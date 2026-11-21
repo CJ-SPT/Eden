@@ -259,6 +259,8 @@ public sealed class CapsuleerInboundRuntimeTests
             host.GetRequiredService<CapsuleerResupply>(),
             host.GetRequiredService<CapsuleerRatting>(),
             host.GetRequiredService<Eden.World.Information.PilotInformationStore>(),
+            host.GetRequiredService<Eden.Gameplay.Exploration.ICombatAnomalies>(),
+            host.GetRequiredService<Eden.World.Exploration.PirateExplorationStore>(),
             host.GetRequiredService<CapsuleerIndustry>(),
             host.GetRequiredService<Eden.World.Sovereignty.PilotEntosisStore>(),
             host.GetRequiredService<CapsuleerCareerTraining>(),

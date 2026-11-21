@@ -46,6 +46,14 @@ public static class CapsuleerPauseRules
         return work with
         {
             Defense = defense,
+            Exploration = work.Exploration is { } exploring
+                ? exploring with
+                {
+                    EndsAt = checked(exploring.EndsAt + delay),
+                    ReadyTicks = exploring.ReadyTicks == 0 ? 0 : checked(exploring.ReadyTicks + delay),
+                }
+                : null,
+            ExplorationRetryAt = work.ExplorationRetryAt == 0 ? 0 : checked(work.ExplorationRetryAt + delay),
             WarpReadyAt = work.WarpReadyAt == 0 ? 0 : checked(work.WarpReadyAt + delay),
             SovereigntyExpedition = work.SovereigntyExpedition is { LockReadyAt: > 0 } expedition
                 ? expedition with

@@ -36,6 +36,23 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot pilot,
         IReadOnlyList<InventoryChange> unloaded,
         long now
+    ) => SellRecoveredLoot(world, catalog, pilot, unloaded, now, item => Enum.IsDefined((SalvageMaterial)item.TypeId));
+
+    internal bool SellRecoveredExplorationLoot(
+        WorldAction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        IReadOnlyList<InventoryChange> unloaded,
+        long now
+    ) => SellRecoveredLoot(world, catalog, pilot, unloaded, now, item => IsMarketSupply(catalog, item.TypeId));
+
+    private bool SellRecoveredLoot(
+        WorldAction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        IReadOnlyList<InventoryChange> unloaded,
+        long now,
+        Func<InventoryItem, bool> marketable
     )
     {
         if (
@@ -46,18 +63,18 @@ internal sealed partial class CapsuleerIndustry
         {
             return false;
         }
-        var salvage = unloaded
+        var stockForSale = unloaded
             .Select(change => change.Item)
-            .Where(item => item.LocationId == pilot.StationId && !item.Singleton && Enum.IsDefined((SalvageMaterial)item.TypeId))
+            .Where(item => item.LocationId == pilot.StationId && !item.Singleton && marketable(item))
             .DistinctBy(item => item.Id)
             .ToArray();
-        if (salvage.Length == 0)
+        if (stockForSale.Length == 0)
         {
             return false;
         }
         var bids = LocalProductionBids(world, pilot.PilotId, pilot.CorpId, pilot.StationId, now);
         bool traded = false;
-        foreach (var item in salvage)
+        foreach (var item in stockForSale)
         {
             var stock = world.Set<OwnedItem>().Find(item.Id);
             if (stock is null)

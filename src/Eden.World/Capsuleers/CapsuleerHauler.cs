@@ -19,6 +19,7 @@ using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Information;
 using Eden.World.Inventory;
@@ -49,6 +50,8 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
     PilotInformationStore information,
+    ICombatAnomalies anomalies,
+    PirateExplorationStore hacking,
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
     CapsuleerCareerTraining careerTraining,
@@ -74,6 +77,8 @@ internal sealed class CapsuleerHaulerFactory(
             resupply,
             ratting,
             information,
+            anomalies,
+            hacking,
             ammunitionSupply,
             entosis,
             careerTraining,
@@ -99,6 +104,8 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
     PilotInformationStore information,
+    ICombatAnomalies anomalies,
+    PirateExplorationStore hacking,
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
     CapsuleerCareerTraining careerTraining,
@@ -139,6 +146,7 @@ internal sealed partial class CapsuleerHauler(
         (_work ?? Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work)
             is { Defense: not null }
                 or { Ratting: not null }
+                or { Exploration: not null }
                 or { Gang.Phase: RoamingGangPhase.Forming or RoamingGangPhase.Hunting or RoamingGangPhase.Returning }
                 or { RegionalEscort: not null }
                 or { CorporationSupply: not null }
@@ -512,6 +520,7 @@ internal sealed partial class CapsuleerHauler(
             }
             // Scouting can populate the system's public sites. Finish that work before opening the station transaction.
             var scoutedAnomaly = capsule ? null : ScoutDepartureAnomaly();
+            var signatures = ExplorationSignatures();
             SynchronizeGang(reconcile: true);
             PublishRegionalReports();
             if (defended.NewThreat)
@@ -541,7 +550,7 @@ internal sealed partial class CapsuleerHauler(
             }
             if (!defended.HoldsNavigation)
             {
-                if (resumeCourse && Pilot.Position is not null && Work.Ratting is null)
+                if (resumeCourse && Pilot.Position is not null && Work.Ratting is null && Work.Exploration is null)
                 {
                     BeginTravel();
                 }
@@ -549,7 +558,7 @@ internal sealed partial class CapsuleerHauler(
                 {
                     _navigation.SetAtRest();
                 }
-                Step(scoutedAnomaly);
+                Step(scoutedAnomaly, signatures);
             }
             return Commit(job);
         }
@@ -809,7 +818,13 @@ internal sealed partial class CapsuleerHauler(
         RefreshObjects(
             loadResources: activity is not { Active: true } || activity.ActiveSystems.Contains(Pilot.SystemId) || RequiresDetail
         );
-        _target = hub ?? refinery ?? office ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
+        _target =
+            hub
+            ?? refinery
+            ?? office
+            ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId)
+            ?? SiteTarget(Work.Ratting)
+            ?? ExplorationTarget(Work.Exploration);
     }
 
     private void RefreshObjects(bool? loadResources = null)
@@ -858,8 +873,13 @@ internal sealed partial class CapsuleerHauler(
         };
     }
 
-    private void Step(CombatAnomaly? scoutedAnomaly)
+    private void Step(CombatAnomaly? scoutedAnomaly, IReadOnlyList<CombatAnomaly>? signatures = null)
     {
+        if (Work.Exploration is not null)
+        {
+            ExplorationStep(signatures ?? []);
+            return;
+        }
         if (Work.Ratting is not null)
         {
             RattingStep();
@@ -934,6 +954,7 @@ internal sealed partial class CapsuleerHauler(
             Retreating = true,
             WaitingReason = null,
             Ratting = null,
+            Exploration = null,
             TrafficLane = null,
             LaneDeparting = false,
             Journey = new(
@@ -995,6 +1016,10 @@ internal sealed partial class CapsuleerHauler(
         {
             _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };
             AttemptShipReplacement();
+            return;
+        }
+        if (_operation.World is EconomyTransaction explorationWorld && TryLaunchExploration(explorationWorld))
+        {
             return;
         }
         if (_operation.World is EconomyTransaction resident)
@@ -1279,6 +1304,7 @@ internal sealed partial class CapsuleerHauler(
                 && (
                     _target?.DestinationGateId is null
                     || Work.Ratting is not null
+                    || Work.Exploration is not null
                     || !GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target)
                 )
         )
@@ -1298,6 +1324,17 @@ internal sealed partial class CapsuleerHauler(
             _navigation.Stop();
             _work = Work with { Ratting = Work.Ratting with { Phase = RattingPhase.Searching } };
             RegionalArrival();
+            return;
+        }
+        if (Work.Exploration is { Phase: ExplorationPhase.Warping } exploring)
+        {
+            if (Pilot.Position!.DistanceTo(exploring.Center) > NpcEncounterDefinitions.DetectionRange)
+            {
+                Follow();
+                return;
+            }
+            _navigation.Stop();
+            _work = Work with { Exploration = exploring with { Phase = ExplorationPhase.Working } };
             return;
         }
         if (_target is null)
@@ -1427,6 +1464,10 @@ internal sealed partial class CapsuleerHauler(
                 _work = Work with { RattingLoot = returning.LootIds };
                 UnloadRattingLoot();
             }
+            if (Work.Exploration is { } exploration)
+            {
+                FinishExplorationAtDock(exploration);
+            }
         }
         else
         {
@@ -1510,7 +1551,7 @@ internal sealed partial class CapsuleerHauler(
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning } };
         }
-        else
+        else if (Work.Exploration is null)
         {
             BeginTravel();
         }

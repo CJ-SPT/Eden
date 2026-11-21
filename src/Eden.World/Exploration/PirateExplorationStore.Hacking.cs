@@ -111,105 +111,119 @@ internal sealed partial class PirateExplorationStore
             using WorldActionScope transaction = new(database, select: world => HackingParticipants(world, pilotId, targetId));
             var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var pilot = Pilot(world, pilotId);
-            var item = world.Set<OwnedItem>().Find(moduleId);
-            if (
-                item is not { Online: true, Singleton: true }
-                || item.OwnerId != pilotId
-                || item.LocationId != pilot.ActiveShipId
-                || !InventoryDefinitions.IsFittedSlot(item.FlagId)
-                || !HackingCatalog.Supported(catalog, item.TypeId, catalog.FittingType(item.TypeId)?.GroupId ?? 0)
-            )
-            {
-                throw new InvalidDataException("Activate a fitted, online data or relic analyzer.");
-            }
-            if (!locks.Contains(targetId))
-            {
-                throw new InvalidDataException("Lock the exploration container before activating the analyzer.");
-            }
-            PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
-            PilotFittingStore.CheckHull(catalog, item.TypeId, pilot.ActiveShip.TypeId);
-            NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
-            var module = HackingCatalog.Module(
-                moduleId,
-                item.TypeId,
-                PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, item))
-            );
-            if (
-                !double.IsFinite(module.DurationMs)
-                || module.DurationMs <= 0
-                || !double.IsFinite(module.Range)
-                || module.Range <= 0
-                || !double.IsFinite(module.CapacitorNeed)
-                || module.CapacitorNeed < 0
-            )
-            {
-                throw new InvalidDataException("Invalid fitted analyzer profile.");
-            }
-            var access = Access(world, catalog, pilot, targetId, module.Range, now);
-            var definition = Definition(catalog, access.Site).Containers[access.Container.Index];
-            var kind = definition.AnalyzerKind ?? (ExplorationKind)access.Site.Kind;
-            int skill = kind != ExplorationKind.Relic ? HackingRules.HackingSkill : HackingRules.ArchaeologySkill;
-            if (!InventoryDefinitions.RequiredSkills.Any(p => catalog.FittingAttributes(item.TypeId).GetValueOrDefault(p.Skill) == skill))
-            {
-                throw new InvalidDataException("Use the analyzer appropriate to this data or relic container.");
-            }
-            var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
-            if (
-                access.Container.Hacked
-                || (
-                    world.Set<SavedHackingAttempt>().Find(pilotId) is not null
-                    || world.Filter<SavedHackingAttempt>(a => a.ContainerId == targetId).Any()
-                )
-                || cooldown?.ReadyAt > now
-                || world.Set<ActiveFittedModule>().Find(moduleId) is not null
-            )
-            {
-                throw new InvalidDataException("The analyzer or container is already in use or has already been hacked.");
-            }
-            var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
-            if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
-            {
-                throw new InvalidDataException("A destroyed ship cannot operate an analyzer.");
-            }
-            var board = HackingRules.Create(
-                access.Container.LootSeed ^ access.Container.Failures,
-                Math.Clamp(definition.Difficulty, 0, 5),
-                module.Coherence,
-                module.Strength,
-                module.Slots
-            );
-            double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
-            long ready = checked(now + (long)Math.Ceiling(module.DurationMs * TimeSpan.TicksPerMillisecond));
-            HackingContact contact = new(
-                pilotId,
-                pilot.ActiveShipId,
-                access.Site.SystemId,
-                targetId,
-                kind,
-                module,
-                now,
-                ready,
-                board,
-                capacitor
-            );
-            world.Add(
-                new SavedHackingAttempt
-                {
-                    PilotId = pilotId,
-                    ContainerId = targetId,
-                    ContactJson = JsonSerializer.Serialize(contact),
-                }
-            );
-            world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
-            cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
-            cooldown.ReadyAt = ready;
-            cooldown.Kind = ModuleCooldownKind.Cycle;
-            CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackStarted, now);
-            Invalidate(world, access.Site.SystemId);
+            var result = Begin(world, catalog, pilotId, moduleId, targetId, locks, now);
             transaction.Commit();
-            return contact;
+            return result;
         }
+    }
+
+    internal HackingContact Begin(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now
+    )
+    {
+        var pilot = Pilot(world, pilotId);
+        var item = world.Set<OwnedItem>().Find(moduleId);
+        if (
+            item is not { Online: true, Singleton: true }
+            || item.OwnerId != pilotId
+            || item.LocationId != pilot.ActiveShipId
+            || !InventoryDefinitions.IsFittedSlot(item.FlagId)
+            || !HackingCatalog.Supported(catalog, item.TypeId, catalog.FittingType(item.TypeId)?.GroupId ?? 0)
+        )
+        {
+            throw new InvalidDataException("Activate a fitted, online data or relic analyzer.");
+        }
+        if (!locks.Contains(targetId))
+        {
+            throw new InvalidDataException("Lock the exploration container before activating the analyzer.");
+        }
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        PilotFittingStore.CheckHull(catalog, item.TypeId, pilot.ActiveShip.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
+        var module = HackingCatalog.Module(
+            moduleId,
+            item.TypeId,
+            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, item))
+        );
+        if (
+            !double.IsFinite(module.DurationMs)
+            || module.DurationMs <= 0
+            || !double.IsFinite(module.Range)
+            || module.Range <= 0
+            || !double.IsFinite(module.CapacitorNeed)
+            || module.CapacitorNeed < 0
+        )
+        {
+            throw new InvalidDataException("Invalid fitted analyzer profile.");
+        }
+        var access = Access(world, catalog, pilot, targetId, module.Range, now);
+        var definition = Definition(catalog, access.Site).Containers[access.Container.Index];
+        var kind = definition.AnalyzerKind ?? (ExplorationKind)access.Site.Kind;
+        int skill = kind != ExplorationKind.Relic ? HackingRules.HackingSkill : HackingRules.ArchaeologySkill;
+        if (!InventoryDefinitions.RequiredSkills.Any(p => catalog.FittingAttributes(item.TypeId).GetValueOrDefault(p.Skill) == skill))
+        {
+            throw new InvalidDataException("Use the analyzer appropriate to this data or relic container.");
+        }
+        var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
+        if (
+            access.Container.Hacked
+            || (
+                world.Set<SavedHackingAttempt>().Find(pilotId) is not null
+                || world.Filter<SavedHackingAttempt>(a => a.ContainerId == targetId).Any()
+            )
+            || cooldown?.ReadyAt > now
+            || world.Set<ActiveFittedModule>().Find(moduleId) is not null
+        )
+        {
+            throw new InvalidDataException("The analyzer or container is already in use or has already been hacked.");
+        }
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
+        if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
+        {
+            throw new InvalidDataException("A destroyed ship cannot operate an analyzer.");
+        }
+        var board = HackingRules.Create(
+            access.Container.LootSeed ^ access.Container.Failures,
+            Math.Clamp(definition.Difficulty, 0, 5),
+            module.Coherence,
+            module.Strength,
+            module.Slots
+        );
+        double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
+        long ready = checked(now + (long)Math.Ceiling(module.DurationMs * TimeSpan.TicksPerMillisecond));
+        HackingContact contact = new(
+            pilotId,
+            pilot.ActiveShipId,
+            access.Site.SystemId,
+            targetId,
+            kind,
+            module,
+            now,
+            ready,
+            board,
+            capacitor
+        );
+        world.Add(
+            new SavedHackingAttempt
+            {
+                PilotId = pilotId,
+                ContainerId = targetId,
+                ContactJson = JsonSerializer.Serialize(contact),
+            }
+        );
+        world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
+        cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
+        cooldown.ReadyAt = ready;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
+        CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackStarted, now);
+        Invalidate(world, access.Site.SystemId);
+        return contact;
     }
 
     public HackingTurn Act(long pilotId, HackingAction action, long now)
@@ -225,52 +239,58 @@ internal sealed partial class PirateExplorationStore
             using WorldActionScope transaction = new(database, select: world => HackingParticipants(world, pilotId));
             var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var attempt = world.Set<SavedHackingAttempt>().Find(pilotId) ?? throw new InvalidDataException("No hacking attempt is active.");
-            var contact = Contact(attempt);
-            var pilot = Pilot(world, pilotId);
-            var access = Access(world, catalog, pilot, contact.ContainerId, contact.Module.Range, now);
-            var item = world.Set<OwnedItem>().Find(contact.Module.Id);
-            if (
-                pilot.ActiveShipId != contact.ShipId
-                || item is not { Online: true }
-                || item.OwnerId != pilotId
-                || item.LocationId != contact.ShipId
-                || !InventoryDefinitions.IsFittedSlot(item.FlagId)
-                || world.Set<ActiveFittedModule>().Find(item.Id) is null
-            )
+            var result = Act(world, catalog, pilotId, action, now);
+            transaction.Commit();
+            return result;
+        }
+    }
+
+    internal HackingTurn Act(WorldAction world, CatalogDbContext catalog, long pilotId, HackingAction action, long now)
+    {
+        var attempt = world.Set<SavedHackingAttempt>().Find(pilotId) ?? throw new InvalidDataException("No hacking attempt is active.");
+        var contact = Contact(attempt);
+        var pilot = Pilot(world, pilotId);
+        var access = Access(world, catalog, pilot, contact.ContainerId, contact.Module.Range, now);
+        var item = world.Set<OwnedItem>().Find(contact.Module.Id);
+        if (
+            pilot.ActiveShipId != contact.ShipId
+            || item is not { Online: true }
+            || item.OwnerId != pilotId
+            || item.LocationId != contact.ShipId
+            || !InventoryDefinitions.IsFittedSlot(item.FlagId)
+            || world.Set<ActiveFittedModule>().Find(item.Id) is null
+        )
+        {
+            throw new InvalidDataException("The original ship and online analyzer are required to continue hacking.");
+        }
+        var next = HackingRules.Step(contact.Board, action);
+        if (next.Outcome == HackingOutcome.Running)
+        {
+            attempt.ContactJson = JsonSerializer.Serialize(contact with { Board = next });
+        }
+        else
+        {
+            if (next.Outcome == HackingOutcome.Won)
             {
-                throw new InvalidDataException("The original ship and online analyzer are required to continue hacking.");
-            }
-            var next = HackingRules.Step(contact.Board, action);
-            if (next.Outcome == HackingOutcome.Running)
-            {
-                attempt.ContactJson = JsonSerializer.Serialize(contact with { Board = next });
+                GrantLoot(world, catalog, access.Container, Definition(catalog, access.Site), pilotId);
+                access.Container.Hacked = true;
+                access.Container.OwnerId = pilotId;
+                if (access.Site.SovereigntySlot == MilitiaOperationSlot && access.Site.ResponseAt is null)
+                {
+                    access.Site.ResponseAt = now + OperationResponse.Ticks;
+                    access.Site.ExpiresAt = Math.Min(access.Site.ExpiresAt, now + OperationCollapse.Ticks);
+                }
+                CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackResolved, now);
             }
             else
             {
-                if (next.Outcome == HackingOutcome.Won)
-                {
-                    GrantLoot(world, catalog, access.Container, Definition(catalog, access.Site), pilotId);
-                    access.Container.Hacked = true;
-                    access.Container.OwnerId = pilotId;
-                    if (access.Site.SovereigntySlot == MilitiaOperationSlot && access.Site.ResponseAt is null)
-                    {
-                        access.Site.ResponseAt = now + OperationResponse.Ticks;
-                        access.Site.ExpiresAt = Math.Min(access.Site.ExpiresAt, now + OperationCollapse.Ticks);
-                    }
-                    CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackResolved, now);
-                }
-                else
-                {
-                    FailHack(world, catalog, access.Site, access.Container, now);
-                }
-                ReleaseModule(world, attempt);
-                world.Remove(attempt);
-                CompleteIfEmpty(world, access.Site, now);
+                FailHack(world, catalog, access.Site, access.Container, now);
             }
-            transaction.Commit();
-            return new(contact, contact.Board, next, action);
+            ReleaseModule(world, attempt);
+            world.Remove(attempt);
+            CompleteIfEmpty(world, access.Site, now);
         }
+        return new(contact, contact.Board, next, action);
     }
 
     public void Cancel(long pilotId, long now)
@@ -284,22 +304,63 @@ internal sealed partial class PirateExplorationStore
         using (database.EnterMovement())
         {
             using WorldActionScope transaction = new(database, select: world => HackingParticipants(world, pilotId));
-            var world = transaction.World;
-            var attempt = world.Set<SavedHackingAttempt>().Find(pilotId);
-            if (attempt is null)
-            {
-                return;
-            }
             using CatalogDbContext catalog = new(database.CatalogPath);
-            ReleaseModule(world, attempt);
-            world.Remove(attempt);
-            if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
-            {
-                var site = world.Set<SavedExplorationSite>().Find(container.SiteId)!;
-                FailHack(world, catalog, site, container, now);
-                CompleteIfEmpty(world, site, now);
-            }
+            Cancel(transaction.World, catalog, pilotId, now);
             transaction.Commit();
+        }
+    }
+
+    internal HackingContact? Pending(WorldAction world, long pilotId) =>
+        world.Set<SavedHackingAttempt>().Find(pilotId) is { } attempt ? Contact(attempt) : null;
+
+    internal static bool OrdinarySite(WorldAction world, long siteId, int system, long now) =>
+        world.Set<SavedExplorationSite>().Find(siteId)
+            is { ReplaceAt: null, SovereigntySlot: >= 0, Kind: (int)ExplorationKind.Data or (int)ExplorationKind.Relic } site
+        && site.SystemId == system
+        && site.ExpiresAt > now
+        && !WormholeRules.IsWormholeSystem(system);
+
+    internal static StaticSpaceObject[] AvailableContainers(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long siteId,
+        int system,
+        long now
+    )
+    {
+        if (!OrdinarySite(world, siteId, system, now))
+        {
+            return [];
+        }
+        var site = world.Set<SavedExplorationSite>().Find(siteId)!;
+        var profile = Definition(catalog, site);
+        return world
+            .Filter<SavedHackingContainer>(container => container.SiteId == siteId)
+            .Where(container => !container.Destroyed && !container.Empty && (!container.Hacked || container.OwnerId == pilotId))
+            .AsEnumerable()
+            .Where(container =>
+                !world
+                    .Filter<SavedHackingAttempt>(attempt => attempt.ContainerId == container.Id)
+                    .Any(attempt => attempt.PilotId != pilotId)
+            )
+            .Select(container => Object(catalog, site, container, profile: profile))
+            .ToArray();
+    }
+
+    internal void Cancel(WorldAction world, CatalogDbContext catalog, long pilotId, long now)
+    {
+        if (world.Set<SavedHackingAttempt>().Find(pilotId) is not { } attempt)
+        {
+            return;
+        }
+        ReleaseModule(world, attempt);
+        world.Remove(attempt);
+        if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
+        {
+            var site = world.Set<SavedExplorationSite>().Find(container.SiteId)!;
+            FailHack(world, catalog, site, container, now);
+            CompleteIfEmpty(world, site, now);
         }
     }
 
@@ -357,27 +418,40 @@ internal sealed partial class PirateExplorationStore
             using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
             var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var pilot = Pilot(world, pilotId);
-            var access = Access(world, catalog, pilot, request.SourceId, HackingRules.LootRange, now);
-            if (!access.Container.Hacked || access.Container.OwnerId != pilotId)
-            {
-                throw new InvalidDataException("Only the successful hacker may retrieve this container's contents.");
-            }
-            var changes = SpaceLootTransfer.Take(
-                world,
-                catalog,
-                pilot,
-                shipId,
-                request.SourceId,
-                request.ItemIds,
-                request.Quantity,
-                (InventoryFlag)request.FlagId
-            );
-            world.SaveChanges();
-            access.Container.Empty = !world.Filter<OwnedItem>(i => i.LocationId == request.SourceId && i.Quantity > 0).Any();
-            CompleteIfEmpty(world, access.Site, now);
+            var result = Take(world, catalog, pilotId, shipId, request, now);
             transaction.Commit();
-            return changes;
+            return result;
         }
+    }
+
+    internal IReadOnlyList<InventoryChange> Take(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        InventoryMoveRequest request,
+        long now
+    )
+    {
+        var pilot = Pilot(world, pilotId);
+        var access = Access(world, catalog, pilot, request.SourceId, HackingRules.LootRange, now);
+        if (!access.Container.Hacked || access.Container.OwnerId != pilotId)
+        {
+            throw new InvalidDataException("Only the successful hacker may retrieve this container's contents.");
+        }
+        var changes = SpaceLootTransfer.Take(
+            world,
+            catalog,
+            pilot,
+            shipId,
+            request.SourceId,
+            request.ItemIds,
+            request.Quantity,
+            (InventoryFlag)request.FlagId
+        );
+        world.SaveChanges();
+        access.Container.Empty = !world.Filter<OwnedItem>(i => i.LocationId == request.SourceId && i.Quantity > 0).Any();
+        CompleteIfEmpty(world, access.Site, now);
+        return changes;
     }
 }
