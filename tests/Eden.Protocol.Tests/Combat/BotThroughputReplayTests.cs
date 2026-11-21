@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using System.Threading.Channels;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.Server.Maintenance;
@@ -59,13 +61,12 @@ public sealed partial class ServerPerformanceReplayTests
         Assert.Equal(99, ThroughputPercentile(arrivals, 0.99));
     }
 
-    private sealed class ThroughputClock : TimeProvider
+    private sealed class ThroughputClock(DateTimeOffset startTime) : TimeProvider
     {
         private readonly long _started = Stopwatch.GetTimestamp();
-        private static readonly DateTimeOffset StartTime = new(2026, 11, 10, 18, 0, 0, TimeSpan.Zero);
         internal TimeSpan Offset { get; set; }
 
-        public override DateTimeOffset GetUtcNow() => StartTime + Stopwatch.GetElapsedTime(_started) + Offset;
+        public override DateTimeOffset GetUtcNow() => startTime + Stopwatch.GetElapsedTime(_started) + Offset;
 
         public override long GetTimestamp() => Stopwatch.GetTimestamp() + (long)(Offset.TotalSeconds * Stopwatch.Frequency);
 
@@ -91,6 +92,15 @@ public sealed partial class ServerPerformanceReplayTests
         systems = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_SYSTEMS") ?? systems.ToString());
         int observers = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_OBSERVERS") ?? "1");
         int seconds = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_SECONDS") ?? "600");
+        int? requiredPilots = Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_MINIMUM_PILOTS") is { } minimum
+            ? int.Parse(minimum)
+            : null;
+        int admissionTimeout = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_ADMISSION_SECONDS") ?? "0");
+        long observerPilot = long.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_OBSERVER_PILOT") ?? "90000006");
+        long observerAccount = long.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_OBSERVER_ACCOUNT") ?? "1000003");
+        var startTime = Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_START_UTC") is { } start
+            ? DateTimeOffset.Parse(start, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)
+            : new DateTimeOffset(2026, 11, 10, 18, 0, 0, TimeSpan.Zero);
         string destination =
             Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_OUTPUT")
             ?? throw new InvalidOperationException("Set EDEN_PERFORMANCE_OUTPUT to retain throughput results.");
@@ -140,7 +150,7 @@ public sealed partial class ServerPerformanceReplayTests
                 }
             }
             WorldDatabase database = new(Path.Combine(directory, "world.sqlite"));
-            ThroughputClock clock = new();
+            ThroughputClock clock = new(startTime);
             File.AppendAllText(progress, "Initializing copied world.\n");
             WorldInitialization.Initialize(database, clock);
             int[] communities;
@@ -165,8 +175,8 @@ public sealed partial class ServerPerformanceReplayTests
                     .ToArray();
             }
             using var host = ServerServices.Build(database, clock, liveWorld: true);
-            using var player = new ReplayPlayer(host, clock, 90000006, 1000003, Report);
-            using var additional = new ThroughputObservers(host, clock, observers - 1, player.Context.Pilot.SystemId, Report);
+            using var player = new ReplayPlayer(host, clock, observerPilot, observerAccount, Report);
+            using var additional = new ThroughputObservers(host, clock, observers - 1, player.Context.Pilot, Report);
             ReplayPlayer[] players = [player, .. additional.Players];
             var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
             var diagnostics = host.GetRequiredService<ICapsuleerDiagnostics>();
@@ -254,8 +264,6 @@ public sealed partial class ServerPerformanceReplayTests
                 slowCommand: (duration, sql) => Report($"Slow SQL command: {duration.TotalMilliseconds:F2} ms. {sql}")
             );
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
-            long completedAtStart = diagnostics.Read().CompletedActions;
-            int generation2AtStart = GC.CollectionCount(2);
             maintenance.Start();
             var marketMaintenance =
                 Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_MARKET_MAINTENANCE") == "1"
@@ -267,7 +275,17 @@ public sealed partial class ServerPerformanceReplayTests
             {
                 populationMaintenance.Start();
             }
-            TimeSpan startedCpu = Process.GetCurrentProcess().TotalProcessorTime;
+            var admission = Stopwatch.StartNew();
+            if (admissionTimeout > 0 && requiredPilots is { } admissionTarget)
+            {
+                await WaitForThroughputPopulation(diagnostics, live, admissionTarget, admissionTimeout, progress);
+            }
+            admission.Stop();
+            long completedAtStart = diagnostics.Read().CompletedActions;
+            long paidAtStart = scheduler.PaidCollections;
+            int generation2AtStart = GC.CollectionCount(2);
+            using var process = Process.GetCurrentProcess();
+            TimeSpan startedCpu = process.TotalProcessorTime;
             // The approximate counter can stay flat for several samples while bots continue to work.
             long startedAllocations = GC.GetTotalAllocatedBytes(precise: true);
             long timedAllocations = 0;
@@ -333,7 +351,7 @@ public sealed partial class ServerPerformanceReplayTests
             });
             int minimumScheduled = int.MaxValue;
             double? recovered = null;
-            long previousCompleted = 0;
+            long previousCompleted = completedAtStart;
             int previousDue = diagnostics.Read().DueJobs;
             double previousSeconds = 0;
             IReadOnlyList<CapsuleerCareerQueue> previousCareers = [];
@@ -351,6 +369,7 @@ public sealed partial class ServerPerformanceReplayTests
                 long sampleAllocations = GC.GetTotalAllocatedBytes(precise: true) - startedAllocations;
                 allocationSamplesMonotonic &= sampleAllocations >= timedAllocations;
                 timedAllocations = sampleAllocations;
+                process.Refresh();
                 double delay = TimeSpan.FromTicks(state.OldestDelayTicks).TotalMilliseconds;
                 if (delay < 1000)
                 {
@@ -395,6 +414,8 @@ public sealed partial class ServerPerformanceReplayTests
                         GcPauseMilliseconds = (GC.GetTotalPauseDuration() - pauseAtStart).TotalMilliseconds,
                         LastFullCollectionIndex = fullCollection.Index,
                         BytesAfterFullCollection = fullCollection.HeapSizeBytes - fullCollection.FragmentedBytes,
+                        WorkingSetBytes = process.WorkingSet64,
+                        PeakWorkingSetBytes = process.PeakWorkingSet64,
                         Runtime = state,
                     }
                 );
@@ -415,6 +436,7 @@ public sealed partial class ServerPerformanceReplayTests
                 session.Dispose();
             }
             await checkpoints;
+            populationMaintenance.Dispose();
             maintenance.Dispose();
             if (marketMaintenance is not null)
             {
@@ -438,6 +460,9 @@ public sealed partial class ServerPerformanceReplayTests
                         seconds,
                         RecoveredSeconds = recovered,
                         SetupMilliseconds = setup.Elapsed.TotalMilliseconds,
+                        AdmissionMilliseconds = admission.Elapsed.TotalMilliseconds,
+                        CompletedDuringReplay = diagnostics.Read().CompletedActions - completedAtStart,
+                        PaidCollectionsDuringReplay = scheduler.PaidCollections - paidAtStart,
                         ExplorationMilliseconds = exploration.Elapsed.TotalMilliseconds,
                         ExplorationAllocatedBytes = explorationBytes,
                         ColdSamples = cold,
@@ -464,7 +489,7 @@ public sealed partial class ServerPerformanceReplayTests
                         WarmupSeconds = LatencyWarmupSeconds,
                         ReportedPilots = LatencyReportedPilots,
                         Communities = communities,
-                        CpuMilliseconds = (Process.GetCurrentProcess().TotalProcessorTime - startedCpu).TotalMilliseconds,
+                        CpuMilliseconds = (process.TotalProcessorTime - startedCpu).TotalMilliseconds,
                         AllocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - startedAllocations,
                         AllocationSamplesMonotonic = allocationSamplesMonotonic,
                         BytesPerCompletedAction = allocationSamplesMonotonic
@@ -491,9 +516,9 @@ public sealed partial class ServerPerformanceReplayTests
             output.WriteLine($"Systems={systems} backlog={backlog} recovered={recovered} scheduled={diagnostics.Read().ScheduledAgents}");
             if (seconds >= 600 && Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_BASELINE") != "1")
             {
-                if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_MINIMUM_PILOTS") is { } required)
+                if (requiredPilots is { } required)
                 {
-                    Assert.True(minimumScheduled >= int.Parse(required), $"Minimum scheduled population was {minimumScheduled}.");
+                    Assert.True(minimumScheduled >= required, $"Minimum scheduled population was {minimumScheduled}.");
                 }
                 Assert.NotNull(recovered);
                 Assert.True(recovered <= 120);
@@ -536,6 +561,43 @@ public sealed partial class ServerPerformanceReplayTests
         }
     }
 
+    private static async Task WaitForThroughputPopulation(
+        ICapsuleerDiagnostics diagnostics,
+        LiveWorld live,
+        int target,
+        int timeoutSeconds,
+        string progress
+    )
+    {
+        Stopwatch elapsed = Stopwatch.StartNew();
+        int nextCheckpoint = 15;
+        while (true)
+        {
+            var state = diagnostics.Read();
+            if (state.ScheduledAgents >= target)
+            {
+                File.AppendAllText(progress, $"Admitted {state.ScheduledAgents} pilots after {elapsed.Elapsed.TotalSeconds:F1}s.\n");
+                return;
+            }
+            Assert.Equal(0, state.Failures);
+            Assert.True(
+                elapsed.Elapsed.TotalSeconds < timeoutSeconds,
+                $"Admission timed out at {state.ScheduledAgents} scheduled, {state.Population.Agents} saved and {state.DueJobs} due."
+            );
+            if (elapsed.Elapsed.TotalSeconds >= nextCheckpoint)
+            {
+                await live.FlushAsync();
+                nextCheckpoint += 15;
+                File.AppendAllText(
+                    progress,
+                    $"admission={elapsed.Elapsed.TotalSeconds:F1}s scheduled={state.ScheduledAgents} "
+                        + $"saved={state.Population.Agents} due={state.DueJobs}\n"
+                );
+            }
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+    }
+
     private static async Task WriteThroughputLog(string path, ChannelReader<string> reports)
     {
         const int bufferSize = 128 * 1024;
@@ -551,15 +613,16 @@ public sealed partial class ServerPerformanceReplayTests
     {
         internal List<ReplayPlayer> Players { get; } = [];
 
-        internal ThroughputObservers(ServiceProvider host, TimeProvider clock, int count, int system, Action<string> report)
+        internal ThroughputObservers(ServiceProvider host, TimeProvider clock, int count, DockedPilot primary, Action<string> report)
         {
             (long Pilot, long Account)[] identities = [(90000001, 1000001), (90000002, 1000002), (90000004, 1000004)];
             var ships = host.GetRequiredService<Eden.World.Docking.SqliteWorld>();
-            foreach (var identity in identities.Take(count))
+            foreach (var identity in identities.Where(identity => identity.Pilot != primary.PilotId).Take(count))
             {
-                var pilot = ships.FindPilot(identity.Account, identity.Pilot)!;
-                var reference = ships.FindPilot(1000003, 90000006)!;
-                ships.SetPosition(pilot.ShipId, new(reference.X + 2000000 + Players.Count * 100000, reference.Y, reference.Z), system);
+                var pilot =
+                    ships.FindPilot(identity.Account, identity.Pilot)
+                    ?? throw new InvalidOperationException($"Saved observer {identity.Pilot} is unavailable.");
+                ships.SetPosition(pilot.ShipId, new(primary.X + 2000000 + Players.Count * 100000, primary.Y, primary.Z), primary.SystemId);
                 Players.Add(new(host, clock, identity.Pilot, identity.Account, report));
             }
         }
