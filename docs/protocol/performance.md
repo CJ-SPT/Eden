@@ -6739,8 +6739,8 @@ samples are under `artifacts/bot-cpu-5000/` in the main checkout.
 
 ## Sustaining expanded fresh-world bot populations
 
-The dedicated Linux host has four vCPUs and 7.8 GiB of RAM. The established-world replay proved the scheduler at
-10,000 pilots with a different workload. Fresh universes also need additional eligible founders. The
+The dedicated Linux host has four vCPUs and 7.8 GiB of RAM. Earlier established-world replays used a different
+workload. Fresh universes need additional eligible founders. The
 [founder cohort setting](capsuleers.md#additional-fresh-universe-founder-cohorts) expands the roster through the
 resident provisioner and preserves existing pilots, jobs, and normal starter economics.
 
@@ -6760,6 +6760,18 @@ Expanded fresh worlds allow one offscreen admission per 50 ms while oldest due w
 retaining up to four starts per interval when the queue drains. Start work enters at current simulation time.
 The deadline queue still orders already-due jobs. Starts do not accumulate during backlog or inactivity.
 
+Production maintenance can keep up to four prepared offscreen jobs in one ownership turn. Cold, observed,
+and cross-system work keep their normal preparation and validation boundaries. Each action settles with its
+own revision and deadline. The traffic geometry cache keeps recently used static objects and retires data
+when the catalog changes. NPC acquisition and fire use scoped resident participants. Checkpoint projection
+batches pilot and job rows and preserves binary appearances.
+
+Hosts with a constrained memory budget can set `EDEN_CHECKPOINT_CAPTURE_FILE=1` to use a temporary on-disk
+image for detached captures. It needs free space for an extra world image during a save. The capture still
+yields between 256-page steps and publishes the same transactionally projected durable checkpoint. A local
+probe on a 386.7 MB world measured 420 MiB less process working set during capture. Median capture time on
+that Windows disk increased from 229 to 405 ms. The default uses an in-memory image.
+
 ### Automated validation
 
 The exact `ReplaySustainedBotThroughput` filter can use the observer pilot and account in a frozen fresh-world
@@ -6772,6 +6784,21 @@ save. The 180-second run recovered from its saved backlog in 58.1 seconds and co
 and 4,004 paid mining collections. In the final 90 seconds, due age p95 was 606 ms and peaked at 1.16 s. Warm
 frame p95/p99 was 53.1/88.0 ms and market p95/p99 was 32.9/44.7 ms. The test container ran alongside the idle
 production service for this diagnostic. Raw results are under `artifacts/remote-bot-10000-20261121/`.
+
+The ten-minute Fresh Universe replay at `8a1af1d4` retained all 10,000 pilots, completed 1,531,712 actions
+and 42,723 paid mining collections, and wrote 41 checkpoints. It recorded zero action failures, frame p99
+of 60.7 ms, and market request p99 of 68.9 ms. Bot queue age p95 over the final five minutes was 166.9 seconds
+and ended at 168.9 seconds. It failed the one-second queue deadline. The test changed the container limit from
+6 GiB to 7 GiB at second 390 for a memory diagnostic. No OOM kill was observed and the queue continued to
+fall behind after the change.
+
+A separate established-world replay with two observers reached 10,000 scheduled pilots and stopped at
+105 seconds when the 6 GiB container OOM-killed the test host. In the next Fresh Universe restart diagnostic,
+the detached file capture and read-only catalog fixtures left more than 3.7 GiB of host memory available.
+The scheduler reached 9,993 of the 10,000 saved pilots. It held the remaining seven while the existing queue
+had thousands of due jobs. That diagnostic ended at the admission plateau before the timed window. The
+read-only catalog link integration test passed on Linux. The linked fixture kept its working copy of the
+world database and its own mutable skill state.
 
 ### Live acceptance
 
