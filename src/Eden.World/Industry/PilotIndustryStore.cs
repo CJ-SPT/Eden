@@ -328,7 +328,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     internal static bool IsInstalled(WorldDbContext world, long itemId) => IsInstalled(new SqlWorldAction(world), itemId);
 
     internal static bool IsInstalled(WorldAction world, long itemId) =>
-        world.Filter<IndustryJob>(j => j.BlueprintId == itemId && j.Status == IndustryJobStatus.Installed).Any();
+        world is EconomyTransaction resident
+            ? resident.BlueprintInstalled(itemId)
+            : world.Filter<IndustryJob>(j => j.BlueprintId == itemId && j.Status == IndustryJobStatus.Installed).Any();
 
     private static OwnedBlueprint ReadBlueprint(WorldAction world, CatalogDbContext catalog, OwnedItem item)
     {

@@ -71,6 +71,16 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(SavedPersonalOrder.StationId), station, (nameof(SavedPersonalOrder.TypeId), type))
             .Where(order => order.StationId == station && order.TypeId == type);
 
+    internal bool BlueprintInstalled(long itemId) =>
+        ((EconomySet<IndustryJob, EconomyIndustryJob>)Set<IndustryJob>())
+            .IndexedSnapshots(nameof(IndustryJob.BlueprintId), itemId)
+            .Any(job => job.BlueprintId == itemId && job.Status == IndustryJobStatus.Installed);
+
+    internal IEnumerable<EconomySavedTaskCounter> TaskCounters(long pilotId) =>
+        ((EconomySet<SavedTaskCounter, EconomySavedTaskCounter>)Set<SavedTaskCounter>())
+            .IndexedSnapshots(nameof(SavedTaskCounter.PilotId), pilotId)
+            .Where(counter => counter.PilotId == pilotId);
+
     internal bool PersonalOrderStillOpen(long id) =>
         ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>()).ReadSnapshot(new(id))
             is { Status: PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };

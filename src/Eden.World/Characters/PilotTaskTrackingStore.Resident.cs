@@ -21,6 +21,14 @@ internal sealed partial class PilotTaskTrackingStore
 
     private static IReadOnlyList<TaskCounter> Counters(WorldAction world, long pilotId)
     {
+        if (world is EconomyTransaction resident)
+        {
+            return resident
+                .TaskCounters(pilotId)
+                .Select(counter => new TaskCounter(counter.Name, counter.Count))
+                .OrderBy(counter => counter.Name, StringComparer.Ordinal)
+                .ToArray();
+        }
         // Query tracked rows as well as additions so one operation can record
         // multiple activities before its owning transaction saves anything.
         world.Filter<SavedTaskCounter>(counter => counter.PilotId == pilotId).Load();
