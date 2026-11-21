@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
@@ -144,7 +145,7 @@ internal sealed partial class CapsuleerScheduler(
                 _population,
                 _systems.Count,
                 activity.ActiveSystems.Count,
-                Current.Count,
+                _registrations.Count,
                 status.Due,
                 oldest is { } due ? activity.ElapsedTicks - due : 0,
                 _completed,
@@ -154,7 +155,7 @@ internal sealed partial class CapsuleerScheduler(
                 _lastFailure
             )
             {
-                ScheduledAgents = _running.Count - _waitingBackground.Count,
+                ScheduledAgents = _running.Count,
                 WaitingBackgroundStarts = _waitingBackground.Count,
                 LastUpdate = _diagnostics.LastUpdate,
                 LastPresentation = _diagnostics.LastPresentation,
@@ -187,12 +188,11 @@ internal sealed partial class CapsuleerScheduler(
             return;
         }
         int? previousRuntime = _locations.TryGetValue(pilot, out int savedSystem) ? savedSystem : null;
-        _membershipDirty |=
-            previousRuntime is null || _reconciledSystems.Contains(previousRuntime.Value) || _reconciledSystems.Contains(system);
+        _membershipDirty |= _reconciledSystems.Contains(system) || previousRuntime is int prior && _reconciledSystems.Contains(prior);
         Live?.TrackCapsuleer(pilot, previousRuntime, system);
         if (previousRuntime is int previous)
         {
-            _systemAgents.GetValueOrDefault(previous)?.Remove(pilot);
+            RemoveMember(_systemAgents, previous, pilot);
         }
         _locations[pilot] = system;
         if (!_systemAgents.TryGetValue(system, out var agents))
@@ -206,6 +206,7 @@ internal sealed partial class CapsuleerScheduler(
     private HashSet<long> _suspended = [];
     private bool _loaded;
     private bool _backgroundPilotsLoaded;
+    private bool _restoredOperations;
     private long _populationRevision;
 
     private readonly record struct Registration(int Community, CapsuleerCareer Career, int CrewSystem);
@@ -233,6 +234,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             Load(system, pilot);
         }
+        Load();
         presence.Wake();
     }
 
@@ -246,7 +248,10 @@ internal sealed partial class CapsuleerScheduler(
         WorldActionScope.Inspect(database, world => Load(world, preparedSystem, preparedPilot));
         // Once the private inspection ends, the population store can reuse its committed summary.
         _population = population.Summary();
-        _populationRevision = Live?.CapsuleerRevision ?? 0;
+        if (preparedSystem is null)
+        {
+            _populationRevision = Live?.CapsuleerRevision ?? 0;
+        }
         _loaded = true;
     }
 
@@ -276,18 +281,15 @@ internal sealed partial class CapsuleerScheduler(
         }
         else
         {
-            if (!_loaded)
-            {
-                RestoreRoamingGangs(world);
-            }
+            _backgroundPilotsLoaded = false;
             foreach (int observed in presence.Read().ActiveSystems)
             {
-                LoadSystem(world, observed, null);
+                LoadSystem(world, observed, null, includeRemote: false);
             }
         }
     }
 
-    private void LoadSystem(WorldAction world, int system, long? pilot)
+    private void LoadSystem(WorldAction world, int system, long? pilot, bool includeRemote = true)
     {
         _systems.Register(system);
         if (world.Set<SavedCapsuleerCoarseWork>().Find(system) is { } work)
@@ -308,13 +310,27 @@ internal sealed partial class CapsuleerScheduler(
                 localShips.Add(ship);
             }
         }
+        var structures = world
+            .Filter<SavedStructure>(structure => structure.SystemId == system)
+            .Select(structure => (long?)structure.Id)
+            .ToArray();
+        if (structures.Length > 0)
+        {
+            foreach (long ship in world.Ships.Where(ship => Enumerable.Contains(structures, ship.StructureId)).Select(ship => ship.Id))
+            {
+                if (world.Positions.Find(ship)?.SystemId is null)
+                {
+                    localShips.Add(ship);
+                }
+            }
+        }
         var ships = localShips.ToArray();
         var pilots = world.Pilots.Where(p => Enumerable.Contains(ships, p.ActiveShipId)).Select(p => p.Id).ToHashSet();
         // A visitor slot stores the smaller reciprocal gate ID, plus a stride per visitor.
         // Expand the saved slots up front so the resident query can use its slot index.
         HashSet<int> visitorSlots = [];
         const int stride = TrafficJourneyRules.VisitorSlotStride;
-        foreach (var gate in database.Catalog.GatesInSystem(system))
+        foreach (var gate in includeRemote ? database.Catalog.GatesInSystem(system) : [])
         {
             int lane = Math.Min(gate.Id, gate.DestinationId);
             if (lane is > 0 and < stride)
@@ -330,7 +346,8 @@ internal sealed partial class CapsuleerScheduler(
             .Set<SavedCapsuleerAgent>()
             .Where(agent =>
                 Enumerable.Contains(pilots, agent.PilotId)
-                || agent.Career == CapsuleerCareer.Hauling
+                || includeRemote
+                    && agent.Career == CapsuleerCareer.Hauling
                     && (agent.CommunitySystemId == system || Enumerable.Contains(visitorSlots, agent.Slot))
             )
             .OrderBy(a => a.PilotId)
@@ -340,18 +357,21 @@ internal sealed partial class CapsuleerScheduler(
 
     private void Register(WorldAction world, IReadOnlyList<SavedCapsuleerAgent> agents, int? founderSystem = null)
     {
-        PopulationRowsLoaded += agents.Count;
         var live = Live;
         foreach (var agent in agents)
         {
             long pilot = agent.PilotId;
+            if (live is not null && _suspended.Contains(pilot))
+            {
+                continue;
+            }
             long ship = world.Pilots.Find(pilot)!.ActiveShipId;
-            int system =
-                world.Positions.Find(ship)?.SystemId ?? database.Catalog.FindStation(world.Ships.Find(ship)!.StationId)!.SolarSystemId;
+            int system = PilotSystem(world, ship);
             if (founderSystem is int occupied && system != occupied)
             {
                 continue;
             }
+            PopulationRowsLoaded++;
             bool firstRegistration = !_registrations.ContainsKey(pilot);
             int crewSystem = firstRegistration ? agent.CommunitySystemId : _registrations[pilot].CrewSystem;
             if (
@@ -386,17 +406,23 @@ internal sealed partial class CapsuleerScheduler(
                     }
                 }
             }
-            if (!Current.ContainsKey(pilot))
+            if (firstRegistration)
             {
-                var saved = world.Set<SavedCapsuleerJob>().Find(pilot)!;
-                var job = new CapsuleerJob(pilot, saved.Revision, saved.Sequence, saved.DueTicks, saved.Action);
-                Current.Add(pilot, job);
-                Live?.ProjectedCapsuleerJobs.TryAdd(pilot, job);
-                // Older saves recorded the last settled tick in this row. It is also the pause cutoff for new saves.
-                if (world.Set<SavedCapsuleerCoarsePilot>().Find(pilot) is { } paused)
+                if (!Current.ContainsKey(pilot))
                 {
-                    _paused[pilot] = new(paused.SettledTicks);
-                    Live?.CapsuleerRoutines.RestoreMissing(pilot, paused.SettledTicks);
+                    var job = ReadJob(world.Set<SavedCapsuleerJob>().Find(pilot)!);
+                    Current.Add(pilot, job);
+                    live?.ProjectedCapsuleerJobs.TryAdd(pilot, job);
+                }
+                // Older saves recorded the last settled tick in this row. It is also the pause cutoff for new saves.
+                if (live?.CapsuleerRoutines.Settled.TryGetValue(pilot, out long settled) == true)
+                {
+                    _paused.TryAdd(pilot, new(settled));
+                }
+                else if (world.Set<SavedCapsuleerCoarsePilot>().Find(pilot) is { } paused)
+                {
+                    _paused.TryAdd(pilot, new(paused.SettledTicks));
+                    live?.CapsuleerRoutines.RestoreMissing(pilot, paused.SettledTicks);
                 }
                 if (founderSystem is null)
                 {
@@ -406,6 +432,20 @@ internal sealed partial class CapsuleerScheduler(
             IndexLocation(pilot, system);
             RegisterShip(pilot, ship);
         }
+    }
+
+    private static CapsuleerJob ReadJob(SavedCapsuleerJob job) => new(job.PilotId, job.Revision, job.Sequence, job.DueTicks, job.Action);
+
+    private int PilotSystem(WorldAction world, long shipId)
+    {
+        if (world.Positions.Find(shipId)?.SystemId is int system)
+        {
+            return system;
+        }
+        var ship = world.Ships.Find(shipId)!;
+        return ship.StructureId is long structure
+            ? world.StructureSystemId(structure)
+            : database.Catalog.FindStation(ship.StationId)!.SolarSystemId;
     }
 
     public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn) =>
@@ -433,7 +473,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             if (!activity.Active)
             {
-                return new(new(0, Current.Count, null, false), [], []);
+                return new(new(0, _registrations.Count, null, false), [], []);
             }
             using var queuePhase = SessionPerformance.Phase("traffic.queueExecution");
             var turn = _queue.Run(
@@ -638,7 +678,7 @@ internal sealed partial class CapsuleerScheduler(
         _lastFailure = job is null ? error.Message : $"Pilot {job.PilotId}, {job.Action}: {error.GetType().Name}: {error.Message}";
         // Observation can fail after settlement. Restore canonical revisions before
         // delaying this pilot so committed inventory, payments and travel cannot replay.
-        _queue.Restore(_running.Where(pilot => !WaitingForBackgroundStart(pilot)).Select(ScheduledJob));
+        _queue.Restore(_running.Select(ScheduledJob));
         if (job is not null && _running.Contains(job.PilotId))
         {
             _queue.Defer(ScheduledJob(job.PilotId), elapsed);
@@ -664,20 +704,23 @@ internal sealed partial class CapsuleerScheduler(
         }
         using var phase = SessionPerformance.Phase("traffic.membership");
         Reconciliations++;
-        if (activity.Active && Live is not null && !_backgroundPilotsLoaded)
+        _diagnosticTimestamp = null;
+        var live = Live;
+        if (activity.Active && policy.Enabled && live is not null && !_backgroundPilotsLoaded)
         {
-            // Read compact resident membership once. The role loads its fit and navigation when due.
-            WorldActionScope.Inspect(
-                database,
-                world =>
-                    Register(
-                        world,
-                        world
-                            .Set<SavedCapsuleerAgent>()
-                            .Where(agent => agent.Career == CapsuleerCareer.Hauling || agent.Career == CapsuleerCareer.Mining)
-                            .ToArray()
-                    )
-            );
+            if (!_restoredOperations)
+            {
+                WorldActionScope.Inspect(database, RestoreRoamingGangs);
+                _restoredOperations = true;
+            }
+            ClearBackgroundStarts();
+            foreach (var start in live.Economy.CapsuleerStartCandidates())
+            {
+                if (!_running.Contains(start.Pilot))
+                {
+                    QueueBackgroundStart(start.Pilot, Current.GetValueOrDefault(start.Pilot)?.DueTicks ?? start.DueTicks);
+                }
+            }
             _backgroundPilotsLoaded = true;
         }
         foreach (int system in activity.ActiveSystems)
@@ -688,8 +731,12 @@ internal sealed partial class CapsuleerScheduler(
                 {
                     using CapsuleerProvisioner provisioner = new(database, clock);
                     provisioner.EnsureSystem(system);
+                    Load(system);
                 }
-                Load(system);
+                else
+                {
+                    WorldActionScope.Inspect(database, world => LoadSystem(world, system, null, includeRemote: false));
+                }
                 _visited.Add(system);
             }
         }
@@ -712,10 +759,7 @@ internal sealed partial class CapsuleerScheduler(
                 if (!_suspended.Contains(pilot))
                 {
                     running.Add(pilot);
-                    if (RemoveBackgroundStart(pilot))
-                    {
-                        StartPilot(pilot, activity.ElapsedTicks);
-                    }
+                    RemoveBackgroundStart(pilot);
                 }
             }
         }
@@ -725,29 +769,45 @@ internal sealed partial class CapsuleerScheduler(
             {
                 if (!_suspended.Contains(pilot) && CanRunUnobserved(pilot))
                 {
-                    running.Add(pilot);
+                    if (_running.Contains(pilot))
+                    {
+                        running.Add(pilot);
+                    }
+                    else if (!running.Contains(pilot))
+                    {
+                        QueueBackgroundStart(pilot, Current[pilot].DueTicks);
+                    }
                 }
             }
         }
         foreach (long pilot in _running.Except(running))
         {
-            if (!RemoveBackgroundStart(pilot))
+            PausePilot(pilot, activity.ElapsedTicks);
+            if (activity.Active)
             {
-                PausePilot(pilot, activity.ElapsedTicks);
                 _queue.Remove(pilot);
             }
         }
         foreach (long pilot in running.Except(_running))
         {
-            if (activity.ActiveSystems.Contains(_locations[pilot]))
+            StartPilot(pilot, activity.ElapsedTicks);
+        }
+        bool goingIdle = !activity.Active && _reconciledSystems.Length > 0;
+        if (live is not null && (goingIdle || _suspended.Count > 0))
+        {
+            foreach (long pilot in _registrations.Keys.Where(pilot => goingIdle || _suspended.Contains(pilot)).ToArray())
             {
-                StartPilot(pilot, activity.ElapsedTicks);
-            }
-            else
-            {
-                _waitingBackground.Add((Current[pilot].DueTicks, pilot));
+                ReleaseRegistration(live, pilot);
             }
         }
+        if (goingIdle)
+        {
+            ClearBackgroundStarts();
+            _waitingDeadlines.TrimExcess();
+            _queue.Restore([]);
+            _restoredOperations = false;
+        }
+        _backgroundPilotsLoaded &= activity.Active;
         _nextRunning = _running;
         _running = running;
         _membershipDirty = false;
@@ -761,8 +821,11 @@ internal sealed partial class CapsuleerScheduler(
             ref _diagnostics,
             _diagnostics with
             {
-                ScheduledAgents = running.Count - _waitingBackground.Count,
+                Jobs = _registrations.Count,
+                ScheduledAgents = running.Count,
                 WaitingBackgroundStarts = _waitingBackground.Count,
+                DueJobs = activity.Active ? _diagnostics.DueJobs : 0,
+                OldestDelayTicks = activity.Active ? _diagnostics.OldestDelayTicks : 0,
             }
         );
     }
@@ -860,7 +923,15 @@ internal sealed partial class CapsuleerScheduler(
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
-            return Current.Values.OrderBy(j => j.DueTicks).ThenBy(j => j.PilotId).ToArray();
+            IEnumerable<CapsuleerJob> jobs = Current.Values;
+            if (Live is not null && _reconciledResumes > 0)
+            {
+                // Job inspection can read dormant deadlines without admitting their pilots.
+                jobs = jobs.Concat(
+                    WorldActionScope.Inspect(database, CapsuleerPopulationStore.Jobs).Where(job => !Current.ContainsKey(job.PilotId))
+                );
+            }
+            return jobs.OrderBy(j => j.DueTicks).ThenBy(j => j.PilotId).ToArray();
         }
     }
 
@@ -883,7 +954,7 @@ internal sealed partial class CapsuleerScheduler(
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
-            return MinerWorker(pilotId)?.Read();
+            return (Live is not null && !_running.Contains(pilotId) ? ReadDormantMiner(pilotId) : MinerWorker(pilotId))?.Read();
         }
     }
 
@@ -893,7 +964,7 @@ internal sealed partial class CapsuleerScheduler(
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
-            return HaulerWorker(pilotId)?.Read();
+            return (Live is not null && !_running.Contains(pilotId) ? ReadDormantHauler(pilotId) : HaulerWorker(pilotId))?.Read();
         }
     }
 
@@ -934,7 +1005,7 @@ internal sealed partial class CapsuleerScheduler(
             _resuming.ContainsKey(pilot)
             || !Current.TryGetValue(pilot, out var job)
             || job.DueTicks <= dueTicks
-            || WaitingForBackgroundStart(pilot)
+            || _waitingDeadlines.ContainsKey(pilot)
         )
         {
             return;

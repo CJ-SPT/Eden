@@ -33,6 +33,8 @@ internal sealed class LiveCapsuleerRoutines(LiveWorld owner, string path)
         _settled.TryAdd(pilot, elapsed);
     }
 
+    internal bool HasPending(long pilot) => _dirtySettled.Contains(pilot) || _admissions.Contains(pilot);
+
     internal CapsuleerRoutineCheckpoint Capture(TransactionParticipants? participants = null, IReadOnlyCollection<long>? pilots = null) =>
         new(
             (participants is null ? _dirtyWork : participants.Systems.Where(_dirtyWork.Contains)).Select(id => _work[id]).ToArray(),

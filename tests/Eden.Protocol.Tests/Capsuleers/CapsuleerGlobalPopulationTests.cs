@@ -330,10 +330,18 @@ public sealed class CapsuleerGlobalPopulationTests
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var live = host.GetRequiredService<LiveWorld>();
+        scheduler.Run(0);
+        Assert.True(scheduler.Read().Population.Agents >= remote.Length);
+        Assert.Equal(0, scheduler.Read().Jobs);
+        Assert.Empty(live.CapsuleerJobs);
         using var observer = presence.Select(90000001, Source);
         var savedJobs = scheduler.Jobs().ToDictionary(job => job.PilotId);
         int waiting = scheduler.Read().WaitingBackgroundStarts;
         Assert.True(waiting >= remote.Length);
+        Assert.Equal(scheduler.Read().ScheduledAgents, scheduler.Read().Jobs);
+        Assert.Equal(scheduler.Read().Jobs, live.CapsuleerJobs.Count);
+        Assert.All(remote, pilot => Assert.False(live.CapsuleerJobs.ContainsKey(pilot)));
         Assert.InRange(scheduler.RetainedRoleWorkers, 0, scheduler.Read().ScheduledAgents);
 
         Assert.Equal(1, scheduler.Run(0, maximumActions: 1).Turn.Completed);
@@ -359,6 +367,12 @@ public sealed class CapsuleerGlobalPopulationTests
         scheduler.Run(0);
         var afterEntry = scheduler.Jobs().ToDictionary(job => job.PilotId);
         Assert.All(waitingAtDestination, pilot => Assert.Equal(beforeEntry[pilot].Revision + 1, afterEntry[pilot].Revision));
+        observer.Dispose();
+        Assert.Equal(0, scheduler.Read().ScheduledAgents);
+        Assert.Equal(0, scheduler.Read().WaitingBackgroundStarts);
+        Assert.Equal(0, scheduler.Read().Jobs);
+        Assert.Equal(0, scheduler.RetainedRoleWorkers);
+        Assert.Equal(afterEntry, scheduler.Jobs().ToDictionary(job => job.PilotId));
     }
 
     [Fact]

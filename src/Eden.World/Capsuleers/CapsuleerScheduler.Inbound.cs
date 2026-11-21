@@ -47,9 +47,10 @@ internal sealed partial class CapsuleerScheduler
             }
             return;
         }
-        if (pilot is long committed)
+        if (pilot is not null)
         {
-            RegisterVisitor(committed);
+            // The committed resident roster admits a visitor locally or paces its offscreen start.
+            Load();
             if (request.Visitor + 1 < _populationSettings.Settings.Capsuleers.GateVisitors)
             {
                 _inboundPreparation[key] = request with { Visitor = request.Visitor + 1 };

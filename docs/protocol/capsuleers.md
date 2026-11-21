@@ -3802,6 +3802,53 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Scheduler admission and idle release
+
+The performance page reads saved pilot and community totals from the resident world. On login the scheduler reads IDs
+and deadlines for eligible offscreen pilots from the resident indexes. It loads a pilot's job, ship membership and role
+registration when that pilot enters the scheduled queue. An occupied system admits its eligible local pilots immediately.
+Offscreen admission uses the existing four-pilot limit per 50 ms interval after due jobs drain. Population suspensions
+exclude pilots from both paths.
+
+The last logout clears the waiting queue and releases scheduler registrations, role workers and clean checkpoint copies.
+The resident world keeps authoritative pilot and asset records, including changes that still differ from the checkpoint
+source. The shared playtime clock, paid-work deadlines and checkpoint recovery use the existing pause rules.
+The loaded job count measures registrations in the scheduler. Saved totals include suspended pilots.
+
+The local EVE.js reference marks a solar-system scene empty after its last session leaves in
+`server/src/space/runtime/spaceRuntime/sceneRegistry.js` (`noteSolarSystemSceneEmpty`, SHA-256
+`2E0ABF2AB95F86D48F04BBFA805C758FA97888B5D7824680E6AFDCDD5B3C9B8C`). Eden applies its own scheduling policy to
+resident bots. [EVE University capsuleer terminology](https://wiki.eveuniversity.org/NPC)
+
+### Automated validation
+
+The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerGlobalPopulationTests.LoginDrainsLocalJobsBeforeStartingBoundedBatchesOfOffscreenTravelers`
+passed in 10.01 seconds after a 3.98-second build. It checks the saved count at idle, zero loaded remote jobs at first login,
+bounded starts, immediate admission on system entry and release after the last logout. Job inspection before and after
+release checks that the committed deadlines are still readable.
+
+The affected run matched 185 cases across population preparation, handoff, resident admission and routines, scheduling,
+maintenance, inbound traffic, combat operations and checkpoint recovery. It passed 183 cases in 178.88 seconds after a
+10.49-second build. The two `OccupiedCapsuleerSimulationTests` cases that expect transfers to pause offscreen work failed
+on both revisions. Three resident admission failures also reproduced on `31abd819`. The final run excluded the two test
+methods that produced those three failures.
+
+A matched headless Release replay used copies of one save with 23,271 pilots and the same login and simulation clock.
+The baseline `31abd819` loaded 23,271 scheduler jobs on the first turn and kept them after logout. The updated run loaded
+24 jobs on the first turn and zero after logout. Both runs had 20,202 waiting starts on the first turn, 104 scheduled pilots
+after 20 more turns, and 10 completed actions with zero failures. Managed heap samples after collection were 955.2 MiB
+and 939.6 MiB on the first turn, and 993.8 MiB and 978.6 MiB after logout. Idle heap and working-set samples varied between
+the runs, limiting the comparison to scheduler residency.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare the saved and loaded counts on the performance page through first login and last logout.
+
 ## Capsule escape after ship loss
 
 The November 18 server checkpoint showed three stranded hauler capsules in KFIE-Z. Their jobs retried with

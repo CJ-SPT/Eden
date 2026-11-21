@@ -115,6 +115,7 @@ records how the scheduler limits the login backlog.
 [Compact navigation checkpoints](protocol/capsuleers.md#compact-navigation-checkpoints) cover the saved-world startup migration.
 [Shared resident skill profiles](protocol/capsuleers.md#shared-resident-skill-profiles) cover skill memory across the roster.
 [Offscreen bot residency](protocol/capsuleers.md#offscreen-bot-residency) covers scheduler memory before deferred jobs start.
+[Scheduler admission and idle release](protocol/capsuleers.md#scheduler-admission-and-idle-release) covers when saved pilots enter and leave the job queue.
 [Development market supply for bots](protocol/industry.md#development-market-supply-for-bots) covers allocation during resupply.
 
 [Civilian danger and stripped belts](protocol/capsuleers.md#civilian-danger-and-stripped-belts--november-17-2026) covers visible threats at belts and gates, paid mining cycles and direct travel between belts.
