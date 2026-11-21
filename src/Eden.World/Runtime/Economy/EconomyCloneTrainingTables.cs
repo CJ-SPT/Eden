@@ -535,14 +535,26 @@ internal sealed partial class ResidentEconomy
 
     private static void ProjectTrainingLog(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyTrainingLog>> changes)
     {
-        foreach (var change in changes)
+        foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            if (change.Value is { } row)
+            var removed = batch.Where(change => change.Value is null).Select(change => change.Key.Id).ToArray();
+            if (removed.Length > 0)
             {
+                string deleted = JsonSerializer.Serialize(removed);
+                world.Database.ExecuteSql($"DELETE FROM WorldSkillHistory WHERE Id IN (SELECT value FROM json_each({deleted}))");
+            }
+            if (removed.Length != batch.Length)
+            {
+                string values = JsonSerializer.Serialize(
+                    batch.Where(change => change.Value is not null).Select(change => change.Value).ToArray()
+                );
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldSkillHistory(Id,PilotId,Time,TypeId,Points,EventId)
-                    VALUES({row.Id},{row.PilotId},{row.Time},{row.TypeId},{row.Points},{row.EventId})
+                    WITH payload(value) AS MATERIALIZED (SELECT jsonb(value) FROM json_each({values}))
+                    SELECT json_extract(value,'$.Id'),json_extract(value,'$.PilotId'),json_extract(value,'$.Time'),
+                        json_extract(value,'$.TypeId'),json_extract(value,'$.Points'),json_extract(value,'$.EventId')
+                    FROM payload WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         PilotId=excluded.PilotId,
                         Time=excluded.Time,
@@ -551,10 +563,6 @@ internal sealed partial class ResidentEconomy
                         EventId=excluded.EventId
                     """
                 );
-            }
-            else
-            {
-                world.Database.ExecuteSql($"DELETE FROM WorldSkillHistory WHERE Id={change.Key.Id}");
             }
         }
     }

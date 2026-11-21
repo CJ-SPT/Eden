@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Skills;
 using Eden.Server;
 using Eden.Server.Launcher;
 using Eden.World.Docking;
@@ -13,10 +14,11 @@ using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Persistence;
 
-public sealed class LiveWorldTests
+public sealed class LiveWorldTests(ITestOutputHelper output)
 {
     [Fact]
     public void GameplayUsesResidentStateWithAnOpenSqlConnection()
@@ -343,6 +345,100 @@ public sealed class LiveWorldTests
         Assert.Equal(300, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={trainedSkill}"));
         Assert.Equal(0, DiskValue(db.Path, $"SELECT COUNT(*) FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={removedSkill}"));
         Assert.Equal(400, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={newSkill}"));
+    }
+
+    [Fact]
+    public async Task TrainingHistoryCheckpointBatchesPreserveRowsAndReplayOrderAfterRetry()
+    {
+        const long pilot = 90000001;
+        const int records = 8192;
+        const int skill = 3449;
+        const long points = (1L << 53) + 1;
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        TestClock clock = new();
+        long now = clock.Now;
+        bool fail = false;
+        List<TrainingEvent> expected = [];
+        long updated;
+        long removed;
+        using (LiveWorld seed = new(database, clock, _ => { }))
+        {
+            using (var prepare = seed.Economy.Begin(new(pilots: [pilot])))
+            {
+                updated = prepare.Add(Event(1, 36)).Entity.Id;
+                removed = prepare.Add(Event(2, 38)).Entity.Id;
+                prepare.Commit();
+            }
+            await seed.FlushAsync();
+        }
+        using (
+            LiveWorld live = new(
+                database,
+                clock,
+                _ => { },
+                (snapshot, path) =>
+                {
+                    if (fail)
+                    {
+                        throw new IOException("Injected training history checkpoint failure");
+                    }
+                    LiveWorld.PersistSnapshot(snapshot, path);
+                }
+            )
+        )
+        {
+            live.MeasureCheckpoints = true;
+            var first = live.LastCheckpoint;
+            using (var rolledBack = live.Economy.Begin(new(pilots: [pilot])))
+            {
+                rolledBack.Add(Event(3, 38));
+            }
+            expected.Add(new(now, skill, points, 53));
+            using (var work = live.Economy.Begin(new(pilots: [pilot])))
+            {
+                var log = work.Set<TrainingLog>();
+                log.Find(updated)!.Points = points;
+                log.Find(updated)!.EventId = 53;
+                work.Remove(log.Find(removed)!);
+                for (int i = 0; i < records; i++)
+                {
+                    int eventId = i % 2 == 0 ? 36 : 53;
+                    long balance = points + i + 1;
+                    work.Add(Event(balance, eventId));
+                    expected.Add(new(now, skill, balance, eventId));
+                }
+                work.Commit();
+            }
+            fail = true;
+            await Assert.ThrowsAsync<IOException>(() => live.FlushAsync());
+            Assert.Same(first, live.LastCheckpoint);
+            Assert.Equal(2, DiskValue(database.Path, "SELECT COUNT(*) FROM WorldSkillHistory"));
+            Assert.Equal(1, DiskValue(database.Path, $"SELECT Points FROM WorldSkillHistory WHERE Id={updated}"));
+            fail = false;
+            await live.FlushAsync();
+            var projection = Assert.Single(live.LastCheckpoint!.ProjectionTables!, table => table.Table == "WorldSkillHistory");
+            output.WriteLine(
+                $"{projection.Rows:N0} history changes, {projection.Commands:N0} commands, {projection.AllocatedBytes:N0} bytes "
+                    + $"and {projection.Elapsed.TotalMilliseconds:F2} ms projection."
+            );
+            Assert.Equal(records + 2, projection.Rows);
+            Assert.Equal(66, projection.Commands);
+            Assert.Equal(0, DiskValue(database.Path, $"SELECT COUNT(*) FROM WorldSkillHistory WHERE Id={removed}"));
+        }
+        using var reopened = ServerServices.Build(database, clock, liveWorld: true);
+        expected.Reverse();
+        Assert.Equal(expected, reopened.GetRequiredService<IPilotTraining>().History(pilot, records + 2));
+
+        TrainingLog Event(long balance, int eventId) =>
+            new()
+            {
+                PilotId = pilot,
+                Time = now,
+                TypeId = skill,
+                Points = balance,
+                EventId = eventId,
+            };
     }
 
     [Fact]
