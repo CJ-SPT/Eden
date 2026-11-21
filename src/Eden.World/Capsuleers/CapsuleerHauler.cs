@@ -1645,7 +1645,7 @@ internal sealed partial class CapsuleerHauler(
     private void ObserveDanger(int destinyStamp)
     {
         if (
-            Pilot.Position is null
+            Pilot.Position is not { } position
             || _navigation.Warp is not null
             || Work.Activity == HaulerActivity.Jumping
             || Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup
@@ -1653,29 +1653,40 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
-        var visible = encounters
-            .Advance(Pilot.SystemId, Now)
-            .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
-            .Select(n => n.Id)
-            .ToHashSet();
+        var contacts = encounters.Advance(Pilot.SystemId, Now);
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
         warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
-        var attackers = combat.Aggressors(Pilot.ShipId).Where(visible.Contains).ToArray();
-        foreach (long npc in attackers)
+        var attackers = combat.Aggressors(Pilot.ShipId);
+        if (attackers.Count > 0)
         {
-            var shot = combat.Fire(
-                Pilot.PilotId,
-                Pilot.ShipId,
-                npc,
-                _navigation.Velocity,
-                Now,
-                new Random(unchecked((int)Pilot.PilotId ^ Work.Stamp ^ npc.GetHashCode())).NextDouble(),
-                destinyStamp
-            );
-            if (shot?.Capsule is not null)
+            HashSet<long> visible = [];
+            foreach (var contact in contacts)
             {
-                Load();
-                return;
+                if (!contact.Warping && contact.Position.DistanceTo(position) <= AsteroidDefinitions.VisibilityRange)
+                {
+                    visible.Add(contact.Id);
+                }
+            }
+            foreach (long npc in attackers)
+            {
+                if (!visible.Contains(npc))
+                {
+                    continue;
+                }
+                var shot = combat.Fire(
+                    Pilot.PilotId,
+                    Pilot.ShipId,
+                    npc,
+                    _navigation.Velocity,
+                    Now,
+                    new Random(unchecked((int)Pilot.PilotId ^ Work.Stamp ^ npc.GetHashCode())).NextDouble(),
+                    destinyStamp
+                );
+                if (shot?.Capsule is not null)
+                {
+                    Load();
+                    return;
+                }
             }
         }
         foreach (var impact in missiles.Advance(Pilot.PilotId, Pilot.ShipId, _navigation.Velocity, Now))

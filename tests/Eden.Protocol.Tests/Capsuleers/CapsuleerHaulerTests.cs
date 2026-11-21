@@ -12,6 +12,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Maps;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Server;
@@ -40,6 +41,117 @@ public sealed class CapsuleerHaulerTests
     private const int ExitGate = 50009992;
     private const int Ore = 1230;
     private const int Load = 1000;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HaulerScansContactsOnlyForAggressorsAndKeepsCombatOrder(bool attackers)
+    {
+        using Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        long miner = host.GetRequiredService<ICapsuleerCommunity>().Pilots().Single(p => p.Career == CapsuleerCareer.Mining).PilotId;
+        long hauler = f.Founder().PilotId;
+        f.AddStock(miner, Load);
+        host.GetRequiredService<CapsuleerTrade>().ListStock(miner, Source);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        var probe = new DangerProbe(attackers);
+        var factory = ActivatorUtilities.CreateInstance<CapsuleerHaulerFactory>(host, probe, probe, probe, probe);
+        var scheduler = ActivatorUtilities.CreateInstance<CapsuleerScheduler>(host, factory);
+        for (int turn = 0; turn < 100 && probe.Calls.Count == 0; turn++)
+        {
+            if (scheduler.Hauler(hauler)?.Pilot.Position is { } position)
+            {
+                probe.Position = position;
+            }
+            f.Clock.Seconds++;
+            scheduler.Run(turn, maximumActions: 1);
+        }
+
+        string[] expected = attackers
+            ? ["advance", "acquire", "warfare", "aggressors", "fire 2", "fire 1", "missiles"]
+            : ["advance", "acquire", "warfare", "aggressors", "missiles"];
+        Assert.Equal(expected, probe.Calls);
+        Assert.Equal(attackers ? probe.Count : 0, probe.ContactReads);
+    }
+
+    private sealed class DangerProbe(bool attackers)
+        : INpcCombat,
+            INpcSimulation,
+            INpcElectronicWarfare,
+            INpcMissiles,
+            IReadOnlyList<NpcSimulationContact>
+    {
+        private NpcSimulationContact[] _contacts = [];
+
+        internal SpacePosition Position { get; set; } = new(0, 0, 0);
+        internal List<string> Calls { get; } = [];
+        internal int ContactReads { get; private set; }
+        public int Count => _contacts.Length;
+        public NpcSimulationContact this[int index]
+        {
+            get
+            {
+                ContactReads++;
+                return _contacts[index];
+            }
+        }
+
+        public IReadOnlyList<NpcSimulationContact> Advance(int systemId, long now)
+        {
+            Calls.Add("advance");
+            double range = AsteroidDefinitions.VisibilityRange;
+            _contacts =
+            [
+                new(1, Position, false),
+                new(2, Position with { X = Position.X + range }, false),
+                new(3, Position with { X = Position.X + range + 1 }, false),
+                new(4, Position, true),
+            ];
+            return this;
+        }
+
+        public void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now) => Calls.Add("acquire");
+
+        public IReadOnlyList<NpcEwarContact> Advance(long pilotId, long shipId, long now)
+        {
+            Calls.Add("warfare");
+            return [];
+        }
+
+        public IReadOnlyList<long> Aggressors(long shipId)
+        {
+            Calls.Add("aggressors");
+            return attackers ? [4, 2, 5, 3, 1] : [];
+        }
+
+        public NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll, int destinyStamp)
+        {
+            Calls.Add($"fire {npcId}");
+            return null;
+        }
+
+        public IReadOnlyList<NpcShot> Advance(long pilotId, long shipId, SpacePosition velocity, long now)
+        {
+            Calls.Add("missiles");
+            return [];
+        }
+
+        public IReadOnlyList<NpcEwarContact> Incoming(long shipId) => [];
+
+        public void Disengage(long shipId, long? npcId = null) { }
+
+        public void Cancel(long shipId) { }
+
+        public IEnumerator<NpcSimulationContact> GetEnumerator()
+        {
+            for (int index = 0; index < Count; index++)
+            {
+                yield return this[index];
+            }
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
 
     [Fact]
     public void LocalAndSpacePresenceFollowTheHaulerThroughItsGateTransfer()
