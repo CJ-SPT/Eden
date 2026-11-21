@@ -21,6 +21,7 @@ internal static class SpatialNavigationSchema
                 ShipId INTEGER PRIMARY KEY REFERENCES WorldShip(Id) ON DELETE CASCADE,
                 TargetingReadyAt INTEGER NOT NULL DEFAULT 0,
                 GateCloakUntil INTEGER NOT NULL DEFAULT 0,
+                FieldScrambledUntil INTEGER NOT NULL DEFAULT 0,
                 CloakModuleId INTEGER NOT NULL DEFAULT 0,
                 CloakTargetingMilliseconds REAL NOT NULL DEFAULT 0, CloakReactivationMilliseconds REAL NOT NULL DEFAULT 0,
                 JumpModuleId INTEGER NOT NULL DEFAULT 0, JumpStartedAt INTEGER NOT NULL DEFAULT 0,
@@ -29,14 +30,14 @@ internal static class SpatialNavigationSchema
                 VelocityX REAL NOT NULL DEFAULT 0, VelocityY REAL NOT NULL DEFAULT 0, VelocityZ REAL NOT NULL DEFAULT 0);
             """
         );
-        if (
-            !world
-                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldSpatialNavigation')")
-                .AsEnumerable()
-                .Contains("GateCloakUntil")
-        )
+        var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldSpatialNavigation')").ToArray();
+        if (!columns.Contains(nameof(SpatialNavigationState.GateCloakUntil)))
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldSpatialNavigation ADD COLUMN GateCloakUntil INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains(nameof(SpatialNavigationState.FieldScrambledUntil)))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldSpatialNavigation ADD COLUMN FieldScrambledUntil INTEGER NOT NULL DEFAULT 0");
         }
     }
 }

@@ -146,6 +146,7 @@ public enum DogmaEffect
     CloakingScanResolution = 854,
     CovertCloakCpu = 5261,
     MicroJumpDrive = 4921,
+    CapitalMicroJumpField = 12126,
     Hacking = 1738,
     ShipScan = 46,
     CargoScan = 47,

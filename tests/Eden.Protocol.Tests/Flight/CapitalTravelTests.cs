@@ -737,9 +737,9 @@ public sealed partial class CapitalTravelTests
             return fleet.Board(pilot.PilotId, assembled, pilot.ShipId).Pilot.ShipId;
         }
 
-        internal long FitCapitalModule(int type)
+        internal long FitCapitalModule(int type, long account = 1000001)
         {
-            var pilot = Db.Store.FindPilot(1000001)!;
+            var pilot = Db.Store.FindPilot(account)!;
             var fitting = Db.Services.GetRequiredService<IPilotFitting>();
             var attributes = fitting.Attributes(type);
             Train(

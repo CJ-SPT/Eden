@@ -64,7 +64,7 @@ public static class ModuleFittingRules
                 && effects.Contains(DogmaEffect.TitanPhenomena)
             || groupId == SmartbombRules.Group && effects.Contains(DogmaEffect.Smartbomb)
             || groupId == SpatialModuleRules.CloakGroup && effects.Any(SpatialModuleRules.IsCloak)
-            || SpatialModuleRules.IsDrive(groupId, typeId) && effects.Contains(DogmaEffect.MicroJumpDrive)
+            || SpatialModuleRules.IsDrive(groupId, typeId) && effects.Contains(SpatialModuleRules.JumpEffect(typeId))
             || groupId is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup
                 && effects.Contains(DogmaEffect.MiningClouds)
             || groupId == HackingRules.AnalyzerGroup && effects.Contains(DogmaEffect.Hacking)

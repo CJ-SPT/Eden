@@ -454,13 +454,18 @@ internal sealed partial class FlightSession(
             {
                 return;
             }
-            if (space.ConsumeDisplacement(Pilot.ShipId) is { } destination)
+            if (space.ConsumeDisplacement(Pilot.ShipId) is { } displacement)
             {
+                var destination = displacement.Position;
                 Pilot = Pilot with { Position = destination };
-                _navigation = new();
+                _navigation = displacement.PriorNavigation?.Copy() ?? new();
                 _simulatedStamp = Stamp;
-                CorrectPosition(Pilot.ShipId, destination, SpacePosition.Zero, _simulatedStamp);
-                Update(new DestinyCommand.Stop(Pilot.ShipId));
+                CorrectPosition(Pilot.ShipId, destination, _navigation.Velocity, _simulatedStamp);
+                Update(
+                    displacement.PriorNavigation is null
+                        ? new DestinyCommand.Stop(Pilot.ShipId)
+                        : new DestinyCommand.MicroJumpVisual(Pilot.ShipId, destination)
+                );
                 PublishMotion();
                 PublishContact();
             }
@@ -1346,6 +1351,10 @@ internal sealed partial class FlightSession(
             return blocked;
         }
         RefreshTackle(true);
+        if (SpatialStatus.FieldScrambledUntil > clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+        {
+            return new PilotCallResult.Failure("The capital micro jump field prevents your ship from warping.");
+        }
         if (MicroJumpSpooling || ModuleCloaked && !SpatialStatus.WarpSafe)
         {
             return new PilotCallResult.Failure("The active cloak or micro-jump spool prevents warp.");

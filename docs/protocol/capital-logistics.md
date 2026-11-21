@@ -651,6 +651,28 @@ seconds after a 3.32-second build. Both Python suites and formatting passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Capital micro jump field generator
+
+Build 3662168 type `83485` and effect `12126` use `dogmaIM.Activate` with `microJumpPortalDriveCapital`
+and `effects.MicroJumpFieldEngageCapital`. The pinned dogma gives a 10-second spool, 30,000 GJ before skills,
+250 km displacement, 10 km surface range, and separate budgets of 50 ships and four capital ships. Command
+carriers apply their spool and non-capital capacity bonuses. The field cannot activate in highsec.
+[CCP Equinox notes](https://www.eveonline.com/news/view/equinox-expansion-notes) ·
+[CCP Cradle of War notes](https://www.eveonline.com/news/view/cradle-of-war-expansion-notes)
+
+EVE.js `microJumpDriveRuntime.js` and `microJumpDriveEligibility.js` corroborate the simultaneous displacement,
+separate budgets and five-second scramble. Eden checks nearby connected capsuleers at spool completion. Eligible
+ships keep their separation and motion, including capitals in siege. Cloak, scram, tether and travel protection
+exclude passengers. Crimewatch applies to each moved passenger and safety can exclude individual targets. Schema
+209 preserves the scramble across reconnect and checkpoint reopen. It blocks warp and further micro jumps until
+the pinned deadline.
+
+**Automated validation.** All three exact field cases passed in 10.59 seconds. The 87-case capital
+micro jump, oscillator, spatial module, tether, warp capacitor and migration filter passed in
+50.33 seconds after a 1.25-second build. Both Python suites and formatting passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |

@@ -2799,13 +2799,15 @@ internal sealed partial class ResidentEconomy
                         row.VelocityX,
                         row.VelocityY,
                         row.VelocityZ,
-                        row.GateCloakUntil
+                        row.GateCloakUntil,
+                        row.FieldScrambledUntil
                     ),
                 state => new Eden.Data.World.Propulsion.SpatialNavigationState
                 {
                     ShipId = state.ShipId,
                     CloakModuleId = state.CloakModuleId,
                     GateCloakUntil = state.GateCloakUntil,
+                    FieldScrambledUntil = state.FieldScrambledUntil,
                     CloakReactivationMilliseconds = state.CloakReactivationMilliseconds,
                     CloakTargetingMilliseconds = state.CloakTargetingMilliseconds,
                     HeadingX = state.HeadingX,
@@ -2821,7 +2823,8 @@ internal sealed partial class ResidentEconomy
                 },
                 ProjectSpatialNavigationState,
                 "ShipId,CloakModuleId,CloakReactivationMilliseconds,CloakTargetingMilliseconds,HeadingX,HeadingY,"
-                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ,GateCloakUntil",
+                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ,"
+                    + "GateCloakUntil,FieldScrambledUntil",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2838,7 +2841,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(12),
                         reader.GetDouble(13),
                         reader.GetDouble(14),
-                        reader.GetInt64(15)
+                        reader.GetInt64(15),
+                        reader.GetInt64(16)
                     ),
                 state => new(state.ShipId),
                 indexes:
@@ -4285,6 +4289,7 @@ internal sealed partial class EconomyTransaction
         {
             if (
                 row.GateCloakUntil < 0
+                || row.FieldScrambledUntil < 0
                 || !double.IsFinite(row.CloakReactivationMilliseconds)
                 || !double.IsFinite(row.CloakTargetingMilliseconds)
                 || !double.IsFinite(row.HeadingX)

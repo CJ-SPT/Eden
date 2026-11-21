@@ -135,7 +135,7 @@ internal static class HullCatalog
             && source.ModifiedAttributeID is (int)DogmaAttributeId.ConsumptionQuantity or (int)DogmaAttributeId.Duration
         )
         || source.SkillTypeID == (int)HullBonusSkill.CapitalMicroJumpDriveOperation
-            && source.ModifiedAttributeID == (int)DogmaAttributeId.Duration
+            && source.ModifiedAttributeID is (int)DogmaAttributeId.Duration or (int)DogmaAttributeId.MicroJumpPassengerLimit
         || FighterHullModifier(source)
         || HullBonusRules.Operational(
             Capability(source),

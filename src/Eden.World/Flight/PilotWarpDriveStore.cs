@@ -19,6 +19,10 @@ internal sealed class PilotWarpDriveStore(WorldDatabase database) : IPilotWarpDr
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(transaction, shipId, now);
         PilotCapitalTravelStore.RequireMobile(transaction, pilotId, shipId, now);
         Eden.World.Combat.LanceDisruption.RequireTravel(transaction, shipId, now);
+        if (Eden.World.Propulsion.PilotSpatialModuleStore.FieldScrambled(transaction, shipId, now))
+        {
+            throw new InvalidDataException("The capital micro jump field prevents your ship from warping.");
+        }
         if (transaction.Set<SavedLanceDisruption>().Find(shipId)?.OscillatorEndsAt > now)
         {
             throw new InvalidDataException("The transportation field prevents your ship from warping.");

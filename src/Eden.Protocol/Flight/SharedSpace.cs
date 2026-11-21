@@ -293,7 +293,10 @@ internal sealed class SharedSpace(
     }
 
     private readonly ConcurrentDictionary<long, ShipMotion> _motion = new();
-    private readonly ConcurrentDictionary<long, SpacePosition> _displacements = new();
+
+    internal sealed record Displacement(SpacePosition Position, NavigationState? PriorNavigation = null);
+
+    private readonly ConcurrentDictionary<long, Displacement> _displacements = new();
     private readonly ConcurrentDictionary<long, CapitalJump> _conduitArrivals = new();
 
     internal bool HasConduitArrival(long ship) => _conduitArrivals.ContainsKey(ship);
@@ -318,37 +321,83 @@ internal sealed class SharedSpace(
         );
     }
 
-    internal SpacePosition? ConsumeDisplacement(long ship) => _displacements.TryRemove(ship, out var destination) ? destination : null;
+    internal Displacement? ConsumeDisplacement(long ship) => _displacements.TryRemove(ship, out var destination) ? destination : null;
 
-    public void Displace(int systemId, long shipId, SpacePosition position)
+    internal IReadOnlyList<MicroJumpPassenger> MicroJumpCandidates(DockedPilot source, double radius)
+    {
+        if (source.Position is not { } origin)
+        {
+            return [];
+        }
+        return _sightGrid
+            .Nearby(source.SystemId, origin)
+            .Select(id => _ships.GetValueOrDefault(id))
+            .Where(ship =>
+                ship is not null
+                && ship.Pilot.ShipId != source.ShipId
+                && ship.Pilot.SystemId == source.SystemId
+                && ship.Pilot.Position is { } at
+                && at.DistanceTo(origin) <= radius + source.Flight.ShipRadius + ship.Pilot.Flight.ShipRadius
+                && ship.Warp is null
+                && ship.DepartureGate is null
+                && !ArrivalProtected(ship)
+                && ship.Health?.Remaining.Destroyed != true
+                && !IsCloaked(ship.Pilot.ShipId)
+            )
+            .Select(ship => new MicroJumpPassenger(ship!.Pilot.PilotId, ship.Pilot.ShipId, ship.Pilot.Position!))
+            .ToArray();
+    }
+
+    internal void TranslateForMicroJump(int systemId, MicroJumpArrival arrival) =>
+        Displace(systemId, arrival.ShipId, arrival.Position, true);
+
+    public void Displace(int systemId, long shipId, SpacePosition position) => Displace(systemId, shipId, position, false);
+
+    private void Displace(int systemId, long shipId, SpacePosition position, bool preserveMotion)
     {
         RunMotion(
             systemId,
             () =>
             {
                 using var owned = EnterMotion(systemId: systemId);
+                NavigationState? navigation = null;
                 if (_motion.TryGetValue(shipId, out var motion) && motion.SystemId == systemId)
                 {
-                    _motion[shipId] = motion with { Position = position, Navigation = new(), Target = null };
+                    if (preserveMotion)
+                    {
+                        navigation = motion.Navigation.Copy();
+                        navigation.CancelAlignment();
+                    }
+                    _motion[shipId] = motion with
+                    {
+                        Position = position,
+                        Navigation = navigation ?? new(),
+                        Target = preserveMotion ? motion.Target : null,
+                    };
                     _history.TryRemove(shipId, out _);
-                    _displacements[shipId] = position;
+                    _displacements[shipId] = new(position, navigation);
                 }
                 if (_ships.TryGetValue(shipId, out var contact) && contact.Pilot.SystemId == systemId)
                 {
                     _sightGrid.Move(shipId, systemId, contact.Pilot.Position, systemId, position);
-                    _ships[shipId] = contact with
+                    var moved = contact with
                     {
                         Pilot = contact.Pilot with { Position = position },
-                        Velocity = SpacePosition.Zero,
-                        Heading = null,
-                        SpeedFraction = 0,
-                        FollowRange = null,
-                        FollowTargetId = 0,
                         AlignTo = null,
                         Warp = null,
                         Bumped = false,
                     };
-                    _displacements[shipId] = position;
+                    _ships[shipId] = preserveMotion
+                        ? moved
+                        : moved with
+                        {
+                            Velocity = SpacePosition.Zero,
+                            Heading = null,
+                            SpeedFraction = 0,
+                            FollowRange = null,
+                            FollowTargetId = 0,
+                        };
+                    _displacements[shipId] = new(position, navigation);
                 }
             },
             nameof(Displace)
