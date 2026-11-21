@@ -28,8 +28,10 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
     private const int Source = 30000141;
     private static readonly WatchedTrafficGate s_gate = new(Source, 30000142, 50009991, 50009992);
 
-    [Fact]
-    public async Task CapAppliesToResidentFoundersAndVisitorsAndRestoresSavedPilotsAfterRestart()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CapAndSystemAccessApplyToResidentFoundersAndVisitorsAndRestoreSavedPilotsAfterRestart(bool transitOnly)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerPopulationPolicy policy = new(TrafficMultiplier: 2, GateVisitors: 6) { ActivePilotCap = 2 };
@@ -52,13 +54,22 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
             await live.FlushAsync();
         }
 
-        Save(fixture, policy with { ActivePilotCap = 1 });
+        var restricted = transitOnly
+            ? policy with
+            {
+                SystemAccess = policy.SystemAccess.Add(Source, CapsuleerRegionAccess.TransitOnly),
+            }
+            : policy with
+            {
+                ActivePilotCap = 1,
+            };
+        Save(fixture, restricted);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
             var live = host.GetRequiredService<LiveWorld>();
             var suspended = live.Economy.Inspect(world => world.Set<SavedCapsuleerSuspension>().Select(pause => pause.PilotId).ToArray());
-            Assert.Equal([founders[1]], suspended);
+            Assert.Equal(transitOnly ? founders : [founders[1]], suspended.Order());
             Assert.NotNull(live.Economy.Inspect(world => world.Pilots.Find(founders[1])?.ActiveShip));
             Assert.NotNull(live.Economy.Inspect(world => world.Set<SavedCapsuleerJob>().Find(founders[1])));
             using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
@@ -67,7 +78,7 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
                 fixture.Clock.Seconds++;
                 host.GetRequiredService<ICapsuleerScheduler>().Run(turn);
             }
-            Assert.Equal(1, host.GetRequiredService<ICapsuleerDiagnostics>().Read().ScheduledAgents);
+            Assert.Equal(transitOnly ? 0 : 1, host.GetRequiredService<ICapsuleerDiagnostics>().Read().ScheduledAgents);
         }
 
         Save(fixture, policy);

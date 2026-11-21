@@ -338,15 +338,25 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         );
         string trafficIdentity = database.Traffic.Manifest?.Identity ?? "fallback";
         string miningIdentity = resident && policy.Miners && CapsuleerProvisioningCatalog.HasMiningFleets(catalog) ? "|mining-crews-1" : "";
-        string regionIdentity = policy.Unrestricted()
-            ? ""
-            : $"|work-regions={policy.DefaultRegionAccess}:"
-                + string.Join(',', policy.RegionAccess.Select(rule => $"{rule.Key}={rule.Value}"));
+        string regionIdentity =
+            policy.DefaultRegionAccess == CapsuleerRegionAccess.WorkAndTransit && policy.RegionAccess.Count == 0
+                ? ""
+                : $"|work-regions={policy.DefaultRegionAccess}:"
+                    + string.Join(',', policy.RegionAccess.Select(rule => $"{rule.Key}={rule.Value}"));
+        string systemIdentity =
+            policy.SystemAccess.Count == 0
+                ? ""
+                : "|work-systems=" + string.Join(',', policy.SystemAccess.Select(rule => $"{rule.Key}={rule.Value}"));
         string careerIdentity = database.Settings.FreshUniverse ? "|fresh-careers" : "";
+        if (database.Settings.FreshUniverse && (!policy.FreshCourierPilots || !policy.FreshBountyPilots || !policy.BeltRatting))
+        {
+            careerIdentity += $":{policy.FreshCourierPilots}:{policy.FreshBountyPilots && policy.BeltRatting}";
+        }
         return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
             + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}"
             + miningIdentity
             + regionIdentity
+            + systemIdentity
             + careerIdentity;
     }
 

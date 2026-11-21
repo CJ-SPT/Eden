@@ -70,6 +70,10 @@ internal static class ConfigurationValidation
         {
             throw new InvalidDataException("Bot region overrides require region IDs from the installed catalog.");
         }
+        if (settings.Capsuleers.SystemAccess.Keys.Any(system => !catalog.Systems.ContainsKey(system)))
+        {
+            throw new InvalidDataException("Bot system overrides require solar system IDs from the installed catalog.");
+        }
         var supply = settings.DevelopmentSupply;
         NpcSupplyRules.ValidateStock(supply.InstitutionalStock);
         if (

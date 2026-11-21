@@ -14,6 +14,9 @@ resident asteroid and market-demand changes and the startup replay.
 [Bot population limits and work regions](protocol/capsuleers.md#bot-population-limits-and-work-regions) covers active admission,
 transit-only routing, and fresh-world preparation outside occupied systems.
 
+[Bot roster and activity controls](protocol/capsuleers.md#bot-roster-and-activity-controls) covers system overrides, dedicated
+careers, ambient traffic and organization settings.
+
 [Bot activity settings](protocol/capsuleers.md#bot-activity-settings) covers restart behavior for exploration and wreck salvage.
 
 [Bot data and relic exploration](protocol/capsuleers.md#bot-data-and-relic-exploration) traces the paid Heron fit,

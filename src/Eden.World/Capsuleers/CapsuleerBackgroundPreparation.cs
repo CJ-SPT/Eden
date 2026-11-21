@@ -36,6 +36,7 @@ internal sealed class CapsuleerBackgroundPreparation(
         {
             var human = activity.Read();
             var occupied = human.ActiveSystems;
+            var policy = database.Settings.Capsuleers;
             if (occupied.Count == 0)
             {
                 _inboundRetries.Clear();
@@ -45,10 +46,9 @@ internal sealed class CapsuleerBackgroundPreparation(
                 }
                 return new(ReadProgress(occupied), null, true);
             }
-            if (database.Settings.FreshUniverse && database.Settings.Capsuleers.Enabled && _freshSystems is null)
+            if (database.Settings.FreshUniverse && policy.Enabled && policy.PrepareUnvisitedSystems && _freshSystems is null)
             {
                 var catalog = database.Catalog;
-                var policy = database.Settings.Capsuleers;
                 _freshSystems = new(
                     catalog
                         .SystemPolitics.Where(entry =>
@@ -102,7 +102,7 @@ internal sealed class CapsuleerBackgroundPreparation(
             bool atCapacity = false;
             if (!foreground && _freshSystems is { Count: > 0 })
             {
-                int cap = database.Settings.Capsuleers.ActivePilotCap;
+                int cap = policy.ActivePilotCap;
                 if (cap > 0)
                 {
                     using var owner = synchronization.Enter("fresh population capacity");

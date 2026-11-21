@@ -31,11 +31,7 @@ internal static class CapsuleerPopulationActivation
                 int count = CapsuleerEncounterRules.Haulers(seed, community.Key, traffic.GateCount, traffic.StationCount, policy);
                 return community.Where(agent =>
                     fresh && agent.Career == CapsuleerCareer.Hauling
-                        ? policy.Enabled
-                            && (
-                                agent.Slot == FreshCareerRules.CourierSlot
-                                || agent.Slot == FreshCareerRules.CombatSlot && policy.BeltRatting
-                            )
+                        ? FreshCareerRules.AllowsFounder(agent.Slot, policy)
                         : CapsuleerPopulationRules.Included(agent.Career, agent.Slot, count, policy)
                 );
             });

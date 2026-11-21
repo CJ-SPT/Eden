@@ -966,7 +966,7 @@ internal sealed partial class CapsuleerHauler(
         }
     }
 
-    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.RegionId);
+    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.SystemId, Pilot.RegionId);
 
     private bool CanContinueTransit() =>
         Pilot.Position is not null
@@ -1151,7 +1151,7 @@ internal sealed partial class CapsuleerHauler(
         bool restrictedRoute = !database.Settings.Capsuleers.CanUse(_operation.Catalog.Definitions, _route);
         if (restrictedRoute && Work.Freight is not null)
         {
-            Wait("The saved freight route needs a region that allows bot work.", (int)CapsuleerWorkRegions.HoldInterval.TotalSeconds);
+            Wait("The saved freight route needs a destination that allows bot work.", (int)CapsuleerWorkRegions.HoldInterval.TotalSeconds);
             return;
         }
         if (restrictedRoute || Work.Retreating || Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)

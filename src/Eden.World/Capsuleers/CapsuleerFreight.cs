@@ -202,7 +202,7 @@ internal static class CapsuleerFreight
         bool emptyHull = false
     )
     {
-        if (catalog.FittingType(hull)?.GroupId != (int)HullClass.Hauler)
+        if (!world.Settings.Capsuleers.TradeGoodsFreight || catalog.FittingType(hull)?.GroupId != (int)HullClass.Hauler)
         {
             return null;
         }
@@ -257,7 +257,8 @@ internal static class CapsuleerFreight
     {
         var starter = world.Set<OwnedItem>().Find(shipId + 1);
         if (
-            starter is not { Quantity: FreightRules.LegacyOreUnits, Singleton: false, FlagId: (int)InventoryFlag.Cargo }
+            !world.Settings.Capsuleers.TradeGoodsFreight
+            || starter is not { Quantity: FreightRules.LegacyOreUnits, Singleton: false, FlagId: (int)InventoryFlag.Cargo }
             || starter.OwnerId != pilotId
             || starter.LocationId != shipId
             || starter.TypeId != CapsuleerProvisioningCatalog.FreightOre(catalog)

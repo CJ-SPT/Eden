@@ -1,3 +1,5 @@
+using Eden.Gameplay.Configuration;
+
 namespace Eden.Gameplay.Capsuleers;
 
 public static class FreshCareerRules
@@ -8,4 +10,13 @@ public static class FreshCareerRules
     public const int DistributionLevel = 1;
 
     public static CapsuleerProfession Profession(int slot) => slot == CombatSlot ? CapsuleerProfession.Combat : CapsuleerProfession.Hauling;
+
+    public static bool AllowsFounder(int slot, CapsuleerPopulationPolicy policy) =>
+        policy.Enabled
+        && slot switch
+        {
+            CourierSlot => policy.FreshCourierPilots,
+            CombatSlot => policy.FreshBountyPilots && policy.BeltRatting,
+            _ => false,
+        };
 }

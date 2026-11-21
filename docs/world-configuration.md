@@ -560,12 +560,29 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 ## Autonomous population
 
-In **Player bots**, configure the saved world's population:
+Open **Player bots**, make changes, and select **Save for restart**. The **Population** page shows the active
+settings, occupied slots, saved/paused totals, individual system access and waiting reasons.
 
-- **Hauler freight** controls regional hull variety, ordinary/courier budget ranges in ISK, courier frequency, empty return trips,
-  cargo type IDs and freight stack survival. These settings live under `settings.capsuleers.freight`.
-  [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight).
-- **Enable player bots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
+- **Bot population** contains the master switch, the world-wide **Active bot cap**
+  (`settings.capsuleers.activePilotCap`) and the switch for preparing unvisited systems in fresh universes
+  (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
+  **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
+- **Where bots work** applies the default, then the region override, then the solar-system override
+  (`settings.capsuleers.systemAccess`). To keep work out of a starter system, choose its region and solar system and
+  set the system to **Transit only**. Bots may still cross it by stargate. Choose **Use region rule** to remove the
+  system override. Restricted home communities pause, and saved assignments that require a restricted work
+  destination wait with their checkpoints intact.
+- **Mining** controls mining fleets and threat awareness.
+- **Hauling & deliveries** controls dedicated agent couriers in fresh universes (`settings.capsuleers.freshCourierPilots`)
+  and new trade-good shipments on civilian routes (`settings.capsuleers.tradeGoodsFreight`). Disabling shipments
+  preserves existing cargo and normal market supply jobs. The freight settings set regional hull variety,
+  ordinary/courier budget ranges in ISK, courier frequency, empty return trips, cargo type IDs and wreck survival.
+  [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight)
+- **PvE combat & salvage** controls belt ratting, ordinary anomalies, wreck salvage and dedicated fresh-universe
+  bounty hunters (`settings.capsuleers.freshBountyPilots`). Dedicated hunters require belt ratting. Disabling salvage
+  stops a pending cycle when the pilot next runs. Ordinary wreck looting can still occur.
+- **Exploration** (`settings.capsuleers.exploration`) lets eligible bots acquire exploration equipment and scan and hack
+  high-security pirate data and relic sites. Disabling it sends active explorers back to their departure stations.
 - **Persistent roaming gangs** (`settings.capsuleers.roamingGangs`, default on) permits coordinated nullsec hunting with
   existing ships. **Roaming gang size** (`settings.capsuleers.roamingGangSize`) accepts 3–6, default 4. The existing roam
   chance controls formation. [Gang behavior and requirements](capsuleer-population.md#persistent-roaming-gangs).
@@ -573,27 +590,17 @@ In **Player bots**, configure the saved world's population:
   interception, owned freight escorts and witnessed defensive responses. **Regional operations per group**
   (`settings.capsuleers.regionalOperationsPerGroup`) accepts 1-3, default 1. Losses delay offensive launches; no replacement
   ships are granted. Population reports groups and outcomes. [Regional behavior](capsuleer-population.md#regional-conflicts).
-- **Active bot cap** (`settings.capsuleers.activePilotCap`) limits admitted player bots across the world, including
-  watched-gate visitors and bots working offscreen. **0** means unlimited. Admitted pilots retain their slots while
-  idle or offscreen. When the cap drops, Eden pauses excess pilots and preserves their assets and jobs. Existing
-  eligible pilots get reopened slots before Eden prepares new founders.
-- **Default region access** applies to regions without an explicit override. Select a region by name, then choose
-  **Work and transit**, **Transit only**, or **Use default**. Transit-only regions allow stargate passage. New
-  communities and work destinations require **Work and transit**. Eden suspends communities based in transit-only
-  regions and holds saved assignments that would require work at a restricted destination. Use **Population** to
-  check the active cap, configured overrides, per-system access and waiting reasons.
-- **Simulated miners** permits mining founders in eligible systems. Preparation uses the current world profile and
-  its available ore, stations and equipment.
-- **Explore data and relic sites** (`settings.capsuleers.exploration`, default on) allows eligible bots to acquire
-  exploration equipment and scan and hack ordinary high-security pirate sites. Disabling exploration sends active
-  explorers back to their departure stations when they next run.
-- **Salvage NPC wrecks** (`settings.capsuleers.wreckSalvage`, default on) allows bot ratters to equip salvagers and
-  recover salvage from their own wrecks. Disabling it stops any pending cycle when the pilot next runs. Pilots can
-  still pick up ordinary loot. Both activity settings preserve owned ships, fittings and inventory.
-- **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
-  up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.
-  Zero pauses station traffic; gate visitors remain independently configurable.
-- **Visitors per watched gate** accepts **0–16**, default **4**. Reciprocal gate observers share the same saved visitor identities.
+- **Corporations, alliances & sovereignty** contains three independent switches.
+  - **Automatic corporation formation and recruitment** (`settings.capsuleers.automaticRecruitment`) controls new bot-led
+    corporations, advertisements, applications initiated by bots and automatic offers to human applicants.
+    Existing bot applications and relocations continue through their normal workflow.
+  - **Form and grow bot alliances** (`settings.capsuleers.automaticAlliances`) controls new alliances and automatic
+    admissions initiated by bot alliances. Accepted applications and existing dues continue.
+  - **Start new sovereignty claims** (`settings.capsuleers.newSovereigntyClaims`) controls new hub bids and first-claim
+    departures. Existing buy orders, underway expeditions and defense of claimed systems continue.
+- Expand **Ambient traffic** to adjust the established-world station roster or the gate visitor pool. Station traffic
+  accepts **0–10×**, default **1×**, up to 60 travelers per community. Fractional densities use a saved-seed draw.
+  Watched-gate visitors accept **0–16**, default **4**. Both ends of a gate share the same saved visitor identities.
 
 All edits use the ordinary pending revision, comparison, history, export/import and restart workflow. Lower limits hide excess
 pilots from space, Local, station guests and directional scans and exclude them from scheduled work. No pilot, ship, cargo,
@@ -602,9 +609,9 @@ before missing station-traffic/miner slots are prepared in entered regions. New 
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
 Normal startup retains saved pilots and starts preparation when a human selects a character. Occupied systems get priority.
-In a fresh universe, Eden also prepares eligible unvisited high-security station systems in bounded background batches. It
-respects the active bot cap and region rules, and preparation stops when the last player leaves. Established worlds prepare
-new communities on demand in occupied systems.
+With fresh-universe background preparation enabled, Eden also prepares eligible unvisited high-security station
+systems in bounded batches. It respects the active bot cap and work access rules, and preparation stops when the last
+player leaves. Established worlds prepare new communities on demand in occupied systems.
 Saved identities and possessions are reused, and dormant time produces no catch-up rewards. Completed catalog/settings/snapshot
 fingerprints are reused; interrupted preparation retries missing communities
 without replacing completed pilots. Unsupported or temporarily depleted communities are recorded
@@ -618,7 +625,5 @@ See the [population guide](capsuleer-population.md) and [implementation record](
 
 ### Planned administration controls
 
-1. Add separate switches for automatic recruitment, alliance formation and new sovereignty claims. Define what happens
-   to existing applications, memberships, claims and expeditions when each switch changes.
-2. Add live pause and resume once all schedulers can preserve remaining activity deadlines. Verify that a paused
-   interval generates no catch-up rewards and that restarting preserves the administrator's choice.
+Live pause and resume remains planned. It requires preserving remaining activity deadlines across the schedulers
+and persisting the pause across restart.

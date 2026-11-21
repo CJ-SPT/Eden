@@ -4,10 +4,11 @@
 
 ## Population controls
 
-Open **Player bots** in the server web editor. Use **Active population & regions** to set the global cap and choose
-where bots may work or pass through. **Population & traffic** controls the overall population, miners, station
-traffic density (**0–10×**, default **1×**), and visitors per watched gate (**0–16**, default **4**). Save for restart
-and restart the server to apply the revision.
+Open **Player bots** in the server web editor. **Bot population** sets the world-wide cap and fresh-universe
+background preparation. **Where bots work** sets work or transit access by region or solar system. Dedicated
+miners, fresh-universe couriers and fresh-universe bounty hunters have controls in their activity sections.
+Expand **Ambient traffic** for station travelers and watched-gate visitors. Save for restart and restart the server
+to apply the revision.
 
 Reducing a limit pauses excess pilots and preserves their identities, ships, possessions, losses and activity. When
 slots reopen, Eden reuses eligible saved pilots before preparing new ones.
@@ -16,8 +17,8 @@ the main population switch pauses both, including miners. Reciprocal gate observ
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
-The station-traffic multiplier scales each system's geography-based traveler roster. Established worlds prepare new
-rosters as players enter systems. Fresh worlds also prepare eligible unvisited high-security station systems while
+The station-traffic multiplier scales each established system's geography-based traveler roster. Established worlds prepare
+new rosters as players enter systems. Fresh worlds can prepare eligible unvisited high-security station systems while
 someone has a selected character. Occupied systems get priority. Existing travelers can continue through empty
 systems and dedicated miners can work the belts in their home systems.
 
@@ -42,7 +43,7 @@ See the [startup performance record](protocol/capsuleers.md#batched-population-s
 for measurements and automated persistence checks. A running server must be rebuilt and restarted to use these changes.
 
 
-The **Population** page shows the active cap, region access and counts for saved, enabled, paused, scheduled and
+The **Population** page shows active cap usage, region and system access, and counts for saved, enabled, paused, scheduled and
 watched-system pilots. Prepared totals include saved communities in empty systems. Deferred systems keep a
 pending-preparation label. Use **Refresh population** while pilots travel. Local shows pilots currently in your
 system. Delayed Local keeps its normal privacy rules.

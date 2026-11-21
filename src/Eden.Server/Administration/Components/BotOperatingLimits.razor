@@ -1,14 +1,32 @@
 @using Eden.Gameplay.Capsuleers
+@using Eden.Data.Catalog
 
 <section class="card settings-group">
-    <h3>Active population &amp; regions</h3>
+    <h3>Bot population</h3>
+    <p class="muted">Settings apply at restart. See <a href="/population">Population</a> for current usage and system access.</p>
     <div class="settings-fields">
-        <SettingField Label="Active bot cap" Help="0 allows unlimited pilots. Admitted pilots retain a slot while offscreen or idle.">
+        <SettingField Label="Enable player bots"
+                      Help="Turning this off pauses all simulated capsuleers and hides them from players.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.SimulatedPilots" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Active bot cap"
+                      Help="0 allows unlimited pilots. Admitted pilots retain a slot while offscreen or idle. Eden pauses excess pilots and reuses them when slots reopen.">
             <Control Context="field">
                 <InputNumber id="@field.Input" @bind-Value="Form.ActivePilotCap" min="0"
                     max="@CapsuleerPopulationRules.MaximumActivePilotCap" aria-describedby="@field.Help" />
             </Control>
         </SettingField>
+        <SettingField Label="Prepare bots in unvisited systems"
+                      Help="In fresh universes, prepare eligible high-security systems ahead of player visits while someone plays.">
+            <Control Context="field">
+                <InputCheckbox id="@field.Input" @bind-Value="Form.PrepareUnvisitedSystems" aria-describedby="@field.Help" />
+            </Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>Where bots work</h3>
+    <div class="settings-fields">
         <SettingField Label="Default region access"
                       Help="Transit only allows stargate travel. Use Work and transit for regions where bots can settle and work.">
             <Control Context="field">
@@ -20,7 +38,7 @@
         </SettingField>
         <SettingField Label="Region" Help="Choose a catalog region to override its default access.">
             <Control Context="field">
-                <select id="@field.Input" name="bot-region" @bind="SelectedRegion" aria-describedby="@field.Help">
+                <select id="@field.Input" name="bot-region" @bind="SelectedRegion" @bind:after="ClearSystem" aria-describedby="@field.Help">
                     <option value="0">Choose a region</option>
                     @foreach (var region in Regions.OrderBy(region => region.Value).ThenBy(region => region.Key))
                     {
@@ -41,6 +59,31 @@
                     </select>
                 </Control>
             </SettingField>
+            <SettingField Label="Solar system" Help="Choose a system in this region to set a more specific access rule.">
+                <Control Context="field">
+                    <select id="@field.Input" name="bot-system" @bind="SelectedSystem" aria-describedby="@field.Help">
+                        <option value="0">Choose a solar system</option>
+                        @foreach (var system in Systems.Values.Where(system => system.RegionId == SelectedRegion).OrderBy(system => system.Name))
+                        {
+                            <option value="@system.Id">@system.Name</option>
+                        }
+                    </select>
+                </Control>
+            </SettingField>
+        }
+        @if (SelectedSystem != 0)
+        {
+            var access = Form.RegionAccess.GetValueOrDefault(SelectedRegion, Form.DefaultRegionAccess);
+            <SettingField Label="@($"Access for {Systems[SelectedSystem].Name}")" Help="A system override takes precedence over its region.">
+                <Control Context="field">
+                    <select @key="SelectedSystem" id="@field.Input" name="bot-system-access"
+                            @bind:get="SelectedSystemOverride" @bind:set="SetSystemOverride" aria-describedby="@field.Help">
+                        <option value="">Use region rule (@CapsuleerPopulationRules.Describe(access))</option>
+                        <option value="@CapsuleerRegionAccess.WorkAndTransit">Work and transit</option>
+                        <option value="@CapsuleerRegionAccess.TransitOnly">Transit only</option>
+                    </select>
+                </Control>
+            </SettingField>
         }
     </div>
     @if (Form.RegionAccess.Count > 0)
@@ -53,22 +96,46 @@
             }
         </ul>
     }
+    @if (Form.SystemAccess.Count > 0)
+    {
+        <h4>System overrides</h4>
+        <ul>
+            @foreach (var rule in Form.SystemAccess.OrderBy(rule => Systems.GetValueOrDefault(rule.Key)?.Name))
+            {
+                <li>@(Systems.GetValueOrDefault(rule.Key)?.Name ?? rule.Key.ToString()) · @CapsuleerPopulationRules.Describe(rule.Value)</li>
+            }
+        </ul>
+    }
 </section>
 
 @code {
     [Parameter, EditorRequired] public SettingsForm Form { get; set; } = default!;
     [Parameter, EditorRequired] public IReadOnlyDictionary<int, string> Regions { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyDictionary<int, CatalogSystemDefinition> Systems { get; set; } = default!;
     [Parameter] public EventCallback Changed { get; set; }
 
     private int SelectedRegion;
+    private int SelectedSystem;
     private CapsuleerRegionAccess? SelectedOverride =>
         Form.RegionAccess.TryGetValue(SelectedRegion, out var mode) ? mode : null;
+    private CapsuleerRegionAccess? SelectedSystemOverride =>
+        Form.SystemAccess.TryGetValue(SelectedSystem, out var mode) ? mode : null;
+
+    private void ClearSystem() => SelectedSystem = 0;
 
     private Task SetOverride(CapsuleerRegionAccess? mode)
     {
         Form.RegionAccess = mode is { } value
             ? Form.RegionAccess.SetItem(SelectedRegion, value)
             : Form.RegionAccess.Remove(SelectedRegion);
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetSystemOverride(CapsuleerRegionAccess? mode)
+    {
+        Form.SystemAccess = mode is { } value
+            ? Form.SystemAccess.SetItem(SelectedSystem, value)
+            : Form.SystemAccess.Remove(SelectedSystem);
         return Changed.InvokeAsync();
     }
 }

@@ -59,6 +59,44 @@ Not performed; agent client testing is disabled.
 
 - During first population on the dedicated server, compare market-demand owner holds and frame start delay with the supplied log.
 
+## Bot roster and activity controls
+
+The web editor groups settings by bot population, geography, mining, hauling and deliveries, PvE, exploration, PvP,
+and organizations. **Ambient traffic** contains the station-roster multiplier and watched-gate visitor limit.
+The **Population** page reports admitted slots and effective work access.
+
+The installed build 3662168 catalog supplies system IDs, names and regions. System overrides take precedence over
+region rules. Existing admission, destination selection and work checks use the resolved rule. Reciprocal
+stargate paths still cross transit-only systems. The local EVE.js build 3396210 reference
+`server/src/space/runtime/spaceRuntime/stargateJump.js` (SHA-256 prefix `6E84A01FB47C541A`) handles gate
+transfers and arrivals. The work access layer is Eden policy.
+
+Fresh-universe couriers and bounty hunters use dedicated saved roster slots. Startup reconciles those slots
+through the same suspension and reactivation path as the active cap. Eligible occupied systems can still prepare
+founders when optional unvisited-system preparation is disabled. The shipment switch gates loading trade goods
+through the shared freight loader. Loaded manifests continue through delivery.
+
+Automatic corporation formation and recruitment, alliance growth, and first-claim procurement and departures
+read independent settings. Existing bot applications and alliance admissions proceed on the usual schedules.
+Active sovereignty expeditions, defense and dues continue. All switches default to the previous behavior on
+legacy revisions. [Administrator settings](../world-configuration.md#autonomous-population)
+
+**Automated validation**
+
+The solution build completed with zero warnings and errors. The exact-method filter passed 24 configuration,
+admission, routing, freight, corporation, alliance and fresh-universe cases in a 79.26-second run. It included
+the installed build 3662168 catalog. The browser method passed its separate 40.77-second rerun with Firefox and
+Chromium, including the 390-pixel viewport and expanding Ambient traffic. Both Python policy suites
+passed all 17 checks. Formatting and local documentation links passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ## Bot population limits and work regions
 
 The active cap counts admitted pilots world-wide, including saved pilots with offscreen or idle work. On activation

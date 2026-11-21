@@ -51,6 +51,7 @@ internal sealed partial class AdministrationOperations(
 )
 {
     internal IReadOnlyDictionary<int, string> RegionNames => catalog.Regions;
+    internal IReadOnlyDictionary<int, CatalogSystemDefinition> SolarSystems => catalog.Systems;
 
     private async Task Authorize(ClaimsPrincipal user)
     {

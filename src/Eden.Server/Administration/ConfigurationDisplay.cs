@@ -72,8 +72,16 @@ internal static class ConfigurationDisplay
         ["progression.grantStartingEquipment"] = "Starting equipment for new pilots",
         ["capsuleers.enabled"] = "Player bots",
         ["capsuleers.activePilotCap"] = "Active bot cap",
+        ["capsuleers.prepareUnvisitedSystems"] = "Prepare bots in unvisited systems",
+        ["capsuleers.freshCourierPilots"] = "Dedicated courier pilots",
+        ["capsuleers.freshBountyPilots"] = "Dedicated bounty hunters",
+        ["capsuleers.tradeGoodsFreight"] = "Carry trade goods on civilian routes",
         ["capsuleers.defaultRegionAccess"] = "Default region access",
         ["capsuleers.regionAccess"] = "Region overrides",
+        ["capsuleers.systemAccess"] = "System overrides",
+        ["capsuleers.automaticRecruitment"] = "Automatic corporation formation and recruitment",
+        ["capsuleers.automaticAlliances"] = "Form and grow bot alliances",
+        ["capsuleers.newSovereigntyClaims"] = "Start new sovereignty claims",
         ["capsuleers.roamingGangs"] = "Persistent roaming gangs",
         ["capsuleers.roamingGangSize"] = "Roaming gang size",
         ["capsuleers.regionalConflicts"] = "Regional conflicts",
@@ -211,19 +219,19 @@ internal static class ConfigurationDisplay
         }
     }
 
+    private static string DescribeAccess(IReadOnlyDictionary<int, CapsuleerRegionAccess> rules) =>
+        rules.Count == 0
+            ? "None"
+            : string.Join(", ", rules.Select(rule => $"{rule.Key} · {CapsuleerPopulationRules.Describe(rule.Value)}"));
+
     private static Dictionary<string, string> Values(WorldSettings settings)
     {
         Dictionary<string, string> values = [];
         Add(JsonSerializer.SerializeToElement(settings, JsonSerializerOptions.Web), "");
         values["capsuleers.activePilotCap"] = settings.Capsuleers.ActivePilotCap == 0 ? "Unlimited" : values["capsuleers.activePilotCap"];
         values["capsuleers.defaultRegionAccess"] = CapsuleerPopulationRules.Describe(settings.Capsuleers.DefaultRegionAccess);
-        values["capsuleers.regionAccess"] =
-            settings.Capsuleers.RegionAccess.Count == 0
-                ? "None"
-                : string.Join(
-                    ", ",
-                    settings.Capsuleers.RegionAccess.Select(rule => $"{rule.Key} · {CapsuleerPopulationRules.Describe(rule.Value)}")
-                );
+        values["capsuleers.regionAccess"] = DescribeAccess(settings.Capsuleers.RegionAccess);
+        values["capsuleers.systemAccess"] = DescribeAccess(settings.Capsuleers.SystemAccess);
         return values;
 
         void Add(JsonElement group, string prefix)
@@ -231,7 +239,7 @@ internal static class ConfigurationDisplay
             foreach (var field in group.EnumerateObject())
             {
                 string path = prefix.Length == 0 ? field.Name : prefix + "." + field.Name;
-                if (path == "capsuleers.regionAccess")
+                if (path is "capsuleers.regionAccess" or "capsuleers.systemAccess")
                 {
                     continue;
                 }

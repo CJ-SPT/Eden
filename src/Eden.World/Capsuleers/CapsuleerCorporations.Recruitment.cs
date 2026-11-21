@@ -82,7 +82,8 @@ internal static partial class CapsuleerCorporations
         organization = organization with { Profession = profession, DueTicks = nextReview };
         var former = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         organization = ObserveEmployer(organization, former, activeTicks);
-        if (former?.CeoId == pilotId && CanRecruit(world, former))
+        bool recruiting = world.Settings.Capsuleers.AutomaticRecruitment;
+        if (recruiting && former?.CeoId == pilotId && CanRecruit(world, former))
         {
             Advertise(world, former, now);
         }
@@ -114,6 +115,11 @@ internal static partial class CapsuleerCorporations
                 pilotId,
                 ReviewOperatingBase(world, catalog, pilot, hull, profession, organization, former, employment)
             );
+            return false;
+        }
+        if (!recruiting)
+        {
+            SaveOrganization(world, pilotId, organization);
             return false;
         }
         bool independent = Eligible(world, catalog, pilotId);

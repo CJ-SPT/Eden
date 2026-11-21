@@ -94,7 +94,8 @@ internal sealed partial class CapsuleerHauler
                 ) || StandByAtSovereignty(world, catalog, corporation, home);
         }
         if (
-            CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId)
+            !world.Settings.Capsuleers.NewSovereigntyClaims
+            || CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId)
             || world.Filter<SavedAllianceMember>(member => member.AllianceId == alliance.Id).Count()
                 < CapsuleerAllianceRules.FoundingCorporations
             || CapsuleerAlliances.HeadquartersHub(world, corporation) is not { } package

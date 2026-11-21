@@ -69,7 +69,15 @@ internal sealed partial class CapsuleerProvisioner
         bool canHaul =
             hasRoute && (database.Traffic.Profiles.Count > 0 || CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight));
         int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic!.GateCount, traffic.StationCount, policy) : 0;
-        var freshRoutes = fresh && world is EconomyTransaction && policy.Enabled ? FreshCareerRoutes.Read(catalog, systemId, policy) : null;
+        var freshRoutes =
+            fresh
+            && world is EconomyTransaction
+            && (
+                FreshCareerRules.AllowsFounder(FreshCareerRules.CourierSlot, policy)
+                || FreshCareerRules.AllowsFounder(FreshCareerRules.CombatSlot, policy)
+            )
+                ? FreshCareerRoutes.Read(catalog, systemId, policy)
+                : null;
         var agents = world
             .Set<SavedCapsuleerAgent>()
             .Where(a => a.CommunitySystemId == systemId)
@@ -105,10 +113,10 @@ internal sealed partial class CapsuleerProvisioner
 
         var rookieSlots = new[]
         {
-            (Slot: FreshCareerRules.CourierSlot, Route: freshRoutes?.Courier, Eligible: true),
-            (Slot: FreshCareerRules.CombatSlot, Route: freshRoutes?.Combat, Eligible: policy.BeltRatting),
+            (Slot: FreshCareerRules.CourierSlot, Route: freshRoutes?.Courier),
+            (Slot: FreshCareerRules.CombatSlot, Route: freshRoutes?.Combat),
         }
-            .Where(entry => entry.Eligible && entry.Route is not null)
+            .Where(entry => entry.Route is not null && FreshCareerRules.AllowsFounder(entry.Slot, policy))
             .ToArray();
         if (summary is null)
         {

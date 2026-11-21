@@ -33,6 +33,10 @@ public static class CapsuleerPopulationRules
         {
             throw new InvalidDataException("Region access must be Work and transit or Transit only.");
         }
+        if (policy.SystemAccess is null || policy.SystemAccess.Values.Any(value => !Enum.IsDefined(value)))
+        {
+            throw new InvalidDataException("System access must be Work and transit or Transit only.");
+        }
         if (policy.RegionalOperationsPerGroup is < 1 or > 3)
         {
             throw new InvalidDataException("Regional groups may run between one and three simultaneous operations.");
@@ -55,8 +59,13 @@ public static class CapsuleerPopulationRules
         }
     }
 
-    public static bool AllowsWork(CapsuleerPopulationPolicy policy, int regionId) =>
-        policy.RegionAccess.GetValueOrDefault(regionId, policy.DefaultRegionAccess) == CapsuleerRegionAccess.WorkAndTransit;
+    public static CapsuleerRegionAccess WorkAccess(CapsuleerPopulationPolicy policy, int systemId, int regionId) =>
+        policy.SystemAccess.TryGetValue(systemId, out var access)
+            ? access
+            : policy.RegionAccess.GetValueOrDefault(regionId, policy.DefaultRegionAccess);
+
+    public static bool AllowsWork(CapsuleerPopulationPolicy policy, int systemId, int regionId) =>
+        WorkAccess(policy, systemId, regionId) == CapsuleerRegionAccess.WorkAndTransit;
 
     public static string Describe(CapsuleerRegionAccess access) =>
         access == CapsuleerRegionAccess.WorkAndTransit ? "Work and transit" : "Transit only";

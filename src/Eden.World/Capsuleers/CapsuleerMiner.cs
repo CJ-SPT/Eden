@@ -734,7 +734,7 @@ internal sealed partial class CapsuleerMiner(
         }
     }
 
-    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.RegionId);
+    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.SystemId, Pilot.RegionId);
 
     internal void RefreshCorporation()
     {

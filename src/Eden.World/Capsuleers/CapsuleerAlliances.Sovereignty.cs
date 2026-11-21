@@ -30,7 +30,8 @@ internal sealed partial class CapsuleerAlliances
         const int hubType = EntosisRules.HubTypeId;
         int stationId = corporation.StationId;
         if (
-            world.Set<SavedAllianceMember>().Find(corporation.Id) is not { } membership
+            !world.Settings.Capsuleers.NewSovereigntyClaims
+            || world.Set<SavedAllianceMember>().Find(corporation.Id) is not { } membership
             || world.Set<SavedAlliance>().Find(membership.AllianceId) is not { ClosedAt: null } alliance
             || alliance.ExecutorCorporationId != corporation.Id
             || world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is null

@@ -49,9 +49,10 @@ public sealed class CapsuleerAllianceTests
     private const long PersonalContribution = 10000;
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(bool expedition)
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(bool expedition, bool claimsEnabled)
     {
         const int station = 60015157;
         const int hubType = EntosisRules.HubTypeId;
@@ -74,7 +75,7 @@ public sealed class CapsuleerAllianceTests
                         StandardMarket = false,
                         ChargeServiceCosts = false,
                     },
-                    Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6 },
+                    Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6, NewSovereigntyClaims = claimsEnabled },
                 },
             },
             "First claim fixture"
@@ -195,6 +196,12 @@ public sealed class CapsuleerAllianceTests
 
             fixture.Clock.Seconds += 16;
             maintenance.Tick();
+            if (!claimsEnabled)
+            {
+                Assert.Empty(live.Economy.Inspect(world => world.Set<SavedPersonalOrder>().ToArray()));
+                Assert.Equal(budget, live.Economy.Inspect(world => world.Set<SavedCorporation>().Find(corporation)!.BalanceCents));
+                return;
+            }
             var order = Assert.Single(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
             Assert.Equal(
                 (corporation, station, hubType, true, 1, price),
@@ -610,8 +617,10 @@ public sealed class CapsuleerAllianceTests
         });
     }
 
-    [Fact]
-    public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart(bool automatic)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
@@ -637,7 +646,10 @@ public sealed class CapsuleerAllianceTests
             startup.Generation,
             draft with
             {
-                Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6 } },
+                Settings = draft.Settings with
+                {
+                    Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6, AutomaticAlliances = automatic },
+                },
             },
             "Alliance fixture"
         );
@@ -700,6 +712,16 @@ public sealed class CapsuleerAllianceTests
 
             using var present = host.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
             maintenance.Tick();
+            if (!automatic)
+            {
+                Assert.Empty(alliances.List());
+                Assert.Empty(applications.Applications(wing.Ceo, forAlliance: false));
+                Assert.Equal(
+                    shortfall + reserve,
+                    live.Economy.Inspect(world => world.Set<SavedCorporation>().Find(founder.Id)!.BalanceCents)
+                );
+                return;
+            }
             var alliance = Assert.Single(alliances.List());
             allianceId = alliance.Id;
             Assert.Equal(founder.Id, alliance.ExecutorCorporationId);

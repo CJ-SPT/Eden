@@ -128,12 +128,15 @@ public sealed partial class AdministrationTests
         await fixture.SignIn();
         string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
         Assert.Contains("Enable player bots", html);
-        Assert.Contains("Simulated miners", html);
+        Assert.Contains("Simulated mining fleets", html);
         Assert.Contains("Station traffic density (×)", html);
         Assert.Contains("Visitors per watched gate", html);
         Assert.Contains("Regional conflicts", html);
         Assert.Contains("Regional operations per group", html);
-        Assert.Contains("reuses them when the limits rise", html);
+        Assert.Contains("reuses them when slots reopen", html);
+        Assert.Contains("Dedicated courier pilots", html);
+        Assert.Contains("Dedicated bounty hunters", html);
+        Assert.Contains("Ambient traffic", html);
         Assert.Contains("Explore data and relic sites", html);
         Assert.Contains("Salvage NPC wrecks", html);
         var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
@@ -165,6 +168,17 @@ public sealed partial class AdministrationTests
             }
         );
         Assert.False((await invalid.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
+        using var unknownSystem = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/validate",
+            draft with
+            {
+                Settings = draft.Settings with
+                {
+                    Capsuleers = policy with { SystemAccess = policy.SystemAccess.Add(1, CapsuleerRegionAccess.TransitOnly) },
+                },
+            }
+        );
+        Assert.False((await unknownSystem.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
     }
 
     [Fact]

@@ -104,6 +104,17 @@ internal sealed partial class CapsuleerAlliances(
         {
             return false;
         }
+        if (policy.AutomaticAlliances && TryGrowAlliance(world, catalog, system, now, local))
+        {
+            return true;
+        }
+        return local.Any(corporation =>
+            TryMaintainAllianceDues(world, corporation) || TryProcureFirstHub(world, catalog, corporation, now)
+        );
+    }
+
+    private bool TryGrowAlliance(EconomyTransaction world, CatalogDbContext catalog, int system, long now, SavedCorporation[] local)
+    {
         var independent = local.Where(row => IsIndependent(world, row, now)).ToArray();
         var neighbors =
             independent.Length == 0
@@ -111,7 +122,7 @@ internal sealed partial class CapsuleerAlliances(
                 : CapsuleerTrafficRoutes
                     .Neighbours(catalog, system)
                     .Prepend(system)
-                    .Where(home => policy.CanWork(catalog.Definitions, home))
+                    .Where(home => world.Settings.Capsuleers.CanWork(catalog.Definitions, home))
                     .SelectMany(home => world.Filter<SavedCorporation>(row => row.SystemId == home).AsEnumerable())
                     .Where(row => Viable(world, row))
                     .OrderByDescending(row => row.SystemId == system)
@@ -133,9 +144,7 @@ internal sealed partial class CapsuleerAlliances(
                 return true;
             }
         }
-        return local.Any(corporation =>
-            TryMaintainAllianceDues(world, corporation) || TryProcureFirstHub(world, catalog, corporation, now)
-        );
+        return false;
     }
 
     private static bool Viable(WorldAction world, SavedCorporation corporation) =>

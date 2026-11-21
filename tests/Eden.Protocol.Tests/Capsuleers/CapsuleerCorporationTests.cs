@@ -22,6 +22,7 @@ using Eden.Server.Chat;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
@@ -490,8 +491,10 @@ public sealed class CapsuleerCorporationTests
         return false;
     }
 
-    [Fact]
-    public async Task PaidAdvertRecruitsTwoJumpOriginsAndOffersCompeteForLastBerth()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PaidAdvertRecruitsTwoJumpOriginsAndOffersCompeteForLastBerth(bool recruiting)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         PrepareExistingSave(fixture);
@@ -556,7 +559,27 @@ public sealed class CapsuleerCorporationTests
             }
             await live.FlushAsync();
         }
+        if (!recruiting)
+        {
+            var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
+            var state = configuration.Read();
+            var draft = state.Active.Draft;
+            configuration.Save(
+                state.Generation,
+                draft with
+                {
+                    Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { AutomaticRecruitment = false } },
+                },
+                "Pause automatic recruitment"
+            );
+            WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        }
         using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        if (!recruiting)
+        {
+            var application = reopened.GetRequiredService<ICorporationMembership>().Apply(Human, corporationId, "Request to join");
+            Assert.Equal(CorporationApplicationStatus.Applied, application.Status);
+        }
         var restored = reopened.GetRequiredService<LiveWorld>();
         using CatalogDbContext source = new(fixture.Database.CatalogPath);
         using var admission = restored.Economy.Begin(TransactionParticipants.None);
@@ -593,7 +616,7 @@ public sealed class CapsuleerCorporationTests
         var roster = Assert.IsType<CapsuleerRosterReport>(CapsuleerCorporations.Roster(admission, corporationId));
         Assert.Equal(originCounts, roster.Origins.Select(origin => origin.Pilots));
         Assert.Equal(0.5, roster.LargestOriginShare);
-        Assert.Equal(0, roster.PendingApplications);
+        Assert.Equal(recruiting ? 0 : 1, roster.PendingApplications);
         Assert.Equal(2, roster.PilotsRelocating);
     }
 

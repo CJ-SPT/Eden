@@ -61,8 +61,10 @@ public sealed class CapsuleerTrafficRoutesTests
         AssertPathsAreReal(catalog, plan, FirstSystem + 2);
     }
 
-    [Fact]
-    public void TransitOnlyRegionCanBeCrossedButCannotBeADestination()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TransitOnlySystemCanBeCrossedButCannotBeADestination(bool systemOverride)
     {
         const int transitRegion = 10000003;
         int transit = FirstSystem + 1;
@@ -89,6 +91,14 @@ public sealed class CapsuleerTrafficRoutesTests
             DefaultRegionAccess = CapsuleerRegionAccess.TransitOnly,
             RegionAccess = new CapsuleerPopulationPolicy().RegionAccess.Add(10000002, CapsuleerRegionAccess.WorkAndTransit),
         };
+        if (systemOverride)
+        {
+            policy = policy with
+            {
+                RegionAccess = policy.RegionAccess.Add(transitRegion, CapsuleerRegionAccess.WorkAndTransit),
+                SystemAccess = policy.SystemAccess.Add(transit, CapsuleerRegionAccess.TransitOnly),
+            };
+        }
         Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 1, HullClass.Hauler, policy: policy));
         var route = CapsuleerTrafficRoutes.Journey(
             catalog,

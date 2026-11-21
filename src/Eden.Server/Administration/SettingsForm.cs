@@ -88,9 +88,18 @@ public sealed class SettingsForm
     [Range(0, CapsuleerPopulationRules.MaximumActivePilotCap)]
     [Display(Name = "Active bot cap")]
     public int ActivePilotCap { get; set; }
+    public bool PrepareUnvisitedSystems { get; set; }
+    public bool FreshCourierPilots { get; set; }
+    public bool FreshBountyPilots { get; set; }
+    public bool TradeGoodsFreight { get; set; }
     public CapsuleerRegionAccess DefaultRegionAccess { get; set; }
     public ImmutableSortedDictionary<int, CapsuleerRegionAccess> RegionAccess { get; set; } =
         ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> SystemAccess { get; set; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public bool AutomaticRecruitment { get; set; }
+    public bool AutomaticAlliances { get; set; }
+    public bool NewSovereigntyClaims { get; set; }
 
     public bool RoamingPvp { get; set; }
     public bool RoamingGangs { get; set; }
@@ -360,8 +369,16 @@ public sealed class SettingsForm
             BotExploration = settings.Capsuleers.Exploration,
             BotWreckSalvage = settings.Capsuleers.WreckSalvage,
             ActivePilotCap = settings.Capsuleers.ActivePilotCap,
+            PrepareUnvisitedSystems = settings.Capsuleers.PrepareUnvisitedSystems,
+            FreshCourierPilots = settings.Capsuleers.FreshCourierPilots,
+            FreshBountyPilots = settings.Capsuleers.FreshBountyPilots,
+            TradeGoodsFreight = settings.Capsuleers.TradeGoodsFreight,
             DefaultRegionAccess = settings.Capsuleers.DefaultRegionAccess,
             RegionAccess = settings.Capsuleers.RegionAccess,
+            SystemAccess = settings.Capsuleers.SystemAccess,
+            AutomaticRecruitment = settings.Capsuleers.AutomaticRecruitment,
+            AutomaticAlliances = settings.Capsuleers.AutomaticAlliances,
+            NewSovereigntyClaims = settings.Capsuleers.NewSovereigntyClaims,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
             RoamingGangs = settings.Capsuleers.RoamingGangs,
             RoamingGangSize = settings.Capsuleers.RoamingGangSize,
@@ -444,8 +461,16 @@ public sealed class SettingsForm
                 Exploration = BotExploration,
                 WreckSalvage = BotWreckSalvage,
                 ActivePilotCap = ActivePilotCap,
+                PrepareUnvisitedSystems = PrepareUnvisitedSystems,
+                FreshCourierPilots = FreshCourierPilots,
+                FreshBountyPilots = FreshBountyPilots,
+                TradeGoodsFreight = TradeGoodsFreight,
                 DefaultRegionAccess = DefaultRegionAccess,
                 RegionAccess = RegionAccess,
+                SystemAccess = SystemAccess,
+                AutomaticRecruitment = AutomaticRecruitment,
+                AutomaticAlliances = AutomaticAlliances,
+                NewSovereigntyClaims = NewSovereigntyClaims,
                 RoamingPvp = RoamingPvp,
                 RoamingGangs = RoamingGangs,
                 RoamingGangSize = RoamingGangSize,

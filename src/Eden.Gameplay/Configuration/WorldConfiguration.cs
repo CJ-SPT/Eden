@@ -121,9 +121,18 @@ public sealed record CapsuleerPopulationPolicy(
     public bool Exploration { get; init; } = true;
     public bool WreckSalvage { get; init; } = true;
     public int ActivePilotCap { get; init; }
+    public bool PrepareUnvisitedSystems { get; init; } = true;
+    public bool FreshCourierPilots { get; init; } = true;
+    public bool FreshBountyPilots { get; init; } = true;
+    public bool TradeGoodsFreight { get; init; } = true;
     public CapsuleerRegionAccess DefaultRegionAccess { get; init; }
     public ImmutableSortedDictionary<int, CapsuleerRegionAccess> RegionAccess { get; init; } =
         ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> SystemAccess { get; init; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public bool AutomaticRecruitment { get; init; } = true;
+    public bool AutomaticAlliances { get; init; } = true;
+    public bool NewSovereigntyClaims { get; init; } = true;
     public CapsuleerFreightPolicy Freight { get; init; } = CapsuleerFreightPolicy.Default;
 }
 

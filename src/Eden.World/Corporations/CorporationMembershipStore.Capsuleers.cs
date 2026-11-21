@@ -23,6 +23,7 @@ internal sealed partial class CorporationMembershipStore
         if (
             world is EconomyTransaction
             && world.Settings.Capsuleers.Enabled
+            && world.Settings.Capsuleers.AutomaticRecruitment
             && pilot.AccountId > 0
             && application.Status is CorporationApplicationStatus.Applied or CorporationApplicationStatus.RenegotiatedByApplicant
             && BotLed(world, corporation)

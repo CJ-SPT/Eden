@@ -80,6 +80,8 @@ body {
 .settings-group.card, .settings-review { margin: 0 0 16px; padding: clamp(16px, 2.2vw, 24px); }
 .settings-group h3, .settings-review h2 { margin: 0 0 10px; font-size: 17px; }
 .settings-group > .muted { margin: 0 0 14px; }
+.ambient-traffic > summary { cursor: pointer; font-size: 17px; font-weight: 600; }
+.ambient-traffic[open] > summary { margin-bottom: 10px; }
 .settings-group > legend, .settings-subgroup legend { font-weight: 600; margin-bottom: 8px; }
 .settings-subgroup { margin: 18px 0; }
 .settings-fields, .settings-multipliers {

@@ -58,7 +58,15 @@ public sealed partial class FreshUniverseTests
             saved.Generation,
             draft with
             {
-                Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { Miners = false } },
+                Settings = draft.Settings with
+                {
+                    Capsuleers = draft.Settings.Capsuleers with
+                    {
+                        Miners = false,
+                        FreshBountyPilots = false,
+                        PrepareUnvisitedSystems = false,
+                    },
+                },
             },
             "Isolate fresh delivery and bounty careers"
         );
@@ -85,6 +93,34 @@ public sealed partial class FreshUniverseTests
             );
         }
 
+        long courier;
+        using (var limited = Open())
+        {
+            var live = limited.GetRequiredService<LiveWorld>();
+            using var observer = limited.GetRequiredService<IHumanPresence>().Select(90000001, system);
+            var preparation = limited.GetRequiredService<ICapsuleerBackgroundPreparation>();
+            var turn = preparation.PrepareNext();
+            Assert.Equal(system, turn.SystemId);
+            Assert.Null(turn.Failure);
+            Assert.True(preparation.PrepareNext().Complete);
+            var agent = Assert.Single(live.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().ToArray()));
+            Assert.Equal(FreshCareerRules.CourierSlot, agent.Slot);
+            courier = agent.PilotId;
+            await live.FlushAsync();
+        }
+
+        saved = configuration.Read();
+        draft = saved.Active.Draft;
+        configuration.Save(
+            saved.Generation,
+            draft with
+            {
+                Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { FreshBountyPilots = true } },
+            },
+            "Enable the dedicated bounty hunter"
+        );
+        WorldInitialization.Initialize(database, clock);
+
         long[] pilots;
         long[] firstShips;
         long supplier;
@@ -96,20 +132,18 @@ public sealed partial class FreshUniverseTests
             var presence = host.GetRequiredService<IHumanPresence>();
             presence.Update(Guid.NewGuid(), system);
             var provisioner = host.GetRequiredService<CapsuleerProvisioner>();
-            for (int slot = 0; slot < 2; slot++)
-            {
-                var turn = provisioner.PrepareBackgroundSystem(
-                    system,
-                    host.GetRequiredService<IWorldSynchronization>(),
-                    () => presence.Read().ActiveSystems.Contains(system),
-                    CancellationToken.None
-                );
-                Assert.NotNull(turn?.CreatedPilotId);
-            }
+            var turn = provisioner.PrepareBackgroundSystem(
+                system,
+                host.GetRequiredService<IWorldSynchronization>(),
+                () => presence.Read().ActiveSystems.Contains(system),
+                CancellationToken.None
+            );
+            Assert.NotNull(turn?.CreatedPilotId);
             pilots = live.Economy.Inspect(world =>
                 world.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.Slot).Select(agent => agent.PilotId).ToArray()
             );
             Assert.Equal(2, pilots.Length);
+            Assert.Equal(courier, pilots[0]);
 
             using CatalogDbContext catalog = new(database.CatalogPath);
             foreach (long id in pilots)
