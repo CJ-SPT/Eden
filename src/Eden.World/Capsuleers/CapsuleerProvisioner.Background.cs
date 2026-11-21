@@ -27,6 +27,32 @@ internal sealed partial class CapsuleerProvisioner
     {
         using var scope = new CatalogReadScope().Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var policy = database.Settings.Capsuleers;
+        if (!policy.CanWork(catalog.Definitions, system))
+        {
+            return new(1, 0, 0);
+        }
+        if (policy.ActivePilotCap > 0)
+        {
+            using var owner = synchronization.Enter("capsuleer capacity snapshot");
+            if (LiveWorld.Find(database.Path) is { } live && live.Economy.AdmittedCapsuleerCount >= policy.ActivePilotCap)
+            {
+                return new(1, 0, 1);
+            }
+        }
+        if (database.Settings.FreshUniverse)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (LiveWorld.Find(database.Path) is null)
+            {
+                return null;
+            }
+            _ = CapsuleerProvisioningCatalog.StarterIndustry(catalog, system);
+            _ = FreshCareerRoutes.Read(catalog, system, policy);
+            using var freshCoordinator = synchronization.TryEnterShared("starter capsuleer preparation");
+            using var freshSystem = freshCoordinator is null ? null : synchronization.TryEnterSystems("starter capsuleer system", [system]);
+            return freshSystem is not null && occupied() ? ProvisionPrepared(system, catalog) : null;
+        }
         _startupBlueprints?.BeginPreparation();
         long seed;
         BackgroundSlot[] slots;
@@ -41,7 +67,13 @@ internal sealed partial class CapsuleerProvisioner
                 world =>
                 {
                     long worldSeed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
-                    string fingerprint = Fingerprint(database, catalog, worldSeed, world.Settings.Capsuleers);
+                    string fingerprint = Fingerprint(
+                        database,
+                        catalog,
+                        worldSeed,
+                        world.Settings.Capsuleers,
+                        resident: world is EconomyTransaction
+                    );
                     var saved = world.Set<SavedCapsuleerSystem>().Find(system);
                     bool current = saved?.PolicyVersion == CapsuleerProvisioningRules.Version && saved.CatalogFingerprint == fingerprint;
                     return new BackgroundPreparation(worldSeed, current ? [] : BackgroundSlots(world, system), current);
@@ -55,19 +87,25 @@ internal sealed partial class CapsuleerProvisioner
             slots = snapshot.Slots;
         }
         cancellationToken.ThrowIfCancellationRequested();
-        var traffic = CapsuleerTrafficRoutes.Read(catalog, system);
+        var traffic = CapsuleerTrafficRoutes.Read(catalog, system, policy);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         var mining = CapsuleerProvisioningCatalog.Mining(catalog, system);
-        bool needsMiner =
+        var miningRoster =
             database.Settings.Capsuleers is { Enabled: true, Miners: true }
             && origins.Length > 0
             && mining.Eligibility == CapsuleerEligibility.Eligible
-            && !slots.Any(slot => slot.Career == CapsuleerCareer.Mining);
+                ? CapsuleerProvisioningCatalog.MiningRoster(catalog, mining, seed)
+                : [];
+        int minerCount = LiveWorld.Find(database.Path) is null ? Math.Min(1, miningRoster.Length) : miningRoster.Length;
+        int minerSlot = Enumerable
+            .Range(0, minerCount)
+            .FirstOrDefault(slot => !slots.Any(saved => saved.Career == CapsuleerCareer.Mining && saved.Slot == slot), -1);
+        bool needsMiner = minerSlot >= 0;
         if (needsMiner)
         {
-            ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Mining);
+            ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Mining, minerSlot);
             int race = origins[(int)(roleSeed % (ulong)origins.Length)].RaceId;
-            (_startupBlueprints ??= new(catalog)).Prepare(catalog, race, CapsuleerCommunityStore.VentureType, null, mining: true);
+            (_startupBlueprints ??= new(catalog)).Prepare(catalog, race, (int)miningRoster[minerSlot], null, mining: true);
         }
         int count =
             traffic.Routes.Length == 0
@@ -97,17 +135,24 @@ internal sealed partial class CapsuleerProvisioner
                 }
                 var opening = CapsuleerEncounterRules.TrafficOpening(seed, system, slot, count);
                 var route = SelectRoute(catalog, traffic, system, slot, opening, offset);
-                var profile = TrafficProvisioning.SelectPrepared(
-                    database,
+                var profile = CapsuleerPatrolFit.Select(
                     catalog,
+                    database.Settings.Capsuleers,
                     seed,
                     system,
                     slot,
-                    route,
-                    reservations: planning!,
-                    roster: roster
+                    () =>
+                        TrafficProvisioning.SelectPrepared(
+                            database,
+                            catalog,
+                            seed,
+                            system,
+                            slot,
+                            route,
+                            reservations: planning!,
+                            roster: roster
+                        )
                 );
-                profile ??= CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, system, slot);
                 if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
                 {
                     continue;

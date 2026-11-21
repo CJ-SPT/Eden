@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Gameplay.Capsuleers;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 
@@ -6,34 +7,42 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
-    private void RefreshChangedPopulation(LiveWorld live)
+    private void RefreshChangedPopulation(WorldAction world, LiveWorld live)
     {
         long previous = _populationRevision;
         var occupied = presence.Read().ActiveSystems;
+        var pilots = live.CapsuleerAgentRevisions.Where(change => change.Value > previous).Select(change => change.Key).ToArray();
+        if (pilots.Length > 0)
+        {
+            _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
+            _membershipDirty = true;
+        }
         foreach (int system in occupied)
         {
             if (live.CapsuleerSystemRevisions.GetValueOrDefault(system) > previous)
             {
-                Load(system);
+                LoadSystem(world, system, null, includeRemote: false);
+                _membershipDirty = true;
             }
         }
-        var pilots = live
-            .CapsuleerAgentRevisions.Where(change => change.Value > previous && _locations.ContainsKey(change.Key))
-            .Select(change => change.Key)
-            .ToArray();
-        if (pilots.Length > 0)
+        foreach (long pilot in pilots)
         {
-            WorldActionScope.Inspect(
-                database,
-                world =>
-                {
-                    Register(world, world.Set<SavedCapsuleerAgent>().Where(agent => Enumerable.Contains(pilots, agent.PilotId)).ToArray());
-                    _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
-                }
-            );
-            _membershipDirty = true;
+            RemoveBackgroundStart(pilot);
+            if (_suspended.Contains(pilot) || world.Set<SavedCapsuleerAgent>().Find(pilot) is not { } agent)
+            {
+                continue;
+            }
+            if (
+                _registrations.ContainsKey(pilot)
+                || occupied.Count > 0 && occupied.Contains(PilotSystem(world, world.Pilots.Find(pilot)!.ActiveShipId))
+            )
+            {
+                Register(world, [agent]);
+            }
+            else if (_backgroundPilotsLoaded && SupportsBackground(agent.Career) && world.Set<SavedCapsuleerJob>().Find(pilot) is { } job)
+            {
+                QueueBackgroundStart(pilot, Current.GetValueOrDefault(pilot)?.DueTicks ?? job.DueTicks);
+            }
         }
-        _populationRevision = live.CapsuleerRevision;
-        _population = population.Summary();
     }
 }

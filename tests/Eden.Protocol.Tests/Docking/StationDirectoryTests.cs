@@ -15,6 +15,38 @@ namespace Eden.Protocol.Tests.Docking;
 
 public sealed class StationDirectoryTests
 {
+    [Fact]
+    public void StationCountIncludesSystemsWithoutStationsInNativePairs()
+    {
+        using TestWorld db = new(liveWorld: true);
+        using var scope = db.Services.CreateScope();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(db.Store, p, TimeProvider.System, new(), db.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.Same(PilotCallResult.Unsupported, Call([]));
+        context.Select(pilot);
+
+        var reply = Assert.IsType<PilotCallResult.Success>(Call([])).Reply;
+        var rows = Assert
+            .IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply)))
+            .Select(row => BlueRead.Tuple(row, 2))
+            .ToDictionary(row => Assert.IsType<long>(row[0]), row => Assert.IsType<long>(row[1]));
+        Assert.Equal(1L, rows[30000142]);
+        Assert.Equal(0L, rows[30000144]);
+        Assert.IsType<PilotCallResult.Failure>(Call([30000142L]));
+        Assert.IsType<PilotCallResult.Failure>(Call([], new() { ["systemID"] = 30000142L }));
+
+        PilotCallResult Call(object?[] args, Dictionary<string, object?>? keywords = null) =>
+            router.Call(context, "map", "GetStationCount", args, _ => { }, keywords);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

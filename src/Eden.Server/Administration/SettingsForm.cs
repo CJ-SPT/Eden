@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
@@ -42,7 +44,7 @@ public sealed class SettingsForm
     public bool RegionalHubSupply { get; set; }
     public bool BeginnerMarketSupply { get; set; }
 
-    [Range(typeof(decimal), "0", "1")]
+    [Range(typeof(decimal), "0", "1", ParseLimitsInInvariantCulture = true)]
     public decimal ManufacturingIndex { get; set; }
     public bool TestingMarket { get; set; }
     public bool TestingGrants { get; set; }
@@ -66,6 +68,7 @@ public sealed class SettingsForm
     public bool AlwaysResolvedSignatures { get; set; }
     public bool StartingSkills { get; set; }
     public bool StartingEquipment { get; set; }
+    private bool FreshUniverse { get; init; }
     public bool FreightVariedHulls { get; set; }
     public long FreightOrdinaryMinimumIsk { get; set; }
     public long FreightOrdinaryMaximumIsk { get; set; }
@@ -79,8 +82,30 @@ public sealed class SettingsForm
     public bool SituationalAwareness { get; set; }
     public bool BeltRatting { get; set; }
     public bool AnomalyRatting { get; set; }
+    public bool BotExploration { get; set; }
+    public bool BotWreckSalvage { get; set; }
+
+    [Range(0, CapsuleerPopulationRules.MaximumActivePilotCap)]
+    [Display(Name = "Active bot cap")]
+    public int ActivePilotCap { get; set; }
+    public bool PrepareUnvisitedSystems { get; set; }
+    public bool FreshCourierPilots { get; set; }
+    public bool FreshBountyPilots { get; set; }
+    public bool TradeGoodsFreight { get; set; }
+    public CapsuleerRegionAccess DefaultRegionAccess { get; set; }
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> RegionAccess { get; set; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> SystemAccess { get; set; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public bool AutomaticRecruitment { get; set; }
+    public bool AutomaticAlliances { get; set; }
+    public bool NewSovereigntyClaims { get; set; }
 
     public bool RoamingPvp { get; set; }
+    public bool RoamingGangs { get; set; }
+    public int RoamingGangSize { get; set; }
+    public bool RegionalConflicts { get; set; }
+    public int RegionalOperationsPerGroup { get; set; }
     public int RoamPercent { get; set; }
     public int GeneratedCombatPercent { get; set; }
 
@@ -96,7 +121,7 @@ public sealed class SettingsForm
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
 
-    [Range(typeof(decimal), "0", "10")]
+    [Range(typeof(decimal), "0", "10", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Station traffic density")]
     public decimal TrafficMultiplier { get; set; }
 
@@ -117,128 +142,148 @@ public sealed class SettingsForm
     [Display(Name = "Autopilot gate landing distance (metres)")]
     public int AutopilotGateLandingMeters { get; set; } = NavigationDefinitions.AutopilotLandingMeters;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Warp speed")]
     public decimal WarpSpeedMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Align speed")]
     public decimal AlignSpeedMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Ship CPU output")]
+    public decimal ShipCpuMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Ship power grid output")]
+    public decimal ShipPowerGridMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Rig calibration")]
+    public decimal ShipCalibrationMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Drone bandwidth")]
+    public decimal ShipDroneBandwidthMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ore mining yield")]
     public decimal OreYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ice harvesting yield")]
     public decimal IceYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Gas harvesting yield")]
     public decimal GasYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "General mining hold capacity")]
     public decimal GeneralMiningHoldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ice hold capacity")]
     public decimal IceHoldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Gas hold capacity")]
     public decimal GasHoldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC bounty ISK")]
     public decimal BountyMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mission ISK")]
     public decimal MissionIskMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mission loyalty points")]
     public decimal MissionLpMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Positive mission standings")]
     public decimal MissionStandingMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Skill training speed")]
+    public decimal TrainingSpeedMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC kill skill points")]
     public decimal KillSkillPointMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mining skill points")]
     public decimal MiningSkillPointMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC kill base SP rate")]
     public decimal KillSkillPointPercent { get; set; } = NpcSkillPointRewards.DefaultPercent;
 
-    [Range(typeof(decimal), "0.01", "1000000000")]
+    [Range(typeof(decimal), "0.01", "1000000000", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mining reference ISK per SP")]
     public decimal MiningIskPerSkillPoint { get; set; } = ActivitySkillPointRewards.IskPerSkillPoint;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Manufacturing speed")]
     public decimal ManufacturingSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Research speed")]
     public decimal ResearchSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Copying speed")]
     public decimal CopyingSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Invention speed")]
     public decimal InventionSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Reprocessing efficiency")]
     public decimal ReprocessingEfficiency { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     public decimal StructureAnchoringSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     public decimal StructureOnliningSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     public decimal StructureUnanchoringSpeed { get; set; } = 1;
 
     [Range(0, int.MaxValue)]
     [Display(Name = "Minimum corporation age for anchoring (days)")]
     public int StructureMinimumCorporationAgeDays { get; set; } = 7;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Extraction yield")]
     public decimal PlanetaryExtractionYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Factory output")]
     public decimal PlanetaryFactoryOutputMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Planetary storage capacity")]
     public decimal PlanetaryStorageCapacityMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Factory speed")]
     public decimal PlanetaryFactorySpeedMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Command center CPU")]
     public decimal PlanetaryCpuMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Command center powergrid")]
     public decimal PlanetaryPowergridMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Customs tax (%)")]
     public decimal PlanetaryCustomsTaxPercent { get; set; } = 17;
 
@@ -255,10 +300,15 @@ public sealed class SettingsForm
             GeneralMiningHoldMultiplier = settings.MiningHolds.GeneralMultiplier,
             IceHoldMultiplier = settings.MiningHolds.IceMultiplier,
             GasHoldMultiplier = settings.MiningHolds.GasMultiplier,
+            ShipCpuMultiplier = settings.ShipFitting.CpuMultiplier,
+            ShipPowerGridMultiplier = settings.ShipFitting.PowerGridMultiplier,
+            ShipCalibrationMultiplier = settings.ShipFitting.CalibrationMultiplier,
+            ShipDroneBandwidthMultiplier = settings.ShipFitting.DroneBandwidthMultiplier,
             BountyMultiplier = settings.Rewards.BountyMultiplier,
             MissionIskMultiplier = settings.Rewards.MissionIskMultiplier,
             MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
             MissionStandingMultiplier = settings.Rewards.MissionStandingMultiplier,
+            TrainingSpeedMultiplier = settings.Progression.TrainingSpeedMultiplier,
             KillSkillPointMultiplier = settings.Progression.KillSkillPointMultiplier,
             MiningSkillPointMultiplier = settings.Progression.MiningSkillPointMultiplier,
             KillSkillPointPercent = settings.Progression.KillSkillPointPercent,
@@ -304,6 +354,7 @@ public sealed class SettingsForm
             AlwaysResolvedSignatures = settings.Exploration.AlwaysResolvedSignatures,
             StartingSkills = settings.Progression.GrantStartingSkills,
             StartingEquipment = settings.Progression.GrantStartingEquipment,
+            FreshUniverse = settings.FreshUniverse,
             GlobalProvisioning = settings.Capsuleers.GlobalProvisioning,
             SimulatedPilots = settings.Capsuleers.Enabled,
             SimulatedMiners = settings.Capsuleers.Miners,
@@ -320,7 +371,24 @@ public sealed class SettingsForm
             SituationalAwareness = settings.Capsuleers.SituationalAwareness,
             BeltRatting = settings.Capsuleers.BeltRatting,
             AnomalyRatting = settings.Capsuleers.AnomalyRatting,
+            BotExploration = settings.Capsuleers.Exploration,
+            BotWreckSalvage = settings.Capsuleers.WreckSalvage,
+            ActivePilotCap = settings.Capsuleers.ActivePilotCap,
+            PrepareUnvisitedSystems = settings.Capsuleers.PrepareUnvisitedSystems,
+            FreshCourierPilots = settings.Capsuleers.FreshCourierPilots,
+            FreshBountyPilots = settings.Capsuleers.FreshBountyPilots,
+            TradeGoodsFreight = settings.Capsuleers.TradeGoodsFreight,
+            DefaultRegionAccess = settings.Capsuleers.DefaultRegionAccess,
+            RegionAccess = settings.Capsuleers.RegionAccess,
+            SystemAccess = settings.Capsuleers.SystemAccess,
+            AutomaticRecruitment = settings.Capsuleers.AutomaticRecruitment,
+            AutomaticAlliances = settings.Capsuleers.AutomaticAlliances,
+            NewSovereigntyClaims = settings.Capsuleers.NewSovereigntyClaims,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
+            RoamingGangs = settings.Capsuleers.RoamingGangs,
+            RoamingGangSize = settings.Capsuleers.RoamingGangSize,
+            RegionalConflicts = settings.Capsuleers.RegionalConflicts,
+            RegionalOperationsPerGroup = settings.Capsuleers.RegionalOperationsPerGroup,
             RoamPercent = settings.Capsuleers.RoamPercent,
             GeneratedCombatPercent = settings.Capsuleers.GeneratedCombatPercent,
             GateCamps = settings.Capsuleers.GateCamps,
@@ -341,6 +409,7 @@ public sealed class SettingsForm
     internal WorldSettings Build() =>
         new()
         {
+            FreshUniverse = FreshUniverse,
             Economy = new(
                 ServiceCosts,
                 ManufacturingIndex,
@@ -361,6 +430,7 @@ public sealed class SettingsForm
             ),
             Resources = new(RenewBelts, RenewalHourUtc, OreYieldMultiplier, IceYieldMultiplier, GasYieldMultiplier),
             MiningHolds = new(GeneralMiningHoldMultiplier, IceHoldMultiplier, GasHoldMultiplier),
+            ShipFitting = new(ShipCpuMultiplier, ShipPowerGridMultiplier, ShipCalibrationMultiplier, ShipDroneBandwidthMultiplier),
             Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             PlanetaryIndustry = new(
@@ -386,14 +456,32 @@ public sealed class SettingsForm
                 MiningSkillPointMultiplier,
                 KillSkillPointPercent,
                 MiningIskPerSkillPoint,
-                StartingEquipment
+                StartingEquipment,
+                TrainingSpeedMultiplier
             ),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors)
             {
                 SituationalAwareness = SituationalAwareness,
                 BeltRatting = BeltRatting,
                 AnomalyRatting = AnomalyRatting,
+                Exploration = BotExploration,
+                WreckSalvage = BotWreckSalvage,
+                ActivePilotCap = ActivePilotCap,
+                PrepareUnvisitedSystems = PrepareUnvisitedSystems,
+                FreshCourierPilots = FreshCourierPilots,
+                FreshBountyPilots = FreshBountyPilots,
+                TradeGoodsFreight = TradeGoodsFreight,
+                DefaultRegionAccess = DefaultRegionAccess,
+                RegionAccess = RegionAccess,
+                SystemAccess = SystemAccess,
+                AutomaticRecruitment = AutomaticRecruitment,
+                AutomaticAlliances = AutomaticAlliances,
+                NewSovereigntyClaims = NewSovereigntyClaims,
                 RoamingPvp = RoamingPvp,
+                RoamingGangs = RoamingGangs,
+                RoamingGangSize = RoamingGangSize,
+                RegionalConflicts = RegionalConflicts,
+                RegionalOperationsPerGroup = RegionalOperationsPerGroup,
                 RoamPercent = RoamPercent,
                 GeneratedCombatPercent = GeneratedCombatPercent,
                 GateCamps = GateCamps,

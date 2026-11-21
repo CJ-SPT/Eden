@@ -1,7 +1,14 @@
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Structures;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Structures;
+
+internal sealed record StructureCynoBeaconRow(StructureCynoBeacon Beacon) : BlueModel
+{
+    public override object ToBlue() =>
+        new List<object?> { Beacon.Id, Beacon.TypeId, Beacon.OwnerId, Beacon.SystemId, (int)Beacon.State, Beacon.Name };
+}
 
 internal sealed record StructureReinforceDefaultReply : BlueModel
 {

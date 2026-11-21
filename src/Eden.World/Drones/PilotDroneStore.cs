@@ -7,7 +7,9 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Fleets;
@@ -20,6 +22,8 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
+using Eden.World.Fighters;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -43,7 +47,7 @@ internal sealed partial class PilotDroneStore(
     ICooperativeFleets fleets,
     Eden.Gameplay.Repair.IRemoteRepairEvents repairEvents,
     ICapacitorEvents capacitorEvents
-) : IPilotDrones
+) : IPilotDrones, IPilotFighterOrders
 {
     private const int ProbabilityResolution = 1_000_000;
 
@@ -184,7 +188,10 @@ internal sealed partial class PilotDroneStore(
             .ToArray();
         double used = active.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
         int maximumCount = DroneCatalog.ControlLimit(fitting);
-        double maximumBandwidth = shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth);
+        double maximumBandwidth = WorldTuningRules.ScaleDroneBandwidth(
+            world.Settings.ShipFitting,
+            shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth)
+        );
         int remainingSlots = maximumCount - active.Length;
         double remainingBandwidth = maximumBandwidth - used;
         List<InventoryChange> changes = [];
@@ -286,7 +293,24 @@ internal sealed partial class PilotDroneStore(
         return new(changes, launches);
     }
 
-    public void Order(long pilotId, IReadOnlyList<long> drones, DroneOrder order, long? targetId, IReadOnlySet<long> locks, long now)
+    public void Order(long pilotId, IReadOnlyList<long> drones, DroneOrder order, long? targetId, IReadOnlySet<long> locks, long now) =>
+        Order(pilotId, drones, order, targetId, locks, now, fighter: false);
+
+    public void OrderFighters(long pilotId, IReadOnlyList<long> squads, DroneOrder order, long? target, IReadOnlySet<long> locks, long now)
+    {
+        RequireResident();
+        Order(pilotId, squads, order, target, locks, now, fighter: true);
+    }
+
+    private void Order(
+        long pilotId,
+        IReadOnlyList<long> drones,
+        DroneOrder order,
+        long? targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool fighter
+    )
     {
         CheckIds(drones);
         if (!Enum.IsDefined(order))
@@ -305,11 +329,17 @@ internal sealed partial class PilotDroneStore(
         );
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = InSpace(world, pilotId);
+        var pilot = InSpace(world, pilotId, requireDroneHull: !fighter);
+        if (fighter && !FighterDeckRules.Supports(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId, pilot.ActiveShip.TypeId))
+        {
+            throw new InvalidDataException("This ship does not support fighter control.");
+        }
         var position = pilot.ActiveShip.Position!;
         int systemId = CurrentSystem(catalog, pilot);
         var fitting = FittingCalculation.Read(world, catalog, pilot);
-        double range = fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
+        double range = fighter
+            ? fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange)
+            : fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
         double droneRange = order == DroneOrder.Reconnect ? NpcEncounterDefinitions.VisibilityRange : DroneRules.ShutdownDistance;
         var selected = drones.Select(id => world.Set<WorldDrone>().Find(id)).ToArray();
         if (
@@ -317,12 +347,18 @@ internal sealed partial class PilotDroneStore(
                 d is null
                 || d.PilotId != pilotId
                 || d.SystemId != systemId
+                || world.Set<OwnedItem>().Find(d.ItemId) is not { } item
+                || FighterDeckRules.IsTube(item.FlagId) != fighter
                 || (order == DroneOrder.Reconnect ? d.ControllerShipId != 0 : d.ControllerShipId != pilot.ActiveShipId)
                 || Position(position).DistanceTo(new(d.X, d.Y, d.Z)) > droneRange
             )
         )
         {
             throw new InvalidDataException("These drones are unavailable to your current ship.");
+        }
+        if (order == DroneOrder.Engage)
+        {
+            Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         }
         bool workOrder = ValidateWorkOrder(world, catalog, pilot, selected!, order, targetId, locks, range, systemId, now);
         if (order == DroneOrder.Engage && !workOrder)
@@ -339,8 +375,21 @@ internal sealed partial class PilotDroneStore(
             {
                 throw new InvalidDataException("Order drones to attack a locked ship within drone control range.");
             }
+            var companion =
+                fighter && targetId is long companionId ? FighterTarget(world, catalog, pilot, companionId, systemId, now) : null;
             var structure = targetId is long structureId ? StructureCombatTargets.Find(world, structureId) : null;
-            if (structure is not null)
+            if (companion is not null)
+            {
+                if (
+                    Position(position).DistanceTo(companion.Contact.Position) - companion.Contact.Profile.Radius > range
+                    || selected.Any(d => !DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d!.ItemId)!.TypeId).SpaceSuperiority)
+                )
+                {
+                    throw new InvalidDataException("Order space-superiority fighters to attack a locked drone or fighter within range.");
+                }
+                _ = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, companion.Owner, systemId, now);
+            }
+            else if (structure is not null)
             {
                 StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
                 if (
@@ -379,9 +428,13 @@ internal sealed partial class PilotDroneStore(
             {
                 throw new InvalidDataException("Order drones to attack a locked NPC within drone control range.");
             }
-            else if (npc.Role == NpcRole.Concord)
+            else
             {
-                ConcordPersistence.Attack(world, catalog, npc, pilot.ActiveShipId, now);
+                MilitiaHubStore.RequireAttack(world, npc, pilot);
+                if (npc.Role == NpcRole.Concord)
+                {
+                    ConcordPersistence.Attack(world, catalog, npc, pilot.ActiveShipId, now);
+                }
             }
         }
         if (order == DroneOrder.Reconnect)
@@ -396,7 +449,10 @@ internal sealed partial class PilotDroneStore(
                 selected.Length,
                 selected.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d!.ItemId)!.TypeId).Bandwidth),
                 DroneCatalog.ControlLimit(fitting),
-                fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+                WorldTuningRules.ScaleDroneBandwidth(
+                    world.Settings.ShipFitting,
+                    fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+                )
             );
         }
         foreach (var entry in selected)
@@ -413,7 +469,11 @@ internal sealed partial class PilotDroneStore(
             {
                 CollectInterruptedMining(world, catalog, pilot, drone, now);
             }
-            CancelWork(world, drone, now);
+            CancelWork(world, drone, preserveTackle: fighter && order != DroneOrder.ReturnToBay);
+            if (fighter && order == DroneOrder.ReturnToBay)
+            {
+                CancelFighterMicroJump(drone);
+            }
             if (workOrder)
             {
                 var previous = ReadWork(drone);
@@ -513,8 +573,9 @@ internal sealed partial class PilotDroneStore(
 
     public IReadOnlyList<DroneContact> List(int systemId, long now) =>
         LiveWorld.Find(database.Path)?.CombatForSystem(systemId)?.Drones(systemId, now)
-        ?? LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId))
-        ?? ReadContacts(systemId);
+        ?? (LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId)) ?? ReadContacts(systemId))
+            .Select(contact => FighterMobilityRules.Apply(contact, now))
+            .ToArray();
 
     private IReadOnlyList<DroneContact> ReadContacts(int systemId)
     {
@@ -611,12 +672,21 @@ internal sealed partial class PilotDroneStore(
             }
         }
         HashSet<long> ships = [ship];
+        HashSet<long> pilots = [pilot];
         HashSet<long> npcs = [];
         foreach (long id in candidates.Where(id => id > 0 && id != ship))
         {
             if (world.Set<WorldNpc>().Find(id) is not null)
             {
                 npcs.UnionWith(NpcHostility.Participants(world, id));
+            }
+            else if (world.Set<WorldDrone>().Find(id) is { } companion)
+            {
+                pilots.Add(companion.PilotId);
+                if (companion.ControllerShipId > 0)
+                {
+                    ships.Add(companion.ControllerShipId);
+                }
             }
             else
             {
@@ -627,7 +697,7 @@ internal sealed partial class PilotDroneStore(
         using CatalogDbContext catalog = new(database.CatalogPath);
         return new(
             systems: [CurrentSystem(catalog, owner)],
-            pilots: [pilot],
+            pilots: pilots,
             ships: ships,
             resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
         );
@@ -650,6 +720,7 @@ internal sealed partial class PilotDroneStore(
         List<InventoryChange> changes = [];
         List<DroneHit> hits = [];
         List<PilotDamage> pilotHits = [];
+        bool protection = Eden.World.Flight.PilotCapitalTravelStore.ProtectedIndustry(world, ship.Id, now);
         var settings = Settings(world, pilotId);
         var shipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         var snapshot = world.CachedFittingSnapshot(pilotId, ship.Id, world.FitRevision(pilotId));
@@ -661,6 +732,8 @@ internal sealed partial class PilotDroneStore(
         int controlledCount = 0;
         double controlledBandwidth = 0;
         bool released = false;
+        bool supportsDrones = DroneRules.SupportsHull(ship.TypeId);
+        bool supportsFighters = FighterDeckRules.Supports(catalog.RequireItem(ship.TypeId).GroupId, ship.TypeId);
         foreach (
             var drone in world
                 .Set<WorldDrone>()
@@ -669,9 +742,16 @@ internal sealed partial class PilotDroneStore(
                 .ToArray()
         )
         {
+            if (drone.ControllerShipId != ship.Id && world.Set<SavedStructure>().Find(drone.ControllerShipId) is not null)
+            {
+                // The structure's recovery clock owns the squadron after the gunner undocks.
+                continue;
+            }
+            bool fighterTube =
+                world.Set<OwnedItem>().Find(drone.ItemId) is { } controlledItem && FighterDeckRules.IsTube(controlledItem.FlagId);
             if (
                 ship.Position is not { } source
-                || !DroneRules.SupportsHull(ship.TypeId)
+                || !(fighterTube ? supportsFighters : supportsDrones)
                 || sourceDestroyed
                 || drone.ControllerShipId != ship.Id
                 || systemId != drone.SystemId
@@ -682,7 +762,12 @@ internal sealed partial class PilotDroneStore(
                 released = true;
                 continue;
             }
-            var contact = Contact(world, catalog, drone);
+            if (fighterTube)
+            {
+                AdvanceFighterTackle(world, catalog, drone, now);
+                CompleteFighterMicroJump(world, drone, now);
+            }
+            var contact = Contact(world, catalog, drone, now);
             var profile = contact.Profile;
             bool qualified = true;
             try
@@ -693,14 +778,18 @@ internal sealed partial class PilotDroneStore(
             {
                 qualified = false;
             }
-            if (!qualified || controlledCount >= allowedCount || controlledBandwidth + profile.Bandwidth > allowedBandwidth)
+            bool fighter = profile.FighterGroup != 0;
+            if (!qualified || !fighter && (controlledCount >= allowedCount || controlledBandwidth + profile.Bandwidth > allowedBandwidth))
             {
                 Release(drone);
                 released = true;
                 continue;
             }
-            controlledCount++;
-            controlledBandwidth += profile.Bandwidth;
+            if (!fighter)
+            {
+                controlledCount++;
+                controlledBandwidth += profile.Bandwidth;
+            }
             var anchor = AdvanceDelegation(world, catalog, pilot, drone, contact, systemId, now);
             contact = contact with
             {
@@ -712,9 +801,16 @@ internal sealed partial class PilotDroneStore(
             {
                 continue;
             }
-            if (profile.Utility is not null)
+            if (profile.Utility is { } utility)
             {
                 RequireResident();
+                if (protection && utility.Offensive)
+                {
+                    CancelWork(world, drone);
+                    drone.Activity = DroneActivity.Idle;
+                    drone.TargetId = ship.Id;
+                    continue;
+                }
                 if (AdvanceWork(world, catalog, pilot, drone, contact, controlRange, now, stamp, changes))
                 {
                     continue;
@@ -723,7 +819,9 @@ internal sealed partial class PilotDroneStore(
             // One bounded step per observed interval. Offline/late callbacks never replay combat.
             double seconds = Math.Min(1, (now - drone.UpdatedAt) / (double)TimeSpan.TicksPerSecond);
             if (
-                profile.Damage.Total > 0
+                !fighter
+                && !protection
+                && profile.Damage.Total > 0
                 && drone.DelegationMode == DroneDelegationMode.None
                 && drone.Activity == DroneActivity.Idle
                 && settings.Aggressive
@@ -771,6 +869,7 @@ internal sealed partial class PilotDroneStore(
                     || npc.RetiredAt.HasValue
                     || npc.Navigation == NpcNavigationState.Warping
                     || npc.SystemId != drone.SystemId
+                    || !MilitiaHubStore.CanAttack(world, npc, pilot)
                     || drone.DelegationMode != DroneDelegationMode.None
                         && Position(source).DistanceTo(NpcMotion.Position(npc)) > controlRange
                 )
@@ -800,8 +899,12 @@ internal sealed partial class PilotDroneStore(
                     structure = null;
                 }
             }
+            var companion =
+                profile.SpaceSuperiority && drone.Activity == DroneActivity.Fighting
+                    ? FighterTarget(world, catalog, pilot, drone.TargetId, systemId, now)
+                    : null;
             var victim =
-                npc is null && structure is null && drone.Activity == DroneActivity.Fighting
+                npc is null && structure is null && companion is null && drone.Activity == DroneActivity.Fighting
                     ? FindVictim(world, catalog, pilot, drone.TargetId, systemId, now)
                     : null;
             var victimContact = victim is null ? null : FindContact(world, victim, systemId, now);
@@ -814,33 +917,37 @@ internal sealed partial class PilotDroneStore(
                 victimContact = null;
             }
             AggressionDecision? decision = null;
-            if (victimContact is not null)
+            if (victimContact is not null || companion is not null)
             {
                 try
                 {
-                    decision = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim!, systemId, now);
+                    decision = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, companion?.Owner ?? victim!, systemId, now);
                 }
                 catch (InvalidDataException)
                 {
+                    companion = null;
                     victimContact = null;
                 }
             }
-            if (npc is null && structure is null && victimContact is null && drone.Activity == DroneActivity.Fighting)
+            if (npc is null && structure is null && companion is null && victimContact is null && drone.Activity == DroneActivity.Fighting)
             {
                 drone.Activity = DroneActivity.Idle;
                 drone.TargetId = anchor?.ShipId ?? ship.Id;
             }
             var target =
-                structure is not null ? StructureCombatTargets.Position(structure)
+                companion is not null ? companion.Contact.Position
+                : structure is not null ? StructureCombatTargets.Position(structure)
                 : npc is null ? victimContact?.Position ?? anchor?.Position ?? Position(source)
                 : NpcMotion.Position(npc);
-            float radius = (float)(
-                catalog
-                    .FittingType(structure?.TypeId ?? npc?.TypeId ?? (victimContact is null ? ship.TypeId : victim!.ActiveShip.TypeId))
-                    ?.Radius
-                ?? 0
-            );
-            if (npc is null && structure is null && victimContact is null && anchor is not null)
+            float radius =
+                companion?.Contact.Profile.Radius
+                ?? (float)(
+                    catalog
+                        .FittingType(structure?.TypeId ?? npc?.TypeId ?? (victimContact is null ? ship.TypeId : victim!.ActiveShip.TypeId))
+                        ?.Radius
+                    ?? 0
+                );
+            if (npc is null && structure is null && companion is null && victimContact is null && anchor is not null)
             {
                 radius = (float)anchor.Radius;
             }
@@ -859,12 +966,15 @@ internal sealed partial class PilotDroneStore(
                 double available =
                     shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity)
                     - InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.DroneBay);
-                if (available >= profile.Volume)
+                if (fighter || available >= profile.Volume)
                 {
                     var item = world.Set<OwnedItem>().Find(drone.ItemId)!;
                     var previous = PilotInventoryStore.Read(catalog, item);
                     item.LocationId = ship.Id;
-                    item.FlagId = (int)InventoryFlag.DroneBay;
+                    if (!fighter)
+                    {
+                        item.FlagId = (int)InventoryFlag.DroneBay;
+                    }
                     Stow(world, drone);
                     changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
                     continue;
@@ -902,8 +1012,9 @@ internal sealed partial class PilotDroneStore(
             );
             drone.UpdatedAt = now;
             if (
-                profile.Damage.Total <= 0
-                || npc is null && structure is null && victimContact is null
+                protection
+                || profile.Damage.Total <= 0
+                || npc is null && structure is null && companion is null && victimContact is null
                 || drone.ReadyAt > now
                 || contact.Position.DistanceTo(target) - radius - profile.Radius > profile.Optimal + profile.Falloff * 2
             )
@@ -911,24 +1022,49 @@ internal sealed partial class PilotDroneStore(
                 continue;
             }
             var attributes =
-                structure is not null ? catalog.FittingAttributes(structure.TypeId)
+                companion is not null ? catalog.FittingAttributes(companion.Contact.Profile.TypeId)
+                : structure is not null ? catalog.FittingAttributes(structure.TypeId)
                 : npc is null ? PilotFittingStore.ShipAttributes(world, catalog, victim!.Id)
                 : PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
             var damage = DroneRules.Shot(
                 contact,
                 target,
-                structure is not null ? SpacePosition.Zero
+                companion is not null ? companion.Contact.Velocity
+                    : structure is not null ? SpacePosition.Zero
                     : npc is null ? victimContact!.Velocity
                     : NpcMotion.Velocity(npc),
-                attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+                attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius) * (companion?.Contact.MobilitySignatureMultiplier ?? 1),
                 rolls is not null && rolls.TryGetValue(drone.ItemId, out double roll)
                     ? roll
                     : RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
                 radius
             );
+            if (profile.SpaceSuperiority)
+            {
+                damage = damage.Scale(
+                    attributes.GetValueOrDefault(
+                        DogmaAttributeId.AntiFighterMissileResistance,
+                        FighterCombatCatalog.DefaultAntiFighterResistance
+                    )
+                );
+            }
             drone.ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
             DroneHit hit;
-            if (structure is not null)
+            if (companion is not null)
+            {
+                CrimewatchPersistence.Player(world, catalog, pilot.Id, companion.Owner.Id, systemId, decision!, now, drone.ReadyAt);
+                var result = SmartbombStore.DamageDrone(world, companion.Row, companion.Contact, damage, now);
+                hit = new(
+                    drone.ItemId,
+                    profile.TypeId,
+                    companion.Row.ItemId,
+                    result.Applied,
+                    damage,
+                    result.Health,
+                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
+                );
+            }
+            else if (structure is not null)
             {
                 StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, drone.ReadyAt);
                 var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now);
@@ -939,7 +1075,7 @@ internal sealed partial class PilotDroneStore(
                     result.Applied,
                     damage,
                     result.Health,
-                    damage.Total / profile.Damage.Total
+                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
                 );
             }
             else if (npc is null)
@@ -953,7 +1089,15 @@ internal sealed partial class PilotDroneStore(
             {
                 var result = NpcDamagePersistence.Apply(world, catalog, npc, pilot, ship.Id, attributes, damage, now, profile.TypeId);
                 CrimewatchPersistence.Npc(world, pilot.Id, systemId, drone.ReadyAt);
-                hit = new(drone.ItemId, profile.TypeId, npc.Id, result.Applied, damage, result.Health, damage.Total / profile.Damage.Total);
+                hit = new(
+                    drone.ItemId,
+                    profile.TypeId,
+                    npc.Id,
+                    result.Applied,
+                    damage,
+                    result.Health,
+                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
+                );
             }
             drone.ShotAt = now;
             drone.ShotTargetId = hit.TargetId;
@@ -1011,14 +1155,33 @@ internal sealed partial class PilotDroneStore(
         drone.VelocityX = drone.VelocityY = drone.VelocityZ = 0;
     }
 
-    public void Release(long pilotId, long shipId)
+    public void Release(long pilotId, long shipId) => ReleaseControl(pilotId, shipId, disconnecting: false);
+
+    public void Disconnect(long pilotId, long shipId) => ReleaseControl(pilotId, shipId, disconnecting: true);
+
+    private void ReleaseControl(long pilotId, long shipId, bool disconnecting)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
-        var world = transaction.World;
-        foreach (var drone in world.Set<WorldDrone>().Where(d => d.PilotId == pilotId && d.ControllerShipId == shipId))
-        {
-            Release(drone);
-        }
+        Release(transaction.World, pilotId, shipId, disconnecting);
         transaction.Commit();
+    }
+
+    internal static void Release(WorldAction world, long pilotId, long shipId, bool disconnecting = false)
+    {
+        foreach (var drone in world.Filter<WorldDrone>(d => d.PilotId == pilotId && d.ControllerShipId == shipId))
+        {
+            Abandon(world, drone);
+            if (disconnecting && world.Set<OwnedItem>().Find(drone.ItemId) is { } item && FighterDeckRules.IsTube(item.FlagId))
+            {
+                drone.ControllerShipId = shipId;
+                drone.TargetId = shipId;
+            }
+        }
+    }
+
+    internal static void Abandon(WorldAction world, WorldDrone drone)
+    {
+        CancelWork(world, drone);
+        Release(drone);
     }
 }

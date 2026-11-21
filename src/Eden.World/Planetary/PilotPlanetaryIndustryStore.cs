@@ -11,6 +11,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Planetary;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Economy;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -62,12 +63,32 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
             "planetary industry"
         );
 
+    private static long Pay(
+        WorldAction world,
+        int? sponsor,
+        long pilot,
+        long counterparty,
+        long context,
+        WalletEntryType kind,
+        long cents,
+        long now
+    )
+    {
+        if (sponsor is not int corporation)
+        {
+            return EconomicStore.Pay(world, pilot, counterparty, context, kind, cents, now);
+        }
+        return cents == 0
+            ? world.Set<Eden.Data.World.Corporations.SavedCorporation>().Find(corporation)!.BalanceCents
+            : CorporationWalletStore.Pay(world, corporation, counterparty, context, kind, -cents, now);
+    }
+
     internal static PlanetaryColony ReadState(SavedPlanetaryColony saved) =>
         JsonSerializer.Deserialize<PlanetaryColony>(saved.StateJson) ?? throw new InvalidDataException("Invalid saved planetary colony.");
 
     internal static void Save(SavedPlanetaryColony saved, PlanetaryColony colony) => saved.StateJson = JsonSerializer.Serialize(colony);
 
-    private PlanetaryColony Advance(SavedPlanetaryColony saved, PlanetaryCatalog catalog, long now)
+    internal PlanetaryColony Advance(SavedPlanetaryColony saved, PlanetaryCatalog catalog, long now)
     {
         var colony = PlanetarySimulation.Advance(ReadState(saved), catalog, now, database.Settings.PlanetaryIndustry);
         Save(saved, colony);
@@ -189,118 +210,120 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
     public PlanetaryChange Update(long pilotId, int planetId, IReadOnlyList<PlanetaryCommand> commands) =>
         Write(
             pilotId,
-            (world, catalog, now) =>
-            {
-                var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
-                var definitions = PlanetaryCatalogReader.Read(catalog);
-                var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
-                if (!planet.Colonizable || pilot.Account.CloneGrade != AccountCloneGrade.Omega)
-                {
-                    throw new InvalidDataException("Planetary colonies require an Omega pilot and a colonizable planet.");
-                }
-                training.Advance(world, pilotId, now);
-                var saved = world.Set<SavedPlanetaryColony>().Find(pilotId, planetId);
-                string hash = Convert.ToHexStringLower(
-                    SHA256.HashData(
-                        Encoding.UTF8.GetBytes(
-                            string.Join('\n', commands.Select(c => c.GetType().Name + ":" + JsonSerializer.Serialize(c, c.GetType())))
-                        )
-                    )
-                );
-                if (
-                    saved is not null
-                    && saved.LastEditHash == hash
-                    && now >= saved.LastEditAt
-                    && now - saved.LastEditAt <= 30 * TimeSpan.TicksPerSecond
-                )
-                {
-                    return new PlanetaryChange(Advance(saved, definitions, now), []);
-                }
-                var state = saved is null ? PlanetaryRules.Empty(pilotId, planetId, now) : Advance(saved, definitions, now);
-                var centers = commands
-                    .OfType<CreatePlanetaryPin>()
-                    .Where(c => PlanetaryRules.PinType(definitions, c.TypeId).Kind == PlanetaryPinKind.Command)
-                    .ToArray();
-                List<InventoryChange> changes = [];
-                if (saved is null)
-                {
-                    if (
-                        centers.Length != 1
-                        || pilot.ActiveShip.Position is not { } position
-                        || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != planet.SystemId
-                    )
-                    {
-                        throw new InvalidDataException("Deploy a command center from a ship in the planet's solar system.");
-                    }
-                    int colonies = world.Filter<SavedPlanetaryColony>(c => c.PilotId == pilotId).Count();
-                    int limit = PlanetaryRules.PlanetLimit(
-                        database.Settings.PlanetaryIndustry,
-                        PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.InterplanetaryConsolidationSkill)
-                    );
-                    if (colonies >= limit)
-                    {
-                        throw new InvalidDataException($"This pilot has reached the planetary colony limit of {limit} planets.");
-                    }
-                    var center = centers[0];
-                    if (
-                        center.Pin.TemporaryKind != 0
-                        || world.Set<OwnedItem>().Find(center.Pin.Value) is not { } item
-                        || item.OwnerId != pilotId
-                        || item.LocationId != pilot.ActiveShipId
-                        || item.TypeId != center.TypeId
-                        || item.FlagId is not ((int)InventoryFlag.Cargo) and not ((int)InventoryFlag.CommandCenterHold)
-                        || item.Singleton
-                        || item.Quantity < 1
-                    )
-                    {
-                        throw new InvalidDataException("Carry the correct command center in your ship's cargo or command-center hold.");
-                    }
-                    var previous = PilotInventoryStore.Read(catalog, item);
-                    item.Quantity--;
-                    changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
-                    if (item.Quantity == 0)
-                    {
-                        world.Remove(item);
-                    }
-                }
-                else if (centers.Length != 0)
-                {
-                    throw new InvalidDataException("This planet already has your command center.");
-                }
-                var identity = world.Set<SavedPlanetaryIdentity>().Find(1)!;
-                state = state with { NextPin = identity.NextPinId };
-                var result = PlanetaryRules.Edit(
-                    state,
-                    planet,
-                    definitions,
-                    commands,
-                    PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.CommandCenterUpgradesSkill),
-                    now,
-                    database.Settings.PlanetaryIndustry
-                );
-                foreach (var create in commands.OfType<CreatePlanetaryPin>())
-                {
-                    PilotSkillReader.CheckRequirements(world, catalog, pilotId, create.TypeId);
-                }
-                long balance = EconomicStore.Pay(
-                    world,
-                    pilotId,
-                    planetId,
-                    planetId,
-                    WalletEntryType.PlanetaryConstruction,
-                    result.CostCents,
-                    now
-                );
-                identity.NextPinId = result.Colony.NextPin;
-                saved ??= world.Add(new SavedPlanetaryColony { PilotId = pilotId, PlanetId = planetId }).Entity;
-                Save(saved, result.Colony);
-                saved.LastEditHash = hash;
-                saved.LastEditAt = now;
-                PlanetaryOrbitStore.EnsureOffice(world, planet);
-                return new PlanetaryChange(result.Colony, changes, balance);
-            },
+            (world, catalog, now) => Update(world, catalog, pilotId, planetId, commands, now),
             (_, catalog) => PlanetaryCatalogReader.Planet(catalog, planetId).SystemId
         );
+
+    internal PlanetaryChange Update(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int planetId,
+        IReadOnlyList<PlanetaryCommand> commands,
+        long now,
+        int? sponsor = null
+    )
+    {
+        var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
+        var definitions = PlanetaryCatalogReader.Read(catalog);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
+        if (!planet.Colonizable || pilot.Account.CloneGrade != AccountCloneGrade.Omega)
+        {
+            throw new InvalidDataException("Planetary colonies require an Omega pilot and a colonizable planet.");
+        }
+        training.Advance(world, pilotId, now);
+        var saved = world.Set<SavedPlanetaryColony>().Find(pilotId, planetId);
+        string hash = Convert.ToHexStringLower(
+            SHA256.HashData(
+                Encoding.UTF8.GetBytes(
+                    string.Join('\n', commands.Select(c => c.GetType().Name + ":" + JsonSerializer.Serialize(c, c.GetType())))
+                )
+            )
+        );
+        if (
+            saved is not null
+            && saved.LastEditHash == hash
+            && now >= saved.LastEditAt
+            && now - saved.LastEditAt <= 30 * TimeSpan.TicksPerSecond
+        )
+        {
+            return new PlanetaryChange(Advance(saved, definitions, now), []);
+        }
+        var state = saved is null ? PlanetaryRules.Empty(pilotId, planetId, now) : Advance(saved, definitions, now);
+        var centers = commands
+            .OfType<CreatePlanetaryPin>()
+            .Where(c => PlanetaryRules.PinType(definitions, c.TypeId).Kind == PlanetaryPinKind.Command)
+            .ToArray();
+        List<InventoryChange> changes = [];
+        if (saved is null)
+        {
+            if (
+                centers.Length != 1
+                || pilot.ActiveShip.Position is not { } position
+                || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != planet.SystemId
+            )
+            {
+                throw new InvalidDataException("Deploy a command center from a ship in the planet's solar system.");
+            }
+            int colonies = world.Filter<SavedPlanetaryColony>(c => c.PilotId == pilotId).Count();
+            int limit = PlanetaryRules.PlanetLimit(
+                database.Settings.PlanetaryIndustry,
+                PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.InterplanetaryConsolidationSkill)
+            );
+            if (colonies >= limit)
+            {
+                throw new InvalidDataException($"This pilot has reached the planetary colony limit of {limit} planets.");
+            }
+            var center = centers[0];
+            if (
+                center.Pin.TemporaryKind != 0
+                || world.Set<OwnedItem>().Find(center.Pin.Value) is not { } item
+                || item.OwnerId != pilotId
+                || item.LocationId != pilot.ActiveShipId
+                || item.TypeId != center.TypeId
+                || item.FlagId is not ((int)InventoryFlag.Cargo) and not ((int)InventoryFlag.CommandCenterHold)
+                || item.Singleton
+                || item.Quantity < 1
+            )
+            {
+                throw new InvalidDataException("Carry the correct command center in your ship's cargo or command-center hold.");
+            }
+            var previous = PilotInventoryStore.Read(catalog, item);
+            item.Quantity--;
+            changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
+            if (item.Quantity == 0)
+            {
+                world.Remove(item);
+            }
+        }
+        else if (centers.Length != 0)
+        {
+            throw new InvalidDataException("This planet already has your command center.");
+        }
+        var identity = world.Set<SavedPlanetaryIdentity>().Find(1)!;
+        state = state with { NextPin = identity.NextPinId };
+        var result = PlanetaryRules.Edit(
+            state,
+            planet,
+            definitions,
+            commands,
+            PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.CommandCenterUpgradesSkill),
+            now,
+            database.Settings.PlanetaryIndustry
+        );
+        foreach (var create in commands.OfType<CreatePlanetaryPin>())
+        {
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, create.TypeId);
+        }
+        long balance = Pay(world, sponsor, pilotId, planetId, planetId, WalletEntryType.PlanetaryConstruction, result.CostCents, now);
+        identity.NextPinId = result.Colony.NextPin;
+        saved ??= world.Add(new SavedPlanetaryColony { PilotId = pilotId, PlanetId = planetId }).Entity;
+        Save(saved, result.Colony);
+        saved.LastEditHash = hash;
+        saved.LastEditAt = now;
+        PlanetaryOrbitStore.EnsureOffice(world, planet);
+        return new PlanetaryChange(result.Colony, changes, balance);
+    }
 
     public void Abandon(long pilotId, int planetId) =>
         Write(
@@ -531,112 +554,109 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         long pinId,
         IReadOnlyList<PlanetaryCargoRequest> imports,
         IReadOnlyList<PlanetaryCommodity> exports
-    ) =>
-        Write(
-            pilotId,
-            (world, catalog, now) =>
+    ) => Write(pilotId, (world, catalog, now) => ImportExport(world, catalog, pilotId, officeId, pinId, imports, exports, now));
+
+    internal PlanetaryChange ImportExport(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long officeId,
+        long pinId,
+        IReadOnlyList<PlanetaryCargoRequest> imports,
+        IReadOnlyList<PlanetaryCommodity> exports,
+        long now,
+        int? sponsor = null
+    )
+    {
+        RequireOmega(world, pilotId);
+        PlanetaryOrbitStore.Read(world, catalog, pilotId, officeId, now);
+        int planetId = PlanetaryRules.OfficePlanet(officeId);
+        var saved = Require(world, pilotId, planetId);
+        var definitions = PlanetaryCatalogReader.Read(catalog);
+        var colony = Advance(saved, definitions, now);
+        var pin = PlanetaryRules.Pin(colony, pinId);
+        if (
+            definitions.Pins[pin.TypeId].Kind != PlanetaryPinKind.Spaceport
+            || imports.Count + exports.Count == 0
+            || imports.Count > 128
+            || imports.Select(i => i.ItemId).Distinct().Count() != imports.Count
+        )
+        {
+            throw new InvalidDataException("Choose a launchpad and distinct import/export quantities.");
+        }
+        var imported = new List<PlanetaryCommodity>();
+        var changes = new List<InventoryChange>();
+        foreach (var import in imports)
+        {
+            var item = world.Set<OwnedItem>().Find(import.ItemId);
+            if (
+                item is null
+                || item.OwnerId != pilotId
+                || item.LocationId != officeId
+                || item.FlagId != (int)InventoryFlag.Hangar
+                || import.Quantity <= 0
+                || import.Quantity > item.Quantity
+                || !definitions.Volumes.ContainsKey(item.TypeId)
+            )
             {
-                RequireOmega(world, pilotId);
-                PlanetaryOrbitStore.Read(world, catalog, pilotId, officeId, now);
-                int planetId = PlanetaryRules.OfficePlanet(officeId);
-                var saved = Require(world, pilotId, planetId);
-                var definitions = PlanetaryCatalogReader.Read(catalog);
-                var colony = Advance(saved, definitions, now);
-                var pin = PlanetaryRules.Pin(colony, pinId);
-                if (
-                    definitions.Pins[pin.TypeId].Kind != PlanetaryPinKind.Spaceport
-                    || imports.Count + exports.Count == 0
-                    || imports.Count > 128
-                    || imports.Select(i => i.ItemId).Distinct().Count() != imports.Count
-                )
-                {
-                    throw new InvalidDataException("Choose a launchpad and distinct import/export quantities.");
-                }
-                var imported = new List<PlanetaryCommodity>();
-                var changes = new List<InventoryChange>();
-                foreach (var import in imports)
-                {
-                    var item = world.Set<OwnedItem>().Find(import.ItemId);
-                    if (
-                        item is null
-                        || item.OwnerId != pilotId
-                        || item.LocationId != officeId
-                        || item.FlagId != (int)InventoryFlag.Hangar
-                        || import.Quantity <= 0
-                        || import.Quantity > item.Quantity
-                        || !definitions.Volumes.ContainsKey(item.TypeId)
-                    )
-                    {
-                        throw new InvalidDataException("Those imports are unavailable in your customs office compartment.");
-                    }
-                    imported.Add(new(item.TypeId, import.Quantity));
-                    var previous = PilotInventoryStore.Read(catalog, item);
-                    item.Quantity -= import.Quantity;
-                    changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
-                    if (item.Quantity == 0)
-                    {
-                        world.Remove(item);
-                    }
-                }
-                imported = imported
-                    .GroupBy(i => i.TypeId)
-                    .Select(g => new PlanetaryCommodity(g.Key, checked(g.Sum(i => i.Quantity))))
-                    .ToList();
-                if (exports.Count > 0)
-                {
-                    colony = PlanetarySimulation.Remove(colony, pinId, exports);
-                }
-                if (imported.Count > 0)
-                {
-                    colony = PlanetarySimulation.Deposit(colony, definitions, pinId, imported, database.Settings.PlanetaryIndustry);
-                }
-                double rate = PlanetaryRules.CustomsTaxRate(database.Settings.PlanetaryIndustry);
-                long importTax = PlanetaryRules.TaxCents(definitions, imported, rate, import: true);
-                long exportTax = PlanetaryRules.TaxCents(definitions, exports, rate);
-                EconomicStore.Pay(
-                    world,
-                    pilotId,
-                    PlanetaryOrbitStore.InterbusCorporation,
-                    planetId,
-                    WalletEntryType.PlanetaryImportTax,
-                    importTax,
-                    now
-                );
-                long balance = EconomicStore.Pay(
-                    world,
-                    pilotId,
-                    PlanetaryOrbitStore.InterbusCorporation,
-                    planetId,
-                    WalletEntryType.PlanetaryExportTax,
-                    exportTax,
-                    now
-                );
-                foreach (var export in exports)
-                {
-                    changes.Add(
-                        InventoryPersistence.MergeOutput(
-                            world,
-                            catalog,
-                            pilotId,
-                            officeId,
-                            (int)InventoryFlag.Hangar,
-                            export.TypeId,
-                            export.Quantity
-                        )
-                    );
-                }
-                // Capacity reductions preserve saved cargo. Net withdrawals remain legal
-                // even when the office is still over its new limit after this transfer.
-                double addedVolume =
-                    exports.Sum(i => definitions.Volumes[i.TypeId] * i.Quantity)
-                    - imported.Sum(i => definitions.Volumes[i.TypeId] * i.Quantity);
-                if (addedVolume > InventoryDefinitions.ResourceTolerance)
-                {
-                    PlanetaryOrbitStore.CheckOfficeCapacity(world, catalog, pilotId, officeId, database.Settings.PlanetaryIndustry);
-                }
-                colony = PlanetarySimulation.Advance(colony, definitions, now, database.Settings.PlanetaryIndustry);
-                Save(saved, colony);
-                return new PlanetaryChange(colony, changes, balance);
+                throw new InvalidDataException("Those imports are unavailable in your customs office compartment.");
             }
+            imported.Add(new(item.TypeId, import.Quantity));
+            var previous = PilotInventoryStore.Read(catalog, item);
+            item.Quantity -= import.Quantity;
+            changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
+            if (item.Quantity == 0)
+            {
+                world.Remove(item);
+            }
+        }
+        imported = imported.GroupBy(i => i.TypeId).Select(g => new PlanetaryCommodity(g.Key, checked(g.Sum(i => i.Quantity)))).ToList();
+        if (exports.Count > 0)
+        {
+            colony = PlanetarySimulation.Remove(colony, pinId, exports);
+        }
+        if (imported.Count > 0)
+        {
+            colony = PlanetarySimulation.Deposit(colony, definitions, pinId, imported, database.Settings.PlanetaryIndustry);
+        }
+        double rate = PlanetaryRules.CustomsTaxRate(database.Settings.PlanetaryIndustry);
+        long importTax = PlanetaryRules.TaxCents(definitions, imported, rate, import: true);
+        long exportTax = PlanetaryRules.TaxCents(definitions, exports, rate);
+        Pay(world, sponsor, pilotId, PlanetaryOrbitStore.InterbusCorporation, planetId, WalletEntryType.PlanetaryImportTax, importTax, now);
+        long balance = Pay(
+            world,
+            sponsor,
+            pilotId,
+            PlanetaryOrbitStore.InterbusCorporation,
+            planetId,
+            WalletEntryType.PlanetaryExportTax,
+            exportTax,
+            now
         );
+        foreach (var export in exports)
+        {
+            changes.Add(
+                InventoryPersistence.MergeOutput(
+                    world,
+                    catalog,
+                    pilotId,
+                    officeId,
+                    (int)InventoryFlag.Hangar,
+                    export.TypeId,
+                    export.Quantity
+                )
+            );
+        }
+        // Capacity reductions preserve saved cargo. Net withdrawals remain legal
+        // even when the office is still over its new limit after this transfer.
+        double addedVolume =
+            exports.Sum(i => definitions.Volumes[i.TypeId] * i.Quantity) - imported.Sum(i => definitions.Volumes[i.TypeId] * i.Quantity);
+        if (addedVolume > InventoryDefinitions.ResourceTolerance)
+        {
+            PlanetaryOrbitStore.CheckOfficeCapacity(world, catalog, pilotId, officeId, database.Settings.PlanetaryIndustry);
+        }
+        colony = PlanetarySimulation.Advance(colony, definitions, now, database.Settings.PlanetaryIndustry);
+        Save(saved, colony);
+        return new PlanetaryChange(colony, changes, balance);
+    }
 }

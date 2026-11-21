@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Eden.Server.Administration;
 
@@ -34,7 +35,8 @@ internal static class AdministrationHost
         int port = DefaultPort,
         string? publicOrigin = null,
         IPAddress? listenAddress = null,
-        string? certificatePath = null
+        string? certificatePath = null,
+        WorldWipeRequest? worldWipe = null
     )
     {
         if (port is < 0 or > 65535)
@@ -67,6 +69,14 @@ internal static class AdministrationHost
         builder.Configuration.Sources.Clear();
         builder.WebHost.UseStaticWebAssets();
         builder.Logging.ClearProviders();
+        // Blazor handles circuit exceptions internally and reports them through the framework logger.
+        builder.Logging.SetMinimumLevel(LogLevel.None);
+        builder.Logging.AddFilter("Microsoft.AspNetCore.Components.Server.Circuits", LogLevel.Warning);
+        builder.Logging.AddConsole(options =>
+        {
+            options.LogToStandardErrorThreshold = LogLevel.Warning;
+            options.QueueFullMode = ConsoleLoggerQueueFullMode.DropWrite;
+        });
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Limits.MaxRequestBodySize = 8 * 1024 * 1024;
@@ -84,11 +94,15 @@ internal static class AdministrationHost
             }
         });
         builder.Services.AddSingleton(administrators);
+        builder.Services.AddSingleton(worldWipe ?? new WorldWipeRequest(worldPath));
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         );
         builder.Services.AddSingleton(worldServices.GetRequiredService<IWorldConfiguration>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<WorldDatabase>());
+        builder.Services.AddSingleton<OptionalDataImporter>();
+        builder.Services.AddSingleton<OptionalDataImports>();
+        builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
         builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
         builder.Services.AddScoped<AdministrationOperations>();
@@ -97,6 +111,7 @@ internal static class AdministrationHost
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
+        builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Capsuleers.CapsuleerCorporationIdentityStore>());
         builder.Services.AddSingleton(
             new ServerPerformanceMonitor(
                 TimeProvider.System,
@@ -106,7 +121,8 @@ internal static class AdministrationHost
                     new(
                         worldServices.GetRequiredService<ICapsuleerDiagnostics>().Read(),
                         worldServices.GetRequiredService<ICapsuleerScene>().MaterializedPilots
-                    )
+                    ),
+                frames: worldServices.GetService<Eden.Infrastructure.Diagnostics.SessionFrameMonitor>()
             )
         );
         var protection = builder
@@ -279,7 +295,61 @@ internal static class AdministrationHost
             (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken }
         );
         api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
+        api.MapPost(
+            "/optional-data/{dataset}",
+            async (string dataset, ClaimsPrincipal user, AdministrationOperations operations) =>
+            {
+                var source = dataset switch
+                {
+                    "market" => OptionalDataset.Market,
+                    "traffic" => OptionalDataset.Traffic,
+                    _ => (OptionalDataset?)null,
+                };
+                if (source is null)
+                {
+                    return Results.NotFound();
+                }
+                await operations.StartOptionalDataImport(user, source.Value);
+                return Results.Redirect("/optional-data");
+            }
+        );
+        api.MapPost(
+            "/world/wipe",
+            async (HttpContext context, AdministrationOperations operations, WorldWipeRequest wipe) =>
+            {
+                var form = await context.Request.ReadFormAsync();
+                var plan = await operations.WipeWorld(context.User, form["confirmation"].ToString(), wipe);
+                context.Response.OnCompleted(wipe.BeginShutdown);
+                string backup = WebUtility.HtmlEncode(plan.BackupDirectory);
+                return Results.Content(
+                    "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>World wipe requested</title>"
+                        + "<h1>World wipe requested</h1><p>Eden is stopping. The wipe will run only after a successful shutdown "
+                        + "and verified backup.</p><p>Backup directory: <code>"
+                        + backup
+                        + "</code></p>"
+                        + "<p>Wait for the server console to report completion before restarting. "
+                        + "If it reports a failure, keep the server stopped and inspect the error.</p></html>",
+                    "text/html"
+                );
+            }
+        );
         api.MapGet("/population", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Population(user));
+        api.MapGet(
+            "/population/corporations/{id:int}/name",
+            (ClaimsPrincipal user, AdministrationOperations operations, int id) => operations.PreviewCorporationName(user, id)
+        );
+        api.MapGet(
+            "/population/corporations/{id:int}/roster",
+            (ClaimsPrincipal user, AdministrationOperations operations, int id) => operations.CorporationRoster(user, id)
+        );
+        api.MapPost(
+            "/population/corporations/name",
+            async (
+                ClaimsPrincipal user,
+                AdministrationOperations operations,
+                Eden.World.Capsuleers.CapsuleerCorporationNamePreview preview
+            ) => await operations.ApplyCorporationName(user, preview) ? Results.NoContent() : Results.Conflict()
+        );
         api.MapGet("/mods", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Mods(user));
         api.MapPost(
             "/mods/install",

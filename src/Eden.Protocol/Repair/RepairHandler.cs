@@ -30,6 +30,7 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
         }
         try
         {
+            bool structureRepair = method == "RepairItemsInStructure";
             if (standing)
             {
                 repair.CheckStation(context.Pilot.PilotId, context.Pilot.DockedLocationId);
@@ -37,7 +38,7 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
             }
             if (args.FirstOrDefault() is not List<object?> items || !items.All(i => i is long))
             {
-                return PilotCallResult.Unsupported;
+                return structureRepair ? new PilotCallResult.Failure("Select assembled items to repair.") : PilotCallResult.Unsupported;
             }
             var ids = items.Cast<long>().ToArray();
             if (method == "GetRepairQuotes" && args.Length == 1)
@@ -47,20 +48,41 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
                         .Quotes(context.Pilot.PilotId, context.Pilot.DockedLocationId, ids)
                         .ToDictionary(
                             p => p.Key,
-                            p => new BlueList<RepairQuoteReply>(p.Value.Select(q => new RepairQuoteReply(q)).ToArray())
+                            p => new BlueList<RepairQuoteReply>(
+                                p.Value.Select(q => new RepairQuoteReply(q, context.Pilot.InStructure)).ToArray()
+                            )
                         )
                 );
             }
-            if (method != "RepairItemsInStation" || args.Length != 2 || args[1] is not (double or long))
+            if (structureRepair && (args.Length != 1 || keywords is { Count: > 0 } || ids.Any(id => id <= 0)))
+            {
+                return new PilotCallResult.Failure("Supply one list of positive item IDs for structure repairs.");
+            }
+            if (!structureRepair && (method != "RepairItemsInStation" || args.Length != 2 || args[1] is not (double or long)))
             {
                 return PilotCallResult.Unsupported;
             }
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-            long payment = RepairDefinitions.PaymentCents(args[1] is double amount ? amount : (long)args[1]!);
-            var result = repair.Repair(context.Pilot.PilotId, context.Pilot.DockedLocationId, ids, payment, now);
-            context.Notifications.Add(
-                new AccountBalanceChanged(context.Pilot.PilotId, (double)result.BalanceCents / MarketDefinitions.CentsPerIsk)
-            );
+            var pilot = context.Pilot;
+            if (structureRepair && !pilot.InStructure)
+            {
+                return new PilotCallResult.Failure("Dock in an Upwell structure to use free repairs.");
+            }
+            var result = structureRepair
+                ? repair.RepairInStructure(pilot.PilotId, pilot.DockedLocationId, ids, now)
+                : repair.Repair(
+                    pilot.PilotId,
+                    pilot.DockedLocationId,
+                    ids,
+                    RepairDefinitions.PaymentCents(args[1] is double amount ? amount : (long)args[1]!),
+                    now
+                );
+            if (!structureRepair)
+            {
+                context.Notifications.Add(
+                    new AccountBalanceChanged(pilot.PilotId, (double)result.BalanceCents / MarketDefinitions.CentsPerIsk)
+                );
+            }
             if (result.Ships.Any(s => s.ShipId == context.Pilot.ShipId))
             {
                 var current = health.Read(context.Pilot.PilotId, now);

@@ -174,23 +174,32 @@ internal sealed partial class LiveWorld
     {
         if (participants is null)
         {
-            return CapsuleerJobs.Keys.ToArray();
+            return CapsuleerJobs.Keys.Union(MinerCheckpoints.Keys).Union(HaulerCheckpoints.Keys).ToArray();
         }
         // Admission and settlement may precede scheduler registration.
         HashSet<long> pilots = [.. participants.Pilots];
         foreach (long ship in participants.Ships)
         {
-            if (_shipOwners.TryGetValue(ship, out long pilot) && CapsuleerJobs.ContainsKey(pilot))
+            if (_shipOwners.TryGetValue(ship, out long pilot) && HasCapsuleerState(pilot))
             {
                 pilots.Add(pilot);
             }
         }
-        foreach (var entry in _systems.Existing(participants.Systems))
+        foreach (int system in participants.Systems)
         {
-            pilots.UnionWith(entry.State.Capsuleers);
+            if (_capsuleersBySystem.TryGetValue(system, out var capsuleers))
+            {
+                pilots.UnionWith(capsuleers);
+            }
         }
         return pilots;
     }
+
+    internal long? CapsuleerPilot(long ship) =>
+        _shipOwners.TryGetValue(ship, out long pilot) && CapsuleerJobs.ContainsKey(pilot) ? pilot : null;
+
+    private bool HasCapsuleerState(long pilot) =>
+        CapsuleerJobs.ContainsKey(pilot) || MinerCheckpoints.ContainsKey(pilot) || HaulerCheckpoints.ContainsKey(pilot);
 
     internal void ProjectShared(TransactionParticipants? participants, WorldDbContext? target = null)
     {
@@ -252,38 +261,56 @@ internal sealed partial class LiveWorld
     internal int? CurrentSystem => _currentSystem.Value;
     private LiveSystemState Current => CurrentSystem is int system ? _systems.Get(system).State : _shared;
 
-    internal void AssignCapsuleer(
-        long pilot,
-        int? previous,
-        int system,
-        Eden.World.Capsuleers.CapsuleerMiner? miner,
-        Eden.World.Capsuleers.CapsuleerHauler? hauler
-    )
+    private readonly Dictionary<int, HashSet<long>> _capsuleersBySystem = [];
+
+    internal void TrackCapsuleer(long pilot, int? previous, int system)
     {
         if (!_ownershipMonitor.IsEntered)
         {
-            throw new InvalidOperationException("Moving a capsuleer runtime requires persistence coordination.");
+            throw new InvalidOperationException("Moving a capsuleer requires persistence coordination.");
         }
-        if (previous is int old && old != system)
+        if (previous is int old && old != system && _capsuleersBySystem.TryGetValue(old, out var prior))
         {
-            var prior = _systems.Get(old);
-            using var ownership = prior.Enter("capsuleer departure");
-            prior.State.Capsuleers.Remove(pilot);
-            prior.State.Miners.Remove(pilot);
-            prior.State.Haulers.Remove(pilot);
+            prior.Remove(pilot);
+            if (prior.Count == 0)
+            {
+                _capsuleersBySystem.Remove(old);
+            }
         }
-        var entry = _systems.Get(system);
-        using var arrival = entry.Enter("capsuleer admission");
-        entry.State.Capsuleers.Add(pilot);
-        entry.State.Miners.Remove(pilot);
-        entry.State.Haulers.Remove(pilot);
-        if (miner is not null)
+        if (!_capsuleersBySystem.TryGetValue(system, out var capsuleers))
         {
-            entry.State.Miners[pilot] = miner;
+            capsuleers = [];
+            _capsuleersBySystem.Add(system, capsuleers);
         }
-        if (hauler is not null)
+        capsuleers.Add(pilot);
+    }
+
+    internal void ReleaseCapsuleerDetails(long pilot, int system)
+    {
+        // Changes ahead of the checkpoint source still belong to the resident world.
+        // Keep their system membership for participant-scoped projection.
+        ReleaseIfProjected(pilot, CapsuleerJobs, ProjectedCapsuleerJobs);
+        ReleaseIfProjected(pilot, MinerCheckpoints, ProjectedMiners);
+        ReleaseIfProjected(pilot, HaulerCheckpoints, ProjectedHaulers);
+        if (
+            !HasCapsuleerState(pilot)
+            && !CapsuleerRoutines.HasPending(pilot)
+            && _capsuleersBySystem.TryGetValue(system, out var members)
+            && members.Remove(pilot)
+            && members.Count == 0
+        )
         {
-            entry.State.Haulers[pilot] = hauler;
+            _capsuleersBySystem.Remove(system);
+        }
+    }
+
+    private static void ReleaseIfProjected<T>(long pilot, Dictionary<long, T> current, Dictionary<long, T> projected)
+        where T : class
+    {
+        if (!current.TryGetValue(pilot, out var value) || EqualityComparer<T>.Default.Equals(value, projected.GetValueOrDefault(pilot)))
+        {
+            current.Remove(pilot);
+            projected.Remove(pilot);
         }
     }
 

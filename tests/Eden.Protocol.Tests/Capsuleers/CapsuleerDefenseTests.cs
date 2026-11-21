@@ -151,7 +151,9 @@ public sealed class CapsuleerDefenseTests
         }
         NavigationState navigation = new();
         var before = f.Health.Read(enemy.PilotId, f.Clock.Now);
+        f.Aggress();
         var locking = defense.Advance(pilot, navigation, null, f.Clock.Now, 0, [], proactive: target);
+        Assert.Equal(target!.ShipId, locking.State!.TargetId);
         Assert.Empty(locking.State!.Cycles);
         f.Clock.Milliseconds += (Assert.Single(locking.State.Locks).ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
         var fired = defense.Advance(locking.Pilot, navigation, locking.State, f.Clock.Now, 10, [], proactive: target);
@@ -370,6 +372,14 @@ public sealed class CapsuleerDefenseTests
         Assert.False(Enabled(DogmaEffect.SensorBooster, 19, true));
         Assert.False(Enabled(DogmaEffect.SensorBooster, 20, true));
         Assert.True(Enabled(DogmaEffect.SensorBooster, 21, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.ProjectileFired, 0, health, 0, 100, true, true, false, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.UseMissiles, 0, health, 0, 100, true, true, false, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.LaserFired, 1, health, 0, 100, true, true, true, true, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.LaserFired, 1, health, 1, 100, true, true, true, true, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.LaserFired, 1, health, 1, 100, true, true, false, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.WarpScrambler, 1, health, 1, 100, true, true, false, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.UseMissiles, 0, health, 0, 100, false, true, false, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.UseMissiles, 0, health, 0, 100, true, false, false, true));
     }
 
     [Fact]
@@ -382,9 +392,14 @@ public sealed class CapsuleerDefenseTests
         Assert.True(CapsuleerDefenseRules.CombatShip(HullClass.Corvette, 1, true));
         Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Hauler, 1, true));
         Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Frigate, 1, false));
+        Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Interceptor, 2, true));
+        Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Interceptor, 2, true, (int)GangFrigate.Wolf));
+        Assert.True(CapsuleerDefenseRules.CombatShip(HullClass.Interceptor, 2, true, (int)GangFrigate.Crow));
+        Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.AssaultFrigate, 2, false, (int)GangFrigate.Harpy));
         Assert.True(CapsuleerDefenseRules.Offensive(false, true, true));
         Assert.False(CapsuleerDefenseRules.Offensive(false, true, false));
-        Assert.False(CapsuleerDefenseRules.Offensive(true, true, true));
+        Assert.True(CapsuleerDefenseRules.Offensive(true, true, true));
+        Assert.False(CapsuleerDefenseRules.Offensive(true, true, false));
         HullDefense defense = new(100, 100, 100, 1000, new(1, 1, 1, 1), new(1, 1, 1, 1), new(1, 1, 1, 1));
         Assert.False(CapsuleerDefenseRules.Retreat(new(1, defense, new(0, 30, 75)), true));
         Assert.True(CapsuleerDefenseRules.Retreat(new(1, defense, new(0, 29, 75)), true));

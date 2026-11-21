@@ -149,7 +149,18 @@ internal sealed record DroneSlimItem(DroneContact Drone) : SlimItem
 {
     public override object ToBlue()
     {
-        var fields = Fields(Drone.Id, Drone.Profile.TypeId, Drone.PilotId, DroneRules.CombatDroneGroup, (int)InventoryCategory.Drone);
+        bool fighter = Drone.Profile.FighterGroup != 0;
+        var fields = Fields(
+            Drone.Id,
+            Drone.Profile.TypeId,
+            Drone.PilotId,
+            fighter ? Drone.Profile.FighterGroup : DroneRules.CombatDroneGroup,
+            (int)(fighter ? InventoryCategory.Fighter : InventoryCategory.Drone)
+        );
+        if (fighter)
+        {
+            fields["squadronSize"] = Drone.SquadronSize;
+        }
         fields["controllerID"] = Drone.ShipId == 0 ? null : Drone.ShipId;
         fields["controllerOwnerID"] = Drone.ShipId == 0 ? null : Drone.PilotId;
         fields["corpID"] = Drone.CorporationId;

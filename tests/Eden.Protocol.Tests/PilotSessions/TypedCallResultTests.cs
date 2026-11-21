@@ -144,7 +144,10 @@ public sealed class TypedCallResultTests
             (new LocalSystemState(30000142), new object?[] { 30000142, null }),
             (new DynamicBountyState(), new object?[] { 1d, false }),
             (new JumpTimerState(), new object?[] { null, null, null }),
-            (new FighterState(), new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() }),
+            (
+                new Eden.Protocol.Fighters.FighterDeckReply(new([], [])),
+                new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() }
+            ),
             (new BountiesAndKillRightsState(), new object?[] { new List<object?>(), new List<object?>() }),
             (new Eden.Protocol.Agents.MissionJournal([]), new object?[] { new List<object?>(), new List<object?>() }),
             (

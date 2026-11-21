@@ -18,6 +18,10 @@ public sealed partial class SqliteWorld
     {
         long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, now);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
+        LanceDisruption.RequireTravel(world, shipId, now);
+        Eden.World.Fleets.CommandBurstStore.RequirePhenomenaInactive(world, shipId, now);
         var structure = PilotStructureStore.Require(world, structureId);
         PilotStructureStore.Advance(world, catalog, now, structure.SystemId);
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
@@ -46,6 +50,7 @@ public sealed partial class SqliteWorld
             throw new InvalidDataException("Focused warp disruption prevents docking at a player structure.");
         }
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Dock, now);
+        Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(world, pilot, structure.SystemId, type.GroupId);
         if (
             new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(structure.X, structure.Y, structure.Z))
             > profile.Radius + (type.Radius ?? 0) + DockingDefinitions.MaximumRange

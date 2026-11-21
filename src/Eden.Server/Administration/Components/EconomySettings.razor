@@ -1,30 +1,33 @@
-<section class="card">
-    <h2>Economy &amp; market</h2>
-    <label>Market preset
-        <InputSelect @bind-Value="Form.MarketPreset">
-            <option value="@MarketPreset.Standard">Standard · live order snapshot</option>
-            <option value="@MarketPreset.Progressive">Progressive · production unlocks</option>
-            <option value="@MarketPreset.Testing">Testing · broad supply at a fixed price</option>
-            <option value="@MarketPreset.NpcOnly">NPC only · catalog corporation offers</option>
-            <option value="@MarketPreset.Custom">Custom · individual supply settings</option>
-        </InputSelect>
-    </label>
-    <p class="muted">Changes apply after restart. Existing balances, goods and player orders are preserved.</p>
+<section class="card settings-group">
+    <h3>Market supply</h3>
+    <SettingField Label="Market preset" Help="Choose a supply policy, or choose Custom to tune the individual supply sources.">
+        <Control Context="field">
+            <InputSelect id="@field.Input" @bind-Value="Form.MarketPreset" aria-describedby="@field.Help">
+                <option value="@MarketPreset.Standard">Standard · live order snapshot</option>
+                <option value="@MarketPreset.Progressive">Progressive · production unlocks</option>
+                <option value="@MarketPreset.Testing">Testing · broad supply at a fixed price</option>
+                <option value="@MarketPreset.NpcOnly">NPC only · catalog corporation offers</option>
+                <option value="@MarketPreset.Custom">Custom · individual supply settings</option>
+            </InputSelect>
+        </Control>
+    </SettingField>
+    <p class="muted">Existing balances, goods and personal market orders keep their saved terms.</p>
     @if (Form.StandardMarket)
     {
         @if (Snapshot?.CapturedAt is DateTimeOffset captured)
         {
-            <p role="status">Snapshot: @captured.ToString("u") · @Snapshot.Orders.ToString("N0") orders
+            <p class="settings-market-status" role="status">Snapshot: @captured.ToString("u") · @Snapshot.Orders.ToString("N0") orders
                 across @Snapshot.Regions regions · @Snapshot.Excluded.ToString("N0") excluded orders.</p>
         }
         else
         {
-            <p role="status">@(Snapshot?.Error ?? "No live order snapshot is installed.")</p>
+            <p class="settings-market-status" role="status">@(Snapshot?.Error ?? "No live order snapshot is installed.")</p>
         }
         <p>Mirrors public live-game orders at their original supported stations, with captured prices and quantities.
             Orders deplete as you trade and expire on their original deadlines. A new import replaces snapshot stock after restart.</p>
         <p class="muted">Requires an imported live order snapshot. Newer items and stations absent from this client,
             private orders and player structures are excluded. Live player identities are replaced by local station corporations.</p>
+        <p><a href="/optional-data">Import market orders</a></p>
     }
     else if (Form.MarketPreset == MarketPreset.Progressive)
     {
@@ -40,42 +43,86 @@
     }
     @if (Form.MarketPreset == MarketPreset.Custom)
     {
-        <fieldset>
-            <legend>Custom market supply</legend>
-            <label><InputCheckbox @bind-Value="Form.StandardMarket" />Mirror imported live orders</label>
-            <label><InputCheckbox @bind-Value="Form.ProgressiveMarkets" />Progressive regional markets</label>
-            <label><InputCheckbox @bind-Value="Form.TestingMarket" />Testing market</label>
-            <label><InputCheckbox @bind-Value="Form.RegionalHubSupply" />Full NPC sell assortment at regional hubs</label>
-            <label><InputCheckbox @bind-Value="Form.BeginnerMarketSupply" />Starter supply in progressive markets</label>
+        <fieldset class="settings-subgroup">
+            <legend>Custom supply sources</legend>
+            <div class="settings-fields">
+                <SettingField Label="Mirror imported live orders"
+                              Help="Seed markets with the imported live order snapshot.">
+                    <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.StandardMarket" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+                <SettingField Label="Progressive regional markets"
+                              Help="Unlock regional supply through production.">
+                    <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.ProgressiveMarkets" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+                <SettingField Label="Testing market"
+                              Help="Seed eligible published market items at the configured testing price.">
+                    <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.TestingMarket" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+                <SettingField Label="Regional hub supply"
+                              Help="Add eligible NPC sell offers at regional hubs.">
+                    <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RegionalHubSupply" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+                <SettingField Label="Beginner market supply"
+                              Help="Put starter equipment on progressive markets immediately.">
+                    <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BeginnerMarketSupply" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+            </div>
             <p class="muted">Live orders require progressive and testing markets to be off. Progressive supply takes priority
                 over testing supply when both are enabled. Hub and starter supplements do not apply to live orders.</p>
         </fieldset>
     }
     @if (!Form.StandardMarket)
     {
-        @if (Form.ProgressiveMarkets || !Form.TestingMarket)
-        {
-            <label>NPC stock per order<InputNumber @bind-Value="Form.InstitutionalStock" min="1" max="1000000" /></label>
-        }
-        @if (Form.TestingMarket && !Form.ProgressiveMarkets)
-        {
-            <label>Testing stock per order<InputNumber @bind-Value="Form.TestingStock" min="1" max="1000000000" /></label>
-            <label>Testing price (ISK)<InputNumber @bind-Value="Form.TestingPriceIsk" min="0.01" step="0.01" /></label>
-        }
+        <div class="settings-fields">
+            @if (Form.ProgressiveMarkets || !Form.TestingMarket)
+            {
+                <SettingField Label="NPC stock per order"
+                              Help="Quantity listed on each eligible NPC supply order.">
+                    <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.InstitutionalStock" min="1" max="1000000" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+            }
+            @if (Form.TestingMarket && !Form.ProgressiveMarkets)
+            {
+                <SettingField Label="Testing stock per order"
+                              Help="Quantity listed on each eligible testing market order.">
+                    <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.TestingStock" min="1" max="1000000000" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+                <SettingField Label="Testing price (ISK)"
+                              Help="Unit price shared by all testing market offers.">
+                    <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.TestingPriceIsk" min="0.01" step="0.01" aria-describedby="@field.Help" /></Control>
+                </SettingField>
+            }
+        </div>
     }
-    <h3>Economy options</h3>
-    <label><InputCheckbox @bind-Value="Form.EmpireLpDatacores" />Empire LP-store datacores</label>
-    <p class="muted">Extend ordinary empire LP stores with their militia datacore offers.</p>
-    <label><InputCheckbox @bind-Value="Form.SimulatedMarketHistory" />Simulated reference market history</label>
-    <p class="muted">Generate reference trades from captured prices. This is separate from imported order books.</p>
-    <label><InputCheckbox @bind-Value="Form.ServiceCosts" />Charge service costs</label>
-    @if (Form.ServiceCosts)
-    {
-        <label>Default manufacturing index
-            <InputNumber @bind-Value="Form.ManufacturingIndex" min="0" max="1" step="0.001" />
-        </label>
-        <p class="muted">0.01 means 1%. Service costs require adjusted material prices in Advanced settings.</p>
-    }
+</section>
+<section class="card settings-group">
+    <h3>Loyalty stores &amp; market history</h3>
+    <div class="settings-fields">
+        <SettingField Label="Empire LP-store datacores"
+                      Help="Extend ordinary empire loyalty stores with their militia datacore offers.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.EmpireLpDatacores" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Simulated market history"
+                      Help="Generate reference trades from captured prices, independently of imported order books.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.SimulatedMarketHistory" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>Service fees</h3>
+    <div class="settings-fields">
+        <SettingField Label="Charge service costs"
+                      Help="Enable service fees. Adjusted material prices can be entered under Advanced.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.ServiceCosts" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        @if (Form.ServiceCosts)
+        {
+            <SettingField Label="Default manufacturing index"
+                          Help="Enter a fraction from 0 to 1. For example, 0.01 means 1%. Advanced supports per-system overrides.">
+                <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.ManufacturingIndex" min="0" max="1" step="0.001" aria-describedby="@field.Help" /></Control>
+            </SettingField>
+        }
+    </div>
 </section>
 
 @code {

@@ -1,0 +1,16 @@
+<div class="setting-field">
+    <label for="@Ids.Input">@Label</label>
+    @Control(Ids)
+    <SettingHelp Id="@Ids.Help" Label="@Label" Text="@Help" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Help { get; set; } = "";
+    [Parameter, EditorRequired] public RenderFragment<FieldIds> Control { get; set; } = default!;
+
+    public readonly record struct FieldIds(string Input, string Help);
+
+    private string Id { get; } = "setting-" + Guid.NewGuid().ToString("N");
+    private FieldIds Ids => new(Id, Id + "-help");
+}

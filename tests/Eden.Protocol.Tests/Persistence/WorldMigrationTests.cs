@@ -12,8 +12,10 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
-    [Fact]
-    public void Version189TackleUpgradePreservesShipSourceAndRevisionTriggers()
+    [Theory]
+    [InlineData(189)]
+    [InlineData(213)]
+    public void StructureTackleUpgradePreservesShipSourceAndRevisionTriggers(int version)
     {
         using StructureTests.Fixture fixture = new();
         long ship = fixture.ShipId;
@@ -29,9 +31,9 @@ public sealed class WorldMigrationTests
                 TargetId INTEGER NOT NULL, TargetKind INTEGER NOT NULL, Effect INTEGER NOT NULL, DurationMilliseconds REAL NOT NULL,
                 CapacitorNeed REAL NOT NULL, Range REAL NOT NULL, Strength REAL NOT NULL, WebPercent REAL NOT NULL,
                 MwdBlock REAL NOT NULL, StartedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
-            PRAGMA user_version=189;
             """
         );
+        world.Database.ExecuteSqlRaw(version == 189 ? "PRAGMA user_version=189" : "PRAGMA user_version=213");
         ResidentFitSchema.Create(world);
         world.Database.ExecuteSql(
             $"""
@@ -99,6 +101,25 @@ public sealed class WorldMigrationTests
             Assert.Equal(0, battle.HullCapacity);
             Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         }
+    }
+
+    [Fact]
+    public void Version185AddsAnInactiveGateCloakWithoutChangingExistingNavigationDeadlines()
+    {
+        using TestWorld fixture = new(freshInitialization: true);
+        long ship = fixture.Store.FindPilot(1000001)!.ShipId;
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Add(new Eden.Data.World.Propulsion.SpatialNavigationState { ShipId = ship, TargetingReadyAt = 123 });
+            world.SaveChanges();
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldSpatialNavigation DROP COLUMN GateCloakUntil; PRAGMA user_version=185;");
+        }
+        WorldInitialization.Initialize(new(fixture.Path));
+        using WorldDbContext reopened = new(fixture.Path);
+        var state = reopened.Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Find(ship)!;
+        Assert.Equal(0, state.GateCloakUntil);
+        Assert.Equal(123, state.TargetingReadyAt);
+        Assert.Equal(WorldMigration.CurrentVersion, reopened.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]

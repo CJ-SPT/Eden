@@ -2,6 +2,41 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Administration settings with decimal-comma locales, November 20, 2026
+
+On a French-configured server, changing **Warp speed** on `localhost` caused the administration reload banner before
+the draft was submitted. Field validation tried to read the fixed minimum `0.1` using the server's regional format and
+threw, terminating the Blazor connection. The settings form now parses its fixed decimal limits using the invariant
+culture. Valid fractional edits remain interactive, and out-of-range values show field validation messages.
+[Microsoft .NET RangeAttribute documentation](https://learn.microsoft.com/dotnet/api/system.componentmodel.dataannotations.rangeattribute.parselimitsininvariantculture)
+
+**Automated validation.** Before the fix, `WorldSettingsPageTests.DecimalRangesAcceptFractionalLimitsInFrenchServerCulture`
+threw while parsing the minimum, and `AdministrationTests.LiveSettingsStayInteractiveInFirefoxAndChromium` showed the
+reload banner on the first decimal edit in Firefox. Both passed after the change. The browser check edits and saves
+against isolated resident worlds using Firefox on `localhost` with `fr-FR` and Chromium on `127.0.0.1` with `en-US`.
+The final filter joined `AdministrationTests`, `WorldSettingsPageTests`, `AdministrationComponentTests`,
+`WorldConfigurationTests` and `WorldTuningTests` with `FullyQualifiedName~` and `|`. It passed all 115 cases in
+38.46 seconds. Tool and solution restore, the build (5.08 seconds, zero warnings or errors), both Python policy suites
+(8 catalog and 9 formatting tests), and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent game client testing is disabled.
+
+**Optional maintainer checks.** Update the reporter's server and edit the same setting in their browser.
+
+### English (South Africa) follow-up
+
+A later report saw the same banner on a build with the decimal validation fix. Firefox and Chromium both passed edits,
+fractional range validation, and repeated saves on `localhost` with `en-ZA` in both the server and the browser.
+The cause on the reported installation is still unknown. Eden now writes Blazor circuit warnings and errors to the server console so
+the exception behind a future reload banner can be identified. The browser still shows the generic banner.
+[ASP.NET Core circuit error handling](https://github.com/dotnet/aspnetcore/blob/v10.0.0/src/Components/Server/src/Circuits/CircuitHost.cs#L636-L664)
+
+**Automated validation.** The exact browser method passed in 39.31 seconds and the exact
+`AdministrationTests.AdministrationLogsCircuitFailuresWithoutEnablingRoutineFrameworkMessages` check passed in 5.99 seconds.
+The final `FullyQualifiedName~` filter joined `AdministrationTests`, `WorldSettingsPageTests` and
+`AdministrationComponentTests`. All 50 tests passed in 44.61 seconds with the opt-in browser checks enabled.
+Tool and solution restore, the build, both Python policy suites, and formatting passed in 111.39 seconds including the tests.
+
 ## Minimum corporation age for anchoring, November 16, 2026
 
 `settings.structures.minimumCorporationAgeDays` now controls the Upwell anchoring age gate. The default is **7** days,
@@ -371,3 +406,35 @@ Optional maintainer checks:
 1. Review tab switching, invalid-input reset and pending-restart status in the administrator page.
 2. Compare native ore/ice/gas module information with actual completed-cycle extraction under custom rates.
 3. Compare native manufacturing/science previews and installed deadlines, including the one-second minimum.
+
+## Optional data imports in server administration
+
+The authenticated **Optional data** page stages the existing [EVE Ref market snapshot](industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
+and [zKill traffic snapshot](capsuleers.md#zkill-backed-traffic--november-8-2026) beside the selected world using its active
+catalog. The provider format and catalog compatibility rules are shared with the command-line importers.
+The [EVE Ref dataset format](https://docs.everef.net/datasets/market-orders.html) and
+[zKillboard archive documentation](https://zkillboard.com/api/docs/) describe the external inputs. Reference checks also
+covered EVE.js `averageMarketPrices.js` and `killmailItemPayload.js` in the local checkout, which has no Git revision
+metadata. This administration change uses Eden's existing providers and introduces no native client calls or saved gameplay changes.
+
+The page shows the installed market capture and traffic archive range. Administrator-authenticated, antiforgery-protected
+forms start background imports. The host runs one web import at a time, and jobs outlive the browser session. The traffic
+command shares the same download/cache and publication path with the page. The market import uses the packaged Python
+script in a staging directory and publishes the validated manifest after moving its generation into place. Previous snapshots
+stay installed on failure. The server adopts the files on restart.
+
+**Automated validation.** The focused filter joined `AdministrationTests`, `AdministrationComponentTests`,
+`TrafficImportTests`, `TrafficSnapshotTests` and `StandardMarketTests` using `FullyQualifiedName~` and `|`.
+In 26.56 seconds, 101 passed and the opt-in browser test was skipped. The exact optional-data page test passed
+again in 11.25 seconds after the final copy update. It checks missing-data explanations, administrator and
+antiforgery gates, and an import failure that preserves the installed traffic snapshot. The Standard market
+refresh test checks staging, preservation of the old capture until restart, and use of the new stock after reopen.
+The solution built with zero warnings and errors. Eight catalog policy, nine formatting policy and four offline
+market importer checks passed. The Docker publish helper verified the packaged market importer in 125.74 seconds.
+Formatting passed in 41.04 seconds. Documentation links and whitespace checks passed.
+After rebasing onto `9e2a7cdd`, the solution build and the same focused filter passed in 37.91 seconds with 101
+passing tests and one opt-in skip. All three Python checks passed again.
+
+**Live acceptance.** Not performed. Agent client testing is disabled. Provider downloads were not exercised.
+
+**Optional maintainer checks.** Import a snapshot on the server and verify that Eden adopts it on restart.

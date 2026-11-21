@@ -16,7 +16,8 @@ public sealed record SpatialModule(
     double SignatureBonus
 )
 {
-    public bool Cloak => Effect != DogmaEffect.MicroJumpDrive;
+    public bool Cloak => SpatialModuleRules.IsCloak(Effect);
+    public CapitalMicroJumpField? Field { get; init; }
     public bool WarpSafe => Effect == DogmaEffect.CovertCloaking;
 }
 
@@ -29,9 +30,35 @@ public sealed record SpatialActivation(
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes
 );
 
-public sealed record SpatialStatus(long CloakModuleId = 0, bool WarpSafe = false, long TargetingReadyAt = 0);
+public sealed record SpatialStatus(
+    long CloakModuleId = 0,
+    bool WarpSafe = false,
+    long TargetingReadyAt = 0,
+    long GateCloakUntil = 0,
+    long FieldScrambledUntil = 0
+)
+{
+    public bool GateCloaked(long now) => GateCloakUntil > now;
 
-public sealed record MicroJumpResult(SpacePosition Position, SpacePosition Velocity);
+    public bool Cloaked(long now) => CloakModuleId != 0 || GateCloaked(now);
+}
+
+public interface IPilotGateCloak
+{
+    void Cancel(long pilotId, long shipId);
+    bool PreservesCloak(long pilotId, long shipId, long moduleId);
+}
+
+public sealed record CapitalMicroJumpField(double Radius, int PassengerLimit, int CapitalLimit, double ScrambleMilliseconds);
+
+public sealed record MicroJumpPassenger(long PilotId, long ShipId, SpacePosition Position);
+
+public sealed record MicroJumpArrival(long ShipId, SpacePosition Position);
+
+public sealed record MicroJumpResult(SpacePosition Position, SpacePosition Velocity)
+{
+    public IReadOnlyList<MicroJumpArrival> Passengers { get; init; } = [];
+}
 
 public interface IPilotSpatialModules
 {
@@ -39,13 +66,24 @@ public interface IPilotSpatialModules
     IReadOnlyDictionary<DogmaAttributeId, double> Stop(long pilotId, long shipId, long moduleId, long now);
     bool Available(long pilotId, long shipId, long moduleId);
     SpatialStatus Status(long shipId);
-    MicroJumpResult? CompleteJump(long pilotId, long shipId, long moduleId, long startedAt, long now);
+    MicroJumpResult? CompleteJump(
+        long pilotId,
+        long shipId,
+        long moduleId,
+        long startedAt,
+        long now,
+        IReadOnlyList<MicroJumpPassenger>? candidates = null
+    );
 }
 
 public static class SpatialModuleRules
 {
     public const int CloakGroup = 330;
     public const int MicroJumpGroup = 1189;
+    public const int CapitalMicroJumpGroup = 4769;
+    public const int CapitalDrive = 83465;
+    public const int CapitalField = 83485;
+    public const int CapitalMicroJumpSkill = 83464;
     public const int CloakingSkill = 11579;
     public const int MicroJumpSkill = 4385;
     public const double DecloakDistance = 2000;
@@ -54,12 +92,23 @@ public static class SpatialModuleRules
     public const double JumpDistance = 100000;
     public const double ActivationGraceMilliseconds = 5000;
 
+    public static bool IsDriveGroup(int group) => group is MicroJumpGroup or CapitalMicroJumpGroup;
+
+    public static bool IsDrive(int group, int type) => group == MicroJumpGroup || group == CapitalMicroJumpGroup && IsCapital(type);
+
+    public static bool IsCapital(int type) => type is CapitalDrive or CapitalField;
+
+    public static DogmaEffect JumpEffect(int type) => type == CapitalField ? DogmaEffect.CapitalMicroJumpField : DogmaEffect.MicroJumpDrive;
+
+    public static double Distance(int type, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        IsCapital(type) ? attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpRange) : JumpDistance;
+
     public static bool IsCloak(DogmaEffect effect) =>
         effect is DogmaEffect.Cloaking or DogmaEffect.PrototypeCloaking or DogmaEffect.CovertCloaking;
 
     public static SpatialModule Define(long item, int type, DogmaEffect effect, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
-        if (!IsCloak(effect) && effect != DogmaEffect.MicroJumpDrive)
+        if (!IsCloak(effect) && effect != JumpEffect(type))
         {
             throw new InvalidDataException("Unsupported spatial module effect.");
         }
@@ -84,9 +133,26 @@ public static class SpatialModuleRules
             module.VelocityMultiplier,
             module.SignatureBonus,
         ];
-        if (values.Any(v => !double.IsFinite(v) || v < 0) || module.VelocityMultiplier <= 0 || !cloak && module.DurationMilliseconds <= 0)
+        double distance = Distance(type, attributes);
+        if (
+            values.Any(v => !double.IsFinite(v) || v < 0)
+            || module.VelocityMultiplier <= 0
+            || !cloak && (module.DurationMilliseconds <= 0 || !double.IsFinite(distance) || distance <= 0)
+        )
         {
             throw new InvalidDataException("Invalid spatial module attributes.");
+        }
+        if (effect == DogmaEffect.CapitalMicroJumpField)
+        {
+            double radius = attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpFieldRadius);
+            double scramble = attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpScrambleDuration);
+            int passengers = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpPassengerLimit));
+            int capitals = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpCapitalLimit));
+            if (!double.IsFinite(radius) || radius <= 0 || !double.IsFinite(scramble) || scramble <= 0 || passengers <= 0 || capitals <= 0)
+            {
+                throw new InvalidDataException("Invalid capital micro jump field attributes.");
+            }
+            module = module with { Field = new(radius, passengers, capitals, scramble) };
         }
         return module;
     }
@@ -94,13 +160,13 @@ public static class SpatialModuleRules
     public static long Deadline(long now, double milliseconds) =>
         checked(now + (long)Math.Ceiling(milliseconds * TimeSpan.TicksPerMillisecond));
 
-    public static SpacePosition Jump(SpacePosition origin, SpacePosition heading)
+    public static SpacePosition Jump(SpacePosition origin, SpacePosition heading, double distance = JumpDistance)
     {
         if (!Finite(origin) || !Finite(heading) || heading.Length <= 0 || !double.IsFinite(heading.Length))
         {
             throw new InvalidDataException("A micro jump requires finite coordinates and a heading.");
         }
-        var destination = origin + heading.Unit * JumpDistance;
+        var destination = origin + heading.Unit * distance;
         if (!Finite(destination))
         {
             throw new InvalidDataException("Invalid micro-jump destination.");

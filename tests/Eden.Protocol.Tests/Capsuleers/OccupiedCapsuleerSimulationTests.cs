@@ -20,7 +20,7 @@ public sealed class OccupiedCapsuleerSimulationTests
     private const int Elsewhere = 30000144;
 
     [Fact]
-    public void LastObserverLeavingStopsTheQueueAndWarmRemoteTurnsDoNoWork()
+    public void LastHumanLeavingStopsTheQueueAndWarmIdleTurnsDoNoWork()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
@@ -33,12 +33,14 @@ public sealed class OccupiedCapsuleerSimulationTests
         first.Transfer(Elsewhere);
         Assert.Equal(jobs.Length, scheduler.Read().ScheduledAgents);
         second.Dispose();
+        Assert.Equal(1, scheduler.Read().ScheduledAgents);
+        first.Dispose();
         scheduler.Run(0);
         Assert.Equal(0, scheduler.Read().ScheduledAgents);
         Assert.Null(scheduler.NextWake().Delay);
         long loaded = scheduler.PopulationRowsLoaded;
         fixture.Clock.Seconds += 180;
-        using var metrics = SessionPerformance.Begin("empty occupied system with dormant fleet", _ => { }, force: true)!;
+        using var metrics = SessionPerformance.Begin("world without selected humans", _ => { }, force: true)!;
         for (int turn = 0; turn < 20; turn++)
         {
             Assert.Equal(0, scheduler.Run(0).Turn.Completed);
@@ -85,7 +87,7 @@ public sealed class OccupiedCapsuleerSimulationTests
             human.Transfer(Elsewhere);
             departed = presence.Read().ElapsedTicks;
             fixture.Clock.Seconds += 180;
-            Assert.Equal(0, scheduler.Run(0).Turn.Completed);
+            Assert.Empty(scheduler.Run(0).Miners);
             Assert.Contains(saved, scheduler.Jobs());
             var live = host.GetRequiredService<LiveWorld>();
             Assert.Equal(paid.Work, live.MinerCheckpoints[paid.Pilot.PilotId].Work);
@@ -101,7 +103,7 @@ public sealed class OccupiedCapsuleerSimulationTests
         using (WorldDbContext world = new(fixture.Database.Path))
         {
             var row = world.Set<SavedCapsuleerCommunity>().Single(m => m.PilotId == saved.PilotId);
-            Assert.Equal(paid!.Work, MinerCheckpoint.Read(row.Progress));
+            CapsuleerTestDriver.AssertSavedMiner(paid!.Work, row.Progress);
         }
         using var returned = reopened.GetRequiredService<IHumanPresence>().Select(90000001, Home);
         Assert.Contains(saved, restored.Jobs());

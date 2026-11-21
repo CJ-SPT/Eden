@@ -41,16 +41,55 @@ public sealed record HaulerProgress(
 )
 {
     public BeltMemory[] VisitedBelts { get; init; } = [];
+    public CapsuleerCareerPlan? CareerPlan { get; init; }
     public FreightManifest? Freight { get; init; }
+    public CorporationSupplyRun? CorporationSupply { get; init; }
+    public FactoryPlanetaryProduction? PlanetaryProduction { get; init; }
+    public SovereigntyExpedition? SovereigntyExpedition { get; init; }
+    public int? HomeDefenseAllianceId { get; init; }
+    public long PlanetaryRetryAt { get; init; }
+    public long RegionalStockRetryAt { get; init; }
+    public int RegionalStockEmptySupplier { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
+    public ExplorationProgress? Exploration { get; init; }
+    public long ExplorationRetryAt { get; init; }
     public ResupplyProgress? Resupply { get; init; }
     public long LastPatrolledGateId { get; init; }
     public long ActivitySequence { get; init; }
     public TravelerRoutine? Routine { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
+    public RoamingGang? Gang { get; init; }
+    public bool GangReturning { get; init; }
+    public long GangRendezvousUntil { get; init; }
+    public RegionalEscort? RegionalEscort { get; init; }
+    public bool RegionalObjectiveVisited { get; init; }
     public bool EscapingBubble { get; init; }
+    public long? ReplacementOrderDeadline { get; init; }
+    public long[]? ReplacementOrderIds { get; init; }
+    public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
+}
+
+public sealed record SovereigntyExpedition(
+    int AllianceId,
+    int CorporationId,
+    int TargetSystemId,
+    long CargoId,
+    long ModuleId,
+    long? HubId = null,
+    long LockReadyAt = 0,
+    bool Returning = false,
+    SovereigntyDuty Duty = SovereigntyDuty.Claim,
+    int? HomeSystemId = null,
+    int CargoQuantity = 0
+);
+
+public enum SovereigntyDuty
+{
+    Claim,
+    Defend,
+    ReagentDelivery,
 }
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth? Health);

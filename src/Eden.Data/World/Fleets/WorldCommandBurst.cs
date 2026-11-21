@@ -7,4 +7,6 @@ public sealed class WorldCommandBurst
     public int SystemId { get; set; }
     public long ExpiresAt { get; set; }
     public string BoostsJson { get; set; } = "";
+    public bool IndustrialProtection { get; set; }
+    public bool Phenomena { get; set; }
 }

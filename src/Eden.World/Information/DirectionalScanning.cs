@@ -65,7 +65,7 @@ internal sealed partial class PilotInformationStore
         return contacts
             .Where(entry =>
                 entry.Contact.Id != observer.ShipId
-                && (!entry.Ship || new Eden.World.Propulsion.PilotSpatialModuleStore(database).Status(entry.Contact.Id).CloakModuleId == 0)
+                && (!entry.Ship || !new Eden.World.Propulsion.PilotSpatialModuleStore(database).Status(entry.Contact.Id).Cloaked(now))
                 && (
                     entry.LoggedOffPilot is { } pilot
                         ? live?.Combat?.DroneLogoffDeadline(pilot, entry.ExpiresAt) ?? entry.ExpiresAt

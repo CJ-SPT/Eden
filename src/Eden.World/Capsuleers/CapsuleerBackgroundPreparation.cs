@@ -1,6 +1,8 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
@@ -20,6 +22,7 @@ internal sealed class CapsuleerBackgroundPreparation(
     private readonly Dictionary<int, CapsuleerRetry> _systemRetries = [];
     private readonly Dictionary<CapsuleerScheduler.InboundPreparation, CapsuleerRetry> _inboundRetries = [];
     private readonly long _started = clock.GetTimestamp();
+    private Queue<int>? _freshSystems;
     private int _lastSystem;
 
     private long NowTicks => clock.GetElapsedTime(_started).Ticks;
@@ -31,9 +34,34 @@ internal sealed class CapsuleerBackgroundPreparation(
         cancellationToken.ThrowIfCancellationRequested();
         lock (_gate)
         {
-            var occupied = activity.Read().ActiveSystems;
+            var human = activity.Read();
+            var occupied = human.ActiveSystems;
+            var policy = database.Settings.Capsuleers;
+            if (occupied.Count == 0)
+            {
+                _inboundRetries.Clear();
+                if (_freshSystems is null)
+                {
+                    _systemRetries.Clear();
+                }
+                return new(ReadProgress(occupied), null, true);
+            }
+            if (database.Settings.FreshUniverse && policy.Enabled && policy.PrepareUnvisitedSystems && _freshSystems is null)
+            {
+                var catalog = database.Catalog;
+                _freshSystems = new(
+                    catalog
+                        .SystemPolitics.Where(entry =>
+                            entry.Value.Security >= CrimewatchRules.HighSecurity
+                            && !catalog.StationsInSystem(entry.Key).IsEmpty
+                            && policy.CanWork(catalog, entry.Key)
+                        )
+                        .Select(entry => entry.Key)
+                        .Order()
+                );
+            }
             var inboundRequests = scheduler.InboundPreparations();
-            foreach (int system in _systemRetries.Keys.Where(system => !occupied.Contains(system)).ToArray())
+            foreach (int system in _systemRetries.Keys.Where(system => _freshSystems is null && !occupied.Contains(system)).ToArray())
             {
                 _systemRetries.Remove(system);
             }
@@ -70,23 +98,44 @@ internal sealed class CapsuleerBackgroundPreparation(
                 .OrderBy(system => system <= _lastSystem)
                 .ThenBy(system => system)
                 .FirstOrDefault();
+            bool foreground = target != 0;
+            bool atCapacity = false;
+            if (!foreground && _freshSystems is { Count: > 0 })
+            {
+                int cap = policy.ActivePilotCap;
+                if (cap > 0)
+                {
+                    using var owner = synchronization.Enter("fresh population capacity");
+                    atCapacity = LiveWorld.Find(database.Path)?.Economy.AdmittedCapsuleerCount >= cap;
+                }
+                if (!atCapacity)
+                {
+                    target = NextFreshSystem(now);
+                }
+            }
             if (target == 0)
             {
                 long? retry = _systemRetries.Values.Concat(_inboundRetries.Values).Select(value => (long?)value.DueTicks).Min();
-                bool complete = progress.CompletedSystems == progress.TotalSystems && inboundRequests.Count == 0;
+                bool complete =
+                    progress.CompletedSystems == progress.TotalSystems
+                    && inboundRequests.Count == 0
+                    && (atCapacity || _freshSystems is null or { Count: 0 });
                 return new(progress, null, complete)
                 {
                     RetryLater = !complete,
                     RetryAfter = retry is long deadline ? TimeSpan.FromTicks(Math.Max(0, deadline - now)) : null,
                 };
             }
-            _lastSystem = target;
+            if (foreground)
+            {
+                _lastSystem = target;
+            }
             try
             {
                 var turn = _provisioner.PrepareBackgroundSystem(
                     target,
                     synchronization,
-                    () => activity.Read().ActiveSystems.Contains(target),
+                    () => foreground ? activity.Read().ActiveSystems.Contains(target) : activity.Read().Active,
                     cancellationToken
                 );
                 if (turn is null)
@@ -97,16 +146,19 @@ internal sealed class CapsuleerBackgroundPreparation(
                 {
                     scheduler.PopulationPrepared(target, pilot);
                 }
-                _systemRetries.Remove(target);
                 if (!turn.HasMoreWork)
                 {
                     _completed[target] = turn.PendingCommunities;
                 }
+                _systemRetries.Remove(target);
                 var updated = ReadProgress(occupied);
                 return new(
                     updated,
                     target,
-                    !turn.HasMoreWork && updated.CompletedSystems == updated.TotalSystems && inboundRequests.Count == 0
+                    !turn.HasMoreWork
+                        && updated.CompletedSystems == updated.TotalSystems
+                        && inboundRequests.Count == 0
+                        && _freshSystems is null or { Count: 0 }
                 );
             }
             catch (CapsuleerBlueprintNotPreparedException)
@@ -120,6 +172,26 @@ internal sealed class CapsuleerBackgroundPreparation(
                 return new(ReadProgress(occupied), target, false) { Failure = error.Message };
             }
         }
+    }
+
+    private int NextFreshSystem(long now)
+    {
+        var candidates = _freshSystems!;
+        int remaining = candidates.Count;
+        while (remaining-- > 0)
+        {
+            int candidate = candidates.Dequeue();
+            if (_completed.ContainsKey(candidate))
+            {
+                continue;
+            }
+            candidates.Enqueue(candidate);
+            if (Ready(_systemRetries, candidate, now))
+            {
+                return candidate;
+            }
+        }
+        return 0;
     }
 
     private CapsuleerPreparationProgress ReadProgress(IReadOnlyList<int> occupied) =>

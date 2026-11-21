@@ -7,6 +7,7 @@ using Eden.Data.World.Structures;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Sovereignty;
@@ -15,27 +16,30 @@ internal sealed partial class PilotEntosisStore
 {
     public void Advance(int systemId, long now)
     {
-        if (!database.Catalog.Systems.TryGetValue(systemId, out var definition))
+        if (database.Catalog.Systems.TryGetValue(systemId, out var definition))
         {
-            return;
+            AdvanceIfPending(Live, systemId, definition.ConstellationId, now);
         }
-        if (
-            !Live.Economy.Inspect(world =>
-                world.Set<SavedSovereigntyHub>().Find(systemId) is not null
-                || world.Filter<SavedSovereigntyActivityEvent>(row => row.SystemId == systemId).Any()
-                || world.Filter<SavedSovereigntyConflict>(row => row.ConstellationId == definition.ConstellationId).Any()
-            )
-        )
+    }
+
+    private bool AdvanceIfPending(LiveWorld live, int systemId, int constellationId, long now)
+    {
+        bool Pending(WorldAction world) =>
+            world.Set<SavedSovereigntyHub>().Find(systemId) is not null
+            || world.Filter<SavedSovereigntyActivityEvent>(row => row.SystemId == systemId).Any()
+            || world.Filter<SavedSovereigntyConflict>(row => row.ConstellationId == constellationId).Any();
+        if (!(live.Reads?.SovereigntyWork(systemId, constellationId, Pending) ?? live.Economy.Inspect(Pending)))
         {
-            return;
+            return false;
         }
-        using var action = Live.Economy.Begin(new(systems: [systemId]));
+        using var action = live.Economy.Begin(new(systems: [systemId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         Advance(action, catalog, systemId, now);
         action.Commit();
+        return true;
     }
 
-    private void Advance(WorldAction world, CatalogDbContext catalog, int system, long now)
+    internal void Advance(WorldAction world, CatalogDbContext catalog, int system, long now)
     {
         AdvanceWarfare(world, catalog, system, now);
         var hub = world.Set<SavedSovereigntyHub>().Find(system);
@@ -56,10 +60,7 @@ internal sealed partial class PilotEntosisStore
         }
         foreach (var cycle in cycles)
         {
-            if (
-                cycle.Contributing
-                && (!_scoringLeases.Contains(cycle.ModuleId) || !Valid(world, catalog, cycle, Target(world, system, structure.Id)!))
-            )
+            if (cycle.Contributing && (!CanScore(cycle.ModuleId) || !Valid(world, catalog, cycle, Target(world, system, structure.Id)!)))
             {
                 cycle.Contributing = false;
                 cycle.Stopping = true;

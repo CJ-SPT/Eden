@@ -8,8 +8,10 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +30,8 @@ internal sealed partial class PilotMissionStore
         int level,
         bool storyline,
         long now,
-        MissionProfile? continuation = null
+        MissionProfile? continuation = null,
+        int? courierDestination = null
     )
     {
         bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
@@ -41,11 +44,11 @@ internal sealed partial class PilotMissionStore
             );
             storyline = true;
         }
-        if (!storyline && agent.Type != AgentType.Basic)
+        if (!storyline && agent.Type is not (AgentType.Basic or AgentType.FactionalWarfare))
         {
             throw new InvalidDataException("This special agent does not offer ordinary missions.");
         }
-        if (!storyline && MissionRules.KindForDivision(agent.DivisionId) is null)
+        if (!storyline && agent.Type != AgentType.FactionalWarfare && MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");
         }
@@ -81,7 +84,15 @@ internal sealed partial class PilotMissionStore
             ? catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.")
             : null;
         var destination = station;
-        if (profile.Kind == MissionKind.Courier)
+        int? warzoneDestination =
+            agent.Type == AgentType.FactionalWarfare
+                ? MilitiaDestination(world, catalog, station!.SolarSystemId, (MilitiaFaction)agent.FactionId!.Value, sequence)
+                : null;
+        if (profile.Kind == MissionKind.Courier && courierDestination is int selected)
+        {
+            destination = catalog.RequireStation(selected);
+        }
+        else if (profile.Kind == MissionKind.Courier)
         {
             var neighbors = catalog.GatesInSystem(station!.SolarSystemId).Select(g => g.DestinationSystemId).ToHashSet();
             var destinations = catalog
@@ -110,7 +121,7 @@ internal sealed partial class PilotMissionStore
             OfferedAt = now,
             ExpiresAt = checked(now + profile.Lifetime.Ticks),
             DestinationStation = destination?.Id ?? 0,
-            SystemId = agent.Space?.SystemId ?? destination!.SolarSystemId,
+            SystemId = warzoneDestination ?? agent.Space?.SystemId ?? destination!.SolarSystemId,
             X = agent.Space?.Position.X ?? station!.X + offset,
             Y = agent.Space?.Position.Y ?? station!.Y + MissionRules.PlacementOffset,
             Z = agent.Space?.Position.Z ?? station!.Z - offset,
@@ -137,6 +148,10 @@ internal sealed partial class PilotMissionStore
         {
             return MissionCatalog.ForFixedAgent(catalog, agent.Id).Where(p => p.Definition.Level == level && p.AvailableTo(agent));
         }
+        if (agent.Type == AgentType.FactionalWarfare)
+        {
+            return MissionCatalog.ForMilitia(catalog, agent).Where(profile => profile.AvailableTo(agent));
+        }
         var kind = MissionRules.KindForDivision(agent.DivisionId);
         return MissionCatalog
             .ForLevel(catalog, level, storyline)
@@ -147,6 +162,25 @@ internal sealed partial class PilotMissionStore
                 && (profile.Definition.Chain is null || profile.Definition.Chain.PreviousMissionId == 0)
                 && MissionCatalog.ChainAvailable(catalog, profile, agent)
             );
+    }
+
+    private static int MilitiaDestination(WorldAction world, CatalogDbContext catalog, int start, MilitiaFaction faction, int sequence)
+    {
+        var opponent = MilitiaRules.Opponent(faction);
+        var distances = Distances(catalog, start);
+        var systems = FactionWarzoneCatalog
+            .Roster.Where(seed =>
+                distances.ContainsKey(seed.SystemId)
+                && FactionWarzoneStore.Occupier(world, seed.SystemId) == opponent
+                && FactionWarzoneStore.System(world, seed.SystemId)!.PendingTransferAt is null
+            )
+            .OrderBy(seed => distances[seed.SystemId])
+            .ThenBy(seed => seed.SystemId)
+            .Take(5)
+            .ToArray();
+        return systems.Length > 0
+            ? systems[sequence % systems.Length].SystemId
+            : throw new InvalidDataException("This station has no reachable opposing warzone destination.");
     }
 
     private MissionPayment Pay(
@@ -172,7 +206,7 @@ internal sealed partial class PilotMissionStore
             Gain(world, recipient, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, gains);
             foreach (var gain in gains)
             {
-                world.AfterCommit(() => fleets.NotifyMissionStanding(recipient, gain.SourceId, gain.After));
+                world.AfterCommit(() => fleets.NotifyStandingChanged(recipient, gain.SourceId, gain.After));
             }
         }
         var payment = Credit(
@@ -186,7 +220,23 @@ internal sealed partial class PilotMissionStore
             mission.LoyaltyPoints - lpShare * sharers.Count
         );
         Gain(world, pilot.Id, agent.Id, mission.CorporationFraction, now, agent.CorporationId, mission.SystemId, standings);
-        Gain(world, pilot.Id, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, standings);
+        if (MilitiaMissionCatalog.Issuer(mission.MissionId) is { } militia)
+        {
+            MilitiaProgressionStore.AdjustStanding(
+                world,
+                pilot,
+                militia,
+                standingShare,
+                StandingEvent.AgentMissionCompleted,
+                mission.SystemId,
+                now,
+                standings
+            );
+        }
+        else
+        {
+            Gain(world, pilot.Id, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, standings);
+        }
         if (mission.Storyline && agent.FactionId is int faction)
         {
             Gain(world, pilot.Id, faction, mission.FactionFraction, now, agent.CorporationId, mission.SystemId, standings);
@@ -235,12 +285,20 @@ internal sealed partial class PilotMissionStore
                 }
             );
         }
-        var lp =
-            world.Set<SavedLoyaltyBalance>().Find(pilotId, agent.CorporationId)
-            ?? world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = agent.CorporationId }).Entity;
-        long before = lp.Points;
-        lp.Points = checked(lp.Points + points);
-        return new(wallet.Cents, before, lp.Points);
+        var faction = MilitiaMissionCatalog.Issuer(mission.MissionId);
+        int issuer = faction is { } militia ? MilitiaRules.Corporation(militia) : agent.CorporationId;
+        var lp = world.Set<SavedLoyaltyBalance>().Find(pilotId, issuer);
+        long before = lp?.Points ?? 0;
+        if (faction is { } side)
+        {
+            MilitiaLoyalty.Credit(world, side, world.Pilots.Find(pilotId)!, points, MilitiaLoyaltySource.Mission, mission.Id, now);
+        }
+        else
+        {
+            lp ??= world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = issuer }).Entity;
+            lp.Points = checked(lp.Points + points);
+        }
+        return new(wallet.Cents, before, world.Set<SavedLoyaltyBalance>().Find(pilotId, issuer)?.Points ?? 0);
     }
 
     private static void Gain(

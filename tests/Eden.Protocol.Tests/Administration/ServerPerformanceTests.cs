@@ -62,6 +62,34 @@ public sealed class ServerPerformanceTests
     }
 
     [Fact]
+    public void FrameHistoryAggregatesCompletedIntervalsPreservesGapsAndExpiresOnMonotonicTime()
+    {
+        TestClock clock = new();
+        SessionFrameMonitor frames = new(clock);
+        ServerPerformanceMonitor monitor = new(clock, new(), readResources: () => Sample(), frames: frames);
+        Parallel.For(0, 100, _ => frames.Record(TimeSpan.FromMilliseconds(4), TimeSpan.FromMilliseconds(1)));
+        frames.Record(TimeSpan.FromMilliseconds(105), TimeSpan.FromMilliseconds(6));
+        Assert.All(monitor.Read().FrameHistory, interval => Assert.Equal(0, interval.Count));
+        clock.Seconds = 2;
+        var first = monitor.Read();
+        Assert.Equal(SessionFrameMonitor.HistoryLength, first.FrameHistory.Length);
+        Assert.Equal(new SessionFrameInterval(101, 5, 105, 6), first.FrameHistory[^1]);
+
+        clock.Seconds = 4;
+        clock.AdvanceWallTime(TimeSpan.FromHours(-3));
+        frames.Record(TimeSpan.FromMilliseconds(8), TimeSpan.Zero);
+        clock.Seconds = 6;
+        var second = monitor.Read();
+        Assert.Equal(first.FrameHistory[^1], second.FrameHistory[^3]);
+        Assert.Equal(default, second.FrameHistory[^2]);
+        Assert.Equal(new SessionFrameInterval(1, 8, 8, 0), second.FrameHistory[^1]);
+        Assert.Equal(101, first.FrameHistory[^1].Count);
+
+        clock.Seconds = 126;
+        Assert.All(monitor.Read().FrameHistory, interval => Assert.Equal(0, interval.Count));
+    }
+
+    [Fact]
     public void RatesStayWithinBoundsWhenApproximateCountersMoveBackwards()
     {
         TestClock clock = new();

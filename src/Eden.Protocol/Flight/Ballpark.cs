@@ -93,6 +93,7 @@ internal static partial class Ballpark
             .Select(s => s.Health!)
             .Concat(npcs.Select(n => n.Health))
             .Concat((drones ?? []).Select(d => d.Health))
+            .Concat(objects.Select(body => body.CynoDeployable?.Health).OfType<ShipHealth>())
             .ToDictionary(s => s.ShipId, s => s.DamageState());
         foreach (var body in objects)
         {
@@ -160,11 +161,20 @@ internal static partial class Ballpark
         using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0); // DESTINY_FULLSTATE, consumed by AddBalls in partial mode.
         writer.Write(stamp);
-        var bodies = objects.ToArray();
-        var slims = bodies.Select(body => WriteObject(writer, body)).ToList();
-        var damage = bodies
-            .Where(body => body.Structure?.DamageFractions is not null)
-            .ToDictionary(body => body.Id, body => StructureDamage(body)!);
+        List<SlimItem> slims = [];
+        Dictionary<long, ShipDamageState> damage = [];
+        foreach (var body in objects)
+        {
+            slims.Add(WriteObject(writer, body));
+            if (body.CynoDeployable?.Health is { } health)
+            {
+                damage.Add(body.Id, health.DamageState());
+            }
+            if (StructureDamage(body) is { } structureDamage)
+            {
+                damage.Add(body.Id, structureDamage);
+            }
+        }
         return new(buffer.WrittenSpan.ToArray(), slims, damage);
     }
 
@@ -289,11 +299,16 @@ internal static partial class Ballpark
 
     private static SlimItem WriteNpc(BinaryWriter writer, NpcContact npc, int stamp)
     {
-        if (npc.Role == NpcRole.MissionStructure)
+        if (npc.Role is NpcRole.MissionStructure or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
         {
             // Carbon Thunkers.cpp omits the free-ball fields for rigid mode. Structures
             // retain their entity slim and damage state while remaining fixed local balls.
-            WriteBallHeader(writer, npc.Id, (byte)NavigationMode.Rigid, npc.Radius, npc.Position, (byte)DestinyBallFlags.Massive);
+            var flags = DestinyBallFlags.Massive;
+            if (npc.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
+            {
+                flags |= DestinyBallFlags.Global;
+            }
+            WriteBallHeader(writer, npc.Id, (byte)NavigationMode.Rigid, npc.Radius, npc.Position, (byte)flags);
             writer.Write((sbyte)-1);
             return new NpcSlimItem(npc);
         }
@@ -365,7 +380,13 @@ internal static partial class Ballpark
             | (ship.Warp is null && !ship.Cloaked ? DestinyBallFlags.Massive : DestinyBallFlags.None);
         WriteBallHeader(writer, pilot.ShipId, (byte)mode, pilot.Flight.ShipRadius, pilot.Position!, (byte)flags);
         writer.Write(pilot.Flight.Mass);
-        writer.Write((byte)(ship.Cloaked ? 1 : 0)); // Pinned Destiny mass-sector cloak mode.
+        writer.Write(
+            (byte)(
+                ship.GateCloakUntil != 0 ? DestinyCommand.CloakBall.GateCloakMode
+                : ship.Cloaked ? 1
+                : 0
+            )
+        );
         writer.Write(-1L); // Force-field harmonic
         writer.Write(pilot.CorpId);
         writer.Write(pilot.AllianceId ?? -1);

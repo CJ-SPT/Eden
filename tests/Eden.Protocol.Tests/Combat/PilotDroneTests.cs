@@ -2,12 +2,14 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Insurance;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Drones;
@@ -17,6 +19,7 @@ using Eden.Protocol.Targeting;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +55,14 @@ public sealed class PilotDroneTests
         Assert.Null(loss.Insurance);
         Assert.Equal(2, loss.InventoryChanges.Count);
         Assert.Empty(f.Tick(30).Hits);
+        if (resident)
+        {
+            var statistics = f.Base.Db.Services.GetRequiredService<IMapStatistics>();
+            Assert.Equal(
+                new MapHistoryRow(SystemId, new(0, 0, 0, 1)),
+                Assert.Single(statistics.History(MapHistoryStatistic.Kills, 1).Rows)
+            );
+        }
         using WorldDbContext saved = new(f.Base.Db.Path);
         Assert.Single(saved.Set<SavedHomeCloneTransfer>());
         Assert.Equal(2, saved.Set<SavedCombatReport>().Count());
@@ -231,16 +242,55 @@ public sealed class PilotDroneTests
     public async Task FatalDroneVolleySettlesOnePersistentLossAndNeverCreatesNpcRewards(bool resident)
     {
         using var f = Prepare();
+        long defender;
         using (LiveWorld? live = resident ? new(new(f.Base.Db.Path), f.Base.Clock, _ => { }) : null)
         {
-            var ids = f.Launch();
-            Space(f);
+            var launched = f.Launch();
+            defender = launched[0];
+            var ids = launched[1..];
+            long attackerShip = f.Ship;
+            using (WorldActionScope action = new(new(f.Base.Db.Path)))
+            {
+                action.World.Set<OwnedItem>().Find(defender)!.OwnerId = Victim;
+                var drone = action.World.Set<WorldDrone>().Find(defender)!;
+                drone.PilotId = Victim;
+                drone.ControllerShipId = VictimShip;
+                drone.TargetId = attackerShip;
+                drone.Activity = DroneActivity.Fighting;
+                drone.Orbiting = true;
+                drone.VelocityX = 300;
+                action.Commit();
+            }
+            var space = Space(f);
             AlmostLost(f);
+            var attacker = f.Base.Db.Store.FindPilot(1000001)!;
+            using FlightSession observer = new(
+                f.Base.Db.Store,
+                attacker,
+                f.Base.Clock,
+                space,
+                [],
+                health: f.Base.Db.Services.GetRequiredService<IPilotHealth>(),
+                drones: f.Drones
+            );
+            observer.Snapshot();
+            observer.Updates.Clear();
             List<PilotDamage> messages = [];
             f.Base.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += messages.Add;
             Engage(f, ids);
             var hit = Assert.Single(f.Tick().Hits);
             Assert.True(hit.Health.Remaining.Destroyed);
+            var abandoned = Assert.Single(f.Drones.List(SystemId, f.Now), drone => drone.Id == defender);
+            Assert.Equal(0, abandoned.ShipId);
+            Assert.Equal(0, abandoned.TargetId);
+            Assert.False(abandoned.Orbiting);
+            Assert.Equal(DroneActivity.Idle, abandoned.Activity);
+            Assert.Equal(SpacePosition.Zero, abandoned.Velocity);
+            space.Leave(VictimShip);
+            observer.RefreshPeers();
+            Assert.Contains(observer.Updates, update => update.Command is DestinyCommand.Stop stop && stop.Id == defender);
+            Assert.Contains(observer.Updates, update => update.Command == new DestinyCommand.RemoveBall(VictimShip, true));
+            Assert.DoesNotContain(observer.Updates, update => update.Command is DestinyCommand.SetState);
             var damage = Assert.Single(messages);
             Assert.Equal(FleetDefinitions.CapsuleGroup, damage.Capsule!.ShipGroupId);
             Assert.NotNull(damage.Insurance);
@@ -251,6 +301,7 @@ public sealed class PilotDroneTests
             }
         }
         using WorldDbContext saved = new(f.Base.Db.Path);
+        Assert.Equal(0, saved.Set<WorldDrone>().Find(defender)!.ControllerShipId);
         var loss = Assert.Single(saved.Set<ShipLoss>());
         Assert.Equal(f.Pilot, loss.AttackerPilotId);
         Assert.Null(loss.NpcId);
@@ -260,6 +311,20 @@ public sealed class PilotDroneTests
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<SavedSecurityStatus>());
         Assert.NotEqual(VictimShip, saved.Pilots.Find(Victim)!.ActiveShipId);
+        if (resident)
+        {
+            // Reopen an older save with an orbit still assigned to the destroyed ship.
+            var stale = saved.Set<WorldDrone>().Find(defender)!;
+            stale.ControllerShipId = VictimShip;
+            stale.Orbiting = true;
+            stale.TargetId = f.Ship;
+            saved.SaveChanges();
+            using var reopened = new LiveWorld(new(f.Base.Db.Path), f.Base.Clock, _ => { });
+            Assert.Equal(0, Assert.Single(f.Drones.List(SystemId, f.Now), drone => drone.Id == defender).ShipId);
+            await reopened.FlushAsync();
+            saved.ChangeTracker.Clear();
+            Assert.False(saved.Set<WorldDrone>().Find(defender)!.Orbiting);
+        }
     }
 
     [Theory]

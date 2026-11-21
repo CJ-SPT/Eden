@@ -23,6 +23,7 @@ public sealed class ConcordOverviewTests
         Assert.Contains("install_npc_bounty_display()", expression);
         Assert.Contains("install_presence_lists()", expression);
         Assert.Contains("install_free_point_preview()", expression);
+        Assert.Contains("install_training_speed(eden_training_speed)", expression);
     }
 
     [PinnedPortraitClientFact]

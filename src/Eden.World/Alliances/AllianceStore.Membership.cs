@@ -3,6 +3,7 @@ using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Alliances;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -11,18 +12,36 @@ namespace Eden.World.Alliances;
 
 internal sealed partial class AllianceStore
 {
-    public long Head => LiveWorld.Find(database.Path)?.Economy.Inspect(_ => Resident.Economy.Sequence("WorldAllianceChange")) ?? 0;
+    private const string ChangeSequence = "WorldAllianceChange";
+
+    public long Head =>
+        LiveWorld.Find(database.Path)?.Economy is { } economy
+            ? economy.IsLoaded
+                ? economy.Sequence(ChangeSequence)
+                : economy.Inspect(_ => economy.Sequence(ChangeSequence))
+            : 0;
 
     public AllianceApplication Apply(long actorId, int allianceId, string text)
     {
-        AllianceMembershipRules.ValidateApplication(text);
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
+        var result = Apply(world, actorId, allianceId, text, Now);
+        world.Commit();
+        return result;
+    }
+
+    internal static AllianceApplication Apply(WorldAction world, long actorId, int allianceId, string text, long now)
+    {
+        AllianceMembershipRules.ValidateApplication(text);
         var corporation = CorporationRoleStore.Current(world, actorId);
         CorporationRoleStore.RequireDirector(world, actorId, corporation);
         _ = Active(world, allianceId);
         if (world.Set<SavedAllianceMember>().Find(corporation.Id) is not null)
         {
             throw new InvalidDataException("Leave your current alliance before applying.");
+        }
+        if (MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, allianceId, now) is { } failure)
+        {
+            throw new InvalidDataException(failure);
         }
         var applications = world.Filter<SavedAllianceApplication>(a => a.CorporationId == corporation.Id).ToArray();
         if (
@@ -52,11 +71,10 @@ internal sealed partial class AllianceStore
             .Entity;
         row.Text = text;
         row.Status = AllianceApplicationStatus.New;
-        row.AppliedAt = Now;
+        row.AppliedAt = now;
         row.EffectiveAt = null;
         var after = Application(row);
         Record(world, new(0, allianceId, corporation.Id, ApplicationBefore: before, ApplicationAfter: after));
-        world.Commit();
         return after;
     }
 
@@ -79,19 +97,24 @@ internal sealed partial class AllianceStore
 
     public void Decide(long actorId, int corporationId, string text, AllianceApplicationStatus status)
     {
-        AllianceMembershipRules.ValidateApplication(text);
-        if (status is not (AllianceApplicationStatus.Accepted or AllianceApplicationStatus.Rejected))
-        {
-            throw new InvalidDataException("Accept or reject this application.");
-        }
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
+        if (Decide(world, actorId, corporationId, text, status, Now))
+        {
+            world.Commit();
+        }
+    }
+
+    internal static bool Decide(WorldAction world, long actorId, int corporationId, string text, AllianceApplicationStatus status, long now)
+    {
+        AllianceMembershipRules.ValidateApplication(text);
+        ValidateDecision(status);
         var alliance = Executor(world, actorId);
         var row =
             world.Filter<SavedAllianceApplication>(a => a.AllianceId == alliance.Id && a.CorporationId == corporationId).SingleOrDefault()
             ?? throw new InvalidDataException("Unknown alliance application.");
         if (row.Status == status)
         {
-            return;
+            return false;
         }
         if (
             row.Status != AllianceApplicationStatus.New
@@ -101,12 +124,27 @@ internal sealed partial class AllianceStore
         {
             throw new InvalidDataException("This application is no longer eligible.");
         }
+        if (
+            status == AllianceApplicationStatus.Accepted
+            && MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporationId, alliance.Id, now) is { } failure
+        )
+        {
+            throw new InvalidDataException(failure);
+        }
         var before = Application(row);
         row.Text = text;
         row.Status = status;
-        row.EffectiveAt = status == AllianceApplicationStatus.Accepted ? Now + AllianceMembershipRules.AdmissionDelay.Ticks : null;
+        row.EffectiveAt = status == AllianceApplicationStatus.Accepted ? now + AllianceMembershipRules.AdmissionDelay.Ticks : null;
         Record(world, new(0, alliance.Id, corporationId, ApplicationBefore: before, ApplicationAfter: Application(row)));
-        world.Commit();
+        return true;
+    }
+
+    private static void ValidateDecision(AllianceApplicationStatus status)
+    {
+        if (status is not (AllianceApplicationStatus.Accepted or AllianceApplicationStatus.Rejected))
+        {
+            throw new InvalidDataException("Accept or reject this application.");
+        }
     }
 
     public IReadOnlyList<AllianceApplication> Applications(long actorId, bool forAlliance) =>
@@ -227,7 +265,7 @@ internal sealed partial class AllianceStore
 
     internal static void Record(WorldAction world, AllianceChange change)
     {
-        long id = world.Next("WorldAllianceChange");
+        long id = world.Next(ChangeSequence);
         world.Add(
             new SavedAllianceChange
             {
@@ -257,6 +295,7 @@ internal sealed partial class AllianceStore
     {
         var before = Snapshot(world, member.AllianceId)!;
         var previous = Member(member);
+        MilitiaOrganizationStore.CorporationDepartedAlliance(world, member.AllianceId, member.CorporationId);
         world.Remove(member);
         ScheduleEmpty(world, member.AllianceId, now);
         foreach (

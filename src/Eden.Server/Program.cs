@@ -23,7 +23,39 @@ namespace Eden.Server;
 
 internal static class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task<int> Main(string[] args)
+    {
+        try
+        {
+            await RunAsync(args);
+            return 0;
+        }
+        catch (Exception error)
+        {
+            bool pause = ServerConsole.ShouldPauseOnError();
+            if (error is MissingCatalogException missingCatalog)
+            {
+                ServerConsole.WriteMissingCatalog(missingCatalog);
+            }
+            else if (pause)
+            {
+                Console.Error.WriteLine($"Eden stopped because of an error.{Environment.NewLine}{error}");
+            }
+            else
+            {
+                throw;
+            }
+            if (pause)
+            {
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Press any key to close this window.");
+                Console.ReadKey(intercept: true);
+            }
+            return 1;
+        }
+    }
+
+    private static async Task RunAsync(string[] args)
     {
         await using var logging = BufferedServerLog.Start();
         if (await Eden.Server.Capsuleers.TrafficImportCommand.TryRun(args))
@@ -103,7 +135,8 @@ internal static class Program
         {
             return;
         }
-        bool economyWorld = args.Contains("--economy-world");
+        bool freshUniverse = args.Contains("--fresh-universe");
+        bool economyWorld = freshUniverse || args.Contains("--economy-world");
         bool testingMarket = args.Contains("--testing-market");
         if (testingMarket && (economyWorld || File.Exists(worldPath)))
         {
@@ -174,7 +207,7 @@ internal static class Program
             long reconciliationStarted = Stopwatch.GetTimestamp();
             Eden.Gameplay.Market.WorldEconomySettings? startingEconomy = File.Exists(worldPath)
                 ? null
-                : new(testingMarket, !economyWorld, npcStock);
+                : new(testingMarket, !economyWorld, npcStock, freshUniverse);
             bool preparePopulation = Value("--grant-redeem") is null && Value("--set-account-password") is null;
             if (preparePopulation)
             {
@@ -242,8 +275,16 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
+        WorldWipeRequest worldWipe = new(worldPath);
         await ServerLifetime.RunAsync(async lifetime =>
         {
+            ConsoleCancelEventHandler interrupt = (_, args) =>
+            {
+                args.Cancel = true;
+                shutdown.Cancel();
+            };
+            Console.CancelKeyPress += interrupt;
+            lifetime.OnStop("console interrupt", () => Console.CancelKeyPress -= interrupt);
             var world = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
             lifetime.OnStop("resident world", world.Dispose);
             // Load the canonical world image before accepting players or starting bot turns.
@@ -251,6 +292,7 @@ internal static class Program
             ServerStartup.Measure("resident readiness", world.Economy.Warm);
             ServerStartup.Measure("accounts", accounts.Initialize);
             var mods = services.GetRequiredService<Eden.Server.Modding.ModRuntime>();
+            using var modFailure = mods.FailureToken.Register(shutdown.Cancel);
             lifetime.OnStop("mods", mods.Stop);
             ServerStartup.Measure(
                 "mod activation",
@@ -289,6 +331,9 @@ internal static class Program
             var concordMaintenance = services.GetRequiredService<ConcordMaintenance>();
             lifetime.OnStop(nameof(ConcordMaintenance), concordMaintenance.Dispose);
             concordMaintenance.Start();
+            var standupFighterMaintenance = services.GetRequiredService<StandupFighterMaintenance>();
+            lifetime.OnStop(nameof(StandupFighterMaintenance), standupFighterMaintenance.Dispose);
+            standupFighterMaintenance.Start();
             var abyssalMaintenance = services.GetRequiredService<AbyssalMaintenance>();
             lifetime.OnStop(nameof(AbyssalMaintenance), abyssalMaintenance.Dispose);
             abyssalMaintenance.Start();
@@ -300,7 +345,7 @@ internal static class Program
             corporationMaintenance.Start();
             var capsuleerMaintenance = services.GetRequiredService<CapsuleerMaintenance>();
             lifetime.OnStop(nameof(CapsuleerMaintenance), capsuleerMaintenance.Dispose);
-            capsuleerMaintenance.Start();
+            capsuleerMaintenance.Start(shutdown.Token);
             var population = services.GetRequiredService<CapsuleerPopulationMaintenance>();
             lifetime.OnStop(nameof(CapsuleerPopulationMaintenance), population.Dispose);
             var gateway = LocalGateway.Create(
@@ -334,7 +379,8 @@ internal static class Program
                     administrationPort,
                     administrationOrigin,
                     IPAddress.Parse(options.ListenAddress),
-                    options.CertificatePath
+                    options.CertificatePath,
+                    worldWipe
                 );
                 lifetime.OnStop("administration", administration.DisposeAsync);
                 lifetime.OnStop("administration listener", () => new ValueTask(administration.StopAsync()));
@@ -367,9 +413,14 @@ internal static class Program
             );
             if (!server.IsCompleted)
             {
-                population.Start();
+                population.Start(shutdown.Token);
             }
-            if (await Task.WhenAny(server, chat.Completion) == chat.Completion)
+            var completed = await Task.WhenAny(server, chat.Completion, worldWipe.ShutdownRequested);
+            if (completed == worldWipe.ShutdownRequested)
+            {
+                await shutdown.CancelAsync();
+            }
+            if (completed == chat.Completion)
             {
                 await chat.Completion;
                 throw new InvalidOperationException("Chat stopped before the game listener.");
@@ -377,6 +428,14 @@ internal static class Program
             joined = true;
             await server;
         });
+        // Reaching here requires every producer and the final resident checkpoint to
+        // have stopped successfully. Never replace a save while a resident owner exists.
+        if (worldWipe.ShutdownRequested.IsCompletedSuccessfully && worldWipe.Pending is { } wipe)
+        {
+            ServerLog.Console.Information($"Backing up and wiping world. Backup directory: {wipe.BackupDirectory}");
+            WorldWipe.Execute(worldPath, wipe.BackupDirectory);
+            ServerLog.Console.Information("World wipe complete. Accounts retained. Restart Eden to initialize the fresh world.");
+        }
     }
 
     private static string ReadPassword()

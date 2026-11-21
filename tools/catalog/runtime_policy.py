@@ -20,6 +20,7 @@ BOUNDARIES = {
     "src/Eden.Server/Program.cs": "Explicit offline catalog creation and verification commands.",
 }
 WORLD_TRANSPORT = {
+    "src/Eden.World/Storage/WorldWipe.cs": "Stopped-host maintenance of detached final checkpoints with verified pre-wipe backups.",
     "src/Eden.World/Storage/TrafficConnections.cs": "Owned traffic snapshot files and isolated fitting-validation image transport.",
     "src/Eden.World/Storage/WorldConnections.cs": "Owned world connection plumbing.",
     "src/Eden.World/Storage/WorldDbContext.cs": "World context and detached checkpoint connection plumbing.",

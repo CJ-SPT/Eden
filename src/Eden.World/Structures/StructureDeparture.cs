@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Drones;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
@@ -36,6 +37,13 @@ internal static class StructureDeparture
             !AssetSafetyStore.SafetyEnabled(catalog, structure.SystemId)
             || destroyed && structure.LowPowerAt is long low && now - low >= StructureRules.AbandonmentDuration;
         AssetSafetyStore.RelocateDelivered(world, catalog, structure, now, eject);
+        foreach (var squadron in world.Filter<WorldDrone>(row => row.ControllerShipId == structure.Id && row.SystemId != null).ToArray())
+        {
+            if (world.Set<OwnedItem>().Find(squadron.ItemId) is { } item)
+            {
+                world.Remove(item);
+            }
+        }
         var loot = lootRoll ?? new ShipLootRoll();
         long? industrialLoot = null;
         foreach (

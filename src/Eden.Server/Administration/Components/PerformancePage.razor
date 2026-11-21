@@ -4,8 +4,16 @@
 @inject AdministrationOperations Operations
 @inject AuthenticationStateProvider Authentication
 <PageTitle>Performance · Eden</PageTitle>
-<h1>Server performance</h1>
-<p class="muted">Live diagnostics for the Eden server process. Refreshes every two seconds while this page is open.</p>
+<div class="performance-hero">
+    <div>
+        <h1>Server performance</h1>
+        <p class="muted">Pilot session timing, process resources and world health.</p>
+    </div>
+    @if (Snapshot is not null)
+    {
+        <span class="sample-status">Refreshes every 2 seconds</span>
+    }
+</div>
 @if (Error is not null)
 {
     <p class="error" role="alert">@Error</p>

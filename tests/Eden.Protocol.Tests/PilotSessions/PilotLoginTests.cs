@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using Eden.Gameplay.Configuration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
@@ -19,9 +20,10 @@ public sealed class PilotLoginTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task RequiresBothLocalTicketAndChallengeProof(bool validTicket)
+    [InlineData(false, 1)]
+    [InlineData(true, 1)]
+    [InlineData(true, 2.5)]
+    public async Task RequiresBothLocalTicketAndChallengeProof(bool validTicket, decimal trainingSpeed)
     {
         // Cold seed preparation is unrelated to the five-second wire exchange.
         using TestWorld world = new();
@@ -36,7 +38,11 @@ public sealed class PilotLoginTests
         NetworkStream wire = client.GetStream();
         List<string> messages = [];
         using var scope = world.Services.CreateScope();
-        PilotLogin login = new(new FixtureIdentity(key), scope.ServiceProvider.GetRequiredService<IPilotSession>());
+        PilotLogin login = new(
+            new FixtureIdentity(key),
+            scope.ServiceProvider.GetRequiredService<IPilotSession>(),
+            tuning: new FixtureTrainingTuning(trainingSpeed)
+        );
         byte[] request = BlueMarshal.Encode(new object?[] { null, "VK", Array.Empty<byte>() });
         Task exchange = login.RunAsync(server.GetStream(), request, messages.Add, timeout.Token);
         Dictionary<string, object?> keys = new()
@@ -56,7 +62,7 @@ public sealed class PilotLoginTests
             Assert.Equal(2L, await encrypted.ReadAsync());
             object?[] reply = BlueRead.Tuple(await encrypted.ReadAsync(), 4);
             object?[] signed = BlueRead.Tuple(reply[1], 2);
-            Assert.Equal(LoginClient.Expression, BlueRead.Bytes(signed[0]));
+            Assert.Equal(LoginClient.For(new(), trainingSpeed), BlueRead.Bytes(signed[0]));
             byte[] digest = SHA256.HashData(BlueMarshal.Encode(new object?[] { signed[0] }));
             Assert.True(key.VerifyData(digest, BlueRead.Bytes(signed[1]), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
             await SendEncrypted(new object?[] { new byte[32], "", null });
@@ -69,5 +75,10 @@ public sealed class PilotLoginTests
         {
             await PacketStream.WriteAsync(wire, aes.EncryptCbc(BlueMarshal.Encode(value), aes.IV), timeout.Token);
         }
+    }
+
+    private sealed record FixtureTrainingTuning(decimal Speed) : IWorldTuning
+    {
+        public WorldSettings Settings { get; } = new() { Progression = new(TrainingSpeedMultiplier: Speed) };
     }
 }

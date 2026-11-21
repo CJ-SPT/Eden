@@ -3,6 +3,12 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
+internal sealed record StationCountReply(IReadOnlyList<SystemStationCount> Counts) : BlueModel
+{
+    // Build 3662168 MapFilterStationCount constructs a dictionary from this list of pairs.
+    public override object ToBlue() => Counts.Select(count => (object?)new object?[] { count.SystemId, count.Count }).ToList();
+}
+
 internal sealed record CorporationStationSystemsReply(IReadOnlyList<int> Systems) : BlueModel
 {
     // Build 3662168 Info.UpdateDataCorp iterates rows and reads solarSystemID.

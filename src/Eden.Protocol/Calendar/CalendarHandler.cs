@@ -7,7 +7,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Calendar;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar alliances) : ISelectedPilotCallHandler
+internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar alliances, ICorporationCalendar corporations)
+    : ISelectedPilotCallHandler
 {
     private long? _pilot;
     private long _cursor;
@@ -52,16 +53,7 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
         _revision = revision;
         foreach (var change in changes.Items)
         {
-            context.Notifications.Add(
-                change.Kind switch
-                {
-                    CalendarChangeKind.Created => new CalendarEventCreated(change.Event),
-                    CalendarChangeKind.Edited => new CalendarEventEdited(change.Event, change.OldTime),
-                    CalendarChangeKind.Cancelled => new CalendarEventRemoved(change.Event.Id, change.Event.Time, true),
-                    CalendarChangeKind.Uninvited => new CalendarEventRemoved(change.Event.Id, change.Event.Time, false),
-                    _ => throw new InvalidDataException("Unknown calendar change."),
-                }
-            );
+            context.Notifications.Add(CalendarNotification.From(change));
         }
     }
 
@@ -121,64 +113,54 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
                     return new CalendarMonthReply(
                         calendar
                             .Month(pilot, (int)month, (int)year)
+                            .Concat(corporations.Month(pilot, (int)month, (int)year))
                             .Concat(alliances.Month(pilot, (int)month, (int)year))
                             .OrderBy(e => e.Time)
                             .ThenBy(e => e.Id)
                             .ToArray()
                     );
                 case ("GetEventDetails", [long id, long owner]):
-                    return new CalendarDetailsReply(
-                        alliances.IsOwner(owner) ? alliances.Details(pilot, id, owner) : calendar.Details(pilot, id, owner)
-                    );
+                    return new CalendarDetailsReply(Events(owner).Details(pilot, id, owner));
                 case ("GetResponsesForCharacter", []):
                     return new BlueList<CalendarPersonalResponseRow>(
                         calendar
                             .Responses(pilot)
+                            .Concat(corporations.Responses(pilot))
                             .Concat(alliances.Responses(pilot))
                             .Select(r => new CalendarPersonalResponseRow(r))
                             .ToArray()
                     );
                 case ("GetResponsesToEvent", [long id, long owner]):
                     return new BlueList<CalendarAttendanceRow>(
-                        (alliances.IsOwner(owner) ? alliances.Attendance(pilot, id, owner) : calendar.Attendance(pilot, id, owner))
-                            .Select(r => new CalendarAttendanceRow(r))
-                            .ToArray()
+                        Events(owner).Attendance(pilot, id, owner).Select(r => new CalendarAttendanceRow(r)).ToArray()
                     );
                 case ("CreatePersonalEvent", [long time, var duration, var title, var description, var important, var invitees]):
                     return calendar.Create(pilot, Draft(time, duration, title, description, important), Pilots(invitees));
-                case ("CreateAllianceEvent", [long time, var duration, var title, var description, var important]):
-                    return alliances.Create(pilot, Draft(time, duration, title, description, important));
+                case (
+                    "CreateCorporationEvent"
+                        or "CreateAllianceEvent",
+                    [long time, var duration, var title, var description, var important]
+                ):
+                    return Organization(method).Create(pilot, Draft(time, duration, title, description, important));
                 case ("EditPersonalEvent", [long id, long old, long time, var duration, var title, var description, var important]):
                     calendar.Edit(pilot, id, old, Draft(time, duration, title, description, important));
                     return PilotCallResult.None;
-                case ("EditAllianceEvent", [long id, long old, long time, var duration, var title, var description, var important]):
-                    alliances.Edit(pilot, id, old, Draft(time, duration, title, description, important));
+                case (
+                    "EditCorporationEvent"
+                        or "EditAllianceEvent",
+                    [long id, long old, long time, var duration, var title, var description, var important]
+                ):
+                    Organization(method).Edit(pilot, id, old, Draft(time, duration, title, description, important));
                     return PilotCallResult.None;
                 case ("UpdateEventParticipants", [long id, var add, var remove]):
                     calendar.UpdateParticipants(pilot, id, Pilots(add), Pilots(remove));
                     return PilotCallResult.None;
                 case ("SendEventResponse", [long id, long owner, long response]) when response is >= 0 and <= (long)CalendarResponse.Maybe:
-                    if (alliances.IsOwner(owner))
-                    {
-                        alliances.Respond(pilot, id, owner, (CalendarResponse)response);
-                    }
-                    else
-                    {
-                        calendar.Respond(pilot, id, owner, (CalendarResponse)response);
-                    }
+                    Events(owner).Respond(pilot, id, owner, (CalendarResponse)response);
                     return PilotCallResult.None;
                 case ("DeleteEvent", [long id, long owner]):
-                    if (alliances.IsOwner(owner))
-                    {
-                        alliances.Delete(pilot, id, owner);
-                    }
-                    else
-                    {
-                        calendar.Delete(pilot, id, owner);
-                    }
+                    Events(owner).Delete(pilot, id, owner);
                     return PilotCallResult.None;
-                case ("CreateCorporationEvent" or "EditCorporationEvent", _):
-                    throw new InvalidDataException("Corporation calendar management is not available yet.");
                 default:
                     throw new InvalidDataException("Invalid calendar request.");
             }
@@ -188,6 +170,18 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
             return new PilotCallResult.Failure(error.Message);
         }
     }
+
+    private ICalendarEvents Events(long ownerId)
+    {
+        if (corporations.IsOwner(ownerId))
+        {
+            return corporations;
+        }
+        return alliances.IsOwner(ownerId) ? alliances : calendar;
+    }
+
+    private IOrganizationCalendar Organization(string method) =>
+        method is "CreateCorporationEvent" or "EditCorporationEvent" ? corporations : alliances;
 
     private static IReadOnlyList<long> Pilots(object? value) =>
         value switch
@@ -291,6 +285,19 @@ internal sealed record CalendarAttendanceRow(CalendarAttendance Attendance) : Bl
                 new object?[] { Attendance.PilotId, (int)Attendance.Response },
             ]
         );
+}
+
+internal static class CalendarNotification
+{
+    internal static PilotNotification From(CalendarChange change) =>
+        change.Kind switch
+        {
+            CalendarChangeKind.Created => new CalendarEventCreated(change.Event),
+            CalendarChangeKind.Edited => new CalendarEventEdited(change.Event, change.OldTime),
+            CalendarChangeKind.Cancelled => new CalendarEventRemoved(change.Event.Id, change.Event.Time, true),
+            CalendarChangeKind.Uninvited => new CalendarEventRemoved(change.Event.Id, change.Event.Time, false),
+            _ => throw new InvalidDataException("Unknown calendar change."),
+        };
 }
 
 internal sealed record CalendarEventCreated(CalendarEvent Event) : PilotNotification("OnNewCalendarEvent")

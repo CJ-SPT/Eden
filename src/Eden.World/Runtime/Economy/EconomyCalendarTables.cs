@@ -39,6 +39,7 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterCalendarTables()
     {
+        RegisterCorporationCalendar();
         Register(
             new EconomyTable<SavedCalendarEvent, EconomySavedCalendarEvent>(
                 "WorldCalendarEvent",

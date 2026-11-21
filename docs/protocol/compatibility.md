@@ -8,12 +8,69 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [EVE.js comparison for map, character and dungeon routes](#evejs-comparison-for-map-character-and-dungeon-routes)
 - [In-game text for routine rejections](#in-game-text-for-routine-rejections)
 - [Client RPC backlog inventory (November 5, 2026)](#client-rpc-backlog-inventory-november-5-2026)
 - [Localization QA wrap compatibility (November 5, 2026)](#localization-qa-wrap-compatibility-november-5-2026)
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## EVE.js comparison for map, character and dungeon routes
+
+The November 21, 2026 pass compared Eden `157c5190` with local EVE.js **261108.1** (client build **3396210**).
+Eden's client audit used build **3662168** and archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The scan decoded 12,789 modules and 171,678 code objects with zero failures after correcting xdis 6.3.0's read of the
+signed Python 2 long digit count in the audit process. Client bytecode was inspected as data.
+
+| Route | Pinned client and EVE.js behavior | Eden implementation |
+| --- | --- | --- |
+| `map.GetStationCount()` | `MapFilterStationCount` constructs a Python dictionary from the returned sequence. EVE.js returns pairs for all catalog systems. | Returns a list of `(solarSystemID, count)` tuples from the pinned catalog, including zero-count systems. Player structures are outside the NPC station count. |
+| `charMgr.GetCharacterCreationDate()` | `CCSvc._GetCharacterCreationDate` calls with zero arguments. EVE.js returns a FILETIME. | Returns the selected character's saved creation FILETIME. |
+| `charMgr.GetOrganizationInfoForCharacters(characterIDs)` | `LocalChatChannelController._update_member_list` requests a list of missing pilot IDs and reads `corporationID`, `allianceID` and `warFactionID` from each returned entry. EVE.js uses a dictionary keyed by character ID. | Batches one committed resident owner-directory snapshot with catalog NPC identities. Duplicate IDs coalesce and unknown identities carry zeroes. |
+| `keeper.GetCurrentDungeonForCharacter()` | `DungeonTracking.OnCharacterSessionChanged` unpacks `(dungeonID, roomID, instanceID, values)` before ballpark binding. EVE.js answers with current room state or Python None. | Reads the active participant's Abyssal room or the saved Ghost Site at the ship's position. Ghost Site values include the active visible countdown, and the arrival notification can refresh it if the timer changes during reconnect. Other locations return Python None. |
+
+The EVE.js source was available without Git metadata. Compared `map/mapService.js` (SHA-256 prefix `6c06a8e47c57`),
+`character/charMgrService.js` (`82731fcebb67`), `dungeon/keeperService.js` (`46fe5bc9604e`) and
+`dungeon/dungeonTrackingRuntime.js` (`c632edb39169`) under `server/src/services`. Eden's implementations use its own
+catalog, resident snapshots and existing Blue adapters.
+[Carbon Blue at fcbf0c2e](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) ·
+[EVE University Star Map](https://wiki.eveuniversity.org/Star_Map) ·
+[Abyssal Deadspace](https://wiki.eveuniversity.org/Abyssal_Deadspace) · [Ghost Sites](https://wiki.eveuniversity.org/Ghost_Sites)
+
+The literal service-name and handler comparison found 411 pinned client calls with an EVE.js method and no Eden source
+candidate after this pass. It also found 34 with only Eden compatibility candidates. These counts include possible aliases,
+disabled features and developer calls. EVE.js matches also include placeholder bodies. For example EVE.js's agent map
+filter returns an empty rowset, while the system-visit filter reads persisted per-character travel history. Ship killmarks
+require per-hull awards and updates to visible ship state. These are separate gaps from the four verified implementations.
+The [previous inventory](../client-routes/README.md) preserves its November 5 source snapshot.
+
+**Automated validation.** The four exact regression methods passed in 11.01 seconds through `Test-Feature.ps1`.
+Tool and solution restores passed, and the solution built in 2.79 seconds with zero warnings or errors.
+The following focused filter passed 118 tests (44.46 seconds including the test runner).
+
+```text
+FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~OwnerDirectoryTests|FullyQualifiedName~AbyssalTests|FullyQualifiedName~DedAndGhostSiteTests|FullyQualifiedName~HackingWorldTests|FullyQualifiedName~MapStartupTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+The cases cover native serialization, argument rejection, selection gating, zero-count systems, committed affiliation
+changes, Abyssal room changes, and reading a Ghost Site's timer without advancing its simulation. The full .NET suite
+was out of scope for this focused run. The catalog and formatting policy suites passed 8 and 9 tests respectively.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open the star map's station-count filter and compare a system with NPC stations to one without.
+
+### Follow-up candidates
+
+The [Upwell repair shop](structures.md#native-upwell-repair-shop) was implemented from the next pass. The comparison also
+confirmed these gaps against the pinned client and the same EVE.js version.
+
+| Route | Client use and implementation dependency |
+| --- | --- |
+| `map.GetSolarSystemVisits` | The Personal map filter reads `lastDateTime`, `solarSystemID` and `visits` from each row. EVE.js increments on a return from another system, filters private Abyssal locations, and preserves history across reconnects. Eden needs checkpointed per-character visit counts for the map. |
+| `allianceRegistry.GetDaysInAlliance`, `GetAllianceMembersOlderThan` | The corporation wallet calls these to check EverMark donation eligibility. EVE.js computes whole elapsed days from current membership. Eden already saves membership start times. The donation flow still needs alliance-aware EverMark settlement. |
 
 ## In-game text for routine rejections
 

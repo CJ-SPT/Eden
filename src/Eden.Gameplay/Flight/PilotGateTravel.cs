@@ -12,6 +12,7 @@ public static class GateTravelRules
     public const double ActivationRange = 2500;
     public const int DurationTicks = 3;
     public const int ArrivalTicks = 8;
+    public const long CloakDurationTicks = 60 * TimeSpan.TicksPerSecond;
     private const double ArrivalClearance = 12000;
 
     public static bool InRange(SpacePosition position, double shipRadius, StaticSpaceObject gate) =>

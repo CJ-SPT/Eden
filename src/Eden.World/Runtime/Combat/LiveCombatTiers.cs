@@ -67,7 +67,9 @@ internal sealed partial class LiveCombatRuntime
         foreach (int system in systems)
         {
             _systemNpcs.Remove(system);
-            _populationDue.Remove(system);
+            _simulationContacts.Remove(system);
+            _beltClearances.Remove(system);
+            InvalidatePopulationDeadline(system, "cold details evicted");
             _contacts.Remove(system);
             _npcSceneIndices.Remove(system);
             _droneSystems.Remove(system);

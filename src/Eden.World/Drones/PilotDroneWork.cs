@@ -38,14 +38,23 @@ internal sealed partial class PilotDroneStore
         }
     }
 
-    private static DroneWork ReadWork(WorldDrone drone) =>
+    internal static DroneWork ReadWork(WorldDrone drone) =>
         drone.WorkJson is null ? new() : JsonSerializer.Deserialize<DroneWork>(drone.WorkJson)!;
 
-    private static void WriteWork(WorldDrone drone, DroneWork work) => drone.WorkJson = JsonSerializer.Serialize(work);
+    internal static void WriteWork(WorldDrone drone, DroneWork work) => drone.WorkJson = JsonSerializer.Serialize(work);
 
-    internal static DroneWorkEffect? WorkEffect(WorldDrone drone, DroneProfile profile)
+    internal static DroneWorkEffect? WorkEffect(WorldDrone drone, DroneProfile profile, long? now = null)
     {
         var work = ReadWork(drone);
+        if (work.FighterTackle is { } tackle && tackle.Active(now ?? drone.UpdatedAt))
+        {
+            return new(
+                UtilityDroneKind.WarpDisrupting,
+                tackle.TargetId,
+                tackle.StartedAt,
+                (tackle.EndsAt - tackle.StartedAt) / (double)TimeSpan.TicksPerMillisecond
+            );
+        }
         if (
             profile.Utility is not { } utility
             || drone.ControllerShipId == 0
@@ -64,19 +73,32 @@ internal sealed partial class PilotDroneStore
             : new(utility.Kind, work.TargetId, work.StartedAt, duration);
     }
 
-    private static void ClearDroneEffects(WorldAction world, long id)
+    private static void ClearDroneEffects(WorldAction world, long id, bool preserveTackle = false)
     {
-        world.RemoveRange(world.Filter<WorldPlayerEwar>(e => e.ModuleId == id));
+        var effects = world.Filter<WorldPlayerEwar>(e => e.ModuleId == id);
+        world.RemoveRange(
+            preserveTackle ? effects.AsEnumerable().Where(e => e.Contact().Module.Effect != DogmaEffect.FighterTackle) : effects
+        );
         world.RemoveRange(world.Filter<WorldTackle>(e => e.ModuleId == id));
     }
 
-    private static void CancelWork(WorldAction world, WorldDrone drone, long now)
+    private static void CancelWork(WorldAction world, WorldDrone drone, bool preserveTackle = false)
     {
-        ClearDroneEffects(world, drone.ItemId);
+        ClearDroneEffects(world, drone.ItemId, preserveTackle);
         if (drone.WorkJson is not null)
         {
             var work = ReadWork(drone);
-            WriteWork(drone, new(DueAt: work.DueAt, Returning: work.Cargo?.Count > 0, Cargo: work.Cargo));
+            WriteWork(
+                drone,
+                new(
+                    DueAt: work.DueAt,
+                    Returning: work.Cargo?.Count > 0,
+                    Cargo: work.Cargo,
+                    FighterMobility: work.FighterMobility,
+                    FighterSalvo: work.FighterSalvo,
+                    FighterTackle: preserveTackle ? work.FighterTackle : null
+                )
+            );
         }
     }
 

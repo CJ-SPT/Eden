@@ -4,11 +4,13 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Corporations;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
@@ -36,10 +38,22 @@ internal sealed partial class PilotMarketStore
         );
     }
 
-    private void Payment(WorldAction world, SavedPersonalOrder order, WalletEntryType kind, long amount, long counterparty = 0)
+    private void Payment(
+        WorldAction world,
+        SavedPersonalOrder order,
+        WalletEntryType kind,
+        long amount,
+        long counterparty = 0,
+        long? contextId = null
+    )
     {
         if (amount == 0)
         {
+            return;
+        }
+        if (order.CorporationId is int corporation)
+        {
+            CorporationWalletStore.Pay(world, corporation, counterparty, contextId ?? order.Id, kind, amount, Now);
             return;
         }
         var wallet = Wallet(world, order.PilotId);
@@ -74,6 +88,18 @@ internal sealed partial class PilotMarketStore
         );
     }
 
+    private static bool HasListingSlot(WorldAction world, CatalogDbContext catalog, long pilotId)
+    {
+        int Level(MarketSkill skill) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
+        int limit = PersonalMarketRules.OrderLimit(
+            Level(MarketSkill.Trade),
+            Level(MarketSkill.Retail),
+            Level(MarketSkill.Wholesale),
+            Level(MarketSkill.Tycoon)
+        );
+        return world.Filter<SavedPersonalOrder>(o => o.PilotId == pilotId).Count(o => o.Status == PersonalOrderStatus.Open) < limit;
+    }
+
     private SavedPersonalOrder Incoming(
         WorldAction world,
         CatalogDbContext catalog,
@@ -83,7 +109,8 @@ internal sealed partial class PilotMarketStore
         bool bid,
         long price,
         int quantity,
-        int days
+        int days,
+        int? corporationId = null
     )
     {
         PersonalMarketRules.Validate(quantity, price, days);
@@ -95,6 +122,7 @@ internal sealed partial class PilotMarketStore
         var order = new SavedPersonalOrder
         {
             PilotId = pilot.Id,
+            CorporationId = corporationId,
             StationId = station.Id,
             SystemId = station.SolarSystemId,
             RegionId = station.RegionId,
@@ -110,14 +138,7 @@ internal sealed partial class PilotMarketStore
         };
         if (days > 0)
         {
-            int Level(MarketSkill skill) => PilotSkillReader.Level(world, catalog, pilot.Id, (int)skill);
-            int limit = PersonalMarketRules.OrderLimit(
-                Level(MarketSkill.Trade),
-                Level(MarketSkill.Retail),
-                Level(MarketSkill.Wholesale),
-                Level(MarketSkill.Tycoon)
-            );
-            if (world.Set<SavedPersonalOrder>().Count(o => o.PilotId == pilot.Id && o.Status == PersonalOrderStatus.Open) >= limit)
+            if (!HasListingSlot(world, catalog, pilot.Id))
             {
                 throw new InvalidDataException("Train trading skills or close an existing market order first.");
             }
@@ -146,7 +167,8 @@ internal sealed partial class PilotMarketStore
         CatalogDbContext catalog,
         SavedPersonalOrder incoming,
         List<InventoryChange> changes,
-        bool npcDemandOnly = false
+        bool npcDemandOnly = false,
+        long? specificOrder = null
     )
     {
         long now = Now;
@@ -159,6 +181,8 @@ internal sealed partial class PilotMarketStore
                 && o.Status == PersonalOrderStatus.Open
                 && o.Expires > now
                 && o.PilotId != incoming.PilotId
+                && (incoming.CorporationId == null || incoming.CorporationId != o.CorporationId)
+                && (specificOrder == null || o.Id == specificOrder)
                 && !npcDemandOnly
             )
             .ToArray()
@@ -181,6 +205,7 @@ internal sealed partial class PilotMarketStore
                             || o.Kind == NpcMarketKind.Regional && (incoming.DurationDays == 0 || !incoming.Bid)
                         : o.Kind == kind
                 )
+                && specificOrder == null
                 && (!npcDemandOnly || o.Kind == NpcMarketKind.Regional && o.Bid)
             )
             .ToArray()
@@ -218,8 +243,8 @@ internal sealed partial class PilotMarketStore
             int quantity = fill.Quantity;
             long price = fill.PriceCents;
             long gross = fill.GrossCents;
-            long buyerId = incoming.Bid ? incoming.PilotId : candidate.Owner;
-            long sellerId = incoming.Bid ? candidate.Owner : incoming.PilotId;
+            long buyerId = incoming.Bid ? incoming.PilotId : candidate.Personal?.PilotId ?? candidate.Owner;
+            long sellerId = incoming.Bid ? candidate.Personal?.PilotId ?? candidate.Owner : incoming.PilotId;
             var buyerOrder = incoming.Bid ? incoming : candidate.Personal;
             var sellerOrder = incoming.Bid ? candidate.Personal : incoming;
             var buyerWallet = incoming.Bid || candidate.Personal is not null ? Wallet(world, buyerId) : null;
@@ -233,6 +258,17 @@ internal sealed partial class PilotMarketStore
                     buyerOrder.EscrowCents = checked(buyerOrder.EscrowCents - reserved);
                     Payment(world, buyerOrder, WalletEntryType.MarketEscrow, fill.RefundCents);
                 }
+                else if (buyerOrder.CorporationId.HasValue)
+                {
+                    Payment(
+                        world,
+                        buyerOrder,
+                        WalletEntryType.MarketTransaction,
+                        -gross,
+                        sellerOrder?.CorporationId ?? sellerId,
+                        buyerOrder.Id == 0 ? candidate.Id : buyerOrder.Id
+                    );
+                }
                 else
                 {
                     if (buyerWallet.Cents < gross)
@@ -243,7 +279,11 @@ internal sealed partial class PilotMarketStore
                 }
             }
             long tax = sellerWallet is null ? 0 : MarketRules.Fill(quantity, quantity, price, TaxRate(world, catalog, sellerId)).TaxCents;
-            if (sellerWallet is not null)
+            if (sellerOrder?.CorporationId is not null)
+            {
+                Payment(world, sellerOrder, WalletEntryType.MarketTransaction, gross - tax, buyerOrder?.CorporationId ?? buyerId);
+            }
+            else if (sellerWallet is not null)
             {
                 sellerWallet.Cents = checked(sellerWallet.Cents + gross - tax);
             }
@@ -269,7 +309,7 @@ internal sealed partial class PilotMarketStore
                         new MarketExecution
                         {
                             PilotId = pilotId,
-                            CounterpartyId = buy ? sellerId : buyerId,
+                            CounterpartyId = buy ? sellerOrder?.CorporationId ?? sellerId : buyerOrder?.CorporationId ?? buyerId,
                             OrderId = orderId,
                             StationId = incoming.StationId,
                             TypeId = incoming.TypeId,
@@ -285,7 +325,7 @@ internal sealed partial class PilotMarketStore
                     .Entity;
             if (buyerWallet is not null)
             {
-                var execution = Execution(buyerId, true, buyerWallet.Cents, escrowed ? 0 : null);
+                var execution = Execution(buyerId, true, buyerWallet.Cents, escrowed || buyerOrder?.CorporationId is not null ? 0 : null);
                 if (incoming.Bid)
                 {
                     trades.Add(execution);
@@ -293,7 +333,7 @@ internal sealed partial class PilotMarketStore
             }
             if (sellerWallet is not null)
             {
-                var execution = Execution(sellerId, false, sellerWallet.Cents, null);
+                var execution = Execution(sellerId, false, sellerWallet.Cents, sellerOrder?.CorporationId is not null ? 0 : null);
                 if (!incoming.Bid)
                 {
                     trades.Add(execution);
@@ -342,7 +382,9 @@ internal sealed partial class PilotMarketStore
         long pilotId,
         int stationId,
         IReadOnlyList<MarketPurchase> items,
-        int days
+        int days,
+        int? corporationId = null,
+        List<long>? placedOrders = null
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -354,13 +396,30 @@ internal sealed partial class PilotMarketStore
         }
         foreach (int type in items.Select(i => i.TypeId))
         {
-            Seed(world, catalog, station, type);
+            Seed(
+                world,
+                catalog,
+                station,
+                type,
+                scopedDevelopmentSupply: pilot.AccountId == Capsuleers.CapsuleerCommunityStore.MinerAccountId
+            );
         }
         List<InventoryChange> changes = [];
         List<MarketExecution> trades = [];
         foreach (var request in items)
         {
-            var order = Incoming(world, catalog, pilot, station, request.TypeId, true, request.LimitPriceCents, request.Quantity, days);
+            var order = Incoming(
+                world,
+                catalog,
+                pilot,
+                station,
+                request.TypeId,
+                true,
+                request.LimitPriceCents,
+                request.Quantity,
+                days,
+                corporationId
+            );
             int start = changes.Count;
             var fills = MatchOrders(world, catalog, order, changes);
             if (days == 0 && fills.Count == 0)
@@ -370,6 +429,7 @@ internal sealed partial class PilotMarketStore
             trades.AddRange(fills);
             if (days > 0)
             {
+                placedOrders?.Add(order.Id);
                 Event(world, order, MarketOrderChangeKind.Placed, changes.Skip(start).ToArray());
             }
         }
@@ -378,7 +438,14 @@ internal sealed partial class PilotMarketStore
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
-    internal MarketResult ExecuteSell(WorldAction world, CatalogDbContext catalog, long pilotId, IReadOnlyList<MarketSale> items, int days)
+    internal MarketResult ExecuteSell(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<MarketSale> items,
+        int days,
+        bool skipUnmatched = false
+    )
     {
         var pilot = Pilot(world, pilotId);
         var station = TradeStation(catalog, pilot, pilot.ActiveShip.StationId);
@@ -426,6 +493,10 @@ internal sealed partial class PilotMarketStore
             var fills = MatchOrders(world, catalog, order, changes);
             if (days == 0 && fills.Count == 0)
             {
+                if (skipUnmatched)
+                {
+                    continue;
+                }
                 throw new InvalidDataException("No matching station order remains at that price. Refresh the market quote.");
             }
             item.Quantity -= days > 0 ? request.Quantity : request.Quantity - order.Remaining;
@@ -449,12 +520,26 @@ internal sealed partial class PilotMarketStore
     private SavedPersonalOrder OwnedOrder(WorldAction world, CatalogDbContext catalog, long pilotId, long id)
     {
         var order = world.Set<SavedPersonalOrder>().Find(id);
-        if (order is null || order.PilotId != pilotId || order.Status != PersonalOrderStatus.Open || order.Expires <= Now)
+        if (
+            order is null
+            || order.CorporationId.HasValue
+            || order.PilotId != pilotId
+            || order.Status != PersonalOrderStatus.Open
+            || order.Expires <= Now
+        )
         {
             throw new InvalidDataException("This personal order is no longer available.");
         }
         _ = TradeStation(catalog, Pilot(world, pilotId), order.StationId);
         return order;
+    }
+
+    internal void CancelPersonalSupplyBid(EconomyTransaction world, CatalogDbContext catalog, SavedPersonalOrder bid)
+    {
+        if (bid.Bid && bid.CorporationId is null && bid.Status == PersonalOrderStatus.Open)
+        {
+            Close(world, catalog, bid, PersonalOrderStatus.Cancelled);
+        }
     }
 
     private void Close(WorldAction world, CatalogDbContext catalog, SavedPersonalOrder order, PersonalOrderStatus status)
@@ -471,9 +556,9 @@ internal sealed partial class PilotMarketStore
                 InventoryPersistence.MergeOutput(
                     world,
                     catalog,
-                    order.PilotId,
+                    order.CorporationId ?? order.PilotId,
                     order.StationId,
-                    (int)InventoryFlag.Hangar,
+                    order.CorporationId.HasValue ? CorporationStorageRules.MarketDeliveriesFlag : (int)InventoryFlag.Hangar,
                     order.TypeId,
                     order.Remaining
                 )

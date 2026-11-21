@@ -1,5 +1,6 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
@@ -22,7 +23,8 @@ internal sealed class PilotSessionTick(
     Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
-    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    Eden.Protocol.FactionWarfare.FactionWarzoneUpdates? warzoneUpdates = null
 )
 {
     public async Task AdvanceAsync(
@@ -56,6 +58,13 @@ internal sealed class PilotSessionTick(
         }
         var flight = context.Flight;
         var previousControl = context.ControlledStructureId;
+        var beforeConduit = flight.Pilot;
+        bool arrived = updates.AdoptConduit(context);
+        using var arrivalContext = arrived ? context.Flight.UseSystem() : null;
+        if (arrived)
+        {
+            await output.AnnounceTransitionAsync(beforeConduit, previousControl);
+        }
         var beforeControl = context.Pilot;
         var beforePlayerDamage = flight.Pilot;
         using (SessionLatency.Measure(SessionLatencyPhase.PendingDamage))
@@ -82,10 +91,29 @@ internal sealed class PilotSessionTick(
         {
             context.ReleaseLocationReferences();
             context.Roster = context.Roster.Select(p => p.PilotId == moved.Pilot.PilotId ? moved.Pilot : p).ToArray();
-            InventoryChangesWire.NotifyItemChange(context, moved.ShipChange);
+            foreach (var change in moved.Changes)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change);
+            }
             updates.Enter(context);
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
-            report($"Ship {flight.Pilot.ShipId} translocated from {departure.SystemId} to {flight.Pilot.SystemId}.");
+            if (moved.Timers is { } timers)
+            {
+                context.Notifications.Add(
+                    new ModuleAttributesChanged([
+                        new(
+                            moved.Pilot.PilotId,
+                            new DogmaItemKey.Item(moved.Pilot.ShipId),
+                            DogmaAttributeId.CapacitorCharge,
+                            timers.UpdatedAt,
+                            moved.Capacitor
+                        ),
+                    ])
+                );
+                context.Notifications.Add(new Eden.Protocol.Flight.JumpTimersUpdated(timers));
+            }
+            string action = moved.Timers is null ? "translocated" : "jumped";
+            report($"Ship {flight.Pilot.ShipId} {action} from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
         if (flight.CompleteJump())
         {
@@ -105,7 +133,11 @@ internal sealed class PilotSessionTick(
             {
                 entosis.Advance(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
-            anomalies?.Advance(context);
+            using (SessionLatency.Measure(SessionLatencyPhase.Exploration))
+            {
+                anomalies?.Advance(context);
+            }
+            warzoneUpdates?.Advance(context);
             abyss?.Advance(context);
             environments?.Advance(context);
             using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
@@ -117,11 +149,16 @@ internal sealed class PilotSessionTick(
                 }
                 if (flight.InBallpark || context.ControlledStructureId is not null)
                 {
+                    flight.RefreshCynos();
                     flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
                     flight.RefreshWrecks();
                     flight.RefreshMissiles();
                     flight.RefreshNpcs();
                     flight.RefreshPeers();
+                }
+                else if (context.ControlledStructureId is not null)
+                {
+                    flight.RefreshStructureObservers();
                 }
             }
 
@@ -153,6 +190,7 @@ internal sealed class PilotSessionTick(
                 || beforeAttack.ShipId != context.Pilot.ShipId
                 || beforeAttack.CorpId != context.Pilot.CorpId
                 || beforeAttack.Identity.AllianceId != context.Pilot.Identity.AllianceId
+                || beforeAttack.Identity.WarFaction != context.Pilot.Identity.WarFaction
                 || beforeAttack.Identity.Fleet != context.Pilot.Identity.Fleet
                 || beforeAttack.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
                 || beforeAttack.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess

@@ -24,7 +24,10 @@ public sealed record CapsuleerJob(long PilotId, long Revision, long Sequence, lo
     }
 }
 
-public sealed record CapsuleerTurn(int Completed, int Pending, long? OldestDueTicks, bool BudgetExceeded);
+public sealed record CapsuleerTurn(int Completed, int Pending, long? OldestDueTicks, bool BudgetExceeded)
+{
+    public int SafetyChecks { get; init; }
+}
 
 public sealed record CapsuleerQueueStatus(int Due, long? OldestDueTicks);
 
@@ -36,9 +39,9 @@ public sealed class CapsuleerJobQueue
     public static readonly TimeSpan WakeInterval = TimeSpan.FromMilliseconds(50);
     public static readonly TimeSpan ExecutionBudget = TimeSpan.FromMilliseconds(10);
 
-    private sealed record ScheduledJob(CapsuleerJob Job, CapsuleerRetry? Retry = null)
+    private sealed record ScheduledJob(CapsuleerJob Job, CapsuleerRetry? Retry = null, long? CheckAt = null)
     {
-        internal long DueTicks => Math.Max(Job.DueTicks, Retry?.DueTicks ?? 0);
+        internal long DueTicks => Retry?.DueTicks is long retry ? Math.Max(CheckAt ?? Job.DueTicks, retry) : CheckAt ?? Job.DueTicks;
     }
 
     private readonly SortedSet<ScheduledJob> _queue = new(
@@ -93,6 +96,18 @@ public sealed class CapsuleerJobQueue
         return true;
     }
 
+    // A transient safety check can wake a sleeping job. Its paid deadline and revision stay durable.
+    public void ScheduleCheck(CapsuleerJob job, long? at)
+    {
+        if (_jobs.TryGetValue(job.PilotId, out var current) && current.Job == job)
+        {
+            _queue.Remove(current);
+            current = current with { CheckAt = at < job.DueTicks ? at : null, Retry = null };
+            _jobs[job.PilotId] = current;
+            Enqueue(current);
+        }
+    }
+
     public bool Defer(CapsuleerJob job, long nowTicks)
     {
         if (!_jobs.TryGetValue(job.PilotId, out var current) || current.Job != job)
@@ -122,7 +137,9 @@ public sealed class CapsuleerJobQueue
         TimeProvider clock,
         IReadOnlySet<long>? pilots = null,
         bool useCanonicalQueue = false,
-        int maximumActions = ActionsPerTurn
+        int maximumActions = ActionsPerTurn,
+        Action<CapsuleerJob, long>? check = null,
+        Func<CapsuleerJob, long?>? firstCheck = null
     )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
@@ -140,13 +157,31 @@ public sealed class CapsuleerJobQueue
             pilots is null || useCanonicalQueue
                 ? _queue
                 : new SortedSet<ScheduledJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
+        int checks = 0;
         while (candidates.Min is { } scheduled && scheduled.DueTicks <= throughTicks && completed < maximumActions)
         {
-            if (completed > 0 && clock.GetElapsedTime(started) >= ExecutionBudget)
+            if ((completed + checks > 0 && clock.GetElapsedTime(started) >= ExecutionBudget) || checks >= ActionsPerTurn)
             {
                 break;
             }
             var job = scheduled.Job;
+            if (scheduled.CheckAt is long at)
+            {
+                if (check is null || !ReferenceEquals(candidates, _queue))
+                {
+                    throw new InvalidOperationException("A scheduled safety check requires the canonical scheduler.");
+                }
+                check(job, at);
+                checks++;
+                continue;
+            }
+            // The single-action worker prepared the original pilot before entering the queue.
+            // A probe can expose another pilot's cold trade or travel job. Release the owner
+            // so its own inputs can be prepared before the authoritative action.
+            if (checks > 0 && useCanonicalQueue && maximumActions == 1 && job.PilotId != first.Job.PilotId)
+            {
+                break;
+            }
             var next = execute(job);
             Validate(next);
             if (
@@ -159,8 +194,11 @@ public sealed class CapsuleerJobQueue
                 throw new InvalidOperationException("A completed action must advance its own job and deadline once.");
             }
             _queue.Remove(scheduled);
-            candidates.Remove(scheduled);
-            var replacement = new ScheduledJob(next);
+            if (!ReferenceEquals(candidates, _queue))
+            {
+                candidates.Remove(scheduled);
+            }
+            var replacement = new ScheduledJob(next, CheckAt: firstCheck?.Invoke(next));
             _jobs[job.PilotId] = replacement;
             if (useCanonicalQueue && pilots is not null && !pilots.Contains(next.PilotId))
             {
@@ -172,21 +210,20 @@ public sealed class CapsuleerJobQueue
             }
             // A witnessed transfer can withdraw its pilot from this turn when
             // the destination is empty. Its next canonical job stays dormant.
-            if (pilots is null || pilots.Contains(next.PilotId))
+            if (!ReferenceEquals(candidates, _queue) && (pilots is null || pilots.Contains(next.PilotId)))
             {
                 candidates.Add(replacement);
             }
             completed++;
         }
         long? oldest = candidates.Min is { } pending && pending.DueTicks <= throughTicks ? pending.DueTicks : null;
-        return new(completed, _jobs.Count, oldest, clock.GetElapsedTime(started) > ExecutionBudget);
+        return new(completed, _jobs.Count, oldest, clock.GetElapsedTime(started) > ExecutionBudget) { SafetyChecks = checks };
     }
 
     public CapsuleerQueueStatus Inspect(long throughTicks) =>
-        new(
-            _queue.TakeWhile(j => j.DueTicks <= throughTicks).Count(),
-            _queue.Min is { } first && first.DueTicks <= throughTicks ? first.DueTicks : null
-        );
+        new(DueJobs(throughTicks).Count(), _queue.Min is { } first && first.DueTicks <= throughTicks ? first.DueTicks : null);
+
+    public IEnumerable<CapsuleerJob> DueJobs(long throughTicks) => _queue.TakeWhile(j => j.DueTicks <= throughTicks).Select(j => j.Job);
 
     private void Enqueue(ScheduledJob job) => _queue.Add(job);
 

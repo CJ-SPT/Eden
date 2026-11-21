@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
 
@@ -17,26 +18,44 @@ internal sealed class TrafficActionDiagnostics
     private const int RetainedActions = 128;
     private const int RetainedPhases = 64;
     private const int SlowActionMilliseconds = 250;
+    private readonly ConcurrentDictionary<CapsuleerAction, long> _lastSlow = new();
     private readonly ConcurrentQueue<TrafficActionTiming> _slow = new();
+    private readonly ConcurrentQueue<TrafficActionTiming> _reportedTrades = new();
     internal IReadOnlyList<TrafficActionTiming> SlowActions => _slow.ToArray();
+    internal IReadOnlySet<long>? ReportedTradePilots { get; set; }
+    internal IReadOnlyList<TrafficActionTiming> ReportedTrades => _reportedTrades.ToArray();
 
-    internal IDisposable Measure(CapsuleerJob job, IReadOnlyList<int> systems, Func<(long Count, bool Copying)> checkpointCopies)
+    internal IDisposable Measure(
+        CapsuleerJob job,
+        IReadOnlyList<int> systems,
+        Func<(long Count, bool Copying)> checkpointCopies,
+        Func<TimeSpan?>? ownerReacquire = null
+    )
     {
         var before = checkpointCopies();
-        List<PerformanceSample> phases = [];
+        var gcPauseAtStart = GC.GetTotalPauseDuration();
+        bool reportedTrade = job.Action == CapsuleerAction.Trade && ReportedTradePilots?.Contains(job.PilotId) == true;
+        // SQL, fits, allocations and wall time are counted for every action. Explicit tracing,
+        // selected trades and repeats of a slow action also capture the individual phase timings.
+        bool detail =
+            SessionPerformance.IncludesPhases
+            || reportedTrade
+            || _lastSlow.TryGetValue(job.Action, out long last) && Stopwatch.GetElapsedTime(last) < TimeSpan.FromMinutes(1);
+        List<PerformanceSample>? phases = detail ? [] : null;
         return SessionPerformance.Capture(
             "traffic.measuredAction",
             sample =>
             {
                 if (sample.Name != "traffic.measuredAction")
                 {
-                    if (phases.Count < RetainedPhases)
+                    if (phases is { Count: < RetainedPhases })
                     {
                         phases.Add(sample);
                     }
                     return;
                 }
-                if (sample.Elapsed.TotalMilliseconds < SlowActionMilliseconds)
+                bool slow = sample.Elapsed.TotalMilliseconds >= SlowActionMilliseconds;
+                if (!slow && !reportedTrade)
                 {
                     return;
                 }
@@ -45,17 +64,23 @@ internal sealed class TrafficActionDiagnostics
                     systems,
                     before.Copying || checkpointCopies().Count != before.Count,
                     sample,
-                    phases.AsReadOnly()
+                    phases?.AsReadOnly() ?? (IReadOnlyList<PerformanceSample>)[]
                 );
-                _slow.Enqueue(timing);
-                while (_slow.Count > RetainedActions)
+                if (reportedTrade)
                 {
-                    _slow.TryDequeue(out _);
+                    Retain(_reportedTrades, timing);
                 }
-                string detail = string.Join(
+                if (!slow)
+                {
+                    return;
+                }
+                double gcPause = (GC.GetTotalPauseDuration() - gcPauseAtStart).TotalMilliseconds;
+                _lastSlow[job.Action] = Stopwatch.GetTimestamp();
+                Retain(_slow, timing);
+                string breakdown = string.Join(
                     ", ",
-                    phases
-                        .Where(p =>
+                    timing
+                        .Phases.Where(p =>
                             p.Name
                                 is not (
                                     "traffic.queueExecution"
@@ -69,13 +94,26 @@ internal sealed class TrafficActionDiagnostics
                         .Take(4)
                         .Select(p => $"{p.Name}={p.Elapsed.TotalMilliseconds:F2} ms (SQL={p.Commands}, connections={p.Connections})")
                 );
+                string wait = ownerReacquire?.Invoke() is { } elapsed
+                    ? $"ownerReacquire={elapsed.TotalMilliseconds:F2} ms, "
+                    : string.Empty;
                 ServerLog.Console.Warning(
                     $"Slow traffic action {job.Action} pilot={job.PilotId}: "
                         + $"total={sample.Elapsed.TotalMilliseconds:F2} ms, SQL={sample.Commands}, connections={sample.Connections}, "
                         + $"fits={sample.Fittings}, allocated={sample.AllocatedBytes}, "
-                        + $"checkpointOverlap={timing.CheckpointOverlap}. {detail}"
+                        + $"{wait}gcPause={gcPause:F2} ms, checkpointOverlap={timing.CheckpointOverlap}. {breakdown}"
                 );
-            }
+            },
+            includePhases: detail
         );
+    }
+
+    private static void Retain(ConcurrentQueue<TrafficActionTiming> timings, TrafficActionTiming timing)
+    {
+        timings.Enqueue(timing);
+        while (timings.Count > RetainedActions)
+        {
+            timings.TryDequeue(out _);
+        }
     }
 }

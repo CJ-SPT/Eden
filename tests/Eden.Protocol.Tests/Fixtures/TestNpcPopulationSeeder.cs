@@ -11,13 +11,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Protocol.Tests.Fixtures;
 
 // Explicit isolated encounter fixture. Production uses regional population rules.
-internal sealed class TestNpcPopulationSeeder : INpcPopulationSeeder
+internal sealed class TestNpcPopulationSeeder(
+    int homeSystem = NpcEncounterDefinitions.PerimeterSystem,
+    int pirateType = NpcEncounterDefinitions.GuristasRookieType
+) : INpcPopulationSeeder
 {
     public long NextUpdate(WorldAction world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 
     public void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
-        if (systemId != NpcEncounterDefinitions.PerimeterSystem)
+        if (systemId != homeSystem)
         {
             return;
         }
@@ -30,7 +33,7 @@ internal sealed class TestNpcPopulationSeeder : INpcPopulationSeeder
         {
             return;
         }
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == NpcEncounterDefinitions.GuristasRookieType);
+        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == pirateType);
         var attributes = catalog
             .Set<TypeAttribute>()
             .Where(a => a.ItemTypeId == type.Id)

@@ -10,6 +10,7 @@ public static class CapsuleerPauseRules
             ActiveTicks = checked(work.ActiveTicks + delay),
             ClockOffsetTicks = checked(work.ClockOffsetTicks + delay),
             DueTicks = work.DueTicks == 0 ? 0 : checked(work.DueTicks + delay),
+            WarpReadyAt = work.WarpReadyAt == 0 ? 0 : checked(work.WarpReadyAt + delay),
         };
 
     public static HaulerProgress Resume(HaulerProgress work, long delay, long now)
@@ -32,15 +33,39 @@ public static class CapsuleerPauseRules
                     )
                     .ToArray(),
                 RecallUntil = defense.RecallUntil == 0 ? 0 : checked(defense.RecallUntil + wallDelay),
+                Budgets = defense
+                    .Budgets.Select(budget =>
+                        budget with
+                        {
+                            AmmoCheckAt = budget.AmmoCheckAt == 0 ? 0 : checked(budget.AmmoCheckAt + wallDelay),
+                        }
+                    )
+                    .ToArray(),
             };
         }
         return work with
         {
             Defense = defense,
+            Exploration = work.Exploration is { } exploring
+                ? exploring with
+                {
+                    EndsAt = checked(exploring.EndsAt + delay),
+                    ReadyTicks = exploring.ReadyTicks == 0 ? 0 : checked(exploring.ReadyTicks + delay),
+                }
+                : null,
+            ExplorationRetryAt = work.ExplorationRetryAt == 0 ? 0 : checked(work.ExplorationRetryAt + delay),
+            WarpReadyAt = work.WarpReadyAt == 0 ? 0 : checked(work.WarpReadyAt + delay),
+            SovereigntyExpedition = work.SovereigntyExpedition is { LockReadyAt: > 0 } expedition
+                ? expedition with
+                {
+                    LockReadyAt = checked(expedition.LockReadyAt + delay),
+                }
+                : work.SovereigntyExpedition,
             Ratting = work.Ratting is { } ratting
                 ? ratting with
                 {
                     LastObservedAt = now,
+                    Salvage = ratting.Salvage is { } salvage ? salvage with { DueTicks = checked(salvage.DueTicks + delay) } : null,
                     Patrol = ratting.Patrol is { } patrol
                         ? patrol with
                         {

@@ -30,7 +30,15 @@ internal sealed partial class LiveCombatRuntime
         {
             return current;
         }
-        var index = new NpcSceneIndex(npcs.Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null)).ToArray());
+        var index = new NpcSceneIndex(
+            npcs.Select(n => new NpcSimulationContact(
+                    n.Id,
+                    n.Position,
+                    n.Transit is not null,
+                    n.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective
+                ))
+                .ToArray()
+        );
         _npcSceneIndices[system] = index;
         return index;
     }
@@ -52,6 +60,18 @@ internal sealed partial class LiveCombatRuntime
             }
             _npcSceneIndices.Remove(npc.SystemId);
         }
+        if (
+            previous is null
+            || previous.Position != npc.Position
+            || previous.Radius != npc.Radius
+            || previous.SystemId != npc.SystemId
+            || previous.Role != npc.Role
+            || previous.Navigation != npc.Navigation
+            || previous.Transit != npc.Transit
+        )
+        {
+            _miningGeometry++;
+        }
         _npcs[npc.Id] = npc;
     }
 
@@ -60,6 +80,7 @@ internal sealed partial class LiveCombatRuntime
         if (_npcs.Remove(id, out var npc))
         {
             _npcSceneIndices.Remove(npc.SystemId);
+            _miningGeometry++;
         }
     }
 }

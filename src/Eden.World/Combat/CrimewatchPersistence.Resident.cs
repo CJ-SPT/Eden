@@ -5,8 +5,10 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -44,7 +46,8 @@ internal static partial class CrimewatchPersistence
                 catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
                 target.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(victim.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
-                Engagement(world, source.Id, victim.Id)?.ExpiresAt > now
+                Engagement(world, source.Id, victim.Id)?.ExpiresAt > now,
+                MilitiaRules.AreEnemies(MilitiaEnlistmentStore.Effective(world, source), MilitiaEnlistmentStore.Effective(world, victim))
             )
         );
     }
@@ -109,6 +112,35 @@ internal static partial class CrimewatchPersistence
         var state = State(world, pilot);
         state.SystemId = system;
         state.Apply(state.Timers() with { Npc = CrimewatchRules.Extend(state.Timers().Npc, end, CrimewatchRules.NpcDuration) });
+    }
+
+    internal static void PersonalDeployable(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot attacker,
+        long owner,
+        int system,
+        long now,
+        long end
+    )
+    {
+        // Personal deployables carry at most a suspect flag for an unlawful attack.
+        var ownerTimers = world.Set<SavedCrimewatch>().Find(owner)?.Timers() ?? CrimewatchTimers.Empty;
+        bool authorized = attacker.Id == owner || Engagement(world, attacker.Id, owner)?.ExpiresAt > now;
+        var decision = CrimewatchRules.Decide(
+            new(
+                Math.Min(Security(catalog, system), Math.BitDecrement(CrimewatchRules.HighSecurity)),
+                attacker.SafetyLevel,
+                false,
+                false,
+                ownerTimers.Flag(now),
+                (world.Set<SavedSecurityStatus>().Find(owner)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
+                authorized
+            )
+        );
+        var state = State(world, attacker.Id);
+        state.SystemId = system;
+        state.Apply(CrimewatchRules.Player(state.Timers(), end, decision.Flag, true, now));
     }
 
     internal static void CheckTravel(

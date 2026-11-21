@@ -50,7 +50,7 @@ internal sealed partial class CapsuleerHauler
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Looting, TargetId = 0 } };
             return null;
         }
-        if (activity.RemainingTicks <= 0 || !ratting.Assess(Pilot, enemies, Now).Capable)
+        if (activity.RemainingTicks <= 0 || !ratting.Assess(Pilot, enemies, Now, FreshCombat).Capable)
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning }, Retreating = enemies.Length > 0 };
             return null;
@@ -74,11 +74,28 @@ internal sealed partial class CapsuleerHauler
     private double RattingSignature(NpcContact target) =>
         Eden.World.Runtime.Combat.LiveCombatRuntime.Find(database.Path)?.RattingNpc(target.Id, Now)?.SignatureRadius ?? 1;
 
-    private bool TryLaunchActivity()
+    private CombatAnomaly? ScoutDepartureAnomaly()
+    {
+        if (_background || Work.Activity != HaulerActivity.Docked || Work.ActiveTicks < Work.DueTicks || Work.Ratting is not null)
+        {
+            return null;
+        }
+        var policy = database.Settings.Capsuleers;
+        long sequence = checked(Work.ActivitySequence + 1);
+        return
+            policy.AnomalyRatting
+            && (!policy.BeltRatting || sequence % RattingRules.AnomalyDepartureInterval == 0)
+            && (Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
+            && RattingRules.Choose(pilotId, sequence)
+            ? ratting.ScoutAnomaly(Pilot.SystemId, Now, pilotId, sequence, Work.VisitedBelts, Work.ActiveTicks)
+            : null;
+    }
+
+    private bool TryLaunchActivity(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.launchActivity");
         var supplies = Work.Resupply!;
-        if (TryLaunchSortie(supplies))
+        if (TryLaunchSortie(supplies, scoutedAnomaly))
         {
             return true;
         }
@@ -117,27 +134,25 @@ internal sealed partial class CapsuleerHauler
         return false;
     }
 
-    private bool TryLaunchSortie(ResupplyProgress supplies)
+    private bool TryLaunchSortie(ResupplyProgress supplies, CombatAnomaly? site)
     {
         var policy = database.Settings.Capsuleers;
-        if (!policy.BeltRatting && !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps)
+        if (!policy.BeltRatting && (_background || !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps))
         {
             return false;
         }
-        int tech = (int)_operation.Catalog.FittingAttributes(Pilot.ShipTypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         if (
-            _background
-            || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
-            || !CapsuleerDefenseRules.CombatShip((HullClass)Pilot.ShipGroupId, tech, true)
+            (!FreshCombat || Pilot.ShipGroupId != (int)HullClass.Corvette)
+            && (
+                TrafficRules.LightHull((HullClass)Pilot.ShipGroupId) || !CapsuleerPatrolFit.CombatHull(_operation.Catalog, Pilot.ShipTypeId)
+            )
         )
         {
             return false;
         }
         var profile = CapsuleerDefenseProfile.Read(_operation.World, _operation.Catalog, pilotId);
         if (
-            _background
-            || !profile.Combat
-            || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
+            !profile.Combat
             || profile.RattingWeapons.Length == 0
             || !profile.RattingWeapons.Any(w => w.AvailableShots > 0)
             || CapsuleerDefenseRules.Retreat(
@@ -158,18 +173,14 @@ internal sealed partial class CapsuleerHauler
         }
         long sequence = checked(Work.ActivitySequence + 1);
         _work = Work with { ActivitySequence = sequence };
-        if (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))
+        if (!FreshCombat && !_background && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence)))
         {
             return true;
         }
-        if (supplies.Requirements.Any(r => !r.Drone) || !RattingRules.Choose(pilotId, sequence))
+        if (!FreshCombat && (supplies.Requirements.Any(r => !r.Drone) || !RattingRules.Choose(pilotId, sequence)))
         {
             return false;
         }
-        CombatAnomaly? site =
-            policy.AnomalyRatting && (!policy.BeltRatting || sequence % 3 == 0)
-                ? ratting.ScoutAnomaly(Pilot.SystemId, Now, pilotId, sequence, Work.VisitedBelts, Work.ActiveTicks)
-                : null;
         long[] belts =
             site is not null ? [site.Id]
             : !policy.BeltRatting ? []
@@ -187,6 +198,11 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        if (policy.WreckSalvage && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident)
+        {
+            PrepareSalvager(resident, profile.ShipAttributes);
+        }
+        _background = false;
         _work = Work with
         {
             Ratting = new(Pilot.StationId, belts, 0, TimeSpan.FromMinutes(RattingRules.MaximumMinutes).Ticks)
@@ -239,23 +255,10 @@ internal sealed partial class CapsuleerHauler
         CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         if (_warpBlocked)
         {
-            throw new InvalidDataException("Warp disruption prevents the ratting pilot from leaving.");
+            throw new InvalidDataException("Warp disruption prevents the pilot from leaving.");
         }
         _work = Work with { WaitingReason = null };
-        _navigation.CancelAlignment();
-        if (
-            !_navigation.StartWarp(
-                Pilot.ShipId,
-                Pilot.Flight,
-                Pilot.Position!,
-                _target!,
-                Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0,
-                Work.Stamp
-            )
-        )
-        {
-            Follow();
-        }
+        _work = Work with { WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, WarpOrder(_target!), Work.ActiveTicks) };
     }
 
     private void EndSortie(RattingProgress activity) =>
@@ -280,6 +283,10 @@ internal sealed partial class CapsuleerHauler
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning } };
         }
+        if (Work.Ratting is { Phase: not RattingPhase.Looting, Salvage: { } pending })
+        {
+            StopRattingSalvage(pending);
+        }
         activity = Work.Ratting!;
         switch (activity.Phase)
         {
@@ -293,7 +300,17 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Returning:
                 if (Work.TargetId != activity.StationId || _target?.Id != activity.StationId || Work.WaitingReason is not null)
                 {
-                    _target = Objects.Single(o => o.Id == activity.StationId);
+                    _target = Objects.FirstOrDefault(o => o.Id == activity.StationId);
+                    if (_target is null)
+                    {
+                        // A remote patrol cannot warp directly to its home station in another system.
+                        _work = Work with
+                        {
+                            Ratting = null,
+                        };
+                        BeginTravel();
+                        break;
+                    }
                     _work = Work with
                     {
                         TargetId = _target.Id,
@@ -312,7 +329,16 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Fighting:
                 if (activity.Patrol is { } patrol)
                 {
-                    if (patrol.LeaveGridAt > 0 && Work.ActiveTicks >= patrol.LeaveGridAt)
+                    long leaveAt = patrol.WatchingForGang
+                        ? checked(patrol.LeaveGridAt + RoamingGangRules.RendezvousTicks)
+                        : patrol.LeaveGridAt;
+                    if (
+                        patrol.LeaveGridAt > 0 && Work.ActiveTicks >= leaveAt
+                        || patrol.Kind == PatrolKind.Transit
+                            && activity.Phase == RattingPhase.Searching
+                            && _target is not null
+                            && GangContactBeyondGate(_target)
+                    )
                     {
                         NextBelt();
                     }
@@ -323,7 +349,7 @@ internal sealed partial class CapsuleerHauler
                     ratting.Arrive(Pilot, Now);
                 }
                 var enemies = ratting.Pirates(Pilot, _target!, Now);
-                if (enemies.Length > 0 && !_background && ratting.Assess(Pilot, enemies, Now).Capable)
+                if (enemies.Length > 0 && !_background && ratting.Assess(Pilot, enemies, Now, FreshCombat).Capable)
                 {
                     _work = Work with { Ratting = activity with { Phase = RattingPhase.Fighting, TargetId = enemies[0].Id } };
                 }
@@ -342,13 +368,24 @@ internal sealed partial class CapsuleerHauler
                     NextBelt();
                     break;
                 }
-                CollectRattingLoot();
+                if (
+                    activity.Salvage is not { } salvage
+                    || !database.Settings.Capsuleers.WreckSalvage
+                    || Work.ActiveTicks >= salvage.DueTicks
+                )
+                {
+                    CollectRattingLoot();
+                }
                 break;
         }
     }
 
     private void NextBelt()
     {
+        if (Work.Ratting?.Salvage is { } pending)
+        {
+            StopRattingSalvage(pending);
+        }
         var activity = Work.Ratting!;
         if (activity.Patrol?.Kind == PatrolKind.Transit)
         {
@@ -370,7 +407,7 @@ internal sealed partial class CapsuleerHauler
                 Ratting = activity with
                 {
                     BeltIndex = activity.BeltIndex + 1,
-                    Patrol = activity.Patrol is { } patrol ? patrol with { LeaveGridAt = 0, NextLook = 0 } : null,
+                    Patrol = activity.Patrol is { } patrol ? patrol with { LeaveGridAt = 0, NextLook = 0, WatchingForGang = false } : null,
                 },
             };
             FlyToBelt();
@@ -380,16 +417,30 @@ internal sealed partial class CapsuleerHauler
     private void CollectRattingLoot()
     {
         var activity = Work.Ratting!;
-        var wreck = ratting
-            .Wrecks(Pilot, _target!, Now)
-            .Where(w => !activity.VisitedWrecks.Contains(w.Id))
-            .OrderBy(w => Pilot.Position!.DistanceTo(w.Position))
+        var contacts = ratting.Wrecks(Pilot, _target!, Now, Live is not null);
+        if (contacts.Count == 0)
+        {
+            NextBelt();
+            return;
+        }
+        var world = _operation.World;
+        var catalog = _operation.Catalog;
+        var salvager = Salvager(world, catalog);
+        var wreck = contacts
+            .Where(w => !activity.VisitedWrecks.Contains(w.Id) && (!w.Empty || CanSalvage(world, catalog, w.Id, salvager)))
+            .OrderByDescending(w => w.Id == activity.Salvage?.WreckId)
+            .ThenBy(w => Pilot.Position!.DistanceTo(w.Position))
             .ThenBy(w => w.Id)
             .FirstOrDefault();
         if (wreck is null)
         {
             NextBelt();
             return;
+        }
+        if (activity.Salvage is { } pending && (pending.WreckId != wreck.Id || pending.ModuleId != salvager?.ItemId))
+        {
+            StopRattingSalvage(pending);
+            activity = Work.Ratting!;
         }
         StaticSpaceObject wreckTarget = new(
             wreck.Id,
@@ -404,18 +455,10 @@ internal sealed partial class CapsuleerHauler
             IsGlobal = false,
             Solid = false,
         };
-        if (Pilot.Position!.DistanceTo(wreck.Position) - Pilot.Flight.ShipRadius - wreck.Radius > WreckDefinitions.TransferRange)
+        double range = wreck.Empty ? salvager!.Range : WreckDefinitions.TransferRange;
+        if (Pilot.Position!.DistanceTo(wreck.Position) - Pilot.Flight.ShipRadius - wreck.Radius > range)
         {
-            _navigation.Follow(
-                Pilot.ShipId,
-                Work.Stamp,
-                Pilot.Position,
-                Pilot.Flight.ShipRadius,
-                wreckTarget,
-                WreckDefinitions.TransferRange / 2,
-                false,
-                true
-            );
+            _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position, Pilot.Flight.ShipRadius, wreckTarget, range / 2, false, true);
             var moved = _navigation.Advance(
                 Pilot.ShipId,
                 Work.Stamp,
@@ -428,9 +471,9 @@ internal sealed partial class CapsuleerHauler
             RestorePosition(Pilot);
             return;
         }
-        var world = _operation.World;
-        var catalog = _operation.Catalog;
-        var items = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == wreck.Id).OrderBy(i => i.Id).ToArray();
+        var items = wreck.Empty
+            ? []
+            : world.Filter<OwnedItem>(i => i.LocationId == wreck.Id).Where(i => i.OwnerId == pilotId).OrderBy(i => i.Id).ToArray();
         List<long> collected = activity.LootIds.ToList();
         foreach (var item in items)
         {
@@ -445,14 +488,17 @@ internal sealed partial class CapsuleerHauler
                 collected.AddRange(changes.Where(c => c.Item.LocationId == Pilot.ShipId).Select(c => c.Item.Id));
             }
         }
-        _work = Work with
+        _work = Work with { Ratting = activity with { LootIds = collected.Distinct().ToArray() } };
+        if (salvager is not null && CanSalvage(world, catalog, wreck.Id, salvager) && RecoverSalvage(wreck, salvager))
         {
-            Ratting = activity with
-            {
-                LootIds = collected.Distinct().ToArray(),
-                VisitedWrecks = activity.VisitedWrecks.Append(wreck.Id).ToArray(),
-            },
-        };
+            return;
+        }
+        activity = Work.Ratting!;
+        if (activity.Salvage is { } finished)
+        {
+            StopRattingSalvage(finished);
+        }
+        _work = Work with { Ratting = Work.Ratting! with { VisitedWrecks = activity.VisitedWrecks.Append(wreck.Id).ToArray() } };
     }
 
     private void UnloadRattingLoot()
@@ -474,7 +520,7 @@ internal sealed partial class CapsuleerHauler
             .ToArray();
         if (available.Length > 0)
         {
-            PilotInventoryStore.Move(
+            var unloaded = PilotInventoryStore.Move(
                 _operation.World,
                 _operation.Catalog,
                 pilotId,
@@ -482,6 +528,7 @@ internal sealed partial class CapsuleerHauler
                 new(available, Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
+            _operation.MarketChanged |= ammunitionSupply.SellRecoveredSalvage(_operation.World, _operation.Catalog, Pilot, unloaded, Now);
         }
         _work = Work with { RattingLoot = [] };
     }

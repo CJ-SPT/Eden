@@ -16934,6 +16934,46 @@
       ]
     },
     {
+      "id": 3387,
+      "name": "Mass Production",
+      "groupId": 268,
+      "groupName": "Production",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 182,
+          "value": 3380.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 450,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 3392,
       "name": "Mechanics",
       "groupId": 1210,
@@ -17322,6 +17362,106 @@
         {
           "id": 315,
           "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 3455,
+      "name": "Warp Drive Operation",
+      "groupId": 275,
+      "groupName": "Navigation",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 167.0
+        },
+        {
+          "id": 182,
+          "value": 3449.0
+        },
+        {
+          "id": 275,
+          "value": 1.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 319,
+          "value": -10.0
+        }
+      ]
+    },
+    {
+      "id": 3456,
+      "name": "Jump Drive Operation",
+      "groupId": 275,
+      "groupName": "Navigation",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 167.0
+        },
+        {
+          "id": 182,
+          "value": 3449.0
+        },
+        {
+          "id": 183,
+          "value": 3455.0
+        },
+        {
+          "id": 184,
+          "value": 3402.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 279,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 899,
+          "value": -5.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
         }
       ]
     },
@@ -31050,6 +31190,94 @@
       ]
     },
     {
+      "id": 20342,
+      "name": "Advanced Spaceship Command",
+      "groupId": 257,
+      "groupName": "Spaceship Command",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 151,
+          "value": -5.0
+        },
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3327.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 20533,
+      "name": "Capital Ships",
+      "groupId": 257,
+      "groupName": "Spaceship Command",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 151,
+          "value": -5.0
+        },
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 20342.0
+        },
+        {
+          "id": 275,
+          "value": 14.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 22536,
       "name": "Mining Foreman",
       "groupId": 258,
@@ -31206,6 +31434,50 @@
         {
           "id": 1286,
           "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 24625,
+      "name": "Advanced Mass Production",
+      "groupId": 268,
+      "groupName": "Production",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 182,
+          "value": 3387.0
+        },
+        {
+          "id": 275,
+          "value": 8.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 450,
+          "value": 1.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
         }
       ]
     },
@@ -34914,6 +35186,646 @@
         {
           "id": 6364,
           "value": 16500.0
+        }
+      ]
+    },
+    {
+      "id": 28352,
+      "name": "Rorqual",
+      "groupId": 883,
+      "groupName": "Capital Industrial Ship",
+      "categoryId": 6,
+      "mass": 800000000.0,
+      "radius": 1100.0,
+      "capacity": 40000.0,
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 300000.0
+        },
+        {
+          "id": 11,
+          "value": 420000.0
+        },
+        {
+          "id": 12,
+          "value": 4.0
+        },
+        {
+          "id": 13,
+          "value": 7.0
+        },
+        {
+          "id": 14,
+          "value": 8.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 60.0
+        },
+        {
+          "id": 48,
+          "value": 1200.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 4500000.0
+        },
+        {
+          "id": 70,
+          "value": 0.07
+        },
+        {
+          "id": 76,
+          "value": 200000.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 28374.0
+        },
+        {
+          "id": 183,
+          "value": 20533.0
+        },
+        {
+          "id": 184,
+          "value": 3456.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 115.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 397.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 263,
+          "value": 90000.0
+        },
+        {
+          "id": 265,
+          "value": 60000.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.65
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 2.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 8800.0
+        },
+        {
+          "id": 351,
+          "value": 400.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 435,
+          "value": 2.0
+        },
+        {
+          "id": 479,
+          "value": 14400000.0
+        },
+        {
+          "id": 482,
+          "value": 67500.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 11500.0
+        },
+        {
+          "id": 564,
+          "value": 75.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 715,
+          "value": 5000.0
+        },
+        {
+          "id": 716,
+          "value": 10.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 861,
+          "value": 1.0
+        },
+        {
+          "id": 866,
+          "value": 17887.0
+        },
+        {
+          "id": 867,
+          "value": 5.0
+        },
+        {
+          "id": 868,
+          "value": 4000.0
+        },
+        {
+          "id": 869,
+          "value": 300000.0
+        },
+        {
+          "id": 874,
+          "value": 1.0
+        },
+        {
+          "id": 898,
+          "value": 0.95
+        },
+        {
+          "id": 907,
+          "value": 1.0
+        },
+        {
+          "id": 908,
+          "value": 1000000.0
+        },
+        {
+          "id": 911,
+          "value": 1.0
+        },
+        {
+          "id": 912,
+          "value": 40000.0
+        },
+        {
+          "id": 979,
+          "value": 6.0
+        },
+        {
+          "id": 982,
+          "value": 1.0
+        },
+        {
+          "id": 1132,
+          "value": 400.0
+        },
+        {
+          "id": 1137,
+          "value": 3.0
+        },
+        {
+          "id": 1154,
+          "value": 3.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.35
+        },
+        {
+          "id": 1235,
+          "value": 200.0
+        },
+        {
+          "id": 1239,
+          "value": -5.0
+        },
+        {
+          "id": 1240,
+          "value": 5.0
+        },
+        {
+          "id": 1243,
+          "value": 3.0
+        },
+        {
+          "id": 1259,
+          "value": 0.82
+        },
+        {
+          "id": 1261,
+          "value": 0.79
+        },
+        {
+          "id": 1262,
+          "value": 0.63
+        },
+        {
+          "id": 1271,
+          "value": 125.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1336,
+          "value": 0.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1549,
+          "value": 10000.0
+        },
+        {
+          "id": 1555,
+          "value": 2000.0
+        },
+        {
+          "id": 1556,
+          "value": 300000.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1970,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 1973,
+          "value": 0.0
+        },
+        {
+          "id": 2021,
+          "value": 5.0
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 2433,
+          "value": 1.0
+        },
+        {
+          "id": 2574,
+          "value": 50.0
+        },
+        {
+          "id": 2754,
+          "value": 1e-05
+        },
+        {
+          "id": 3131,
+          "value": 5000.0
+        },
+        {
+          "id": 3133,
+          "value": 30.0
+        },
+        {
+          "id": 3205,
+          "value": 5.0
+        },
+        {
+          "id": 3223,
+          "value": 10.0
+        },
+        {
+          "id": 3224,
+          "value": -6.0
+        },
+        {
+          "id": 3233,
+          "value": 10.0
+        },
+        {
+          "id": 3317,
+          "value": 348.0
+        },
+        {
+          "id": 3319,
+          "value": 0.0
+        },
+        {
+          "id": 3326,
+          "value": 10.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 5978,
+          "value": 1.0
+        },
+        {
+          "id": 6364,
+          "value": 19000.0
+        }
+      ]
+    },
+    {
+      "id": 28374,
+      "name": "Capital Industrial Ships",
+      "groupId": 257,
+      "groupName": "Spaceship Command",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 20342.0
+        },
+        {
+          "id": 183,
+          "value": 29637.0
+        },
+        {
+          "id": 184,
+          "value": 20533.0
+        },
+        {
+          "id": 275,
+          "value": 12.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 279,
+          "value": 2.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        },
+        {
+          "id": 1285,
+          "value": 28585.0
+        },
+        {
+          "id": 1286,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 28585,
+      "name": "Capital Industrial Reconfiguration",
+      "groupId": 1218,
+      "groupName": "Resource Processing",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 182,
+          "value": 24625.0
+        },
+        {
+          "id": 275,
+          "value": 8.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 885,
+          "value": 50.0
+        },
+        {
+          "id": 1047,
+          "value": 0.0
         }
       ]
     },
@@ -59221,6 +60133,24 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 319,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 233050,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 124,
+        "name": "warpCapacitorNeedBonus",
+        "attributeID": 319,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 17,
+        "description": "Autogenerated skill attribute, warpCapacitorNeedBonus"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 327,
       "data": {
         "stackable": 1,
@@ -59387,6 +60317,25 @@
         "displayWhenZero": 0,
         "categoryID": 7,
         "description": "Autogenerated skill attribute, manufacturingTimeBonus"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 450,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233627,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 139,
+        "name": "manufacturingSlotBonus",
+        "attributeID": 450,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Autogenerated skill attribute, manufacturingSlotBonus"
       }
     },
     {
@@ -60510,6 +61459,198 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 853,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Attribute on ship to make advanced command affect only ships that we want.",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 853,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "advancedAgility"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 861,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233608,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 137,
+        "name": "canJump",
+        "attributeID": 861,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "1 = ship can use jump drive"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 866,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233268,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "unitID": 116,
+        "tooltipDescriptionID": 295338,
+        "name": "jumpDriveConsumptionType",
+        "attributeID": 866,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 295337,
+        "categoryID": 7,
+        "description": "Type that is used for consumption from cargo hold when activating jump drive operation."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 867,
+      "data": {
+        "stackable": 1,
+        "iconID": 1391,
+        "displayNameID": 233269,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 126,
+        "tooltipDescriptionID": 295340,
+        "name": "jumpDriveRange",
+        "attributeID": 867,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 295339,
+        "categoryID": 7,
+        "description": "Range in light years the ship can maximum jump to."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 868,
+      "data": {
+        "stackable": 0,
+        "iconID": 0,
+        "displayNameID": 233624,
+        "dataType": 5,
+        "defaultValue": 2000.0,
+        "unitID": 138,
+        "tooltipDescriptionID": 318051,
+        "name": "jumpDriveConsumptionAmount",
+        "attributeID": 868,
+        "published": 1,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 318050,
+        "categoryID": 7,
+        "description": "Number of units it consumes per light year."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 869,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "The amount of time before the ship actually jumps.",
+        "dataType": 4,
+        "defaultValue": 300000.0,
+        "attributeID": 869,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "jumpDriveDuration"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 874,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 874,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "advancedCapitalAgility"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 885,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233611,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 138,
+        "name": "consumptionQuantityBonus",
+        "attributeID": 885,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": ""
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 898,
+      "data": {
+        "stackable": 1,
+        "iconID": 90,
+        "displayNameID": 233266,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "unitID": 127,
+        "tooltipDescriptionID": 295346,
+        "name": "jumpDriveCapacitorNeed",
+        "attributeID": 898,
+        "published": 1,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 295345,
+        "categoryID": 7,
+        "description": "Minimum capacitor need for jump drive operation from full capacitor in modifier%."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 899,
+      "data": {
+        "stackable": 1,
+        "iconID": 90,
+        "displayNameID": 233267,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 105,
+        "name": "jumpDriveCapacitorNeedBonus",
+        "attributeID": 899,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": ""
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 907,
       "data": {
         "stackable": 1,
@@ -60692,6 +61833,41 @@
         "displayWhenZero": 0,
         "categoryID": 4,
         "description": ""
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 979,
+      "data": {
+        "stackable": 1,
+        "iconID": 34,
+        "displayNameID": 233434,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "name": "maxJumpClones",
+        "attributeID": 979,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "The maximum amount of jump clones that the character may have in existence or ship may have stored."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 982,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Defines whether a ship has the functionality to allow it to receive clone jumps and host jump clones.",
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "attributeID": 982,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "canReceiveCloneJumps"
       }
     },
     {
@@ -60975,6 +62151,75 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 1235,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Cargo Scanner Range Bonus",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 105,
+        "attributeID": 1235,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "cargoScannerRangeBonus"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1239,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "shipBonusORECapital1",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1239,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "shipBonusORECapital1"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1240,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "shipBonusORECapital2",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1240,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "shipBonusORECapital2"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1243,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "shipBonusORECapital3",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1243,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "shipBonusORECapital3"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 1247,
       "data": {
         "stackable": 1,
@@ -61135,6 +62380,24 @@
         "displayWhenZero": 0,
         "categoryID": 7,
         "description": ""
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1336,
+      "data": {
+        "stackable": 1,
+        "iconID": 34,
+        "displayNameID": 233264,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "name": "jumpClonesLeft",
+        "attributeID": 1336,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "The remaining number of unused clone vats on the ship that are available for installation of jump clones."
       }
     },
     {
@@ -61439,6 +62702,24 @@
         "displayWhenZero": 0,
         "categoryID": 7,
         "description": "Bonus to chance of opening a container (for skills)."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1785,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 263205,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 137,
+        "name": "isCapitalSize",
+        "attributeID": 1785,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": ""
       }
     },
     {
@@ -61921,6 +63202,24 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 1970,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 296756,
+        "dataType": 3,
+        "defaultValue": 0.0,
+        "unitID": 137,
+        "name": "disallowInHighSec",
+        "attributeID": 1970,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Security status restriction, preventing ships from entering high sec and modules from being activated."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 1971,
       "data": {
         "stackable": 1,
@@ -61935,6 +63234,23 @@
         "displayWhenZero": 0,
         "categoryID": 7,
         "description": "Multiplier for jump fatigue distance"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1973,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 297045,
+        "dataType": 4,
+        "defaultValue": -1000.0,
+        "name": "gateScrambleStatus",
+        "attributeID": 1973,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "If greater than zero than the ship cannot activate gates. Set this to 0 on a type if you want it to be gate scramble-able."
       }
     },
     {
@@ -61970,6 +63286,22 @@
         "displayWhenZero": 0,
         "categoryID": 9,
         "name": "shipBonusGC3"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2021,
+      "data": {
+        "stackable": 1,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 2021,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entosisDurationMultiplier"
       }
     },
     {
@@ -62121,6 +63453,23 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 2244,
+      "data": {
+        "stackable": 1,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.10000000149011612,
+        "unitID": 108,
+        "attributeID": 2244,
+        "published": 0,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 38,
+        "name": "fighterAbilityAntiCapitalMissileResistance"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 2298,
       "data": {
         "stackable": 1,
@@ -62181,6 +63530,23 @@
         "displayWhenZero": 0,
         "categoryID": 37,
         "name": "shipBonusRole6"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2433,
+      "data": {
+        "stackable": 1,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 108,
+        "attributeID": 2433,
+        "published": 0,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 38,
+        "name": "fighterAbilityKamikazeResistance"
       }
     },
     {
@@ -62284,6 +63650,26 @@
         "displayWhenZero": 0,
         "categoryID": 37,
         "name": "industrialBonusDroneDamage"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2754,
+      "data": {
+        "stackable": 1,
+        "tooltipDescriptionID": 317734,
+        "displayNameID": 317711,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "unitID": 108,
+        "name": "entosisAssistanceImpedanceMultiplier",
+        "attributeID": 2754,
+        "published": 1,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 317733,
+        "categoryID": 36,
+        "description": ""
       }
     },
     {
@@ -62492,6 +63878,45 @@
         "highIsGood": 1,
         "displayWhenZero": 0,
         "categoryID": 9
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3131,
+      "data": {
+        "stackable": 0,
+        "tooltipDescriptionID": 583323,
+        "displayNameID": 583321,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 138,
+        "name": "conduitJumpDriveConsumptionAmount",
+        "attributeID": 3131,
+        "published": 1,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 583322,
+        "categoryID": 7,
+        "description": "Number of units needed to conduit jump"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3133,
+      "data": {
+        "stackable": 0,
+        "tooltipDescriptionID": 583438,
+        "displayNameID": 583421,
+        "dataType": 1,
+        "defaultValue": 0.0,
+        "name": "conduitJumpPassengerCount",
+        "attributeID": 3133,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 583422,
+        "categoryID": 7,
+        "description": "How many passengers can be carried in a Conduit Jump"
       }
     },
     {
@@ -62766,6 +64191,36 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 3223,
+      "data": {
+        "stackable": 1,
+        "name": "capitalIndustrialShipBonusDroneOreMiningYield",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 3223,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 37
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3224,
+      "data": {
+        "stackable": 1,
+        "name": "capitalIndustrialShipBonusDroneIceCycleTime",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 3224,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 37
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 3225,
       "data": {
         "stackable": 1,
@@ -62820,6 +64275,21 @@
         "attributeID": 3230,
         "published": 0,
         "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 37
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3233,
+      "data": {
+        "stackable": 1,
+        "name": "capitalIndustrialShipBonusDroneHitPoints",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 3233,
+        "published": 0,
+        "highIsGood": 1,
         "displayWhenZero": 0,
         "categoryID": 37
       }
@@ -62931,6 +64401,36 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 3317,
+      "data": {
+        "stackable": 0,
+        "description": "Pointer to type-list that describes which beacons a ship's jump drive can connect to",
+        "dataType": 13,
+        "defaultValue": 0.0,
+        "attributeID": 3317,
+        "published": 0,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "name": "jumpDriveTargetBeaconTypelistID"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3319,
+      "data": {
+        "stackable": 0,
+        "description": "Set this attribute on a ship to declare that the ship is an eligible passenger to travel through a Titan Jump Portal",
+        "dataType": 0,
+        "defaultValue": 1.0,
+        "attributeID": 3319,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "name": "isTitanJumpPortalPassenger"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 3320,
       "data": {
         "stackable": 0,
@@ -62987,6 +64487,21 @@
         "highIsGood": 1,
         "displayWhenZero": 0,
         "name": "isIndustrialJumpPortalPassenger"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3326,
+      "data": {
+        "stackable": 1,
+        "name": "capitalIndustrialCommandBonusDroneDamage",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 3326,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 37
       }
     },
     {
@@ -63781,6 +65296,34 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 234,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 234,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 319,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "warpdriveoperationSkillBoostWarpCapacitorNeedBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 251,
       "data": {
         "isAssistance": 0,
@@ -64250,6 +65793,34 @@
           }
         ],
         "effectName": "engineeringPowerEngineeringOutputBonusPostPercentPowerOutputLocationShipGroupPowerCore",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 494,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 494,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 153,
+            "operation": 6,
+            "modifyingAttributeID": 319,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "warpDriveOperationWarpCapacitorNeedBonusPostPercentWarpCapacitorNeedLocationShipGroupPropulsion",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -64797,6 +66368,34 @@
         "guid": "",
         "propulsionChance": 0,
         "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 568,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 568,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 196,
+            "operation": 2,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "massProductionSkillLevelModAddManufactureSlotLimitChar",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -66587,6 +68186,202 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 1614,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1614,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 853,
+            "operation": 6,
+            "modifyingAttributeID": 151,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillAdvancedSpaceshipAgilityBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1615,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1615,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 70,
+            "operation": 0,
+            "modifyingAttributeID": 853,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "shipAdvancedSpaceshipCommandAgilityBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1616,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1616,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 874,
+            "operation": 6,
+            "modifyingAttributeID": 151,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillCapitalShipsAdvancedAgility",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1617,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1617,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 70,
+            "operation": 0,
+            "modifyingAttributeID": 874,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "shipCapitalAgilityBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1651,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1651,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 885,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillCynosural&SiegeConsumQuantityBonusSkillLevel",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1722,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1722,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 898,
+            "operation": 6,
+            "modifyingAttributeID": 899,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "jumpDriveSkillsCapacitorNeedBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1723,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1723,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 899,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "jumpDriveSkillsCapacitorNeedBonusSkillLevel",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 1804,
       "data": {
         "isAssistance": 0,
@@ -68193,6 +69988,123 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 3262,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3262,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 1239,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "oreCapitalShipSkillMultiplier1",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3263,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3263,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 1240,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "oreCapitalShipSkillMultiplier2",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3264,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3264,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 714,
+            "modifyingAttributeID": 885,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 3,
+            "skillTypeID": 28585
+          }
+        ],
+        "effectName": "skillCapitalIndustrialReconfigurationConsumptionQuantityBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3267,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3267,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 714,
+            "modifyingAttributeID": 1239,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 28585
+          }
+        ],
+        "effectName": "shipConsumptionQuantityBonusIndustrialReconfigurationORECapital1",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 3297,
       "data": {
         "sfxName": "None",
@@ -68276,6 +70188,64 @@
           }
         ],
         "effectName": "shipEnergyNeutralizerTransferAmountBonusAF",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3311,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3311,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 1243,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "oreCapitalShipSkillMultiplier3",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3327,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3327,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 1244,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "oreCapitalShipSkillMultiplier4",
         "guid": "None",
         "propulsionChance": 0,
         "published": 0
@@ -68545,6 +70515,34 @@
         ],
         "effectName": "shipBonusSmallEnergyTurretDamagePirateFaction",
         "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3493,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3493,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 126,
+            "modifyingAttributeID": 1235,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 47
+          }
+        ],
+        "effectName": "rorqualCargoScanRangeBonus",
         "propulsionChance": 0,
         "published": 0
       }
@@ -76215,6 +78213,41 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 6104,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6104,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 2021,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 4,
+            "skillTypeID": 24242
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2754,
+            "modifyingAttributeID": 2754,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 7,
+            "skillTypeID": 24242
+          }
+        ],
+        "effectName": "entosisDurationMultiply",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 6172,
       "data": {
         "descriptionID": 309894,
@@ -77766,6 +79799,153 @@
           }
         ],
         "effectName": "industrialBonusDroneDamage",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6791,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6791,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2582,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "oreCapitalShipSkillMultiplier5",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6793,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6793,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2535,
+            "modifyingAttributeID": 1240,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 22536
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2469,
+            "modifyingAttributeID": 1240,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 22536
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2471,
+            "modifyingAttributeID": 1240,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 22536
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2473,
+            "modifyingAttributeID": 1240,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 22536
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2537,
+            "modifyingAttributeID": 1240,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 22536
+          }
+        ],
+        "effectName": "miningForemanBurstBonusORECapital2",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6794,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6794,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2535,
+            "modifyingAttributeID": 1243,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3350
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2469,
+            "modifyingAttributeID": 1243,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3350
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2471,
+            "modifyingAttributeID": 1243,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3350
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2473,
+            "modifyingAttributeID": 1243,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3350
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 2537,
+            "modifyingAttributeID": 1243,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3350
+          }
+        ],
+        "effectName": "shieldCommandBurstBonusORECapital3",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -80511,6 +82691,112 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 8296,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8296,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 77,
+            "modifyingAttributeID": 3223,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3438
+          }
+        ],
+        "effectName": "capitalIndustrialShipBonusDroneOreMiningYield",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8297,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8297,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 3224,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 43702
+          }
+        ],
+        "effectName": "capitalIndustrialShipBonusDroneIceCycleTime",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8298,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8298,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 3223,
+            "operation": 4,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "capitalIndustrialShipSkillLevelDroneOreMiningYield",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8299,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8299,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 3224,
+            "operation": 4,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "capitalIndustrialShipSkillLevelDroneIceHarvestingCycleTime",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 8300,
       "data": {
         "isAssistance": 0,
@@ -80613,6 +82899,75 @@
           }
         ],
         "effectName": "shipRoleBonusOreMiningDuration",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8309,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8309,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 265,
+            "modifyingAttributeID": 3233,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3436
+          },
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 9,
+            "modifyingAttributeID": 3233,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3436
+          },
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 263,
+            "modifyingAttributeID": 3233,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3436
+          }
+        ],
+        "effectName": "capitalIndustrialShipBonusDroneHitPoints",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8310,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8310,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 3233,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "capitalIndustrialShipSkillLevelDroneHitPoints",
         "propulsionChance": 0,
         "published": 0
       }
@@ -80912,6 +83267,85 @@
         ],
         "effectName": "BattleshipRoleBonusArmorPlate&ShieldExtenderHP",
         "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8470,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8470,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 3326,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3436
+          }
+        ],
+        "effectName": "capitalIndustrialCommandBonusDroneDamage",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8471,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8471,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 3326,
+            "operation": 4,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "capitalIndustrialShipSkillLevelDroneDamage",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8473,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8473,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 3327,
+            "operation": 4,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "capitalIndustrialShipSkillLevelMiningForemanBurstRange",
         "propulsionChance": 0,
         "published": 0
       }
@@ -102471,6 +104905,52 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 3387,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 165.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3380.0
+          },
+          {
+            "attributeID": 275,
+            "value": 2.0
+          },
+          {
+            "attributeID": 277,
+            "value": 3.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 450,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 568,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 3392,
       "data": {
         "dogmaAttributes": [
@@ -102972,6 +105452,126 @@
           },
           {
             "effectID": 394,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3455,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 165.0
+          },
+          {
+            "attributeID": 181,
+            "value": 167.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3449.0
+          },
+          {
+            "attributeID": 275,
+            "value": 1.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 319,
+            "value": -10.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 234,
+            "isDefault": 0
+          },
+          {
+            "effectID": 494,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3456,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 165.0
+          },
+          {
+            "attributeID": 181,
+            "value": 167.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3449.0
+          },
+          {
+            "attributeID": 183,
+            "value": 3455.0
+          },
+          {
+            "attributeID": 184,
+            "value": 3402.0
+          },
+          {
+            "attributeID": 275,
+            "value": 5.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 278,
+            "value": 5.0
+          },
+          {
+            "attributeID": 279,
+            "value": 5.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 899,
+            "value": -5.0
+          },
+          {
+            "attributeID": 1047,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 1722,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1723,
             "isDefault": 0
           }
         ]
@@ -117519,6 +120119,114 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 20342,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 151,
+            "value": -5.0
+          },
+          {
+            "attributeID": 180,
+            "value": 167.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3327.0
+          },
+          {
+            "attributeID": 275,
+            "value": 5.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1047,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 232,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1614,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 20533,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 151,
+            "value": -5.0
+          },
+          {
+            "attributeID": 180,
+            "value": 167.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 20342.0
+          },
+          {
+            "attributeID": 275,
+            "value": 14.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1047,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 232,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1616,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 22536,
       "data": {
         "dogmaAttributes": [
@@ -117706,6 +120414,56 @@
           },
           {
             "effectID": 6022,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 24625,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 165.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3387.0
+          },
+          {
+            "attributeID": 275,
+            "value": 8.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 450,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1047,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 568,
             "isDefault": 0
           }
         ]
@@ -121580,6 +124338,756 @@
           },
           {
             "effectID": 8377,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28352,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 3,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 300000.0
+          },
+          {
+            "attributeID": 11,
+            "value": 420000.0
+          },
+          {
+            "attributeID": 12,
+            "value": 4.0
+          },
+          {
+            "attributeID": 13,
+            "value": 7.0
+          },
+          {
+            "attributeID": 14,
+            "value": 8.0
+          },
+          {
+            "attributeID": 15,
+            "value": 0.0
+          },
+          {
+            "attributeID": 19,
+            "value": 1.0
+          },
+          {
+            "attributeID": 21,
+            "value": 0.0
+          },
+          {
+            "attributeID": 37,
+            "value": 60.0
+          },
+          {
+            "attributeID": 48,
+            "value": 1200.0
+          },
+          {
+            "attributeID": 49,
+            "value": 0.0
+          },
+          {
+            "attributeID": 55,
+            "value": 4500000.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.07
+          },
+          {
+            "attributeID": 76,
+            "value": 200000.0
+          },
+          {
+            "attributeID": 79,
+            "value": 6750.0
+          },
+          {
+            "attributeID": 101,
+            "value": 0.0
+          },
+          {
+            "attributeID": 102,
+            "value": 0.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.67
+          },
+          {
+            "attributeID": 110,
+            "value": 0.67
+          },
+          {
+            "attributeID": 111,
+            "value": 0.67
+          },
+          {
+            "attributeID": 113,
+            "value": 0.67
+          },
+          {
+            "attributeID": 124,
+            "value": 16777215.0
+          },
+          {
+            "attributeID": 129,
+            "value": 150.0
+          },
+          {
+            "attributeID": 136,
+            "value": 1.0
+          },
+          {
+            "attributeID": 153,
+            "value": 1.38e-08
+          },
+          {
+            "attributeID": 182,
+            "value": 28374.0
+          },
+          {
+            "attributeID": 183,
+            "value": 20533.0
+          },
+          {
+            "attributeID": 184,
+            "value": 3456.0
+          },
+          {
+            "attributeID": 188,
+            "value": 0.0
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 115.0
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 217,
+            "value": 397.0
+          },
+          {
+            "attributeID": 246,
+            "value": 394.0
+          },
+          {
+            "attributeID": 263,
+            "value": 90000.0
+          },
+          {
+            "attributeID": 265,
+            "value": 60000.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.5
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.65
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 271,
+            "value": 1.0
+          },
+          {
+            "attributeID": 272,
+            "value": 0.5
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 278,
+            "value": 2.0
+          },
+          {
+            "attributeID": 279,
+            "value": 1.0
+          },
+          {
+            "attributeID": 283,
+            "value": 8800.0
+          },
+          {
+            "attributeID": 351,
+            "value": 400.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 435,
+            "value": 2.0
+          },
+          {
+            "attributeID": 479,
+            "value": 14400000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 67500.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 11500.0
+          },
+          {
+            "attributeID": 564,
+            "value": 75.0
+          },
+          {
+            "attributeID": 600,
+            "value": 1.5
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 715,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 716,
+            "value": 10.0
+          },
+          {
+            "attributeID": 853,
+            "value": 1.0
+          },
+          {
+            "attributeID": 861,
+            "value": 1.0
+          },
+          {
+            "attributeID": 866,
+            "value": 17887.0
+          },
+          {
+            "attributeID": 867,
+            "value": 5.0
+          },
+          {
+            "attributeID": 868,
+            "value": 4000.0
+          },
+          {
+            "attributeID": 869,
+            "value": 300000.0
+          },
+          {
+            "attributeID": 874,
+            "value": 1.0
+          },
+          {
+            "attributeID": 898,
+            "value": 0.95
+          },
+          {
+            "attributeID": 907,
+            "value": 1.0
+          },
+          {
+            "attributeID": 908,
+            "value": 1000000.0
+          },
+          {
+            "attributeID": 911,
+            "value": 1.0
+          },
+          {
+            "attributeID": 912,
+            "value": 40000.0
+          },
+          {
+            "attributeID": 979,
+            "value": 6.0
+          },
+          {
+            "attributeID": 982,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1132,
+            "value": 400.0
+          },
+          {
+            "attributeID": 1137,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1154,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1178,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1179,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1196,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1198,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1199,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1200,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1224,
+            "value": 0.35
+          },
+          {
+            "attributeID": 1235,
+            "value": 200.0
+          },
+          {
+            "attributeID": 1239,
+            "value": -5.0
+          },
+          {
+            "attributeID": 1240,
+            "value": 5.0
+          },
+          {
+            "attributeID": 1243,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1259,
+            "value": 0.82
+          },
+          {
+            "attributeID": 1261,
+            "value": 0.79
+          },
+          {
+            "attributeID": 1262,
+            "value": 0.63
+          },
+          {
+            "attributeID": 1271,
+            "value": 125.0
+          },
+          {
+            "attributeID": 1281,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1336,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1547,
+            "value": 4.0
+          },
+          {
+            "attributeID": 1549,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 1555,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 1556,
+            "value": 300000.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11346.0
+          },
+          {
+            "attributeID": 1785,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1970,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1971,
+            "value": 0.1
+          },
+          {
+            "attributeID": 1973,
+            "value": 0.0
+          },
+          {
+            "attributeID": 2021,
+            "value": 5.0
+          },
+          {
+            "attributeID": 2045,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2112,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2113,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2115,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2244,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2433,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2574,
+            "value": 50.0
+          },
+          {
+            "attributeID": 2754,
+            "value": 1e-05
+          },
+          {
+            "attributeID": 3131,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 3133,
+            "value": 30.0
+          },
+          {
+            "attributeID": 3205,
+            "value": 5.0
+          },
+          {
+            "attributeID": 3223,
+            "value": 10.0
+          },
+          {
+            "attributeID": 3224,
+            "value": -6.0
+          },
+          {
+            "attributeID": 3233,
+            "value": 10.0
+          },
+          {
+            "attributeID": 3317,
+            "value": 348.0
+          },
+          {
+            "attributeID": 3319,
+            "value": 0.0
+          },
+          {
+            "attributeID": 3326,
+            "value": 10.0
+          },
+          {
+            "attributeID": 5682,
+            "value": 0.0
+          },
+          {
+            "attributeID": 5796,
+            "value": 2147483647000.0
+          },
+          {
+            "attributeID": 5978,
+            "value": 1.0
+          },
+          {
+            "attributeID": 6364,
+            "value": 19000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 1615,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1617,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2134,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2251,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3267,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3493,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6104,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6783,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6793,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6794,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8264,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8296,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8297,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8309,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8470,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28374,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 167.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 20342.0
+          },
+          {
+            "attributeID": 183,
+            "value": 29637.0
+          },
+          {
+            "attributeID": 184,
+            "value": 20533.0
+          },
+          {
+            "attributeID": 275,
+            "value": 12.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 278,
+            "value": 3.0
+          },
+          {
+            "attributeID": 279,
+            "value": 2.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1047,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1285,
+            "value": 28585.0
+          },
+          {
+            "attributeID": 1286,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3262,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3263,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3311,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3327,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6791,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8298,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8299,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8310,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8471,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8473,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28585,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 165.0
+          },
+          {
+            "attributeID": 182,
+            "value": 24625.0
+          },
+          {
+            "attributeID": 275,
+            "value": 8.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 885,
+            "value": 50.0
+          },
+          {
+            "attributeID": 1047,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 1651,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3264,
             "isDefault": 0
           }
         ]
@@ -148511,6 +152019,26 @@
     },
     {
       "dataset": "client/types",
+      "key": 3387,
+      "data": {
+        "descriptionID": 87375,
+        "typeID": 3387,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76841,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 369,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 200000.0,
+        "portionSize": 1,
+        "groupID": 268
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 3392,
       "data": {
         "descriptionID": 95196,
@@ -148704,6 +152232,46 @@
         "volume": 0.01,
         "mass": 0.0,
         "basePrice": 30000.0,
+        "portionSize": 1,
+        "groupID": 275
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3455,
+      "data": {
+        "descriptionID": 87425,
+        "typeID": 3455,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76893,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 374,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 45000.0,
+        "portionSize": 1,
+        "groupID": 275
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3456,
+      "data": {
+        "descriptionID": 87426,
+        "typeID": 3456,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 76894,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 374,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 10000000.0,
         "portionSize": 1,
         "groupID": 275
       }
@@ -150070,6 +153638,45 @@
     },
     {
       "dataset": "client/types",
+      "key": 20342,
+      "data": {
+        "descriptionID": 89737,
+        "typeID": 20342,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 98960,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 377,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 50000000.0,
+        "portionSize": 1,
+        "groupID": 257
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 20533,
+      "data": {
+        "descriptionID": 89791,
+        "typeID": 20533,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 99027,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 377,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 450000000.0,
+        "portionSize": 1,
+        "groupID": 257
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 22536,
       "data": {
         "descriptionID": 91133,
@@ -150126,6 +153733,25 @@
         "basePrice": 35000000.0,
         "portionSize": 1,
         "groupID": 257
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 24625,
+      "data": {
+        "descriptionID": 90335,
+        "typeID": 24625,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 99997,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 369,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 20000000.0,
+        "portionSize": 1,
+        "groupID": 268
       }
     },
     {
@@ -150485,6 +154111,79 @@
         "published": 1,
         "certificateTemplate": 109,
         "groupID": 27
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28352,
+      "data": {
+        "quoteID": 871974,
+        "raceID": 128,
+        "typeNameID": 76086,
+        "designerIDs": [
+          1000276
+        ],
+        "radius": 1100.0,
+        "factionID": 500014,
+        "quoteAuthorID": 871975,
+        "typeID": 28352,
+        "graphicID": 3331,
+        "capacity": 40000.0,
+        "isDynamicType": 0,
+        "soundID": 20221,
+        "wreckTypeID": 28603,
+        "techLevel": 1,
+        "basePrice": 4337000000.0,
+        "marketGroupID": 1048,
+        "volume": 14500000.0,
+        "portionSize": 1,
+        "descriptionID": 597280,
+        "metaLevel": 0,
+        "isisGroupID": 46,
+        "mass": 800000000.0,
+        "published": 1,
+        "certificateTemplate": 142,
+        "groupID": 883
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28374,
+      "data": {
+        "descriptionID": 90668,
+        "typeID": 28374,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 100400,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 377,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 1000000000.0,
+        "portionSize": 1,
+        "groupID": 257
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28585,
+      "data": {
+        "descriptionID": 90722,
+        "typeID": 28585,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 100456,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 1323,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 30000000.0,
+        "portionSize": 1,
+        "groupID": 1218
       }
     },
     {

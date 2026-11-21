@@ -27,6 +27,8 @@ public interface IAlliances
     int? PilotAffiliation(long pilotId);
     IReadOnlyList<Alliance> List();
     IReadOnlyList<AllianceMember> Members(int allianceId);
+    int DaysInAlliance(int allianceId, int corporationId);
+    IReadOnlyList<int> MembersOlderThan(int allianceId, int minimumDays);
     AllianceCreation Create(long actorId, AllianceDetails details);
     void Update(long actorId, string description, string url);
     IReadOnlyList<string> SuggestTickers(string name);

@@ -73,13 +73,13 @@ internal sealed class CapsuleerRatting(
             .OrderBy(n => n.Id)
             .ToArray();
 
-    internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, StaticSpaceObject site, long now) =>
+    internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, StaticSpaceObject site, long now, bool includeEmpty) =>
         wrecks
             .List(pilot.SystemId, now)
             .Where(w =>
                 w.OwnerId == pilot.PilotId
                 && WithinSite(site, w.Position)
-                && !w.Empty
+                && (!w.Empty || includeEmpty && w.GroupId == WreckDefinitions.Group)
                 && w.Id < WreckDefinitions.FirstPlayerWreckId
                 && pilot.Position!.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange
             )
@@ -88,12 +88,17 @@ internal sealed class CapsuleerRatting(
     private static bool WithinSite(StaticSpaceObject site, SpacePosition position) =>
         site.Id >= CombatAnomalyRules.FirstSiteId || site.Position.DistanceTo(position) <= NpcEncounterDefinitions.ChaseLeash;
 
-    internal RattingAssessment Assess(DockedPilot pilot, NpcContact[] contacts, long now)
+    internal RattingAssessment Assess(DockedPilot pilot, NpcContact[] contacts, long now, bool freshCombat = false)
     {
         var profile = defense.Profile(pilot.PilotId);
         var runtime = LiveCombatRuntime.Find(database.Path);
         var ship = runtime?.DefenseShip(pilot.PilotId, now);
-        if (ship is null || !profile.Combat || TrafficRules.LightHull((Eden.Gameplay.Ships.HullClass)pilot.ShipGroupId))
+        var hull = (Eden.Gameplay.Ships.HullClass)pilot.ShipGroupId;
+        if (
+            ship is null
+            || !profile.Combat
+            || TrafficRules.LightHull(hull) && !(freshCombat && hull == Eden.Gameplay.Ships.HullClass.Corvette)
+        )
         {
             return new(false, double.PositiveInfinity, 0, "No supported resident combat fit.");
         }

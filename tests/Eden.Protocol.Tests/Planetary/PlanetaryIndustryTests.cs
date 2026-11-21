@@ -72,6 +72,31 @@ public sealed class PlanetaryIndustryTests
         return PlanetaryCatalogReader.Read(catalog);
     }
 
+    [Fact]
+    public void BotProductionPlansEveryCatalogCommodityFromExtraction()
+    {
+        using var fixture = Prepare();
+        var catalog = Catalog(fixture);
+        Assert.Equal(68, catalog.Schematics.Count);
+        Assert.Equal(15, catalog.CommodityTiers.Count(row => row.Value == 0));
+        foreach (var commodity in catalog.CommodityTiers.Keys)
+        {
+            Dictionary<int, long> stock = [];
+            int turns = 0;
+            while (stock.GetValueOrDefault(commodity) < 1)
+            {
+                Assert.True(turns++ < 500, $"Production did not converge for {commodity}.");
+                var step = Assert.IsType<PlanetaryProductionStep>(PlanetaryProductionPlan.Next(catalog, commodity, 1, stock, 1));
+                foreach (var input in step.Inputs)
+                {
+                    Assert.True(stock.GetValueOrDefault(input.TypeId) >= input.Quantity);
+                    stock[input.TypeId] -= input.Quantity;
+                }
+                stock[step.TypeId] = stock.GetValueOrDefault(step.TypeId) + step.Quantity;
+            }
+        }
+    }
+
     internal static PlanetaryColony Deploy(Fixture f, bool factory = true)
     {
         long center = f.Grant(CommandCenter, cargo: true);

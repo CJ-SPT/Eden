@@ -60,8 +60,7 @@ internal sealed partial class PilotMarketStore
         {
             if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
             {
-                using var resident = live.Economy.Begin();
-                return resident.NextExpiry;
+                return live.Economy.Inspect(static world => world.NextExpiry);
             }
             if (signal.Deadline != 0)
             {
@@ -84,7 +83,7 @@ internal sealed partial class PilotMarketStore
         }
         using WorldDbContext world = new(database.Path);
         var settings = world.Set<SavedWorldEconomy>().Single();
-        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
+        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock, database.Settings.FreshUniverse);
     }
 
     public long Observe(long pilotId)
@@ -125,7 +124,11 @@ internal sealed partial class PilotMarketStore
         return world
             .Set<SavedPersonalOrder>()
             .AsNoTracking()
-            .Where(o => o.PilotId == pilotId && (history ? o.Status != PersonalOrderStatus.Open : o.Status == PersonalOrderStatus.Open))
+            .Where(o =>
+                o.PilotId == pilotId
+                && o.CorporationId == null
+                && (history ? o.Status != PersonalOrderStatus.Open : o.Status == PersonalOrderStatus.Open)
+            )
             .OrderByDescending(o => o.Id)
             .AsEnumerable()
             .Select(o => o.Snapshot())
@@ -139,7 +142,10 @@ internal sealed partial class PilotMarketStore
             return ResidentEscrow(live, pilotId);
         }
         using WorldDbContext world = new(database.Path);
-        var orders = world.Set<SavedPersonalOrder>().Where(o => o.PilotId == pilotId && o.Status == PersonalOrderStatus.Open).ToArray();
+        var orders = world
+            .Set<SavedPersonalOrder>()
+            .Where(o => o.PilotId == pilotId && o.CorporationId == null && o.Status == PersonalOrderStatus.Open)
+            .ToArray();
         return new(orders.Sum(o => o.EscrowCents), orders.Where(o => !o.Bid).Sum(o => checked(o.PriceCents * o.Remaining)));
     }
 
@@ -267,7 +273,7 @@ internal sealed partial class PilotMarketStore
     private sealed record Candidate(SavedPersonalOrder? Personal, NpcMarketOrder? Npc)
     {
         internal long Id => Personal?.Id ?? Npc!.Id;
-        internal long Owner => Personal?.PilotId ?? Npc!.OwnerId;
+        internal long Owner => Personal?.CorporationId ?? Personal?.PilotId ?? Npc!.OwnerId;
         internal long Price => Personal?.PriceCents ?? Npc!.PriceCents;
         internal long Issued => Personal?.Modified ?? Npc!.Issued;
         internal int Remaining => Personal?.Remaining ?? Npc!.Remaining;
@@ -291,6 +297,7 @@ internal sealed partial class PilotMarketStore
                 && o.Status == PersonalOrderStatus.Open
                 && o.Expires > now
                 && o.PilotId != incoming.PilotId
+                && o.CorporationId == null
                 && !npcDemandOnly
             )
             .ToArray()

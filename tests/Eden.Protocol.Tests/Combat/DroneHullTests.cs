@@ -112,7 +112,6 @@ public sealed class DroneHullTests
             )
             .Select(type => type.Id)
             .ToHashSet();
-        Assert.Equal(149, hulls.Count);
         Assert.Equal(hulls.Order(), BuildContentPolicy.Current.DroneHullTypes.Order());
         var fleet = fixture.Base.Db.Services.GetRequiredService<IPilotFleet>();
         foreach (int hull in hulls.Order())

@@ -5,6 +5,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Repair;
 using Eden.Data.World.Skills;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
@@ -18,10 +19,13 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Repair;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using StructureFixture = Eden.Protocol.Tests.Structures.StructureTests.Fixture;
 
 namespace Eden.Protocol.Tests.Repair;
 
@@ -334,4 +338,87 @@ public sealed class RepairTests
     [InlineData(-1d)]
     public void InvalidPaymentsCannotReachTheWallet(double payment) =>
         Assert.Throws<InvalidDataException>(() => RepairDefinitions.PaymentCents(payment));
+
+    [Fact]
+    public async Task UpwellRepairMonikerQuotesAndRepairsForFreeThroughTheResidentWorld()
+    {
+        using StructureFixture f = new(liveWorld: true);
+        var structure = f.Online();
+        var docked = f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
+        var live = f.Db.Services.GetRequiredService<LiveWorld>();
+        using (var transaction = live.Economy.Begin(new(pilots: [f.PilotId], ships: [docked.ShipId])))
+        {
+            var damage =
+                transaction.Set<ShipHealthState>().Find(docked.ShipId)
+                ?? transaction.Add(new ShipHealthState { ShipId = docked.ShipId }).Entity;
+            damage.ArmorDamage = 10;
+            damage.StructureDamage = 20;
+            damage.UpdatedAt = f.Clock.Now;
+            transaction.Commit();
+        }
+        var repair = f.Db.Services.GetRequiredService<IPilotRepair>();
+        var wallets = f.Db.Services.GetRequiredService<IPilotWalletReader>();
+        long balance = wallets.Balance(f.PilotId);
+        using var scope = f.Db.Services.CreateScope();
+        using PilotCallContext context = new(
+            1000001,
+            docked.Account,
+            [docked],
+            p => new(f.Db.Store, p, f.Clock, new(), f.Db.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        context.Select(docked);
+        List<object?> ids = [docked.ShipId];
+        const long systemGroup = 5;
+        object?[] nativeBind = [structure.Id, (long)docked.SystemId, systemGroup];
+        Assert.Same(PilotCallResult.Unsupported, Bind([structure.Id, structure.Id, (long)RepairDefinitions.StationGroup], null));
+        Assert.Same(PilotCallResult.Unsupported, Bind([structure.Id, (long)docked.SystemId + 1, systemGroup], null));
+
+        var binding = Assert.IsType<BoundPilotReply>(
+            Assert.IsType<PilotCallResult.Success>(Bind(nativeBind, ["GetRepairQuotes", new object?[] { ids }])).Reply
+        );
+        Assert.Equal("repairSvc", context.ResolveReference(binding.Reference.Id));
+        var quotes = Assert.IsType<Dictionary<long, object?>>(Wire(binding.Reply));
+        var quote = Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(quotes[docked.ShipId])));
+        var fields = BlueRead.Fields(quote.State);
+        Assert.Equal(30d, fields["damage"]);
+        Assert.Equal(0d, fields["costToRepairOneUnitOfDamage"]);
+        Assert.IsType<PilotCallResult.Failure>(Call([ids, 1L]));
+        Assert.IsType<PilotCallResult.Failure>(Call([new List<object?> { docked.ShipId, long.MaxValue }]));
+        Assert.Equal(30d, Assert.Single(repair.Quotes(f.PilotId, structure.Id, [docked.ShipId])[docked.ShipId]).Damage);
+
+        using (var action = live.Economy.Begin(new(systems: [structure.SystemId])))
+        {
+            action.Set<SavedStructure>().Find(structure.Id)!.HasCore = false;
+            action.Commit();
+        }
+        Assert.IsType<PilotCallResult.Failure>(Call([ids]));
+        using (var action = live.Economy.Begin(new(systems: [structure.SystemId])))
+        {
+            action.Set<SavedStructure>().Find(structure.Id)!.HasCore = true;
+            action.Commit();
+        }
+
+        var repaired = Assert.IsType<PilotCallResult.Success>(Bind(nativeBind, ["RepairItemsInStructure", new object?[] { ids }]));
+        Assert.Null(Wire(Assert.IsType<BoundPilotReply>(repaired.Reply).Reply));
+        Assert.Equal(0d, Assert.Single(repair.Quotes(f.PilotId, structure.Id, [docked.ShipId])[docked.ShipId]).Damage);
+        Assert.Equal(balance, wallets.Balance(f.PilotId));
+        Assert.Empty(repair.Payments(f.PilotId));
+        Assert.DoesNotContain(context.Notifications, note => note.Name == "OnAccountChange");
+        Assert.Contains(context.Notifications, note => note.Name == "OnModuleAttributeChanges");
+        await live.FlushAsync();
+        using var file = WorldConnections.FileConnection(f.Db.Path);
+        using WorldDbContext saved = new(file);
+        var condition = saved.Set<ShipHealthState>().Find(docked.ShipId)!;
+        Assert.Equal(0d, condition.ArmorDamage);
+        Assert.Equal(0d, condition.StructureDamage);
+
+        PilotCallResult Call(object?[] args) => router.Call(context, "repairSvc", "RepairItemsInStructure", args, _ => { });
+        PilotCallResult Bind(object?[] bind, object?[]? first) =>
+            router.Call(context, "repairSvc", "MachoBindObject", new object?[] { bind, first }, _ => { });
+
+        static object? Wire(BlueModel model) => BlueMarshal.Decode(BlueMarshal.Encode(model));
+    }
 }

@@ -20,6 +20,9 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         .GroupBy(profile => profile.SecurityBand)
         .ToDictionary(group => group.Key, group => Ordered(group));
     private readonly TrafficProfile[] _global = Ordered(profiles);
+    private readonly Dictionary<long, TrafficProfile> _kills = profiles.ToDictionary(profile => profile.KillId);
+
+    internal TrafficProfile? Find(long killId) => _kills.GetValueOrDefault(killId);
 
     private const int MaximumRuntimePools = 128;
     private readonly Lock _runtimePoolGate = new();
@@ -59,9 +62,19 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         var prepared = PrepareCandidates(region, band, compatible, hullGroup);
         // Materialize while the caller's catalog is alive. Completed Lazy factories release
         // their captures, leaving only immutable snapshot profiles and stable selection order.
+        int tierCount = 0;
         foreach (var tier in prepared.Tiers)
         {
-            _ = tier.Value;
+            tierCount++;
+            if (tier.Value.Groups.Length > 0 && correction)
+            {
+                // Correction takes the first compatible profile and has no identity reservation to skip.
+                break;
+            }
+        }
+        if (tierCount < prepared.Tiers.Length)
+        {
+            prepared = new(prepared.Tiers[..tierCount]);
         }
         lock (_runtimePoolGate)
         {
@@ -81,13 +94,9 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
     private static TrafficProfile[] Ordered(IEnumerable<TrafficProfile> values) =>
         values.OrderByDescending(profile => profile.KilledAt).ThenByDescending(profile => profile.KillId).ToArray();
 
-    private static TrafficProfile[] Latest(IEnumerable<TrafficProfile> values) =>
-        values
-            .OrderByDescending(profile => profile.KilledAt)
-            .ThenByDescending(profile => profile.KillId)
-            .DistinctBy(profile => profile.CharacterId)
-            .OrderBy(profile => profile.CharacterId)
-            .ToArray();
+    // Each tier already orders newest kills first, and filtering preserves that order.
+    private static TrafficProfile[] Latest(IEnumerable<TrafficProfile> ordered) =>
+        ordered.DistinctBy(profile => profile.CharacterId).OrderBy(profile => profile.CharacterId).ToArray();
 
     internal IEnumerable<TrafficProfile> Candidates(
         long seed,
@@ -248,14 +257,7 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         {
             throw new InvalidDataException("Traffic snapshot failed its SQLite integrity check.");
         }
-        command.CommandText = "SELECT Payload FROM Manifest";
-        var metadata =
-            JsonSerializer.Deserialize<TrafficSnapshotManifest>((string)command.ExecuteScalar()!)
-            ?? throw new InvalidDataException("Missing traffic snapshot manifest.");
-        if (metadata.Version != TrafficRules.SnapshotVersion || metadata.CatalogFingerprint != fingerprint)
-        {
-            throw new InvalidDataException("Traffic snapshot version or catalog fingerprint does not match; reimport it.");
-        }
+        var metadata = ReadManifest(command, fingerprint);
         command.CommandText = "SELECT Payload FROM Profile ORDER BY KillId";
         using var reader = command.ExecuteReader();
         List<TrafficProfile> values = [];
@@ -271,5 +273,30 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
             throw new InvalidDataException("Traffic snapshot content checksum does not match.");
         }
         return new(metadata, values.ToArray());
+    }
+
+    internal static TrafficSnapshotManifest ReadManifest(string path, string fingerprint)
+    {
+        using var connection = TrafficConnections.Snapshot(path);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        return ReadManifest(command, fingerprint);
+    }
+
+    private static TrafficSnapshotManifest ReadManifest(Microsoft.Data.Sqlite.SqliteCommand command, string fingerprint)
+    {
+        command.CommandText = "SELECT Payload FROM Manifest";
+        if (
+            command.ExecuteScalar() is not string payload
+            || JsonSerializer.Deserialize<TrafficSnapshotManifest>(payload) is not { } metadata
+        )
+        {
+            throw new InvalidDataException("Missing traffic snapshot manifest.");
+        }
+        if (metadata.Version != TrafficRules.SnapshotVersion || metadata.CatalogFingerprint != fingerprint)
+        {
+            throw new InvalidDataException("Traffic snapshot version or catalog fingerprint does not match; reimport it.");
+        }
+        return metadata;
     }
 }

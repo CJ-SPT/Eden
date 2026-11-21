@@ -101,6 +101,21 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.JumpBridge is { } bridge)
+        {
+            fields["targetSolarsystemID"] = bridge.DestinationSystemId;
+            fields["component_jumpBridge"] = bridge.Revision;
+            fields["activationState"] = bridge.Active;
+        }
+        if (Body.TypeId == DoomsdayFieldRules.BeaconType && Body.GroupId == DoomsdayFieldRules.BeaconGroup)
+        {
+            fields["component_activate"] = new object?[] { true, null };
+        }
+        if (Body.CynoDeployable is { } deployable)
+        {
+            fields["component_activate"] = new object?[] { deployable.Active, deployable.Active ? null : deployable.OnlineAt };
+            fields["component_decay"] = deployable.ExpiresAt;
+        }
         if (Body.AgentId is long agentId)
         {
             fields["charID"] = agentId;
@@ -199,6 +214,29 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
                 fields["abyssFilamentTypeID"] = abyss.FilamentTypeId;
             }
         }
+        if (Body.MilitiaCapture is { } capture)
+        {
+            // Build 3662168 bracketMgr.UpdateCaptureFromSlim sets lastIncident using client simulation time.
+            fields["capturePoint"] = new Dictionary<string, object?>
+            {
+                ["points"] = capture.Points,
+                ["captureTime"] = capture.Minutes,
+                ["captureID"] =
+                    capture.Capturing is { } faction ? (object)(int)faction
+                    : capture.Paused ? "contested"
+                    : null,
+                ["lastCapturing"] = (int?)capture.Previous,
+            };
+        }
+        if (Body.BattlefieldCapture is { } point)
+        {
+            fields["component_fwCapturePoint_factionInfo"] = new object?[] { (int)point.Attacker, (int)point.Occupier };
+            fields["component_fwCapturePoint_nextPointTime"] = point.NextPointAt;
+        }
+        if (Body.BattlefieldScore is int battlefieldScore)
+        {
+            fields["component_fwScoreboard_score"] = battlefieldScore;
+        }
         if (Body.AccelerationGateDirection is { } direction && direction != SpacePosition.Zero)
         {
             // Build 3662168's AlignToDirection negates the model's +Z axis, which is the launch axis in the gate assets.
@@ -292,10 +330,14 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
             fields["corpID"] = null;
         }
         fields["charID"] = null;
+        if (Npc.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective or NpcRole.MilitiaComplexDefender)
+        {
+            fields["warFactionID"] = Npc.FactionId;
+        }
         fields["modules"] = new List<object?>();
         // Build 3662168's NPC bounty display normally reads catalog dogma.
         fields["edenNpcBounty"] = Npc.BountyCents / (double)MarketDefinitions.CentsPerIsk;
-        if (Npc.Role is NpcRole.Navy or NpcRole.Customs or NpcRole.Concord)
+        if (Npc.Role is NpcRole.Navy or NpcRole.Customs or NpcRole.Concord or NpcRole.MilitiaNavy)
         {
             fields["hostile_response_threshold"] = DefensivePatrolResponseThreshold;
             fields["friendly_response_threshold"] = DefensivePatrolResponseThreshold;
@@ -325,7 +367,12 @@ internal sealed record ShipSlimItem(ShipContact Ship) : SlimItem
         fields["charID"] = pilot.PilotId;
         fields["corpID"] = pilot.CorpId;
         fields["allianceID"] = pilot.AllianceId;
+        fields["warFactionID"] = (int?)pilot.WarFaction;
         fields["dirtTime"] = Ship.DirtTime;
+        if (Ship.Compression is { Count: > 0 } facilities)
+        {
+            fields["compression_facility_typelists"] = new BlueMap<int, double>(facilities.ToDictionary(f => f.TypeList, f => f.Range));
+        }
         fields["modules"] = (Ship.Modules ?? [])
             .Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId })
             .ToList();

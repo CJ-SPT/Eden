@@ -7,6 +7,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -16,6 +17,7 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Inventory;
@@ -30,6 +32,8 @@ namespace Eden.World.Industry;
 [Injectable]
 internal sealed partial class PilotIndustryStore(WorldDatabase database, TimeProvider clock, IIndustryRandom random) : IPilotIndustry
 {
+    internal const int FacilityMaterialFactorAttribute = 2600;
+
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     private static Pilot Pilot(WorldAction world, long id) => world.Filter<Pilot>(p => p.Id == id).Single();
@@ -43,7 +47,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             Manufacturing: HasService(catalog, station),
             Laboratory: HasService(catalog, station, StationService.Laboratory),
             TimeMultiplier: FacilityMultiplier(catalog, station, 2602),
-            MaterialMultiplier: FacilityMultiplier(catalog, station, 2600),
+            MaterialMultiplier: FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute),
             ReactionProducts: ReactionProducts(catalog, station),
             ReactionTimeMultiplier: FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
@@ -61,7 +65,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             HasService(catalog, station),
             HasService(catalog, station, StationService.Laboratory),
             FacilityMultiplier(catalog, station, 2602),
-            FacilityMultiplier(catalog, station, 2600),
+            FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute),
             ReactionProducts(catalog, station),
             FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
@@ -151,7 +155,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         if (
             stationId >= StructureRules.FirstStructureId
-            && !PilotStructureStore.Access(world, PilotStructureStore.Require(world, stationId), pilotId)
+            && !PilotStructureStore.ServiceAccess(world, catalog, PilotStructureStore.Require(world, stationId), pilotId)
         )
         {
             throw new InvalidDataException("Industry access to this structure is denied.");
@@ -210,7 +214,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                             .AsEnumerable()
                             .Where(s =>
                                 catalog.Definitions.Systems[s.SystemId].RegionId == regionId
-                                && PilotStructureStore.Access(world, s, pilotId)
+                                && PilotStructureStore.ServiceAccess(world, catalog, s, pilotId)
                             )
                             .Select(s => IndustryStation.From(PilotStructureStore.Snapshot(world, catalog, s)))
                     )
@@ -299,7 +303,11 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     return [];
                 }
                 double security = ManufacturingCatalog.Security(catalog, station.SolarSystemId);
-                return ProductTypes(catalog).Where(t => ManufacturingCatalog.Allowed(catalog, t, security)).ToArray();
+                bool supercapital =
+                    station.StructureServices?.Contains(StructureService.SupercapitalManufacturing) == true
+                    && world.Set<SavedStructure>().Find(id) is { } shipyard
+                    && StructureIndustry.SupercapitalConstruction(world, catalog, shipyard);
+                return ProductTypes(catalog).Where(t => ManufacturingCatalog.Allowed(catalog, t, security, supercapital)).ToArray();
             }
         );
     }
@@ -308,6 +316,14 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         ManufacturingCatalog.Recipes(catalog).Values.Select(r => r.ProductTypeId).Distinct().Order().ToArray();
 
     private static bool Active(IndustryJob job) => job.Status == IndustryJobStatus.Installed;
+
+    internal static bool Ready(WorldAction world, IndustryJob job, long now) =>
+        job.SuspendedAt is null && (job.CapsuleerEndTicks is long due ? world.ActiveTicks >= due : now >= job.EndTime);
+
+    private static long EndTime(WorldAction world, IndustryJob job, long now) =>
+        Active(job) && job.CapsuleerEndTicks is long due
+            ? Math.Max(job.EndTime, checked(now + (due - (job.CapsuleerSuspendedTicks ?? world.ActiveTicks))))
+            : job.EndTime;
 
     internal static bool IsInstalled(WorldDbContext world, long itemId) => IsInstalled(new SqlWorldAction(world), itemId);
 
@@ -514,10 +530,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             job.Runs,
             job.OutputQuantity,
             job.StartTime,
-            job.EndTime,
+            EndTime(world, job, Now),
             job.DurationSeconds,
             job.SuspendedAt.HasValue ? IndustryJobStatus.Paused
-                : Active(job) && Now >= job.EndTime ? IndustryJobStatus.Ready
+                : Active(job) && Ready(world, job, Now) ? IndustryJobStatus.Ready
                 : job.Status,
             job.CompletedAt,
             job.CostCents,
@@ -609,6 +625,21 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = InstallManufacturing(world, catalog, pilotId, request);
+        scope.Commit();
+        return result;
+    }
+
+    internal IndustryResult InstallManufacturing(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IndustryRequest request,
+        int? supplyCorporation = null,
+        bool stockOperatorHangar = false,
+        bool serverQuote = false
+    )
+    {
         AdvanceFacility(world, catalog, request.FacilityId, Now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId);
         var item =
@@ -631,7 +662,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         StructureIndustry.RequireService(world, catalog, pilotId, request.FacilityId, request.Activity, recipe.ProductTypeId);
         if (
             request.ProductTypeId.HasValue && request.ProductTypeId != recipe.ProductTypeId
-            || !ManufacturingCatalog.Allowed(catalog, recipe.ProductTypeId, ManufacturingCatalog.Security(catalog, station.SolarSystemId))
+            || !ManufacturingCatalog.Allowed(
+                catalog,
+                recipe.ProductTypeId,
+                ManufacturingCatalog.Security(catalog, station.SolarSystemId),
+                station.StructureServices?.Contains(StructureService.SupercapitalManufacturing) == true
+            )
         )
         {
             throw new InvalidDataException("This product cannot be manufactured at this station.");
@@ -643,28 +679,29 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                 throw new InvalidDataException("Train the blueprint's required manufacturing skills first.");
             }
         }
-        var calculation = ManufacturingRules.Plan(
-            request,
-            new(
-                recipe.Seconds,
-                world
-                    .Filter<IndustryJob>(j =>
-                        j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Manufacturing
-                    )
-                    .Count(),
-                Bonuses(world, catalog, pilotId),
-                recipe
-                    .Skills.Select(skill => new ManufacturingSkillTimeBonus(
-                        Attributes(catalog, skill.TypeId).GetValueOrDefault(DogmaAttributeId.ManufactureTimePerLevel),
-                        Level(world, catalog, pilotId, skill.TypeId)
-                    ))
-                    .ToArray(),
-                recipe.Materials,
-                new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns),
-                FacilityMultiplier(catalog, station, 2602),
-                FacilityMultiplier(catalog, station, 2600)
-            )
+        ManufacturingInputs inputs = new(
+            recipe.Seconds,
+            world
+                .Filter<IndustryJob>(j =>
+                    j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Manufacturing
+                )
+                .Count(),
+            Bonuses(world, catalog, pilotId),
+            recipe
+                .Skills.Select(skill => new ManufacturingSkillTimeBonus(
+                    Attributes(catalog, skill.TypeId).GetValueOrDefault(DogmaAttributeId.ManufactureTimePerLevel),
+                    Level(world, catalog, pilotId, skill.TypeId)
+                ))
+                .ToArray(),
+            recipe.Materials,
+            new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns),
+            FacilityMultiplier(catalog, station, 2602),
+            FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute)
         );
+        var calculation =
+            supplyCorporation.HasValue || serverQuote
+                ? ManufacturingRules.Plan(request.Runs, inputs)
+                : ManufacturingRules.Plan(request, inputs);
         long duration = calculation.DurationSeconds;
         var materials = calculation.Materials;
         List<InventoryChange> changes = [];
@@ -693,6 +730,15 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             )
             .Entity;
         SetJobOutput(world, catalog, job, request);
+        if (supplyCorporation is int owner)
+        {
+            // Group internal component jobs with their sponsoring factory while keeping the output in the operator's hangar.
+            job.OutputCorporationId = owner;
+            if (!stockOperatorHangar)
+            {
+                job.OutputFlagId = CorporationStorageRules.MarketDeliveriesFlag;
+            }
+        }
         double? security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)station.SolarSystemId)?.SecurityStatus;
         if (EconomicStore.Enabled(world) && security is null)
         {
@@ -706,14 +752,28 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         job.CostCents = charge.TotalCents;
         world.SaveChanges();
-        long? balance =
-            charge.TotalCents > 0
-                ? EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, WalletEntryType.Manufacturing, charge.TotalCents, now)
-                : null;
+        long? balance = null;
+        if (charge.TotalCents > 0)
+        {
+            if (supplyCorporation is int corporation)
+            {
+                CorporationWalletStore.Pay(
+                    world,
+                    corporation,
+                    station.OwnerId,
+                    job.Id,
+                    WalletEntryType.Manufacturing,
+                    -charge.TotalCents,
+                    now
+                );
+            }
+            else
+            {
+                balance = EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, WalletEntryType.Manufacturing, charge.TotalCents, now);
+            }
+        }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.IndustryStarted);
-        var result = new IndustryResult(ReadJob(world, catalog, job), changes, balance);
-        scope.Commit();
-        return result;
+        return new(ReadJob(world, catalog, job), changes, balance);
     }
 
     public IndustryResult Deliver(long pilotId, long jobId, int systemId) => Finish(pilotId, jobId, systemId, cancel: false);
@@ -749,7 +809,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         return results.AsReadOnly();
     }
 
-    private IndustryResult Finish(WorldAction world, CatalogDbContext catalog, long pilotId, long jobId, int systemId, bool cancel)
+    internal IndustryResult Finish(WorldAction world, CatalogDbContext catalog, long pilotId, long jobId, int systemId, bool cancel)
     {
         var job = OwnedJob(world, pilotId, jobId);
         AdvanceFacility(world, catalog, job.StationId, Now);
@@ -763,7 +823,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         {
             return new(ReadJob(world, catalog, job), []);
         }
-        if (!Active(job) || !cancel && (Now < job.EndTime || job.SuspendedAt.HasValue))
+        if (!Active(job) || !cancel && !Ready(world, job, Now))
         {
             throw new InvalidDataException("This industry job cannot be completed yet.");
         }
@@ -782,7 +842,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                 InventoryPersistence.MergeOutput(
                     world,
                     catalog,
-                    pilotId,
+                    job.OutputFlagId == CorporationStorageRules.MarketDeliveriesFlag ? job.OutputCorporationId ?? pilotId : pilotId,
                     job.OutputLocationId ?? job.StationId,
                     job.OutputFlagId,
                     job.ProductTypeId,
@@ -822,6 +882,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         // Cancellation releases the blueprint and slot, but consumes the paid
         // materials. A completed job delivers once, even after reconnect/retry.
+        if (!cancel)
+        {
+            job.EndTime = EndTime(world, job, Now);
+        }
         job.Status = status;
         job.CompletedAt = Now;
         if (!cancel && job.Activity == IndustryActivity.Manufacturing)

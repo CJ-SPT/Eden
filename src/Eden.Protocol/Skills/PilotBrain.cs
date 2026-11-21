@@ -67,11 +67,12 @@ internal sealed class PilotBrain(
         {
             // Native inventory reads the local fitting graph. The client applies
             // item modifiers only to attributes the hull already provides.
-            foreach (var (attribute, multiplier) in WorldTuningRules.MiningHoldMultipliers(tuning.Settings.MiningHolds))
-            {
-                effects.Add(new(shipId, BrainModifier.Item, attribute, BrainOperation.PostMultiply, [], [], multiplier));
-            }
-            foreach (var (attribute, multiplier) in WorldTuningRules.TravelMultipliers(tuning.Settings.Navigation))
+            var settings = tuning.Settings;
+            var multipliers = WorldTuningRules
+                .MiningHoldMultipliers(settings.MiningHolds)
+                .Concat(WorldTuningRules.TravelMultipliers(settings.Navigation))
+                .Concat(WorldTuningRules.FittingMultipliers(settings.ShipFitting));
+            foreach (var (attribute, multiplier) in multipliers)
             {
                 effects.Add(new(shipId, BrainModifier.Item, attribute, BrainOperation.PostMultiply, [], [], multiplier));
             }

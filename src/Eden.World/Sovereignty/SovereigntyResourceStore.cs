@@ -70,6 +70,21 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
             }
         });
 
+    public void AdvanceSites(int systemId)
+    {
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return;
+        }
+        bool HasUpgrades(WorldAction world) => world.Filter<SavedSovereigntyUpgrade>(row => row.SystemId == systemId).Any();
+        using var scope = live.CurrentSystem == systemId ? null : live.UseSystem(systemId);
+        // Offline upgrades can become powered by another hub. Settle the network before reading any upgraded system.
+        if (live.Reads?.HasSovereigntyUpgrades(systemId, HasUpgrades) ?? live.Economy.Inspect(HasUpgrades))
+        {
+            AdvanceAll();
+        }
+    }
+
     public void AdvanceAll()
     {
         entosis?.AdvanceAll();
@@ -262,6 +277,8 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
             ?? throw new InvalidDataException("This upgrade is not installed.");
         action.Remove(row);
         SovereigntySites.Invalidate(action, row.SystemId);
+        Eden.World.Structures.CapitalNavigationStore.StopUnavailableServices(action, row.SystemId, Now);
+        Eden.World.Structures.StructureIndustry.StopUnavailableShipyards(action, catalog, row.SystemId, Now);
         SovereigntyResourcePersistence.Refresh(action, catalog, Now);
         action.Commit();
     }
@@ -270,8 +287,23 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = AddFuel(action, catalog, pilotId, hubId, itemId, quantity, Now);
+        action.Commit();
+        return result;
+    }
+
+    internal static SovereigntyResourceResult AddFuel(
+        WorldAction action,
+        CatalogDbContext catalog,
+        long pilotId,
+        long hubId,
+        long itemId,
+        int quantity,
+        long now
+    )
+    {
         var claim = Require(action, pilotId, hubId, true);
-        SovereigntyResourcePersistence.Advance(action, catalog, Now);
+        SovereigntyResourcePersistence.Advance(action, catalog, now);
         InRange(action, catalog, pilotId, action.Set<SavedStructure>().Find(hubId)!);
         var item = Source(action, pilotId, itemId);
         if (!SovereigntyResourceCatalog.Upgrades(catalog).Any(row => row.FuelTypeId == item.TypeId))
@@ -296,9 +328,8 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
         {
             throw new InvalidDataException("The sovereignty fuel ledger is full.");
         }
-        SovereigntyResourcePersistence.Refresh(action, catalog, Now);
-        var result = SovereigntyResourcePersistence.View(action, catalog, claim, Now);
-        action.Commit();
+        SovereigntyResourcePersistence.Refresh(action, catalog, now);
+        var result = SovereigntyResourcePersistence.View(action, catalog, claim, now);
         return new(result, [change]);
     }
 

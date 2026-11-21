@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Combat;
 
-internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false, bool Projection = false);
+internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false, bool Projection = false, int? System = null);
 
 internal sealed partial class LiveCombatRuntime(
     LiveWorld owner,
@@ -80,6 +80,18 @@ internal sealed partial class LiveCombatRuntime(
         return _ships.GetValueOrDefault(pilotId)?.NpcAggression;
     }
 
+    private bool IndustryProtected(long ship, long now) =>
+        owner.Economy.MayHaveIndustrialProtection(now)
+        && owner.Economy.Inspect(world => Eden.World.Flight.PilotCapitalTravelStore.ProtectedIndustry(world, ship, now));
+
+    private void RequireIndustryOffense(long ship, long now)
+    {
+        if (IndustryProtected(ship, now))
+        {
+            throw new InvalidDataException("P.A.N.I.C. prevents use of offensive modules and drones.");
+        }
+    }
+
     internal CombatVolley? Fire(
         long pilotId,
         long moduleId,
@@ -126,13 +138,14 @@ internal sealed partial class LiveCombatRuntime(
             throw new InvalidDataException("Invalid weapon accuracy draw.");
         }
         var ship = Ship(pilotId, now);
+        RequireIndustryOffense(ship.ShipId, now);
         var target = Npc(targetId, now);
         if (target is null)
         {
             return null;
         }
         // Mining alerts and cargo state share the paid shot's world action.
-        if (NpcPopulationRules.IsMining(target.Role) || target.Role == NpcRole.Concord)
+        if (NpcPopulationRules.IsMining(target.Role) || target.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
         {
             return null;
         }
@@ -189,7 +202,7 @@ internal sealed partial class LiveCombatRuntime(
                 _contactEpoch++;
                 _acquisitions.Clear();
                 _systemNpcs.Clear();
-                _populationDue.Clear();
+                InvalidatePopulationDeadlines("NPC destruction");
                 _effectiveNpcs.Clear();
                 return result;
             }
@@ -748,18 +761,18 @@ internal sealed partial class LiveCombatRuntime(
                     break;
                 case "WorldNpcEncounter":
                 case "WorldNpcMiningOperation":
-                    ObserveEncounterPopulation(change.Id, change.Resident);
+                    ObserveEncounterPopulation(change.Id, change.Table, change.Resident);
                     break;
                 case "WorldNpcStanding":
-                    _populationDue.Clear();
+                    InvalidatePopulationDeadlines("standings");
                     break;
                 case "WorldNpcMiningMember":
-                    ObserveNpcPopulation(change.Id, change.Resident);
+                    ObserveNpcPopulation(change.Id, change.Table, change.Resident);
                     _contactEpoch++;
                     _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpc":
-                    ObserveNpcPopulation(change.Id, change.Resident);
+                    ObserveNpcPopulation(change.Id, change.Table, change.Resident);
                     _effectiveNpcs.Remove(change.Id);
                     _acquisitions.Clear();
                     _contactEpoch++;

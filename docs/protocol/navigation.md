@@ -8,6 +8,9 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Insider QA tab, November 21, 2026](#insider-qa-tab-november-21-2026)
+- [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
+- [Distant warping ships in the overview, November 17, 2026](#distant-warping-ships-in-the-overview-november-17-2026)
 - [Travel configuration, November 15, 2026](#travel-configuration-november-15-2026)
 - [Stargate handoff timing, November 14, 2026](#stargate-handoff-timing-november-14-2026)
 - [Shared bookmark folders and access lists, November 11, 2026](#shared-bookmark-folders-and-access-lists--november-11-2026)
@@ -44,6 +47,133 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Gate-arrival cloak, November 17, 2026
+
+The reported missing jump-gate cloak was an unimplemented lifecycle: arrival supplied an eight-tick
+protection window and jump effect, but no cloak or native timer. Resident stargate and wormhole transfers
+now save a 60-second cloak deadline atomically with destination placement. Checkpoints and cold reopen
+retain that deadline rather than granting another minute. Schema **186** adds `GateCloakUntil` to the
+existing spatial-navigation row; old saves default to zero. New cloak commands require the resident world.
+
+The owner receives restore-mode `CloakBall`, the no-animation cloak effect and
+`OnJumpCloakUpdated(shipID, endTime, duration)`, with FILETIME ticks for both deadline and duration.
+Successful movement, stop, warp and ordinary module activation end gate cloak; the catalog's
+`canActivateInGateCloak` (**3123**) retains it for exempt fitted modules. Invalid navigation preserves
+the cloak. Cancellation sends the native timer cancellation and decloak update. Device-cloak rules,
+reactivation delays and targeting recalibration remain separate. Nearby objects cannot break gate cloak.
+
+While protected, a ship is absent from peer grids, target acquisition, NPC targets, directional scans,
+smartbomb candidates and area damage. The receiving gate can still flash without adding the hidden ship.
+Observers evaluate the saved deadline directly, including when the owner's next frame has not arrived.
+Authoritative position changes also clear the old deadline for autonomous movement and relocations.
+No new SQLite gameplay fallback was added.
+
+Gameplay references: [UniWiki cloaking](https://wiki.eveuniversity.org/Cloak) and
+[jump-cloak timers](https://wiki.eveuniversity.org/Timers#Jump_Cloak_Timer).
+Inert build-3662168 inspection confirms `crimewatchTimers.TimerContainer.OnJumpCloakUpdated` accepts
+`(shipID,endTime,duration)` and `OnJumpCloakCancelled` accepts `(shipID)`; the decoded payload SHA-256 is
+`ec59e24560aa1e0b9e0c37a4d0252bdf761ccddad245979d0dbe6ec47fa4ef59`.
+The pinned `environment/effects/cloaking` supplies `CloakNoAnim`.
+[Carbon Destiny Ballpark.cpp at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+confirms `CloakBall` clears massiveness and adds a proximity sensor only for normal device cloaks.
+The local older-build EVE.js comparison used restore mode **2** and the same timer shape:
+`space/runtime/shipCloak.js` SHA-256 `8c017e8cbb7dd8debe7780cd70b774c8376bcf10b54fbc406713d078e6c2c829`
+and `space/runtime/scene/cloaking.js` SHA-256 `8c30f470349435fb6dfe3a19c9852441812d08eaf6490040e1cb867f5b32e0c5`.
+No reference implementation was copied and no client code was executed.
+
+**Automated validation.** The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.GateCloakTests.GateArrivalCloaksTheShipUntilMovementOrTheExactDeadline`
+failed on the uncloaked arrival (15.39-second build, 13.06-second test command). After implementation,
+the exact five-variant selection passed in 7.62 seconds with a 4.77-second build. Combining gate-cloak
+and gate-activity classes passed 19 cases in 8.79 seconds with a 6.13-second build. Two intermediate
+test builds caught a wrong candidate property name and an xUnit assertion style issue; both were corrected.
+Coverage includes exact expiry without an owner frame, heading/speed/stop/warp, invalid movement,
+hidden receiving-gate effects, targeting, scanning, area candidates, nearby ships, rejected transfers,
+foreign cancellation, native timers, checkpoint projection, cold reopen and cancellation persistence.
+The first broader affected selection passed **85 tests** in **37.37 seconds**, with an **8.85-second** build.
+The following broad run was interrupted after two inbound-traffic assertions expected immediate visible
+arrival hulls. Those assertions now count hidden arrivals, retain exact gate-activity and Local checks,
+and reject hidden hulls and ship flashes in the observer grid. The corrected inbound method plus
+`GateCloakTests` passed **11 cases** in **16.37 seconds** (9.35-second build) after integrating `main`
+at `01b9030f`. The exact version-185 upgrade test passed in **5.97 seconds** (4.83-second build).
+Another run stopped on the hauler's immediate-visibility assertion; its corrected hidden-arrival check
+passed the exact method in **7.59 seconds** (4.79-second build). A later run stopped on
+`PilotSpaceActivitiesTests.ShoppingChoosesRealAffordableStockAndHonorsThreatMemory(overpriced: true, avoided: false)`.
+The exact shopping method independently reproduced that failure on unchanged `main` at `01b9030f`
+(one failed, two passed; 9.22-second build and 7.88-second test command). That unrelated method is
+excluded from the final selection; its existing failure remains unresolved in this milestone.
+Slow destination loading also checks that an already-expired deadline cannot gain another arrival window.
+The final affected filter is:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.SpatialModule|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.InterdictionTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.HicInterdictionTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.WormholeTravelTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Targeting|FullyQualifiedName~Eden.Protocol.Tests.Combat.Smartbomb|FullyQualifiedName~Eden.Protocol.Tests.Combat.AreaWeapon|FullyQualifiedName~Eden.Protocol.Tests.Information.Directional|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.GateCampTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerGateWatchTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.PilotSpaceActivitiesTests
+```
+
+The OR-combined filter above is grouped and combined with
+`FullyQualifiedName!~Eden.Protocol.Tests.Capsuleers.PilotSpaceActivitiesTests.ShoppingChoosesRealAffordableStockAndHonorsThreatMemory`.
+
+The final selection passed **447 tests**, zero failed/skipped, in **245.56 seconds**. Tool restore
+(**0.15 seconds**), solution restore (**0.55 seconds**), and the solution build (**0.79 seconds**,
+zero warnings/errors) passed. Both Python policy suites passed: **8 catalog tests** in **1.15 seconds**
+and **9 formatting tests** in **0.12 seconds**. Formatting verification passed for **2,602 files** with
+the 140-character width policy in **26.03 seconds**; the final sequence took **274.35 seconds**.
+Added documentation links/anchors and `git diff --check` passed. The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Jump through a gate and wait for expiry; repeat and move immediately.
+From another pilot, verify the receiving gate flashes while the arriving ship stays hidden.
+
+## Distant warping ships in the overview, November 17, 2026
+
+The maintainer's screenshot shows a Bestower still in the overview at **83.5 AU**. A reproducible
+presentation boundary retained a peer using only its last published position while Destiny continued
+advancing its published warp. If that position was still local, the peer diff emitted no removal even
+when the timed warp was far outside the observer's visibility range.
+
+Peer visibility now also samples the existing immutable warp at the shared Destiny stamp. A distant
+warp leaves the observer's peer set through the normal `RemoveBalls` adapter. The saved location,
+warp course and existing visibility distance are retained. Ordinary nearby movement and subsequent
+valid re-entry still use the usual peer diff. A snapshot also excludes the distant warp.
+
+Gameplay reference: [UniWiki grids](https://wiki.eveuniversity.org/Grid_Manipulation), which distinguishes
+grid-visible ships from distant objects. Carbon Destiny revision
+[27ee40b, Ballpark.cpp](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+was consulted for stamped simulation and visibility; the existing `WarpCourse.Sample` supplies the
+position calculation. The local older-build EVE.js comparison used `space/runtime/scene/visibility.js`,
+SHA-256 `4d55b4825a399f3dce6d2d1f44728d8a223e842ddd9682dec5b1c8e17f2760b3`, for departure/addition ordering.
+No codec, saved-world state or gameplay position was changed.
+
+**Automated validation.** The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.GateActivityProtocolTests.WarpingPeerLeavesTheObserversGridEvenWhenItsLastPositionHasNotBeenRepublished`
+first failed on the missing departure (9.55-second build, 5.98-second test command), then passed after
+the correction (6.06-second build, 5.91-second test command). The extended flow checks initial entry,
+nearby warp retention, distant departure, repeated reads, snapshots and valid re-entry.
+The first combined selection passed 70 cases and failed the two single-observer allocation-budget
+variants of `CapsuleerPresentationTests.UnchangedPresentationSharesObservationsAcrossAdvancingFrames`
+(4.90-second build, 26.65-second test command). The exact method on unchanged `main` at `01b9030f`
+reproduced both failures, with one variant passing (1.11-second build, 7.80-second test command).
+Baseline allocation totals were **6,862,624 / 6,865,728 bytes**, versus **6,862,616 / 6,865,728 bytes**
+on this branch, against the existing 6 MiB limit. SQL commands, connections and fitting calculations
+were zero on both revisions. That unrelated allocation-budget method is excluded from final validation.
+The final affected filter is:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Targeting|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.SpatialModuleOperationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerPresentationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTrafficNavigationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundGateAcceptanceTests)&FullyQualifiedName!~Eden.Protocol.Tests.Capsuleers.CapsuleerPresentationTests.UnchangedPresentationSharesObservationsAcrossAdvancingFrames
+```
+
+The final selection passed **367 tests**, zero failed/skipped, in **174.05 seconds**. Tool restore
+(**0.16 seconds**), solution restore (**0.57 seconds**) and the solution build (**4.28 seconds**,
+zero warnings/errors) passed. Both Python policy suites passed: **8 catalog tests** in **1.14 seconds**
+and **9 formatting tests** in **0.12 seconds**. Formatting verification passed for **2,602 files**,
+including the 140-character width policy, in **25.77 seconds**. The final sequence took **206.09 seconds**.
+Added documentation links/anchors and `git diff --check` passed. The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The supplied screenshot establishes
+the reported symptom; native presentation of the correction remains unverified.
+
+**Optional maintainer checks.** Watch a hauler warp away and confirm that its overview row disappears.
 
 ## Travel configuration, November 15, 2026
 
@@ -344,6 +474,37 @@ position/gate/dock operations and typed catch-up motion; existing affected fligh
 **Optional maintainer checks:** Align to a gate/bookmark and stop; enable autopilot on a multi-system station route;
 save a different gate distance, restart and compare the next gate landing.
 
+## Insider QA tab, November 21, 2026
+
+The reported **Invalid Packet Destination** named `inventoryAssetHoldingMgr.is_item_validation_enabled`. In build **3662168**,
+`InsiderService.QAMenu` calls `assetholding.client.qa.get_insider_qa_menu` synchronously. The menu immediately reads both
+`is_item_validation_enabled()` and `is_item_failure_enabled()` through `AssetHoldingService.remote_inventory`. The initial
+Python booleans are True and False respectively. The menu inverts the validation result to label its bypass switch. The setters
+`set_item_validation_enabled(bool)` and `set_item_failure_enabled(bool)` return Python None. The server checks the authenticated
+QA role and pilot selection. Connection-local flags model the entitlement QA switches. Eden's ordinary inventory validation,
+consumption and creation use their normal rules.
+
+The **Jump Clones** callback invokes `jumpCloneSvc.ResetLastCloneJumpTime()` through the current location moniker. Eden clears the
+selected pilot's saved timer in a resident transaction and delivers `OnJumpCloneCacheInvalidated` after commit. The existing
+checkpoint projects that change. Only the QA role can reset the timer. Other server-backed entries, including the home-station
+remote-office timer, HyperNet seeding and the redeemer's test-token batch, require mechanics outside this implementation.
+
+Source evidence comes from inert inspection of `eve/devtools/script/insider.pyj`, `assetholding/client/qa.pyj`,
+`assetholding/client/assetholding_svc.pyj` and `eve/client/script/ui/services/clonejumpsvc.pyj` in the staged archive. The SHA-256 is
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The older EVE.js **261108.1** release was checked for its
+connection-local toggle behavior and its jump-clone reset in `server/src/services/inventory/inventoryAssetHoldingMgrService.js`
+and `server/src/services/station/jumpCloneRuntime.js`. Ordinary cooldown behavior is covered in the
+[EVE University jump-clone guide](https://wiki.eveuniversity.org/Jump_clones).
+
+**Automated validation** — The exact Asset Holding test passed in 10.84 s and the exact jump-clone reset test passed in 8.82 s.
+The combined `InsiderQaTests`, `JumpCloneServiceTests`, `Persistence.JumpCloneTests` and
+`Hosting.ServerServicesTests` filter passed all 29 cases in 15.11 s. It covers selection and authorization, native boolean
+and None replies, argument validation, per-connection isolation, location binding, cache invalidation and checkpoint reopen.
+
+**Live acceptance** — Not performed; agent client testing is disabled.
+
+**Optional maintainer checks** — Open Insider → QA while docked, toggle both Asset Holding switches and reopen the menu, then reset an active jump-clone cooldown.
+
 ## Insider tools and reward destinations, November 9, 2026
 
 Insider **Tools → Skill Tool** now applies profiles through `slash.SlashCmd('/giveskill me|pilotID skillTypeID level')`.
@@ -471,7 +632,7 @@ Sources: verified `code.ccp` SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418
 
 The maintainer reported `Invalid Packet Destination: Unsupported local call beyonce.GetCynoJammerState` when entering sovereignty nullsec. In pinned build **3662168**, `InfoPanelLocationInfo.DrawClaimableSystemInfo` constructs `sovDashboard.CynoJammerIcon`; `CynoJammerIcon._UpdateFromServer` calls `sm.RemoteSvc('beyonce').GetCynoJammerState()` without arguments or a bound ballpark reference. `UpdateIconState` consumes one value named `onlineSimTime`. `GetJamStatus` maps Python **None** to jammer off; numeric **zero** and elapsed timestamps mean on, while a future timestamp means pending. Returning false or zero would incorrectly indicate an active jammer.
 
-`FlightCallHandler` now owns this local state read and returns successful Python **None**, consistent with Eden having no deployed sovereignty jammers. It handles the read before the general `beyonce` movement-checkpoint fallback. The call requires selected-pilot authentication, rejects service arguments and keywords, and accepts the router's existing `machoVersion` transport metadata handling. It changes no movement, ship, sovereignty or notification state. Jammer deployment, warm-up scheduling and cynosural field restrictions remain unsupported. The existing empty structures, absent claim/hub and zero development-index replies retain their contracts.
+`FlightCallHandler` owns this local state read before the general `beyonce` movement-checkpoint fallback. It requires selected-pilot authentication, rejects service arguments and keywords, and accepts the router's existing `machoVersion` transport metadata handling. It returns successful Python **None** when the service is off. The [resident Tenebrex service](capital-logistics.md#pharolux-and-tenebrex) now supplies the spool deadline and enforces the system's actual jammer state.
 
 Evidence: offline inspection of verified build-3662168 `code.ccp`, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, including `sovDashboard/cynoJammerIcon.pyj` and `eve/client/script/ui/shared/infoPanels/infoPanelLocationInfo.pyj`. Gameplay references: [EVE University navigation structures](https://wiki.eveuniversity.org/Navigation_structures#Tenebrex_Cyno_Jammer) and its supporting [CCP Onslaught patch notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-onslaught). The wire contract comes from the pinned client. No client code was executed. This reuses the existing None adapter; the Blue codec and its [Carbon Blue `af0d65b29f951260ea09140ca11adf5d40566997` reference](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) are unchanged.
 
@@ -593,7 +754,7 @@ References: inert inspection of unchanged pinned `code.ccp`, SHA-256 **37FB2AF4F
 
 The maintainer's November 4, 2026 screenshot shows a black **Map** window with **Invalid Packet Destination: Unsupported local call structureDirectory.GetJumpBridgesWithMyAccess**, while the selected filter is **Empire & Pirate Factions**. In pinned build **3662168**, `MapView._ConstructScene` hides the scene until asset construction finishes. `_ConstructAssetRequirements` synchronously calls `LoadAllJumpBridges`, which unpacks the remote reply into bridge endpoint pairs, accessible structure IDs and inaccessible structure IDs before iterating. The missing call aborts this initialization; returning one empty list would instead fail the three-value unpack.
 
-`MapStartupHandler` now owns that selected-pilot route and returns a named `EmptyJumpBridgeAccessReply`, encoded as a Python tuple of three empty lists. Eden has no player jump bridges or bridge access rules. Static system positions and stargate connections come from the client's bundled `starMapCache.pickle`, independently of these optional bridges.
+`MapStartupHandler` owns that selected-pilot route and returns a Python tuple of three lists. [Resident Ansiblex links](capital-logistics.md#ansiblex-jump-gates) supply the bridge pairs and per-endpoint access. Static system positions and stargate connections come from the client's bundled `starMapCache.pickle`, independently of these optional bridges.
 
 The same handler answers `stationSvc.GetAllianceSystems` with an empty list and `fwWarzoneSolarsystem.GetAllWarzonesOccupationStates` / `GetAllWarzonesOccupationStatesUncached` with empty dictionaries. The native `MapFilterFactionEmpire` and legacy color handler both call `MapViewData.GetAllianceSolarSystems`, which iterates alliance rows and then the nested warzone occupation dictionaries. Empty dynamic ownership leaves the client's static NPC faction ownership intact; it does not implement alliance sovereignty or faction warfare. All four reads require pilot selection, accept no gameplay arguments and reject unexpected keywords; the router removes native `machoVersion` cache metadata as usual. Unknown methods remain unsupported. No world schema or runtime-save changes are needed.
 
@@ -779,6 +940,84 @@ Gameplay reference was checked against [EVE University stargates](https://wiki.e
 
 **Optional maintainer checks.** After restarting with the new build, verify the shortened tunnel and arrival camera while following traffic through a gate.
 
+
+## Star map statistics, November 20, 2026
+
+All eight filters in the native **Statistics** menu read known-space activity. Eden samples
+selected player characters and enabled, unsuspended autonomous capsuleers once a minute from
+resident ship locations. The 30-minute averages use the samples available since collection
+started, then roll forward. A character is counted once across simultaneous connections.
+Bots contribute from observed and offscreen systems while a player is selected. NPC stations
+and dockable structures both contribute to the docked count.
+
+Completed stargate transfers count once in the destination system. Committed combat records
+capsuleer ship and capsule losses by victim and NPC pirate, navy, customs and CONCORD ship
+losses by their system. Players and autonomous capsuleers share the same travel and combat
+settlement paths. The windows are measured from the event timestamp. Recent aggregates and
+samples survive checkpoint reopen. Collection begins with this update and downtime adds no
+samples. Private and wormhole systems are outside the known-space filters.
+
+Pinned build 3662168's `MapSvc.GetInfoOnPilotsBySolarSystemIDs` calls
+`machoNet.GetClusterGameStatisticsForClient('EVE', ({}, {}, 0))`. The reply contains
+system totals, docked totals and a positive sample divisor. The client adds 30,000,000 to
+dictionary keys, subtracts docked totals and rounds each average. The map filter modules call
+`map.GetHistory(1, 1)` for gate traffic and `map.GetHistory(3, 1|24)` for losses.
+History uses the existing rowset with `value1` for jumps or combined ship losses,
+`value2` for NPC ship losses and `value3` for capsule losses. The ship filter subtracts
+`value2` from `value1`. The pirate and police filter reads `value2` over 24 hours.
+The 24-hour pod history also supplies the native route planner's avoidance data.
+History has a one-minute native cache and a payload checksum that changes with the rows.
+Faction warfare statistic 5 retains its empty baseline.
+
+The client contract was inspected inertly in the staged build 3662168 archive
+(SHA-256 `238ef5811fcecd77db8ecdb8f143f0e74bbd337d225a2582ed25132def900d8c`), including
+`mapSvc.pyj`, the map filters, `idCheckers.pyj` and Carbon `objectCaching.pyj`. Compared
+evejs release 261108.1's `mapService.js` (SHA-256
+`6c06a8e47c57e514381da2d0b35cc7aad6fbf39c3da480fa6d2b1baa90fafbb1`) for jump attribution,
+combined kill columns and native method caching. The map guide describes the player-facing
+filters. [EVE University Star Map](https://wiki.eveuniversity.org/Star_Map)
+
+### Automated validation
+
+Exact development filters selected
+`Eden.Protocol.Tests.Maps.MapNavigationTests.GateHistoryPublishesCommittedArrivalsAndExpiresAfterCheckpointReopen`
+and `Eden.Protocol.Tests.Maps.MapNavigationTests.PopulationAveragesSelectedPlayersAndOffscreenBotsAcrossSamplesAndRestart`
+with `FullyQualifiedName=`. Both passed in 6.71 and 9.81 seconds of test command time after correcting
+the population fixture to use the pilot's actual home system. The cases check native packets, arrival
+attribution, rejected transfers, rollback, one-hour and 24-hour expiry, duplicate sessions, offscreen bots,
+and checkpoint reopen. The warmed sample and jump-history read issued zero SQL commands, opened zero
+connections, and made zero fitting calculations. Combat cases cover a bot hull loss, a capsule kill,
+a pirate ship kill and a rejected kill transaction.
+
+At base `6f62966d`, tool restore and solution restore took 0.15 and 0.63 seconds, and the solution built
+in 24.71 seconds with zero warnings and errors. The broader affected run passed 215 and failed 11
+in 57 seconds of reported test time. All 11 failures reproduced on unchanged `6f62966d`.
+Ten were deliberate paused-checkpoint cases that timed out. One was a regional market rollback fixture
+that left its world-owner file locked. The final focused run passed 215 tests in 65.57 seconds of
+command time. Its filter uses these `FullyQualifiedName~` clauses joined by `|`.
+
+```text
+Eden.Protocol.Tests.Maps, CapsuleerHaulerTests, CapsuleerPopulationSettingsTests, GateCloakTests,
+GateTravelRulesTests, GateActivityProtocolTests, PilotDroneTests, NpcCombatTests, InteractionHistoryPersistenceTests,
+AreaWeaponPersistenceTests, WorldMigrationTests, LiveWorldTests, CheckpointOwnershipTests, DetachedCheckpointTests,
+IncrementalCheckpointTests, RegionalMarketTests, TestingMarketTests
+```
+
+The final run excluded only the three baseline-reproduced method names
+`WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll`,
+`PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait` and
+`FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` with `FullyQualifiedName!~`.
+Both Python policy suites passed all 17 cases in 1.66 seconds combined. Style, CSharpier, the 140-character
+width check and Git whitespace verification passed. Formatting verification took 41.39 seconds.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+On an updated host, open the native Star Map Statistics filters after a population sample,
+a stargate jump and a combat loss. Check that the systems light up and the filter tooltips show the expected counts.
 
 ## Native map navigation support, November 9, 2026
 
@@ -1057,3 +1296,12 @@ The full .NET suite was not requested or run.
 
 **Optional maintainer checks:** Observe the native capacitor gauge during a long warp and a capacitor-limited
 partial warp.
+
+
+## Observing a loss and a warp in the same update — November 17, 2026
+
+A missed alignment previously caused the observer to receive a complete ballpark snapshot. Peer refresh now
+removes the departed hull and sends the warping ship's timed state through a single-ship AddBalls update.
+The same partial-state mechanism already handles NPC warps. The automated check exercises both events in
+one refresh and checks that a second refresh emits nothing. The original in-client reset remains unconfirmed.
+[Carbon Destiny state stream at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp)

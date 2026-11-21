@@ -1,5 +1,7 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.World.Catalog;
@@ -74,14 +76,22 @@ internal sealed partial class LiveCombatRuntime
             .Set<WorldDrone>()
             .Where(d => d.SystemId == system && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == d.PilotId))
             .AsEnumerable()
-            .Select(d => new LiveDrone(
-                PilotDroneStore.Contact(world, catalog, d),
-                d.UpdatedAt,
-                d.ReadyAt,
-                d.CommandedAt,
-                d.ArmorDamage,
-                d.StructureDamage
-            ))
+            .Select(drone =>
+            {
+                // Older checkpoints can still assign a deployed drone to a hull recorded as lost.
+                if (drone.ControllerShipId != 0 && world.Set<ShipLoss>().Find(drone.ControllerShipId) is not null)
+                {
+                    PilotDroneStore.Abandon(world, drone);
+                }
+                return new LiveDrone(
+                    PilotDroneStore.Contact(world, catalog, drone),
+                    drone.UpdatedAt,
+                    drone.ReadyAt,
+                    drone.CommandedAt,
+                    drone.ArmorDamage,
+                    drone.StructureDamage
+                );
+            })
             .ToArray();
     }
 
@@ -106,7 +116,10 @@ internal sealed partial class LiveCombatRuntime
         }
         return new DronePilot(
             DroneCatalog.ControlLimit(fit),
-            fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth),
+            WorldTuningRules.ScaleDroneBandwidth(
+                world.Settings.ShipFitting,
+                fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+            ),
             fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
             saved is null ? new() : new(saved.Aggressive, saved.FocusFire),
             qualified
@@ -137,6 +150,7 @@ internal sealed partial class LiveCombatRuntime
                 Orbiting = saved.Orbiting,
                 Delegation = DroneDelegationPersistence.Read(saved),
                 WorkEffect = PilotDroneStore.WorkEffect(saved, current.Contact.Profile),
+                Mobility = current.Contact.Profile.Mobility is null ? null : PilotDroneStore.ReadWork(saved).FighterMobility,
             },
             UpdatedAt = saved.UpdatedAt,
             ReadyAt = saved.ReadyAt,

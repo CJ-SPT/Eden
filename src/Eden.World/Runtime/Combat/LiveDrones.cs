@@ -49,7 +49,7 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         Trim();
-        return SystemDrones(system).Select(d => d.Contact).ToArray();
+        return SystemDrones(system).Select(d => Eden.Gameplay.Flight.FighterMobilityRules.Apply(d.Contact, now)).ToArray();
     }
 
     private LiveDrone[] SystemDrones(int system)
@@ -168,7 +168,10 @@ internal sealed partial class LiveCombatRuntime
                 .ToArray();
             return settle(rolls, endpoints);
         }
-        if (drones.Any(drone => drone.Contact.Profile.Utility is not null))
+        if (
+            IndustryProtected(ship.ShipId, now)
+            || drones.Any(drone => drone.Contact.Profile.Utility is not null || drone.Contact.Profile.FighterGroup != 0)
+        )
         {
             // Utility cycles mutate the same resident economy generation as
             // their targets and inventory. This does not open the saved world.
@@ -268,7 +271,10 @@ internal sealed partial class LiveCombatRuntime
                 npc = null;
             }
             // Mining alerts and inventory return retain the existing transaction boundary.
-            if (npc is not null && (NpcPopulationRules.IsMining(npc.Role) || npc.Role == NpcRole.Concord))
+            if (
+                npc is not null
+                && (NpcPopulationRules.IsMining(npc.Role) || npc.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
+            )
             {
                 return Settle();
             }
@@ -470,14 +476,16 @@ internal sealed partial class LiveCombatRuntime
             roll = DroneRules.OwnerAccuracyRoll(roll);
             return true;
         }
-        var contact = drone.Contact;
+        var contact = Eden.Gameplay.Flight.FighterMobilityRules.Apply(drone.Contact, now);
         var weapon = DroneNpcCombat.Weapon(attributes);
         if (!double.IsFinite(weapon.CycleMilliseconds) || weapon.CycleMilliseconds <= 0)
         {
             throw new InvalidDataException("Invalid NPC weapon cycle attributes.");
         }
         var signature =
-            DroneSignature(contact.Profile.TypeId) * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact);
+            DroneSignature(contact.Profile.TypeId)
+            * contact.MobilitySignatureMultiplier
+            * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact);
         var retaliation = DroneRules.Retaliation(contact, npc.Position, npc.Velocity, signature, weapon, roll, npc.Radius, now);
         if (retaliation.Result.Remaining.Destroyed)
         {
@@ -485,7 +493,7 @@ internal sealed partial class LiveCombatRuntime
         }
         _liveDrones[contact.Id] = drone with
         {
-            Contact = contact with { Health = contact.Health with { Remaining = retaliation.Result.Remaining } },
+            Contact = drone.Contact with { Health = drone.Contact.Health with { Remaining = retaliation.Result.Remaining } },
             ArmorDamage = contact.Profile.Defense.Armor - retaliation.Result.Remaining.Armor,
             StructureDamage = contact.Profile.Defense.Structure - retaliation.Result.Remaining.Structure,
         };

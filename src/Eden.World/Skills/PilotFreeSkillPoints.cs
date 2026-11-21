@@ -71,12 +71,21 @@ internal sealed partial class PilotTrainingStore
         return new(result.Points!.Remaining, result.Training, result.Points.Allocations, result.PointRevision);
     }
 
+    internal FreePointChange Apply(WorldAction world, long pilotId, FreePointRequest request, long now)
+    {
+        var result = Allocate(world, pilotId, request, preview: false, now);
+        return new(result.Points!.Remaining, result.Training, result.Points.Allocations, result.PointRevision);
+    }
+
+    private TrainingUpdateResult Allocate(WorldAction world, long pilotId, FreePointRequest request, bool preview, long now) =>
+        UpdateCore(world, pilotId, null, false, false, null, new(request), preview, now);
+
     private TrainingUpdateResult Allocate(long pilotId, FreePointRequest request, bool preview)
     {
         using var phase = SessionPerformance.Phase(preview ? "skills.previewPoints" : "skills.applyPoints");
         using WorldActionScope action = new(database, new(pilots: [pilotId]));
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var result = UpdateCore(action.World, pilotId, null, false, false, null, new(request), preview, now);
+        var result = Allocate(action.World, pilotId, request, preview, now);
         // A preview evaluates elapsed training in the private view and then discards it.
         if (!preview)
         {

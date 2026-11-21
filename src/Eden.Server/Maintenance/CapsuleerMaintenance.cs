@@ -17,31 +17,41 @@ internal sealed class CapsuleerMaintenance(
     TimeProvider clock,
     IWorldSynchronization synchronization,
     ICapsuleerUpdateDiagnostics updateDiagnostics,
-    IPilotOperationScope? operations = null
+    IPilotOperationScope? operations = null,
+    ICapsuleerDiagnostics? diagnostics = null
 ) : IDisposable, ICapsuleerPresentation
 {
     // System.Threading.Timer bounds one wait to uint.MaxValue - 1 milliseconds.
     private static readonly TimeSpan MaximumTimerDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+    private static readonly TimeSpan CatchUpBudget = CapsuleerJobQueue.WakeInterval / 2;
     private CancellationTokenSource? _cancellation;
     private Task _loop = Task.CompletedTask;
     private volatile bool _stopping;
+    private long _waitTicks;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
     private readonly List<ChatPilot> _presenceChanges = [];
     private CapsuleerBatch? _retryPresentation;
     private CapsuleerBatch? _publishedPresentation;
 
-    internal void Start()
+    internal Task Completion => _loop;
+    internal TimeSpan WorkerWait => TimeSpan.FromTicks(Interlocked.Read(ref _waitTicks));
+
+    internal void Start(CancellationToken stopping = default)
     {
         ObjectDisposedException.ThrowIf(_stopping, this);
         if (_cancellation is null)
         {
-            _cancellation = new();
+            _cancellation = CancellationTokenSource.CreateLinkedTokenSource(stopping);
             _loop = Run(_cancellation.Token);
         }
     }
 
     private async Task Run(CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
         var wake = CapsuleerWakePlan.Polling;
         try
         {
@@ -55,19 +65,39 @@ internal sealed class CapsuleerMaintenance(
         {
             try
             {
+                long waiting = clock.GetTimestamp();
                 await Wait(wake, cancellationToken).ConfigureAwait(false);
+                Interlocked.Add(ref _waitTicks, clock.GetElapsedTime(waiting).Ticks);
+                cancellationToken.ThrowIfCancellationRequested();
                 var changedDuringTurn = scheduler.NextWake().Changed;
+                var budget = CapsuleerJobQueue.ExecutionBudget;
                 bool backlogged;
                 do
                 {
-                    Tick(out backlogged);
+                    long started = clock.GetTimestamp();
+                    Tick(budget, out backlogged, out bool advanced, cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (backlogged)
                     {
-                        // Yield alone immediately reschedules a permanent backlog. Keep
-                        // catch-up turns within the same cadence as ordinary maintenance.
-                        await Task.Delay(CapsuleerJobQueue.WakeInterval, clock, cancellationToken).ConfigureAwait(false);
+                        var interval = CapsuleerJobQueue.WakeInterval;
+                        var worked = clock.GetElapsedTime(started);
+                        var remaining = advanced ? interval - worked : interval;
+                        var delay = remaining > CapsuleerJobQueue.ExecutionBudget ? remaining : CapsuleerJobQueue.ExecutionBudget;
+                        budget = advanced ? CatchUpBudget : CapsuleerJobQueue.ExecutionBudget;
+                        waiting = clock.GetTimestamp();
+                        if (advanced && diagnostics?.Read().OldestDelayTicks > interval.Ticks)
+                        {
+                            // Each job releases the owner. Yield to runnable requests between
+                            // productive slices while catching up more than one wake interval.
+                            await Task.Yield();
+                        }
+                        else
+                        {
+                            await Task.Delay(delay, clock, cancellationToken).ConfigureAwait(false);
+                        }
+                        Interlocked.Add(ref _waitTicks, clock.GetElapsedTime(waiting).Ticks);
                     }
-                } while (backlogged && !_stopping);
+                } while (backlogged);
                 wake = scheduler.NextWake();
                 if (changedDuringTurn.IsCompleted)
                 {
@@ -133,9 +163,9 @@ internal sealed class CapsuleerMaintenance(
         }
     }
 
-    internal MinerObservation? Tick() => Tick(out _);
+    internal MinerObservation? Tick() => Tick(CapsuleerJobQueue.ExecutionBudget, out _, out _);
 
-    private MinerObservation? Tick(out bool backlogged)
+    private MinerObservation? Tick(TimeSpan budget, out bool backlogged, out bool advanced, CancellationToken cancellationToken = default)
     {
         using var operation = operations?.Begin();
         using var performance = SessionPerformance.IsActive
@@ -150,30 +180,38 @@ internal sealed class CapsuleerMaintenance(
             {
                 // A job, its transaction and the queue revision are one atomic step.
                 // Let waiting sessions enter before the next job or scene capture.
-                var batch = scheduler.Run(scene.Stamp, maximumActions: 1);
+                var batch = scheduler.Run(scene.Stamp, maximumActions: 1, cancellationToken);
                 backlogged = batch.Turn.OldestDueTicks is not null;
-                completed += batch.Turn.Completed;
+                int work = batch.Turn.Completed + batch.Turn.SafetyChecks;
+                advanced = work > 0;
+                completed += work;
                 lastMiner = batch.Miners.LastOrDefault() ?? lastMiner;
             } while (
-                backlogged
+                !cancellationToken.IsCancellationRequested
+                && backlogged
+                && advanced
                 && completed < CapsuleerJobQueue.ActionsPerTurn
-                && clock.GetElapsedTime(started) < CapsuleerJobQueue.ExecutionBudget
+                && clock.GetElapsedTime(started) < budget
             );
             return lastMiner;
         }
         finally
         {
-            long presentationStarted = clock.GetTimestamp();
-            try
+            // Shutdown still saves committed actions. A closing client does not need a fresh scene or Local roster.
+            if (!cancellationToken.IsCancellationRequested)
             {
-                Refresh();
-            }
-            finally
-            {
-                long completed = clock.GetTimestamp();
-                updateDiagnostics.RecordUpdate(
-                    new(clock.GetElapsedTime(started, completed), clock.GetElapsedTime(presentationStarted, completed))
-                );
+                long presentationStarted = clock.GetTimestamp();
+                try
+                {
+                    Refresh();
+                }
+                finally
+                {
+                    long completed = clock.GetTimestamp();
+                    updateDiagnostics.RecordUpdate(
+                        new(clock.GetElapsedTime(started, completed), clock.GetElapsedTime(presentationStarted, completed))
+                    );
+                }
             }
         }
     }

@@ -38,6 +38,16 @@ internal static partial class DroneCatalog
         var attributes = fittedAttributes ?? catalog.FittingAttributes(typeId);
         double bandwidth = attributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidthUsed);
         var required = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
+        if (type.CategoryId == (int)InventoryCategory.Fighter)
+        {
+            return Eden.World.Fighters.FighterCombatCatalog.Profile(type, source, attributes) with
+            {
+                Mobility = Eden.World.Fighters.FighterMobilityCatalog.Read(catalog, typeId, attributes),
+                Salvo = Eden.World.Fighters.FighterSalvoCatalog.Read(catalog, typeId, attributes),
+                Tackle = Eden.World.Fighters.FighterTackleCatalog.Read(catalog, typeId, attributes),
+                Bomb = Eden.World.Fighters.FighterBombCatalog.Read(catalog, typeId),
+            };
+        }
         if (UtilityDroneRules.Group(type.GroupId))
         {
             return ReadUtility(catalog, typeId, fittedAttributes);

@@ -34,7 +34,7 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
 
     public IReadOnlyList<CombatAnomaly> Anomalies(int systemId, long now)
     {
-        sovereignty?.AdvanceAll();
+        sovereignty?.AdvanceSites(systemId);
         var ice = Get(systemId, now, MiningFamily.Ice);
         var ore = SovereigntyOres(systemId, now);
         if (ore.Count == 0)
@@ -69,9 +69,22 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
         }
     }
 
-    private MiningSiteView Read(int systemId, long now, MiningFamily family)
+    private MiningSiteView Read(int systemId, long now, MiningFamily family) => ReadSites(systemId, now, family, database);
+
+    internal static void EnsureIce(EconomyTransaction world, CatalogDbContext catalog, int systemId, long now) =>
+        ReadSites(systemId, now, MiningFamily.Ice, null, world, catalog);
+
+    private static MiningSiteView ReadSites(
+        int systemId,
+        long now,
+        MiningFamily family,
+        WorldDatabase? database,
+        EconomyTransaction? resident = null,
+        CatalogDbContext? existingCatalog = null
+    )
     {
-        using CatalogDbContext catalog = new(database.CatalogPath);
+        using var opened = database is null ? null : new CatalogDbContext(database.CatalogPath);
+        var catalog = existingCatalog ?? opened!;
         var system = catalog.FindSystem(systemId);
         if (system is null)
         {
@@ -104,14 +117,15 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
         }
         if (
             wormholeClass > 0
+            && database is not null
             && LiveWorld.Find(database.Path) is null
             && eligible.Any(e => SleeperSiteCatalog.Read(catalog).Any(s => s.DungeonId == e.DungeonId))
         )
         {
             throw new InvalidOperationException("Guarded fullerite reservoirs require the resident world.");
         }
-        using WorldActionScope transaction = new(database, new(systems: [systemId]));
-        var world = transaction.World;
+        using var transaction = database is null ? null : new WorldActionScope(database, new(systems: [systemId]));
+        var world = resident ?? transaction!.World;
         long? siteId = world
             .Filter<SavedMiningSite>(s => s.SystemId == systemId && s.Family == family)
             .Select(s => (long?)s.Id)
@@ -154,7 +168,7 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
         }
         if (site.ReplaceAt is long replacement)
         {
-            transaction.Commit();
+            transaction?.Commit();
             return new(replacement, []);
         }
         var profile = MiningSiteCatalog.Sites.Single(s => s.DungeonId == site.DungeonId);
@@ -194,7 +208,7 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
             IsSignature: family == MiningFamily.Gas,
             Mining: site.Family
         );
-        transaction.Commit();
+        transaction?.Commit();
         return new(deadline, [contact]);
     }
 

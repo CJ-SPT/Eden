@@ -12,6 +12,7 @@ internal sealed partial class LiveReadModels
         "resident.structures",
         "WorldStructure",
         "WorldStructureService",
+        "WorldJumpBridge",
         "WorldStructureBattle",
         "WorldSovereigntyHub",
         "WorldSovereigntyClaim",
@@ -49,6 +50,7 @@ internal sealed partial class LiveReadModels
                         or "WorldSovereigntyCapital"
                         or "WorldSovereigntySkyhook"
                         or "WorldStructureService"
+                        or "WorldJumpBridge"
                         or "WorldStructureBattle"
                         or "WorldStructure"
                         or "WorldMoonExtraction"

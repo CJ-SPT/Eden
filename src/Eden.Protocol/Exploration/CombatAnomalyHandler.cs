@@ -1,9 +1,11 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Exploration;
@@ -15,7 +17,9 @@ internal sealed class CombatAnomalyHandler(
     TimeProvider clock,
     ProbeScanningHandler? probes = null,
     IDedEscalations? escalations = null,
-    IWorldTuning? tuning = null
+    IWorldTuning? tuning = null,
+    IMilitiaComplexes? complexes = null,
+    SharedSpace? space = null
 ) : ISelectedPilotCallHandler
 {
     private int? _system;
@@ -63,7 +67,7 @@ internal sealed class CombatAnomalyHandler(
         if (service == "scanMgr" && method == "SignalTrackerRegister" && args.Length == 0)
         {
             _system = context.Pilot.SystemId;
-            _known = sites.List(_system.Value, Now);
+            _known = PublicSites(_system.Value, Now);
             _signatures = sites.Signatures(_system.Value, Now);
             context.Notifications.Add(new SignalTrackerFullState(_system.Value, _known, _signatures));
             probes?.Enter(context);
@@ -79,7 +83,7 @@ internal sealed class CombatAnomalyHandler(
             probes?.Enter(context);
             var signatures = sites.Signatures(context.Pilot.SystemId, Now);
             RevealSignatures(context, signatures, []);
-            return new SignalTrackerState(sites.List(context.Pilot.SystemId, Now), signatures);
+            return new SignalTrackerState(PublicSites(context.Pilot.SystemId, Now), signatures);
         }
         return PilotCallResult.Unsupported;
     }
@@ -117,16 +121,21 @@ internal sealed class CombatAnomalyHandler(
             context.Flight.RefreshAnomalies([]);
             return;
         }
-        var current = sites.List(system, Now);
-        var signatures = sites.Signatures(system, Now);
+        if (complexes is not null && space is not null && complexes.IsWarzone(system))
+        {
+            complexes.Advance(system, space.MilitiaComplexPilots(system), now);
+        }
+        var current = PublicSites(system, now);
+        var signatures = sites.Signatures(system, now);
         var position = context.Pilot.Position;
         TrackGhostSite(context, position, signatures);
+        var missionSites = missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).ToArray();
         context.Flight.RefreshAnomalies(
             current
                 .Concat(signatures)
                 .Concat(escalations?.Sites(context.Pilot.PilotId, system, now) ?? [])
                 .SelectMany(s => s.Objects)
-                .Concat(missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).SelectMany(s => s.Objects))
+                .Concat(missionSites.SelectMany(s => s.Objects))
                 .Where(o =>
                     position is not null
                     && position.DistanceTo(o.Position)
@@ -136,6 +145,7 @@ internal sealed class CombatAnomalyHandler(
                                 : Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
                         )
                 )
+                .Concat(position is null ? [] : missionSites.Select(site => site.PublicBeacon).OfType<StaticSpaceObject>())
                 .ToArray()
         );
         if (_system != system)
@@ -162,6 +172,13 @@ internal sealed class CombatAnomalyHandler(
         _known = current;
     }
 
+    private IReadOnlyList<CombatAnomaly> PublicSites(int system, long now)
+    {
+        var ordinary = sites.List(system, now);
+        var militia = complexes?.Sites(system, now);
+        return militia is { Count: > 0 } ? ordinary.Concat(militia).ToArray() : ordinary;
+    }
+
     private void RevealSignatures(PilotCallContext context, IReadOnlyList<CombatAnomaly> added, IReadOnlyList<CombatAnomaly> removed)
     {
         if (tuning?.Settings.Exploration.AlwaysResolvedSignatures == true && (added.Count > 0 || removed.Count > 0))
@@ -175,10 +192,7 @@ internal sealed class CombatAnomalyHandler(
         var site =
             position is null || !context.Flight.InBallpark || context.Flight.InWarp
                 ? null
-                : signatures.FirstOrDefault(s =>
-                    s.Exploration == ExplorationKind.Ghost
-                    && s.Position.DistanceTo(position) <= Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
-                );
+                : signatures.FirstOrDefault(s => s.Exploration == ExplorationKind.Ghost && GhostSiteRules.IsOnGrid(position, s.Position));
         if (site?.Id != _ghostSite && _ghostSite != 0)
         {
             context.Notifications.Add(new ExitingExplorationDungeon(_ghostDungeon));
@@ -195,7 +209,8 @@ internal sealed class CombatAnomalyHandler(
             _ghostSite = site.Id;
             _ghostDungeon = site.DungeonId;
         }
-        else if (site.GhostCountdownEnd != _ghostCountdown)
+        // The pinned client ignores entry values if its reconnect lookup already created this dungeon.
+        if (site.GhostCountdownEnd != _ghostCountdown)
         {
             context.Notifications.Add(new GhostDungeonValues(site.DungeonId, site.GhostCountdownEnd));
         }

@@ -8,7 +8,7 @@ namespace Eden.World.Alliances;
 
 internal sealed partial class AllianceStore
 {
-    bool IAllianceCalendar.IsOwner(long ownerId) =>
+    bool IOrganizationCalendar.IsOwner(long ownerId) =>
         ownerId is > 0 and <= int.MaxValue
         && LiveWorld.Find(database.Path)?.Economy.Inspect(world => world.Set<SavedAlliance>().Find((int)ownerId) is not null) == true;
 
@@ -33,7 +33,7 @@ internal sealed partial class AllianceStore
             : throw new InvalidDataException("This alliance calendar event is unavailable.");
     }
 
-    IReadOnlyList<CalendarEvent> IAllianceCalendar.Month(long actorId, int month, int year)
+    IReadOnlyList<CalendarEvent> ICalendarEvents.Month(long actorId, int month, int year)
     {
         var range = CalendarRules.Month(month, year);
         return CalendarBook(actorId)
@@ -45,13 +45,13 @@ internal sealed partial class AllianceStore
             ?? [];
     }
 
-    CalendarDetails IAllianceCalendar.Details(long actorId, long eventId, long allianceId)
+    CalendarDetails ICalendarEvents.Details(long actorId, long eventId, long allianceId)
     {
         var entry = CalendarEntry(actorId, eventId, allianceId);
         return new(entry.CreatorId, entry.Description);
     }
 
-    IReadOnlyList<PersonalCalendarResponse> IAllianceCalendar.Responses(long actorId) =>
+    IReadOnlyList<PersonalCalendarResponse> ICalendarEvents.Responses(long actorId) =>
         CalendarBook(actorId)
             ?.Events.Select(e => new PersonalCalendarResponse(
                 e.Event.Id,
@@ -62,10 +62,10 @@ internal sealed partial class AllianceStore
             .ToArray()
         ?? [];
 
-    IReadOnlyList<CalendarAttendance> IAllianceCalendar.Attendance(long actorId, long eventId, long allianceId) =>
+    IReadOnlyList<CalendarAttendance> ICalendarEvents.Attendance(long actorId, long eventId, long allianceId) =>
         CalendarEntry(actorId, eventId, allianceId).Attendance;
 
-    long IAllianceCalendar.Create(long actorId, CalendarEventDraft draft)
+    long IOrganizationCalendar.Create(long actorId, CalendarEventDraft draft)
     {
         var value = CalendarRules.Check(draft, Now);
         long id = 0;
@@ -97,7 +97,7 @@ internal sealed partial class AllianceStore
         return id;
     }
 
-    void IAllianceCalendar.Edit(long actorId, long eventId, long oldTime, CalendarEventDraft draft)
+    void IOrganizationCalendar.Edit(long actorId, long eventId, long oldTime, CalendarEventDraft draft)
     {
         var value = CalendarRules.Check(draft, Now);
         ChangeSocial(
@@ -107,21 +107,9 @@ internal sealed partial class AllianceStore
                 var before =
                     state.Events.SingleOrDefault(e => e.Event.Id == eventId)
                     ?? throw new InvalidDataException("Unknown alliance calendar event.");
-                CheckCalendarMutable(before);
-                if (before.Event.Time != oldTime)
-                {
-                    throw new InvalidDataException("The alliance event time changed. Reload before editing.");
-                }
                 var changed = before with
                 {
-                    Event = before.Event with
-                    {
-                        Time = value.Time,
-                        DurationMinutes = value.DurationMinutes,
-                        Title = value.Title,
-                        Important = value.Important,
-                        Modified = Math.Max(Now, before.Event.Modified + 1),
-                    },
+                    Event = CalendarRules.Edit(before.Event, oldTime, value, Now),
                     Description = value.Description,
                     Attendance =
                         before.Event.Time == value.Time
@@ -134,16 +122,7 @@ internal sealed partial class AllianceStore
         );
     }
 
-    private void CheckCalendarMutable(AllianceCalendarEntry entry)
-    {
-        if (entry.Event.Deleted)
-        {
-            throw new InvalidDataException("The alliance event has been cancelled.");
-        }
-        CalendarRules.CheckTime(entry.Event.Time, Now);
-    }
-
-    void IAllianceCalendar.Respond(long actorId, long eventId, long allianceId, CalendarResponse response)
+    void ICalendarEvents.Respond(long actorId, long eventId, long allianceId, CalendarResponse response)
     {
         CalendarRules.CheckResponse(response);
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
@@ -154,7 +133,7 @@ internal sealed partial class AllianceStore
         {
             throw new InvalidDataException("This alliance event is unavailable.");
         }
-        CheckCalendarMutable(entry);
+        CalendarRules.CheckMutable(entry.Event, Now);
         var replies = entry.Attendance.Where(a => a.PilotId != actorId).Append(new(actorId, response)).OrderBy(a => a.PilotId).ToArray();
         SaveSocial(
             world,
@@ -167,7 +146,7 @@ internal sealed partial class AllianceStore
         world.Commit();
     }
 
-    void IAllianceCalendar.Delete(long actorId, long eventId, long allianceId) =>
+    void ICalendarEvents.Delete(long actorId, long eventId, long allianceId) =>
         ChangeSocial(
             actorId,
             (world, state) =>
@@ -181,7 +160,7 @@ internal sealed partial class AllianceStore
                 {
                     return state;
                 }
-                CheckCalendarMutable(entry);
+                CalendarRules.CheckMutable(entry.Event, Now);
                 var changed = entry.Event with { Deleted = true, Modified = Math.Max(Now, entry.Event.Modified + 1) };
                 Record(world, new(0, state.AllianceId, 0, Calendar: new(0, CalendarChangeKind.Cancelled, changed, changed.Time)));
                 return state with { Events = state.Events.Select(e => e.Event.Id == eventId ? e with { Event = changed } : e).ToArray() };

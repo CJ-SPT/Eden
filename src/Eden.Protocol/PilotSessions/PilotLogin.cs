@@ -47,7 +47,8 @@ public sealed class PilotLogin(
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
         // Install native UI compatibility adapters before the roster opens.
         // The signed expression returns no settings or other client data.
-        byte[] expression = LoginClient.For(tuning?.Settings.PlanetaryIndustry ?? new());
+        var settings = tuning?.Settings ?? new();
+        byte[] expression = LoginClient.For(settings.PlanetaryIndustry, settings.Progression.TrainingSpeedMultiplier);
         byte[] signature = key.SignData(PilotLoginWire.HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         await packets.WriteAsync(
             new LoginChallenge(challenge, new SignedSettings(expression, signature), PilotLoginWire.HashArgument(credentials.Challenge))

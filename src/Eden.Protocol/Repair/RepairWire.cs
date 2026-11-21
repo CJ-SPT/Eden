@@ -3,7 +3,7 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Repair;
 
-internal sealed record RepairQuoteReply(RepairQuote Quote) : BlueModel
+internal sealed record RepairQuoteReply(RepairQuote Quote, bool Free) : BlueModel
 {
     public override object ToBlue() =>
         new BlueInstance(
@@ -15,7 +15,7 @@ internal sealed record RepairQuoteReply(RepairQuote Quote) : BlueModel
                 ["groupID"] = Quote.GroupId,
                 ["damage"] = Quote.Damage,
                 ["maxHealth"] = Quote.MaxHealth,
-                ["costToRepairOneUnitOfDamage"] = (double)RepairDefinitions.IskPerDamagePoint,
+                ["costToRepairOneUnitOfDamage"] = Free ? 0d : RepairDefinitions.IskPerDamagePoint,
             }
         );
 }

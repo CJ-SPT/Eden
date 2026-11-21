@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Storage;
@@ -8,7 +7,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial record HaulerCheckpoint(long PilotId, HaulerProgress Work)
 {
-    private static readonly JsonSerializerOptions Options = new() { IgnoreReadOnlyProperties = true };
+    private static JsonSerializerOptions Options => CapsuleerCheckpointJson.Options;
 
     internal static HaulerProgress? Read(string? json) =>
         json is null
@@ -17,19 +16,16 @@ internal sealed partial record HaulerCheckpoint(long PilotId, HaulerProgress Wor
 
     internal static void Apply(WorldDbContext world, IReadOnlyList<HaulerCheckpoint> checkpoints)
     {
-        const int rowsPerBatch = 128;
-        foreach (var batch in checkpoints.Chunk(rowsPerBatch))
+        foreach (var batch in checkpoints.Chunk(CapsuleerCheckpointJson.ProjectionBatchSize))
         {
-            StringBuilder sql = new();
-            List<object> parameters = [];
-            foreach (var checkpoint in batch)
-            {
-                int offset = parameters.Count;
-                sql.Append($"UPDATE WorldCapsuleerHauler SET Progress=@p{offset} WHERE PilotId=@p{offset + 1};");
-                parameters.Add(JsonSerializer.Serialize(checkpoint.Work, Options));
-                parameters.Add(checkpoint.PilotId);
-            }
-            world.Database.ExecuteSqlRaw(sql.ToString(), parameters.ToArray());
+            string rows = JsonSerializer.Serialize(batch, Options);
+            world.Database.ExecuteSql(
+                $"""
+                UPDATE WorldCapsuleerHauler SET Progress=json_extract(saved.value,'$.Work')
+                FROM json_each({rows}) AS saved
+                WHERE PilotId=json_extract(saved.value,'$.PilotId')
+                """
+            );
         }
     }
 

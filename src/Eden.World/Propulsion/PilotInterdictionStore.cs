@@ -174,12 +174,17 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
             })
         ?? new(false, destination);
 
-    public IReadOnlyList<StaticSpaceObject> Contacts(int systemId, long now) =>
-        LiveWorld
-            .Find(database.Path)
-            ?.Economy.Inspect(world =>
-                Fields(world, systemId, now)
-                    .Where(row => row.Kind == InterdictionKind.Probe)
+    public IReadOnlyList<StaticSpaceObject> Contacts(int systemId, long now)
+    {
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return [];
+        }
+        LiveReadModels.InterdictionContacts Read() =>
+            live.Economy.Inspect(world =>
+            {
+                var probes = Fields(world, systemId, now).Where(row => row.Kind == InterdictionKind.Probe).ToArray();
+                var objects = probes
                     .Select(row => new StaticSpaceObject(
                         row.Id,
                         row.TypeId,
@@ -194,9 +199,14 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
                         IsGlobal = false,
                         InterdictionRadius = row.Radius,
                     })
-                    .ToArray()
-            )
-        ?? [];
+                    .ToArray();
+                return new LiveReadModels.InterdictionContacts(
+                    Array.AsReadOnly(objects),
+                    probes.Select(probe => probe.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min()
+                );
+            });
+        return (live.Reads?.Interdiction(systemId, now, Read) ?? Read()).Objects;
+    }
 
     private static InterdictionSphere? Sphere(WorldAction world, SavedInterdictionField row)
     {
@@ -221,4 +231,7 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
 
     private static SavedInterdictionField[] Fields(WorldAction world, int system, long now) =>
         world.Filter<SavedInterdictionField>(row => row.SystemId == system && row.ExpiresAt > now && row.HitPoints > 0).ToArray();
+
+    internal static bool BlocksJump(WorldAction world, int system, SpacePosition position, long now) =>
+        Fields(world, system, now).Any(row => Sphere(world, row) is { } field && position.DistanceTo(field.Center) <= field.Radius);
 }

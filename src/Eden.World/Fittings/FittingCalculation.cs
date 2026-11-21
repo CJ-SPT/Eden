@@ -355,7 +355,7 @@ internal sealed partial record FittingCalculation(
                         Add(module.Item.Id, modifier, false);
                     }
                 }
-                if (module.Item.Online && module.GroupId == SpatialModuleRules.MicroJumpGroup && activeModules.ContainsKey(module.Item.Id))
+                if (module.Item.Online && SpatialModuleRules.IsDriveGroup(module.GroupId) && activeModules.ContainsKey(module.Item.Id))
                 {
                     modifiers.Add(
                         new(
@@ -448,7 +448,7 @@ internal sealed partial record FittingCalculation(
                     );
                 }
             }
-            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId))
+            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId, module.Item.TypeId))
             {
                 foreach (var modifier in AreaWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
@@ -558,6 +558,7 @@ internal sealed partial record FittingCalculation(
             .Concat(AdvancedWeaponRules.Skills)
             .Concat([AreaWeaponRules.BombDeploymentSkill, AreaWeaponRules.DefenderSkill, AreaWeaponRules.ProjectorSkill])
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
+            .Concat(modules.Any(m => m.GroupId == CommandBurstRules.PhenomenaGroup) ? [CommandBurstRules.SpatialPhenomenaGeneration] : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])
@@ -568,6 +569,9 @@ internal sealed partial record FittingCalculation(
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
             .Concat([OverloadRules.ThermodynamicsSkill, SpatialModuleRules.MicroJumpSkill, SmartbombRules.EnergyPulseWeaponsSkill])
+            .Concat(
+                modules.Any(m => m.GroupId == SpatialModuleRules.CapitalMicroJumpGroup) ? [SpatialModuleRules.CapitalMicroJumpSkill] : []
+            )
             .Concat(Enum.GetValues<NaniteRepairSkill>().Select(s => (int)s))
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])

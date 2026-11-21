@@ -3,8 +3,10 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Repair;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +43,12 @@ internal static partial class AssistancePersistence
                 timers.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(target.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
                 world.Set<SavedEngagement>().Any(e => (e.LowerPilotId == target.Id || e.HigherPilotId == target.Id) && e.ExpiresAt > now),
-                timers.Pvp.Running(now)
+                timers.Pvp.Running(now),
+                MilitiaRules.IsThirdPartyCombat(
+                    MilitiaEnlistmentStore.Effective(world, source),
+                    MilitiaEnlistmentStore.Effective(world, target),
+                    timers.Pvp.Running(now)
+                )
             )
         );
     }

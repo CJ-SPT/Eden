@@ -29,7 +29,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Propulsion;
 
 [Injectable]
-internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTargetLocks? locks = null) : IPilotSpatialModules
+internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IPilotTargetLocks? locks = null)
+    : IPilotSpatialModules,
+        IPilotGateCloak
 {
     public SpatialStatus Status(long shipId) =>
         LiveReadModels.Find(database.Path)?.SpatialNavigation(shipId, () => ReadStatus(shipId)) ?? ReadStatus(shipId);
@@ -57,7 +59,9 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         return new(
             module?.Id ?? 0,
             module is not null && FittingCatalog.DefaultEffect(catalog, module.TypeId) == DogmaEffect.CovertCloaking,
-            state is { CloakModuleId: not 0 } && module is null ? long.MaxValue : state?.TargetingReadyAt ?? 0
+            state is { CloakModuleId: not 0 } && module is null ? long.MaxValue : state?.TargetingReadyAt ?? 0,
+            state?.GateCloakUntil ?? 0,
+            state?.FieldScrambledUntil ?? 0
         );
     }
 
@@ -84,8 +88,12 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         );
     }
 
+    internal static bool FieldScrambled(WorldAction world, long ship, long now) =>
+        world.Set<SpatialNavigationState>().Find(ship)?.FieldScrambledUntil > now;
+
     private static bool Scrambled(WorldAction world, long ship, long now) =>
-        world
+        FieldScrambled(world, ship, now)
+        || world
             .Filter<WorldTackle>(t =>
                 t.TargetId == ship
                 && t.TargetKind == TackleTargetKind.Ship
@@ -114,6 +122,20 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, pilot.ActiveShipId, now);
         var item = world.Set<OwnedItem>().Find(moduleId);
+        bool capital = item is not null && SpatialModuleRules.IsCapital(item.TypeId);
+        if (capital && world is not EconomyTransaction)
+        {
+            throw new InvalidDataException("A capital micro jump requires the resident world.");
+        }
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(
+            world,
+            pilot.Id,
+            pilot.ActiveShipId,
+            now,
+            allowSiegeMicroJump: item?.TypeId == SpatialModuleRules.CapitalDrive
+                && effect == DogmaEffect.MicroJumpDrive
+                && pilot.ActiveShip.TypeId == CapitalModeRules.Sarathiel
+        );
         bool cloak = SpatialModuleRules.IsCloak(effect);
         if (cloak && pilot.ActiveShip.Position?.SystemId is int system && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system))
         {
@@ -137,11 +159,32 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         {
             throw new InvalidDataException("Use an online spatial module fitted to your active ship in space.");
         }
+        if (
+            effect == DogmaEffect.CapitalMicroJumpField
+            && CrimewatchPersistence.Security(catalog, CrimewatchPersistence.System(catalog, pilot.ActiveShip))
+                >= CrimewatchRules.HighSecurity
+        )
+        {
+            throw new InvalidDataException("Capital micro jump fields cannot activate in high-security space.");
+        }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
         var status = ReadStatus(world, catalog, pilot.ActiveShipId);
         if (cloak)
         {
+            Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, pilot.ActiveShipId, now);
+            if (
+                world
+                    .Filter<OwnedItem>(fitted => fitted.LocationId == pilot.ActiveShipId)
+                    .AsEnumerable()
+                    .Any(fitted =>
+                        InventoryDefinitions.IsHighSlot(fitted.FlagId)
+                        && Eden.Gameplay.Combat.DoomsdayFieldRules.IsDisruptiveLance(fitted.TypeId)
+                    )
+            )
+            {
+                throw new InvalidDataException("A fitted disruptive lance prevents cloaking.");
+            }
             CheckCloakGeometry(world, catalog, pilot.ActiveShip, now);
         }
         var cloakTypes = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToHashSet();
@@ -341,9 +384,19 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         return values;
     }
 
-    public MicroJumpResult? CompleteJump(long pilotId, long shipId, long moduleId, long startedAt, long now)
+    public MicroJumpResult? CompleteJump(
+        long pilotId,
+        long shipId,
+        long moduleId,
+        long startedAt,
+        long now,
+        IReadOnlyList<MicroJumpPassenger>? candidates = null
+    )
     {
-        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        using WorldActionScope transaction = new(
+            database,
+            new(pilots: candidates?.Select(c => c.PilotId).Append(pilotId) ?? [pilotId], ships: [shipId])
+        );
         var world = transaction.World;
         var pilot = world.Pilots.Find(pilotId);
         if (pilot?.ActiveShipId != shipId || pilot.ActiveShip.OwnerId != pilotId)
@@ -365,18 +418,27 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             && item.OwnerId == pilotId
             && item.LocationId == shipId
             && InventoryDefinitions.IsMediumSlot(item.FlagId)
+            && (item.TypeId != SpatialModuleRules.CapitalField || candidates is not null && world is EconomyTransaction)
             && !Scrambled(world, shipId, now)
             && ReadStatus(world, catalog, shipId).CloakModuleId == 0
         )
         {
+            var origin = new SpacePosition(position.X, position.Y, position.Z);
             var destination = SpatialModuleRules.Jump(
-                new(position.X, position.Y, position.Z),
-                new(state.HeadingX, state.HeadingY, state.HeadingZ)
+                origin,
+                new(state.HeadingX, state.HeadingY, state.HeadingZ),
+                SpatialModuleRules.IsCapital(item.TypeId)
+                    ? SpatialModuleRules.Distance(item.TypeId, catalog.FittingAttributes(item.TypeId))
+                    : SpatialModuleRules.JumpDistance
             );
+            var arrivals =
+                item.TypeId == SpatialModuleRules.CapitalField
+                    ? CompleteField(world, catalog, pilot, item, state, origin, destination - origin, candidates!, now)
+                    : [];
             position.X = destination.X;
             position.Y = destination.Y;
             position.Z = destination.Z;
-            result = new(destination, new(state.VelocityX, state.VelocityY, state.VelocityZ));
+            result = new(destination, new(state.VelocityX, state.VelocityY, state.VelocityZ)) { Passengers = arrivals };
         }
         state.JumpModuleId = 0;
         if (world.Set<ActiveFittedModule>().Find(moduleId) is { } active && active.ShipId == shipId)

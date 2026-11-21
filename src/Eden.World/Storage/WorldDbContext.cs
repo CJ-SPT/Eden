@@ -142,6 +142,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Sovereignty.SovereigntyWarfareSchema.Configure(model);
         Eden.World.Sovereignty.SovereigntyActivitySchema.Configure(model);
         Eden.World.Sovereignty.SovereigntyResourceSchema.Configure(model);
+        Eden.World.FactionWarfare.FactionWarzoneSchema.Configure(model);
         Eden.World.Planetary.PlanetarySchema.Configure(model);
         JetcanSchema.Configure(model);
         Eden.World.Structures.StructureSchema.Configure(model);
@@ -158,8 +159,10 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Exploration.AbyssalSchema.Configure(model);
         ModuleConditionSchema.Configure(model);
         SpatialNavigationSchema.Configure(model);
+        Eden.World.Flight.CapitalTravelSchema.Configure(model);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Configure(model);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Configure(model);
+        Eden.World.Capsuleers.RegionalConflictSchema.Configure(model);
         ShipHeatSchema.Configure(model);
         NaniteRepairSchema.Configure(model);
         WorldConfigurationSchema.Configure(model);
@@ -286,12 +289,13 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<SavedJumpClone>().ToTable("WorldJumpClone").HasKey(clone => clone.Id);
         model.Entity<SavedJumpClone>().HasOne<Pilot>().WithMany().HasForeignKey(clone => clone.PilotId);
         model.Entity<SavedJumpClone>().HasIndex(clone => clone.PilotId).IsUnique().HasFilter("Active = 1");
+        model.Entity<SavedJumpClone>().HasIndex(clone => clone.LocationId).HasFilter("InShip = 1");
         model
             .Entity<SavedJumpClone>()
             .ToTable(table =>
                 table.HasCheckConstraint(
                     "CK_JumpClone_Location",
-                    "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
+                    "(Active = 1 AND LocationId IS NULL AND InShip = 0) OR (Active = 0 AND LocationId IS NOT NULL)"
                 )
             );
         model.Entity<SavedMailingList>().ToTable("WorldMailingList").HasKey(list => list.Id);
@@ -502,11 +506,17 @@ public sealed partial class WorldDbContext(string path) : DbContext
         areaWeapons.HasKey(row => row.Id);
         areaWeapons.HasIndex(row => row.SystemId);
         areaWeapons.HasIndex(row => row.ModuleId);
+        var disruptions = model.Entity<Eden.Data.World.Combat.SavedLanceDisruption>().ToTable("SavedLanceDisruption");
+        disruptions.HasKey(row => row.ShipId);
+        disruptions.Property(row => row.OscillatorEndsAt).HasDefaultValue(0L);
+        disruptions.HasOne<Ship>().WithMany().HasForeignKey(row => row.ShipId).OnDelete(DeleteBehavior.Cascade);
         var interdiction = model.Entity<Eden.Data.World.Propulsion.SavedInterdictionField>().ToTable("SavedInterdictionField");
         interdiction.HasKey(row => row.Id);
         interdiction.HasIndex(row => row.SystemId);
         interdiction.HasIndex(row => row.ModuleId);
         var commandBursts = model.Entity<Eden.Data.World.Fleets.WorldCommandBurst>().ToTable("WorldCommandBurst");
+        commandBursts.Property(row => row.IndustrialProtection).HasDefaultValue(false);
+        commandBursts.Property(row => row.Phenomena).HasDefaultValue(false);
         commandBursts.HasKey(b => b.Id);
         commandBursts.HasOne<Ship>().WithMany().HasForeignKey(b => b.ShipId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<ActiveFittedModule>().ToTable("WorldActiveModule").HasKey(h => h.ModuleId);
@@ -667,6 +677,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<TrainingLog>().HasIndex(e => new { e.PilotId, e.Time });
         model.Entity<Ship>().ToTable("WorldShip");
         model.Entity<Ship>().Property(s => s.StorageFlagId).HasDefaultValue((int)InventoryFlag.Hangar);
+        Eden.World.Inventory.ShipSharingSchema.Configure(model);
         model.Entity<Ship>().HasIndex(s => new { s.OwnerId, s.StoredInId });
         model.Entity<FlightPosition>().ToTable("WorldPosition").HasKey(p => p.ShipId);
         model.Entity<Pilot>().HasIndex(p => p.AccountId);

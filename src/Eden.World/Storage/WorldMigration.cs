@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 190;
+    internal const int CurrentVersion = 214;
 
     public static void Open(
         WorldDbContext world,
@@ -35,7 +35,7 @@ internal static class WorldMigration
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
         // Every step receives the original version, even after historical PRAGMA writes.
-        LegacyWorldMigration.Initialize(world, version);
+        LegacyWorldMigration.Initialize(world, version, economy?.FreshUniverse == true);
         InitialEconomyMigration.Initialize(world, version, economy, economics);
         Eden.World.Market.StandardMarketSchema.Upgrade(world);
         WorldVersions06To20.Apply(world, catalog, version);
@@ -58,6 +58,7 @@ internal static class WorldMigration
             WorldVersions35To49.Apply(world, version);
             WorldVersions50To68.Apply(world, version);
         }
+        Eden.World.Characters.ShipCloneSchema.Upgrade(world);
         if (version is >= 6 and < ScienceSchema.Version)
         {
             ScienceSchema.UpgradeContracts(world);
@@ -67,10 +68,7 @@ internal static class WorldMigration
         Eden.World.Exploration.CombatAnomalySchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);
         Eden.World.Structures.StructureSchema.Upgrade(world);
-        if (version < 190)
-        {
-            Eden.World.Propulsion.StructureTackleSchema.Upgrade(world);
-        }
+        Eden.World.Propulsion.StructureTackleSchema.Upgrade(world);
         SavedWorldValidation.ReconcileAndCheck(world, catalog);
         WorldVersions69To84.Apply(world, version);
         transaction.Commit();
@@ -94,14 +92,13 @@ internal static class WorldMigration
         {
             RigFittingSchema.Upgrade(world);
         }
-        if (version < 96)
-        {
-            PlayerEwarSchema.Upgrade(world);
-        }
+        // Saves that advanced beyond the old EWAR migration can still have the original single-column key.
+        PlayerEwarSchema.Upgrade(world);
         CorporationStorageSchema.Upgrade(world);
+        CorporationCalendarSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);
-        WorldConfigurationStore.Seed(world, catalog, clock);
+        WorldConfigurationStore.Seed(world, catalog, clock, economy?.FreshUniverse == true);
         if (
             !world
                 .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPilotHostility')")
@@ -115,7 +112,6 @@ internal static class WorldMigration
         DroneDelegationPersistence.Upgrade(world);
         NpcEnergySchema.Upgrade(world);
         RemoteAssistanceSchema.Upgrade(world);
-        Eden.World.Information.InformationSchema.Upgrade(world);
         JetcanSchema.Upgrade(world);
         SpaceLootRights.Upgrade(world);
         Eden.World.Information.SalvagePersistence.Upgrade(world, catalog);
@@ -124,8 +120,10 @@ internal static class WorldMigration
         ShipHeatPersistence.ValidateSaved(world);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerProvisioningSchema.Upgrade(world);
+        Eden.World.Capsuleers.RegionalConflictSchema.Upgrade(world);
 
         Eden.World.Capsuleers.CapsuleerPopulationStore.Initialize(world);
+        Eden.World.Information.InformationSchema.Upgrade(world);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
         Eden.World.Capsuleers.CapsuleerPopulationStore.ScheduleFounders(world);
         Eden.World.Capsuleers.TrafficSchema.Upgrade(world);
@@ -157,6 +155,8 @@ internal static class WorldMigration
         Eden.World.Exploration.AbyssalSchema.Upgrade(world);
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
         Eden.World.Propulsion.SpatialNavigationSchema.Upgrade(world);
+        ShipSharingSchema.Upgrade(world);
+        Eden.World.Flight.CapitalTravelSchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);
         if (version < 138)
         {
@@ -188,6 +188,7 @@ internal static class WorldMigration
         Eden.World.Sovereignty.SovereigntyWarfareSchema.Upgrade(world);
         Eden.World.Sovereignty.SovereigntyActivitySchema.Upgrade(world, version);
         Eden.World.Sovereignty.SovereigntyResourceSchema.Upgrade(world);
+        Eden.World.FactionWarfare.FactionWarzoneSchema.Upgrade(world);
         Eden.World.Characters.ContactOwnerSchema.Upgrade(world);
         Eden.World.Characters.PilotActivitySchema.Upgrade(world);
         Eden.World.Bookmarks.SharedBookmarkSchema.Upgrade(world, catalog);
@@ -214,6 +215,39 @@ internal static class WorldMigration
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldNpcBounty_NpcId_PilotId ON WorldNpcBounty(NpcId,PilotId);
                 """
             );
+        }
+        if (version < 188)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                UPDATE WorldCorporation
+                SET DetailsJson = json_set(DetailsJson, '$.ApplicationsEnabled', json('true'))
+                WHERE CapsuleerFoundingSystemId IS NOT NULL AND ClosedAt IS NULL
+                    AND EXISTS (SELECT 1 FROM WorldCapsuleerAgent WHERE PilotId = WorldCorporation.CeoId);
+                """
+            );
+        }
+        if (version < CapsuleerCheckpointMigration.Version)
+        {
+            CapsuleerCheckpointMigration.RemoveEmbeddedCollision(world);
+        }
+        world.Database.ExecuteSqlRaw(
+            "CREATE TABLE IF NOT EXISTS WorldMapStatistics(Id INTEGER PRIMARY KEY CHECK (Id=1), Payload TEXT NOT NULL)"
+        );
+        if (version < DevelopmentMarketOrderMigration.Version)
+        {
+            DevelopmentMarketOrderMigration.RemoveUnusedAsks(world);
+            // Commit the schema and sanitized rows first. A restart retries reclamation if interrupted.
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CapsuleerCheckpointMigration.Version}");
+            history.Commit();
+            history.Dispose();
+            // The next startup step copies the file into RAM, including freelist pages.
+            if (world.Database.SqlQueryRaw<int>("PRAGMA freelist_count").AsEnumerable().Single() > 0)
+            {
+                world.Database.ExecuteSqlRaw("PRAGMA temp_store=FILE; VACUUM;");
+            }
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
+            return;
         }
         world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
         history.Commit();

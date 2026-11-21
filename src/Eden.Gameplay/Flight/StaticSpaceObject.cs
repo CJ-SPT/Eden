@@ -21,15 +21,21 @@ public sealed record StaticSpaceObject(
     public SpacePosition? AccelerationGateDirection { get; init; }
     public int? HackingState { get; init; }
     public double? InterdictionRadius { get; init; }
+    public CynoDeployableActivation? CynoDeployable { get; init; }
+    public Structures.JumpBridgeContact? JumpBridge { get; init; }
     public bool Solid { get; init; } = true;
     public StaticCollisionGeometry? Collision { get; init; }
     public bool IsGlobal { get; init; } = true;
     public string? Name { get; init; }
+    public int? AsteroidBeltId { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
     public long? AgentId { get; init; }
     public SpaceContainerState? Container { get; init; }
     public Structures.StructureContact? Structure { get; init; }
     public Structures.MoonMiningPoint? MoonMiningPoint { get; init; }
+    public FactionWarfare.MilitiaCaptureBracket? MilitiaCapture { get; init; }
+    public FactionWarfare.MilitiaBattlefieldCapture? BattlefieldCapture { get; init; }
+    public int? BattlefieldScore { get; init; }
     public Sovereignty.SovereigntyHub? Sovereignty { get; init; }
     public Sovereignty.SovereigntyCommandNode? CommandNode { get; init; }
     public Sovereignty.SovereigntySkyhook? Skyhook { get; init; }

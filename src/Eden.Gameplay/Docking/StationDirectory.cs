@@ -18,7 +18,10 @@ public sealed record StationDirectoryEntry(
 
 public sealed record StationDirectorySnapshot(IReadOnlyList<StationDirectoryEntry> Stations, IReadOnlyList<int> ServiceIds);
 
+public readonly record struct SystemStationCount(int SystemId, int Count);
+
 public interface IStationDirectory
 {
     StationDirectorySnapshot Read();
+    IReadOnlyList<SystemStationCount> CountsBySystem();
 }

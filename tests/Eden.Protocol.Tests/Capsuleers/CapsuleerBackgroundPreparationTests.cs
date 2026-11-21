@@ -157,7 +157,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
-    public void WatchingGateQueuesVisitorsOnlyWhenBothSystemsAreOccupied()
+    public void WatchingEitherEndQueuesSharedGateVisitors()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         var configuration = new WorldConfigurationStore(f.Database, f.Clock);
@@ -184,9 +184,9 @@ public sealed class CapsuleerBackgroundPreparationTests
             Assert.Empty(saved.Set<SavedCapsuleerAgent>());
         }
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
-        Assert.Null(scheduler.NextInboundPreparation());
+        Assert.False(scheduler.NextInboundPreparation()!.BothObserved);
         using var source = host.GetRequiredService<IHumanPresence>().Select(90000002, gate.DestinationSystemId!.Value);
-        Assert.NotNull(scheduler.NextInboundPreparation());
+        Assert.True(scheduler.NextInboundPreparation()!.BothObserved);
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         var synchronization = host.GetRequiredService<IWorldSynchronization>();
         int planned = 0;
@@ -323,7 +323,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
-    public void SavedPilotsRemainDormantUntilTheirSystemIsEntered()
+    public void SavedPilotsAdvanceInUnvisitedRegionsWithoutReprovisioning()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         AddOtherRegion(f.Database);
@@ -346,13 +346,17 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.NotEmpty(scheduler.Jobs());
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         while (!preparation.PrepareNext().Complete) { }
-        Assert.DoesNotContain(scheduler.Jobs(), job => distant.Contains(job.PilotId));
-        f.Clock.Seconds += 120;
+        var initial = scheduler.Jobs().Where(job => distant.Contains(job.PilotId)).ToDictionary(job => job.PilotId);
+        Assert.Equal(distant.Order(), initial.Keys.Order());
+        for (int i = 0; i < 120; i++)
+        {
+            f.Clock.Seconds++;
+            scheduler.Run(i);
+        }
+        var advanced = scheduler.Jobs().Where(job => distant.Contains(job.PilotId)).ToArray();
+        Assert.All(advanced, job => Assert.True(job.Sequence > initial[job.PilotId].Sequence));
         human.Transfer(Third);
-        Assert.Contains(scheduler.Jobs(), job => distant.Contains(job.PilotId));
-        long elapsed = host.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
-        scheduler.Run(0);
-        Assert.All(scheduler.Jobs().Where(job => distant.Contains(job.PilotId)), job => Assert.True(job.DueTicks > elapsed));
+        Assert.All(advanced, job => Assert.Contains(job, scheduler.Jobs()));
         using WorldDbContext retained = new(f.Database.Path);
         Assert.All(distant, pilot => Assert.Single(retained.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId == pilot)));
     }
@@ -580,6 +584,32 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.Equal(18, preparation.Calls);
     }
 
+    [Fact]
+    public async Task HostShutdownCancelsPopulationPreparationBeforeDisposal()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        using var host = ServerServices.Build(f.Database, f.Clock);
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource cancelled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        FakePreparation preparation = new(token =>
+        {
+            entered.TrySetResult();
+            if (token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5)))
+            {
+                cancelled.TrySetResult();
+            }
+            token.ThrowIfCancellationRequested();
+        });
+        using CancellationTokenSource shutdown = new();
+        using CapsuleerPopulationMaintenance worker = new(preparation, f.Clock, host.GetRequiredService<IPilotOperationScope>());
+        worker.Start(shutdown.Token);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        shutdown.Cancel();
+        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        worker.Dispose();
+        Assert.Equal(1, preparation.Calls);
+    }
+
     internal static void PrepareStartup(CapsuleerHaulerTests.Fixture f)
     {
         var settings = new WorldConfigurationStore(f.Database, f.Clock);
@@ -614,7 +644,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         );
     }
 
-    private sealed class FakePreparation : ICapsuleerBackgroundPreparation
+    private sealed class FakePreparation(Action<CancellationToken>? duringPreparation = null) : ICapsuleerBackgroundPreparation
     {
         internal int Calls { get; private set; }
         public Task Changed { get; } = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task;
@@ -622,6 +652,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         public CapsuleerBackgroundTurn PrepareNext(CancellationToken cancellationToken = default)
         {
             Calls++;
+            duringPreparation?.Invoke(cancellationToken);
             return new(new(Calls, 18, 0), Calls, Calls == 18);
         }
     }

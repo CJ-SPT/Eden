@@ -1,10 +1,216 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
+    private const int BackgroundStartsPerInterval = 4;
+    private readonly SortedSet<(long DueTicks, long Pilot)> _waitingBackground = [];
+    private readonly Dictionary<long, long> _waitingDeadlines = [];
+    private long _nextBackgroundStartTicks;
+
+    private void QueueBackgroundStart(long pilot, long dueTicks)
+    {
+        if (_waitingDeadlines.TryAdd(pilot, dueTicks))
+        {
+            _waitingBackground.Add((dueTicks, pilot));
+        }
+    }
+
+    private void RemoveBackgroundStart(long pilot)
+    {
+        if (_waitingDeadlines.Remove(pilot, out long dueTicks))
+        {
+            _waitingBackground.Remove((dueTicks, pilot));
+        }
+    }
+
+    private void ClearBackgroundStarts()
+    {
+        _waitingBackground.Clear();
+        _waitingDeadlines.Clear();
+    }
+
+    private long? NextWorkTicks() =>
+        _waitingBackground.Count == 0 ? _queue.NextDueTicks : Math.Min(_queue.NextDueTicks ?? long.MaxValue, _nextBackgroundStartTicks);
+
+    private int StartBackgroundPilots(long elapsedTicks)
+    {
+        // Let already eligible jobs drain before adding more work. An overloaded turn
+        // or a period with no humans must never accumulate a credit for future starts.
+        if (_waitingBackground.Count == 0 || elapsedTicks < _nextBackgroundStartTicks || _queue.NextDueTicks <= elapsedTicks)
+        {
+            return 0;
+        }
+        _nextBackgroundStartTicks = checked(elapsedTicks + CapsuleerJobQueue.WakeInterval.Ticks);
+        int count = 0;
+        for (; count < BackgroundStartsPerInterval && _waitingBackground.Count > 0; count++)
+        {
+            var start = _waitingBackground.Min;
+            if (!_registrations.ContainsKey(start.Pilot))
+            {
+                WorldActionScope.Inspect(database, world => Register(world, [world.Set<SavedCapsuleerAgent>().Find(start.Pilot)!]));
+            }
+            StartPilot(start.Pilot, elapsedTicks);
+            _running.Add(start.Pilot);
+            RemoveBackgroundStart(start.Pilot);
+        }
+        return count;
+    }
+
+    private void StartPilot(long pilot, long elapsedTicks)
+    {
+        bool firstEntry = _newPilots.Remove(pilot);
+        if (_paused.TryGetValue(pilot, out var pause))
+        {
+            if (pause.ElapsedTicks < elapsedTicks || pause.Timestamp != clock.GetTimestamp())
+            {
+                _resuming[pilot] = elapsedTicks;
+            }
+            else
+            {
+                _paused.Remove(pilot);
+            }
+        }
+        else if (firstEntry && elapsedTicks > 0)
+        {
+            _resuming[pilot] = elapsedTicks;
+        }
+        _queue.Publish(ScheduledJob(pilot));
+    }
+
+    private static bool SupportsBackground(CapsuleerCareer career) => career is CapsuleerCareer.Mining or CapsuleerCareer.Hauling;
+
+    private bool CanRunUnobserved(long pilot) => SupportsBackground(_registrations.GetValueOrDefault(pilot).Career);
+
+    private CapsuleerMiner? MinerWorker(long pilot)
+    {
+        if (_registrations.GetValueOrDefault(pilot).Career != CapsuleerCareer.Mining)
+        {
+            return null;
+        }
+        if (!_miners.TryGetValue(pilot, out var worker))
+        {
+            worker = miners.Create(pilot, _miningCrews[_registrations[pilot].CrewSystem], id => _suspended.Contains(id));
+            _miners.Add(pilot, worker);
+        }
+        return worker;
+    }
+
+    private void RebaseMiningCrew(long pilot, CapsuleerMiner worker, int system)
+    {
+        var registration = _registrations[pilot];
+        if (system == registration.CrewSystem)
+        {
+            return;
+        }
+        _miningCrews[registration.CrewSystem].Remove(pilot);
+        if (!_miningCrews.TryGetValue(system, out var crew))
+        {
+            crew = [];
+            _miningCrews.Add(system, crew);
+        }
+        crew.Add(pilot);
+        _registrations[pilot] = registration with { CrewSystem = system };
+        worker.ChangeCrew(crew);
+    }
+
+    private CapsuleerHauler? HaulerWorker(long pilot)
+    {
+        if (_registrations.GetValueOrDefault(pilot).Career != CapsuleerCareer.Hauling)
+        {
+            return null;
+        }
+        if (!_haulers.TryGetValue(pilot, out var worker))
+        {
+            worker = haulers.Create(pilot);
+            _haulers.Add(pilot, worker);
+        }
+        return worker;
+    }
+
+    private void ReleaseWorker(long pilot)
+    {
+        _offscreenPresence.Remove(pilot);
+        _miners.Remove(pilot);
+        _haulers.Remove(pilot);
+    }
+
+    private CapsuleerMiner? ReadDormantMiner(long pilot) =>
+        Live!.Economy.Peek<SavedCapsuleerAgent>(pilot)?.Career == CapsuleerCareer.Mining && !_suspended.Contains(pilot)
+            ? miners.Create(pilot, [], id => _suspended.Contains(id))
+            : null;
+
+    private CapsuleerHauler? ReadDormantHauler(long pilot) =>
+        Live!.Economy.Peek<SavedCapsuleerAgent>(pilot)?.Career == CapsuleerCareer.Hauling && !_suspended.Contains(pilot)
+            ? haulers.Create(pilot)
+            : null;
+
+    private void ReleaseRegistration(LiveWorld live, long pilot)
+    {
+        ReleaseWorker(pilot);
+        var registration = _registrations[pilot];
+        _registrations.Remove(pilot);
+        _newPilots.Remove(pilot);
+        int system = _locations[pilot];
+        _locations.Remove(pilot);
+        RemoveMember(_systemAgents, system, pilot);
+        RemoveMember(_miningCrews, registration.CrewSystem, pilot);
+        if (_pilotShips.Remove(pilot, out long ship))
+        {
+            _ships.Remove(ship);
+        }
+        live.ReleaseCapsuleerDetails(pilot, system);
+    }
+
+    private static void RemoveMember(Dictionary<int, HashSet<long>> groups, int group, long pilot)
+    {
+        if (groups.TryGetValue(group, out var members) && members.Remove(pilot) && members.Count == 0)
+        {
+            groups.Remove(group);
+        }
+    }
+
+    private void WakeObservedMiners(long elapsed, IReadOnlyList<SystemSimulationState> transitions)
+    {
+        if (transitions.Count == 0 || Live is not { } live)
+        {
+            return;
+        }
+        long pulse = checked(elapsed + TimeSpan.TicksPerSecond);
+        foreach (var state in transitions.Where(state => state.Mode == SystemSimulationMode.Activating))
+        {
+            foreach (long pilot in _systemAgents.GetValueOrDefault(state.SystemId) ?? [])
+            {
+                if (
+                    _running.Contains(pilot)
+                    && !_resuming.ContainsKey(pilot)
+                    && live.MinerCheckpoints.GetValueOrDefault(pilot)?.Work.Navigation.Warp is not null
+                    && Current[pilot].DueTicks > elapsed
+                    && _miners.TryGetValue(pilot, out var traveler)
+                )
+                {
+                    traveler.Sample(elapsed);
+                    WakePilot(pilot, Math.Min(pulse, Current[pilot].DueTicks));
+                }
+                if (
+                    _running.Contains(pilot)
+                    && live.MinerCheckpoints.GetValueOrDefault(pilot)?.Work is { Activity: MinerActivity.Mining } work
+                    && Current[pilot].DueTicks == work.DueTicks
+                    && work.DueTicks > pulse
+                )
+                {
+                    // Publish a threat-check deadline while retaining the paid collection deadline in Work.
+                    WakePilot(pilot, pulse);
+                }
+            }
+        }
+    }
+
     private void SettleReadySystems(HumanActivitySnapshot activity)
     {
         foreach (var state in _systems.Observed())
@@ -50,7 +256,8 @@ internal sealed partial class CapsuleerScheduler
 
     private void UpdateDetailRetention(HumanActivitySnapshot activity, IReadOnlyList<SystemSimulationState> transitions)
     {
-        ResidentFitCache.Find(database.Path)?.Pin(activity.Pilots.Select(p => p.PilotId).Concat(_running));
+        var observed = activity.ActiveSystems.SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? []);
+        ResidentFitCache.Find(database.Path)?.Pin(activity.Pilots.Select(p => p.PilotId).Concat(observed.Where(_running.Contains)));
         if (Live is not { } live)
         {
             return;

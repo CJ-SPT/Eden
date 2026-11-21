@@ -37,6 +37,13 @@ public sealed record ResourcePolicy(
 
 public sealed record MiningHoldPolicy(decimal GeneralMultiplier = 1, decimal IceMultiplier = 1, decimal GasMultiplier = 1);
 
+public sealed record ShipFittingPolicy(
+    decimal CpuMultiplier = 1,
+    decimal PowerGridMultiplier = 1,
+    decimal CalibrationMultiplier = 1,
+    decimal DroneBandwidthMultiplier = 1
+);
+
 public sealed record RewardPolicy(
     decimal BountyMultiplier = 1,
     decimal MissionIskMultiplier = 1,
@@ -84,7 +91,8 @@ public sealed record ProgressionPolicy(
     decimal MiningSkillPointMultiplier = 1,
     decimal KillSkillPointPercent = NpcSkillPointRewards.DefaultPercent,
     decimal MiningIskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint,
-    bool GrantStartingEquipment = true
+    bool GrantStartingEquipment = true,
+    decimal TrainingSpeedMultiplier = 1
 );
 
 public sealed record CapsuleerPopulationPolicy(
@@ -102,11 +110,30 @@ public sealed record CapsuleerPopulationPolicy(
     public int CampPercent { get; init; } = 20;
     public int CampSeconds { get; init; } = 240;
     public bool RoamingPvp { get; init; } = true;
+    public bool RoamingGangs { get; init; } = true;
+    public int RoamingGangSize { get; init; } = 4;
+    public bool RegionalConflicts { get; init; } = true;
+    public int RegionalOperationsPerGroup { get; init; } = 1;
     public int RoamPercent { get; init; } = 30;
     public int GeneratedCombatPercent { get; init; } = 35;
     public bool SituationalAwareness { get; init; } = true;
     public bool BeltRatting { get; init; } = true;
     public bool AnomalyRatting { get; init; } = true;
+    public bool Exploration { get; init; } = true;
+    public bool WreckSalvage { get; init; } = true;
+    public int ActivePilotCap { get; init; }
+    public bool PrepareUnvisitedSystems { get; init; } = true;
+    public bool FreshCourierPilots { get; init; } = true;
+    public bool FreshBountyPilots { get; init; } = true;
+    public bool TradeGoodsFreight { get; init; } = true;
+    public CapsuleerRegionAccess DefaultRegionAccess { get; init; }
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> RegionAccess { get; init; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> SystemAccess { get; init; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
+    public bool AutomaticRecruitment { get; init; } = true;
+    public bool AutomaticAlliances { get; init; } = true;
+    public bool NewSovereigntyClaims { get; init; } = true;
     public CapsuleerFreightPolicy Freight { get; init; } = CapsuleerFreightPolicy.Default;
 }
 
@@ -122,10 +149,12 @@ public sealed record ExplorationPolicy(bool AlwaysResolvedSignatures = false);
 
 public sealed record WorldSettings
 {
+    public bool FreshUniverse { get; init; }
     public EconomicPolicy Economy { get; init; } = new();
     public DevelopmentSupplyPolicy DevelopmentSupply { get; init; } = new();
     public ResourcePolicy Resources { get; init; } = new();
     public MiningHoldPolicy MiningHolds { get; init; } = new();
+    public ShipFittingPolicy ShipFitting { get; init; } = new();
     public RewardPolicy Rewards { get; init; } = new();
     public IndustryPolicy Industry { get; init; } = new();
     public PlanetaryPolicy PlanetaryIndustry { get; init; } = new();
@@ -136,6 +165,11 @@ public sealed record WorldSettings
     public SimulationPolicy Simulation { get; init; } = new();
     public NavigationPolicy Navigation { get; init; } = new();
     public ExplorationPolicy Exploration { get; init; } = new();
+
+    public bool UsesFreshUniverseMarket() =>
+        FreshUniverse
+        && Economy is { StandardMarket: false, RegionalHubSupply: false, BeginnerMarketSupply: false }
+        && (Economy.ProgressiveMarkets ?? !DevelopmentSupply.TestingMarket);
 }
 
 // Read-only access to the active in-memory policy, never a pending administrator draft.

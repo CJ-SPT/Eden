@@ -11,9 +11,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Fleets;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets, ISystemObjects systems, IPilotSecurityStatus security)
-    : ISelectedPilotCallHandler,
-        IDisposable
+internal sealed partial class CooperativeFleetHandler(
+    ICooperativeFleets fleets,
+    ISystemObjects systems,
+    IPilotSecurityStatus security,
+    IPilotCapitalTravel? capital = null
+) : ISelectedPilotCallHandler, IDisposable
 {
     internal const string Prefix = "@fleet:";
     private readonly Guid _session = Guid.NewGuid();
@@ -24,6 +27,8 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
     private readonly Dictionary<long, FleetMembership> _watchlist = [];
     private readonly Dictionary<long, ShipHealth> _watchHealth = [];
     private int _watchSystem;
+    private IReadOnlyList<CynosuralField> _sentCynos = [];
+    private IReadOnlyList<JumpPortal> _sentPortals = [];
     public bool IsMonitoring => _pilot.HasValue;
 
     public void Advance(PilotCallContext context)
@@ -70,7 +75,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
         {
             var value = delivery.Event;
             if (
-                value is not (FleetEvent.Invitation or FleetEvent.MissionStanding)
+                value is not (FleetEvent.Invitation or FleetEvent.StandingChanged)
                 && delivery.FleetId != identity?.FleetId
                 && !(identity is null && value is FleetEvent.Left { PilotId: var departed } && departed == pilot.PilotId)
             )
@@ -131,7 +136,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                         );
                     }
                     break;
-                case FleetEvent.MissionStanding standing:
+                case FleetEvent.StandingChanged standing:
                     context.Notifications.Add(new NpcStandingSet(standing.SourceId, pilot.PilotId, standing.Value));
                     break;
                 case FleetEvent.Resync resync:
@@ -143,6 +148,39 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
             }
         }
         AdvanceTags(context);
+        AdvanceCynos(context);
+        AdvancePortals(context);
+    }
+
+    private void AdvanceCynos(PilotCallContext context)
+    {
+        var current = capital?.FleetFields(context.Pilot.PilotId) ?? [];
+        foreach (var removed in _sentCynos.ExceptBy(current.Select(field => field.Beacon.Id), field => field.Beacon.Id))
+        {
+            context.Notifications.Add(FleetBeacon(removed, false));
+        }
+        foreach (var added in current.ExceptBy(_sentCynos.Select(field => field.Beacon.Id), field => field.Beacon.Id))
+        {
+            context.Notifications.Add(FleetBeacon(added, true));
+        }
+        _sentCynos = current;
+    }
+
+    private static FleetNotification FleetBeacon(CynosuralField field, bool active) =>
+        field.DeployableId is long id ? new FleetDeployableBeaconChanged(id, field, active) : new FleetModuleBeaconChanged(field, active);
+
+    private void AdvancePortals(PilotCallContext context)
+    {
+        var current = capital?.FleetPortals(context.Pilot.PilotId) ?? [];
+        foreach (var removed in _sentPortals.Except(current))
+        {
+            context.Notifications.Add(new FleetPortalChanged(removed, false));
+        }
+        foreach (var added in current.Except(_sentPortals))
+        {
+            context.Notifications.Add(new FleetPortalChanged(added, true));
+        }
+        _sentPortals = current;
     }
 
     private static bool IsInTransit(PilotCallContext context) => context.Flight.InWarp || context.Flight.Translocating;
@@ -236,6 +274,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
         _watchlist.Clear();
         _watchHealth.Clear();
         _sentTags = null;
+        _sentCynos = [];
         _tagFleet = null;
     }
 
@@ -547,6 +586,9 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                 case ("SetTakesFleetWarp", [bool takesWarp]):
                     fleets.SetTakesWarp(actor, id, takesWarp);
                     return PilotCallResult.None;
+                case ("SetAcceptsConduitJumpsValue", [bool acceptsConduit]):
+                    fleets.SetAcceptsConduitJumps(actor, id, acceptsConduit);
+                    return PilotCallResult.None;
                 case ("SendBroadcast", _):
                     SendBroadcast(actor, id, args, FleetBroadcastRange.Universe);
                     return PilotCallResult.None;
@@ -584,6 +626,25 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
         )
         {
             throw new InvalidDataException("Invalid fleet broadcast.");
+        }
+        if (
+            kind == FleetBroadcastKind.JumpBeacon
+            && (
+                range != FleetBroadcastRange.Universe
+                || capital
+                    ?.FleetFields(actor)
+                    .Any(field =>
+                        field.PilotId == actor
+                        && field.FleetId == fleet
+                        && item is long id
+                        && field.Beacon.Id == id
+                        && type is long beaconType
+                        && field.Beacon.TypeId == beaconType
+                    ) != true
+            )
+        )
+        {
+            throw new InvalidDataException("Broadcast only your active fleet cynosural field.");
         }
         fleets.Broadcast(actor, fleet, kind, (FleetBroadcastScope)direction, range, item as long?, type is long t ? (int)t : null);
     }

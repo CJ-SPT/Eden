@@ -45,7 +45,7 @@ internal sealed partial class CapsuleerResupply(PilotMarketStore market)
         var correction = world.Set<SavedTrafficCorrection>().Find(pilotId);
         var identity = world.Set<SavedTrafficIdentity>().Find(pilotId);
         long kill = correction?.TemplateKillId ?? identity?.KillId ?? 0;
-        var source = database.Traffic.Profiles.FirstOrDefault(p => p.KillId == kill);
+        var source = database.Traffic.Find(kill);
         var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
         var moduleIds = modules.Select(i => i.Id).ToArray();
         // Keep Single's corruption check while loading every magazine in one indexed query.
@@ -310,7 +310,7 @@ internal sealed partial class CapsuleerResupply(PilotMarketStore market)
             world.Set<SavedTrafficCorrection>().Find(pilotId)?.TemplateKillId
             ?? world.Set<SavedTrafficIdentity>().Find(pilotId)?.KillId
             ?? 0;
-        var profile = database.Traffic.Profiles.FirstOrDefault(p => p.KillId == kill);
+        var profile = database.Traffic.Find(kill);
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship).ToArray();
         var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
         var moduleIds = modules.Select(i => i.Id).ToArray();
@@ -441,7 +441,15 @@ internal sealed partial class CapsuleerResupply(PilotMarketStore market)
         List<ShoppingCandidate> candidates = [];
         foreach (int target in stations)
         {
-            var route = CapsuleerTrafficRoutes.ToStation(catalog, station, target, hull, avoided, RattingRules.MaximumShoppingJumps);
+            var route = CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                station,
+                target,
+                hull,
+                avoided,
+                RattingRules.MaximumShoppingJumps,
+                policy: world.Settings.Capsuleers
+            );
             if (route is null || route.Systems.Length - 1 > RattingRules.MaximumShoppingJumps)
             {
                 continue;

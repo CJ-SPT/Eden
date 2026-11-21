@@ -1,12 +1,14 @@
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Planetary;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
@@ -21,7 +23,9 @@ internal sealed class FlightCallHandler(
     IPilotPlanetaryIndustry? planetary = null,
     IWorldTuning? tuning = null,
     IDedEscalations? escalations = null,
-    IWormholeTravel? wormholes = null
+    IWormholeTravel? wormholes = null,
+    IMilitiaComplexes? complexes = null,
+    ICapitalNavigation? navigation = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -43,9 +47,10 @@ internal sealed class FlightCallHandler(
             {
                 return new PilotCallResult.Failure("Cyno jammer state does not accept arguments.");
             }
-            // Build 3662168 CynoJammerIcon uses None for no jammer; zero means online.
-            // Eden has no deployed jammers. Handle this read before movement checkpointing.
-            return PilotCallResult.None;
+            // Build 3662168 CynoJammerIcon compares the deadline to its current clock.
+            return navigation?.JammerOnlineAt(context.Pilot.SystemId) is long at
+                ? new PilotCallResult.Success(new CynoJammerDeadline(at))
+                : PilotCallResult.None;
         }
         if (service == "beyonce" && method == "GetFleetLocationAndInfo")
         {
@@ -121,12 +126,18 @@ internal sealed class FlightCallHandler(
         if (
             command is FlightCommand.WarpToScan
             || command is FlightCommand.WarpTo { TargetId: >= CombatAnomalyRules.FirstSiteId and < CombatAnomalyRules.FirstObjectId }
-            || command is FlightCommand.WarpTo wormholeWarp && WormholeRules.IsEndpoint(wormholeWarp.TargetId)
+            || command is FlightCommand.WarpTo siteWarpRequest
+                && (
+                    WormholeRules.IsEndpoint(siteWarpRequest.TargetId)
+                    || MilitiaComplexRules.IsSite(siteWarpRequest.TargetId)
+                    || MilitiaObjectiveRules.IsSite(siteWarpRequest.TargetId)
+                )
         )
         {
             var site = anomalies
                 .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                 .Concat(anomalies.Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
+                .Concat(complexes?.Sites(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                 .SingleOrDefault(s =>
                     command is FlightCommand.WarpToScan scan
                         ? scan.TargetId == s.TargetId

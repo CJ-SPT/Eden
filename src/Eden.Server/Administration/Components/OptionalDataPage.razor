@@ -1,0 +1,70 @@
+@page "/optional-data"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@implements IAsyncDisposable
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+
+<PageTitle>Optional data · Eden</PageTitle>
+<h1>Optional data</h1>
+<p>Imports download public snapshots using the server’s internet connection. They can take several minutes and continue
+    if you leave this page. Restart Eden after a successful import to use the new data.</p>
+
+@if (SessionExpired)
+{
+    <p class="error" role="alert">Your administrator session has ended. <a href="/login">Sign in again</a>.</p>
+}
+else if (Installed is not null)
+{
+    <div class="grid">
+        <section class="card" aria-labelledby="market-import-heading">
+            <h2 id="market-import-heading">Live market orders</h2>
+            <p>Imports the latest public EVE Ref market orders at supported NPC stations. The Standard market preset uses
+                the captured prices, quantities and expiry dates. A newer capture refreshes imported stock after restart.</p>
+            <p>Without a compatible snapshot, the Standard preset is unavailable. Testing, Progressive and NPC-only markets
+                work without this download. Keep the snapshot beside the world while Standard is selected so Eden can restart.</p>
+            <p>To use the imported orders, open <a href="/">Settings</a>, choose Standard under Economy &amp; market,
+                save for restart, and restart Eden. Personal orders and wallet balances keep their saved terms.</p>
+            @if (Installed.Market.CapturedAt is { } capturedAt)
+            {
+                <p><strong>Installed</strong> · @capturedAt.UtcDateTime.ToString("u") · @Installed.Market.Orders.ToString("N0")
+                    orders across @Installed.Market.Regions regions</p>
+            }
+            else
+            {
+                <p class="muted">@Installed.Market.Error</p>
+            }
+            @if (Status.Market is { } market)
+            {
+                <p class="@(market.Failed ? "error" : null)" role="@(market.Failed ? "alert" : "status")">@market.Message</p>
+            }
+            <form method="post" action="/api/admin/optional-data/market">
+                <AntiforgeryToken />
+                <button type="submit" disabled="@Running">@(Installed.Market.CapturedAt is null ? "Import market orders" : "Re-import market orders")</button>
+            </form>
+        </section>
+        <section class="card" aria-labelledby="traffic-import-heading">
+            <h2 id="traffic-import-heading">zKillboard traffic</h2>
+            <p>Imports the latest seven published complete UTC days of zKillboard reports. Eden uses public pilot names
+                and compatible ship fittings to add variety to simulated traffic.</p>
+            <p>Without a compatible snapshot, enabled simulated traffic uses generated Tech I freighters. Saved imported
+                pilots keep their identities, ships, fittings and losses.</p>
+            @if (Installed.Traffic is { } snapshot)
+            {
+                <p><strong>Installed</strong> · @snapshot.From through @snapshot.Through UTC · @snapshot.Pilots.ToString("N0")
+                    @(snapshot.Pilots == 1 ? "pilot" : "pilots") and @snapshot.Fits.ToString("N0") @(snapshot.Fits == 1 ? "fitting" : "fittings")</p>
+            }
+            else
+            {
+                <p class="muted">No compatible traffic snapshot is installed.</p>
+            }
+            @if (Status.Traffic is { } traffic)
+            {
+                <p class="@(traffic.Failed ? "error" : null)" role="@(traffic.Failed ? "alert" : "status")">@traffic.Message</p>
+            }
+            <form method="post" action="/api/admin/optional-data/traffic">
+                <AntiforgeryToken />
+                <button type="submit" disabled="@Running">@(Installed.Traffic is null ? "Import zKillboard traffic" : "Re-import zKillboard traffic")</button>
+            </form>
+        </section>
+    </div>
+}

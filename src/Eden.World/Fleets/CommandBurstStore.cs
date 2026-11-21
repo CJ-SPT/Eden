@@ -7,6 +7,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -14,6 +15,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -25,7 +27,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Fleets;
 
 [Injectable]
-internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFleets fleets) : IPilotCommandBursts
+internal sealed partial class CommandBurstStore(WorldDatabase database, ICooperativeFleets fleets, IPilotCombatPresence presence)
+    : IPilotCommandBursts
 {
     public CommandBurstPulse Pulse(
         long pilotId,
@@ -145,6 +148,7 @@ internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFlee
             SpacePosition origin = new(position.X, position.Y, position.Z);
             double radius = catalog.RequireItem(source.ActiveShip.TypeId).Radius ?? 0;
             bool highsec = CrimewatchPersistence.Security(catalog, system) >= CrimewatchRules.HighSecurity;
+            var militia = highsec ? MilitiaEnlistmentStore.Effective(world, source) : null;
             foreach (var candidate in fleetmates.Where(c => c.ShipId != shipId).DistinctBy(c => c.ShipId))
             {
                 if (
@@ -161,7 +165,15 @@ internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFlee
                         catalog.RequireItem(target.ActiveShip.TypeId).Radius ?? 0,
                         module.Radius
                     )
-                    || highsec && HasNeutralEngagement(world, pilotId, target.Id, now)
+                    || highsec
+                        && (
+                            HasNeutralEngagement(world, pilotId, target.Id, now)
+                            || MilitiaRules.IsThirdPartyCombat(
+                                militia,
+                                MilitiaEnlistmentStore.Effective(world, target),
+                                world.Set<SavedCrimewatch>().Find(target.Id)?.PvpUntil > now
+                            )
+                        )
                 )
                 {
                     continue;
@@ -169,6 +181,20 @@ internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFlee
                 recipients.Add(candidate.ShipId);
             }
         }
+        SaveBoosts(world, recipients, system, expiresAt, values);
+        transaction.Commit();
+        return new(module, readyAt, capacitor, magazine, recipients.ToArray());
+    }
+
+    private static void SaveBoosts(
+        WorldAction world,
+        IEnumerable<long> recipients,
+        int system,
+        long expiresAt,
+        CommandBurstValue[] values,
+        bool phenomena = false
+    )
+    {
         string boosts = JsonSerializer.Serialize(values);
         long lastId = 0;
         foreach (long ship in recipients)
@@ -182,11 +208,10 @@ internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFlee
                     SystemId = system,
                     ExpiresAt = expiresAt,
                     BoostsJson = boosts,
+                    Phenomena = phenomena,
                 }
             );
         }
-        transaction.Commit();
-        return new(module, readyAt, capacitor, magazine, recipients.ToArray());
     }
 
     private static bool HasNeutralEngagement(WorldAction world, long source, long target, long now) =>
@@ -259,6 +284,18 @@ internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFlee
     {
         foreach (var boost in Effective(catalog, rows))
         {
+            if (boost.CollectionId == IndustrialProtectionRules.VelocityPenalty)
+            {
+                // Build 3662168 publishes this DBuff against a separate client attribute.
+                // Destiny consumes the effective maximum velocity.
+                yield return new(
+                    ship,
+                    DogmaAttributeId.MaxVelocity,
+                    DogmaOperation.PostPercent,
+                    new DogmaValue.Constant(boost.Value),
+                    true
+                );
+            }
             var collection = CommandBurstCatalog.Collection(catalog, boost.CollectionId);
             foreach (var modifier in collection.Modifiers)
             {

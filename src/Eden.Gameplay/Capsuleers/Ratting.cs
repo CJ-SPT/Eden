@@ -20,7 +20,10 @@ public sealed record RattingProgress(int StationId, long[] Belts, int BeltIndex,
     public long TargetId { get; init; }
     public long[] LootIds { get; init; } = [];
     public long[] VisitedWrecks { get; init; } = [];
+    public RattingSalvage? Salvage { get; init; }
 }
+
+public sealed record RattingSalvage(long WreckId, long ModuleId, long DueTicks, long CycleReadyAt = 0);
 
 public sealed record SupplyRequirement(int TypeId, int Quantity, bool Drone, double Volume);
 
@@ -31,7 +34,12 @@ public sealed record ResupplyProgress(int StationId, long BudgetCents, long Spen
     public bool Checked { get; init; }
 }
 
-public sealed record RattingWeapon(CombatWeapon Weapon, int AvailableShots, MissileWarhead? Missile = null, int LoadedShots = 0);
+public sealed record RattingWeapon(CombatWeapon Weapon, int AvailableShots, MissileWarhead? Missile = null, int LoadedShots = 0)
+{
+    public double DroneControlRange { get; init; }
+    public double DroneSpeed { get; init; }
+    public double DroneOrbitSpeed { get; init; }
+}
 
 public sealed record RattingOpponent(
     long Id,
@@ -54,6 +62,7 @@ public static class RattingRules
     public const int MaximumClearSeconds = 120;
     public const int MaximumShoppingJumps = 3;
     public const int DepartureDivisor = 3;
+    public const int AnomalyDepartureInterval = 3;
     public const int BudgetDivisor = 4;
     public const int ReferencePriceMultiplier = 2;
     private const double SurvivalMargin = 2;

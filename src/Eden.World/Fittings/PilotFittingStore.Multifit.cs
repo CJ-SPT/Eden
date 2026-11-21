@@ -22,7 +22,7 @@ internal sealed partial class PilotFittingStore : IPilotMultifit
         {
             throw new InvalidDataException("Multifit ships in your current station hangar while docked.");
         }
-        CheckFittingService(world, pilot.ActiveShip, pilotId);
+        CheckFittingService(world, catalog, pilot.ActiveShip, pilotId);
         var stacks = world
             .Filter<OwnedItem>(item =>
                 item.OwnerId == pilotId && item.LocationId == fitting.SourceId && item.FlagId == (int)InventoryFlag.Hangar

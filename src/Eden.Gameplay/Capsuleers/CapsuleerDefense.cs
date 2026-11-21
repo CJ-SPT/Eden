@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
@@ -8,6 +9,15 @@ using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Capsuleers;
+
+// Build 3662168 combat hull type IDs for generated interceptor and assault frigate patrols.
+public enum GangFrigate
+{
+    Stiletto = 11198,
+    Crow = 11176,
+    Wolf = 11371,
+    Harpy = 11381,
+}
 
 public sealed record CapsuleerAttacker(
     long PilotId,
@@ -58,6 +68,7 @@ public sealed record CapsuleerDefenseState
     public int MotionStamp { get; init; } = int.MinValue;
     public CapsuleerLock[] Locks { get; init; } = [];
     public CapsuleerModuleCycle[] Cycles { get; init; } = [];
+    public CapsuleerModuleBudget[] Budgets { get; init; } = [];
 }
 
 public static class CapsuleerDefenseRules
@@ -77,13 +88,56 @@ public static class CapsuleerDefenseRules
             .ThenBy(attacker => attacker.ShipId)
             .FirstOrDefault();
 
-    public static bool CombatShip(HullClass hull, int tech, bool hasDamage) =>
+    public static ChargeSize? PatrolWeaponSize(HullClass hull) =>
+        hull switch
+        {
+            HullClass.Frigate
+            or HullClass.AssaultFrigate
+            or HullClass.CovertOps
+            or HullClass.Interceptor
+            or HullClass.StealthBomber
+            or HullClass.ElectronicAttack
+            or HullClass.ExpeditionFrigate
+            or HullClass.LogisticsFrigate
+            or HullClass.PrototypeExploration
+            or HullClass.Destroyer
+            or HullClass.Interdictor
+            or HullClass.CommandDestroyer
+            or HullClass.TacticalDestroyer => ChargeSize.Small,
+            HullClass.Cruiser
+            or HullClass.HeavyAssaultCruiser
+            or HullClass.Logistics
+            or HullClass.ForceRecon
+            or HullClass.CombatReconShip
+            or HullClass.HeavyInterdictionCruiser
+            or HullClass.StrategicCruiser
+            or HullClass.FlagCruiser
+            or HullClass.Yacht
+            or HullClass.CombatBattlecruiser
+            or HullClass.CommandShip
+            or HullClass.ExpeditionCommand => ChargeSize.Medium,
+            HullClass.AttackBattlecruiser
+            or HullClass.Battleship
+            or HullClass.EliteBattleship
+            or HullClass.BlackOps
+            or HullClass.Marauder => ChargeSize.Large,
+            _ => null,
+        };
+
+    public static bool CombatShip(HullClass hull, int tech, bool hasDamage) => CombatShip(hull, tech, hasDamage, 0);
+
+    public static bool CombatShip(HullClass hull, int tech, bool hasDamage, int typeId) =>
         hasDamage
         && hull != HullClass.Shuttle
         && (
             HullSupportRules.IsClass(hull, HullCohort.Combat, tech)
             || HullSupportRules.IsClass(hull, HullCohort.Small, tech)
-            || tech == 2 && hull == HullClass.Interdictor
+            || tech == 2
+                && (
+                    hull == HullClass.Interdictor
+                    || hull == HullClass.Interceptor && (GangFrigate)typeId is GangFrigate.Stiletto or GangFrigate.Crow
+                    || hull == HullClass.AssaultFrigate && (GangFrigate)typeId is GangFrigate.Wolf or GangFrigate.Harpy
+                )
         );
 
     public static bool Retreat(ShipHealth health, bool hasDamage)
@@ -102,8 +156,7 @@ public static class CapsuleerDefenseRules
 
     public static double Fraction(double current, double maximum) => maximum > 0 ? Math.Clamp(current / maximum, 0, 1) : 1;
 
-    public static bool Offensive(bool combatShip, bool retreating, bool warpBlocked) =>
-        combatShip && !retreating || !combatShip && warpBlocked;
+    public static bool Offensive(bool combatShip, bool retreating, bool warpBlocked) => combatShip && !retreating || warpBlocked;
 
     public static bool ShouldActivate(
         DogmaEffect effect,
@@ -114,12 +167,14 @@ public static class CapsuleerDefenseRules
         bool offensive,
         bool locked,
         bool blocked,
-        bool shieldTank
+        bool shieldTank,
+        bool fightingRetreat = false
     )
     {
         double fraction = Fraction(capacitor, capacity);
         bool affordable = double.IsFinite(cost) && cost >= 0 && capacitor >= cost;
-        bool reserved = affordable && Fraction(capacitor - cost, capacity) >= OffensiveCapacitorReserve;
+        bool reserved = affordable && (cost == 0 || Fraction(capacitor - cost, capacity) >= OffensiveCapacitorReserve);
+        bool emergency = affordable && fightingRetreat;
         double shield = Fraction(health.Remaining.Shield, health.Defense.Shield);
         double armor = Fraction(health.Remaining.Armor, health.Defense.Armor);
         double hull = Fraction(health.Remaining.Structure, health.Defense.Structure);
@@ -138,20 +193,19 @@ public static class CapsuleerDefenseRules
             or DogmaEffect.TrackingComputer
             or DogmaEffect.MissileGuidanceComputer
             or DogmaEffect.OmnidirectionalTrackingLink => reserved && offensive,
-            DogmaEffect.LaserFired
-            or DogmaEffect.ProjectileFired
-            or DogmaEffect.UseMissiles
-            or DogmaEffect.AutoTargetingMissile
-            or DogmaEffect.StasisWebifier
-            or DogmaEffect.WarpDisruptor
-            or DogmaEffect.WarpScrambler
-            or DogmaEffect.PlayerEcm
+            DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles or DogmaEffect.AutoTargetingMissile => (
+                reserved || emergency
+            )
+                && offensive
+                && locked,
+            DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler or DogmaEffect.EnergyNosferatu =>
+                affordable && offensive && locked,
+            DogmaEffect.PlayerEcm
             or DogmaEffect.SensorDampener
             or DogmaEffect.TrackingDisruptor
             or DogmaEffect.GuidanceDisruptor
             or DogmaEffect.TargetPainter
-            or DogmaEffect.EnergyNeutralizer
-            or DogmaEffect.EnergyNosferatu => reserved && offensive && locked,
+            or DogmaEffect.EnergyNeutralizer => (reserved || emergency) && offensive && locked,
             _ => false,
         };
     }

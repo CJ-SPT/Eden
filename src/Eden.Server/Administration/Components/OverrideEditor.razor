@@ -1,8 +1,8 @@
 @inject AdministrationOperations Operations
 @inject AuthenticationStateProvider Authentication
-<section class="card">
-    <h2>Economic overrides</h2>
-    <p class="muted">Change server-supplied prices and indices for existing items and systems. Draft edits are included when you save a pending revision above.</p>
+<section class="card settings-group">
+    <h3>Economic overrides</h3>
+    <p class="muted">Change server-supplied prices and indices for existing items and systems. Draft edits are included when you save for restart.</p>
     @if (Error is not null)
     {
         <p class="error" role="alert">@Error</p>

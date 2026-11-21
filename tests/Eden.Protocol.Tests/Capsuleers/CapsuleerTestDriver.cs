@@ -39,6 +39,24 @@ internal sealed class CapsuleerTestDriver
     internal static HaulerObservation Hauler(ServiceProvider host, TestClock clock) =>
         Drivers.GetValue(host, h => new(h, clock)).AdvanceHauler();
 
+    internal static void AssertSavedMiner(MinerProgress expected, string? progress)
+    {
+        var saved = Assert.IsType<MinerProgress>(MinerCheckpoint.Read(progress));
+        Assert.Equal(expected.AvoidedBelts, saved.AvoidedBelts);
+        Assert.Equal(expected.StrippedBelts, saved.StrippedBelts);
+        Assert.Equal(expected.StarterOreTypes, saved.StarterOreTypes);
+        // The record compares arrays by reference. All remaining work must survive exactly.
+        Assert.Equal(
+            expected with
+            {
+                AvoidedBelts = saved.AvoidedBelts,
+                StrippedBelts = saved.StrippedBelts,
+                StarterOreTypes = saved.StarterOreTypes,
+            },
+            saved
+        );
+    }
+
     private long Advance(CapsuleerCareer career)
     {
         long pilot = _pilots.Single(p => p.Career == career).PilotId;

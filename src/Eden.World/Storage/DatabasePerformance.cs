@@ -24,7 +24,7 @@ internal static class DatabasePerformance
     {
         if (data is CommandExecutedEventData executed)
         {
-            SessionPerformance.DatabaseElapsed(executed.Duration);
+            SessionPerformance.DatabaseElapsed(executed.Duration, command: executed.Command.CommandText);
         }
         else if (data is TransactionEndEventData transaction)
         {

@@ -71,7 +71,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             int total = catalog.Definitions.Systems.Count;
             int cached = total - systems.Length;
             progress?.Invoke(new(cached, total, 0));
-            if (systems.Length == 0 || maximumCommunities == 0)
+            if (systems.Length == 0 || maximumCommunities == 0 || database.Settings.FreshUniverse)
             {
                 return new(catalog.Definitions.Systems.Count, 0, systems.Length);
             }
@@ -128,6 +128,10 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             action.Commit();
             return result;
         }
+        if (database.Settings.FreshUniverse)
+        {
+            return new(0, 0, 0);
+        }
         using WorldDbContext world = new(database.Path);
         return Provision(systemId, catalog, world);
     }
@@ -141,6 +145,20 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
     )
     {
         using var transaction = world.Database.BeginTransaction();
+        var policy = world.Settings.Capsuleers;
+        if (!policy.CanWork(catalog.Definitions, systemId))
+        {
+            return new(1, 0, 0);
+        }
+        if (policy.ActivePilotCap > 0)
+        {
+            int admitted = world.Set<SavedCapsuleerAgent>().Count() - world.Set<SavedCapsuleerSuspension>().Count();
+            maximumFounders = Math.Min(maximumFounders, CapsuleerPopulationRules.AvailableSlots(policy.ActivePilotCap, admitted));
+            if (maximumFounders == 0)
+            {
+                return new(1, 0, 1);
+            }
+        }
         var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
         if (state is null)
         {
@@ -149,14 +167,13 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
-        var policy = world.Settings.Capsuleers;
         string fingerprint = Fingerprint(database, catalog, seed, policy);
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
         }
         var mining = CapsuleerProvisioningCatalog.Mining(catalog, systemId);
-        var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId);
+        var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId, policy);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic.Routes.Length > 0;
         bool canHaul =
@@ -311,7 +328,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         WorldDatabase database,
         CatalogDbContext catalog,
         long seed,
-        Eden.Gameplay.Configuration.CapsuleerPopulationPolicy policy
+        Eden.Gameplay.Configuration.CapsuleerPopulationPolicy policy,
+        bool resident = false
     )
     {
         FileInfo file = new(database.CatalogPath);
@@ -319,8 +337,27 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             $"{policy.Enabled}|{policy.Miners}|{policy.TrafficMultiplier}|{policy.GateVisitors}"
         );
         string trafficIdentity = database.Traffic.Manifest?.Identity ?? "fallback";
+        string miningIdentity = resident && policy.Miners && CapsuleerProvisioningCatalog.HasMiningFleets(catalog) ? "|mining-crews-1" : "";
+        string regionIdentity =
+            policy.DefaultRegionAccess == CapsuleerRegionAccess.WorkAndTransit && policy.RegionAccess.Count == 0
+                ? ""
+                : $"|work-regions={policy.DefaultRegionAccess}:"
+                    + string.Join(',', policy.RegionAccess.Select(rule => $"{rule.Key}={rule.Value}"));
+        string systemIdentity =
+            policy.SystemAccess.Count == 0
+                ? ""
+                : "|work-systems=" + string.Join(',', policy.SystemAccess.Select(rule => $"{rule.Key}={rule.Value}"));
+        string careerIdentity = database.Settings.FreshUniverse ? "|fresh-careers" : "";
+        if (database.Settings.FreshUniverse && (!policy.FreshCourierPilots || !policy.FreshBountyPilots || !policy.BeltRatting))
+        {
+            careerIdentity += $":{policy.FreshCourierPilots}:{policy.FreshBountyPilots && policy.BeltRatting}";
+        }
         return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
-            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}";
+            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}"
+            + miningIdentity
+            + regionIdentity
+            + systemIdentity
+            + careerIdentity;
     }
 
     private static CapsuleerTrafficRoute SelectRoute(
@@ -401,26 +438,28 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
     {
         long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
         long ship = InventoryPersistence.NextId(world);
-        var trafficProfile =
+        var fittedProfile =
             career == CapsuleerCareer.Hauling
-                ? TrafficProvisioning.Select(
-                    database,
-                    world,
+                ? CapsuleerPatrolFit.Select(
                     catalog,
+                    database.Settings.Capsuleers,
                     seed,
                     site.SystemId,
                     slot,
-                    route!,
-                    reservations: _startupReservations
+                    () =>
+                        TrafficProvisioning.Select(
+                            database,
+                            world,
+                            catalog,
+                            seed,
+                            site.SystemId,
+                            slot,
+                            route!,
+                            reservations: _startupReservations
+                        )
                 )
                 : null;
-        var fittedProfile =
-            trafficProfile
-            ?? (
-                career == CapsuleerCareer.Hauling
-                    ? CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, site.SystemId, slot)
-                    : null
-            );
+        var trafficProfile = fittedProfile is { CharacterId: > 0 } ? fittedProfile : null;
         if (
             career == CapsuleerCareer.Hauling
             && fittedProfile is null

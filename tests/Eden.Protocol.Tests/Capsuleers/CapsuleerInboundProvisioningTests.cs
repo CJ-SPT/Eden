@@ -101,6 +101,39 @@ public sealed class CapsuleerInboundProvisioningTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void PreparingTheFarGateFindsSavedVisitorsOutsideTheSystem()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        using var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
+        WatchedTrafficGate gate = new(Source, Observer, DepartureGate, ArrivalGate);
+        long[] visitors = Enumerable
+            .Range(0, TrafficJourneyRules.GateVisitorCount)
+            .Select(visitor => provisioner.EnsureInbound(gate, sourceObserved: true, visitor)!.Value)
+            .Order()
+            .ToArray();
+        using (WorldDbContext world = new(fixture.Database.Path))
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
+        {
+            Assert.All(world.Set<SavedCapsuleerAgent>(), agent => Assert.Equal(Observer, agent.CommunitySystemId));
+            Assert.All(
+                world.Set<SavedCapsuleerHauler>(),
+                hauler => Assert.Equal(Observer, catalog.RequireStation(world.Ships.Find(hauler.FounderShipId)!.StationId).SolarSystemId)
+            );
+        }
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        _ = fixture.Database.Catalog.StationsInSystem(Source);
+        _ = fixture.Database.Catalog.GatesInSystem(Source);
+        _ = host.GetRequiredService<ICapsuleerPopulation>().Summary();
+        using var metrics = SessionPerformance.Begin("saved visitor admission", output.WriteLine, force: true)!;
+        scheduler.PopulationPrepared(Source);
+        Assert.Equal(visitors, scheduler.Jobs().Select(job => job.PilotId).Order());
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
     public void StationlessDeadEndCannotCreateAGateShuttle()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false);

@@ -14,6 +14,10 @@ public enum NpcRole
     MiningLogistics,
     Concord = 8,
     MissionStructure = 9,
+    MilitiaNavy = 10,
+    MilitiaComplexDefender = 11,
+    MilitiaHub = 12,
+    MilitiaObjective = 13,
 }
 
 public enum NpcAnchorKind
@@ -25,6 +29,9 @@ public enum NpcAnchorKind
     Mission,
     GhostSite,
     Abyssal,
+    MilitiaComplex,
+    MilitiaHub,
+    MilitiaObjective,
 }
 
 public static class NpcPopulationRules
@@ -70,5 +77,7 @@ public static class NpcPopulationRules
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         double missileRange = 0,
         double? acquisitionRange = null
-    ) => Math.Max(NpcEncounterDefinitions.ChaseLeash, DetectionRange(attributes, missileRange, acquisitionRange) * 2);
+    ) => Leash(DetectionRange(attributes, missileRange, acquisitionRange));
+
+    internal static double Leash(double detectionRange) => Math.Max(NpcEncounterDefinitions.ChaseLeash, detectionRange * 2);
 }

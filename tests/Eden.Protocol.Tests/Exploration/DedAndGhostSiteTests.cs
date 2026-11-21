@@ -26,6 +26,35 @@ namespace Eden.Protocol.Tests.Exploration;
 public sealed class DedAndGhostSiteTests
 {
     [Fact]
+    public void CurrentDungeonRestoresTheGhostTimerOnlyAtThePilotsCurrentSite()
+    {
+        using Fixture f = new();
+        PassiveCatalogFixture.LoadDedAndGhost(f.CatalogPath);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var exploration = f.Db.Services.GetRequiredService<IPirateExploration>();
+        int system = CombatAnomalyRules.SystemId;
+        var site = Assert.Single(exploration.Signatures(system, f.Clock.Now), entry => entry.Exploration == ExplorationKind.Ghost);
+        exploration.ArriveUncloaked(system, site.Position, f.Clock.Now);
+        long response = GhostSiteRules.ResponseAt(f.Clock.Now, site.Id);
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(response - f.Clock.Now));
+
+        f.Db.Store.SetPosition(f.ShipId, site.Position, system);
+        var beforeResponse = BlueRead.Tuple(AbyssalTests.ReadCurrentDungeon(f, f.Db.Store.FindPilot(1000001)!), 4);
+        Assert.Null(BlueRead.Fields(beforeResponse[3])["destruction_timer"]);
+        _ = exploration.Signatures(system, f.Clock.Now);
+        var result = BlueRead.Tuple(AbyssalTests.ReadCurrentDungeon(f, f.Db.Store.FindPilot(1000001)!), 4);
+        Assert.Equal((long)site.DungeonId, result[0]);
+        Assert.Equal((long)site.GhostRoomId, result[1]);
+        Assert.Equal(site.Id, result[2]);
+        var timer = BlueRead.Fields(BlueRead.Fields(result[3])["destruction_timer"]);
+        Assert.Equal(response, timer["start_time"]);
+        Assert.Equal(response + GhostSiteRules.VisibleCountdown, timer["end_time"]);
+
+        f.Db.Store.SetPosition(f.ShipId, site.Position with { X = site.Position.X + 100_000_000 }, system);
+        Assert.Null(AbyssalTests.ReadCurrentDungeon(f, f.Db.Store.FindPilot(1000001)!));
+    }
+
+    [Fact]
     public void PinnedCatalogResolvesLayoutsRestrictionsAndCacheTypes()
     {
         using Fixture f = new();

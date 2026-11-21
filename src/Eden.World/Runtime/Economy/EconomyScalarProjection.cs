@@ -36,6 +36,11 @@ internal sealed partial class EconomySet<TRow, TState>
         {
             return base.Project(selector, predicate);
         }
+        var keys = QueryKeys(predicate);
+        if (keys.Length == 0)
+        {
+            return [];
+        }
         Func<TState, TResult> select;
         Func<TState, bool>? match = null;
         try
@@ -54,9 +59,8 @@ internal sealed partial class EconomySet<TRow, TState>
         {
             return base.Project(selector, predicate);
         }
-        var localSelect = selector.Compile(preferInterpretation: true);
-        var localMatch = predicate?.Compile(preferInterpretation: true);
-        var keys = (predicate is null ? table.Keys : table.Matching(predicate)).Concat(_local.Keys).Distinct().ToArray();
+        Func<TRow, TResult>? localSelect = null;
+        Func<TRow, bool>? localMatch = null;
         return Read();
 
         IEnumerable<TResult> Read()
@@ -69,8 +73,10 @@ internal sealed partial class EconomySet<TRow, TState>
                 }
                 if (_local.TryGetValue(key, out var row))
                 {
+                    localMatch ??= predicate?.Compile(preferInterpretation: true);
                     if (transaction.Visible(row) && (localMatch is null || localMatch(row)))
                     {
+                        localSelect ??= selector.Compile(preferInterpretation: true);
                         yield return localSelect(row);
                     }
                 }

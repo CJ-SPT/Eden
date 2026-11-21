@@ -2,6 +2,10 @@
 
 [Documentation index](README.md)
 
+The administration **World** page can [back up and wipe gameplay state](world-wipe.md) while retaining accounts and configuration.
+Use **Optional data** to import or refresh [live market orders](#market-presets) and
+[zKillboard traffic](capsuleer-population.md#zkill-backed-travelers).
+
 Schema 99 adds immutable configuration revisions to each saved world. Upgrading captures its existing development supply, economic policies, adjusted prices, manufacturing indices and renewal schedule. Existing worlds retain their values; normal new-world defaults remain unchanged.
 
 A draft saves as **pending restart**. Saving, restoring and importing use the same validation and optimistic generation check. Startup validates the pending revision before resource, market, combat and drone reconciliation. A rejected revision leaves the previous active revision in use and records its failure. Its history entry remains available; restoring a valid revision creates another pending entry. Revisions cannot be updated or deleted.
@@ -13,7 +17,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Exploration | Always resolve cosmic signatures for every pilot, without scanner probes. Off by default. |
-| Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
+| Progression | Skill training speed, NPC kill-SP and mining-SP multipliers, and starting grants for new pilots. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
 | Planetary industry | Maximum planets per pilot, extraction yield, factory output, command-center CPU and powergrid multipliers. |
 | Structures | Minimum corporation age for anchoring; anchoring, core onlining and decommissioning speeds for new timers. |
@@ -23,6 +27,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Pilot activities | Situational awareness, belt ratting and public combat anomaly ratting. |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 | Travel | Warp speed and align speed multipliers; autopilot gate landing distance, from 0 to 100,000 metres. |
+| Fitting | Ship CPU, power grid, rig calibration and drone bandwidth multipliers. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
 
@@ -30,10 +35,15 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 
 ### Market presets
 
-The **World & economy → Economy & market** section combines the former Economy and Development supply cards.
+Open **Economy & market** to choose a preset, configure custom supply sources, or set service fees.
 Existing settings are preserved; combinations that do not match a preset appear as **Custom**. Choosing a preset
 changes market supply switches only. Wallet grants, balances, owned goods, player orders, service costs and
 reference-history choices retain their settings.
+
+The presets also apply to existing **Fresh-universe** worlds. The profile starts pilots at zero ISK with the
+starter package. Its default market uses starter ore buyers and blueprint and skillbook offers. To select that
+market again under **Custom**, enable progressive regional markets and turn off live orders, testing, regional
+hub supply and beginner supply. Other presets use their own available buyers and sellers.
 
 | Preset | Supply |
 | --- | --- |
@@ -49,8 +59,14 @@ The existing hub and starter supply supplements do not alter imported orders. Th
 are hidden for Standard because the imported quantities and prices are authoritative. Initial wallet grants
 remain under Progression.
 
-Import a snapshot before selecting Standard. From the repository root, with the server's installed catalog and
-the destination **beside its saved world**:
+Before selecting Standard, open **Optional data** and choose **Import market orders**. Use **Re-import market
+orders** to refresh the snapshot. The server downloads and validates the data in the background, and the page shows
+the installed capture and the import result. Standard requires a compatible snapshot. Testing, Progressive and
+NPC-only markets work without one.
+
+Market imports require Python 3.8 or newer on the server. The Docker image includes it. On other installations,
+use Python on the server's PATH or set `EDEN_PYTHON` to the executable. To import manually from the repository
+root, point the importer at the server's installed catalog and write beside its saved world:
 
 ```powershell
 python tools/Import-LiveMarket.py --catalog src/Eden.Server/data/catalog.sqlite --output src/Eden.Server/data/market-orders
@@ -75,14 +91,17 @@ market access and retires removed orders; it intentionally establishes a new ext
 an offline snapshot, with no network requests during gameplay and no automatic continuous synchronization.
 
 Keep `market-orders/` beside the world when deploying or restoring it, including its manifest and referenced
-generation directory. The files are runtime data excluded from Git. Failed imports leave the previous manifest
-active. Servers keep their current immutable snapshot until restart, so an import can be staged while running.
+generation directory. If Standard is already active and the files are missing or incompatible, restore or re-import
+the snapshot with the command above before starting Eden. The files are runtime data excluded from Git. Failed imports
+leave the previous manifest active. Servers keep their current immutable snapshot until restart, so an import can be staged while running.
 Do not remove a generation still referenced by a running server. Selection and activation reject missing or
 incompatible manifests; regional checksums and order validation reject corrupt data before publishing orders.
 
 Native protocol and automated evidence: [Standard market implementation](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026).
 
-The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **Travel**, **World & economy** and **Advanced**.
+The Settings page groups controls by pilot activity, industry and trade, and world simulation. **Economy & market**,
+**NPCs & exploration**, and **Player bots** each have their own section. Open a **?** beside a setting for units,
+limits, dependencies or examples. Category changes retain the shared draft.
 
 **Structures → Minimum corporation age for anchoring (days)** sets `settings.structures.minimumCorporationAgeDays`.
 Set it to **0** to remove the age wait, or keep the default **7** days. Values must be nonnegative whole days;
@@ -129,9 +148,15 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
   The Progression panel exposes both base conversions: `progression.killSkillPointPercent` accepts 0–100%, and
   `progression.miningIskPerSkillPoint` accepts 0.01–1,000,000,000 ISK per SP. Lower mining costs grant more SP.
   Omitted base fields retain 0.25% and 400 in existing revision documents. These rates are saved, exported and compared
-  with original, active and pending values, and activate after restart. They do not alter past rewards or training speed.
+  with original, active and pending values, and activate after restart.
   Live draft previews compare against active settings using editable example amounts, with ore/ice/gas selection,
   combined multipliers, effective conversion and SP per kill or collection. Example amounts are not saved.
+- **Progression → Skill training speed** (`settings.progression.trainingSpeedMultiplier`) accepts **0.1–100×** and defaults
+  to **1×**, including for older revisions. Select **Save for restart** and restart the server to activate the rate. At 2×, a
+  newly scheduled level with a normal one-hour duration takes 30 minutes. Character attributes, implants, cerebral accelerators
+  and clone grade still determine the underlying rate. Saved queue deadlines and accrued SP carry across restart. Pause and
+  resume an existing queue to reschedule all remaining levels at the active rate. The client receives the rate at login and
+  uses saved deadlines for scheduled training. See [skill training speed](protocol/characters.md#world-skill-training-speed-november-21-2026).
 - Mission ISK, LP and positive standing gains are calculated when an offer is created and saved with it. Existing offers and
   accepted missions keep their terms. Standing gain fractions cap at 100%; penalties remain unchanged.
 - Industry speed divides normal duration: 2× means half the time, retaining ordinary skill/blueprint bonuses and rounding.
@@ -141,7 +166,7 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 - Reprocessing scales effective efficiency after skills and caps recovery at 100% of available materials, before output rounding.
   The quote and committed outputs use the same calculation.
 
-Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
+Combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
 update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
 
 ## Custom gameplay options
@@ -151,12 +176,12 @@ Use **Save for restart** to stage edits and restart the server to activate them.
 
 | Admin control | Exported setting | Effect when disabled |
 | --- | --- | --- |
-| World & economy → Economy → Empire LP-store datacores | `settings.economy.empireLpDatacores` | Ordinary empire stores offer their original assortment. Militia stores retain their own datacores. |
-| World & economy → Economy → Simulated market history | `settings.economy.simulatedMarketHistory` | History contains actual local trades only. Sparse history can leave native tickers and charts empty. |
-| World & economy → Economy → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global NPC sell offers retire on market preparation. |
-| World & economy → Economy → Beginner market supply | `settings.economy.beginnerMarketSupply` | Starting stations and hubs require ordinary production unlocks for generated product sell offers. Original corporation offers still apply. |
+| Economy & market → Empire LP-store datacores | `settings.economy.empireLpDatacores` | Ordinary empire stores offer their original assortment. Militia stores retain their own datacores. |
+| Economy & market → Simulated market history | `settings.economy.simulatedMarketHistory` | History contains actual local trades only. Sparse history can leave native tickers and charts empty. |
+| Economy & market → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global NPC sell offers retire on market preparation. |
+| Economy & market → Beginner market supply | `settings.economy.beginnerMarketSupply` | Starting stations and hubs require ordinary production unlocks for generated product sell offers. Original corporation offers still apply. |
 | Progression → Grant civilian starting equipment to new pilots | `settings.progression.grantStartingEquipment` | Newly created pilots receive their starting hull and configured skills/wallet grants without the additional civilian miner and weapon. |
-| World & economy → Player bots → Enable player bots | `settings.capsuleers.enabled` | All simulated capsuleers pause and disappear from space, Local, station guests and scans after restart. |
+| Player bots → Enable player bots | `settings.capsuleers.enabled` | All simulated capsuleers pause and disappear from space, Local, station guests and scans after restart. |
 
 The player-bot control uses the existing capsuleer master switch and covers travelers, miners, haulers and ratters.
 Re-enabling resumes eligible saved bots with their possessions and progress. Miner, traffic-density and gate-visitor
@@ -170,7 +195,7 @@ history and export/import. See the [implementation record](protocol/world-config
 
 ## Exploration
 
-Open **Settings → World & economy → Exploration** and enable **Always resolve cosmic signatures**,
+Open **Settings → NPCs & exploration → Probe scanning** and enable **Always resolve cosmic signatures**,
 then choose **Save for restart**. After the next server start, current-system signatures appear at 100%
 with their exact positions and available site details for every pilot. Warping and bookmarking require no probes.
 This includes combat/DED, data, relic, gas and wormhole signatures supported by the world.
@@ -212,6 +237,29 @@ Exports retain the existing `settings.navigation` group for compatibility:
 Older exports missing the multipliers load them as 1×; exports missing the entire navigation group also keep the
 15,000 m gate default. Forms, imports and command/API validation share the 0.1–100× multiplier bounds.
 See the [protocol record](protocol/navigation.md#travel-configuration-november-15-2026).
+
+## Fitting
+
+Open **Settings → Fitting**, edit the World settings draft and choose **Save for restart**. Each
+multiplier accepts **0.1–100×** and defaults to **1×**, including in older configuration exports. The
+server applies the factors to fitted ship budgets after hull, skill and equipment bonuses.
+
+| Option | Effect |
+| --- | --- |
+| Ship CPU | Increases or decreases CPU available to online modules. |
+| Ship power grid | Increases or decreases power grid available to online modules. |
+| Rig calibration | Changes the total calibration available when installing rigs. |
+| Drone bandwidth | Changes the bandwidth available for drones in space. A hull with zero bandwidth still has zero bandwidth. |
+
+At **1.5× CPU and 2× power grid**, a skilled and fitted ship with 200 tf and 50 MW gets 300 tf and
+100 MW. Module costs, required skills, slots, hardpoints, drone bay capacity and drone control count
+follow their normal rules. Lowering budgets leaves existing gear installed. Normal fitting
+reconciliation can offline modules that exceed the new CPU or power grid budget. Newly installed rigs
+and online operations must fit within the applicable budget.
+
+Exports use `settings.shipFitting` with `cpuMultiplier`, `powerGridMultiplier`,
+`calibrationMultiplier` and `droneBandwidthMultiplier`.
+See the [protocol record](protocol/fitting.md#configurable-ship-fitting-budgets).
 
 ## Planetary industry
 
@@ -327,7 +375,14 @@ dotnet run --project src/Eden.Server -- --world 'C:\Eden\world.sqlite' --set-adm
 
 Start the server normally, then open **http://127.0.0.1:26003**. The listener starts only after an administrator has been provisioned. Use `--admin-port <port>` for a different dedicated port or `--disable-admin` to disable it. By default it binds IPv4 loopback and requires a local peer and Host. Setting `EDEN_ADMIN_ORIGIN` opts into HTTPS administration using the configured server listen address and certificate, with requests restricted to the configured browser origin. Game accounts receive no administration access. [Docker setup for remote administration](docker.md#remote-administration)
 
-Settings contains seven activity categories and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save for restart** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
+**Changed values** compares the draft with the last saved configuration, including edits made in other categories.
+Expand **Original, active and pending values** to review revision values. **Reset draft to original** copies the
+original configuration into the draft. **Save for restart** validates and durably stages the draft. The server
+activates the saved revision at restart. Revisions provides comparison, restore, JSON export and validated file import.
+Restoring also creates a pending revision.
+
+Use **Player bots** to configure individual bot activities. **Population** shows the active values after restart.
+[Autonomous population settings](#autonomous-population)
 
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 
@@ -456,11 +511,21 @@ Published custom skillbooks with a market group and positive base price become N
 
 Back up the stopped world together with `<world>.skills.sqlite`, `<world>.skills-active` and `<world>.skill-packages/`, plus its original catalog. Definitions/history live in the independent authoring database and do not enter resident checkpoint replacement. Packages retain their base catalog fingerprint for configuration compatibility and have their own content identity. A changed original catalog, stale generation, incomplete package or damaged archive is rejected. No game restart or installed-client update is performed by the editor itself.
 
-**Performance** shows live diagnostics for the Eden server process: uptime, CPU usage, working set and private memory, managed memory and allocation rate, authenticated game connections, process/thread-pool threads, queued work and cumulative garbage collections. Connected accounts include character selection; they exclude pending logins and web administrator sessions. CPU usage is normalized across the processors available to the process. CPU and allocation rates need two samples and cover the actual elapsed interval between samples. These are server-process measurements rather than total machine usage or simulation-frame latency.
+**Performance** shows session frame latency alongside CPU, memory, authenticated game connections and runtime activity.
+**Frame processing time** measures each completed scheduled update for a selected pilot, including server-side
+output and mod observation. **Frame start delay** measures how far past its scheduled start the frame began.
+These metrics measure individual sessions. For example, a single two-second interval can include frames from several
+pilots. The charts show average and peak processing time and peak start delay for each completed interval over
+the last two minutes. Time spent idle without scheduled updates is excluded from start delay. An interval without completed frames appears as a gap. Hover over a bar to read its values.
+The window is shared across administrators, fills even while the page is closed and resets with the process.
+
+Process CPU usage is normalized across the processors available to Eden. CPU and allocation rates need two samples
+and cover the actual elapsed interval between samples. The connection count includes authenticated players at
+character selection. Pending logins and web administrator sessions are excluded.
 
 The page refreshes every two seconds while open. A shared, demand-driven cache limits resource sampling to once per two seconds across all administrator viewers. Navigating away disposes that page's refresh loop. The first sample displays collecting indicators for rates. Each refresh checks the current administrator credentials; password rotation stops existing interactive access. The same read-only snapshot is available at authenticated `GET /api/admin/performance` on the administration listener.
 
-Resident hosts also report the last successful checkpoint's generation, completion time, file size and separate owner wait, capture, projection and file-write durations. Failed saves display an alert while retaining the previous successful report. Before the first save, the page says no checkpoint has completed; hosts without a resident world show diagnostics as unavailable. Reading these reports does not acquire world ownership, open SQLite connections, project simulation state, trigger saves or force garbage collection. No historical samples are stored.
+Resident hosts also report the last successful checkpoint's generation, completion time, file size and separate owner wait, capture, projection and file-write durations. Failed saves display an alert while retaining the previous successful report. Before the first save, the page says no checkpoint has completed; hosts without a resident world show diagnostics as unavailable. Reading these reports does not acquire world ownership, open SQLite connections, project simulation state, trigger saves or force garbage collection. Frame history is held in memory only.
 
 Authentication uses a separate ASP.NET Core cookie scheme and administrator role. HTTP and interactive operations enforce authorization and the current credential stamp. Forms and writes require antiforgery validation. Password rotation revokes existing HTTP sessions and interactive operation access. Passwords are hashed in a separate `<world>.administrators.json` credential file. Authentication keys live in `<world>.admin-keys` and use the current Windows user's key protection on Windows. These runtime files are excluded from version control. The local password command can rotate credentials while the server runs.
 
@@ -501,17 +566,47 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 ## Autonomous population
 
-In **World & economy → Player bots**, configure the saved world's population:
+Open **Player bots**, make changes, and select **Save for restart**. The **Population** page shows the active
+settings, occupied slots, saved/paused totals, individual system access and waiting reasons.
 
-- **Hauler freight** controls regional hull variety, ordinary/courier budget ranges in ISK, courier frequency, empty return trips,
-  cargo type IDs and freight stack survival. These settings live under `settings.capsuleers.freight`.
-  [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight).
-- **Enable player bots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
-- **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
-- **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
-  up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.
-  Zero pauses station traffic; gate visitors remain independently configurable.
-- **Visitors per watched gate** accepts **0–16**, default **4**. Reciprocal gate observers share the same saved visitor identities.
+- **Bot population** contains the master switch, the world-wide **Active bot cap**
+  (`settings.capsuleers.activePilotCap`) and the switch for preparing unvisited systems in fresh universes
+  (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
+  **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
+- **Where bots work** applies the default, then the region override, then the solar-system override
+  (`settings.capsuleers.systemAccess`). To keep work out of a starter system, choose its region and solar system and
+  set the system to **Transit only**. Bots may still cross it by stargate. Choose **Use region rule** to remove the
+  system override. Restricted home communities pause, and saved assignments that require a restricted work
+  destination wait with their checkpoints intact.
+- **Mining** controls mining fleets and threat awareness.
+- **Hauling & deliveries** controls dedicated agent couriers in fresh universes (`settings.capsuleers.freshCourierPilots`)
+  and new trade-good shipments on civilian routes (`settings.capsuleers.tradeGoodsFreight`). Disabling shipments
+  preserves existing cargo and normal market supply jobs. The freight settings set regional hull variety,
+  ordinary/courier budget ranges in ISK, courier frequency, empty return trips, cargo type IDs and wreck survival.
+  [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight)
+- **PvE combat & salvage** controls belt ratting, ordinary anomalies, wreck salvage and dedicated fresh-universe
+  bounty hunters (`settings.capsuleers.freshBountyPilots`). Dedicated hunters require belt ratting. Disabling salvage
+  stops a pending cycle when the pilot next runs. Ordinary wreck looting can still occur.
+- **Exploration** (`settings.capsuleers.exploration`) lets eligible bots acquire exploration equipment and scan and hack
+  high-security pirate data and relic sites. Disabling it sends active explorers back to their departure stations.
+- **Persistent roaming gangs** (`settings.capsuleers.roamingGangs`, default on) permits coordinated nullsec hunting with
+  existing ships. **Roaming gang size** (`settings.capsuleers.roamingGangSize`) accepts 3–6, default 4. The existing roam
+  chance controls formation. [Gang behavior and requirements](capsuleer-population.md#persistent-roaming-gangs).
+- **Regional conflicts** (`settings.capsuleers.regionalConflicts`, default on) assigns existing gangs to regional raids,
+  interception, owned freight escorts and witnessed defensive responses. **Regional operations per group**
+  (`settings.capsuleers.regionalOperationsPerGroup`) accepts 1-3, default 1. Losses delay offensive launches; no replacement
+  ships are granted. Population reports groups and outcomes. [Regional behavior](capsuleer-population.md#regional-conflicts).
+- **Corporations, alliances & sovereignty** contains three independent switches.
+  - **Automatic corporation formation and recruitment** (`settings.capsuleers.automaticRecruitment`) controls new bot-led
+    corporations, advertisements, applications initiated by bots and automatic offers to human applicants.
+    Existing bot applications and relocations continue through their normal workflow.
+  - **Form and grow bot alliances** (`settings.capsuleers.automaticAlliances`) controls new alliances and automatic
+    admissions initiated by bot alliances. Accepted applications and existing dues continue.
+  - **Start new sovereignty claims** (`settings.capsuleers.newSovereigntyClaims`) controls new hub bids and first-claim
+    departures. Existing buy orders, underway expeditions and defense of claimed systems continue.
+- Expand **Ambient traffic** to adjust the established-world station roster or the gate visitor pool. Station traffic
+  accepts **0–10×**, default **1×**, up to 60 travelers per community. Fractional densities use a saved-seed draw.
+  Watched-gate visitors accept **0–16**, default **4**. Both ends of a gate share the same saved visitor identities.
 
 All edits use the ordinary pending revision, comparison, history, export/import and restart workflow. Lower limits hide excess
 pilots from space, Local, station guests and directional scans and exclude them from scheduled work. No pilot, ship, cargo,
@@ -519,8 +614,10 @@ equipment, wallet, loss, grant record or saved activity is deleted. Raising a li
 before missing station-traffic/miner slots are prepared in entered regions. New gate visitors are prepared on gate watches. A lost ship remains lost.
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
-Normal startup retains saved pilots without loading NPC jobs throughout the galaxy. A region activates when a player enters it,
-starting with the entered system and preparing its remaining systems in background batches. Other regions stay dormant until entered.
+Normal startup retains saved pilots and starts preparation when a human selects a character. Occupied systems get priority.
+With fresh-universe background preparation enabled, Eden also prepares eligible unvisited high-security station
+systems in bounded batches. It respects the active bot cap and work access rules, and preparation stops when the last
+player leaves. Established worlds prepare new communities on demand in occupied systems.
 Saved identities and possessions are reused, and dormant time produces no catch-up rewards. Completed catalog/settings/snapshot
 fingerprints are reused; interrupted preparation retries missing communities
 without replacing completed pilots. Unsupported or temporarily depleted communities are recorded
@@ -531,3 +628,8 @@ administration commands do not populate the galaxy.
 Defaults preserve the existing population policy. Older revision documents receive the new defaults automatically;
 `Capsuleers.GlobalProvisioning` remains a preserved legacy preference and is not the population switch.
 See the [population guide](capsuleer-population.md) and [implementation record](protocol/capsuleers.md#configurable-simulated-pilot-population--november-9-2026).
+
+### Planned administration controls
+
+Live pause and resume remains planned. It requires preserving remaining activity deadlines across the schedulers
+and persisting the pause across restart.

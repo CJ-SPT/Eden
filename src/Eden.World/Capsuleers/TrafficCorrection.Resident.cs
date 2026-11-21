@@ -39,20 +39,19 @@ internal static partial class TrafficCorrection
         {
             return false;
         }
-        var original = database.Traffic.Profiles.FirstOrDefault(profile => profile.KillId == identity.KillId);
+        var original = database.Traffic.Find(identity.KillId);
         if (original is null || original.HullTypeId != ship.TypeId || pilot.Name != original.Name || ship.Name != original.Name)
         {
             return false;
         }
         var health = world.Set<ShipHealthState>().Find(ship.Id);
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         if (
             health is not null
             && (
                 health.ArmorDamage != 0
                 || health.StructureDamage != 0
                 || health.ShieldCharge + InventoryDefinitions.ResourceTolerance
-                    < attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity)
+                    < PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.ShieldCapacity)
             )
         )
         {

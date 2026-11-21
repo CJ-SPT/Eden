@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 
 namespace Eden.Server.Administration;
@@ -17,10 +18,15 @@ internal static class ConfigurationDisplay
         ["miningHolds.generalMultiplier"] = "General mining hold capacity",
         ["miningHolds.iceMultiplier"] = "Ice hold capacity",
         ["miningHolds.gasMultiplier"] = "Gas hold capacity",
+        ["shipFitting.cpuMultiplier"] = "Ship CPU output",
+        ["shipFitting.powerGridMultiplier"] = "Ship power grid output",
+        ["shipFitting.calibrationMultiplier"] = "Rig calibration",
+        ["shipFitting.droneBandwidthMultiplier"] = "Drone bandwidth",
         ["rewards.bountyMultiplier"] = "NPC bounty ISK",
         ["rewards.missionIskMultiplier"] = "Mission ISK",
         ["rewards.missionLpMultiplier"] = "Mission loyalty points",
         ["rewards.missionStandingMultiplier"] = "Positive mission standings",
+        ["progression.trainingSpeedMultiplier"] = "Skill training speed",
         ["progression.killSkillPointMultiplier"] = "NPC kill skill points",
         ["progression.miningSkillPointMultiplier"] = "Mining skill points",
         ["progression.killSkillPointPercent"] = "NPC kill base SP rate (%)",
@@ -66,6 +72,21 @@ internal static class ConfigurationDisplay
         ["economy.beginnerMarketSupply"] = "Beginner market supply",
         ["progression.grantStartingEquipment"] = "Starting equipment for new pilots",
         ["capsuleers.enabled"] = "Player bots",
+        ["capsuleers.activePilotCap"] = "Active bot cap",
+        ["capsuleers.prepareUnvisitedSystems"] = "Prepare bots in unvisited systems",
+        ["capsuleers.freshCourierPilots"] = "Dedicated courier pilots",
+        ["capsuleers.freshBountyPilots"] = "Dedicated bounty hunters",
+        ["capsuleers.tradeGoodsFreight"] = "Carry trade goods on civilian routes",
+        ["capsuleers.defaultRegionAccess"] = "Default region access",
+        ["capsuleers.regionAccess"] = "Region overrides",
+        ["capsuleers.systemAccess"] = "System overrides",
+        ["capsuleers.automaticRecruitment"] = "Automatic corporation formation and recruitment",
+        ["capsuleers.automaticAlliances"] = "Form and grow bot alliances",
+        ["capsuleers.newSovereigntyClaims"] = "Start new sovereignty claims",
+        ["capsuleers.roamingGangs"] = "Persistent roaming gangs",
+        ["capsuleers.roamingGangSize"] = "Roaming gang size",
+        ["capsuleers.regionalConflicts"] = "Regional conflicts",
+        ["capsuleers.regionalOperationsPerGroup"] = "Regional operations per group",
         ["capsuleers.miners"] = "Simulated miners",
         ["capsuleers.trafficMultiplier"] = "Station traffic density",
         ["capsuleers.freight.variedHulls"] = "Use regional hauler hulls",
@@ -80,6 +101,8 @@ internal static class ConfigurationDisplay
         ["capsuleers.situationalAwareness"] = "React to ships and remember dangerous belts",
         ["capsuleers.beltRatting"] = "Run belt-ratting sorties",
         ["capsuleers.anomalyRatting"] = "Run ordinary combat anomalies",
+        ["capsuleers.exploration"] = "Explore data and relic sites",
+        ["capsuleers.wreckSalvage"] = "Salvage NPC wrecks",
         ["capsuleers.roamingPvp"] = "Nullsec PvP roams",
         ["capsuleers.roamPercent"] = "Roam chance per departure (%)",
         ["capsuleers.generatedCombatPercent"] = "Combat fits among generated nullsec pilots (%)",
@@ -111,10 +134,15 @@ internal static class ConfigurationDisplay
         "miningHolds.generalMultiplier",
         "miningHolds.iceMultiplier",
         "miningHolds.gasMultiplier",
+        "shipFitting.cpuMultiplier",
+        "shipFitting.powerGridMultiplier",
+        "shipFitting.calibrationMultiplier",
+        "shipFitting.droneBandwidthMultiplier",
         "rewards.bountyMultiplier",
         "rewards.missionIskMultiplier",
         "rewards.missionLpMultiplier",
         "rewards.missionStandingMultiplier",
+        "progression.trainingSpeedMultiplier",
         "progression.killSkillPointMultiplier",
         "progression.miningSkillPointMultiplier",
         "industry.manufacturingSpeed",
@@ -193,10 +221,19 @@ internal static class ConfigurationDisplay
         }
     }
 
+    private static string DescribeAccess(IReadOnlyDictionary<int, CapsuleerRegionAccess> rules) =>
+        rules.Count == 0
+            ? "None"
+            : string.Join(", ", rules.Select(rule => $"{rule.Key} · {CapsuleerPopulationRules.Describe(rule.Value)}"));
+
     private static Dictionary<string, string> Values(WorldSettings settings)
     {
         Dictionary<string, string> values = [];
         Add(JsonSerializer.SerializeToElement(settings, JsonSerializerOptions.Web), "");
+        values["capsuleers.activePilotCap"] = settings.Capsuleers.ActivePilotCap == 0 ? "Unlimited" : values["capsuleers.activePilotCap"];
+        values["capsuleers.defaultRegionAccess"] = CapsuleerPopulationRules.Describe(settings.Capsuleers.DefaultRegionAccess);
+        values["capsuleers.regionAccess"] = DescribeAccess(settings.Capsuleers.RegionAccess);
+        values["capsuleers.systemAccess"] = DescribeAccess(settings.Capsuleers.SystemAccess);
         return values;
 
         void Add(JsonElement group, string prefix)
@@ -204,6 +241,10 @@ internal static class ConfigurationDisplay
             foreach (var field in group.EnumerateObject())
             {
                 string path = prefix.Length == 0 ? field.Name : prefix + "." + field.Name;
+                if (path is "capsuleers.regionAccess" or "capsuleers.systemAccess")
+                {
+                    continue;
+                }
                 if (field.Value.ValueKind == JsonValueKind.Object)
                 {
                     Add(field.Value, path);

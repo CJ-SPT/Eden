@@ -6,7 +6,7 @@ using Eden.World.Runtime.Combat;
 
 namespace Eden.World.Runtime;
 
-internal readonly record struct MarketLocation(int Station, int System, int Region, bool Bid);
+internal readonly record struct MarketLocation(int Station, int System, int Region, bool Bid, int TypeId);
 
 internal sealed partial class LiveWorld
 {
@@ -85,9 +85,9 @@ internal sealed partial class LiveWorld
         }
         using var command = _memory.CreateCommand();
         command.CommandText = """
-            SELECT StationId,SystemId,RegionId,Bid FROM WorldMarketOrder WHERE Id IN (SELECT value FROM json_each($npc))
+            SELECT StationId,SystemId,RegionId,Bid,TypeId FROM WorldMarketOrder WHERE Id IN (SELECT value FROM json_each($npc))
             UNION ALL
-            SELECT StationId,SystemId,RegionId,Bid FROM WorldPersonalOrder WHERE Id IN (SELECT value FROM json_each($personal))
+            SELECT StationId,SystemId,RegionId,Bid,TypeId FROM WorldPersonalOrder WHERE Id IN (SELECT value FROM json_each($personal))
             """;
         command.Parameters.AddWithValue("$npc", JsonSerializer.Serialize(npc));
         command.Parameters.AddWithValue("$personal", JsonSerializer.Serialize(personal));
@@ -99,7 +99,7 @@ internal sealed partial class LiveWorld
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                locations.Add(new(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetBoolean(3)));
+                locations.Add(new(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetBoolean(3), reader.GetInt32(4)));
             }
         }
         finally

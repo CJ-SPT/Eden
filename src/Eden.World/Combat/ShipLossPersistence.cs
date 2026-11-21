@@ -13,9 +13,11 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
+using Eden.World.Drones;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Combat;
@@ -36,6 +38,7 @@ internal static partial class ShipLossPersistence
     )
     {
         long pilotId = pilot.Id;
+        PilotDroneStore.Release(new SqlWorldAction(world), pilotId, shipId);
         var old = pilot.ActiveShip;
         var moduleIds = world.Set<OwnedItem>().Where(i => i.LocationId == shipId && i.OwnerId == pilotId).Select(i => i.Id).ToArray();
         var items = world

@@ -1,15 +1,170 @@
 # Protocol findings and milestone records
 
-[Upwell completion program](protocol/structures.md#upwell-completion-program--november-16-2026)
-records resident battle state, native damage/timer views and the remaining combat/recovery milestones.
+[Alliance membership age and EverMark donations](protocol/alliances.md#alliance-membership-age-and-evermark-donations) covers wallet lookups and transfers between an executor and its member corporations.
 
-[Incoming structure combat and loss](protocol/structures.md#incoming-weapons-destruction-and-automatic-custody) records
-paid attacks, reinforcement eligibility, fatal custody and exact-deadline unanchoring.
+[Corporation calendar events](protocol/social.md#corporation-calendar-events) covers role-gated event management, member RSVPs and checkpointed notifications.
 
-[Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) records resident custody,
-five-/twenty-day delivery, paid personal/corporate recovery and public structure loot.
+[Native Upwell repair shop](protocol/structures.md#native-upwell-repair-shop) records the native structure binding and free repair call.
 
-[Resident tethering](protocol/structures.md#resident-tethering-and-repair) records protection, native effects and saved repairs.
+[EVE.js comparison for map, character and dungeon routes](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
+covers NPC station counts, character creation timestamps, Local chat affiliations and dungeon state on reconnect.
+
+[Market presets on fresh worlds and demand batching](protocol/industry.md#market-presets-on-fresh-worlds-and-demand-batching)
+covers preset activation, saved player orders, and shorter market-demand turns during population growth.
+
+[Autonomous pilot creation under load](protocol/capsuleers.md#autonomous-pilot-creation-under-load) records the
+resident asteroid and market-demand changes and the startup replay.
+
+[Bot population limits and work regions](protocol/capsuleers.md#bot-population-limits-and-work-regions) covers active admission,
+transit-only routing, and fresh-world preparation outside occupied systems.
+
+[Bot roster and activity controls](protocol/capsuleers.md#bot-roster-and-activity-controls) covers system overrides, dedicated
+careers, ambient traffic and organization settings.
+
+[Bot activity settings](protocol/capsuleers.md#bot-activity-settings) covers restart behavior for exploration and wreck salvage.
+
+[Bot data and relic exploration](protocol/capsuleers.md#bot-data-and-relic-exploration) traces the paid Heron fit,
+probe resolution, native hacking and sale of recovered loot.
+
+[Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade) covers paid salvager fitting,
+wreck recovery, restart and sale into funded station demand.
+
+[Fresh-world frontier patrols](protocol/capsuleers.md#fresh-world-frontier-patrols) covers earned combat equipment,
+replacement reserves and station moves into lower-security space.
+
+[Fresh-world replacement markets](protocol/capsuleers.md#fresh-world-replacement-markets) covers buying and boarding
+at a reachable supplier and replacing starter fits from corporate reserves.
+
+[Fresh-world corporate careers](protocol/capsuleers.md#fresh-world-corporate-careers) covers the transition from
+paid career ships into recruitment, corporate freight, and station manufacturing.
+
+[Fresh-universe hauling and bounty careers](protocol/capsuleers.md#fresh-universe-hauling-and-bounty-careers)
+covers zero-ISK delivery and combat starts, earned skill points, and paid recovery after ship loss.
+
+[Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
+covers paid structure attacks, reinforcement, asset recovery and saved tether repairs.
+
+[Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
+covers the reload banner while editing settings on servers that use a decimal comma.
+
+[Optional data imports in server administration](protocol/world-configuration.md#optional-data-imports-in-server-administration)
+covers background downloads, snapshot replacement, and restart adoption for market orders and zKillboard traffic.
+
+[First bot career ships](protocol/capsuleers.md#first-bot-career-ships) covers qualifying for, paying for, fitting, and
+flying a bot's first career hull in a fresh universe.
+
+[Earned bot career training](protocol/capsuleers.md#earned-bot-career-training) covers persisted ship goals,
+work qualifications, the Magic 14, and permanent Omega bot accounts.
+
+[Fresh-universe starter industry](protocol/capsuleers.md#fresh-universe-starter-industry) follows two corvettes
+from zero ISK through mining, refining, paid manufacturing, and a funded market fill.
+
+[Regional procurement for bot corporations](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
+covers station buy orders, tracked escrow, and cross-region delivery of fleet stock.
+
+[Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement) covers saved loadouts,
+bounded buy orders and in-stock replacements for miners, patrol pilots and haulers.
+
+[Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production) covers paid procurement,
+saved copying and invention jobs, and public sales of the finished modules.
+
+[Miner II datacores from R&D agents](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents) covers research projects,
+paid redemptions and checkpointed courier deliveries when local sell orders are unavailable.
+
+[Miner II components from owned materials](protocol/capsuleers.md#miner-ii-components-from-owned-materials) covers
+reprocessing stockpiled ore and paid component jobs that feed assembly.
+
+[Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight) covers the nullsec
+mining expedition, bot-originated ore orders and checkpointed partial shipments to the refinery.
+
+[Bot planetary production and factory freight](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
+covers catalog-driven PI planning, bot-owned colonies and customs freight for factory inputs.
+
+[Bot moon refineries](protocol/capsuleers.md#bot-moon-refineries) covers paid Athanor construction, corporate courier
+deliveries, native anchoring and commissioning, and the first moon extraction.
+
+[Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
+and a patrol pilot returning to duty across a restart.
+
+[Capsuleer mining fleets](protocol/capsuleers.md#capsuleer-mining-fleets) covers barge and exhumer fits, coordinated belt
+selection and targeting, and saved crew behavior.
+
+[Rival gang interception at gates](protocol/capsuleers.md#rival-gang-interception-at-gates) covers independently
+routed fleets, scout reports, and gate-cloak visibility during contact.
+
+[Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances) covers neighboring bot corporations forming,
+recruiting and maintaining an alliance through the ordinary corporation services.
+
+[Nearby procurement for bot factories](protocol/capsuleers.md#nearby-procurement-for-bot-factories) records local shortfalls,
+corporate purchases at nearby stations and checkpointed factory deliveries.
+[Combined factory pickups](protocol/capsuleers.md#combined-factory-pickups) covers collecting multiple materials on one trip.
+
+[Demand-driven bot manufacturing](protocol/capsuleers.md#demand-driven-bot-manufacturing) covers the catalog recipes,
+local purchase orders, corporate procurement and jobs that supply the public market.
+
+[Corporation ammunition supply](protocol/capsuleers.md#corporation-ammunition-supply) covers manufacturing, public sales,
+paid courier trips and reserve resupply by simulated corporations.
+
+[Bot corporation recruitment and gangs](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs) covers player applications,
+autonomous invite acceptance, and live affiliation checks during patrols.
+
+[Bot-led player corporations](protocol/capsuleers.md#bot-led-player-corporations) covers local founding, existing-save enrollment and checkpoint validation.
+
+[Catalog-wide frigate through battleship patrols](protocol/capsuleers.md#catalog-wide-frigate-through-battleship-patrols)
+records coverage of 296 eligible hulls, the sixteen exceptions, and the snapshot and combat checks.
+
+[Battlecruisers and battleships for solo patrols and gangs](protocol/capsuleers.md#battlecruisers-and-battleships-for-solo-patrols-and-gangs)
+covers fitted heavy hulls, traffic snapshot selection and combat against players and rival bots.
+
+[Cruisers for solo patrols and gangs](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs) covers cruiser
+fits, snapshot recruitment and engagements against players and rival bots.
+
+[Destroyers for solo patrols and gangs](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) covers
+snapshot recruitment, fitted weapons and engagements with players and rival bots.
+
+[Tech II frigates in bot gangs](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs) covers snapshot-enabled
+recruitment and fitted Stiletto, Crow, Wolf and Harpy engagements against players and rival bots.
+
+[Roaming gang formation and scout tackle](protocol/capsuleers.md#roaming-gang-formation-and-scout-tackle--november-18-2026)
+covers role selection and scout engagements against players and rival pilots with nearby gang support.
+
+[Distant warping ships](protocol/navigation.md#distant-warping-ships-in-the-overview-november-17-2026)
+leave the observer grid when their timed warp moves beyond visibility, even between position publications.
+
+[Gate-arrival cloak](protocol/navigation.md#gate-arrival-cloak-november-17-2026) adds the saved 60-second
+deadline, native timer, hidden arrival and movement cancellation after gate and wormhole jumps.
+
+[Multifit exhausted-stack notifications](protocol/fitting.md#multifit-exhausted-stack-notifications-november-17-2026)
+correct the rejected item change behind an invisible fitted module and stale hangar entry.
+
+[Combat anomaly scouting on station departure](protocol/capsuleers.md#combat-anomaly-scouting-on-station-departure--november-17-2026)
+records the saved Trade job failure, its transaction boundary and the checkpoint replay.
+
+The November 17 combat and traffic fixes cover [abandoned drones](protocol/drones.md#drone-control-on-ship-destruction--november-17-2026),
+[observer grid updates](protocol/navigation.md#observing-a-loss-and-a-warp-in-the-same-update--november-17-2026)
+and [returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026).
+
+[Bot traffic distribution](protocol/capsuleers.md#bot-traffic-distribution) records the destination bias, varied shortest
+paths and a matched routing replay around Amamake, Jakanerva and Penirgman.
+
+[Traffic through unobserved systems](protocol/capsuleers.md#traffic-through-unobserved-systems) records resident
+traveler admission, checkpoint recovery and the shared playtime pause. [Paced offscreen starts](protocol/capsuleers.md#paced-offscreen-starts)
+records how the scheduler limits the login backlog.
+[Compact navigation checkpoints](protocol/capsuleers.md#compact-navigation-checkpoints) cover the saved-world startup migration.
+[Shared resident skill profiles](protocol/capsuleers.md#shared-resident-skill-profiles) cover skill memory across the roster.
+[Offscreen bot residency](protocol/capsuleers.md#offscreen-bot-residency) covers scheduler memory before deferred jobs start.
+[Scheduler admission and idle release](protocol/capsuleers.md#scheduler-admission-and-idle-release) covers when saved pilots enter and leave the job queue.
+[Development market supply for bots](protocol/industry.md#development-market-supply-for-bots) covers allocation during resupply.
+
+[Civilian danger and stripped belts](protocol/capsuleers.md#civilian-danger-and-stripped-belts--november-17-2026) covers visible threats at belts and gates, paid mining cycles and direct travel between belts.
+
+[Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
+rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.
+
+[Smarter bots and persistent roaming gangs](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026) adds role-based hunting decisions, saved gang commands, coordinated nullsec travel and resident combat without native scenes.
+
+[Structures gap audit](protocol/structures.md#structures-gap-audit) records the merged defense and fighter lifecycle
+and the remaining defense, service, ownership and specialized hull work.
 
 [Resident defensive missiles](protocol/structures.md#resident-defensive-missile-firing) records paid structure launches,
 lease-owned repeat cycles, physical impacts, green safety and saved retaliation rights.
@@ -50,6 +205,7 @@ handles the native structure-container alias and launches the real ship when und
 aligns native inventory binds and resident combat/heat membership with the docked structure's system.
 
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
+[Checkpoint compatibility](protocol/area-weapons.md#checkpoint-compatibility-for-older-ewar-keys) records the startup repair for older EWAR keys.
 
 [Docked structure control and quantum cores](protocol/structures.md#docked-structure-control-and-quantum-core-setup--november-16-2026)
 adds native control sessions and setup inventories, and fixes the missing solar-system binding behind black docked screens.
@@ -70,6 +226,9 @@ configure planetary storage and processing duration with matching native preview
 align the panel's units per cycle with its already modified products and output volume.
 
 [Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
+[First-claim hub procurement](protocol/alliances.md#first-claim-hub-procurement) creates a paid market bid for a bot alliance's first hub.
+[Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims) sends a fitted hauler to deploy the hub and capture it with paid Entosis.
+[Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep) funds defensive links, alliance dues and configured upgrade reagents.
 
 [One-way PI customs transfers](protocol/planetary.md#one-way-customs-transfer-dictionaries--november-16-2026)
 accept the empty opposite-side dictionary sent by native import-only and export-only requests.
@@ -487,7 +646,11 @@ records in-memory ship preparation, bulk grants and matched 2× startup measurem
 [Simulated-pilot target lock retention](protocol/capsuleers.md#simulated-pilot-target-lock-retention-november-9-2026)
 fixes completed locks disappearing during peaceful defense updates while retaining normal warp lock loss.
 
-[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the route planner’s history dependency, stable cache replies and empty telemetry limits.
+[Star map statistics](protocol/navigation.md#star-map-statistics-november-20-2026) covers the eight statistics
+filters, including player and bot presence, stargate traffic and combat losses.
+[Star map Industry filters](protocol/industry.md#star-map-industry-filters-november-20-2026) covers player and bot
+job starts and the configured system cost overlays.
+[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the original route-planner integration.
 
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) records mixed-category main/map searches and result resolution.
 
@@ -581,6 +744,20 @@ eligibility, continued healthy-job execution and committed-action replay protect
 and visitor recovery, bounded retry waits and continued progress in other occupied systems.
 [Shared bot presentation](protocol/capsuleers.md#shared-bot-presentation---november-16-2026) covers per-system observation
 reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint measurements.
+[Bot corporation identities](protocol/capsuleers.md#bot-corporation-identities) and
+[autonomous recruitment](protocol/capsuleers.md#autonomous-corporation-recruitment) cover saved charters and multi-system hiring.
+[Bot corporation relocation](protocol/capsuleers.md#bot-corporation-relocation) covers gate travel, personal supplies and work bases.
+[Bot corporation retention](protocol/capsuleers.md#bot-corporation-retention) records later employer and base changes.
+[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry) records unobserved mining, belt ratting,
+and paid NPC-station production on the human-active clock.
+[Player-structure bot factories](protocol/capsuleers.md#player-structure-bot-factories) records fitted facility and docking access,
+resident factory cargo, and manufacturing pauses across logout and restart.
+[Fractured moon ore and paid reactions](protocol/capsuleers.md#fractured-moon-ore-and-paid-reactions) records the
+mining, refining, and hauling cycle after Athanor commissioning.
+[Athanor-to-Miner II chain](protocol/capsuleers.md#athanor-to-miner-ii-chain) records composite dependencies,
+factory freight, and production after bootstrap fuel is exhausted.
+[Catalog-driven fleet supply and production](protocol/capsuleers.md#catalog-driven-fleet-supply-and-production) records
+fit-based procurement, factory prerequisites, and corporate reserves.
 
 | Topic | Coverage |
 | --- | --- |
@@ -687,6 +864,7 @@ reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint 
 
 - [Trashing personal items and ships, November 8, 2026](protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026)
 
+- [Insider QA tab, November 21, 2026](protocol/navigation.md#insider-qa-tab-november-21-2026)
 - [Insider tools and reward destinations, November 9, 2026](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026)
 - [Native redemption pairs and batched training queues, November 9, 2026](protocol/characters.md#native-redemption-pairs-and-batched-training-queues-november-9-2026)
 - [Native Type Browser item creation, November 8, 2026](protocol/navigation.md#native-type-browser-item-creation-november-8-2026)
@@ -705,6 +883,15 @@ reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint 
 - [Pilot services subscription and checkout, November 8, 2026](protocol/characters.md#pilot-services-subscription-and-checkout-november-8-2026)
 
 - [Sovereignty plan and resident foundation, November 16, 2026](protocol/sovereignty.md)
+- [Theaters of War shipcaster reads, November 21, 2026](protocol/faction-warfare.md#theaters-of-war-shipcaster-reads--november-21-2026)
+- [Faction Warfare militia missions, ranks and combat statistics, November 20, 2026](protocol/faction-warfare.md#militia-missions-ranks-and-combat-statistics--november-20-2026)
+- [Faction Warfare Advantage and battlefields, November 20, 2026](protocol/faction-warfare.md#advantage-and-battlefields--november-20-2026)
+- [Faction Warfare warzone foundation, November 20, 2026](protocol/faction-warfare.md#resident-warzone-foundation--november-20-2026)
+- [Faction Warfare shared complexes and rewards, November 20, 2026](protocol/faction-warfare.md#shared-complexes-and-rewards--november-20-2026)
+- [Faction Warfare infrastructure hubs and conquest, November 20, 2026](protocol/faction-warfare.md#infrastructure-hubs-and-territorial-conquest--november-20-2026)
+- [Faction Warfare organization enlistment and militia communications, November 20, 2026](protocol/faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026)
+- [Individual enlistment and militia combat, November 20, 2026](protocol/faction-warfare.md#individual-enlistment-and-militia-combat--november-20-2026)
+- [Faction navy pursuit and service access, November 20, 2026](protocol/faction-warfare.md#faction-navy-pursuit-and-service-access--november-20-2026)
 - [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)
 - [Sovereignty conflict and command nodes, November 16, 2026](protocol/sovereignty.md#sovereignty-conflict-and-command-nodes--november-16-2026)
 - [Sovereignty activity and capitals, November 16, 2026](protocol/sovereignty.md#sovereignty-activity-and-capitals--november-16-2026)
@@ -888,6 +1075,16 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Navigation and travel
 
+- [Capital logistics and capital ships, November 20, 2026](protocol/capital-logistics.md)
+- [Fresh-world Rhea acquisition](protocol/capital-logistics.md#fresh-world-rhea-acquisition)
+- [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
+- [Carrier launch decks and light attack fighters](protocol/capital-logistics.md#carrier-launch-decks-and-light-attack-fighters)
+- [Fighter rocket and torpedo salvos](protocol/capital-logistics.md#fighter-rocket-and-torpedo-salvos)
+- [Long-range heavy fighter bombs](protocol/capital-logistics.md#long-range-heavy-fighter-bombs)
+- [Standup fighter launch and recall](protocol/capital-logistics.md#standup-fighter-launch-and-recall)
+- [Upwell target locks](protocol/capital-logistics.md#upwell-target-locks)
+- [Rorqual industrial core and shipboard compression](protocol/capital-logistics.md#rorqual-industrial-core-and-shipboard-compression)
+- [Mobile jump clones](protocol/capital-logistics.md#mobile-jump-clones)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)
 - [Empty-space context menu latency](protocol/navigation.md#empty-space-context-menu-latency)
 - [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)
@@ -939,8 +1136,10 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="character-sheet-service-roadmap"></a>[Character-sheet service roadmap](protocol/characters.md#character-sheet-service-roadmap)
 - <a id="character-sheet-attributes-and-biography-november-4-2026"></a>[Character-sheet attributes and biography, November 4, 2026](protocol/characters.md#character-sheet-attributes-and-biography-november-4-2026)
 - <a id="skill-training-queue-november-2-2026"></a>[Skill training queue, November 2, 2026](protocol/characters.md#skill-training-queue-november-2-2026)
+- [World skill training speed, November 21, 2026](protocol/characters.md#world-skill-training-speed-november-21-2026)
 - <a id="local-skill-plan-gateway-november-2-2026"></a>[Local skill-plan gateway, November 2, 2026](protocol/characters.md#local-skill-plan-gateway-november-2-2026)
 - <a id="character-creation-and-first-spawn-november-2-2026"></a>[Character creation and first spawn, November 2, 2026](protocol/characters.md#character-creation-and-first-spawn-november-2-2026)
+- <a id="initial-corvette-fitting"></a>[Initial corvette fitting](protocol/characters.md#initial-corvette-fitting)
 
 ### Chat, mail and contacts
 
@@ -1090,6 +1289,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Fitting and module families
 
+- [Configurable ship fitting budgets](protocol/fitting.md#configurable-ship-fitting-budgets)
 - [Native Multifit batches, November 15, 2026](protocol/fitting.md#native-multifit-batches-november-15-2026)
 - [Resident inventory and fitting commands](protocol/fitting.md#resident-inventory-and-fitting-commands)
 - [Apply a simulated fitting to the active ship](protocol/fitting.md#apply-a-simulated-fitting-to-the-active-ship)
@@ -1162,6 +1362,14 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Allocation during bot admission and market settlement](protocol/performance.md#allocation-during-bot-admission-and-market-settlement)
+- [Player bot allocation and queue delay](protocol/performance.md#player-bot-allocation-and-queue-delay)
+- [Offscreen bot scheduling at ten thousand pilots](protocol/performance.md#offscreen-bot-scheduling-at-ten-thousand-pilots)
+- [In-space frame stalls during bot traffic](protocol/performance.md#in-space-frame-stalls-during-bot-traffic)
+- [Sustained 5,000-pilot throughput follow-up](protocol/performance.md#sustained-5000-pilot-throughput-follow-up)
+- [Capsuleer shutdown and checkpoint projection](protocol/performance.md#capsuleer-shutdown-and-checkpoint-projection)
+- [Capsuleer system entry and NPC acquisition](protocol/performance.md#capsuleer-system-entry-and-npc-acquisition)
+- [Offscreen mining queue pressure](protocol/performance.md#offscreen-mining-queue-pressure)
 - [Gameplay SQL migration and replay](protocol/performance.md#gameplay-sql-migration-and-replay)
 - [Resident skill memory and fitting cache limits, November 13, 2026](protocol/performance.md#resident-skill-memory-and-fitting-cache-limits-november-13-2026)
 - [Docked RPC latency during checkpoints, November 12, 2026](protocol/performance.md#docked-rpc-latency-during-checkpoints-november-12-2026)

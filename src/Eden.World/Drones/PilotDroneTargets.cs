@@ -1,6 +1,7 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -86,6 +87,31 @@ internal sealed partial class PilotDroneStore
         }
     }
 
+    private sealed record FighterCompanionTarget(WorldDrone Row, DroneContact Contact, Pilot Owner);
+
+    private static FighterCompanionTarget? FighterTarget(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot source,
+        long id,
+        int system,
+        long now
+    )
+    {
+        if (
+            world.Set<WorldDrone>().Find(id) is not { } row
+            || row.SystemId != system
+            || row.PilotId == source.Id
+            || world.Set<OwnedItem>().Find(row.ItemId) is null
+            || world.Pilots.Find(row.PilotId) is not { } owner
+        )
+        {
+            return null;
+        }
+        var contact = Contact(world, catalog, row, now);
+        return contact.Health.Remaining.Destroyed ? null : new(row, contact, owner);
+    }
+
     private sealed record PendingDroneDamage(DroneHit Hit, PilotDamage Damage);
 
     private PendingDroneDamage ApplyPilotDamage(
@@ -110,7 +136,8 @@ internal sealed partial class PilotDroneStore
             ? losses.Apply(world, catalog, victim, shipId, drone.SystemId!.Value, victim.ActiveShip.Position!, now, party)
             : null;
         ShipHealth health = new(shipId, defense, result.Remaining);
-        double quality = damage.Total / profile.Damage.Total;
+        int count = profile.FighterGroup == 0 ? 1 : world.Set<OwnedItem>().Find(drone.ItemId)!.Quantity;
+        double quality = damage.Total / (profile.Damage.Total * count);
         world.SaveChanges();
         var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         return new(

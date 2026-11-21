@@ -2,6 +2,44 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Configurable ship fitting budgets
+
+World configuration scales final CPU output, power output, calibration capacity and drone
+bandwidth after fitting bonuses. Resident module onlining and full-fit validation use the tuned
+CPU and power grid. Rig admission uses the same calibration capacity reported by ship dogma.
+Drone launch, continued control, reconnect and delegation use the tuned bandwidth. The world
+stores the policy as a configuration revision and activates it at startup.
+
+Build 3662168 catalog IDs are 48 (`cpuOutput`), 11 (`powerOutput`), 1132
+(`upgradeCapacity`) and 1271 (`droneBandwidth`). The original archive has SHA-256 prefix
+`37FB2AF4FA0EC5C8F`. In `clientDogmaLocation.pyj`, `CheckApplyBrainEffects` applies ship
+effects to loaded dogma items and `OnlineModule` runs local activation. In
+`baseDogmaLocation.pyj`, `CheckPowerCpuRequirementForOnlineModules` reads both capacity
+attributes. Eden sends non-default factors through the existing native item post-multiply
+brain effects. The local EVE.js comparison checked `moduleOperation.js` (SHA-256 prefix
+`C27F281DEB63C503`), whose online operation compares load against fitted CPU and power output.
+See the [CCP fitting window guide](https://support.eveonline.com/hc/en-us/articles/213287845-Fitting-Window).
+
+**Automated validation.** The exact filter passed nine cases in 22 seconds. It covered
+`ConfiguredBudgetsDriveResidentFittingAndNativeModifiersAcrossRestart`,
+`FullStackLaunchUsesOnlyAvailableControlAndBandwidth`,
+`SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves` and
+`WorldSettingsPageRendersAllActivityTabsAndTheSharedRestartSaveBar`.
+
+The focused fitting, drone, pilot brain and world configuration suites passed 237 of
+238 cases in 5 minutes 22 seconds. The only failure, in
+`FittingSnapshotTests.ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes`,
+counted 10 SQL commands against a limit of 9. An isolated replay on the previous main
+commit (`abdddb2d`) reproduced the same result. The solution build, both Python policy
+suites and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Save a higher CPU multiplier, restart and confirm the active
+ship's Fitting window and module onlining use the larger budget.
+
+[World settings and export keys](../world-configuration.md#fitting)
+
 ## Resident inventory and fitting commands
 
 Ship assembly, naming, boarding, capsule exit, corvette recovery, repackaging, and
@@ -29,6 +67,59 @@ policy suites, and formatting verification passed.
 **Live acceptance.** Not performed. Agent client testing is disabled.
 
 **Optional maintainer checks.** None.
+
+## Multifit exhausted-stack notifications, November 17, 2026
+
+The maintainer reported an invisible fitted module occupying a slot while appearing to remain in the
+hangar after Multifit. The resident batch correctly moves each unit and coalesces changes by item ID.
+When the original stack's last unit becomes an assembled module, its final change spans the original
+stack quantity and the fitted singleton. The shared notification adapter previously included
+`ixQuantity` alongside the assembled row's negative physical quantity (**-1**).
+
+Inert inspection of pinned build **3662168** `invCache.OnItemChange`, lines 252–255, confirms that an
+`ixQuantity` change with a negative old or new physical quantity raises `RuntimeError` before inventory
+cache processing and Godma forwarding. This explains the stale hangar entry and absent fitted module
+without a second authoritative item. The adapter now omits `ixQuantity` for assembled rows while
+retaining `ixStackSize` with the original count, plus the location, flag and singleton changes.
+Ordinary stack quantity notifications retain both quantity fields. The correction applies to Multifit
+and saved-fit application through their existing shared adapter.
+
+The decoded `eve/client/script/environment/invCache.pyj` payload SHA-256 is
+`0a8e0dc64921c75f095a0b61eea9319eee24fa61b2024256b3247a3bc147cda8`.
+The [EVE University fitting guide](https://wiki.eveuniversity.org/Fitting_ships) supplies the gameplay reference.
+Local EVE.js `invBroker/fittingOperations.js` was consulted for its committed fitting-change publication
+contract (SHA-256 `c0f37f9719aa8c4c46a01601967d680c25671537b9d329001159ac054347a1d5`, no Git metadata).
+Existing Blue DBRow serialization retains the
+[Carbon Marshal.cpp reference at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+The codec, resident inventory transaction and checkpoint format are unchanged.
+
+**Automated validation.** The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Fittings.MultifitTests.NativeBoundMultifitSplitsPackagesFitsInactiveHullsAndSurvivesCheckpoint`
+initially passed the two leftover-stack variants and failed the exhausted-stack variant on the invalid
+`ixQuantity` field (9.74-second build, 8.01-second test command). After the correction, combining that
+method with `FullyQualifiedName=Eden.Protocol.Tests.Fittings.ApplyFittingTests.AppliesNativeSimulationFitAndReportsShortages`
+passed all six cases (5.68-second build, 8.47-second test command). These extend existing flows with
+exhausted stacks, one/two leftover units, final notification rows, original stack counts, conserved units,
+checkpoint persistence and repeated saved-fit application.
+
+Final validation against `main` at `5ade3cd4` passed **404 affected tests**, zero failed/skipped, in
+**203.36 seconds** command wall time with this filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Fittings|FullyQualifiedName~Eden.Protocol.Tests.Inventory|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFleetTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStack|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionSingletonTests|FullyQualifiedName~Eden.Protocol.Tests.Ammunition.AmmunitionTests
+```
+
+Tool restore (**0.17 seconds**), solution restore (**0.72 seconds**) and the solution build
+(**18.46 seconds**, zero warnings/errors) passed. Both Python policy suites passed: **8 catalog tests**
+(**1.42 seconds**) and **9 formatting tests** (**0.16 seconds**). Formatting verification passed for
+**2,598 files** with the 140-character width policy in **46.25 seconds**. The final validation sequence
+took **270.54 seconds**. Added documentation links/anchors and `git diff --check` passed.
+The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After updating and reconnecting, Multifit a plan that consumes the full
+module stack, then board the resulting hull and verify its modules and the hangar display.
 
 ## Native Multifit batches, November 15, 2026
 
@@ -275,6 +366,8 @@ Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle.
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
 ## Contents
+
+- [Configurable ship fitting budgets](#configurable-ship-fitting-budgets)
 
 - [Bulk and corporation saved fittings, November 11, 2026](#bulk-and-corporation-saved-fittings--november-11-2026)
 
@@ -1109,6 +1202,8 @@ The resumed module goal prioritizes unrestricted tackle/navigation before ship-r
 Targeted defaults are **6426 / remoteWebifierFalloff**, **39 / warpDisrupt**, and **5934 / warpScrambleBlockMWDWithNPCEffect**. They require an online medium-slot module, its earned skills, a live source hull, an actual locked player ship or NPC in the same system, target range and module range. Payment, the live contact and the saved cycle deadline commit together. Each repeat revalidates and pays its actual catalog capacitor cost; Propulsion Jamming reduces qualifying costs by 5% per earned level. Civilian web/disruptor profiles do not require that skill and receive no discount. Civilian disruption strength is genuinely zero. Manual stop completes the paid cycle. Unpaid repeats, target-lock loss, transitions, hull loss and disconnect remove live effects; restart clears effects while retaining capacitor expenditure and deadlines.
 
 Web strength uses source speedFactor (20) multiplied by target stasisWebifierResistance (2115, default 1). Max velocity (37) shares the existing strongest-first dogma stacking sequence, with independent positive/negative sequences and skills exempt. Tech I is -50%, Tech II -60%, X5 -55%, and the civilian module -35%; every other profile retains its own values. All 18 static web profiles have zero falloff (2044). Nonzero or unsupported falloff metadata is rejected. NPC maximum and cruise speed are scaled together to preserve the catalog cruise/max ratio; actual NPC integration and native SetMaxSpeed both consume those values. Player motion retains inertia rather than truncating velocity when a web starts or ends.
+
+Stationary NPCs with zero or absent catalog maximum speed keep zero cruise speed when webbed. Scramble strength still applies. [Regression coverage](performance.md#in-space-frame-stalls-during-bot-traffic)
 
 Disruption strength (105) adds to target warpScrambleStatus (104) without a stacking penalty. Warp is denied when the total is positive: equal core and hostile strength permits it. Scramblers also add activationBlocked (1349) to MWDs requiring High Speed Maneuvering, cancel a running MWD, and restore its online signature/mass/speed policy. A disruptor does not block MWDs. Targeting remains available during warp alignment, so new points cancel an existing alignment order; actual warp entry clears targeting. Subcapital gate travel and ordinary station docking remain available. Micro jump stoppers remain catalog validation metadata until that module family is implemented.
 

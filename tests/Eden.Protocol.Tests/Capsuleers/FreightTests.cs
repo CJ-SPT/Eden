@@ -44,11 +44,27 @@ public sealed class FreightTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task LegacyDockLoadsOneShipmentAndPreservesUnrelatedCargoAcrossRestart(bool customized)
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task LegacyDockLoadsOneShipmentAndPreservesUnrelatedCargoAcrossRestart(bool customized, bool shipments)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        if (!shipments)
+        {
+            var configuration = new WorldConfigurationStore(f.Database, f.Clock);
+            var state = configuration.Read();
+            var draft = state.Active.Draft;
+            configuration.Save(
+                state.Generation,
+                draft with
+                {
+                    Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { TradeGoodsFreight = false } },
+                },
+                "Disable trade-good shipments"
+            );
+            WorldInitialization.Initialize(f.Database, f.Clock);
+        }
         PassiveCatalogFixture.LoadUtilityHulls(f.Database.CatalogPath);
         using CatalogDbContext catalog = new(f.Database.CatalogPath);
         Assert.True(Enumerable.Range(0, 64).Select(slot => CapsuleerFreight.Hull(catalog, 1, Home, slot)).Distinct().Count() >= 8);
@@ -88,7 +104,7 @@ public sealed class FreightTests
             };
             setup.Database.ExecuteSql($"DELETE FROM WorldPosition WHERE ShipId={ship}");
             new HaulerCheckpoint(pilot, work).Apply(setup);
-            expectedHull = customized ? HaulingRules.BadgerType : CapsuleerFreight.Hull(catalog, 1, Home, 0);
+            expectedHull = customized || !shipments ? HaulingRules.BadgerType : CapsuleerFreight.Hull(catalog, 1, Home, 0);
         }
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
         {
@@ -100,8 +116,8 @@ public sealed class FreightTests
             worker.Execute(job, 60);
             var observed = worker.Read()!;
             Assert.Equal(expectedHull, observed.Pilot.ShipTypeId);
-            Assert.Equal(customized, observed.Work.Freight is null);
-            if (!customized)
+            Assert.Equal(customized || !shipments, observed.Work.Freight is null);
+            if (!customized && shipments)
             {
                 Assert.NotEmpty(observed.Work.Freight!.Stacks);
             }
@@ -111,7 +127,7 @@ public sealed class FreightTests
         Assert.Equal(7, saved.Set<OwnedItem>().Find(personal)!.Quantity);
         Assert.Equal(expectedHull, saved.Ships.Find(ship)!.TypeId);
         var manifest = HaulerCheckpoint.Read(saved.Set<SavedCapsuleerHauler>().Single().Progress)!.Freight;
-        if (customized)
+        if (customized || !shipments)
         {
             Assert.Null(manifest);
             Assert.Equal(FreightRules.LegacyOreUnits, saved.Set<OwnedItem>().Find(ship + 1)!.Quantity);

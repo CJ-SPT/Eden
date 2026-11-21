@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
@@ -5,6 +6,8 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.World.Capsuleers;
@@ -14,6 +17,7 @@ using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Eden.World.Storage.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +30,87 @@ public sealed class CapsuleerTrafficNavigationTests
     private const int Remote = 30000144;
     private const int SourceStation = 60015157;
     private const int DestinationStation = 60003760;
+
+    [Fact]
+    public void RestartReclaimsEmbeddedCollisionAndResumesTheSameApproach()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        var founder = f.Founder();
+        var pilot = new SqliteWorld(f.Database, f.Clock).FindPilot(-1, founder.PilotId)!;
+        var position = new SpacePosition(10_000, 0, 0);
+        var center = new SpacePosition(0, 0, 0);
+        StaticSpaceObject target = new(SourceStation, 0, 0, 0, 0, center, 500)
+        {
+            Collision = new(Enumerable.Repeat(new StaticCollisionPrimitive(center, center, 500), 2048).ToArray()),
+        };
+        NavigationState navigation = new();
+        navigation.Follow(pilot.ShipId, 0, position, pilot.Flight.ShipRadius, target, 0, orbit: false, inBallpark: true);
+        HaulerProgress work = new(HaulerActivity.Flying, 0, 0, pilot.ShipId, SourceStation, target.Id, navigation.Capture());
+        string legacy = JsonSerializer.Serialize(work, new JsonSerializerOptions { IgnoreReadOnlyProperties = true });
+        Assert.Contains("\"Collision\":{\"Primitives\":", legacy);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            world.Database.ExecuteSql($"UPDATE WorldCapsuleerHauler SET Progress={legacy} WHERE PilotId={founder.PilotId}");
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CapsuleerCheckpointMigration.Version - 1}");
+        }
+        long before = new FileInfo(f.Database.Path).Length;
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        Assert.True(new FileInfo(f.Database.Path).Length < before);
+        var migrated = f.Founder().Progress;
+        Assert.DoesNotContain("\"Collision\"", migrated);
+        var restored = Assert.IsType<HaulerProgress>(HaulerCheckpoint.Read(migrated));
+        Assert.Equal(target.Id, restored.Navigation.FollowTarget?.Id);
+        Assert.Equal(target.Position, restored.Navigation.FollowTarget?.Position);
+        Assert.Equal(target.Radius, restored.Navigation.FollowTarget?.Radius);
+        var next = NavigationState.Restore(restored.Navigation, pilot.Flight);
+        Assert.Equal(
+            navigation.Advance(pilot.ShipId, 1, pilot.Flight, position, _ => target, [target]).Position,
+            next.Advance(pilot.ShipId, 1, pilot.Flight, position, _ => target, [target]).Position
+        );
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            new HaulerCheckpoint(founder.PilotId, work).Apply(world);
+        }
+        Assert.DoesNotContain("\"Collision\"", f.Founder().Progress);
+    }
+
+    [Fact]
+    public void PendingWarpGivesAHunterTimeAndTackleStillBlocksRelease()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        var founder = f.Founder();
+        var pilot = new SqliteWorld(f.Database, f.Clock).FindPilot(-1, founder.PilotId)!;
+        using var catalog = new CatalogDbContext(f.Database.CatalogPath);
+        var target = SystemObjects.Geometry(catalog, Source).Single(body => body.Id == SourceStation);
+        pilot = pilot with { Position = target.Position + new SpacePosition(1_000_000, 0, 0) };
+        NavigationState navigation = new();
+        navigation.SetVelocity(new(-pilot.Flight.MaxSpeed, 0, 0));
+        CapsuleerWarpOrder order = new(pilot, target, 0, 2_500);
+        long ready = CapsuleerWarpRules.Begin(navigation, order, 0);
+        Assert.InRange(ready, TimeSpan.FromSeconds(4).Ticks, TimeSpan.FromSeconds(8).Ticks);
+        Assert.NotNull(navigation.FollowTarget);
+        Assert.Null(navigation.WarpDestination);
+        for (long elapsed = 0; elapsed < ready; elapsed += TimeSpan.TicksPerSecond)
+        {
+            Assert.Equal(ready, CapsuleerWarpRules.Advance(navigation, order, ready, elapsed, false));
+            Assert.Null(navigation.WarpDestination);
+            Assert.Null(navigation.Warp);
+        }
+        navigation = NavigationState.Restore(navigation.Capture(), pilot.Flight);
+        Assert.Equal(ready, CapsuleerWarpRules.Advance(navigation, order, ready, ready, true));
+        Assert.Null(navigation.WarpDestination);
+        CapsuleerWarpRules.Advance(navigation, order, ready, ready, false);
+        Assert.NotNull(navigation.WarpDestination);
+        var resumed = CapsuleerPauseRules.Resume(
+            new HaulerProgress(HaulerActivity.Flying, 0, 0, pilot.ShipId, SourceStation, target.Id, navigation.Capture())
+            {
+                WarpReadyAt = ready,
+            },
+            TimeSpan.TicksPerSecond,
+            f.Clock.Now
+        );
+        Assert.Equal(ready + TimeSpan.TicksPerSecond, resumed.WarpReadyAt);
+    }
 
     [Theory]
     [InlineData(0, 1, false, 0, 1, Corridor)]
@@ -137,12 +222,22 @@ public sealed class CapsuleerTrafficNavigationTests
         presentation.Refresh();
         var aligning = Assert.Single(space.Peers(viewer), peer => peer.Pilot.PilotId == founder.PilotId);
         Assert.Equal(saved.Position, aligning.Pilot.Position);
-        Assert.Equal(work.Navigation.WarpDestination, aligning.AlignTo);
+        Assert.Null(aligning.AlignTo);
         f.Clock.Seconds++;
         scheduler.Run(1);
         var moved = scheduler.Hauler(founder.PilotId)!;
         Assert.NotEqual(saved.Position, moved.Pilot.Position);
         Assert.Equal(outgoing.Id, moved.Work.TargetId);
+        Assert.Null(moved.Work.Navigation.Warp);
+        Assert.True(moved.Work.WarpReadyAt > moved.Work.ActiveTicks);
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+        using (WorldDbContext pending = new(f.Database.Path))
+        {
+            Assert.Equal(
+                moved.Work.WarpReadyAt,
+                HaulerCheckpoint.Read(pending.Set<SavedCapsuleerHauler>().Find(founder.Id)!.Progress)!.WarpReadyAt
+            );
+        }
         bool observedWarp = false;
         for (int stamp = 2; stamp < 90; stamp++)
         {
@@ -172,7 +267,13 @@ public sealed class CapsuleerTrafficNavigationTests
     [InlineData(100, false, true)]
     [InlineData(0, false, false)]
     [InlineData(100, true, false)]
-    public async Task ArmedTravelerHuntsVisiblePilotsAtAStationlessExitGateThenContinues(int roamPercent, bool carriesFreight, bool sabre)
+    [InlineData(100, true, false, true)]
+    public async Task ArmedTravelerHuntsVisiblePilotsAtAStationlessExitGateThenContinues(
+        int roamPercent,
+        bool carriesFreight,
+        bool sabre,
+        bool visibleInterdictor = false
+    )
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         MoveDestinationToRemote(f);
@@ -270,7 +371,17 @@ public sealed class CapsuleerTrafficNavigationTests
         var victim = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
         ShipContact contact = new(PilotContact.From(victim), SpacePosition.Zero, null, 0, null);
         var space = host.GetRequiredService<SharedSpace>();
-        space.Publish(contact with { Arriving = true });
+        space.Publish(
+            visibleInterdictor
+                ? contact with
+                {
+                    Pilot = contact.Pilot with { ShipGroupId = (int)HullClass.Interdictor },
+                }
+                : contact with
+                {
+                    Arriving = true,
+                }
+        );
         HaulerObservation Tick()
         {
             f.Clock.Seconds++;
@@ -278,6 +389,14 @@ public sealed class CapsuleerTrafficNavigationTests
             return scheduler.Hauler(pilot)!;
         }
         var observation = Tick();
+        if (visibleInterdictor)
+        {
+            Assert.True(observation.Work.Retreating);
+            Assert.Equal(Corridor, observation.Pilot.SystemId);
+            Assert.Contains(observation.Work.Routine!.Threats, threat => threat.SystemId == Corridor);
+            Assert.NotEqual(gateId, observation.Work.TargetId);
+            return;
+        }
         if (roamPercent == 0 || carriesFreight)
         {
             for (int i = 0; i < 20 && observation.Pilot.SystemId == Corridor; i++)
@@ -523,24 +642,34 @@ public sealed class CapsuleerTrafficNavigationTests
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
-        hauler.Reappear(job, TimeSpan.FromHours(1).Ticks, Corridor);
+        job = hauler.Reappear(job, TimeSpan.FromHours(1).Ticks, Corridor);
         var appearance = hauler.Read()!;
         Assert.Equal(Corridor, appearance.Pilot.SystemId);
         Assert.Null(appearance.Work.ArrivalGateId);
         Assert.Null(appearance.Work.ArrivalAt);
         Assert.Null(appearance.Work.DepartureAt);
+        var spatial = host.GetRequiredService<IPilotSpatialModules>();
+        Assert.True(spatial.Status(founder.FounderShipId).GateCloaked(f.Clock.Now));
+        for (int tick = 1; tick <= 20 && spatial.Status(founder.FounderShipId).GateCloaked(f.Clock.Now); tick++)
+        {
+            f.Clock.Seconds++;
+            job = hauler.Execute(job, tick);
+        }
+        Assert.False(spatial.Status(founder.FounderShipId).GateCloaked(f.Clock.Now));
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(true, true)]
-    public async Task EightJumpJourneyRetainsShipDestinationAndCursorAcrossRestart(bool background, bool scheduled)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task EightJumpJourneyRetainsShipDestinationAndCursorAcrossRestart(bool background, bool scheduled, bool transitOnly)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         var founder = f.Founder();
         const int firstSystem = 30001001;
         const int jumps = 8;
+        const int transitRegion = 10000003;
         int[] route = [Source, .. Enumerable.Range(firstSystem, jumps)];
         using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
         {
@@ -563,6 +692,16 @@ public sealed class CapsuleerTrafficNavigationTests
                 );
             }
             catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={route[^1]} WHERE Id={DestinationStation}");
+            if (transitOnly)
+            {
+                catalog.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO Region VALUES ({transitRegion},'Transit region');
+                    INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000021,{transitRegion},'Transit constellation');
+                    UPDATE SolarSystem SET ConstellationId=20000021 WHERE Id BETWEEN {route[1]} AND {route[^2]};
+                    """
+                );
+            }
         }
         using (WorldDbContext world = new(f.Database.Path))
         {
@@ -580,6 +719,36 @@ public sealed class CapsuleerTrafficNavigationTests
             );
             world.SaveChanges();
             new HaulerCheckpoint(founder.PilotId, work).Apply(world);
+            if (transitOnly)
+            {
+                var population =
+                    world.Set<SavedCapsuleerProvisioning>().Find(1) ?? world.Add(new SavedCapsuleerProvisioning { Id = 1 }).Entity;
+                population.WorldSeed = 1;
+                world.SaveChanges();
+            }
+        }
+        if (transitOnly)
+        {
+            WorldConfigurationStore configuration = new(f.Database, f.Clock);
+            var state = configuration.Read();
+            var settings = state.Active.Draft.Settings;
+            var policy = settings.Capsuleers;
+            configuration.Save(
+                state.Generation,
+                state.Active.Draft with
+                {
+                    Settings = settings with
+                    {
+                        Capsuleers = policy with
+                        {
+                            TrafficMultiplier = 10,
+                            RegionAccess = policy.RegionAccess.Add(transitRegion, CapsuleerRegionAccess.TransitOnly),
+                        },
+                    },
+                },
+                "Transit corridor"
+            );
+            WorldInitialization.Initialize(f.Database, f.Clock);
         }
         var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         IHumanPresenceLease? human = null;
@@ -609,6 +778,12 @@ public sealed class CapsuleerTrafficNavigationTests
                 var observation = Current();
                 Assert.Null(observation.Work.WaitingReason);
                 Assert.Equal(founder.FounderShipId, observation.Pilot.ShipId);
+                if (transitOnly && observation.Pilot.RegionId == transitRegion)
+                {
+                    Assert.NotNull(observation.Pilot.Position);
+                    Assert.Null(observation.Work.Ratting);
+                    Assert.Null(observation.Work.Exploration);
+                }
                 if (observation.Pilot.SystemId != visited[^1])
                 {
                     visited.Add(observation.Pilot.SystemId);

@@ -85,7 +85,7 @@ internal static partial class ShipStoragePersistence
                         && office.StationId == stored.StationId
                         && CorporationStorageRules.IsDivision(stored.StorageFlagId)
                 : parent is not null
-                    ? parent.OwnerId == stored.OwnerId
+                    ? (parent.OwnerId == stored.OwnerId || stored.StorageFlagId == (int)InventoryFlag.ShipMaintenanceBay)
                         && (
                             parent.StoredInId is null
                             || world.Set<Eden.Data.World.Structures.SavedAssetSafety>().Find(parent.StoredInId.Value) is not null

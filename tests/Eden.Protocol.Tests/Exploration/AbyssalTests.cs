@@ -10,6 +10,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Runtime;
@@ -22,6 +23,57 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class AbyssalTests
 {
+    [Fact]
+    public void CurrentDungeonUsesTheSavedRoomBeforeBallparkBinding()
+    {
+        using Fixture f = new();
+        Prepare(f);
+        long ship = f.ShipId;
+        long filament = f.Grant(AbyssalRules.TranquilDarkFilament, 1, cargo: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var abyss = f.Db.Services.GetRequiredService<IAbyssalDeadspace>();
+        Assert.Null(ReadCurrentDungeon(f, f.Db.Store.FindPilot(1000001)!));
+
+        var entered = abyss.Deploy(f.PilotId, ship, filament, AbyssalMode.Cruiser);
+        AssertRoom(entered);
+        KillRoom(f, live, entered.Run.Id);
+        f.Db.Store.SetPosition(ship, AbyssalRules.ConduitPosition(0), entered.Run.SystemId);
+        AssertRoom(abyss.Activate(f.PilotId, ship, entered.Run.ConduitId));
+
+        void AssertRoom(AbyssalTransition transition)
+        {
+            var scene = AbyssalRules.Scene(transition.Run.Room);
+            var result = BlueRead.Tuple(ReadCurrentDungeon(f, transition.Pilot), 4);
+            Assert.Equal((long)scene.DungeonId, result[0]);
+            Assert.Equal((long)scene.RoomId, result[1]);
+            Assert.Equal(transition.Run.Id, result[2]);
+            Assert.Empty(BlueRead.Fields(result[3]));
+        }
+    }
+
+    internal static object? ReadCurrentDungeon(Fixture f, Eden.Gameplay.Docking.DockedPilot pilot)
+    {
+        using var scope = f.Db.Services.CreateScope();
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), f.Db.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.Same(PilotCallResult.Unsupported, Call([]));
+        context.Select(pilot);
+        Assert.False(context.Flight.InBallpark);
+        Assert.IsType<PilotCallResult.Failure>(Call([pilot.PilotId]));
+        var reply = Assert.IsType<PilotCallResult.Success>(Call([])).Reply;
+        Assert.Empty(context.Notifications);
+        return BlueMarshal.Decode(BlueMarshal.Encode(reply));
+
+        PilotCallResult Call(object?[] args) => router.Call(context, "keeper", "GetCurrentDungeonForCharacter", args, _ => { });
+    }
+
     internal static void Prepare(Fixture f)
     {
         PassiveCatalogFixture.LoadAbyssal(f.CatalogPath);

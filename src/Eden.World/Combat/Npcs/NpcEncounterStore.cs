@@ -11,6 +11,7 @@ using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
@@ -24,7 +25,8 @@ namespace Eden.World.Combat.Npcs;
 internal sealed class NpcEncounterStore(
     WorldDatabase database,
     INpcPopulationSeeder? population = null,
-    NpcProfileCatalog? hullProfiles = null
+    NpcProfileCatalog? hullProfiles = null,
+    MilitiaHubStore? militiaHubs = null
 ) : INpcEncounters, INpcSimulation
 {
     public NpcSceneContacts ReadScene(int systemId, SpacePosition position, long now)
@@ -35,6 +37,7 @@ internal sealed class NpcEncounterStore(
     private NpcSceneContacts ReadSceneOwned(int systemId, SpacePosition position, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
             return LiveCombatRuntime.Find(database.Path)?.ReadScene(systemId, position, now, () => RefreshPopulation(systemId, now))
@@ -52,6 +55,7 @@ internal sealed class NpcEncounterStore(
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
             if (
@@ -75,6 +79,7 @@ internal sealed class NpcEncounterStore(
     private IReadOnlyList<NpcSimulationContact> AdvanceOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
             if (LiveCombatRuntime.Find(database.Path)?.Simulate(systemId, now, () => RefreshPopulation(systemId, now)) is { } resident)
@@ -112,18 +117,22 @@ internal sealed class NpcEncounterStore(
         bool seed =
             database.PopulationStamps.GetValueOrDefault(systemId, -1) != stamp
             || database.PopulationDeadlines.GetValueOrDefault(systemId, long.MaxValue) <= now;
+        using var shared = live.EnterShared("resident population participants", TransactionParticipants.None);
+        var participants =
+            live.Economy.IsLoaded && !live.Economy.HasActiveAction
+                ? PopulationParticipants(NpcPopulationMember.FromSnapshots(live.Economy.PopulationMembers(systemId)), systemId)
+                : live.Economy.Inspect(world => PopulationParticipants(world, systemId));
         long due;
         if (seed)
         {
-            using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId));
+            using var transaction = live.Economy.Begin(participants);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            population.Seed(transaction.World, catalog, systemId, now);
-            due = population.NextUpdate(transaction.World, systemId, now);
+            population.Seed(transaction, catalog, systemId, now);
+            due = population.NextUpdate(transaction, systemId, now);
             transaction.Commit();
         }
         else
         {
-            var participants = live.Economy.Inspect(world => PopulationParticipants(world, systemId));
             due = live.Economy.Inspect(world => population.NextUpdate(world, systemId, now), participants);
         }
         database.PopulationStamps[systemId] = stamp;
@@ -131,13 +140,14 @@ internal sealed class NpcEncounterStore(
         return due;
     }
 
-    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system)
+    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system) =>
+        PopulationParticipants(NpcPopulationMember.InSystem(world, system), system);
+
+    private static TransactionParticipants PopulationParticipants(IEnumerable<NpcPopulationMember> members, int system)
     {
-        var npcs = world
-            .Filter<WorldNpc>(n =>
-                n.SystemId == system
-                && n.DestroyedAt == null
-                && n.RetiredAt == null
+        var npcs = members
+            .Where(n =>
+                n.Active
                 && (
                     NpcPopulationRules.IsMining(n.Role)
                     || n.Role == NpcRole.Convoy

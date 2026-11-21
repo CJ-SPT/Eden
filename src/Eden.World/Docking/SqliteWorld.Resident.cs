@@ -60,6 +60,21 @@ public sealed partial class SqliteWorld
     )
     {
         var saved = world.Positions.Find(shipId);
+        if (
+            saved is not null
+            && (
+                position is null
+                || saved.X != position.X
+                || saved.Y != position.Y
+                || saved.Z != position.Z
+                || systemId is int next && saved.SystemId != next
+            )
+        )
+        {
+            // Autonomous movement and administrative relocations also end an old arrival cloak.
+            // A gate transfer installs its destination deadline after changing position.
+            Eden.World.Propulsion.GateCloakPersistence.Cancel(world, shipId);
+        }
         if (position is not null && systemId is int sameSystem && saved?.SystemId == sameSystem)
         {
             // Ordinary movement changes coordinates only. Membership, crimewatch,
@@ -71,6 +86,18 @@ public sealed partial class SqliteWorld
         var hull = world.Ships.Find(shipId);
         var owner = hull is null ? null : world.Pilots.Find(hull.OwnerId);
         var pilot = owner?.ActiveShipId == shipId ? owner : null;
+        if (saved is null && position is not null && pilot is not null && world is EconomyTransaction)
+        {
+            int departureSystem = hull!.StructureId is long structure
+                ? world.StructureSystemId(structure)
+                : catalog.RequireStation(hull.StationId).SolarSystemId;
+            Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(
+                world,
+                pilot,
+                departureSystem,
+                catalog.RequireItem(hull.TypeId).GroupId
+            );
+        }
         bool transfer =
             position is null
             || systemId is int destinationSystem
@@ -139,14 +166,34 @@ public sealed partial class SqliteWorld
         return transfer;
     }
 
-    internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, int stationId)
+    internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long locationId)
     {
+        if (world is EconomyTransaction)
+        {
+            long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+            Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
+            Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
+        }
+        if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
+        {
+            return DockStructure(world, catalog, pilotId, shipId, locationId);
+        }
+        if (locationId is <= 0 or > int.MaxValue)
+        {
+            throw new InvalidDataException("Dock your active ship at an available station.");
+        }
+        int stationId = (int)locationId;
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var destination = catalog.FindStation(stationId);
         if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not { } position || destination is null)
         {
             throw new InvalidDataException("Dock your active ship at an available station.");
+        }
+        if (Eden.Gameplay.Flight.CapitalTravelRules.Supercapital(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId))
+        {
+            throw new InvalidDataException("Supercapitals require a Keepstar to dock.");
         }
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         CrimewatchPersistence.CheckTravel(
@@ -165,6 +212,12 @@ public sealed partial class SqliteWorld
         {
             throw new InvalidDataException("The station is outside docking range.");
         }
+        Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(
+            world,
+            pilot,
+            system,
+            catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId
+        );
         PilotTaskTrackingStore.Record(world, catalog, pilotId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), TaskEvents.Docked);
         pilot.ActiveShip.StationId = stationId;
         pilot.ActiveShip.StructureId = null;
@@ -233,7 +286,8 @@ public sealed partial class SqliteWorld
                 ),
                 CorporationAccess: corporationAccess,
                 CorporationAccountKey: CorporationWalletStore.SelectedKey(world, pilot.Id, corporation),
-                AllianceId: world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId
+                AllianceId: world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId,
+                WarFaction: Eden.World.FactionWarfare.MilitiaEnlistmentStore.Effective(world, pilot)
             ),
             new(
                 ship.Id,

@@ -26,6 +26,8 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
                         or "GetAlliancePublicInfo"
                         or "GetRankedAlliances"
                         or "GetAllianceMembers"
+                        or "GetDaysInAlliance"
+                        or "GetAllianceMembersOlderThan"
                         or "GetMembers"
                         or "UpdateAlliance"
             ) && !(service == "corpRegistry" && method is "CreateAlliance" or "GetSuggestedAllianceShortNames")
@@ -67,6 +69,17 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
                 case ("GetAllianceMembers", [long id]) when id is > 0 and <= int.MaxValue:
                     Require((int)id);
                     return new AlliancePublicMembersReply(alliances.Members((int)id));
+                case ("GetDaysInAlliance", [long id, long corporation])
+                    when id is > 0 and <= int.MaxValue && corporation is > 0 and <= int.MaxValue:
+                    return alliances.DaysInAlliance((int)id, (int)corporation);
+                case ("GetDaysInAlliance", [long id, null]) when id is > 0 and <= int.MaxValue:
+                    // The personal donation panel also queries the executor of an alliance with no elected executor.
+                    return 0;
+                case ("GetAllianceMembersOlderThan", [long id, long days])
+                    when id is > 0 and <= int.MaxValue && days is >= 0 and <= int.MaxValue:
+                    return new BlueList<int>(alliances.MembersOlderThan((int)id, (int)days));
+                case ("GetDaysInAlliance" or "GetAllianceMembersOlderThan", _):
+                    throw new InvalidDataException("Choose a valid alliance and corporation or a nonnegative membership age.");
                 case ("GetMembers", []):
                     return new AllianceMembersReply(alliances.Members(Current(context)));
                 case ("UpdateAlliance", [var description, var url]):

@@ -15,6 +15,7 @@ using Eden.Server.Chat;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Configuration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,70 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
 {
     private const int Source = 30000141;
     private static readonly WatchedTrafficGate s_gate = new(Source, 30000142, 50009991, 50009992);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CapAndSystemAccessApplyToResidentFoundersAndVisitorsAndRestoreSavedPilotsAfterRestart(bool transitOnly)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerPopulationPolicy policy = new(TrafficMultiplier: 2, GateVisitors: 6) { ActivePilotCap = 2 };
+        Save(fixture, policy);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        long[] founders;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var provisioner = host.GetRequiredService<CapsuleerProvisioner>();
+            provisioner.EnsureSystem(Source);
+            for (int visitor = 0; visitor < policy.GateVisitors; visitor++)
+            {
+                provisioner.EnsureInbound(s_gate, visitor: visitor);
+            }
+            var live = host.GetRequiredService<LiveWorld>();
+            founders = live.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().Select(agent => agent.PilotId).Order().ToArray());
+            Assert.Equal(2, founders.Length);
+            Assert.Equal(2, host.GetRequiredService<ICapsuleerPopulation>().Summary().EnabledAgents);
+            Assert.Null(provisioner.EnsureInbound(s_gate, visitor: 5));
+            await live.FlushAsync();
+        }
+
+        var restricted = transitOnly
+            ? policy with
+            {
+                SystemAccess = policy.SystemAccess.Add(Source, CapsuleerRegionAccess.TransitOnly),
+            }
+            : policy with
+            {
+                ActivePilotCap = 1,
+            };
+        Save(fixture, restricted);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var suspended = live.Economy.Inspect(world => world.Set<SavedCapsuleerSuspension>().Select(pause => pause.PilotId).ToArray());
+            Assert.Equal(transitOnly ? founders : [founders[1]], suspended.Order());
+            Assert.NotNull(live.Economy.Inspect(world => world.Pilots.Find(founders[1])?.ActiveShip));
+            Assert.NotNull(live.Economy.Inspect(world => world.Set<SavedCapsuleerJob>().Find(founders[1])));
+            using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+            for (int turn = 0; turn < 4; turn++)
+            {
+                fixture.Clock.Seconds++;
+                host.GetRequiredService<ICapsuleerScheduler>().Run(turn);
+            }
+            Assert.Equal(transitOnly ? 0 : 1, host.GetRequiredService<ICapsuleerDiagnostics>().Read().ScheduledAgents);
+        }
+
+        Save(fixture, policy);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        Assert.Equal(
+            founders,
+            restored.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().Select(agent => agent.PilotId).Order().ToArray())
+        );
+        Assert.Equal(2, reopened.GetRequiredService<ICapsuleerPopulation>().Summary().EnabledAgents);
+    }
 
     [Fact]
     public void RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs()
@@ -121,6 +186,7 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
         }
         using var resumed = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         using var presence = resumed.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+        resumed.GetRequiredService<CapsuleerMaintenance>().Tick();
         var visible = resumed.GetRequiredService<ICapsuleerHandoff>().Capture();
         Assert.NotEmpty(visible.Haulers);
         Assert.All(visible.Haulers, h => Assert.Contains(h.Pilot.PilotId, original.Pilots));
@@ -168,6 +234,11 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
         using var presence = host.GetRequiredService<IHumanPresence>().Select(human, Source);
         var worker = host.GetRequiredService<CapsuleerMaintenance>();
         worker.Tick();
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        Assert.True(scheduler.Read().Population.PausedAgents > 0);
+        Assert.Equal(0, scheduler.Read().Jobs);
+        Assert.Equal(0, scheduler.Read().WaitingBackgroundStarts);
+        Assert.Empty(host.GetRequiredService<LiveWorld>().CapsuleerJobs);
         Assert.Equal(0, host.GetRequiredService<CapsuleerScene>().MaterializedPilots);
         Assert.False(host.GetRequiredService<SharedStationGuests>().IsOnline(visitor));
         Assert.Null(host.GetRequiredService<ChatRuntime>().User(visitor));
@@ -311,6 +382,7 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
                 TargetId = 99,
                 Locks = [new(99, 1100)],
                 RecallUntil = 1200,
+                Budgets = [new(10, 2, 1300), new(11)],
             },
             RattingLoot = [88],
         };
@@ -323,6 +395,8 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
         Assert.Equal(5000, resumed.Ratting.LastObservedAt);
         Assert.Equal(5100, Assert.Single(resumed.Defense!.Locks).ReadyAt);
         Assert.Equal(5200, resumed.Defense.RecallUntil);
+        Assert.Equal(new CapsuleerModuleBudget(10, 2, 5300), resumed.Defense.Budgets[0]);
+        Assert.Equal(new CapsuleerModuleBudget(11), resumed.Defense.Budgets[1]);
         Assert.Same(work.Resupply, resumed.Resupply);
         Assert.Equal(work.RattingLoot, resumed.RattingLoot);
         Assert.Equal(work.Ratting.LootIds, resumed.Ratting.LootIds);

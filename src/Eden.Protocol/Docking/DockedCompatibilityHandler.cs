@@ -33,7 +33,6 @@ internal sealed class DockedCompatibilityHandler(
         return (service, method) switch
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
-            ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),
             ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => new BlueList<BountyReply>(
                 owners.Order().Select(owner => new BountyReply(owner)).ToArray()
@@ -118,13 +117,10 @@ internal sealed class DockedCompatibilityHandler(
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("warRegistry", "GetWars") => BlueEmpty.Dictionary,
-            ("jumpTimers", "GetTimers") => new JumpTimerState(),
             ("air_npe", "get_air_npe_state") => 0,
-            ("fighterMgr", "GetFightersForShip") => new FighterState(),
             ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
-            ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new LocalSystemState(pilot.SystemId),
 
 
             ("seasonManager", "get_season_data_for_character")

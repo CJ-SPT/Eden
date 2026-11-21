@@ -5347,3 +5347,902 @@ Cold roster construction, traffic actions and the long tick remain separate obse
 ### Optional maintainer checks
 
 After deployment, compare agent-action holds and checkpoint-time docked RPC latency with several sessions online.
+
+## Bot backlog and market contention
+
+On November 18, the dedicated server logged a 734.85 ms session frame, with 688.62 ms spent inside world
+ownership and 37.44 ms waiting. During a later sample with 2,785 scheduled bots, peak frame processing was
+58.26 ms, but 987 jobs were due and the oldest was 34.57 seconds late. Detached checkpoint projection took
+22.28 seconds in that sample, with 29.53 ms for capture under ownership. These measurements describe
+separate parts of the workload.
+
+Warm expiry and notification polls now use scoped resident reads, and an acknowledged notification cursor returns
+without acquiring ownership. Disabled regional demand skips the full economic action. Busy systems and
+their combat state no longer participate in these polls. Traffic preparation skips the institutional catalog
+when the active market rules use development or standard stock, and a discarded plan checks the earliest
+deadline without counting the entire overdue prefix.
+
+When overdue jobs keep advancing, the maintenance loop uses a 25 ms catch-up budget and counts processing
+and presentation toward its 50 ms cadence. It keeps a minimum 10 ms asynchronous pause after long passes and
+uses the full 50 ms cooldown after an attempt makes no progress. Ownership still releases between individual
+jobs, and each job keeps its saved deadline and ordering. Due counts continue to report the scheduler's sampled
+backlog.
+
+### Automated validation
+
+The exact development filters selected
+`ResidentEconomyTests.ExpiryAndAcknowledgedMarketChangesReadResidentIndexesWithoutMaterializingHistory`,
+`TrafficPreparationTests.CompletedJobCannotUseItsEarlierPreparationAgain` and
+`CapsuleerMaintenanceTests.BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs`. The market test timed out
+while an unrelated system was held on `4ada2843`. The updated test completes while that system remains held,
+with zero SQL commands, connection opens or fitting calculations. The traffic cases cover development and
+progressive market inputs, and the clock-controlled catch-up cases cover continued progress and a stalled
+attempt. The first runs on the corrected code took 6.58, 8.00 and 6.92 seconds, respectively.
+
+The affected selection passed 122 of 133 cases in 93 seconds. All 11 failures reproduced on unchanged
+`4ada2843`. Ten were paused-checkpoint ownership cases and one was the NPC settlement rollback fixture's
+SQLite trigger during teardown. The selection used `FullyQualifiedName~.<Class>.` for:
+
+```text
+PersonalMarketTests, ResidentEconomyTests, NpcRestingOrderTests, EconomicProjectionTests,
+MarketSummaryPerformanceTests, TrafficPreparationTests, CapsuleerMaintenanceTests, CapsuleerDeadlineTests,
+CapsuleerDeadlinePerformanceTests, CapsuleerGlobalPopulationTests, CapsuleerLockOrderTests, CheckpointOwnershipTests
+```
+
+Tool and solution restores passed. The final build took 7.89 seconds with zero warnings or errors. Both Python
+policy suites passed all eight catalog and nine formatting checks. Style, CSharpier, line width and Git
+whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. The server logs describe behavior before the change.
+
+### Optional maintainer checks
+
+After deployment, compare completed actions per second, oldest queue delay and peak frame processing at about
+3,000 scheduled pilots.
+
+## Offscreen mining queue pressure
+
+The November 20 administration capture showed 2,126 scheduled pilots, 2,589 awaiting offscreen admission,
+628 jobs due and a 7.74-second oldest delay with one occupied system. The last pass spent 25.57 ms in simulation
+and preparation and 0.09 ms in scene and Local updates.
+
+Commit `07709a76` enrolled ordinary miners in offscreen simulation. The miner's scheduler still used the
+occupied-system path, so it scheduled a `Collect` job every second during a paid cycle. Each pulse ran the miner's
+combat and awareness checks. The diagnostic replay already backed up before the November 20 recruitment merge.
+
+The following 60-second runs copied the same frozen save, visited 450 communities, retained one observer and
+ran the production maintenance loop with 15-second checkpoint requests. The replay uses wall-clock scheduling,
+so initial lateness and actual scheduled counts differ by revision. The current-main run included seven seconds
+of sampled thread stacks. These short runs show queue pressure during startup and recovery.
+
+| Revision | Scheduled at end | Due at end | Oldest delay at end | Completed actions |
+| --- | ---: | ---: | ---: | ---: |
+| `9e2e42bc`, before offscreen expansion | 4,718 | 2,585 | 39.14 s | 7,444 |
+| `71af02a0`, before the recruitment merge | 5,000 | 3,411 | 70.53 s | 4,029 |
+| `002e999d`, after the recruitment merge | 5,000 | 3,267 | 68.87 s | 3,776 |
+| Paid-cycle scheduling patch | 5,000 | 3,049 | 64.06 s | 4,469 |
+
+The two 5,000-pilot runs started with oldest delays of 20.07 s on `002e999d` and 16.21 s with the patch.
+Oldest delay grew by about 48 s over each run, so this replay does not establish sustained capacity gains.
+After the 30-second warmup, the patched run's full-frame p95 was 30.87 ms and `GetRegionBest` p95 was
+52.17 ms. Peak checkpoint capture, detached projection and file write were 21.47 ms, 415.13 ms and 1.24 s.
+The scheduler reported zero failures in all four runs. Replay JSON, checkpoints and logs are retained under
+`artifacts/bot-capacity-20261120/`.
+
+An offscreen miner now schedules its next paid collection directly in Eden's safest security band when it has
+no nearby NPCs, aggressors, incoming missiles, tackle, active defense or available crew warnings. The ordinary
+cadence applies in occupied systems and belts with possible natural pirate spawns. Observing a sleeping miner
+restores the next one-second threat check without advancing its funded mining cycle. The saved progress still
+owns the collection time. The security rule comes from Eden's catalog and NPC spawn policy, with gameplay
+context from [EVE University's mining mission notes](https://wiki.eveuniversity.org/Mining_missions).
+
+### Automated validation
+
+The exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart`.
+It exercises an actual paid offscreen cycle, a warmed idle turn with zero SQL commands, connection opens and
+fit calculations, re-entry during the cycle, and continued mining and manufacturing after checkpoint reopen.
+The exact test passed in 12.12 seconds. The affected selection passed 71 tests in 47.92 seconds. It covered the
+miner, handoff, deadline, deadline performance, runtime, defense, occupied simulation and pilot activity tests.
+An earlier selection reported three failures that reproduced on unchanged `002e999d`. Two occupied-only tests
+expected remote work to pause, and one shopping theory expected an overpriced listing to be rejected. The final
+selection excluded those two methods and all three variants of the shopping method. Both Python policy suites
+passed, with eight catalog and nine formatting cases. The solution built in 8.31 seconds without warnings or errors.
+Style, CSharpier, line-width, documentation link and Git whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare oldest due-job age after restart at a similar scheduled population and one occupied system.
+
+## Capsuleer system entry and NPC acquisition
+
+Preparing a system now resolves reciprocal gate visitor slots before querying the resident bot roster.
+The resident query uses the existing indexes for active pilots, community membership and saved visitor slots.
+Slots admitted under an older population setting remain eligible. The scheduler reads the committed population
+summary after closing its private inspection, which allows repeated system entries to reuse the same summary.
+The cache checks the population revision, catalog generation, policy and traffic identity. A private action can
+still read its own pending changes without publishing them to the shared cache.
+
+Resident NPC acquisition now finds each pirate's closest eligible target in one pass and queries existing
+aggression directly. The rule still checks surface range, leash and electronic warfare, breaks equal ranges by
+ship ID, and retains the original NPC ordering and exact reaction time. Gameplay context comes from
+[EVE University's belt ratting guide](https://wiki.eveuniversity.org/Ratting). The local evejs reference's
+`server/src/space/npc/npcBehaviorLoop.js` was checked for scene worker scope. Its SHA-256 is
+`21AD46AB54D10507B6811C2FF14A49B0E0181D5AA38A1CCCFCEE0B97F6DA843B`.
+
+### Automated validation
+
+The exact checks covered deterministic targeting across concurrent viewers, entry without warming background
+fits, and recovery of saved visitors whose ships and home community are outside the entering observer's system.
+The visitor fixture warmed the catalog indexes before measuring and asserted zero queries, connection opens
+and fit calculations during admission.
+
+The final affected selection passed **134 tests in 167.96 seconds**. The filter used
+`FullyQualifiedName~.<Class>.` for `CapsuleerInboundProvisioningTests`, `CapsuleerHandoffTests`,
+`CapsuleerRuntimeTests`, `CapsuleerGlobalPopulationTests`, `CapsuleerPopulationSettingsTests`,
+`CapsuleerTrafficPerformanceTests`, `NpcAggressionTests`, `LiveSimulationTests`, `NpcPopulationTests` and
+`CombatAnomalyWorldTests`. Tool restore, solution restore, build, both Python policy suites and formatting passed.
+
+`ServerPerformanceReplayTests.ReplaySustainedBotThroughput` compared `f795cb85` with this patch using the same
+frozen save, the same 450 communities in the same order, one observer, and a 60-second maintenance window
+with checkpoint requests every 15 seconds. Both runs scheduled 5,000 pilots and recorded zero failures.
+The control ran alongside focused tests, and the real-time runs started with different queue ages.
+
+| Measurement | Control | Patch |
+| --- | ---: | ---: |
+| 450 visits and observer transfers | 18.54 s | 1.84 s |
+| Allocations on the exploration thread | 13.44 GB | 1.34 GB |
+| Oldest due-job delay, first / last sample | 28.90 / 74.75 s | 6.48 / 58.58 s |
+| Completed actions | 3,135 | 4,577 |
+| Full frame p95 after warmup | 40.65 ms | 67.19 ms |
+| `GetRegionBest` p95 after warmup | 89.06 ms | 64.33 ms |
+| Peak checkpoint capture / projection / file writing | 22.58 / 335.43 / 1,379.53 ms | 32.66 / 722.97 / 1,195.32 ms |
+
+Exploration allocated 90% less. Both queues fell further behind during the maintenance window, so the run
+does not establish sustainable capacity at 5,000 pilots. Replay inputs, reports and acquisition results are
+retained under `artifacts/bot-scans-20261120/`.
+
+An isolated acquisition replay compared 20,000 warmed evaluations per case with 64 NPCs. Both builds returned
+identical NPC and target IDs, ordering and reaction deadlines. Allocation counts capture the selection rule
+only. They exclude world ownership, NPC motion, combat settlement and session output.
+
+| Targets | Previous allocation per call | Updated allocation per call | Previous / updated total |
+| ---: | ---: | ---: | ---: |
+| 1 | 48,152 B | 8,128 B | 500 / 459 ms |
+| 24 | 84,520 B | 44,496 B | 4,491 / 1,786 ms |
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None for the system-entry and acquisition comparisons.
+
+## Capsuleer shutdown and checkpoint projection
+
+Host shutdown previously joined the game listener and client sessions before cancelling its two capsuleer
+workers. A worker draining due work could start another atomic job, build another optional plan, or publish
+another Local and scene update while connections were closing. The console interrupt, SIGTERM, world wipe,
+and fatal mod paths now use the same host cancellation signal as both workers. Scheduling takes cancellation
+at preparation and job boundaries. A job already settling finishes its transaction, and the host still joins
+both workers before the final resident checkpoint.
+
+The checkpoint groups saved miner and hauler progress by the existing batch size. Each batch passes typed
+progress through the existing JSON serializer and uses one keyed SQLite update. Projection keeps its existing
+transaction and writes the same progress into existing rows. Ordinary periodic saves and the final shutdown
+save use the same pathway.
+
+### Automated validation
+
+The exact cases cancel preparation before publication, stop the active worker between two real saved jobs,
+and cancel population preparation before disposal. Reopening the shutdown checkpoint confirms that the first
+job advanced once and the remaining due job retained its revision, sequence and deadline.
+
+The exact filter selected `HostShutdownStopsBetweenAtomicJobsAndSavesTheCommittedJob`,
+`CancelledPreparationLeavesItsJobDueWithoutRecordingAFailure`, and `HostShutdownCancelsPopulationPreparationBeforeDisposal`.
+All three passed in 10.70 seconds. The affected selection passed **79 tests in 47.99 seconds**, covering
+`ServerLifetimeTests`, `CapsuleerMaintenanceTests`, `TrafficPreparationTests`, `CapsuleerBackgroundPreparationTests`,
+`CapsuleerHandoffTests`, `CapsuleerResidentRoutineTests`, `CapsuleerDeadlinePerformanceTests`, `CapsuleerRuntimeTests`,
+`DetachedCheckpointTests`, `LiveWorldTests`, and `UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart`.
+Tool restore, solution restore, the warning-free build, both Python policy suites and formatting passed.
+
+An isolated Release benchmark projected 902 miner and 4,098 hauler progress rows read from the same frozen
+world. Five warmed samples compared the production projection methods against `37c2f38c`. Median projection
+time fell from 150.06 ms to 99.85 ms, and median allocation fell from 74.99 MB to 23.77 MB. The destination
+rows had identical checksums. The benchmark covers the progress writes inside a transaction. Full-world
+capture, disk copy, file installation and client drain take separate time. The harness and results are retained
+under `artifacts/bot-shutdown-20261120/projection/`.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. Production shutdown duration and the slowest deployed step
+remain unverified.
+
+### Optional maintainer checks
+
+Compare the `Shutdown step` timings for both capsuleer workers and the resident world.
+
+## Player bot allocation and queue delay
+
+A 180-second replay on November 20, 2026 reproduced the reported process allocation rate. Both builds used copies of
+the same frozen world, activated the same 450 communities in the same order, and kept one simulated observer online
+with 5,000 pilots scheduled. The comparison isolates these changes on `37c2f38c`. Both builds sampled process-wide
+allocated bytes between the start and the last sample of the timed maintenance window.
+Each timing is one run per build on the same machine.
+
+Early allocation samples attributed 94–97% of allocated bytes to bot maintenance, predominantly hauler resumption.
+The third-minute control sample attributed 36% to asteroid geometry capture and 36% to advancing NPCs for miners.
+The scheduler now restores a hauler's current hull once. Fitting evaluation groups modifiers in native operation order
+and only constructs stacking sequences for attributes with penalized modifiers. Within an operation, repeated catalog
+reads reuse the canonical path and typed cache keys. Resident transaction validation visits tables opened by the action.
+Asteroid geometry reads the system index and overlays private changes without materializing tracked asteroid entities.
+Guard refreshes read each anchor's slot history once and select the newest occupant per slot. Population scheduling
+and participant lookup read immutable NPCs from the system index, including private transaction changes.
+The queue keeps the existing deadlines, budgets and ordering.
+
+The pinned client's `stackingNurfedAttribute.pyj` supplies the stacking penalty formula. The related evejs file
+`server/src/services/fitting/liveFittingState.js` was inspected at SHA-256
+`604fc96b1e57271ff184dcb096b60cb6e5f9a29b7db77b7ae0b0a6f404003440`. Gameplay references include
+[EVE University on stacking penalties](https://wiki.eveuniversity.org/Stacking_penalties) and
+[EVE University on belt encounters](https://wiki.eveuniversity.org/Ratting).
+
+### Automated validation
+
+| Timed measurement | Control | Optimized |
+| --- | ---: | ---: |
+| Process allocations | 308.4 MiB/s | 245.7 MiB/s |
+| Allocated per completed bot action, including other process work | 2,217 KiB | 1,174 KiB |
+| Completed actions | 25,718 | 38,667 |
+| Due jobs at the last sample | 3,644 | 3,530 |
+| Oldest due job at the last sample | 125.0 s | 95.3 s |
+| Failed bot actions | 0 | 0 |
+| Observer frame p95 after 30 s | 61.2 ms | 57.7 ms |
+| `GetRegionBest` p95 after 30 s | 56.2 ms | 79.0 ms |
+| Peak checkpoint capture / projection / file write | 25 ms / 4.75 s / 4.48 s | 23 ms / 10.32 s / 4.96 s |
+
+In both runs, all 150 warmed observer requests issued zero SQL commands, opened zero connections and performed zero
+fitting calculations. Thirteen checkpoints completed in each run. More actions reached the checkpoint writer in the
+optimized run. The queue still accumulated delay over three minutes. After the NPC change, population refresh
+accounted for 18% of bytes in the third-minute allocation sample, down from 37% in the intermediate build.
+
+A separate warmed, fixed-work comparison evaluated 256 identical sparse fits. Allocation per fit fell from
+1,442,446 B to 84,096 B, and elapsed time fell from 516.5 ms to 45.5 ms. Both returned a checksum of 547,072.
+The final managed heap samples from the two 10-second third-minute traces were 2,614 MiB and 2,630 MiB.
+Neither trace contained a generation 2 collection. These runs establish a reduction in allocation churn.
+Retained heap growth over longer sessions remains unmeasured.
+
+Reproduce with `ReplaySustainedBotThroughput`, `EDEN_BOT_REPLAY_SOURCE` set to the frozen save,
+`EDEN_BOT_REPLAY_CASE=450-False` and `EDEN_BOT_REPLAY_SECONDS=180`. The same one-case replay was selected on each
+build. The three other parameter combinations returned before opening a world. Local manifests, per-second samples,
+checkpoint timings and allocation stacks are under `artifacts/bot-allocation-20261120/`.
+
+The integrated branch builds on `2e57166c`, which adds cancellation between bot jobs and batches checkpoint
+projection. A fresh 180-second replay on that branch averaged 230.1 MiB/s, completed 37,105 actions with zero
+failures, and ended with 3,546 jobs due and the oldest 100.2 s late. The warmed frame and market request p95s
+were 71.7 ms and 110.8 ms. The 13 checkpoints peaked at 44 ms for capture, 12.37 s for projection and 1.22 s
+for file writing. This integration run used the same save and observer workload and ran without an allocation trace.
+
+The solution build took 33.88 s and produced zero warnings or errors. The focused selection ran
+288 tests in 156.76 s. It passed 286. Two SQL-count assertions reproduced on both unmodified base revisions.
+`HostOperationSharesFittingInputsAndOneConnectionAcrossAwaitAndNestedScopes` observed three commands against an
+expected two. `ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes` observed ten against a
+maximum of nine. Its preceding assertions for equivalent attributes and zero warmed fitting calculations passed.
+The asteroid restart comparison also failed on the original base. Sharing the geometry builder preserves the belt ID
+after reopening and that test now passes. Both Python policy suites passed, with eight catalog and nine formatting cases.
+Formatting and line-width verification passed in 45.96 s.
+
+The focused .NET filter ORs `FullyQualifiedName~.<Class>.` for these classes, plus
+`FullyQualifiedName~.PopulationMaintenanceAndTwoMovingSessionFramesStaySqlFree` and
+`FullyQualifiedName~.SustainedPercentilesSortArrivalOrder`.
+
+```text
+DogmaGraphTests, CatalogProviderTests, CatalogFittingReadTests, PassiveFittingTests, FittingSnapshotTests,
+ResidentBotEconomyTests, CapsuleerHaulerTests, CapsuleerFitRetentionTests, CapsuleerDeadlinePerformanceTests,
+CapsuleerTrafficPerformanceTests, TrafficPreparationTests, CapsuleerMaintenanceTests, ResidentEconomyTests,
+CapsuleerHandoffTests, ResourceRenewalTests, AsteroidFieldTests, RegionalNpcTests, NpcGuardTests, NpcConvoyTests,
+NpcPopulationTests, NpcMiningTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After deployment, compare allocation rate and oldest due-job age at the same active pilot count.
+
+## Sustained 5,000-pilot throughput follow-up
+
+Trade preparation now prepares the first compatible correction tier outside world ownership, including corrections
+that follow a same-trade Badger refresh. Provisioning still checks current identity and name reservations. Correction
+still reads the current hull, its fittings, cargo and drone volume before applying the prepared candidate pool.
+Catalog lookups also reuse the ordered snapshot and prepare career ship choices before acquiring the action owner.
+
+NPC population uses typed encounter, standing and slot snapshots. Miners share unchanged NPC contact lists and
+evaluate threat and aggression for their own ships. Depletion, geometry and population changes trigger the relevant
+invalidation. A positive asteroid quantity change leaves collision geometry and the next NPC population deadline valid.
+
+Detached checkpoints report projection time, commands, rows and allocations by table or combat component.
+Item, position and weapon cooldown deletes now look up the projected primary keys. On the frozen save, SQLite's
+query plan showed a full table scan with a correlated JSON walk before each change and a primary-key search after it.
+Combat NPC state and aggression also project in batches. Resident mutations, capture, detached projection and
+checkpoint installation still use their existing commit boundaries.
+
+The regional market cache tracks changed order types and requotes those types before a player receives the next view.
+The cached expiry and active-time deadlines still bound the view, and broad invalidation or expiry rebuilds it.
+Unchanged quotes can share the existing array. The replay reports cache lookup and rebuild separately from the
+session's world wait and output encoding.
+
+Gameplay references include [EVE University hauling](https://wiki.eveuniversity.org/Hauling),
+[mining](https://wiki.eveuniversity.org/Mining), and [trading](https://wiki.eveuniversity.org/Trading).
+The local evejs references were `server/src/space/npc/npcService.js` (SHA-256
+`33BE15EB62AC417573C9AD1D5DBE4C8FB33BEE62C15A9689A660DFA546EE6581`) and
+`server/src/services/market/marketProxyService.js` (SHA-256
+`F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`).
+
+### Automated validation
+
+The replay uses `artifacts/traffic-stalls/frozen`, `EDEN_BOT_REPLAY_CASE=450-False`, one observer,
+and `EDEN_BOT_REPLAY_PREPARATION=0` to match the integrated baseline. Short runs use 180 seconds. The acceptance
+run uses 600 seconds with assertions enabled. Per-career newly due counts use the change in queued work and
+completed actions, so community admissions and withdrawals can affect those estimates.
+
+| Three-minute measurement | `e6f62071` | Four changes with original cadence |
+| --- | ---: | ---: |
+| Completed actions | 37,105 | 42,347 |
+| Oldest delay at the final sample | 100.18 s | 86.65 s |
+| Allocated per completed action | 1,145 KiB | 907 KiB |
+| Peak checkpoint projection | 12.37 s | 0.95 s |
+| Warm frame p95 / p99 | 71.67 / 95.10 ms | 56.65 / 103.81 ms |
+| Warm market p95 / p99 | 110.81 / 271.70 ms | 101.89 / 115.80 ms |
+
+The worker spent 69.7 seconds awaiting timers and wake signals over 180 seconds. The last career sample had
+3,208 overdue haulers and 285 overdue miners. Productive overdue turns can now yield asynchronously between
+bounded slices when the queue is more than one wake interval behind. Slow or stalled turns still take a timed
+cooldown. Arrival order and the work allowed in a turn do not change.
+
+The cadence replay completed 54,574 actions, spent 16.5 seconds waiting and finished 60.37 seconds behind.
+An eight-second thread sample in that run found repeated catalog reads for gate guards during miner
+population refresh. The guard seeder now shares the immutable anchor geometry per catalog and system.
+It checks the newest occupants before loading profiles for the slots that need work.
+
+The following short run recorded these three Trade actions. World execution is the inclusive queue action
+phase measured inside ownership. Preparation accounts for most of pilot 90007109's elapsed time.
+
+| Pilot | Total | World execution | SQL commands | Fitting calculations | Allocated |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 90000016 | 128 ms | 119 ms | 173 | 18 | 61.8 MiB |
+| 90001841 | 253 ms | 119 ms | 911 | 30 | 117.1 MiB |
+| 90007109 | 523 ms | 49 ms | 2,684 | 3 | 222.9 MiB |
+
+The same run completed 47,734 actions in 181 seconds and ended 76.38 seconds behind.
+Frame p95 was 106.54 ms and market p95 was 157.31 ms. Exact candidate selection and correction outcomes
+are covered by the focused tests. The earlier trace did not retain full inventory and wallet snapshots for
+these three individual trades.
+
+The final solution build passed in 18.44 seconds with zero warnings or errors. The focused run passed
+203 tests in 107.80 seconds. It covered traffic snapshots, correction and preparation, maintenance,
+NPC guards, convoys, mining and shared contacts, detached checkpoints and retries, and market summaries.
+Both Python suites passed, with eight catalog checks and nine formatting checks. Formatting and line
+width passed.
+
+The single ten-minute acceptance replay ran for 11 minutes and 9 seconds including setup and shutdown.
+Exactly one theory case ran the workload. It scheduled 5,000 pilots, completed the timed window with
+zero failed actions, and failed the recovery assertion. The oldest delay was 36.92 s at one minute,
+47.51 s at two minutes, 50.57 s at three minutes, and reached 150.72 s in the final five minutes.
+It never sampled an oldest delay below one second. Warm frames measured 58.95 / 80.88 ms p95 / p99
+and market requests measured 115.55 / 169.22 ms. All 570 warmed requests issued zero SQL commands,
+opened zero connections and performed zero fitting calculations. Five traffic or population owner
+holds crossed 250 ms. Peak projection was 2.61 s across 41 checkpoints. Allocation averaged
+675 KiB per completed action. The reports are under `artifacts/bot-throughput-20261120/acceptance/`.
+The acceptance result leaves the merge pending.
+
+Passive EventPipe sampling began after the missed recovery cutoff and ran through most of the remaining
+window. Seven generation 2 collections completed during the timed replay. The reported managed heap
+after collection grew from 1.35 GiB after the first timed full collection to 2.35 GiB after the seventh.
+The trace covered three of those collections. Matching sampled object addresses through move and
+survival events found market-order dictionary storage, byte arrays, strings and traffic-profile arrays
+across all three. A large string-slot array and resident item dictionary storage survived the last two.
+These are samples of newly observed allocations. They do not identify every retained object or its
+root. The replay's accumulated verbose logs contribute to the measured heap.
+
+### Gate travel, population and market follow-up
+
+The next short replay found four-second gate transfer holds from miners on expeditions. Their saved
+jump target was absent from the transaction participants, which caused economic publication to
+visit every resident system. Miner transfers now declare the saved gate's origin and destination,
+the pilot and the ship. A warmed regression checks the committed destination, both endpoint
+presentation versions and an unrelated system's unchanged version.
+
+Gate bodies and system security and faction values use compact indexes for each catalog generation.
+Traffic retains static geometry separately from mutable belt views, with limits of 1,024 systems and
+49,152 objects. Career training keeps the ordered choices per profession for the catalog generation.
+Encounter and mining operation updates invalidate population deadlines. NPC and mining member writes
+continue to invalidate contacts, and unchanged motion preserves the resident snapshot. The market
+reply shares its encoded bytes while its immutable order view is current. Focused checks verify
+the native map encoding after a trade changes the best ask and reuse when the winning ask stays the same.
+
+The short catalog diagnostic recovered in 47.42 s and went from 26.68 ms to 0.98 ms average
+jump completion. The follow-up short run with the geometry, population and market changes recovered
+in 20.16 s. Its eight long traffic holds included seven gate transfers spending 1.57–4.82 s in
+resident publication, with zero SQL during publication. The run finished 2.36 s behind with
+117,891 completed actions. These runs are under
+`artifacts/bot-throughput-20261120/travel-indexes/` and
+`artifacts/bot-throughput-20261120/travel-publication/`.
+
+After scoping miner jumps, the short replay completed 117,856 actions, recovered in 21.24 s and
+finished 256 ms behind. None of its traffic or population holds exceeded 250 ms. Warm frame
+p95/p99 was 58.64/103.06 ms and market p95/p99 was 70.69/107.33 ms. The paid mining path now uses
+the resident pilot index for ledger buckets, reuses catalog task definitions, and evaluates
+task completion once after both counters advance. The next short run allocated 611.8 KiB per
+completed action, down from 620.0 KiB. Its final sample reached 1.36 s and market p95 reached
+103.26 ms. The earlier nine samples were under one second. The reports are under
+`artifacts/bot-throughput-20261120/miner-gate-scope/` and `artifacts/bot-throughput-20261120/paid-mining/`.
+
+Warm session polls reuse resident entosis and interdiction snapshots, with invalidation on commit
+and expiry at the paid cycle or probe deadline. The alliance monitor reads its committed cursor
+without entering the world owner. Four docked request cases complete during a paused checkpoint
+copy with zero SQL, connections and fitting calculations. The short run recovered in 23.26 s,
+completed 120,737 actions and reached 39.48/74.66 ms warm frame p95/p99 and 65.68/82.77 ms
+warm market p95/p99. Its maximum queue delay in the final half was 1.81 s. The report is under
+`artifacts/bot-throughput-20261120/warm-player-reads/`.
+
+Per-table counters identified over 3,200 single-row skill commands at the last checkpoint.
+Skill projection now batches inserts and updates and looks up the composite key for deletes.
+The save-retry test covers a trained, deleted and added skill in two projection commands and
+verifies the values in the reopened file. The market order projector uses the primary key for
+deletes. NPC population checks immutable encounter fields before materializing pirate,
+convoy or mining rows for a due update.
+
+That short replay completed 122,217 actions at 600.5 KiB per action. At its last checkpoint,
+3,296 skill rows required 26 commands. Peak projection was 1.22 s and total commands per
+checkpoint peaked at 1,184. The queue finished 42 ms behind after a late peak of 1.47 s.
+One miner preparation held the owner for 290 ms. The report is under
+`artifacts/bot-throughput-20261120/checkpoint-and-population/`.
+
+Paid mining now finds the fitted module and each mining skill by key. Hold capacity checks
+read the selected hold and keep the original item order for the volume calculation.
+The next replay allocated 592.9 KiB per completed action. Its one long traffic hold spent
+410.70 ms in commit publication. The first Mercoxit route warmup spent 439.38 ms reading
+catalog data. A scalar catalog query now finds the same destination systems without
+deserializing every belt's ore rows. The gate graph, route order, jump limit and home market
+eligibility still use the same catalog and rules.
+
+The replay now streams verbose lines to its existing log file. It uses the same frozen save,
+observer arrivals, performance counters and acceptance assertions. This keeps retained diagnostic
+strings out of the measured world heap as the log grows.
+
+The final short replay recovered in 20.19 s, completed 123,774 actions and ended with 5,464 pilots
+scheduled. Its maximum queue delay after the midpoint was 772 ms and it finished 171 ms behind.
+Warm frame p95/p99 was 29.89/56.13 ms and warm market p95/p99 was 60.42/67.93 ms. The 150 warmed
+requests used zero SQL, connections and fitting calculations. No traffic or population owner hold
+reached 250 ms. Allocation averaged 584.5 KiB per action. The report is under
+`artifacts/bot-throughput-20261120/compact-mercoxit/`.
+
+The follow-up passed 500 focused .NET cases in 203 s of test execution, including the catalog
+projection, miner gate scope, paid mining, regional quote encoding and checkpoint retry checks.
+Both Python policy suites passed. The focused filter excludes previously reproduced failures in
+resupply inventory counts, the failed regional payment fixture, the cross-restart Mercoxit fixture
+and paused in-space frame tests blocked in combat anomaly arrival. The unmodified branch baseline
+and the focused filter are recorded in `artifacts/bot-throughput-20261120/validation/`.
+
+The ten-minute replay of `5d86312b` recovered in 19.16 s and completed 486,611 actions with
+5,512 pilots scheduled at the end. Warm frame p95/p99 was 30.44/54.54 ms and warm market
+p95/p99 was 66.86/80.27 ms. The 570 warmed requests used zero SQL, connections and fitting
+calculations. The last sample was 996 ms behind. In the final five minutes, 39 samples reached
+one second, with a 1.54 s peak. One trade held the world owner for 383 ms, with 333 ms in
+resident transaction validation. Allocation averaged 499.8 KiB per action. The last of 13
+full collections left 1.66 GiB of managed objects. The acceptance assertion failed and the
+candidate stayed on its branch. See `artifacts/bot-throughput-20261120/final-acceptance/`.
+Over the final five minutes, miners completed 186,070 jobs against about 186,053 becoming due,
+and haulers completed 73,265 against about 73,269. The worker spent 11.38 s waiting in that window.
+
+Fitting-cache revision checks now limit transaction preparation to fitting inputs. Corporation,
+account and capsuleer slot validation reads the committed indexes together with private changes.
+That short replay completed 124,202 actions, ended with 5,496 pilots scheduled and recovered in
+23.19 s. Its maximum queue age after the midpoint was 671 ms. Allocation averaged 518.8 KiB per
+action. Warm frame and market p95/p99 were 27.50/32.33 ms and 64.06/79.30 ms. No traffic or population
+hold reached 250 ms. See `artifacts/bot-throughput-20261120/fit-and-validation/`.
+The affected test filter passed 202 cases in 205 s, including resident fitting and fitting rollback.
+The earlier wider filter reproduced an offline SQL-count failure and two disconnect projection
+failures on both revisions. The validation directory contains both results and the affected filter.
+
+The ten-minute replay of `45507e91` recovered in 19.15 s and completed 457,757 actions. It ended
+40.40 s behind with 5,532 scheduled pilots, 755 overdue mining jobs and 2,577 overdue hauling jobs.
+Warm frame p95/p99 was 29.85/46.26 ms and warm market p95/p99 was 70.32/86.22 ms.
+One hold reached 568 ms in NPC population refresh. The hold occurred before the GC trace began.
+The subsequent six-and-a-half-minute trace recorded a longest runtime suspension of 16.32 ms.
+A 15-second worker profile during the backlog attributed 22.5% of sampled time to population
+refresh, 4.9% to full solar-system records read for provisioning security and 2.8% to reading
+complete celestial collections in the pirate seeder. The artifacts are under
+`artifacts/bot-throughput-20261120/acceptance-after-fit-checks/`.
+
+NPC population refresh now selects participants from the resident system index before opening
+the action, uses keyed pilot-independent NPC member reads, and hydrates combat details only
+for missing or stale contacts. Compact per-catalog indexes supply the belt anchors and nullable
+system security values used by pirate seeding and capsuleer provisioning.
+The 168 focused tests passed. The short replay completed 129,199 actions with 5,532 pilots scheduled.
+Its maximum queue age after the midpoint was 932 ms and its last sample was 455 ms.
+Allocation averaged 483.8 KiB per action. See `artifacts/bot-throughput-20261120/compact-npc-catalog/`.
+
+Hauler drone resupply now uses the committed fitting snapshot's capacity, bandwidth and control
+limit when its revision is current. It still reads the pilot's current drone inventory before
+selecting supplies. The focused regression verifies the same supply decision with zero SQL,
+connection opens and fitting calculations on the warmed resident path.
+Transfers and capacity checks share the fitted hold capacities for that dock action and
+read current occupied volume after each transfer. The bounded resupply short replay completed
+133,854 actions at 5,628 scheduled pilots. Its final-half maximum queue age was 478 ms.
+One owner hold reached 251 ms, including 205 ms in the miner industry stage.
+Miner preparation now warms the immutable manufacturing recipe index outside world ownership.
+The affected tests passed in groups of 206, 42 and 58, with both Python policy suites and
+formatting verification. See `artifacts/bot-throughput-20261120/validation/`.
+
+The next short replay measured 189 ms of manufacturing preparation outside the world owner.
+It still recorded a 330 ms collection hold during cold NPC refresh and a 419 ms miner preparation
+hold that included 326 ms of resident bot validation. Immutable guard and mining inputs now warm
+outside ownership on the first relevant action in a system. Resident uniqueness checks use the
+committed composite capsuleer slot index and skip rechecking unchanged unique keys against every
+private row. Changed keys still check committed and private rows before publishing.
+The solution build, 176 affected .NET cases (70 seconds including runner overhead), both Python
+policy suites and formatting verification passed. The focused report is
+`artifacts/bot-throughput-20261120/validation/prepared-population.trx`.
+
+The population warmup short replay recovered in 19.13 seconds and completed 135,066 actions at
+5,620 scheduled pilots. The final-half queue age peaked at 981 ms and ended at 166 ms. Allocation
+averaged 467.0 KiB per action. One 549 ms trade held the world owner, with 525 ms recorded as SQL
+execution during resupply. Comparable resupplies with similar command counts took under 39 ms.
+The replay now records individual SQL commands taking at least 100 ms and splits resupply into
+requirements, offers, reload and remaining stock phases. The compact immutable drone selection
+list stays loaded for the catalog generation and warms during trade preparation.
+See `artifacts/bot-throughput-20261120/prepared-population/`.
+
+The resupply follow-up passed 75 focused .NET cases, both Python suites and formatting verification.
+The shopping fixture's overpriced case fails on `e6f62071` and on this branch with the same result.
+The focused filter excludes that fixture and the previously reproduced offline hangar SQL count case.
+The comparison and focused reports are under `artifacts/bot-throughput-20261120/validation/`.
+
+The final short replay recovered in 20.16 s, completed 134,820 actions without job failures, and
+ended with 5,644 pilots scheduled. Queue age peaked at 787 ms after the midpoint and ended at
+101 ms. Warm frame p95/p99 was 26.38/34.30 ms and market p95/p99 was 57.97/68.87 ms. The 150 warmed
+requests recorded zero SQL commands, connections and fitting calculations. No traffic or population
+owner hold reached 250 ms. Allocation averaged 470.3 KiB per completed action, and peak projection
+was 1.32 s across 13 checkpoints. See `artifacts/bot-throughput-20261120/prepared-resupply/`.
+
+The ten-minute acceptance replay passed on `d812297a` in 10 minutes and 49 seconds including
+setup and shutdown. It recovered in 19.15 s, completed 530,960 actions without job failures, and
+ended with 5,776 pilots scheduled. The final five minutes peaked at 674 ms of queue age and ended
+at 61 ms. Warm frame p95/p99 was 23.97/36.86 ms and warm market was 75.85/94.62 ms. All 570 warm
+requests used zero SQL commands, connections and fitting calculations. No measured traffic or
+population owner hold reached 250 ms. Allocation averaged 405.5 KiB per completed action.
+Peak projection was 2.33 s across 41 checkpoints. Market orders accounted for 1.14 s and 652
+commands in that projection. The last of 11 full collections left 1.73 GiB of managed objects.
+
+The three reported trades took 94, 170 and 510 ms, with 83, 103 and 38 ms in world execution,
+respectively. The acceptance artifacts include SQL, fitting and allocation counts for each action.
+Focused tests cover candidate order, fitting and transaction outcomes. The original trace lacks
+complete trade inventory and wallet snapshots for an exact comparison. See
+`artifacts/bot-throughput-20261120/acceptance-prepared-resupply/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare deployed oldest-job age and frame latency with a similar active pilot count and observer workload.
+
+## Offscreen bot scheduling at ten thousand pilots
+
+A loaded hauler on an ordinary offscreen arrival reuses its target and geometry while their
+catalog generation matches. A loaded miner can reuse resident geometry. Gate transfers, cold
+state and detailed hauler activity retain their preparation path. A background miner in warp
+schedules its next motion step at warp exit on the original sampling cadence. Observer entry
+samples the course and wakes the pilot.
+
+Paid high-security belt cycles keep their settlement deadline. A transient queue entry checks
+for aggression, incoming effects, moving or nearby hostile NPCs, missiles and crew warnings on
+the original one-second cadence. A due population refresh serves the system. A clear check
+grants no ore. A warning brings the pilot back to its ordinary action at the check deadline.
+Offscreen travel publishes Local and docked guest changes. Observed ships receive full scene updates.
+The existing settlement boundary follows the [EVE University mining mechanics](https://wiki.eveuniversity.org/Mining#Mechanics).
+The local EVE.js reference handles mining cycle boundaries in `server/src/services/mining/miningRuntime.js`
+(SHA-256 `0a4a64ee74d915099dc268acd4ff0cf6eeb5de4e11011797ac04fd0372aa93b5`).
+
+Two workers can prepare catalog, fitting-template, supply and journey inputs for upcoming trades
+in different systems. The scheduler checks the inputs again at the head of the queue. Ship, cargo,
+wallet, market and job changes commit in queue order.
+
+On the frozen traffic-stalls save at `7d049a6d`, the original three-minute, 900-community Debug
+replay completed 96,467 actions and ended 68.4 seconds behind. The staged candidate with travel
+reuse, mining checks and advance trade preparation completed 153,000 and ended 175 milliseconds
+behind, with 9,432 scheduled. A subsequent 1,000-community Debug run started with 9,915 scheduled
+and ended 15.3 seconds behind. Short runs report measurements. Ten-minute runs also assert queue
+age and client latency. Reports are in `artifacts/bot-throughput-review-d13dc927/` and
+`artifacts/bot-10000-20261120/`.
+
+The matched seeded belt and eight-jump shipment had the same outcomes on the baseline and candidate
+after checkpoint and reopen. The miner collected 2,898 ore in 12 cycles and left 125,519 units in
+the rock. The hauler delivered 10 units, with zero remaining aboard. Their wallet balances were
+1,000,000 and 10,000,000 cents respectively. Capacitor, skill points, gate arrival times and pending
+job deadlines matched. Fixture inputs and results are in `artifacts/bot-10000-20261120/economy/`.
+
+For the capacity check, use `ReplaySustainedBotThroughput` with the frozen source, one observer,
+1,040 visited communities, 600 seconds and `EDEN_BOT_REPLAY_MINIMUM_PILOTS=10000`. The default
+worker trace records each timing phase. Setting `EDEN_BOT_REPLAY_WORKER_TRACE=0` uses ordinary
+worker logging. Both modes measure warmed requests, ownership, checkpoints and queue age.
+The population minimum counts admitted pilots.
+
+The matching 1,040-community Release control on `7d049a6d` started with 10,156 admitted pilots.
+At three minutes it had completed 76,455 actions and the oldest due job was 101.3 seconds late.
+This control used ordinary worker logging and the same frozen save, observer arrivals and checkpoint cadence.
+The control harness and report are in `artifacts/bot-10000-20261120/baseline-production-1040/`.
+
+In the intermediate ten-minute Release run, the scheduler first caught up after 111.5 seconds.
+The queue fell behind again and ended 12.4 seconds late. The final five minutes contained 207
+samples at or above one second. A late twelve-second CPU profile attributed about 25% of sampled
+bot worker time to fitting calculation, including 9.8% to fitted mining lasers during collection.
+About 29% included resident query evaluation. These groups overlap. The report and trace are in
+`artifacts/bot-10000-20261120/production-1040/`.
+
+The fitted laser's static attributes now share the bounded cache for derived fitting values. Changes to
+skills, fitting inputs or catalog data invalidate the entry. Module damage and cooldowns come from the
+current action. Docked resupply reads the supported magazines once per inspection and rechecks quantities
+after stocking. Ordinary bot action diagnostics retain total duration, allocations, SQL and fitting counts.
+Explicit traces, selected trades and repetitions of a slow action also retain phase timings.
+
+With the laser cache, resupply and timing changes, the 1,040-community run recovered in 82.0 seconds.
+It completed 129,480 actions by 179.9 seconds, with a 14.6 ms oldest job. Over ten minutes it completed
+433,239 actions and ended with 10,392 admitted, 221 due, and a 203 ms oldest job. The 570 warmed
+requests performed zero SQL commands, connection opens or fitting calculations. Frame p95/p99 were
+34.7/76.5 ms and market p95/p99 were 85.4/143.8 ms. All monitored traffic and population holds
+stayed below 250 ms. Nineteen of 297 samples in the final five minutes reached one second, peaking
+at 3.58 seconds. The queue-age assertion failed. See `artifacts/bot-10000-20261120/final-1040/`.
+
+The resident query path now returns immediately on an empty committed index, then considers rows added
+or changed in the current transaction. A simple captured field can supply an index key directly.
+Scalar projections build their private-row delegates on first use. The replay records the active
+garbage collector and process pause time so that runs using the test-host default and Eden.Server's
+server GC can be distinguished. The automated cohort has one observer, regular checkpoint writes and
+a previously populated frozen world. Background community provisioning is disabled for this comparison.
+
+### Automated validation
+
+The final Release replay used the frozen traffic-stalls save, one observer and the server garbage
+collector from Eden.Server's runtime configuration. Set `DOTNET_gcServer=1` on the test host,
+`EDEN_BOT_REPLAY_CASE=900-False`, `EDEN_BOT_REPLAY_SYSTEMS=1040`, `EDEN_BOT_REPLAY_SECONDS=600`,
+`EDEN_BOT_REPLAY_PREPARATION=0`, `EDEN_BOT_REPLAY_MINIMUM_PILOTS=10000` and
+`EDEN_BOT_REPLAY_WORKER_TRACE=0`. Supply the frozen source in `EDEN_BOT_REPLAY_SOURCE` and an output
+directory in `EDEN_PERFORMANCE_OUTPUT`. Run the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplaySustainedBotThroughput`
+in Release. The selected theory case took 11 minutes 18 seconds including setup and teardown.
+
+| Ten-minute server GC replay | Result |
+| --- | ---: |
+| Admitted bots, minimum / end | 10,156 / 10,480 |
+| Completed actions / failures | 446,271 / 0 |
+| Initial recovery to less than 1 second | 43.54 s |
+| Oldest due job, maximum over final 5 minutes / end | 931.2 ms / 49.3 ms |
+| Samples reaching 1 second in final 5 minutes | 0 of 298 |
+| Warm frame p95 / p99 | 25.17 / 95.02 ms |
+| Warm regional market p95 / p99 | 54.84 / 93.49 ms |
+| Warm SQL commands / connections / fitting rebuilds across 570 requests | 0 / 0 / 0 |
+| Maximum recorded traffic or population hold | 214.39 ms |
+| Checkpoints | 41 |
+
+The original revision and final build also ran with identical server GC settings. The nearest samples
+to 180 seconds were at 179.96 and 179.85 seconds respectively. Both runs began with 10,156 admitted.
+
+| Same frozen workload at three minutes | Original `7d049a6d` | Final build |
+| --- | ---: | ---: |
+| Admitted bots | 10,156 | 10,416 |
+| Due jobs | 6,265 | 112 |
+| Oldest due job | 29.80 s | 61.5 ms |
+| Total process allocation since workload start | 93.66 GiB | 41.82 GiB |
+| Committed actions | 141,258 | 136,325 |
+
+The original scheduler counted routine mining pulses as committed actions. The final build can handle
+those pulses as transient checks. The economic fixtures compare actual production and delivery after
+reopen. The original three-minute control stayed above one second of queue age throughout. Its report is
+in `artifacts/bot-10000-20261120/baseline-server-gc-1040/`.
+
+The report, manifest, progress log and test result are in `artifacts/bot-10000-20261120/indexed-server-gc-1040/`.
+The workload admits existing miners and haulers while a player is online. Source-save population, admitted
+population and completed actions are separate counters. Transient threat checks are excluded from completed actions.
+
+The solution build and Release test build each finished with zero warnings and errors. The working tree
+passed formatting and line-width checks. The focused Release run selected 130 cases across scheduler,
+deadlines, background preparation, maintenance, presentation, mining, NPC acquisition, resupply, fitting
+retention, diagnostics, resident economy and the two matched economic replays. In 1 minute 30 seconds,
+128 passed. Both parameterizations of
+`CapsuleerGatePerformanceTests.ResupplyStopsInspectingHangarAfterStockFillsTheRequirement` reproduced
+the existing offline SQL assertion on the base and candidate, with 61 commands against the expected 60.
+The exact private-wallet-index test also passed through `Test-Feature.ps1` in 6.14 seconds including runner
+startup. Logs are in `artifacts/bot-10000-20261120/validation/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare queue age and frame and market latency on the dedicated server during a similarly populated session.
+
+## In-space frame stalls during bot traffic
+
+A deployed frame took 545.63 ms with 20.66 ms of world wait and 525.00 ms of inclusive ownership.
+The 423.17 ms Arrival logged in the same second recorded zero SQL commands, connections and fitting rebuilds.
+The monitor showed 8,379 scheduled pilots, zero due jobs at capture and peak frame start delay below 4 ms.
+The existing timers leave much of the frame processing time unattributed.
+
+On baseline `be9e571f`, the existing warm in-space frame test exceeded its five-second timeout while
+another thread held shared world coordination. Combat, pirate and mining site reads advanced galaxy-wide
+sovereignty even when the local system had no installed upgrades. They now consult a resident, versioned local
+lookup. Systems with upgrades still settle the network at read time, including offline upgrades that can gain power.
+
+A second test with populated wormhole routes reproduced the same timeout on a warm signature read.
+The signature view now survives across reads until a connection commits, the catalog changes or the next
+age, exit visibility, expiry or replacement deadline arrives. Partially depleted holes with mass regeneration
+recompute their presentation on read. Slow session warnings include exploration time. Slow prepared
+traffic warnings include the elapsed time reacquiring the maintenance owner. Both warnings report
+process-wide GC pause time overlapping their measured interval.
+
+The new timing also identified a cold exploration tick that took 3.87 seconds inside the exploration phase.
+Building the wormhole catalog loaded every celestial in each eligible system to choose the lowest-ID anchor.
+A grouped catalog query now selects that one body's coordinates for every system. The population test checks
+the selected anchor and requires exactly one command reading the celestial table across all nine system classes.
+
+The separately reported `Invalid NPC maximum speed` exception reproduced when a stasis web was applied
+to a stationary target with zero or absent maximum velocity. The replay save contains eight Tower Sentry
+Drone IIIs and four Tower Sentry Drone IIs with no catalog maximum speed. Webs now leave those targets
+at zero cruise speed while simultaneous scramble effects still apply. Moving targets keep their cruise-to-maximum ratio.
+The deployed error omitted the NPC identity.
+
+### Automated validation
+
+The paired Release builds used baseline `be9e571f` with and without this change.
+They replayed the same frozen save for 90 seconds on server GC.
+Each used 1,040 visited communities, two observers, at least 10,156 scheduled pilots and seven checkpoints.
+Of four theory cases, `EDEN_BOT_REPLAY_CASE=900-False` ran the workload. Both runs recorded
+80 warmed frames and 40 warmed regional market calls after 30 seconds, with zero SQL commands,
+connections or fitting rebuilds across those requests.
+
+| Measure | Baseline | Final |
+| --- | ---: | ---: |
+| First frame, including setup on its path | 4,453 ms | 1,546 ms |
+| SQL commands in first frame | 12,710 | 5,053 |
+| Warm frame processing, median / p95 | 12.41 / 55.46 ms | 2.05 / 35.32 ms |
+| Slowest warm frame processing | 85.00 ms | 162.87 ms |
+| Warm frame including queue, p95 / maximum | 68.28 / 90.40 ms | 50.53 / 186.53 ms |
+| Committed actions / failures | 59,908 / 0 | 68,869 / 0 |
+| Due jobs / oldest due job at end | 4,281 / 8,889 ms | 62 / 28.83 ms |
+
+The slowest final warm frame recorded 140.34 ms of world wait, 1.71 ms of ownership and 0.10 ms
+in exploration. Both warmed samples stayed below 250 ms. The short replay demonstrates queue recovery
+in this workload and leaves the cause of the deployed 545.63 ms frame unconfirmed.
+Reports and progress logs are in `artifacts/traffic-spike-validation/{baseline,final}/`.
+
+Focused coverage includes both variants of
+`SystemRuntimeIsolationTests.PausedSystemCannotBlockAnotherSystemsCompleteWarmFrame`, all six cases of
+`CheckpointOwnershipTests.PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait`,
+wormhole travel and lifecycle, sovereignty upgrades, tackle, timing diagnostics, traffic preparation
+and maintenance. The checkpoint timing fixture now verifies the sum and maximum of the actual page-batch
+holds. Its previous single-owner assertion also failed on the baseline incremental checkpoint.
+
+After integrating the capsuleer supply changes from `19ab116c`, the same focused filter plus the catalog
+supply restart test passed all 107 cases in 58.24 seconds. The solution and Release test project built with
+zero warnings or errors. Both Python policy suites passed all 17 tests and repository formatting checks passed.
+A further 90-second replay on the integrated build completed 69,638 actions with zero failures and finished
+with 10,372 scheduled pilots and a 31.53 ms oldest delay. Its first frame took 1,944 ms. Across the 80
+warmed frames, processing p95 was 18.13 ms and the maximum was 65.32 ms. End-to-end p95 and maximum
+were 22.07 ms and 80.41 ms. All 120 warmed requests recorded zero SQL, connections and fitting rebuilds.
+The report is in `artifacts/traffic-spike-validation/integrated/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare frame processing and oldest due job age at similar pilot counts. On any further spike, capture
+the session's `Exploration`, `WorldWait`, `Ownership` and `gcPause` timings alongside any prepared
+traffic action's `ownerReacquire` time.
+
+## Allocation during bot admission and market settlement
+
+The November 21, 2026 server capture on `f285dfd7` recorded a trade allocating 145.4 MiB and repeated
+400–900 ms holds of the shared world owner during market demand. One arrival took 441.68 ms, including
+440.85 ms to reacquire that owner. The dashboard showed a process-wide rate of 722.1 MiB/s at 1,401 scheduled pilots.
+
+The resident demand worker used to import combat state from every loaded system when polling the order book.
+It now pages committed open sell orders by ID and opens the settlement transaction for sellers at the locations
+the turn can visit. This includes cheaper listings beyond the page. The transaction's private fills determine the
+next recovery deadline. Price and time priority, rollback and checkpoint recovery use the existing settlement path.
+
+The bot worker accounted for 95% of sampled allocations during a separate 12-second admission trace.
+The stack for restoring hauler fittings accounted for 39%. Fittings now share immutable base attributes and look
+up a pilot's relevant skill points by composite key, including pending changes in that transaction. A trade
+prepares the selected career hull directly when the saved or entry hull qualifies. Selecting a new goal
+checks only hull groups that can supply the required career stage. Fresh careers prepare their slot's
+entry hull. Cold single-record catalog reads reuse a parameterized command within each operation.
+Partial mining keeps the system's asteroid contacts warm. Depletion, replenishment and physical changes refresh
+the affected system.
+
+### Automated validation
+
+With the build 3662168 item index warm and hauling career data cold, preparing an Ibis pilot's next hull took
+30.4 MiB and 335 catalog commands on the baseline and 1.8 MiB and 22 commands after the change. The fresh
+hauling path took 30.4 MiB and 335 commands before and 1.9 MiB and 21 commands after. Each repeated preparation
+issued zero SQL commands. These measurements cover the preparation phase alone.
+
+On the combat path the same corvette went from 209.0 MiB and 2,475 commands to 2.1 MiB and 29 commands.
+A Badger seeking its next hauling hull went from 30.3 MiB and 334 commands to 7.2 MiB and 159 commands.
+The ordered list of eligible hull IDs matched the baseline at all five tested stages for mining, hauling and combat.
+
+Eight warm demand polls on a resting listing allocated 1.18 MiB on the baseline. Loading 256 unrelated systems
+raised that to 7.08 MiB. The new worker allocated 0.83 MiB in both cases and settled a partial sale while the
+test held an unrelated system's owner. The polls did zero SQL, opened zero connections and rebuilt zero fits.
+
+For a fixed population comparison, a copy of the frozen save used `capsuleers.activePilotCap=1401` on both
+builds. It reached that cap before the final 30-second window. The control and patched runs used the same
+starting revision, catalog, 135 visited communities and one observer.
+
+| Measurement | Control | Patched |
+| --- | ---: | ---: |
+| Managed allocations at 1,401 scheduled pilots, final 30 s | 139.9 MiB/s | 102.0 MiB/s |
+| Process bytes per completed action in that window | 504.2 KiB | 369.5 KiB |
+| Actions completed in that window | 8,569 | 8,541 |
+| Mean allocation across admission and work, full 90 s | 197.2 MiB/s | 172.6 MiB/s |
+| Completed actions / failures, full 90 s | 23,639 / 0 | 24,050 / 0 |
+| Warm frame processing p95 | 7.16 ms | 2.19 ms |
+| Peak checkpoint capture / projection / write | 12 ms / 784 ms / 1,257 ms | 11 ms / 791 ms / 1,841 ms |
+
+Each run completed seven checkpoints and ended with zero jobs due. All 60 warm observer requests on each build
+used zero SQL commands, connections and fitting rebuilds. The dedicated server's 722.1 MiB/s sample was higher
+than either local replay.
+
+The 90-second Release replay used four reported processors, server GC, the same frozen world, 135 visited
+communities, one observer and real market maintenance. With uncapped admission it completed 29,629 actions
+before and 33,513 after, with zero failures. Process allocation per completed action fell from 697.8 to
+611.1 KiB. Process allocation per second was 223.8 and 220.3 MiB/s respectively, with 3,523 and 3,999 pilots
+scheduled at the end. Warm frame processing p95 was 10.18 ms and 3.73 ms. All 60 warm observer requests
+on each build used zero SQL commands, connections and fitting rebuilds. The frozen world's initial book had
+no open sell orders. The market regression exercises partial settlement while another system is busy.
+
+Reproduce with `ReplaySustainedBotThroughput`, `EDEN_BOT_REPLAY_CASE=450-False`, `EDEN_BOT_REPLAY_SYSTEMS=135`,
+`EDEN_BOT_REPLAY_SECONDS=90`, `EDEN_BOT_REPLAY_MARKET_MAINTENANCE=1` and `EDEN_BOT_REPLAY_WORKER_TRACE=0`.
+Set `EDEN_BOT_REPLAY_SOURCE` to the frozen directory and `EDEN_PERFORMANCE_OUTPUT` to a separate directory
+for each run. Per-second samples and checkpoint measurements are under `artifacts/bot-allocation-20261121/`.
+
+The solution build passed in 9.99 s. The exact `ResidentDemandDoesNotVisitUnrelatedSimulatedSystems` and
+`PartialMiningKeepsAsteroidContactsWarmAndDepletionRefreshesOnlyTheMinedSystem` filters passed. The broader
+catalog, fitting, market, admission, scheduling, preparation, NPC and fresh-career selection passed 179 of
+184 cases in 2 min 13 s. All five failures reproduced on `f285dfd7`. They were two fitting SQL-count assertions,
+the warm founder's SQL-count assertion and both disconnect variants of
+`RoutineProjectionPersistsNewResidentFounderBeforeItsDependents`. Fresh couriers and combat pilots earned and
+replaced both career ships in the installed-catalog test. Both Python policy suites passed all 17 checks.
+
+After integration with the capital-logistics changes on `74904850`, the solution and Release test project
+built with zero warnings or errors in 10.84 s and 12.81 s. The integration filter covered resident demand,
+resident economy, traffic preparation, passive fittings, fitting rollback, career ship replacement, capital
+fuel consumption and phenomena effects. All 55 cases passed in 42 s. Repository formatting passed.
+On the integrated build, the same 90-second capped replay averaged 173.3 MiB/s overall and 105.1 MiB/s
+in the final window at 1,401 pilots. It completed 23,973 actions with zero failures and zero jobs due at the
+last sample. The 60 warm requests issued zero SQL commands, opened zero connections and rebuilt zero fits.
+Warm frame processing p95 was 9.71 ms. Seven checkpoints peaked at 14 ms for capture, 794 ms for projection
+and 1,015 ms for file writing.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare allocation rate at 1,401 scheduled pilots after updating the dedicated server. Check the same interval
+for `market demand` owner holds and arrival `ownerReacquire` times.

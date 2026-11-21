@@ -52,6 +52,8 @@ public sealed class SessionLatencyTests
         Assert.Contains("queue=", message);
         Assert.Contains("reply=", message);
         Assert.Contains("WorldWait=", message);
+        Assert.Contains("Exploration=", message);
+        Assert.Contains("gcPause=", message);
         Assert.Contains("TrafficRefresh=", message);
         Assert.Contains("PendingDamage=", message);
         Assert.Contains("Handler=", message);

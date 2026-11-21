@@ -20,13 +20,13 @@ internal sealed record FleetOptionsReply(bool FreeMove, bool Registered = false)
 
 internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
 {
-    internal static BlueInstance OptOuts(bool enabled) =>
+    internal static BlueInstance OptOuts(FleetMember member) =>
         new(
             "util.KeyVal",
             new Dictionary<string, object?>
             {
-                ["acceptsFleetWarp"] = enabled,
-                ["acceptsConduitJumps"] = false,
+                ["acceptsFleetWarp"] = member.TakesFleetWarp,
+                ["acceptsConduitJumps"] = member.AcceptsConduitJumps,
                 ["acceptsFleetRegroups"] = false,
             }
         );
@@ -46,7 +46,7 @@ internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
                 ["job"] = Member.Job,
                 ["shipTypeID"] = Member.Pilot.ShipTypeId,
                 ["solarSystemID"] = Member.Pilot.SystemId,
-                ["memberOptOuts"] = OptOuts(Member.TakesFleetWarp),
+                ["memberOptOuts"] = OptOuts(Member),
             }
         );
 }
@@ -116,12 +116,12 @@ internal sealed record FleetMemberNotification(long FleetId, FleetMember Before,
             Before.Placement.SquadId,
             (int)Before.Placement.Role,
             Before.Job,
-            FleetMemberReply.OptOuts(Before.TakesFleetWarp),
+            FleetMemberReply.OptOuts(Before),
             After.Placement.WingId,
             After.Placement.SquadId,
             (int)After.Placement.Role,
             After.Job,
-            FleetMemberReply.OptOuts(After.TakesFleetWarp),
+            FleetMemberReply.OptOuts(After),
             OnlyMember,
         ];
 }
@@ -169,6 +169,23 @@ internal sealed record FleetBroadcastNotification(FleetBroadcast Broadcast) : Fl
             Broadcast.ItemId,
             Broadcast.TypeId,
         ];
+}
+
+internal sealed record FleetModuleBeaconChanged(Eden.Gameplay.Flight.CynosuralField Field, bool Active)
+    : FleetNotification("OnFleetJumpBeaconModuleChange")
+{
+    public override object?[] Arguments => [Field.PilotId, Field.SystemId, Field.Beacon.Id, Field.Beacon.TypeId, Active];
+}
+
+internal sealed record FleetDeployableBeaconChanged(long Id, Eden.Gameplay.Flight.CynosuralField Field, bool Active)
+    : FleetNotification("OnFleetJumpBeaconDeployableChange")
+{
+    public override object?[] Arguments => [Id, Field.SystemId, Field.Beacon.Id, Field.PilotId, Active];
+}
+
+internal sealed record FleetPortalChanged(Eden.Gameplay.Flight.JumpPortal Portal, bool Active) : FleetNotification("OnBridgeModeChange")
+{
+    public override object?[] Arguments => [Portal.ShipId, Portal.Target.SystemId, Portal.Target.BeaconId, Active];
 }
 
 internal sealed record FleetStateNotification(IReadOnlyList<FleetTargetTag> Tags) : FleetNotification("OnFleetStateChange")

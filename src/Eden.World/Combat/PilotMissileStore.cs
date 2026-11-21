@@ -20,6 +20,7 @@ using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -89,6 +90,7 @@ internal sealed partial class PilotMissileStore(
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
         overloaded |= members.Any(id => PilotOverloadStore.Selected(world, database.Path, pilotId, id));
         var launchers = members.Select(id => ReadLauncher(world, catalog, pilot, id, now)).ToArray();
@@ -266,6 +268,7 @@ internal sealed partial class PilotMissileStore(
             {
                 throw new InvalidDataException("The NPC is unavailable.");
             }
+            MilitiaHubStore.RequireAttack(world, npc, pilot);
             targetType = catalog.FittingType(npc.TypeId)!;
             target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(targetType.Radius ?? 0));
         }
@@ -496,6 +499,8 @@ internal sealed partial class PilotMissileStore(
                 && row.TargetKind == MissileTargetKind.Npc
                 && world.Set<WorldNpc>().Find(row.TargetId) is { DestroyedAt: null, RetiredAt: null } npc
                 && npc.Navigation != NpcNavigationState.Warping
+                && world.Pilots.Find(row.PilotId) is { } pilot
+                && MilitiaObjectiveStore.CanAttack(world, npc, pilot)
             )
             {
                 var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
@@ -505,7 +510,6 @@ internal sealed partial class PilotMissileStore(
                     payload.Target!.Velocity.Length
                 );
                 var damage = payload.Warhead.Damage.Scale(application);
-                var pilot = world.Pilots.Find(row.PilotId)!;
                 var result = NpcDamagePersistence.Apply(
                     world,
                     catalog,

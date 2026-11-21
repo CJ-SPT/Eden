@@ -119,6 +119,8 @@ internal sealed class PilotCallContext(
     public DockedPilot Pilot => Flight.Pilot;
     public SignedSettings SignedSettings { get; } = signedSettings;
     public bool LocalizationQaWrap { get; set; }
+    public bool AssetHoldingItemValidationEnabled { get; set; } = true;
+    public bool AssetHoldingItemFailureEnabled { get; set; }
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
     public List<PilotNotification> Notifications { get; } = [];
@@ -348,9 +350,11 @@ internal sealed class PilotCallRouter(
                     && (
                         context.Pilot.Position is not null
                         || args[0] is not object?[] repairBind
-                        || repairBind is not [long repairStation, long repairLocation, (long)RepairDefinitions.StationGroup]
-                        || repairStation != context.Pilot.DockedLocationId
-                        || repairLocation != repairStation
+                        || repairBind is not [long dockable, long repairLocation, long repairGroup]
+                        || dockable != context.Pilot.DockedLocationId
+                        // Build 3662168 RepairSvc.GetRemoteRepairMgr binds Upwell repair to the solar system.
+                        || repairLocation != (context.Pilot.InStructure ? context.Pilot.SystemId : dockable)
+                        || repairGroup != (context.Pilot.InStructure ? SolarSystemGroupId : RepairDefinitions.StationGroup)
                     )
                 )
                 {

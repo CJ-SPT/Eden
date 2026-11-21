@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Mail;
@@ -7,6 +6,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Notifications;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -166,8 +166,7 @@ internal sealed partial class AllianceStore
         {
             return false;
         }
-        var row = world.Set<SavedCorporationBillPaymentSettings>().Find(id);
-        var settings = row is null ? null : JsonSerializer.Deserialize<CorporationBillPaymentSettings>(row.DataJson);
+        var settings = CorporationBillingStore.Saved(world, id);
         return settings is not null
             && settings.CorporationId == id
             && settings.Rules.Any(r => r.BillTypeId == AllianceBillingRules.MaintenanceBillType && r.Enabled)
@@ -273,6 +272,7 @@ internal sealed partial class AllianceStore
 
     private static void CloseAlliance(WorldAction world, SavedAlliance alliance, long at)
     {
+        MilitiaOrganizationStore.OrganizationClosed(world, alliance.Id);
         var before = Snapshot(world, alliance.Id)!;
         foreach (var member in world.Filter<SavedAllianceMember>(m => m.AllianceId == alliance.Id).ToArray())
         {

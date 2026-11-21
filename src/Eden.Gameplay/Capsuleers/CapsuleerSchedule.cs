@@ -20,6 +20,12 @@ public sealed record CapsuleerBatch(CapsuleerTurn Turn, IReadOnlyList<MinerObser
 public interface ICapsuleerScheduler
 {
     CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn);
+    CapsuleerBatch Run(int destinyStamp, int maximumActions, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Run(destinyStamp, maximumActions);
+    }
+
     IReadOnlyList<CapsuleerJob> Jobs();
     MinerObservation? Miner(long pilotId);
     HaulerObservation? Hauler(long pilotId);
@@ -53,6 +59,7 @@ public static class CapsuleerScheduleRules
             MinerActivity.Docked => CapsuleerAction.Prepare,
             MinerActivity.Locking => CapsuleerAction.Lock,
             MinerActivity.Mining => CapsuleerAction.Collect,
+            MinerActivity.Jumping => CapsuleerAction.GateTransfer,
             MinerActivity.Waiting => CapsuleerAction.Retry,
             _ => CapsuleerAction.Arrival,
         };
@@ -65,7 +72,12 @@ public static class CapsuleerScheduleRules
         {
             return new(work.DueTicks, action);
         }
-        return Next(work.ActiveTicks, work.DueTicks, action, !inSpace && work.Activity == MinerActivity.Waiting);
+        return Next(
+            work.ActiveTicks,
+            work.DueTicks,
+            action,
+            work.Activity == MinerActivity.Jumping || !inSpace && work.Activity == MinerActivity.Waiting
+        );
     }
 
     public static CapsuleerSchedule Next(HaulerProgress work, bool inSpace) => Next(work, inSpace, false);

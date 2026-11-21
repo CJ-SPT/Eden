@@ -6,6 +6,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -48,12 +49,18 @@ internal sealed partial class FlightSession(
     IPilotWarpDrive? warpDrive = null,
     IPilotInterdiction? interdiction = null,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    IMilitiaComplexes? complexes = null,
+    IPilotCapitalTravel? capital = null,
     Eden.Gameplay.Structures.IPilotTethering? tethering = null
 ) : IDisposable
 {
+    private readonly IPilotCapitalTravel? capitalTravel = capital;
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
     internal const int JumpDurationTicks = FlightTravel.JumpDurationTicks;
     internal const int TranslocationDurationTicks = FlightTravel.TranslocationDurationTicks;
+
+    private static long s_lastConnectionId;
+    private readonly long _connectionId = Interlocked.Increment(ref s_lastConnectionId);
 
     private FlightEffects? _effects;
     private FlightScene? _scene;
@@ -174,7 +181,9 @@ internal sealed partial class FlightSession(
     internal List<PilotNotification> NotificationsBeforeFlight { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
     internal SpatialStatus SpatialStatus => space.SpatialStatus(Pilot.ShipId);
-    public bool Cloaked => SpatialStatus.CloakModuleId != 0;
+    internal bool ModuleCloaked => SpatialStatus.CloakModuleId != 0;
+    internal bool GateCloaked => SpatialStatus.GateCloaked(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+    public bool Cloaked => ModuleCloaked || GateCloaked;
     public SpacePosition Heading => _navigation.Direction ?? _navigation.LastHeading;
     private SpatialActivation? _microJump;
     public bool MicroJumpSpooling => _microJump is not null;
@@ -228,9 +237,9 @@ internal sealed partial class FlightSession(
     internal void NotifyCommandBursts(IReadOnlyList<CommandBurstBoost> boosts) =>
         Update(new DestinyCommand.DbuffUpdated(Pilot.ShipId, boosts));
 
-    internal void NotifyCommandBurstPulse(CommandBurstPulse pulse)
+    internal void NotifyCommandBurstPulse(CommandBurstModule module, IReadOnlyList<long> recipients, int? charge)
     {
-        string family = pulse.Module.Effect switch
+        string family = module.Effect switch
         {
             DogmaEffect.ArmorCommandBurst => "Armor",
             DogmaEffect.ShieldCommandBurst => "Shield",
@@ -242,24 +251,16 @@ internal sealed partial class FlightSession(
             Pilot.ShipId,
             null,
             "effects.WarfareLinkSphere" + family,
-            new() { ["graphicRadius"] = pulse.Module.Radius, ["radius"] = pulse.Module.Radius }
+            new() { ["graphicRadius"] = module.Radius, ["radius"] = module.Radius }
         );
-        foreach (long recipient in pulse.Recipients)
+        foreach (long recipient in recipients)
         {
             Emit(recipient, Pilot.ShipId, "effects.WarfareLink" + family, null);
         }
 
         void Emit(long ship, long? target, string graphic, Dictionary<string, object?>? info)
         {
-            var command = new DestinyCommand.CommandBurstVisual(
-                ship,
-                pulse.Module.Id,
-                pulse.Module.TypeId,
-                target,
-                pulse.Magazine.TypeId,
-                graphic,
-                info
-            );
+            var command = new DestinyCommand.CommandBurstVisual(ship, module.Id, module.TypeId, target, charge, graphic, info);
             // Publish the source and recipient visuals together in the emitting ship's flight stream.
             Update(command);
         }
@@ -328,6 +329,7 @@ internal sealed partial class FlightSession(
                 CorporationAccess = identity.Access,
                 CorporationAccountKey = identity.AccountKey,
                 AllianceId = identity.AllianceId,
+                WarFaction = identity.WarFaction,
             },
         };
         if (InBallpark && !_destroying)
@@ -358,6 +360,18 @@ internal sealed partial class FlightSession(
     internal StaticSpaceObject? FindBookmarkObject(long id) => Scene.NavigationTarget(SceneContext, id);
 
     public TargetContact? FindTarget(long id) => Scene.FindTarget(SceneContext, id);
+
+    internal void RefreshStructureObservers()
+    {
+        if (_controlledStructureId is not null)
+        {
+            Scene.RefreshPeers(SceneContext);
+            RefreshNpcs();
+            RefreshDrones();
+        }
+    }
+
+    internal bool HasPeerShip(long id) => id != Pilot.ShipId && space.FindArea(Pilot.SystemId, id) is not null;
 
     internal PilotWeaponTarget? FindPilotWeaponTarget(long id) => Scene.FindPilotWeaponTarget(SceneContext, id);
 
@@ -457,6 +471,26 @@ internal sealed partial class FlightSession(
     {
         using (space.UseSystem(Pilot.SystemId))
         {
+            if (space.HasConduitArrival(Pilot.ShipId))
+            {
+                return;
+            }
+            if (space.ConsumeDisplacement(Pilot.ShipId) is { } displacement)
+            {
+                var destination = displacement.Position;
+                Pilot = Pilot with { Position = destination };
+                _navigation = displacement.PriorNavigation?.Copy() ?? new();
+                _simulatedStamp = Stamp;
+                CorrectPosition(Pilot.ShipId, destination, _navigation.Velocity, _simulatedStamp);
+                Update(
+                    displacement.PriorNavigation is null
+                        ? new DestinyCommand.Stop(Pilot.ShipId)
+                        : new DestinyCommand.MicroJumpVisual(Pilot.ShipId, destination)
+                );
+                PublishMotion();
+                PublishContact();
+            }
+            SynchronizeGateCloak();
             RefreshTackle();
             RefreshInterdiction();
             RefreshTether();
@@ -627,7 +661,7 @@ internal sealed partial class FlightSession(
             (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
             _navigation.FollowTarget?.Id ?? 0,
             _travel.Gate?.Destination.SourceId,
-            _travel.IsArriving(Stamp),
+            _travel.IsArriving(Stamp) && (SpatialStatus.GateCloakUntil == 0 || GateCloaked),
             ModuleEffects.Modules,
             ModuleEffects.Mining,
             health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
@@ -650,7 +684,10 @@ internal sealed partial class FlightSession(
             DepartureAt: _travel.DepartureAt,
             Cloaked: Cloaked,
             MicroJump: _microJump,
-            Tether: _tether
+            GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0,
+            ConnectionId: _connectionId,
+            Tether: _tether,
+            Compression: _compressionFacilities
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -809,7 +846,7 @@ internal sealed partial class FlightSession(
         {
             if (_structureObserver is not null)
             {
-                Scene.RefreshStructurePeers(SceneContext);
+                Scene.RefreshPeers(SceneContext);
             }
             return;
         }
@@ -817,7 +854,7 @@ internal sealed partial class FlightSession(
         PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
-        Scene.RefreshPeers(SceneContext, contact, preserveSourceState: SourceSceneLocked);
+        Scene.RefreshPeers(SceneContext);
     }
 
     internal IReadOnlyList<ShipContact> VisiblePeers => Scene.VisiblePeers;
@@ -831,15 +868,16 @@ internal sealed partial class FlightSession(
     {
         ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
-        drones?.Release(Pilot.PilotId, Pilot.ShipId);
         _accelerationGateWarp = false;
         if (_disconnecting)
         {
+            drones?.Disconnect(Pilot.PilotId, Pilot.ShipId);
             tackle?.Disconnect(Pilot.PilotId, Pilot.ShipId);
             electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId);
         }
         else
         {
+            drones?.Release(Pilot.PilotId, Pilot.ShipId);
             tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
             electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
         }
@@ -880,6 +918,12 @@ internal sealed partial class FlightSession(
                 }
             }
         }
+    }
+
+    internal void RetireStoredShip()
+    {
+        space.Leave(Pilot.ShipId);
+        Pilot = Pilot with { Position = null };
     }
 
     public void PrepareDisconnect()
@@ -966,7 +1010,25 @@ internal sealed partial class FlightSession(
         IPilotTranslocation travel,
         TranslocationTarget target,
         IReadOnlyList<StaticSpaceObject> destinationObjects
-    )
+    ) => StartSpaceTransfer(DeveloperTransfer(travel, target, destinationObjects));
+
+    private TranslocationTransit DeveloperTransfer(
+        IPilotTranslocation travel,
+        TranslocationTarget target,
+        IReadOnlyList<StaticSpaceObject> destinationObjects
+    ) =>
+        new(
+            () =>
+            {
+                var moved = travel.Move(Pilot.PilotId, Pilot.ShipId, target);
+                return new(moved.Pilot, [moved.ShipChange]);
+            },
+            target.System.Id,
+            destinationObjects,
+            0
+        );
+
+    private void StartSpaceTransfer(TranslocationTransit transit)
     {
         if (EntosisActive)
         {
@@ -977,13 +1039,13 @@ internal sealed partial class FlightSession(
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
             _navigation = new();
             _simulatedStamp = Stamp;
-            _travel.BeginTranslocation(travel, target, destinationObjects, Stamp);
+            _travel.BeginTranslocation(transit, Stamp);
             if (wasWarping)
             {
                 WarpEffect(Pilot.ShipId, false);
             }
             Update(new DestinyCommand.Stop(Pilot.ShipId));
-            Update(new DestinyCommand.TranslocationOut(Pilot.ShipId, target.System.Id, TranslocationDurationTicks * 1000));
+            Update(new DestinyCommand.TranslocationOut(Pilot.ShipId, transit.SystemId, TranslocationDurationTicks * 1000));
             space.Publish(CreateContact());
         }
     }
@@ -994,12 +1056,14 @@ internal sealed partial class FlightSession(
         IReadOnlyList<StaticSpaceObject> destinationObjects
     )
     {
-        _travel.QueueTranslocation(travel, target, destinationObjects);
+        _travel.QueueTranslocation(DeveloperTransfer(travel, target, destinationObjects));
     }
 
     public void SourceStatePublished() => _travel.SourceStatePublished(Stamp);
 
     internal void GateDeparturePublished() => _travel.GateDeparturePublished(clock.GetTimestamp());
+
+    internal void CapitalDeparturePublished() => _travel.CapitalDeparturePublished(clock.GetTimestamp());
 
     public void StartPendingTranslocation()
     {
@@ -1007,20 +1071,31 @@ internal sealed partial class FlightSession(
         {
             if (_travel.DepartureReady(Stamp) is { } pending)
             {
-                StartTranslocation(pending.Travel, pending.Target, pending.Objects);
+                StartSpaceTransfer(pending);
             }
         }
     }
 
-    public PilotTranslocation? CompleteTranslocation()
+    public SpaceTransfer? CompleteTranslocation()
     {
         using (space.UseSystem(Pilot.SystemId))
         {
-            if (_travel.TranslocationDue(Stamp) is not { } transit)
+            if (_travel.TranslocationDue(Stamp, clock) is not { } transit)
             {
                 return null;
             }
-            var moved = transit.Travel.Move(Pilot.PilotId, Pilot.ShipId, transit.Target);
+            SpaceTransfer moved;
+            try
+            {
+                moved = transit.Move();
+            }
+            catch (InvalidDataException error) when (transit.Capital)
+            {
+                _travel.CancelTranslocation();
+                SnapshotCore();
+                NotificationsBeforeFlight.Add(new CapitalJumpCancelled(error.Message));
+                return null;
+            }
             Relocate(moved.Pilot, transit.Objects);
             _travel.CompleteTranslocation();
             return moved;
@@ -1065,6 +1140,8 @@ internal sealed partial class FlightSession(
                     )
                 )
             );
+            Scene.ResetStructureObservers();
+            RefreshStructureObservers();
             return;
         }
         // A new source SetState would run the client's asynchronous DoBallClear
@@ -1074,6 +1151,7 @@ internal sealed partial class FlightSession(
             return;
         }
         Checkpoint();
+        RefreshCynos();
         if (!InBallpark && Pilot.Position is { } position)
         {
             // A legacy save or a disconnect during warp can leave the ship inside a rigid body.
@@ -1104,6 +1182,7 @@ internal sealed partial class FlightSession(
         }
         bool entering = !InBallpark;
         InBallpark = true;
+        SynchronizeGateCloak();
         bool arriving = _travel.BeginArrival(entering, Stamp);
         RefreshTether();
         PublishMotion();
@@ -1154,6 +1233,10 @@ internal sealed partial class FlightSession(
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems, bool automatic = false)
     {
+        if (CapitalModuleActive)
+        {
+            return new PilotCallResult.Failure("Wait for the active capital module to finish before jumping.");
+        }
         if (EntosisActive)
         {
             return new PilotCallResult.Failure("Wait for the paid Entosis cycle to finish before jumping.");
@@ -1171,6 +1254,7 @@ internal sealed partial class FlightSession(
             return departure.Result;
         }
         // Keep the source scene alive for the camera handoff before transferring the pilot.
+        CancelGateCloak();
         if (!automatic)
         {
             PilotNavigationRevision++;
@@ -1190,6 +1274,10 @@ internal sealed partial class FlightSession(
 
     internal void StartWormholeJump(long entrance, IWormholeTravel travel, ISystemObjects systems)
     {
+        if (CapitalModuleActive)
+        {
+            throw new InvalidDataException("Wait for the active capital module to finish before jumping.");
+        }
         if (EntosisActive)
         {
             throw new InvalidDataException("Wait for the paid Entosis cycle to finish before jumping.");
@@ -1200,6 +1288,7 @@ internal sealed partial class FlightSession(
             throw new InvalidDataException("Wait until your ship is ready to enter the wormhole.");
         }
         var destination = travel.Prepare(Pilot.PilotId, Pilot.ShipId, entrance);
+        CancelGateCloak();
         var objects = systems.Load(destination.System.Id);
         PilotNavigationRevision++;
         _travel.BeginGate(
@@ -1246,6 +1335,19 @@ internal sealed partial class FlightSession(
                 return false;
             }
         }
+        else if (jump.Bridge is { } bridge)
+        {
+            try
+            {
+                position = bridge.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+            }
+            catch (InvalidDataException error)
+            {
+                _travel.Reset();
+                NotificationsBeforeFlight.Add(new CapitalJumpCancelled(error.Message));
+                return false;
+            }
+        }
         else if (gates is not null)
         {
             position = gates.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
@@ -1276,10 +1378,12 @@ internal sealed partial class FlightSession(
     {
         var origin = Pilot.Position!;
         var destination = missions?.WarpDestination(Pilot.SystemId, origin, requested) ?? requested;
-        return destination == requested
-            ? dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), Pilot.PilotId)
-                ?? requested
-            : destination;
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (destination == requested)
+        {
+            destination = dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, now, Pilot.PilotId) ?? requested;
+        }
+        return destination == requested ? complexes?.Redirect(Pilot.SystemId, requested, now) ?? requested : destination;
     }
 
     private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null, bool accelerationGate = false)
@@ -1297,7 +1401,11 @@ internal sealed partial class FlightSession(
             return blocked;
         }
         RefreshTackle(true);
-        if (MicroJumpSpooling || Cloaked && !SpatialStatus.WarpSafe)
+        if (SpatialStatus.FieldScrambledUntil > clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+        {
+            return new PilotCallResult.Failure("The capital micro jump field prevents your ship from warping.");
+        }
+        if (MicroJumpSpooling || ModuleCloaked && !SpatialStatus.WarpSafe)
         {
             return new PilotCallResult.Failure("The active cloak or micro-jump spool prevents warp.");
         }
@@ -1314,11 +1422,19 @@ internal sealed partial class FlightSession(
             return new PilotCallResult.Failure("Your ship is inside a warp disruption bubble.");
         }
         var body = Scene.Objects.FirstOrDefault(item => item.Id == target);
+        if (
+            body is null
+            && coordinates is null
+            && VisibleNpcs.FirstOrDefault(n => n.Id == target && n.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective) is { } hub
+        )
+        {
+            body = new(hub.Id, hub.TypeId, hub.GroupId, hub.CategoryId, hub.CorporationId, hub.Position, hub.Radius);
+        }
         if (body is null && coordinates is null)
         {
             return PilotCallResult.Unsupported;
         }
-        if (!accelerationGate && (missions is not null || dedComplexes is not null))
+        if (!accelerationGate && (missions is not null || dedComplexes is not null || complexes is not null))
         {
             try
             {
@@ -1373,11 +1489,19 @@ internal sealed partial class FlightSession(
         }
         if (accelerationGate)
         {
-            var activation =
-                DedComplexRules.IsGate(target) && dedComplexes is not null
-                    ? dedComplexes.ActivateGate(Pilot.PilotId, target, coordinates!, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
-                    : missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
-            _gateInventoryChanges.AddRange(activation.Items);
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            if (MilitiaComplexRules.IsGate(target) && complexes is not null)
+            {
+                complexes.Gate(Pilot.PilotId, target, now, coordinates!);
+            }
+            else
+            {
+                var activation =
+                    DedComplexRules.IsGate(target) && dedComplexes is not null
+                        ? dedComplexes.ActivateGate(Pilot.PilotId, target, coordinates!, now)
+                        : missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
+                _gateInventoryChanges.AddRange(activation.Items);
+            }
         }
         else if (warpDrive is not null)
         {
@@ -1418,6 +1542,10 @@ internal sealed partial class FlightSession(
             try
             {
                 var result = ExecuteCommand(command);
+                if (command is not FlightCommand.RefreshState && result is PilotCallResult.Success)
+                {
+                    CancelGateCloak();
+                }
                 if (!automatic && command is not FlightCommand.RefreshState && result is PilotCallResult.Success)
                 {
                     PilotNavigationRevision++;
@@ -1437,6 +1565,10 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
+        if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CapitalModuleActive && !CanNavigateInSiege(command))
+        {
+            return new PilotCallResult.Failure("Wait for the active capital module to finish before moving the ship.");
+        }
         if (
             EntosisActive
             && command
@@ -1453,7 +1585,7 @@ internal sealed partial class FlightSession(
         {
             return new PilotCallResult.Failure("Wait for the micro-jump spool to finish before navigating.");
         }
-        if (Cloaked && command is FlightCommand.Dock or FlightCommand.Jump or FlightCommand.ActivateAccelerationGate)
+        if (ModuleCloaked && command is FlightCommand.Dock or FlightCommand.Jump or FlightCommand.ActivateAccelerationGate)
         {
             return new PilotCallResult.Failure("Decloak before docking or using a gate.");
         }
@@ -1508,12 +1640,17 @@ internal sealed partial class FlightSession(
         }
         switch (command)
         {
-            case FlightCommand.ActivateAccelerationGate gate when missions is not null || dedComplexes is not null:
+            case FlightCommand.ActivateAccelerationGate gate when missions is not null || dedComplexes is not null || complexes is not null:
                 try
                 {
                     if (!CanTarget)
                     {
                         return new PilotCallResult.Failure("Wait until your ship can navigate before activating the gate.");
+                    }
+                    long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                    if (MilitiaComplexRules.IsGate(gate.GateId) && complexes is not null)
+                    {
+                        return StartWarp(gate.GateId, 0, complexes.Gate(Pilot.PilotId, gate.GateId, now), accelerationGate: true);
                     }
                     var destination =
                         DedComplexRules.IsGate(gate.GateId) && dedComplexes is not null

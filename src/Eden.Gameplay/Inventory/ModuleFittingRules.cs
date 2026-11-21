@@ -3,6 +3,7 @@ using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -53,14 +54,17 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            AreaWeaponRules.IsModule(groupId)
+            AreaWeaponRules.IsModule(groupId, typeId)
             || groupId == InterdictionRules.NullifierGroup && effects.Contains(DogmaEffect.InterdictionNullifier)
             || groupId == InterdictionRules.GeneratorGroup && effects.Contains(DogmaEffect.WarpDisruptSphere)
             || groupId == InterdictionRules.LauncherGroup && effects.Contains(DogmaEffect.UseMissiles)
             || groupId == CommandBurstRules.Group && effects.Any(CommandBurstRules.IsBurst)
+            || groupId == CommandBurstRules.PhenomenaGroup
+                && CommandBurstRules.IsPhenomena(typeId)
+                && effects.Contains(DogmaEffect.TitanPhenomena)
             || groupId == SmartbombRules.Group && effects.Contains(DogmaEffect.Smartbomb)
             || groupId == SpatialModuleRules.CloakGroup && effects.Any(SpatialModuleRules.IsCloak)
-            || groupId == SpatialModuleRules.MicroJumpGroup && effects.Contains(DogmaEffect.MicroJumpDrive)
+            || SpatialModuleRules.IsDrive(groupId, typeId) && effects.Contains(SpatialModuleRules.JumpEffect(typeId))
             || groupId is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup
                 && effects.Contains(DogmaEffect.MiningClouds)
             || groupId == HackingRules.AnalyzerGroup && effects.Contains(DogmaEffect.Hacking)
@@ -115,6 +119,22 @@ public static class ModuleFittingRules
                         ),
                 ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
                 Sovereignty.EntosisRules.ModuleGroup => effects.Contains(Sovereignty.EntosisRules.Effect),
+                Flight.CapitalTravelRules.GeneratorGroup => Flight.CapitalTravelRules.ModuleField(typeId) is not null
+                    && effects.Contains(DogmaEffect.CynosuralGeneration),
+                Flight.IndustrialProtectionRules.Group => typeId == Flight.IndustrialProtectionRules.Module
+                    && effects.Contains(DogmaEffect.IndustrialInvulnerability),
+                Flight.ShipCompressionRules.Group => Flight.ShipCompressionRules.IsCompressor(typeId)
+                    && effects.Contains(DogmaEffect.IndustrialItemCompression),
+                Flight.CapitalModeRules.Group => Flight.CapitalModeRules.Effect(typeId) is { } mode && effects.Contains(mode),
+                Flight.CapitalModeRules.CloneVatGroup => typeId == Flight.CapitalModeRules.CloneVat
+                    && effects.Contains(DogmaEffect.CloneJumpAccepting),
+                Flight.CapitalTravelRules.EconomizerGroup => effects.Contains(DogmaEffect.JumpDriveEconomizer),
+                Flight.CapitalTravelRules.TitanPortalGroup => typeId == Flight.CapitalTravelRules.TitanPortalGenerator
+                    && effects.Contains(DogmaEffect.TitanJumpPortalGeneration),
+                Flight.CapitalTravelRules.CovertPortalGroup => typeId == Flight.CapitalTravelRules.CovertPortalGenerator
+                    && effects.Contains(DogmaEffect.CovertJumpPortalGeneration),
+                CapitalTravelRules.IndustrialPortalGroup => typeId == CapitalTravelRules.IndustrialPortalGenerator
+                    && effects.Contains(DogmaEffect.TitanJumpPortalGeneration),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                     && effects.Contains(DogmaEffect.CapacitorBoosting),
                 HullRepairDefinitions.Group => LocalRepairDefinitions.IsSupported(attributes)

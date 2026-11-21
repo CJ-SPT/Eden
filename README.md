@@ -1,14 +1,25 @@
 # Eden
 
-Eden is a self-hosted C# server emulator for **EVE Online 24.01, Windows build 3662168**. Play solo or connect multiple
-pilots to the same persistent world. You’ll need to supply the matching Windows client and resource cache separately.
+<img src="assets/icons/eden-server.png" width="80" align="right" alt="">
+
+Eden is a self-hosted C# server emulator for EVE Online. Play solo or invite friends to a persistent world where simulated
+pilots mine, trade, and form corporations.
+
+**Client required** · EVE Online 24.01 for Windows, build 3662168. Supply the matching client and resource cache separately.
+
+**[Set up on Windows](#start-here)** · [Connect and play](#connect-and-play) · [Host with Docker](docs/docker.md) ·
+[Gameplay coverage](docs/feature-notes.md#gameplay-overview) · [Documentation](docs/README.md) ·
+[Discord](https://discord.gg/ZTxJrZKAXe)
 
 ## Start here
 
-For local setup on Windows, install PowerShell 7, 64-bit Python 3.11 or later, and the .NET SDK pinned in
-[global.json](global.json). Run these commands from the repository root, replacing the example paths with your EVE
-installation and a separate staging directory. Catalog setup builds the server and downloads the matching CCP data export
-on its first run.
+### Start a local server on Windows
+
+You’ll need PowerShell 7, 64-bit Python 3.11 or later, and a stable .NET 10 SDK.
+[Download the .NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+
+From the repository root, run these commands in PowerShell 7. Replace `E:\Eve` with the folder containing your matching
+`tq` and `ResFiles` directories. Use a separate, empty folder in place of `E:\EdenDev\3662168`.
 
 ```powershell
 .\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve' -DevelopmentRoot 'E:\EdenDev\3662168'
@@ -16,97 +27,37 @@ on its first run.
 dotnet run --no-build --project src/Eden.Server
 ```
 
-- [Windows client setup](docs/development-client.md) covers staging, offline catalog rebuilds and development login.
-- [Launcher and remote hosting](docs/launcher.md) covers account setup, connecting with Eden Launcher and configuring TLS.
-- [Docker deployment](docs/docker.md) covers hosting in Linux containers with persistent data.
-- [Documentation index](docs/README.md) lists setup, gameplay, modding and developer guides.
+The first command copies and verifies the client. Catalog setup builds the server and downloads the matching game data on
+its first run. For staging, offline setup, and troubleshooting, see the [Windows client guide](docs/development-client.md).
 
-## Current status
+### Connect and play
 
-[Sovereignty](docs/protocol/sovereignty.md) supports neutral hub deployment, paid Entosis capture, vulnerability windows,
-reinforcement, command-node campaigns, activity indices, alliance capitals and live ADM capture scaling. Resident claims,
-checkpoint recovery, native sovereignty/map views, Skyhook resources, workforce networks and catalog-backed upgrades
-are implemented. Active detection and prospecting upgrades feed site generation; infrastructure consumers remain planned.
+1. Open Eden Launcher. In **Settings**, connect to `http://127.0.0.1:26002` for a local server, or use the API address from
+   your server host.
+2. Select the staged client folder and choose **Use this client**.
+3. Choose **Add account** to create an account or sign in. Select the account and click **Play**.
 
-[Player-bot failure isolation](docs/protocol/capsuleers.md#bot-failure-isolation---november-16-2026) backs off broken pilots
-while healthy bots continue, preserving authoritative jobs and committed economic progress.
-[Population preparation retries](docs/protocol/capsuleers.md#population-preparation-retries---november-16-2026) recover
-failed system and gate-visitor batches automatically while other occupied systems continue preparing.
-[Shared bot presentation](docs/protocol/capsuleers.md#shared-bot-presentation---november-16-2026) reuses unchanged system
-observations across players while preserving immediate damage, exact recharge and effect deadlines.
+[Get Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher#run) ·
+[Build the launcher](https://github.com/CJ-SPT/Eden-Launcher#build-and-verify) ·
+[Account setup and remote hosting](docs/launcher.md)
 
-| Area | What you can do |
-| --- | --- |
-| Flight and fitting | Fly, dock, use gates and autopilot, save bookmarks, and fit supported ships and modules, including all published Tech II subcapital hulls. Specialist module support varies by hull. [Feature notes](docs/feature-notes.md#fitting-weapons-and-modules) |
-| Combat and exploration | Fight other pilots or NPCs, [abandon, steal, or recover lawful loot](docs/protocol/inventory.md#criminal-loot-and-lawful-recovery-november-14-2026), run anomalies and 437 level 1–4 combat, delivery, trade, mining and Data Center mission definitions, or probe down DED complexes, Ghost Sites and ordinary data and relic sites. [Combat](docs/protocol/combat.md), [mission inventory](docs/missions.md), [scanning and hacking](docs/protocol/information.md) |
-| Abyssal Deadspace | Run three-room T0–T6 solo-cruiser or cooperative frigate/destroyer pockets with weather, environmental hazards, loot and checkpointed deadlines. Roll supported modules with mutaplasmids. Encounter and reward distributions use authored Eden policies. [Scope and validation](docs/protocol/abyssal.md) |
-| Drones | Launch combat, repair, salvage, EWAR, web, neutralizing and hybrid drones, plus ore/ice mining drones using world gathering and mining SP settings. [Scope and validation](docs/protocol/drones.md#utility-and-mining-drones-november-15-2026) |
-| Industry and trade | Mine ore, ice and gas, [jettison cargo](docs/protocol/inventory.md#cargo-jettison-november-13-2026), run planetary colonies, research blueprints, manufacture, place market orders, and [trade items and ISK with docked players](docs/protocol/inventory.md#direct-player-trading). Choose market presets, including Standard with individual imported live orders and Progressive with production-unlocked supply. [Industry and markets](docs/protocol/industry.md), [planetary industry](docs/protocol/planetary.md), [market presets](docs/world-configuration.md#market-presets) |
-| Persistent capsuleers | Encounter simulated travelers, miners, haulers and ratters. Their routines advance while a connected player has a character in the system and resume from saved state when players return. [Population guide](docs/capsuleer-population.md), [simulation rules](docs/protocol/capsuleers.md#occupied-system-simulation---november-12-2026) |
-| Fleets, corporations, alliances and structures | Fly in fleets, [tag shared targets](docs/protocol/fleets.md#fleet-target-tags-november-14-2026), use chat and mail, manage player corporations with bulk member removal, CEO elections, blueprint lock/unlock votes and shared hangars, form alliances with applications, executor governance, maintenance bills and shared tools, and deploy Upwell structures with supported docking and industry services. [Docked structure control](docs/protocol/structures.md#docked-structure-control-and-quantum-core-setup--november-16-2026) supports quantum cores, fuel and service setup; [Ship attacks and structure loss](docs/protocol/structures.md#incoming-weapons-destruction-and-automatic-custody) now cover paid turrets, missiles, combat drones and automatic asset recovery; [resident tethering](docs/protocol/structures.md#resident-tethering-and-repair) adds protection and repairs. [Defensive fitting](docs/protocol/structures.md#resident-defensive-fitting-and-full-power-dogma) supports rack equipment, rigs and full-power attributes. [Controlled targeting](docs/protocol/structures.md#resident-structure-targeting-and-controlled-scenes) uses resident scans and nearby native scenes. [Ammunition handling](docs/protocol/structures.md#resident-structure-ammunition-and-reloads) adds bay custody, magazines and saved reloads. [Defensive missile firing](docs/protocol/structures.md#resident-defensive-missile-firing) adds paid launches, repeat cycles and green-safety retaliation, including against [deployed drones](docs/protocol/structures.md#defensive-missiles-against-drones). [Standup energy neutralizers](docs/protocol/structures.md#standup-energy-neutralizers-and-structure-capacitor) drain ships and NPCs using the structure's capacitor. [Standup webifiers](docs/protocol/structures.md#standup-stasis-webifiers) slow ships and NPCs for 30 seconds. Remaining defensive effects and services are in progress. [Fleets](docs/protocol/fleets.md), [corporations](docs/corporations.md), [alliances](docs/protocol/alliances.md), [structures](docs/protocol/structures.md) |
-| World settings and mods | Tune gathering, rewards, progression, travel, industry and structure timers through administration. Install skill mods, C# server plugins and Python client extensions. [World settings](docs/world-configuration.md), [remote administration in Docker](docs/docker.md#remote-administration), [modding guide](docs/modding.md) |
+## Customize your world
 
-Mission support includes [short-deadline deliveries](docs/missions.md#short-deadline-deliveries) and
-[singleton courier cargo](docs/missions.md#singleton-courier-cargo), for 437 supported definitions, including [sequential courier chains](docs/missions.md#mission-chains), [trade storylines](docs/missions.md#trade-missions-and-item-rewards) and [one-time Data Center agents](docs/missions.md#data-center-agents).
-
-New mission offers include a [timed ISK bonus](docs/protocol/agents.md#timed-mission-bonuses--november-14-2026),
-with saved deadlines and fleet reward sharing.
-
-[Area weapons and EWAR](docs/protocol/area-weapons.md) add burst jammers, bombs, defenders and heavy grapplers,
-plus paid projector programs that retain their supercarrier hull dependency.
-
-The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
-document automated coverage and any live client observations.
-
-[Resident wormholes](docs/protocol/wormholes.md) provide C1–C6 connections with saved mass, lifetime,
-polarization, collapse and replacement signatures, 57 Sleeper combat/data/relic/gas site definitions, blue loot,
-Tech 3 exploration inputs and native wormhole system effects.
-
-The [Ship Tree recent-skill lookup](docs/protocol/characters.md#ship-tree-recent-skill-lookup-november-15-2026)
-now returns successfully; recent-training highlights remain unavailable.
-
-[Multifit](docs/protocol/fitting.md#native-multifit-batches-november-15-2026) assembles and fits up to 100 packaged
-hulls per batch from stock in your current personal item hangar.
-
-Use the [personal notepad and shared settings](docs/protocol/social.md#notepad-and-shared-settings--november-14-2026)
-to save private notes and folders, and share overview profiles, inventory filters and fleet broadcast settings with other pilots.
+Use the admin tools to adjust progression, travel, rewards, and production. Eden also supports skill mods, C# server plugins,
+and Python client extensions. [World settings](docs/world-configuration.md) · [Modding guide](docs/modding.md)
 
 ## Local game data
 
-- `catalog.sqlite` contains game definitions for build 3662168. The setup script generates it locally.
-- `world.sqlite` contains accounts, characters, assets and simulation state. The server creates it on first startup.
+- `catalog.sqlite` contains game definitions for build 3662168. Catalog setup generates it locally.
+- `world.sqlite` saves accounts, pilots, assets, and simulation state. Eden creates it on first startup.
 
 The default data directory is `src/Eden.Server/data` when running from source and `data` beside a published executable.
-If you’re keeping an existing world, stop the old server and copy its data before starting the updated server.
-[Save migration guide](docs/development-client.md#moving-an-existing-server)
-
-[AutoMining](docs/modding.md#automining) adds opt-in harvesting, player fleet following, multi-system ore routes and station hauling through Eden Mods.
-
-[Regional Express](docs/modding.md#regional-express) adds optional regional shortcuts with region-appropriate gates.
-
-[Client package retention](docs/modding.md#client-package-retention) automatically removes obsolete generated catalogs
-and abandoned builds while retaining active, pending and rollback packages.
-
-[Cargo container access](docs/protocol/inventory.md#resident-cargo-container-access-november-15-2026) supports
-native opening, names, passwords and content previews through the resident world and its checkpoints.
-
-[Corporation auto-removal](docs/protocol/corporations.md#ordinary-member-auto-removal-november-15-2026) queues
-ordinary expulsions in space and settles them when the member docks, with persistent requests and current protection checks.
-
-[Agency Agents & Missions](docs/protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
-supports native agent browsing, locator filtering, mission previews and existing mission conversations/actions.
-
-[Population validation during travel](docs/protocol/performance.md#population-validation-during-travel-november-15-2026)
-batches resident NPC slot checks and avoids copying unchanged guards during population participant discovery.
-
-[Site history queries](docs/protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
-select current site identities before copying rows and avoid materializing history for simple resident ID maxima.
+Stop the server before copying or moving an existing world. [Save migration guide](docs/development-client.md#moving-an-existing-server)
 
 ## Build and run
 
-Use the Windows commands in [Start here](#start-here) to prepare data and run a local server. For code milestones, run
-the following checks from the repository root in order. Replace the example hosting filter with the affected behavior and
-its immediate dependencies.
+Use the commands under [Start here](#start-here) to run a local server. For code milestones, run the checks below from the
+repository root in order. Replace the sample hosting filter with the affected tests and their immediate dependencies.
 
 ```powershell
 dotnet tool restore
@@ -118,28 +69,26 @@ python tests/Eden.Protocol.Tests/Formatting/formatting_policy_test.py
 .\tools\Format.ps1 -Check
 ```
 
-Stop at the first failure and record the test filter, results, elapsed time and limitations. Run the full .NET suite only
-for an explicitly requested regression check. Documentation-only changes use documentation checks.
-[Contributor guide](AGENTS.md) · [Automated validation](docs/testing.md)
+Stop at the first failure. Record the test filter, results, elapsed time, and limitations. Run the full .NET suite only for an
+explicitly requested regression check. Documentation changes use documentation checks.
 
-For project boundaries and server diagnostics, see the [architecture and runtime guide](docs/architecture.md).
+[Contributor guide](AGENTS.md) · [Testing guide](docs/testing.md) · [Architecture and runtime](docs/architecture.md)
 
 ## Formatting
 
-After restoring tools and the solution, run `.\tools\Format.ps1` to apply formatting or
-`.\tools\Format.ps1 -Check` to verify it. The script runs .NET style rules, CSharpier 1.3.0 and strict line-width
-validation. Use `dotnet format style --no-restore --severity warn` for style-only fixes and CSharpier for whitespace.
+After restoring tools and the solution, use `.\tools\Format.ps1` to format files or `.\tools\Format.ps1 -Check` to verify them.
+The script runs .NET style rules, CSharpier 1.3.0, and line-width checks. For style-only fixes, use
+`dotnet format style --no-restore --severity warn`.
 
-Follow [EditorConfig](.editorconfig) and the [contributor guide](AGENTS.md#code-style). Authored C# uses four-space
-indentation and Allman braces. Project and configuration files use two spaces. The 140-character limit covers authored
-C#, project and solution files, `global.json`, JSON under `.config` and `.vscode`, and
-`appsettings*.json` and `launchSettings.json`. Generated code, build outputs and runtime data are excluded.
+Use four spaces and Allman braces in C#. Use two spaces in project and configuration files. The 140-character limit covers
+authored C#, project and solution files, `global.json`, JSON under `.config` and `.vscode`, and `appsettings*.json` and
+`launchSettings.json`. Generated code, build outputs, and runtime data are excluded.
 
-Wrap long lines first. For unavoidable exceptions, record the repository-relative path with forward slashes, the exact
-line and a specific reason in [formatting-exceptions.json](tools/formatting-exceptions.json). For format-on-save in
-Visual Studio, VS Code or Rider, select the repository-local CSharpier tool and keep EditorConfig enabled.
+Wrap long lines where possible. For unavoidable exceptions, record the repository-relative path with forward slashes, the
+exact line, and a reason. For format on save in Visual Studio, VS Code, or Rider, select the repository-local CSharpier tool
+and keep EditorConfig enabled. [EditorConfig](.editorconfig) · [Formatting exceptions](tools/formatting-exceptions.json)
 
 ## License
 
-Eden’s original source and documentation are available under the [MIT License](LICENSE).
-See the [Carbon licensing notes](docs/carbon-license.md) for reference-source attribution.
+Eden’s original source and documentation are available under the MIT License. The Carbon notes cover reference-source
+attribution. [MIT License](LICENSE) · [Carbon licensing notes](docs/carbon-license.md)

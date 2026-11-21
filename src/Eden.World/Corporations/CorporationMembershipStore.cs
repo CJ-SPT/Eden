@@ -7,6 +7,7 @@ using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.FactionWarfare;
 using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -52,6 +53,22 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         var world = transaction.World;
         var pilot = Pilot(world, pilotId);
         var corporation = Corporation(world, corporationId);
+        long now = Now;
+        var application = SubmitApplication(world, pilot, corporation, text, now);
+        var submitted = application.Snapshot();
+        OfferToPlayer(world, corporation, pilot, application, now);
+        transaction.Commit();
+        return submitted;
+    }
+
+    internal static SavedCorporationApplication SubmitApplication(
+        WorldAction world,
+        Pilot pilot,
+        SavedCorporation corporation,
+        string text,
+        long now
+    )
+    {
         CheckJoin(world, pilot, corporation);
         if (!corporation.Snapshot(0).Details.ApplicationsEnabled)
         {
@@ -60,20 +77,19 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         if (
             world
                 .Set<SavedCorporationApplication>()
-                .Where(a => a.PilotId == pilotId && a.CorporationId == corporationId)
+                .Where(a => a.PilotId == pilot.Id && a.CorporationId == corporation.Id)
                 .AsEnumerable()
                 .Any(a => !CorporationMembershipRules.Closed(a.Status))
         )
         {
             throw new InvalidDataException("You already have an active application to this corporation.");
         }
-        long now = Now;
         var application = world
             .Add(
                 new SavedCorporationApplication
                 {
-                    PilotId = pilotId,
-                    CorporationId = corporationId,
+                    PilotId = pilot.Id,
+                    CorporationId = corporation.Id,
                     Text = text,
                     Status = CorporationApplicationStatus.Applied,
                     AppliedAt = now,
@@ -83,8 +99,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             .Entity;
         world.SaveChanges();
         NotifyApplication(world, application);
-        transaction.Commit();
-        return application.Snapshot();
+        return application;
     }
 
     public CorporationApplication Invite(long actorId, long pilotId)
@@ -99,24 +114,28 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             throw new InvalidDataException("Personnel management is required to invite corporation members.");
         }
         var pilot = Pilot(world, pilotId);
+        var application = SubmitInvitation(world, pilot, corporation, Now);
+        world.Commit();
+        return application.Snapshot();
+    }
+
+    internal static SavedCorporationApplication SubmitInvitation(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
+    {
         CheckJoin(world, pilot, corporation);
         var application = world
-            .Set<SavedCorporationApplication>()
-            .Where(a => a.PilotId == pilotId && a.CorporationId == corporation.Id)
-            .AsEnumerable()
-            .SingleOrDefault(a => !CorporationMembershipRules.Closed(a.Status));
+            .Filter<SavedCorporationApplication>(a => a.PilotId == pilot.Id)
+            .SingleOrDefault(a => a.CorporationId == corporation.Id && !CorporationMembershipRules.Closed(a.Status));
         if (application?.Status is CorporationApplicationStatus.Invited or CorporationApplicationStatus.Offered)
         {
-            return application.Snapshot();
+            return application;
         }
-        long now = Now;
         if (application is null)
         {
             application = world
                 .Add(
                     new SavedCorporationApplication
                     {
-                        PilotId = pilotId,
+                        PilotId = pilot.Id,
                         CorporationId = corporation.Id,
                         Status = CorporationApplicationStatus.Invited,
                         AppliedAt = now,
@@ -133,8 +152,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         world.SaveChanges();
         NotifyApplication(world, application);
-        world.Commit();
-        return application.Snapshot();
+        return application;
     }
 
     public CorporationApplication Update(long actorId, CorporationApplicationUpdate update)
@@ -156,43 +174,62 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         var corporation = Corporation(world, application.CorporationId);
         bool applicant = actorId == application.PilotId;
-        bool ceo = CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.PersonnelManager);
-        CorporationMembershipRules.CheckTransition(application.Status, update.Status, applicant, ceo);
         var pilot = Pilot(world, application.PilotId);
-        if (update.Status is CorporationApplicationStatus.Joined or CorporationApplicationStatus.Offered)
-        {
-            CheckJoin(world, pilot, corporation);
-        }
-        if (update.Status == CorporationApplicationStatus.Joined)
-        {
-            Move(world, pilot, corporation.Id, Now);
-            DeliverWelcomeMail(world, pilot.Id, corporation, Now);
-        }
-        application.Status = update.Status;
-        // A recruiter cannot replace the applicant's statement while sending an offer or rejection.
         if (applicant)
         {
             application.Text = update.Text;
         }
-        application.Response = update.Response;
-        application.UpdatedAt = Now;
-        NotifyApplication(world, application);
-        if (update.Status == CorporationApplicationStatus.Joined)
-        {
-            WithdrawOtherApplications(world, pilot.Id, application.Id, Now);
-        }
-        world.SaveChanges();
-        if (update.Status == CorporationApplicationStatus.Joined)
-        {
-            Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
-            world.SaveChanges();
-        }
+        long now = Now;
+        ChangeApplication(world, applicant ? pilot.Id : actor.Id, pilot, corporation, application, update.Status, update.Response, now);
+        OfferToPlayer(world, corporation, pilot, application, now);
         transaction.Commit();
         if (update.Status == CorporationApplicationStatus.Joined)
         {
             database.NotifyAccessGroupsChanged();
         }
         return application.Snapshot();
+    }
+
+    internal static void ChangeApplication(
+        WorldAction world,
+        long actor,
+        Pilot pilot,
+        SavedCorporation corporation,
+        SavedCorporationApplication application,
+        CorporationApplicationStatus status,
+        string response,
+        long now
+    )
+    {
+        CorporationMembershipRules.CheckTransition(
+            application.Status,
+            status,
+            actor == pilot.Id,
+            CorporationRoleStore.Has(world, actor, corporation, CorporationRole.PersonnelManager)
+        );
+        if (status is CorporationApplicationStatus.Joined or CorporationApplicationStatus.Offered)
+        {
+            CheckJoin(world, pilot, corporation);
+        }
+        if (status == CorporationApplicationStatus.Joined)
+        {
+            Move(world, pilot, corporation.Id, now);
+            DeliverWelcomeMail(world, pilot.Id, corporation, now);
+        }
+        application.Status = status;
+        application.UpdatedAt = now;
+        application.Response = response;
+        NotifyApplication(world, application);
+        if (status == CorporationApplicationStatus.Joined)
+        {
+            WithdrawOtherApplications(world, pilot.Id, application.Id, now);
+        }
+        world.SaveChanges();
+        if (status == CorporationApplicationStatus.Joined)
+        {
+            Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
+            world.SaveChanges();
+        }
     }
 
     public CorporationLeavePermission CanRemove(long actorId, long pilotId)
@@ -210,7 +247,16 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         var pilot = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        bool departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        bool departed;
+        if (Eden.Gameplay.FactionWarfare.MilitiaRules.CorporationFaction(pilot.CorporationId) is not null)
+        {
+            Eden.World.FactionWarfare.MilitiaEnlistmentStore.LeaveNpcMilitia(world, catalog, pilot, Now);
+            departed = true;
+        }
+        else
+        {
+            departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        }
         world.Commit();
         if (departed)
         {
@@ -238,6 +284,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
     {
         var actor = Pilot(world, actorId);
         var pilot = Pilot(world, pilotId);
+        if (Eden.Gameplay.FactionWarfare.MilitiaRules.CorporationFaction(pilot.CorporationId) is not null)
+        {
+            return actorId == pilotId ? new(true, "") : new(false, "Only the enrolled pilot may retire from this militia.");
+        }
         var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         if (
             corporation is null
@@ -269,6 +319,8 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
 
     internal static void Move(WorldAction world, Pilot pilot, int corporationId, long now)
     {
+        MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporationId);
+        MilitiaOrganizationStore.ClearMemberWarning(world, pilot.Id);
         if (world.Set<SavedCorporationWalletSelection>().Find(pilot.Id) is { } selection)
         {
             world.Remove(selection);
@@ -280,8 +332,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         int previous = pilot.CorporationId;
         int oldCount = world.Pilots.Count(p => p.CorporationId == previous);
         int newCount = world.Pilots.Count(p => p.CorporationId == corporationId);
+        // Simulated pilots never consume client notification feeds.
         var recipients = world
             .Pilots.Where(p => p.CorporationId == previous || p.CorporationId == corporationId)
+            .Where(p => p.AccountId > 0)
             .Select(p => p.Id)
             .ToArray();
         if (!world.Set<SavedCorporationEmployment>().Any(e => e.PilotId == pilot.Id))
@@ -351,13 +405,16 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
     }
 
-    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation) =>
+    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation)
+    {
         CorporationMembershipRules.CheckJoin(
             pilot.CorporationId == corporation.Id,
             world.Set<SavedCorporation>().Any(c => c.CeoId == pilot.Id && c.ClosedAt == null),
             world.Pilots.Count(p => p.CorporationId == corporation.Id),
             corporation.MemberLimit
         );
+        MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporation.Id);
+    }
 
     private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 

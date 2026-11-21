@@ -9,6 +9,7 @@ using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -21,7 +22,8 @@ internal sealed partial class CombatAnomalyStore(
     IPirateExploration? exploration = null,
     IMiningSites? mining = null,
     IWormholeTravel? wormholes = null,
-    Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null
+    Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null,
+    MilitiaObjectiveStore? militiaObjectives = null
 ) : ICombatAnomalies, IDedComplexTravel, IDedEscalations
 {
     private sealed record SiteSlotIdentity(long Id, int Slot);
@@ -112,6 +114,10 @@ internal sealed partial class CombatAnomalyStore(
             var combat = ListCore(systemId, now, true);
             var ded = DedSignatures(systemId, now);
             var other = exploration?.Signatures(systemId, now) ?? Array.Empty<CombatAnomaly>();
+            if (militiaObjectives?.Sites(systemId, now, signatures: true) is { Count: > 0 } militia)
+            {
+                other = other.Concat(militia).ToArray();
+            }
             var resources = mining?.Signatures(systemId, now) ?? Array.Empty<CombatAnomaly>();
             var connections = wormholes?.Signatures(systemId) ?? Array.Empty<CombatAnomaly>();
             if (
@@ -142,7 +148,7 @@ internal sealed partial class CombatAnomalyStore(
 
     private IReadOnlyList<CombatAnomaly> ListCoreOwned(int systemId, long now, bool signature)
     {
-        sovereignty?.AdvanceAll();
+        sovereignty?.AdvanceSites(systemId);
         var key = (systemId, signature);
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.

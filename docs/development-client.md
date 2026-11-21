@@ -43,9 +43,11 @@ Preparation copies the client files and resources. It checks SHA-256 hashes for 
 
 ## Creating and recreating the databases
 
-Optional [zKill-backed traffic snapshots](capsuleer-population.md#zkill-backed-travelers) add real pilot names and complete supported victim fits. Import them separately; normal catalog setup and gameplay remain offline. A replacement snapshot is adopted on the next server restart.
+The server administration **Optional data** page can import [live market orders](world-configuration.md#market-presets)
+for the Standard preset and [zKill-backed traffic](capsuleer-population.md#zkill-backed-travelers) for simulated pilots.
+Other market presets and generated traffic work without these downloads. Eden adopts new snapshots on restart.
 
-From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, the pinned .NET SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
+From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, a stable .NET 10 SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. By default, setup writes to `src/Eden.Server/data/catalog.sqlite`. Use `-Output` to write a catalog for another server. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
@@ -85,6 +87,10 @@ those extra types are outside this station/structure runtime integration. Moving
 ### Starting with saved data
 
 Start the server with `dotnet run --no-build --project src/Eden.Server`. The server uses `src/Eden.Server/data/world.sqlite` from source or `data/world.sqlite` beside the published executable. Set `EDEN_DATA_DIR` to choose a different data directory for the server and catalog setup. Relative values resolve from the server folder. An explicit `--world` path takes precedence and uses the catalog beside that save.
+
+If startup reports a missing `catalog.sqlite`, copy your matching catalog to the path in the error or run `Setup-Catalog.ps1`
+with `-Output` set to that path. If you double-click `Eden.Server.exe` on Windows, its console displays the error until you
+press a key. Set `EDEN_NO_PAUSE_ON_ERROR=1` for automation that starts Eden in a dedicated Windows console.
 
 The first startup initializes a new world with Eden Pilot and Eden Wing. Existing saves migrate to the current schema, preserving their assets and supported history. Normal startup loads the saved world into RAM and checkpoints committed gameplay changes every 15 seconds. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning. Save failures remain visible by default. Set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.
 
@@ -190,6 +196,16 @@ remaining work is replanned and the normal skills, brain and queue displays are 
 role-filtered list, correcting the **Unable to acquire server slash command list** popup. Restart the server and fully reopen the
 client after updating so its cached command list is refreshed. See the
 [implementation record](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026). Native presentation remains unverified.
+
+## Insider QA tab
+
+Select a pilot on a developer account and open **Insider → QA**. The client builds the menu using two status reads from the server.
+**Asset Holding** starts with both switches off. The switches record entitlement QA settings for that connection.
+Eden's inventory validation and item creation continue to use their normal rules.
+
+**Jump Clones → Reset last clone jump time** clears the selected pilot's cooldown immediately and refreshes the client's clone cache.
+The reset survives a world checkpoint. Other native menu entries may require additional services, including entitlement processing,
+HyperNet and test-token generation. See the [Insider QA protocol record](protocol/navigation.md#insider-qa-tab-november-21-2026).
 
 ## Issuing account redeem rewards
 
@@ -840,6 +856,19 @@ The native run flew Hoarder, Orca, Covetor, Retriever, Charon, Squall and Victor
 Undock clearance includes the station and hull radii. A course pointing through a station can still be blocked: stop and manually orbit clear before warping. The milestone does not add automatic obstacle avoidance. Fleet/corporation access, combat drones/fighters, automatic frigate escape, industrial cores and cloaking remain traced as deferred roles in the per-hull audit. Stop after milestone 4; do not begin capital acceptance.
 
 ## Creating an economy world without testing supply
+
+For a fresh-universe progression world, put the verified build-3662168 `catalog.sqlite` beside a new world path
+and select the profile on its first launch.
+
+```powershell
+dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Fresh\world.sqlite' --fresh-universe
+```
+
+Subsequent launches use the same `--world` path and the saved profile. Register and create your character through
+the launcher and client. Fresh humans and bots start at zero ISK with a racial corvette and civilian equipment.
+NPC ore buyers provide first earnings, and NPC blueprint and skillbook offers provide access to training and jobs.
+The first autonomous cohort develops a local Miner I supply chain at eligible high-security stations.
+[Fresh-universe implementation](protocol/capsuleers.md#fresh-universe-starter-industry)
 
 Personal station-local market orders work in existing development worlds. Their saved economic settings retain replenishing 1 ISK stock and one-time pilot grants.
 

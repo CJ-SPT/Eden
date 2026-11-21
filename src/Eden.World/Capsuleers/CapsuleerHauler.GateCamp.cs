@@ -26,6 +26,10 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        if (Live is { } live && !watch.Compatible(other => CapsuleerCorporations.CanFlyTogether(live, Pilot, other)))
+        {
+            return false;
+        }
         bool tackleFit = profile.Modules.Any(m => m.Effect is DogmaEffect.WarpScrambler or DogmaEffect.WarpDisruptor);
         var role = watch.Position(pilotId, tackleFit);
         if (role is null)
@@ -44,6 +48,7 @@ internal sealed partial class CapsuleerHauler
         if (
             watch is null
             || watch.Dispersing
+            || Live is { } live && !watch.Compatible(other => CapsuleerCorporations.CanFlyTogether(live, Pilot, other))
             || Work.Retreating
             || !PatrolAllowed(patrol)
             || watch.Join(pilotId, false, camp.Role) is null
@@ -66,10 +71,13 @@ internal sealed partial class CapsuleerHauler
         }
         var seen = defense.Observe(Pilot, Work.ActiveTicks);
         bool Ally(PilotSighting other) =>
-            watch.Member(other.PilotId) || other.Camp is { } mate && mate.GateId == camp.GateId && mate.Until == camp.Until;
+            (PatrolRules.Unaffiliated(Pilot.CorpId, other.CorporationId) || PatrolRules.Friendly(Pilot, other))
+            && (watch.Member(other.PilotId) || other.Camp is { } mate && mate.GateId == camp.GateId && mate.Until == camp.Until);
         var opponents = PatrolRules.Candidates(Pilot, _target.Position, seen).Where(c => !Ally(c)).ToArray();
-        int allies = seen.Count(Ally);
-        if (opponents.Count(c => PilotAwareness.ArmedHull(c.Hull)) >= 3 + allies)
+        double friendlyStrength =
+            PvpTactics.Threat((Eden.Gameplay.Ships.HullClass)Pilot.ShipGroupId)
+            + seen.Where(Ally).Sum(contact => PvpTactics.Threat(contact.Hull));
+        if (opponents.Sum(contact => PvpTactics.Threat(contact.Hull)) > friendlyStrength * 2)
         {
             watch.Dispersing = true;
             watch.Leave(pilotId);

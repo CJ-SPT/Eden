@@ -13,10 +13,12 @@ internal static class StructureCompressionCatalog
         (catalog, _) => CatalogTypeLists.Read(catalog, StructureCompressionRules.StructureTypeList)
     );
 
-    internal static int Compressed(CatalogDbContext catalog, int sourceTypeId)
+    internal static int Compressed(CatalogDbContext catalog, int sourceTypeId) =>
+        Compressed(catalog, sourceTypeId, catalog.Definition(s_allowed, 0));
+
+    internal static int Compressed(CatalogDbContext catalog, int sourceTypeId, InventoryTypeList allowed)
     {
         var source = catalog.RequireItem(sourceTypeId);
-        var allowed = catalog.Definition(s_allowed, 0);
         if (
             !allowed.Contains(source.Id, source.GroupId, source.CategoryId)
             || !catalog.Definitions.Pin(CatalogData.Client.Compressibletypes).TryGetValue(sourceTypeId, out long output)
@@ -24,7 +26,7 @@ internal static class StructureCompressionCatalog
             || catalog.FittingType((int)output) is null
         )
         {
-            throw new InvalidDataException("This resource cannot be compressed in a structure.");
+            throw new InvalidDataException("This resource is incompatible with this compression facility.");
         }
         return (int)output;
     }

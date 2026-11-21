@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Net;
+using System.Reflection;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Mining;
 using Eden.Server.Administration;
@@ -16,6 +18,35 @@ namespace Eden.Protocol.Tests.Administration;
 
 public sealed class WorldSettingsPageTests
 {
+    [Fact]
+    public void DecimalRangesAcceptFractionalLimitsInFrenchServerCulture()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            // Read fresh attributes because DataAnnotations caches the limits after first use.
+            var ranges = typeof(SettingsForm)
+                .GetProperties()
+                .Select(property => property.GetCustomAttribute<RangeAttribute>())
+                .OfType<RangeAttribute>()
+                .Where(range => range.OperandType == typeof(decimal));
+            foreach (var range in ranges)
+            {
+                decimal minimum = decimal.Parse((string)range.Minimum, CultureInfo.InvariantCulture);
+                decimal maximum = decimal.Parse((string)range.Maximum, CultureInfo.InvariantCulture);
+                Assert.True(range.IsValid(minimum));
+                Assert.True(range.IsValid(maximum));
+                Assert.False(range.IsValid(minimum - .01m));
+                Assert.False(range.IsValid(maximum + .01m));
+            }
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
     [Fact]
     public void CustomsTaxControlAcceptsZeroAndFractionalPercentagesAndReportsRevisionChanges()
     {
@@ -206,7 +237,7 @@ public sealed class WorldSettingsPageTests
     [Fact]
     public void PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges()
     {
-        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9);
+        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9) { Exploration = false, WreckSalvage = false };
         var form = SettingsForm.From(new() { Capsuleers = policy });
         Assert.Equal(policy, form.Build().Capsuleers);
         Assert.Equal(new CapsuleerPopulationPolicy(), SettingsForm.From(new()).Build().Capsuleers);
@@ -223,6 +254,8 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(changes, c => c.Field == "Player bots" && c.After == "Off");
         Assert.Contains(changes, c => c.Field == "Station traffic density" && c.After == "10×");
         Assert.Contains(changes, c => c.Field == "Visitors per watched gate" && c.After == "16");
+        Assert.Contains(changes, c => c.Field == "Explore data and relic sites" && c.Before == "On" && c.After == "Off");
+        Assert.Contains(changes, c => c.Field == "Salvage NPC wrecks" && c.Before == "On" && c.After == "Off");
     }
 
     [Fact]
@@ -266,7 +299,8 @@ public sealed class WorldSettingsPageTests
                 KillSkillPointMultiplier: 9,
                 MiningSkillPointMultiplier: 2.5m,
                 KillSkillPointPercent: 1.25m,
-                MiningIskPerSkillPoint: 125.5m
+                MiningIskPerSkillPoint: 125.5m,
+                TrainingSpeedMultiplier: 2.5m
             ),
             Industry = new(10, 11, 12, 13, 14),
             Structures = new(2, 3, 4, MinimumCorporationAgeDays: 0),
@@ -285,6 +319,7 @@ public sealed class WorldSettingsPageTests
         form.MiningSkillPointMultiplier = 101;
         form.KillSkillPointPercent = 100.01m;
         form.MiningIskPerSkillPoint = 0;
+        form.TrainingSpeedMultiplier = 0;
         form.InventionSpeed = 101;
         form.StructureAnchoringSpeed = 0;
         form.StructureOnliningSpeed = 101;
@@ -298,6 +333,7 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningSkillPointMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.KillSkillPointPercent)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningIskPerSkillPoint)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.TrainingSpeedMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.InventionSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureAnchoringSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureOnliningSpeed)));
@@ -309,6 +345,7 @@ public sealed class WorldSettingsPageTests
         form.MiningSkillPointMultiplier = 0;
         form.KillSkillPointPercent = 0;
         form.MiningIskPerSkillPoint = 0.01m;
+        form.TrainingSpeedMultiplier = 0.1m;
         form.InventionSpeed = 100;
         form.StructureAnchoringSpeed = .1m;
         form.StructureOnliningSpeed = 100;
@@ -316,6 +353,14 @@ public sealed class WorldSettingsPageTests
         form.StructureMinimumCorporationAgeDays = 0;
         Assert.True(Validator.TryValidateObject(form, new(form), [], true));
         Assert.Equal("2.5×", ConfigurationDisplay.Settings(new(), settings, null).Single(r => r.Label == "Mining skill points").Active);
+        Assert.Contains(
+            ConfigurationDisplay.Settings(new(), new(), settings),
+            row => row.Label == "Skill training speed" && row.Original == "1×" && row.Active == "1×" && row.Pending == "2.5×"
+        );
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
+            change => change.Field == "Skill training speed" && change.Before == "1×" && change.After == "2.5×"
+        );
         Assert.Contains(
             ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
             c => c.Field == "Mining skill points" && c.After == "2.5×"

@@ -34,6 +34,7 @@ internal static class ConfigurationValidation
             || settings.DevelopmentSupply is null
             || settings.Resources is null
             || settings.MiningHolds is null
+            || settings.ShipFitting is null
             || settings.NpcPopulation is null
             || settings.Progression is null
             || settings.Simulation is null
@@ -48,11 +49,31 @@ internal static class ConfigurationValidation
             throw new InvalidDataException("Every typed settings group is required.");
         }
         WorldTuningRules.Validate(settings);
+        if (
+            settings.FreshUniverse
+            && (
+                settings.DevelopmentSupply.TestingGrants
+                || settings.Progression is { GrantStartingEquipment: false } or { GrantStartingSkills: false }
+            )
+        )
+        {
+            throw new InvalidDataException(
+                "Fresh-universe progression requires starting skills and equipment with testing grants disabled."
+            );
+        }
         if (settings.Economy.StandardMarket && (settings.DevelopmentSupply.TestingMarket || settings.Economy.ProgressiveMarkets != false))
         {
             throw new InvalidDataException("Standard market requires testing and progressive markets to be disabled.");
         }
         Eden.Gameplay.Capsuleers.CapsuleerPopulationRules.Validate(settings.Capsuleers);
+        if (settings.Capsuleers.RegionAccess.Keys.Any(region => !catalog.Regions.ContainsKey(region)))
+        {
+            throw new InvalidDataException("Bot region overrides require region IDs from the installed catalog.");
+        }
+        if (settings.Capsuleers.SystemAccess.Keys.Any(system => !catalog.Systems.ContainsKey(system)))
+        {
+            throw new InvalidDataException("Bot system overrides require solar system IDs from the installed catalog.");
+        }
         var supply = settings.DevelopmentSupply;
         NpcSupplyRules.ValidateStock(supply.InstitutionalStock);
         if (

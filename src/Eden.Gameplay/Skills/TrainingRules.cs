@@ -1,3 +1,4 @@
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 
 namespace Eden.Gameplay.Skills;
@@ -17,7 +18,8 @@ public sealed record TrainingSkill(
 public sealed record TrainingInputs(
     IReadOnlyDictionary<int, TrainingSkill> Skills,
     AccountCloneGrade CloneGrade = AccountCloneGrade.Alpha,
-    long UnallocatedPoints = 0
+    long UnallocatedPoints = 0,
+    decimal SpeedMultiplier = 1
 );
 
 public static class TrainingRules
@@ -32,7 +34,8 @@ public static class TrainingRules
         bool activate,
         TrainingEntry? running,
         long now,
-        bool clampAlphaBudget = false
+        bool clampAlphaBudget = false,
+        bool checkHorizon = true
     )
     {
         if (targets.Count > MaximumEntries)
@@ -43,6 +46,7 @@ public static class TrainingRules
         {
             throw new InvalidDataException("Invalid unallocated skill point balance.");
         }
+        WorldTuningRules.ValidateRate(inputs.SpeedMultiplier);
         List<TrainingEntry> result = [];
         var points = inputs.Skills.ToDictionary(s => s.Key, s => s.Value.Points);
         long start = now;
@@ -60,7 +64,7 @@ public static class TrainingRules
             {
                 throw new InvalidTrainingQueue("QueueSkillNotUploaded");
             }
-            if (start - now > TimeSpan.FromDays(MaximumQueueDays).Ticks)
+            if (checkHorizon && start - now > TimeSpan.FromDays(MaximumQueueDays).Ticks)
             {
                 throw new InvalidTrainingQueue("QueueTooLong");
             }
@@ -111,9 +115,9 @@ public static class TrainingRules
             }
             double primary = skill.PrimaryAttribute;
             double secondary = skill.SecondaryAttribute;
-            double rate = (primary + secondary / 2) * (alpha ? .5 : 1);
+            double rate = (primary + secondary / 2) * (alpha ? .5 : 1) * (double)inputs.SpeedMultiplier;
             long duration = (long)Math.Ceiling((endPoints - before) * TimeSpan.TicksPerMinute / rate);
-            var periods = TrainingTiming.Plan(skill, before, endPoints, start, alpha);
+            var periods = TrainingTiming.Plan(skill, before, endPoints, start, alpha, inputs.SpeedMultiplier);
             if (periods.Count > 0)
             {
                 duration = periods[^1].EndTime - start;

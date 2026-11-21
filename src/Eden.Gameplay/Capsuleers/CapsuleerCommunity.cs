@@ -28,6 +28,8 @@ public enum MinerActivity
     Returning,
     Waiting,
     ReadyToReturn,
+    FlyingToGate,
+    Jumping,
 }
 
 public sealed record MinerProgress(
@@ -49,12 +51,34 @@ public sealed record MinerProgress(
 )
 {
     public long WorkingBelt { get; init; }
+    public CapsuleerCareerPlan? CareerPlan { get; init; }
+    public int[] StarterOreTypes { get; init; } = [];
+    public FactorySupplyRequest? FactorySupply { get; init; }
     public BeltMemory[] AvoidedBelts { get; init; } = [];
+    public BeltMemory[] StrippedBelts { get; init; } = [];
     public bool LeaveAfterCycle { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
     public bool EscapingBubble { get; init; }
+    public long? ReplacementOrderDeadline { get; init; }
+    public long[]? ReplacementOrderIds { get; init; }
+    public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
+    public bool DeepCoreProvisioned { get; init; }
+    public MercoxitExpedition? Mercoxit { get; init; }
+    public CapsuleerFactoryStage? FactoryStage { get; init; }
+    public long? MoonExtractionId { get; init; }
+    public int? RefineryIceType { get; init; }
+    public int? OperatingStationId { get; init; }
 }
+
+public sealed record MercoxitExpedition(int StationId, int[] Systems, bool Returning = false)
+{
+    public int RefineryStationId { get; init; }
+}
+
+public sealed record CapsuleerFactoryStage(long StructureId, int StationId, CapsuleerFactoryCargo[] Cargo);
+
+public sealed record CapsuleerFactoryCargo(long ItemId, int Quantity);
 
 public sealed record MinerObservation(DockedPilot Pilot, MinerProgress Work, InventoryItem? Laser, string? WaitingReason)
 {

@@ -18,7 +18,10 @@ public sealed record JumpCloneSkills(int Psychology, int AdvancedPsychology, int
     public int CooldownHours => JumpCloneRules.BaseCooldownHours - Synchronizing;
 }
 
-public sealed record JumpClone(long Id, int StationId, string Name);
+public sealed record JumpClone(long Id, int StationId, string Name, long? ShipId = null)
+{
+    public long LocationId => ShipId ?? StationId;
+}
 
 public sealed record JumpCloneSnapshot(IReadOnlyList<JumpClone> Clones, long? LastJump)
 {
@@ -26,6 +29,8 @@ public sealed record JumpCloneSnapshot(IReadOnlyList<JumpClone> Clones, long? La
 }
 
 public sealed record JumpCloneChange(long BalanceCents, int StationId);
+
+public sealed record JumpCloneRemoval(long PilotId, long LocationId, long? VatHostId);
 
 public sealed record JumpCloneTransfer(DockedPilot Pilot, IReadOnlyList<InventoryChange> Changes, long BalanceCents, int SourceStationId);
 
@@ -58,8 +63,9 @@ public interface IPilotJumpClones : IPilotJumpCloneSkills
     long Price(long pilotId);
     JumpCloneChange Install(long pilotId);
     void Rename(long pilotId, long cloneId, string name);
-    int Destroy(long pilotId, long cloneId);
+    JumpCloneRemoval Destroy(long pilotId, long cloneId);
     JumpCloneTransfer Jump(long pilotId, long expectedShipId, int stationId, long cloneId, long quotedCents);
+    void ResetCooldown(long pilotId);
 }
 
 public static class JumpCloneRules

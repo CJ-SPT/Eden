@@ -55,6 +55,7 @@ internal sealed class FlightScene(
     private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
+    private DoomsdayFieldContact[] _doomsdayFields = [];
 
     private FlightNpcScene Npcs => _npcScene ??= new(space, clock, encounters, effects, update, send);
     private FlightDroneScene Drones => _droneScene ??= new(space, clock, drones, update);
@@ -80,6 +81,17 @@ internal sealed class FlightScene(
 
     internal void RefreshDrones(FlightSceneContext context) => Drones.RefreshDrones(context);
 
+    internal void ResetStructureObservers()
+    {
+        _peers = [];
+        _peerOrderSequences.Clear();
+        _cloakedPeers.Clear();
+        _gateArrivals.Clear();
+        _gateDepartures.Clear();
+        Npcs.Clear();
+        Drones.Reset();
+    }
+
     internal void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon) => Npcs.NotifyNpcWeapon(npcId, weapon);
 
     internal void NotifyHealth(ShipHealth current) => Npcs.NotifyHealth(current);
@@ -103,6 +115,11 @@ internal sealed class FlightScene(
     {
         Objects = Objects.ExceptBy(_anomalies.Select(o => o.Id), o => o.Id).ToArray();
         _anomalies = [];
+        if (_doomsdayFields.Length != 0)
+        {
+            Objects = Objects.Where(body => body.TypeId != DoomsdayFieldRules.BeaconType).ToArray();
+            _doomsdayFields = [];
+        }
         _peers = [];
         _peerOrderSequences.Clear();
         _cloakedPeers.Clear();
@@ -125,7 +142,7 @@ internal sealed class FlightScene(
         {
             return null;
         }
-        if (space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
+        if (Peers(context).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
@@ -150,6 +167,7 @@ internal sealed class FlightScene(
                         || MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
+                        || o.CynoDeployable is not null
                         || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
                     )
                 )
@@ -421,6 +439,130 @@ internal sealed class FlightScene(
         }
     }
 
+    internal void RefreshDoomsdayFields(FlightSceneContext context, IReadOnlyList<DoomsdayFieldContact> current)
+    {
+        if (!context.InBallpark || context.Pilot.Position is not { } observer)
+        {
+            return;
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var visible = current
+            .Where(field =>
+                field.VisualAt <= now
+                && field.VisualEndsAt > now
+                && field.SourcePosition.DistanceTo(observer) <= NpcEncounterDefinitions.VisibilityRange
+            )
+            .ToArray();
+        if (_doomsdayFields.SequenceEqual(visible))
+        {
+            return;
+        }
+        var removed = _doomsdayFields.ExceptBy(visible.Select(field => field.Id), field => field.Id).ToArray();
+        var added = visible.ExceptBy(_doomsdayFields.Select(field => field.Id), field => field.Id).ToArray();
+        _doomsdayFields = visible;
+        Objects = Objects
+            .Where(body => body.TypeId != DoomsdayFieldRules.BeaconType)
+            .Concat(visible.Select(field => field.Beacon).OfType<StaticSpaceObject>())
+            .ToArray();
+        foreach (var field in removed)
+        {
+            DoomsdayFieldEffect(field, now, false);
+            if (field.Beacon is { } oldBeacon)
+            {
+                update(new DestinyCommand.RemoveBall(oldBeacon.Id, false));
+            }
+        }
+        var beacons = added.Select(field => field.Beacon).OfType<StaticSpaceObject>().ToArray();
+        if (beacons.Length != 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(beacons, space.Stamp(clock))));
+        }
+        foreach (var field in added)
+        {
+            DoomsdayFieldEffect(field, now, true);
+        }
+    }
+
+    private void DoomsdayFieldEffect(DoomsdayFieldContact field, long now, bool start)
+    {
+        Dictionary<string, object?>? graphic = null;
+        double duration = 10_000;
+        if (start && field.StartOffset is { } first && field.EndOffset is { } second)
+        {
+            double progress = Math.Clamp((now - field.VisualAt) / (double)(field.VisualEndsAt - field.VisualAt), 0, 1);
+            var current = first + (second - first) * progress;
+            duration = (field.VisualEndsAt - now) / (double)TimeSpan.TicksPerMillisecond;
+            graphic = new()
+            {
+                ["startTargetOffset"] = new object?[] { current.X, current.Y, current.Z },
+                ["endTargetOffset"] = new object?[] { second.X, second.Y, second.Z },
+                ["duration"] = duration,
+            };
+        }
+        update(
+            new DestinyCommand.TimedSpecialEffect(
+                field.ShipId,
+                field.ModuleId,
+                field.TypeId,
+                field.Beacon?.Id,
+                0,
+                DoomsdayFieldRules.Graphic(field.TypeId),
+                true,
+                start,
+                false,
+                duration,
+                field.VisualAt,
+                graphic
+            )
+        );
+    }
+
+    internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
+    {
+        static bool Cyno(StaticSpaceObject body) =>
+            body.GroupId is CapitalTravelRules.FieldGroup or CapitalTravelRules.CovertFieldGroup || body.CynoDeployable is not null;
+        var previous = Objects.Where(Cyno).ToArray();
+        if (previous.SequenceEqual(current))
+        {
+            return;
+        }
+        Objects = Objects.Where(body => !Cyno(body)).Concat(current).ToArray();
+        if (!context.InBallpark)
+        {
+            return;
+        }
+        foreach (var removed in previous.ExceptBy(current.Select(body => body.Id), body => body.Id))
+        {
+            update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        foreach (var changed in current)
+        {
+            if (
+                previous.FirstOrDefault(prior => prior.Id == changed.Id)?.CynoDeployable is { } before
+                && changed.CynoDeployable is { } after
+            )
+            {
+                if (before.Active != after.Active)
+                {
+                    update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+                }
+                if (
+                    before.DamagedAt != after.DamagedAt
+                    || before.Health.Remaining.Armor != after.Health.Remaining.Armor
+                    || before.Health.Remaining.Structure != after.Health.Remaining.Structure
+                )
+                {
+                    NotifyHealth(after.Health);
+                }
+            }
+        }
+        var added = current.ExceptBy(previous.Select(body => body.Id), body => body.Id).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
+        }
+    }
+
     internal void RefreshInterdiction(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> contacts)
     {
         var previous = Objects.Where(o => o.InterdictionRadius is not null).ToArray();
@@ -537,8 +679,7 @@ internal sealed class FlightScene(
         }
     }
 
-    internal void SnapshotStructure(FlightSceneContext context) =>
-        Snapshot(context, space.Peers(context.Pilot, context.Position, context.EntityId), null);
+    internal void SnapshotStructure(FlightSceneContext context) => Snapshot(context, Peers(context), null);
 
     internal void Snapshot(FlightSceneContext context, ShipContact[] peers, ShipContact? own)
     {
@@ -602,31 +743,22 @@ internal sealed class FlightScene(
     internal void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
         FlightEffects.CorrectPosition(send, id, position, velocity, stamp);
 
-    internal void RefreshStructurePeers(FlightSceneContext context) => RefreshPeers(context, null, preserveSourceState: true);
+    private ShipContact[] Peers(FlightSceneContext context) => space.Peers(context.Pilot.SystemId, context.EntityId, context.Position);
 
-    internal void RefreshPeers(FlightSceneContext context, ShipContact? contact, bool preserveSourceState = false)
+    internal void RefreshPeers(FlightSceneContext context)
     {
-        var current = space.Peers(context.Pilot, context.Position, context.EntityId);
-        var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
-        if (
-            !preserveSourceState
-            && current.Any(ship =>
-                ship.Warp is not null
-                && previousById.TryGetValue(ship.Pilot.ShipId, out var old)
-                && old.Warp != ship.Warp
-                && old.AlignTo != ship.Warp.Destination
-            )
-        )
+        foreach (var arrival in space.GateArrivals(context.Pilot.SystemId, context.EntityId, context.Position))
         {
-            Snapshot(context, current, contact);
-            return;
+            ObserveGateArrival(arrival);
         }
+        var current = Peers(context);
+        var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
-            if (space.SpatialStatus(departed.Pilot.ShipId).CloakModuleId != 0)
+            if (space.IsCloaked(departed.Pilot.ShipId))
             {
                 _cloakedPeers.Add(departed.Pilot.ShipId);
-                update(new DestinyCommand.CloakBall(departed.Pilot.ShipId));
+                update(new DestinyCommand.CloakBall(departed.Pilot.ShipId, space.IsGateCloaked(departed.Pilot.ShipId)));
                 update(
                     new DestinyCommand.SpecialEffect(departed.Pilot.ShipId, null, null, null, null, "effects.Cloak", false, true, false)
                 );
@@ -668,6 +800,8 @@ internal sealed class FlightScene(
                 ship.DirtTime != previous.DirtTime
                 || ship.Pilot.CorpId != previous.Pilot.CorpId
                 || ship.Pilot.AllianceId != previous.Pilot.AllianceId
+                || ship.Pilot.WarFaction != previous.Pilot.WarFaction
+                || !(ship.Compression ?? []).SequenceEqual(previous.Compression ?? [])
             )
             {
                 update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));
@@ -686,12 +820,13 @@ internal sealed class FlightScene(
             }
             long after = _peerOrderSequences.GetValueOrDefault(ship.Pilot.ShipId);
             bool missing = space.MissingOrders(ship.Pilot.ShipId, after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
-            if (missing)
+            bool missedWarp = ship.Warp is { } warp && previous.Warp != warp && previous.AlignTo != warp.Destination;
+            if (missing && ship.Warp is null)
             {
                 CorrectPosition(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity, ship.Stamp);
                 ApplyCourse(context, ship);
             }
-            else
+            else if (!missing)
             {
                 foreach (var order in space.Orders(ship.Pilot.ShipId, after))
                 {
@@ -704,6 +839,11 @@ internal sealed class FlightScene(
                         send(order.Update);
                     }
                 }
+            }
+            if (ship.Warp is not null && (missing || missedWarp))
+            {
+                // Native AddBalls applies partial full state to an existing ID, including its original warp start stamp.
+                update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, space.Stamp(clock))));
             }
             _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
             if (ship.Warp is not null)

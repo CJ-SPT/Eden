@@ -76,12 +76,13 @@ public sealed class OwnershipTimingTests
             world.ObjectsChanged();
         }
         await world.FlushAsync();
-        var capture = Assert.Single(timings, timing => timing.Operation == "checkpoint capture");
         var checkpoint = Assert.IsType<WorldCheckpoint>(world.LastCheckpoint);
+        var batches = timings.Where(timing => timing.Operation == "checkpoint page batch").ToArray();
+        Assert.Equal(checkpoint.CopySteps, batches.Length);
         Assert.True(checkpoint.Copy > TimeSpan.Zero);
-        Assert.True(capture.Hold >= checkpoint.Copy);
         Assert.True(checkpoint.Capture > TimeSpan.Zero);
-        Assert.True(capture.Hold >= checkpoint.Capture + checkpoint.Copy);
+        Assert.True(batches.Max(batch => batch.Hold) >= checkpoint.MaximumCopyPause);
+        Assert.True(TimeSpan.FromTicks(batches.Sum(batch => batch.Hold.Ticks)) >= checkpoint.Capture + checkpoint.Copy);
     }
 
     [Fact]

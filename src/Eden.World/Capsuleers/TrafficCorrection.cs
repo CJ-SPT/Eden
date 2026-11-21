@@ -38,20 +38,19 @@ internal static partial class TrafficCorrection
         {
             return false;
         }
-        var original = database.Traffic.Profiles.FirstOrDefault(profile => profile.KillId == identity.KillId);
+        var original = database.Traffic.Find(identity.KillId);
         if (original is null || original.HullTypeId != ship.TypeId || pilot.Name != original.Name || ship.Name != original.Name)
         {
             return false;
         }
         var health = world.Set<ShipHealthState>().Find(ship.Id);
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         if (
             health is not null
             && (
                 health.ArmorDamage != 0
                 || health.StructureDamage != 0
                 || health.ShieldCharge + InventoryDefinitions.ResourceTolerance
-                    < attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity)
+                    < PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.ShieldCapacity)
             )
         )
         {
@@ -105,6 +104,15 @@ internal static partial class TrafficCorrection
         return true;
     }
 
+    private static bool IsWeapon(DogmaEffect? effect) =>
+        effect is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles;
+
+    private static readonly CatalogDefinition<bool> s_weapon = new(
+        "traffic-correction-weapon",
+        (catalog, typeId) => IsWeapon(FittingCatalog.DefaultEffect(catalog, typeId)),
+        64
+    );
+
     internal static TrafficSnapshot.TrafficCandidatePools CandidatePools(
         WorldDatabase database,
         CatalogDbContext catalog,
@@ -121,22 +129,12 @@ internal static partial class TrafficCorrection
             profile =>
             {
                 var hull = catalog.RequireItem(profile.HullTypeId);
-                var fit = catalog.FittingAttributes(profile.HullTypeId);
                 return !TrafficRules.LightHull((HullClass)hull.GroupId)
-                    && CapsuleerDefenseRules.CombatShip(
-                        (HullClass)hull.GroupId,
-                        (int)fit.GetValueOrDefault(DogmaAttributeId.TechLevel, 1),
-                        true
-                    )
                     && TrafficRules.RouteAllows((HullClass)hull.GroupId, true)
                     && (hull.Capacity ?? 0) >= cargo
-                    && fit.GetValueOrDefault(DogmaAttributeId.DroneCapacity) >= drones
-                    && profile.Equipment.Any(e =>
-                        FittingCatalog.DefaultEffect(catalog, e.TypeId)
-                            is DogmaEffect.LaserFired
-                                or DogmaEffect.ProjectileFired
-                                or DogmaEffect.UseMissiles
-                    );
+                    && CapsuleerPatrolFit.CombatHull(catalog, profile.HullTypeId)
+                    && catalog.FittingAttributes(profile.HullTypeId).GetValueOrDefault(DogmaAttributeId.DroneCapacity) >= drones
+                    && profile.Equipment.Any(e => catalog.Definition(s_weapon, e.TypeId));
             },
             profile => catalog.RequireItem(profile.HullTypeId).GroupId,
             cargo,

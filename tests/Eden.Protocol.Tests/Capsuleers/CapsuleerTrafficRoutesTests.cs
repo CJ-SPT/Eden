@@ -1,4 +1,5 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Capsuleers;
@@ -58,6 +59,59 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Equal(FirstStation + 1, forward.DestinationStationId);
         Assert.Equal(Enumerable.Range(FirstSystem, 6), forward.Systems);
         AssertPathsAreReal(catalog, plan, FirstSystem + 2);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TransitOnlySystemCanBeCrossedButCannotBeADestination(bool systemOverride)
+    {
+        const int transitRegion = 10000003;
+        int transit = FirstSystem + 1;
+        int destination = FirstSystem + 2;
+        using Fixture fixture = new();
+        fixture.AddStation(FirstStation, FirstSystem);
+        fixture.AddStation(FirstStation + 1, transit);
+        fixture.AddStation(FirstStation + 2, destination);
+        fixture.Connect(FirstSystem, transit);
+        fixture.Connect(transit, destination);
+        using (CatalogDbContext edit = new(fixture.Path, writable: true))
+        {
+            edit.Database.ExecuteSql(
+                $"""
+                INSERT INTO Region VALUES ({transitRegion},'Transit region');
+                INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000021,{transitRegion},'Transit constellation');
+                UPDATE SolarSystem SET ConstellationId=20000021 WHERE Id={transit};
+                """
+            );
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        CapsuleerPopulationPolicy policy = new()
+        {
+            DefaultRegionAccess = CapsuleerRegionAccess.TransitOnly,
+            RegionAccess = new CapsuleerPopulationPolicy().RegionAccess.Add(10000002, CapsuleerRegionAccess.WorkAndTransit),
+        };
+        if (systemOverride)
+        {
+            policy = policy with
+            {
+                RegionAccess = policy.RegionAccess.Add(transitRegion, CapsuleerRegionAccess.WorkAndTransit),
+                SystemAccess = policy.SystemAccess.Add(transit, CapsuleerRegionAccess.TransitOnly),
+            };
+        }
+        Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 1, HullClass.Hauler, policy: policy));
+        var route = CapsuleerTrafficRoutes.Journey(
+            catalog,
+            FirstStation,
+            TrafficJourneyKind.Regional,
+            1,
+            0,
+            HullClass.Hauler,
+            policy: policy
+        );
+        Assert.NotNull(route);
+        Assert.Equal(FirstStation + 2, route.DestinationStationId);
+        Assert.Equal([FirstSystem, transit, destination], route.Systems);
     }
 
     [Fact]
@@ -213,10 +267,61 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Equal(route.Systems.Length, route.Systems.Distinct().Count());
         AssertPathsAreReal(catalog, new(1, 1, [route]), FirstSystem);
         using var metrics = SessionPerformance.Begin("warm journey destinations", _ => { }, force: true)!;
-        Assert.Equal(route, CapsuleerTrafficRoutes.Journey(catalog, FirstStation, kind, 0, 0, HullClass.Hauler));
+        var repeated = CapsuleerTrafficRoutes.Journey(catalog, FirstStation, kind, 0, 0, HullClass.Hauler)!;
+        Assert.Equal(route.Systems, repeated.Systems);
+        Assert.Equal(route, repeated with { Systems = route.Systems });
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);
         Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
+    public void RegionalTrafficSpreadsAcrossSystemsAndEqualLengthGatePaths()
+    {
+        using Fixture fixture = new();
+        int crowded = FirstSystem + 4;
+        int quiet = FirstSystem + 5;
+        fixture.AddStation(FirstStation, FirstSystem);
+        for (int index = 1; index <= 12; index++)
+        {
+            fixture.AddStation(FirstStation + index, crowded);
+        }
+        fixture.AddStation(FirstStation + 13, quiet);
+        fixture.Connect(FirstSystem, FirstSystem + 1);
+        fixture.Connect(FirstSystem, FirstSystem + 2);
+        fixture.Connect(FirstSystem + 1, FirstSystem + 3);
+        fixture.Connect(FirstSystem + 2, FirstSystem + 3);
+        fixture.Connect(FirstSystem + 3, crowded);
+        fixture.Connect(FirstSystem + 3, quiet);
+        using CatalogDbContext catalog = new(fixture.Path);
+
+        var journeys = Enumerable
+            .Range(1, 256)
+            .Select(pilot =>
+                CapsuleerTrafficRoutes.Journey(
+                    catalog,
+                    FirstStation,
+                    TrafficJourneyKind.Regional,
+                    1,
+                    0,
+                    HullClass.Hauler,
+                    TravelerRoutineRules.Create(pilot)
+                )!
+            )
+            .ToArray();
+        Assert.InRange(journeys.Count(route => route.Systems[^1] == crowded), 90, 166);
+        Assert.InRange(journeys.Count(route => route.Systems[^1] == quiet), 90, 166);
+        Assert.InRange(journeys.Count(route => route.Systems[1] == FirstSystem + 1), 90, 166);
+        Assert.InRange(journeys.Count(route => route.Systems[1] == FirstSystem + 2), 90, 166);
+        Assert.All(journeys, route => Assert.Equal(4, route.Systems.Length));
+        AssertPathsAreReal(catalog, new(2, 1, journeys), FirstSystem);
+
+        var gate = catalog.Definitions.GatesInSystem(FirstSystem).First();
+        WatchedTrafficGate watch = new(gate.DestinationSystemId, gate.SolarSystemId, gate.DestinationId, gate.Id);
+        var first = CapsuleerTrafficRoutes.Inbound(catalog, watch, visitor: 0)!;
+        var second = CapsuleerTrafficRoutes.Inbound(catalog, watch, visitor: 2)!;
+        Assert.Equal(new[] { crowded, quiet }, new[] { first.Systems[^1], second.Systems[^1] }.Order().ToArray());
+        AssertPathsAreReal(catalog, new(2, 1, [first, second]), watch.ObserverSystemId);
     }
 
     [Theory]

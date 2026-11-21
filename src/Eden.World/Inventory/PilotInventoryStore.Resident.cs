@@ -48,7 +48,8 @@ internal sealed partial class PilotInventoryStore
         long now,
         IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null,
         bool deferFittingChanges = false,
-        Ship? fittingShip = null
+        Ship? fittingShip = null,
+        bool mobileRefit = false
     )
     {
         var (itemIds, sourceId, flagId, quantity) = request;
@@ -74,7 +75,7 @@ internal sealed partial class PilotInventoryStore
         bool sourceHangar = active.Position is null && sourceId == active.DockedLocationId;
         bool destinationHangar = active.Position is null && destinationId == active.DockedLocationId;
         if (
-            (active.Position is not null && !sameShipQuantityMove)
+            (active.Position is not null && !sameShipQuantityMove && !mobileRefit)
             || !(sourceHangar || sourceShip is not null)
             || !(destinationHangar && flagId == (int)InventoryFlag.Hangar || destinationShip is not null && ShipHoldRules.IsHold(flagId))
             || sourceHangar && destinationHangar && !quantity.HasValue
@@ -118,7 +119,7 @@ internal sealed partial class PilotInventoryStore
             items.Length + storedShips.Length != itemIds.Count
             || items.Any(i => quantity > i.Quantity)
             || storedShips.Any(s => s.Id == destinationId || quantity is > 1 || world.Pilots.Any(p => p.ActiveShipId == s.Id))
-            || (active.Position is not null && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
+            || (active.Position is not null && !mobileRefit && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
         )
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");

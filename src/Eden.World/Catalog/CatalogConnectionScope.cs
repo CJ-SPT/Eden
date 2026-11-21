@@ -1,5 +1,5 @@
+using System.Diagnostics;
 using Eden.Data.Catalog;
-using Eden.Gameplay.Dogma;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Microsoft.Data.Sqlite;
@@ -9,6 +9,8 @@ namespace Eden.World.Catalog;
 internal sealed class CatalogConnectionInputs(bool scoped = false) : IDisposable
 {
     private SqliteConnection? _connection;
+    private SqliteCommand? _record;
+    private readonly Lock _recordGate = new();
     internal bool IsScoped { get; } = scoped;
 
     internal SqliteConnection Connection(string path)
@@ -38,7 +40,39 @@ internal sealed class CatalogConnectionInputs(bool scoped = false) : IDisposable
         return _connection;
     }
 
-    public void Dispose() => _connection?.Dispose();
+    internal SourceRecord? ReadRecord(string path, string dataset, string key)
+    {
+        lock (_recordGate)
+        {
+            if (_record is null)
+            {
+                _record = Connection(path).CreateCommand();
+                _record.CommandText = "SELECT Data FROM SourceRecord WHERE Dataset = $dataset AND Key = $key";
+                _record.Parameters.Add("$dataset", SqliteType.Text);
+                _record.Parameters.Add("$key", SqliteType.Text);
+            }
+            _record.Parameters[0].Value = dataset;
+            _record.Parameters[1].Value = key;
+            SessionPerformance.DatabaseCommand(_record.CommandText);
+            long start = Stopwatch.GetTimestamp();
+            var data = (string?)_record.ExecuteScalar();
+            SessionPerformance.DatabaseElapsed(Stopwatch.GetElapsedTime(start), command: _record.CommandText);
+            return data is null
+                ? null
+                : new SourceRecord
+                {
+                    Dataset = dataset,
+                    Key = key,
+                    Data = data,
+                };
+        }
+    }
+
+    public void Dispose()
+    {
+        _record?.Dispose();
+        _connection?.Dispose();
+    }
 }
 
 internal sealed class CatalogConnectionScope : IPilotOperationScope
@@ -52,6 +86,10 @@ internal sealed class CatalogConnectionScope : IPilotOperationScope
         if (s_current.Value is not { } operation)
         {
             return new();
+        }
+        if (operation.Catalogs.TryGetValue(path, out var current))
+        {
+            return current;
         }
         string fullPath = Path.GetFullPath(path);
         if (!operation.Catalogs.TryGetValue(fullPath, out var inputs))

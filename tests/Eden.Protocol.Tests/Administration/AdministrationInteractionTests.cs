@@ -1,5 +1,8 @@
+using System.Globalization;
 using System.Security.Claims;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration;
 using Eden.Server.Administration.Components;
 using Microsoft.AspNetCore.Components;
@@ -15,9 +18,19 @@ public sealed partial class AdministrationTests
     [AdministrationBrowserFact]
     public async Task LiveSettingsStayInteractiveInFirefoxAndChromium()
     {
-        foreach (string browser in new[] { "firefox", "chromium" })
+        var cases = new[]
         {
-            await using var fixture = await Fixture.Start(liveWorld: true);
+            ("firefox", "localhost", "fr-FR"),
+            ("chromium", "127.0.0.1", "en-US"),
+            ("firefox", "localhost", "en-ZA"),
+            ("chromium", "localhost", "en-ZA"),
+        };
+        foreach (var (browser, host, culture) in cases)
+        {
+            await using var fixture = await Fixture.Start(liveWorld: true, culture: culture);
+            var frames = fixture.World.Services.GetRequiredService<SessionFrameMonitor>();
+            frames.Record(TimeSpan.FromMilliseconds(4), TimeSpan.FromMilliseconds(1));
+            frames.Record(TimeSpan.FromMilliseconds(12), TimeSpan.FromMilliseconds(3));
             System.Diagnostics.ProcessStartInfo start = new("python")
             {
                 CreateNoWindow = true,
@@ -27,8 +40,10 @@ public sealed partial class AdministrationTests
             start.ArgumentList.Add(
                 Path.Combine(AppContext.BaseDirectory, "administration-browser-tests", "Test-AdministrationInteractivity.py")
             );
-            start.ArgumentList.Add(fixture.Client.BaseAddress!.ToString());
+            start.ArgumentList.Add(new UriBuilder(fixture.Client.BaseAddress!) { Host = host }.Uri.ToString());
             start.ArgumentList.Add(browser);
+            start.ArgumentList.Add(culture);
+            start.ArgumentList.Add(CultureInfo.GetCultureInfo(culture).NumberFormat.NumberDecimalSeparator);
             using var process = System.Diagnostics.Process.Start(start)!;
             var output = process.StandardOutput.ReadToEndAsync();
             var errors = process.StandardError.ReadToEndAsync();
@@ -43,7 +58,7 @@ public sealed partial class AdministrationTests
                     process.Kill(entireProcessTree: true);
                 }
             }
-            Assert.True(process.ExitCode == 0, browser + ": " + await output + await errors);
+            Assert.True(process.ExitCode == 0, $"{browser} at {host} ({culture}): {await output}{await errors}");
             var state = fixture.World.Services.GetRequiredService<IWorldConfiguration>().Read();
             Assert.Equal(1, state.Active.Id);
             Assert.Equal(3, state.Pending!.Id);
@@ -73,6 +88,25 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.GeneralMiningHoldMultiplier), "2.5");
             await renderer.Change(nameof(SettingsForm.IceHoldMultiplier), "0.5");
             await renderer.Change(nameof(SettingsForm.GasHoldMultiplier), "3");
+            await renderer.Click("Progression");
+            await renderer.Change(nameof(SettingsForm.TrainingSpeedMultiplier), "2.5");
+            Assert.Contains("60 minutes of training becomes 24 minutes of training", renderer.Text);
+            await renderer.Click("Player bots");
+            await renderer.Change(nameof(SettingsForm.BotExploration), false);
+            await renderer.Change(nameof(SettingsForm.ActivePilotCap), "250");
+            await renderer.Change(nameof(SettingsForm.PrepareUnvisitedSystems), false);
+            await renderer.Change(nameof(SettingsForm.FreshCourierPilots), false);
+            await renderer.Change(nameof(SettingsForm.FreshBountyPilots), false);
+            await renderer.Change(nameof(SettingsForm.TradeGoodsFreight), false);
+            await renderer.Change(nameof(SettingsForm.AutomaticRecruitment), false);
+            await renderer.Change(nameof(SettingsForm.AutomaticAlliances), false);
+            await renderer.Change(nameof(SettingsForm.NewSovereigntyClaims), false);
+            await renderer.ChangeSelection("bot-region", "10000002");
+            await renderer.ChangeSelection("bot-region-access", nameof(CapsuleerRegionAccess.TransitOnly));
+            await renderer.ChangeSelection("bot-system", "30000142");
+            await renderer.ChangeSelection("bot-system-access", nameof(CapsuleerRegionAccess.WorkAndTransit));
+            Assert.Contains("The Forge", renderer.Text);
+            Assert.Contains("System overrides", renderer.Text);
             Assert.Contains("Unsaved changes", renderer.Text);
             Assert.False(renderer.Button("Save for restart").Disabled);
             await renderer.Submit();
@@ -83,11 +117,46 @@ public sealed partial class AdministrationTests
             Assert.Equal(2, saved.Pending!.Draft.Settings.Resources.OreYieldMultiplier);
             Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), saved.Pending.Draft.Settings.MiningHolds);
             Assert.Equal(new MiningHoldPolicy(), saved.Active.Draft.Settings.MiningHolds);
+            Assert.Equal(2.5m, saved.Pending.Draft.Settings.Progression.TrainingSpeedMultiplier);
+            Assert.Equal(1, saved.Active.Draft.Settings.Progression.TrainingSpeedMultiplier);
+            Assert.False(saved.Pending.Draft.Settings.Capsuleers.Exploration);
+            Assert.True(saved.Pending.Draft.Settings.Capsuleers.WreckSalvage);
+            Assert.True(saved.Active.Draft.Settings.Capsuleers.Exploration);
+            Assert.Equal(0, saved.Active.Draft.Settings.Capsuleers.ActivePilotCap);
+            Assert.Equal(250, saved.Pending.Draft.Settings.Capsuleers.ActivePilotCap);
+            Assert.Equal(CapsuleerRegionAccess.TransitOnly, saved.Pending.Draft.Settings.Capsuleers.RegionAccess[10000002]);
+            Assert.Equal(CapsuleerRegionAccess.WorkAndTransit, saved.Pending.Draft.Settings.Capsuleers.SystemAccess[30000142]);
+            var botPolicy = saved.Pending.Draft.Settings.Capsuleers;
+            Assert.False(botPolicy.PrepareUnvisitedSystems);
+            Assert.False(botPolicy.FreshCourierPilots);
+            Assert.False(botPolicy.FreshBountyPilots);
+            Assert.False(botPolicy.TradeGoodsFreight);
+            Assert.False(botPolicy.AutomaticRecruitment);
+            Assert.False(botPolicy.AutomaticAlliances);
+            Assert.False(botPolicy.NewSovereigntyClaims);
+            await renderer.ChangeSelection("bot-region", "10000002");
+            await renderer.ChangeSelection("bot-system", "30000142");
+            await renderer.ChangeSelection("bot-system-access", "");
+            await renderer.Change(nameof(SettingsForm.BotWreckSalvage), false);
             await renderer.Click("Rewards");
             await renderer.Change(nameof(SettingsForm.BountyMultiplier), "3");
+            await renderer.Click("Fitting");
+            await renderer.Change(nameof(SettingsForm.ShipCpuMultiplier), "1.25");
+            await renderer.Change(nameof(SettingsForm.ShipPowerGridMultiplier), "1.5");
+            await renderer.Change(nameof(SettingsForm.ShipCalibrationMultiplier), "2");
+            await renderer.Change(nameof(SettingsForm.ShipDroneBandwidthMultiplier), "0.5");
+            Assert.Contains("Ship power grid output", renderer.Text);
             await renderer.Submit();
             Assert.Contains("Revision 3 saved · pending restart.", renderer.Text);
-            Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), config.Read().Pending!.Draft.Settings.MiningHolds);
+            var updated = config.Read();
+            Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), updated.Pending!.Draft.Settings.MiningHolds);
+            Assert.False(updated.Pending.Draft.Settings.Capsuleers.Exploration);
+            Assert.False(updated.Pending.Draft.Settings.Capsuleers.WreckSalvage);
+            Assert.Empty(updated.Pending.Draft.Settings.Capsuleers.SystemAccess);
+            Assert.Equal(CapsuleerRegionAccess.TransitOnly, updated.Pending.Draft.Settings.Capsuleers.RegionAccess[10000002]);
+            Assert.Equal(new ShipFittingPolicy(1.25m, 1.5m, 2, .5m), updated.Pending.Draft.Settings.ShipFitting);
+            Assert.Equal(new ShipFittingPolicy(), updated.Active.Draft.Settings.ShipFitting);
+            Assert.True(updated.Active.Draft.Settings.Capsuleers.WreckSalvage);
             await renderer.Click("Gathering");
             await renderer.Click("Reset to 1×");
             Assert.False(renderer.Button("Save for restart").Disabled);
@@ -205,7 +274,14 @@ public sealed partial class AdministrationTests
 
         internal Task Click(string text) => Dispatch(Button(text), "onclick", new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
 
-        internal Task Change(string property, string value) => Dispatch(Input(property), "onchange", new ChangeEventArgs { Value = value });
+        internal Task Change(string property, object value) => Dispatch(Input(property), "onchange", new ChangeEventArgs { Value = value });
+
+        internal Task ChangeSelection(string name, string value) =>
+            Dispatch(
+                Elements(Root).Single(element => element.Name == "select" && Equals(element.Attributes.GetValueOrDefault("name"), name)),
+                "onchange",
+                new ChangeEventArgs { Value = value }
+            );
 
         internal Task Submit() => Dispatch(Elements(Root).Single(element => element.Name == "form"), "onsubmit", EventArgs.Empty);
 

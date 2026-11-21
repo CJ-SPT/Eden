@@ -1,3 +1,4 @@
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Fleets;
@@ -41,6 +42,7 @@ public enum FleetBroadcastKind
     EnemySpotted,
     InPosition,
     HealTarget,
+    JumpBeacon,
 }
 
 public sealed record FleetPilot(
@@ -51,10 +53,11 @@ public sealed record FleetPilot(
     int SystemId,
     SpacePosition? Position,
     bool InTransit = false,
-    int? AllianceId = null
+    int? AllianceId = null,
+    MilitiaFaction? WarFaction = null
 );
 
-public sealed record FleetAffiliation(int CorporationId, int? AllianceId);
+public sealed record FleetAffiliation(int CorporationId, int? AllianceId, MilitiaFaction? WarFaction = null);
 
 public sealed record FleetPlacement(long WingId, long SquadId, FleetRole Role);
 
@@ -62,7 +65,13 @@ public sealed record FleetIdentity(long FleetId, long WingId, long SquadId, Flee
 
 public sealed record FleetMembership(long FleetId, long Version);
 
-public sealed record FleetMember(FleetPilot Pilot, FleetPlacement Placement, int Job, bool TakesFleetWarp = true);
+public sealed record FleetMember(
+    FleetPilot Pilot,
+    FleetPlacement Placement,
+    int Job,
+    bool TakesFleetWarp = true,
+    bool AcceptsConduitJumps = true
+);
 
 public sealed record FleetSquad(long Id, string Name);
 
@@ -120,7 +129,7 @@ public abstract record FleetEvent
 
     public sealed record Warp(FleetWarpOrder Order) : FleetEvent;
 
-    public sealed record MissionStanding(long SourceId, double Value) : FleetEvent;
+    public sealed record StandingChanged(long SourceId, double Value) : FleetEvent;
 
     public sealed record Resync(FleetMember? Member) : FleetEvent;
 }
@@ -144,7 +153,7 @@ public interface ICooperativeFleets
     IReadOnlyList<FleetPilot> Fleetmates(long actor);
     bool CanShareLoot(long actor, long owner, int system);
     IReadOnlyList<FleetDelivery> Drain(long actor);
-    void NotifyMissionStanding(long pilotId, long sourceId, double value);
+    void NotifyStandingChanged(long pilotId, long sourceId, double value);
     CooperativeFleet Create(long actor);
     bool CanBind(long actor, long fleet);
     CooperativeFleet Read(long actor, long fleet);
@@ -162,6 +171,7 @@ public interface ICooperativeFleets
     void SetFreeMove(long actor, long fleet, bool enabled);
     void SetMotd(long actor, long fleet, string text);
     void SetTakesWarp(long actor, long fleet, bool enabled);
+    void SetAcceptsConduitJumps(long actor, long fleet, bool enabled);
     void Broadcast(
         long actor,
         long fleet,

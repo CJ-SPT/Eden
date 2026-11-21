@@ -1,0 +1,10 @@
+<details class="setting-help">
+    <summary title="@Text" aria-label="@($"Help for {Label}")"><span aria-hidden="true">?</span></summary>
+    <p id="@Id">@Text</p>
+</details>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+}

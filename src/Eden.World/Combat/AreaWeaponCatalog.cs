@@ -15,7 +15,7 @@ internal static class AreaWeaponCatalog
 
     private static bool ValidateModule(CatalogDbContext catalog, int type, int group)
     {
-        if (!AreaWeaponRules.IsModule(group) || catalog.Read(CatalogData.Client.Types, (long)type) is not { Published: 1 })
+        if (!AreaWeaponRules.IsModule(group, type) || catalog.Read(CatalogData.Client.Types, (long)type) is not { Published: 1 })
         {
             return false;
         }

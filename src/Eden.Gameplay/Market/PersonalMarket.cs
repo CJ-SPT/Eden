@@ -50,7 +50,8 @@ public sealed record PersonalMarketChange(long Id, MarketOrder Order, MarketOrde
 public sealed record WorldEconomySettings(
     bool TestingMarket = true,
     bool TestingGrants = true,
-    int InstitutionalStock = NpcSupplyRules.Stock
+    int InstitutionalStock = NpcSupplyRules.Stock,
+    bool FreshUniverse = false
 )
 {
     public const int SingletonId = 1;
@@ -63,6 +64,7 @@ public interface IPersonalMarket
     long Observe(long pilotId);
     IReadOnlyList<PersonalMarketChange> Changes(long pilotId, long after);
     IReadOnlyList<MarketOrder> PersonalOrders(long pilotId, bool history = false);
+    IReadOnlyList<MarketOrder> CorporationOrders(long pilotId);
     MarketEscrow Escrow(long pilotId);
     void PlaceBuy(long pilotId, PersonalMarketBuy request);
     void PlaceSell(long pilotId, IReadOnlyList<MarketSale> items, int durationDays);

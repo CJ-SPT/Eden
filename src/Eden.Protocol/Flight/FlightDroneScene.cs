@@ -10,6 +10,8 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
 {
     internal DroneContact[] Contacts { get; private set; } = [];
 
+    internal void Reset() => Contacts = [];
+
     internal void Capture(FlightSceneContext context) => Contacts = ReadDrones(context);
 
     internal void ReplayActivities()
@@ -22,6 +24,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         {
             update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
         }
+        foreach (var drone in Contacts.Where(d => d.MobilityActive))
+        {
+            MobilityEffect(drone, true);
+        }
     }
 
     private DroneContact[] ReadDrones(FlightSceneContext context) =>
@@ -29,7 +35,7 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             ? []
             : (drones?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                 // A controller must keep simulating its flight even beyond the observer grid.
-                .Where(d => d.ShipId == context.Pilot.ShipId || position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                .Where(d => d.ShipId == context.EntityId || position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
                 .ToArray();
 
     internal void RefreshDrones(FlightSceneContext context)
@@ -45,7 +51,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             {
                 update(new DestinyCommand.DroneActivityChanged(departed.Id, null));
             }
-            update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
+            if (departed.Profile.FighterGroup == 0)
+            {
+                update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
+            }
             update(new DestinyCommand.RemoveBall(departed.Id, drones?.WasDestroyed(departed.Id) == true));
         }
         var added = current.ExceptBy(Contacts.Select(d => d.Id), d => d.Id).ToArray();
@@ -61,11 +70,17 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             {
                 update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
             }
-            if (old is null || old.ShipId != drone.ShipId || old.Activity != drone.Activity || old.TargetId != drone.TargetId)
+            if (
+                old is null
+                || old.ShipId != drone.ShipId
+                || old.Activity != drone.Activity
+                || old.TargetId != drone.TargetId
+                || old.SquadronSize != drone.SquadronSize
+            )
             {
                 // Michelle uses the control row's owner OR controller to keep a panel entry.
                 // The physical slim keeps the owner for reconnect and scooping.
-                if (drone.ShipId != 0 || old is { ShipId: not 0 })
+                if (drone.Profile.FighterGroup == 0 && (drone.ShipId != 0 || old is { ShipId: not 0 }))
                 {
                     update(new DestinyCommand.DroneStateChanged(new(drone, Removed: drone.ShipId == 0)));
                 }
@@ -111,6 +126,11 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             {
                 update(new DestinyCommand.OnDamageStateChange(drone.Id, drone.Health.DamageState()));
             }
+            if (drone.Mobility is { JumpedAt: > 0 } jump && old is not null && old.Mobility?.JumpedAt != jump.JumpedAt)
+            {
+                update(new DestinyCommand.SetBallPosition(drone.Id, drone.Position.X, drone.Position.Y, drone.Position.Z));
+                update(new DestinyCommand.SetBallVelocity(drone.Id, 0, 0, 0));
+            }
             if (old?.WorkEffect != drone.WorkEffect)
             {
                 if (old?.WorkEffect is { } previousWork)
@@ -121,6 +141,14 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
                 {
                     update(DroneWorkWire.Effect(drone, currentWork, true));
                 }
+            }
+            if (old is { MobilityActive: true } && (!drone.MobilityActive || old.Mobility != drone.Mobility))
+            {
+                MobilityEffect(old, false);
+            }
+            if (drone.MobilityActive && (old?.MobilityActive != true || old.Mobility != drone.Mobility))
+            {
+                MobilityEffect(drone, true);
             }
             if (drone.ShotAt != 0 && old?.ShotAt != drone.ShotAt)
             {
@@ -142,5 +170,34 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             }
         }
         Contacts = current;
+    }
+
+    private void MobilityEffect(DroneContact drone, bool active)
+    {
+        string? graphic = drone.Profile.Mobility?.Kind switch
+        {
+            FighterMobilityKind.Microwarpdrive => "effects.MicroWarpDrive",
+            FighterMobilityKind.MicroJumpDrive => "effects.MicroJumpDriveEngage",
+            FighterMobilityKind.Afterburner => "effects.Afterburner",
+            _ => null,
+        };
+        if (graphic is not null && drone.Mobility is { } cycle)
+        {
+            update(
+                new DestinyCommand.TimedSpecialEffect(
+                    drone.Id,
+                    drone.Id,
+                    drone.Profile.TypeId,
+                    null,
+                    null,
+                    graphic,
+                    false,
+                    active,
+                    active,
+                    (cycle.EndsAt - cycle.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
+                    cycle.StartedAt
+                )
+            );
+        }
     }
 }

@@ -31,6 +31,7 @@ public static class WorldTuningRules
         ArgumentNullException.ThrowIfNull(settings.Structures);
         ArgumentNullException.ThrowIfNull(settings.PlanetaryIndustry);
         ArgumentNullException.ThrowIfNull(settings.Progression);
+        ArgumentNullException.ThrowIfNull(settings.ShipFitting);
         if (settings.Navigation is null || settings.Navigation.AutopilotGateLandingMeters is < 0 or > (int)NavigationState.MaximumWarpRange)
         {
             throw new InvalidDataException("Autopilot gate landing distance must be between 0 and 100000 metres.");
@@ -43,12 +44,17 @@ public static class WorldTuningRules
         ValidateRate(settings.MiningHolds.GeneralMultiplier);
         ValidateRate(settings.MiningHolds.IceMultiplier);
         ValidateRate(settings.MiningHolds.GasMultiplier);
+        ValidateRate(settings.ShipFitting.CpuMultiplier);
+        ValidateRate(settings.ShipFitting.PowerGridMultiplier);
+        ValidateRate(settings.ShipFitting.CalibrationMultiplier);
+        ValidateRate(settings.ShipFitting.DroneBandwidthMultiplier);
         ValidateRate(settings.Rewards.BountyMultiplier, true);
         ValidateRate(settings.Rewards.MissionIskMultiplier, true);
         ValidateRate(settings.Rewards.MissionLpMultiplier, true);
         ValidateRate(settings.Rewards.MissionStandingMultiplier, true);
         ValidateRate(settings.Progression.KillSkillPointMultiplier, true);
         ValidateRate(settings.Progression.MiningSkillPointMultiplier, true);
+        ValidateRate(settings.Progression.TrainingSpeedMultiplier);
         NpcSkillPointRewards.ValidatePercent(settings.Progression.KillSkillPointPercent);
         ActivitySkillPointRewards.ValidateIskPerSkillPoint(settings.Progression.MiningIskPerSkillPoint);
         ValidateRate(settings.Industry.ManufacturingSpeed);
@@ -86,16 +92,8 @@ public static class WorldTuningRules
         }
     }
 
-    public static void ScaleTravel(NavigationPolicy policy, Dictionary<DogmaAttributeId, double> attributes)
-    {
-        foreach (var (attribute, multiplier) in TravelMultipliers(policy))
-        {
-            if (attributes.TryGetValue(attribute, out double value) && value > 0)
-            {
-                attributes[attribute] = value * multiplier;
-            }
-        }
-    }
+    public static void ScaleTravel(NavigationPolicy policy, Dictionary<DogmaAttributeId, double> attributes) =>
+        ScalePositiveAttributes(attributes, TravelMultipliers(policy));
 
     public static IEnumerable<KeyValuePair<DogmaAttributeId, double>> MiningHoldMultipliers(MiningHoldPolicy policy)
     {
@@ -113,9 +111,41 @@ public static class WorldTuningRules
         }
     }
 
-    public static void ScaleMiningHolds(MiningHoldPolicy policy, Dictionary<DogmaAttributeId, double> attributes)
+    public static void ScaleMiningHolds(MiningHoldPolicy policy, Dictionary<DogmaAttributeId, double> attributes) =>
+        ScalePositiveAttributes(attributes, MiningHoldMultipliers(policy));
+
+    public static IEnumerable<KeyValuePair<DogmaAttributeId, double>> FittingMultipliers(ShipFittingPolicy policy)
     {
-        foreach (var (attribute, multiplier) in MiningHoldMultipliers(policy))
+        if (policy.CpuMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.CpuOutput, (double)policy.CpuMultiplier);
+        }
+        if (policy.PowerGridMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.PowerOutput, (double)policy.PowerGridMultiplier);
+        }
+        if (policy.CalibrationMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.CalibrationCapacity, (double)policy.CalibrationMultiplier);
+        }
+        if (policy.DroneBandwidthMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.DroneBandwidth, (double)policy.DroneBandwidthMultiplier);
+        }
+    }
+
+    public static void ScaleFitting(ShipFittingPolicy policy, Dictionary<DogmaAttributeId, double> attributes) =>
+        ScalePositiveAttributes(attributes, FittingMultipliers(policy));
+
+    public static double ScaleDroneBandwidth(ShipFittingPolicy policy, double bandwidth) =>
+        bandwidth * (double)policy.DroneBandwidthMultiplier;
+
+    private static void ScalePositiveAttributes(
+        Dictionary<DogmaAttributeId, double> attributes,
+        IEnumerable<KeyValuePair<DogmaAttributeId, double>> multipliers
+    )
+    {
+        foreach (var (attribute, multiplier) in multipliers)
         {
             if (attributes.TryGetValue(attribute, out double capacity) && capacity > 0)
             {

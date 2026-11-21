@@ -142,7 +142,24 @@ internal sealed class NpcGuardSeeder
         return result;
     }
 
-    internal static List<NpcGuardObstacle> CatalogObstacles(CatalogDbContext catalog, int systemId)
+    private static readonly CatalogDefinition<IReadOnlyList<NpcGuardObstacle>> s_obstacles = new(
+        "npc-anchor-obstacles",
+        LoadCatalogObstacles,
+        Estimate: obstacles => 32L + 64L * obstacles.Count
+    );
+
+    internal static IReadOnlyList<NpcGuardObstacle> CatalogObstacles(CatalogDbContext catalog, int systemId) =>
+        catalog.Definition(s_obstacles, systemId);
+
+    internal static void WarmSystem(CatalogDbContext catalog, int systemId)
+    {
+        if (catalog.Definition(s_guardAnchors, systemId).Sites.Length != 0)
+        {
+            _ = CatalogObstacles(catalog, systemId);
+        }
+    }
+
+    private static IReadOnlyList<NpcGuardObstacle> LoadCatalogObstacles(CatalogDbContext catalog, int systemId)
     {
         List<NpcGuardObstacle> obstacles = [];
         var bodies = catalog.CelestialsInSystem(systemId).Where(body => body.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
@@ -153,78 +170,132 @@ internal sealed class NpcGuardSeeder
                 obstacles.Add(new(new(body.X, body.Y, body.Z), body.Radius ?? type.Radius ?? 0));
             }
         }
-        return obstacles;
+        foreach (var station in catalog.StationsInSystem(systemId))
+        {
+            if (catalog.FittingType(station.TypeId) is { } type)
+            {
+                obstacles.Add(new(new(station.X, station.Y, station.Z), type.Radius ?? 0));
+            }
+        }
+        return obstacles.AsReadOnly();
     }
 
-    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, ClientSystems system, NpcSecurityBand band, long now)
+    private sealed record GuardAnchor(
+        int Id,
+        NpcAnchorKind Kind,
+        int FactionId,
+        SpacePosition Position,
+        double Radius,
+        IReadOnlyList<StationUndockPoint> Lanes
+    );
+
+    private sealed record GuardAnchors(GuardAnchor[] Sites, int[] MissingGates);
+
+    private static readonly CatalogDefinition<GuardAnchors> s_guardAnchors = new(
+        "npc-guard-anchors",
+        LoadGuardAnchors,
+        Estimate: anchors => 64L + 128L * anchors.Sites.Length
+    );
+
+    private static GuardAnchors LoadGuardAnchors(CatalogDbContext catalog, int systemId)
     {
-        if (band == NpcSecurityBand.Null || system.FactionID is not long faction || NpcGuardRules.Roster(checked((int)faction)) is null)
+        List<GuardAnchor> sites = [];
+        List<int> missing = [];
+        if (catalog.SystemPolitics(systemId).FactionId is not long faction || NpcGuardRules.Roster(checked((int)faction)) is null)
         {
-            return;
+            return new([], []);
         }
-        var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
-        var stations = catalog.StationsInSystem(systemId).Where(station => catalog.FittingType(station.TypeId) is not null).ToArray();
-        obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
         foreach (var gate in catalog.GatesInSystem(systemId))
         {
-            var body = catalog.FindCelestial(gate.Id);
-            if (body is null)
+            if (catalog.FindGateBody(gate.Id) is not { } body)
             {
-                Report($"gate {gate.Id} has no catalog position.");
+                missing.Add(gate.Id);
                 continue;
             }
             double radius = body.Radius ?? catalog.FittingType(body.TypeId)?.Radius ?? 0;
-            SeedAnchor(
-                world,
-                catalog,
-                gate.Id,
-                systemId,
-                NpcAnchorKind.Gate,
-                checked((int)faction),
-                new(body.X, body.Y, body.Z),
-                radius,
-                [],
-                obstacles,
-                now
-            );
+            sites.Add(new(gate.Id, NpcAnchorKind.Gate, checked((int)faction), new(body.X, body.Y, body.Z), radius, []));
         }
-        foreach (var station in stations)
+        foreach (var station in catalog.StationsInSystem(systemId))
         {
+            if (catalog.FittingType(station.TypeId) is not { } type)
+            {
+                continue;
+            }
             var owner = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
             long? ownerFaction = owner?.FactionID ?? catalog.Read(CatalogData.Sde.NpcCorporations, (long)station.OwnerId)?.FactionID;
             if (ownerFaction is long empire && NpcGuardRules.Roster(checked((int)empire)) is not null)
             {
-                SeedAnchor(
-                    world,
-                    catalog,
-                    station.Id,
-                    systemId,
-                    NpcAnchorKind.Station,
-                    checked((int)empire),
-                    new(station.X, station.Y, station.Z),
-                    catalog.FittingType(station.TypeId)?.Radius ?? 0,
-                    StationUndockCatalog.Read(catalog, station.TypeId),
-                    obstacles,
-                    now
+                sites.Add(
+                    new(
+                        station.Id,
+                        NpcAnchorKind.Station,
+                        checked((int)empire),
+                        new(station.X, station.Y, station.Z),
+                        type.Radius ?? 0,
+                        StationUndockCatalog.Read(catalog, station.TypeId)
+                    )
                 );
             }
         }
+        return new(sites.ToArray(), missing.ToArray());
     }
 
-    private void SeedAnchor(
-        WorldAction world,
-        CatalogDbContext catalog,
-        int anchorId,
-        int systemId,
-        NpcAnchorKind kind,
-        int factionId,
-        SpacePosition anchor,
-        double radius,
-        IReadOnlyList<StationUndockPoint> lanes,
-        IReadOnlyList<NpcGuardObstacle> obstacles,
-        long now
-    )
+    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, NpcSecurityBand band, long now)
     {
+        if (band == NpcSecurityBand.Null)
+        {
+            return;
+        }
+        var anchors = catalog.Definition(s_guardAnchors, systemId);
+        foreach (int gate in anchors.MissingGates)
+        {
+            Report($"gate {gate} has no catalog position.");
+        }
+        foreach (var anchor in anchors.Sites)
+        {
+            SeedAnchor(world, catalog, systemId, anchor, now);
+        }
+    }
+
+    private void SeedAnchor(WorldAction world, CatalogDbContext catalog, int systemId, GuardAnchor site, long now)
+    {
+        var (anchorId, kind, factionId, anchor, radius, lanes) = site;
+        int slots = kind == NpcAnchorKind.Gate ? 3 : 2;
+        // A destroyed guard only schedules a respawn when it is the newest occupant of its slot.
+        Span<NpcPopulationMember?> latest = stackalloc NpcPopulationMember?[slots];
+        latest.Clear();
+        foreach (var npc in NpcPopulationMember.AtAnchor(world, anchorId))
+        {
+            if ((uint)npc.Slot < latest.Length && (latest[npc.Slot] is not { } prior || prior.Id < npc.Id))
+            {
+                latest[npc.Slot] = npc;
+            }
+        }
+        Span<bool> due = stackalloc bool[slots];
+        bool anyDue = false;
+        for (int slot = 0; slot < latest.Length; slot++)
+        {
+            var previous = latest[slot];
+            due[slot] =
+                previous is null
+                || previous.Value.DestroyedAt is long destroyed
+                    && now - destroyed >= NpcEncounterDefinitions.RespawnSeconds * TimeSpan.TicksPerSecond;
+            anyDue |= due[slot];
+        }
+        var encounters = world.Set<WorldNpcEncounter>();
+        if (
+            !anyDue
+            && encounters is EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter> resident
+            && resident.ContainsSnapshot(new(anchorId))
+        )
+        {
+            return;
+        }
+        var encounter = encounters.Find((long)anchorId);
+        if (encounter is not null && !anyDue)
+        {
+            return;
+        }
         var roster = NpcGuardRules.Roster(factionId)!;
         NpcGuardType[] types =
             kind == NpcAnchorKind.Gate ? [roster.Cruiser, roster.Frigate, roster.Customs] : [roster.Cruiser, roster.Frigate];
@@ -233,10 +304,9 @@ internal sealed class NpcGuardSeeder
         {
             return;
         }
-        var encounter = world.Set<WorldNpcEncounter>().Find((long)anchorId);
         if (encounter is null)
         {
-            var home = NpcGuardRules.Home(anchor, radius, lanes, obstacles);
+            var home = NpcGuardRules.Home(anchor, radius, lanes, CatalogObstacles(catalog, systemId));
             if (home is null)
             {
                 Report($"anchor {anchorId} has no placement clear of collision boundaries and exit lanes.");
@@ -260,17 +330,7 @@ internal sealed class NpcGuardSeeder
         }
         for (int slot = 0; slot < members.Length; slot++)
         {
-            var previous = world
-                .Filter<WorldNpc>(n => n.EncounterId == encounter.Id && n.SpawnSlot == slot)
-                .OrderByDescending(n => n.Id)
-                .FirstOrDefault();
-            if (
-                previous is not null
-                && (
-                    !previous.DestroyedAt.HasValue
-                    || now - previous.DestroyedAt.Value < NpcEncounterDefinitions.RespawnSeconds * TimeSpan.TicksPerSecond
-                )
-            )
+            if (!due[slot])
             {
                 continue;
             }

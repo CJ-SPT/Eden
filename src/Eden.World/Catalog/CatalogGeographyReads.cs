@@ -1,11 +1,15 @@
 using System.Collections.Immutable;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Flight;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
+    internal double? SystemContentSecurity(int systemId) =>
+        writable ? Read(CatalogData.Client.Solarsystemcontent, (long)systemId)?.Security : Definitions.SystemContentSecurity(systemId);
+
     internal IEnumerable<CatalogStationDefinition> Stations() =>
         writable ? Set<Station>().Select(station => station.Id).ToArray().Select(RequireStation) : Definitions.Stations.Values;
 
@@ -83,10 +87,38 @@ public sealed partial class CatalogDbContext
 
     internal CatalogSystemDefinition RequireSystem(int id) => FindSystem(id) ?? throw new InvalidDataException($"Missing system {id}.");
 
+    internal CatalogSystemPolitics SystemPolitics(int id)
+    {
+        if (!writable)
+        {
+            return Definitions.SystemPolitics.GetValueOrDefault(id);
+        }
+        var system = Read(CatalogData.Client.Systems, (long)id);
+        return new(system?.SecurityStatus, system?.FactionID);
+    }
+
+    internal CatalogCelestialDefinition? FindGateBody(long id) => writable ? FindCelestial(id) : Definitions.FindGateBody(id);
+
     internal CatalogCelestialDefinition? FindCelestial(long id) =>
         writable
             ? CatalogProvider.CelestialRows(Set<Celestial>().Where(body => body.Id == id)).SingleOrDefault()
             : Definitions.FindCelestial(id);
+
+    internal IReadOnlyDictionary<int, SpacePosition> FirstCelestialPositions()
+    {
+        var celestials = Set<Celestial>();
+        var firstIds = celestials.GroupBy(body => body.SolarSystemId).Select(group => group.Min(body => body.Id));
+        return celestials
+            .Where(body => firstIds.Contains(body.Id))
+            .Select(body => new
+            {
+                body.SolarSystemId,
+                body.X,
+                body.Y,
+                body.Z,
+            })
+            .ToDictionary(body => body.SolarSystemId, body => new SpacePosition(body.X, body.Y, body.Z));
+    }
 
     internal ImmutableArray<CatalogCelestialDefinition> CelestialsInSystem(int id) =>
         writable

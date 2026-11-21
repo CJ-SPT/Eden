@@ -19,14 +19,15 @@ internal sealed class CapsuleerPopulationMaintenance(
     private Task _loop = Task.CompletedTask;
     private bool _disposed;
 
-    internal void Start()
+    internal void Start(CancellationToken stopping = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_cancellation is null)
         {
-            _cancellation = new();
+            _cancellation = CancellationTokenSource.CreateLinkedTokenSource(stopping);
+            var token = _cancellation.Token;
             // No planning or world work executes synchronously on the listener startup path.
-            _loop = Task.Run(() => Run(_cancellation.Token));
+            _loop = Task.Run(() => Run(token));
         }
     }
 

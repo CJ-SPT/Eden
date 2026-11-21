@@ -37,6 +37,8 @@ internal sealed partial class ResidentEconomy
         return deadlines is { Count: > 0 } ? deadlines.Min.Expires : long.MaxValue;
     }
 
+    internal IEnumerable<long> TimedModules(long ship) => _timedShips.TryGetValue(ship, out var modules) ? modules : [];
+
     internal long[] DueModules(int? system, long now)
     {
         var deadlines = system is int id ? _moduleSystemDeadlines.GetValueOrDefault(id) : _moduleDeadlines;

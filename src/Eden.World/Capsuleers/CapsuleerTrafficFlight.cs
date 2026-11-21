@@ -83,9 +83,12 @@ internal static partial class CapsuleerTrafficFlight
         };
     }
 
-    internal static CapsuleerTrafficRoute Route(SavedCapsuleerHauler saved, CatalogDbContext catalog)
+    internal static CapsuleerTrafficRoute Route(SavedCapsuleerHauler saved, CatalogDbContext catalog) =>
+        Route(saved, catalog, HaulerCheckpoint.Read(saved.Progress)?.Journey);
+
+    internal static CapsuleerTrafficRoute Route(SavedCapsuleerHauler saved, CatalogDbContext catalog, TrafficJourney? journey)
     {
-        if (HaulerCheckpoint.Read(saved.Progress)?.Journey is { } journey)
+        if (journey is not null)
         {
             return new(journey.SourceStationId, journey.DestinationStationId, journey.Systems);
         }
@@ -106,7 +109,7 @@ internal static partial class CapsuleerTrafficFlight
             systemId,
             work.RouteIndex,
             work.RouteDirection,
-            route.SourceStationId == route.DestinationStationId
+            route.SourceStationId == route.DestinationStationId && work.SovereigntyExpedition is null
         );
 
     internal static StaticSpaceObject Target(

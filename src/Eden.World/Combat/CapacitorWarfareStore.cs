@@ -134,6 +134,10 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         if (transfer)
         {
             Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, targetId, now);
+            if (Eden.World.Flight.PilotCapitalTravelStore.ActiveMode(world, targetId, now) is not null)
+            {
+                throw new InvalidDataException("A ship in siege or triage cannot receive remote capacitor.");
+            }
         }
         if (transfer && target.Pilot is null)
         {

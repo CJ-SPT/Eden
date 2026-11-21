@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Gameplay.Calendar;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
@@ -24,6 +25,7 @@ public sealed class SavedCorporation
     public long CreatedAt { get; set; }
     public int MemberLimit { get; set; }
     public long BalanceCents { get; set; }
+    public int? CapsuleerFoundingSystemId { get; set; }
     public long? ClosedAt { get; set; }
 
     public PlayerCorporation Snapshot(int members) =>
@@ -72,6 +74,7 @@ public sealed class SavedCorporationChange
     public string? TitleJson { get; set; }
     public string? ShareJson { get; set; }
     public string? StorageJson { get; set; }
+    public string? CalendarJson { get; set; }
 
     public CorporationChange Snapshot() =>
         new(
@@ -82,7 +85,8 @@ public sealed class SavedCorporationChange
             RoleJson is null ? null : JsonSerializer.Deserialize<CorporationRoleChange>(RoleJson),
             TitleJson is null ? null : JsonSerializer.Deserialize<CorporationTitleChange>(TitleJson),
             ShareJson is null ? null : JsonSerializer.Deserialize<CorporationShareChange>(ShareJson),
-            StorageJson is null ? null : JsonSerializer.Deserialize<CorporationStorageChange>(StorageJson)
+            StorageJson is null ? null : JsonSerializer.Deserialize<CorporationStorageChange>(StorageJson),
+            CalendarJson is null ? null : JsonSerializer.Deserialize<CalendarChange>(CalendarJson)
         );
 }
 

@@ -21,7 +21,7 @@ internal static class SpatialModuleCatalog
 
     private static bool Validate(CatalogDbContext catalog, int type, int group)
     {
-        if (group is not (SpatialModuleRules.CloakGroup or SpatialModuleRules.MicroJumpGroup))
+        if (group != SpatialModuleRules.CloakGroup && !SpatialModuleRules.IsDrive(group, type))
         {
             return false;
         }
@@ -31,7 +31,11 @@ internal static class SpatialModuleCatalog
         {
             return false;
         }
-        if (group == SpatialModuleRules.CloakGroup ? !SpatialModuleRules.IsCloak(effect.Value) : effect != DogmaEffect.MicroJumpDrive)
+        if (
+            group == SpatialModuleRules.CloakGroup
+                ? !SpatialModuleRules.IsCloak(effect.Value)
+                : effect != SpatialModuleRules.JumpEffect(type)
+        )
         {
             return false;
         }
@@ -59,7 +63,7 @@ internal static class SpatialModuleCatalog
             _ = SpatialModuleRules.Define(0, type, effect.Value, catalog.FittingAttributes(type));
             return true;
         }
-        catch (InvalidDataException)
+        catch (Exception error) when (error is InvalidDataException or OverflowException)
         {
             return false;
         }

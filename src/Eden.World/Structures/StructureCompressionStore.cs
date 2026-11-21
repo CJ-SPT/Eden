@@ -104,7 +104,10 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
         var structure = PilotStructureStore.Require(world, structureId);
         PilotStructureStore.Advance(world, catalog, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), structure.SystemId);
         var snapshot = PilotStructureStore.Snapshot(world, catalog, structure);
-        if (!PilotStructureStore.Access(world, structure, pilot.Id) || !snapshot.Services.Contains(StructureService.Reprocessing))
+        if (
+            !PilotStructureStore.ServiceAccess(world, catalog, structure, pilot.Id)
+            || !snapshot.Services.Contains(StructureService.Reprocessing)
+        )
         {
             return null;
         }

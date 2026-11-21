@@ -2,8 +2,11 @@ using System.Linq.Expressions;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mail;
+using Eden.Data.World.Mining;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
@@ -53,6 +56,8 @@ internal abstract class WorldAction
 
     internal virtual bool PilotExists(long id) => Filter<Pilot>(p => p.Id == id).Any();
 
+    internal virtual long? SkillPoints(long pilot, int type) => Set<PilotSkill>().Find(pilot, type)?.Points;
+
     internal abstract bool HasPilotName(string name);
     internal abstract bool TrafficCharacterTaken(long character);
     internal abstract bool Prepared(InstitutionalPreparation value);
@@ -77,6 +82,13 @@ internal abstract class WorldAction
 
     internal virtual IQueryable<T> Filter<T>(Expression<Func<T, bool>> predicate)
         where T : class => Set<T>().Where(predicate);
+
+    internal virtual IEnumerable<EconomyWorldAsteroid> AsteroidsInSystem(int system) =>
+        Filter<WorldAsteroid>(a => a.SystemId == system)
+            .Select(a => new EconomyWorldAsteroid(a.Id, a.BeltId, a.Quantity, a.Radius, a.SystemId, a.TypeId, a.X, a.Y, a.Z));
+
+    internal virtual IEnumerable<int> RenewedBeltsInSystem(int system) =>
+        Filter<SavedBeltRenewal>(b => b.SystemId == system).Select(b => b.BeltId);
 
     internal abstract IReadOnlyList<long> ContainedInventoryIds(long location);
 

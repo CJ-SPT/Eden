@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Exploration;
 using Eden.Gameplay.Combat;
@@ -24,7 +26,10 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
     private const long PolarizationTicks = WormholeRules.PolarizationSeconds * TimeSpan.TicksPerSecond;
     private const int FirstTargetCode = 17_000_000;
     private const int TargetCodeCount = 576_000;
-    private readonly Dictionary<int, IReadOnlyList<CombatAnomaly>> _views = [];
+
+    private sealed record SignatureView(long Catalog, long Revision, long From, long Until, IReadOnlyList<CombatAnomaly> Sites);
+
+    private readonly ConditionalWeakTable<LiveWorld, ConcurrentDictionary<int, SignatureView>> _views = new();
 
     private LiveWorld Owner =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Wormhole operations require the resident world.");
@@ -41,15 +46,35 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
 
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId)
     {
+        var live = LiveWorld.Find(database.Path);
+        long now = Now;
+        if (
+            live is not null
+            && _views.TryGetValue(live, out var cached)
+            && cached.TryGetValue(systemId, out var view)
+            && view.Catalog == database.Catalog.Identity.Generation
+            && view.Revision == live.WormholeRevision
+            && now >= view.From
+            && now < view.Until
+            && live.Economy.IsLoaded
+            && !(
+                live.HasPersistenceOwnership
+                && (live.Economy.HasActiveAction || live.HasOpenSqlTransaction || live.HasUnpublishedSqlChanges)
+            )
+        )
+        {
+            return view.Sites;
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var authority = WormholeCatalog.Read(catalog);
         if (!authority.Systems.ContainsKey(systemId) || authority.Types.Count == 0)
         {
             return Array.Empty<CombatAnomaly>();
         }
-        using var action = Owner.Economy.Begin(TransactionParticipants.None);
+        live ??= Owner;
+        using var action = live.Economy.Begin(TransactionParticipants.None);
         var world = action;
-        long now = Now;
+        now = Now;
         foreach (var slot in authority.Slots.GetValueOrDefault(systemId) ?? [])
         {
             if (world.Set<SavedWormholeConnection>().Find(slot.Id) is null)
@@ -85,12 +110,14 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
             }
         }
         action.Commit();
-        var current = signatures.OrderBy(s => s.Id).ToArray();
-        if (_views.TryGetValue(systemId, out var previous) && Same(previous, current))
+        var views = _views.GetOrCreateValue(live);
+        IReadOnlyList<CombatAnomaly> current = signatures.OrderBy(s => s.Id).ToArray();
+        if (views.TryGetValue(systemId, out var previous) && Same(previous.Sites, current))
         {
-            return previous;
+            current = previous.Sites;
         }
-        _views[systemId] = current;
+        long until = rows.Aggregate(long.MaxValue, (deadline, row) => Math.Min(deadline, NextChange(row, authority, now)));
+        views[systemId] = new(catalog.Definitions.Identity.Generation, live.WormholeRevision, now, until, current);
         return current;
 
         void Add(SavedWormholeConnection saved)
@@ -123,6 +150,36 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
             );
         }
     }
+
+    private static long NextChange(SavedWormholeConnection row, WormholeAuthority authority, long now)
+    {
+        if (row.ReplaceAt != 0)
+        {
+            return row.ReplaceAt;
+        }
+        long deadline = WormholeRules.NextAgeChange(row.ExpiresAt, now);
+        if (row.ActivatedAt != 0 && !row.ExitVisible)
+        {
+            deadline = Math.Min(deadline, RevealAt(row));
+        }
+        // Regenerating mass can cross a visual size band before the next clock deadline.
+        if (
+            row.RemainingMass < row.TotalMass
+            && authority.Types.TryGetValue(row.TypeId, out var type)
+            && type.Regeneration > 0
+            && WormholeRules.Size(
+                WormholeRules.Regenerate(row.RemainingMass, row.TotalMass, type.Regeneration, row.MassUpdatedAt, now),
+                row.TotalMass
+            ) < 1
+        )
+        {
+            return now;
+        }
+        return deadline;
+    }
+
+    private static long RevealAt(SavedWormholeConnection saved) =>
+        Math.Max(saved.ActivatedAt + TimeSpan.TicksPerMinute * 5, saved.ExpiresAt - 15 * TimeSpan.TicksPerHour);
 
     private static bool Same(IReadOnlyList<CombatAnomaly> first, IReadOnlyList<CombatAnomaly> second) =>
         first.Count == second.Count
@@ -176,11 +233,7 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
             saved.ReplaceAt = saved.ExpiresAt + WormholeRules.ReplacementSeconds * TimeSpan.TicksPerSecond;
         }
         // Deterministic passive reveal, bounded by the original activation deadline, survives restart.
-        if (
-            saved.ActivatedAt != 0
-            && now >= saved.ActivatedAt + TimeSpan.TicksPerMinute * 5
-            && saved.ExpiresAt - now <= 15 * TimeSpan.TicksPerHour
-        )
+        if (saved.ActivatedAt != 0 && now >= RevealAt(saved))
         {
             saved.ExitVisible = true;
         }
@@ -324,6 +377,7 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
             connection.Saved.ReplaceAt = now + WormholeRules.ReplacementSeconds * TimeSpan.TicksPerSecond;
         }
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, connection.Destination, now);
+        Eden.World.Propulsion.GateCloakPersistence.Start(world, shipId, now);
         var result = ships.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
         LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, shipId);
@@ -344,6 +398,8 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
 
     private static Connection Validate(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long entranceId, long now)
     {
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         var authority = WormholeCatalog.Read(catalog);
         long sourceId = entranceId - (entranceId - WormholeRules.FirstEndpointId) % 2;
         var saved = world.Filter<SavedWormholeConnection>(c => c.EndpointId == sourceId).SingleOrDefault();

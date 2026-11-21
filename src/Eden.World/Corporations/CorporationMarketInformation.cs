@@ -15,8 +15,7 @@ internal sealed class CorporationMarketInformation(WorldDatabase database) : ICo
         return live.Economy.Inspect(
             world =>
             {
-                // Only completed NPC trades are public here. Personal orders and wallet
-                // entries never contribute; reading Show Info must not seed or refresh markets.
+                // Public results come from completed trades against this corporation�s orders.
                 // Materialize the indexed owner lookup before filtering by the indexed OrderId.
                 // A deferred aggregation inside Contains runs again for every execution.
                 var orderIds = world
@@ -24,6 +23,9 @@ internal sealed class CorporationMarketInformation(WorldDatabase database) : ICo
                     .Where(order => order.OwnerId == corporationId)
                     .Select(order => order.Id)
                     .ToHashSet();
+                orderIds.UnionWith(
+                    world.Filter<SavedPersonalOrder>(order => order.CorporationId == corporationId).Select(order => order.Id)
+                );
                 return world
                     .Set<MarketExecution>()
                     .Where(trade => orderIds.Contains(trade.OrderId) && trade.CounterpartyId == corporationId)

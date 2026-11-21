@@ -7,8 +7,8 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">Pilots run only in systems with a connected player. When the last player leaves, pilots pause and retain their ships,
-    possessions and pending work. Gate visitor preparation requires players on both sides of the gate.</p>
+<p class="muted">Ordinary pilots run in occupied systems. Active roaming gangs and escorted shipments continue while anyone is playing.
+    All pilots pause when the last player leaves, retaining their ships, possessions and pending work.</p>
 @if (Error is not null)
 {
     <p class="error" role="alert">@Error</p>
@@ -17,9 +17,42 @@
 {
     <section class="card">
         <h2>Active population settings</h2>
-        <p>Simulated pilots: @(snapshot.Policy.Enabled ? "On" : "Off") · Miners: @(snapshot.Policy.Miners ? "On" : "Off") ·
-            Station traffic: @snapshot.Policy.TrafficMultiplier× · Visitors per watched gate: @snapshot.Policy.GateVisitors</p>
-        <p class="muted">Traffic and visitor limits are separate. They do not guarantee every saved pilot is in your current system.</p>
+        <p>Active bot slots: @snapshot.Population.EnabledAgents / @(snapshot.Policy.ActivePilotCap == 0 ? "Unlimited" : snapshot.Policy.ActivePilotCap.ToString()) ·
+            Default region access: @CapsuleerPopulationRules.Describe(snapshot.Policy.DefaultRegionAccess)</p>
+        <p>Player bots: @(snapshot.Policy.Enabled ? "On" : "Off") · Mining fleets: @(snapshot.Policy.Miners ? "On" : "Off") ·
+            Trade-good shipments: @(snapshot.Policy.TradeGoodsFreight ? "On" : "Off") ·
+            Data and relic exploration: @(snapshot.Policy.Exploration ? "On" : "Off")</p>
+        <p>Fresh-universe careers · Couriers: @(snapshot.Policy.FreshCourierPilots ? "On" : "Off") ·
+            Bounty hunters: @(snapshot.Policy.FreshBountyPilots && snapshot.Policy.BeltRatting ? "On" : "Off")</p>
+        <p>Prepare bots in unvisited systems (fresh universes): @(snapshot.Policy.PrepareUnvisitedSystems ? "On" : "Off")</p>
+        <p>Corporation formation and recruitment: @(snapshot.Policy.AutomaticRecruitment ? "On" : "Off") ·
+            Form and grow alliances: @(snapshot.Policy.AutomaticAlliances ? "On" : "Off") ·
+            Start new sovereignty claims: @(snapshot.Policy.NewSovereigntyClaims ? "On" : "Off")</p>
+        @if (snapshot.Policy.ActivePilotCap > 0 && snapshot.Population.EnabledAgents >= snapshot.Policy.ActivePilotCap)
+        {
+            <p role="status">All active bot slots are in use. Eden will defer additional founders.</p>
+        }
+        @if (snapshot.Policy.RegionAccess.Count > 0)
+        {
+            <h3>Region overrides</h3>
+            <ul>
+                @foreach (var rule in snapshot.Policy.RegionAccess.OrderBy(rule => Catalog.Regions.GetValueOrDefault(rule.Key)))
+                {
+                    <li>@Catalog.Regions.GetValueOrDefault(rule.Key, rule.Key.ToString()) · @CapsuleerPopulationRules.Describe(rule.Value)</li>
+                }
+            </ul>
+        }
+        @if (snapshot.Policy.SystemAccess.Count > 0)
+        {
+            <h3>System overrides</h3>
+            <ul>
+                @foreach (var rule in snapshot.Policy.SystemAccess.OrderBy(rule => Name(rule.Key)))
+                {
+                    <li>@Name(rule.Key) · @CapsuleerPopulationRules.Describe(rule.Value)</li>
+                }
+            </ul>
+        }
+        <p>Ambient traffic · Station travelers: @snapshot.Policy.TrafficMultiplier× · Visitors per watched gate: @snapshot.Policy.GateVisitors</p>
     </section>
     <section class="card">
         <h2>Coverage</h2>
@@ -33,7 +66,7 @@
             <div><dt>Scheduled pilots</dt><dd>@snapshot.Runtime.ScheduledAgents</dd></div>
             <div><dt>Pilots in watched systems</dt><dd>@snapshot.MaterializedPilots</dd></div>
         </dl>
-        <p class="muted">Saved totals include dormant pilots. Founders are prepared on demand in occupied systems.</p>
+        <p class="muted">Saved totals include dormant pilots. Occupied systems prepare first.</p>
     </section>
     <section class="card">
         <h2>Waiting pilots</h2>
@@ -44,6 +77,28 @@
         @foreach (var reason in snapshot.Runtime.Blocked)
         {
             <p>@reason.Agents · @reason.Reason</p>
+        }
+    </section>
+    <section class="card">
+        <h2>Regional conflicts</h2>
+        @if (snapshot.RegionalConflicts.Count == 0)
+        {
+            <p class="muted">No regional operations have been established yet.</p>
+        }
+        @foreach (var region in snapshot.RegionalConflicts)
+        {
+            <h3>@Catalog.Regions.GetValueOrDefault(region.RegionId, "Unknown region")</h3>
+            <div class="scroll"><table><thead><tr><th>Group</th><th>Home</th><th>Threat pressure</th><th>Losses</th><th>Kills</th></tr></thead><tbody>
+                @foreach (var group in region.Groups)
+                {
+                    <tr><td>@group.Name</td><td>@Name(group.HomeSystemId)</td><td>@group.Pressure / 100</td><td>@group.Losses</td><td>@group.Kills</td></tr>
+                }
+            </tbody></table></div>
+            @foreach (var operation in region.Operations.Take(20))
+            {
+                <p>@(region.Groups.FirstOrDefault(group => group.Id == operation.Key.GroupId)?.Name) · @operation.Objective ·
+                    @Name(operation.TargetSystemId) · @operation.Status · @operation.Reason</p>
+            }
         }
     </section>
     <section class="card">
@@ -60,10 +115,13 @@
             <button class="secondary" @onclick="Load">Refresh</button>
         </div>
         <p class="muted">@Filtered.Count matching systems. Eligibility changes never remove an established community.</p>
-        <div class="scroll"><table><thead><tr><th>System</th><th>Eligibility</th><th>Settings</th><th>Community</th><th>Home / destination</th></tr></thead><tbody>
+        <div class="scroll"><table><thead><tr><th>System</th><th>Bot access</th><th>Eligibility</th><th>Settings</th><th>Community</th><th>Home / destination</th></tr></thead><tbody>
             @foreach (var system in Filtered.Skip(Page * PageSize).Take(PageSize))
             {
-                <tr><td>@Name(system.SystemId) (@system.SystemId)</td><td>@CapsuleerProvisioningRules.Description(system.Eligibility)</td>
+                <tr><td>@Name(system.SystemId) (@system.SystemId)</td>
+                    <td>@CapsuleerPopulationRules.Describe(CapsuleerPopulationRules.WorkAccess(snapshot.Policy, system.SystemId,
+                            Catalog.Systems.GetValueOrDefault(system.SystemId)?.RegionId ?? 0))</td>
+                    <td>@CapsuleerProvisioningRules.Description(system.Eligibility)</td>
                     <td>@(system.CurrentPolicy ? "Current" : "Pending preparation")</td>
                     <td>@(system.Provisioned ? "Established" : "Not provisioned")</td><td>@system.HomeStationId / @system.DestinationStationId</td></tr>
             }

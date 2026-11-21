@@ -107,8 +107,9 @@ public sealed class CapsuleerPopulationRetryTests
         var pilot = ships.FindPilot(1000001)!;
         var gate = host.GetRequiredService<ISystemObjects>().Load(Source).First(value => value.DestinationSystemId is not null);
         ships.SetPosition(pilot.ShipId, gate.Position, Source);
-        using var human = host.GetRequiredService<IHumanPresence>().Select(pilot.PilotId, Source);
         var activity = host.GetRequiredService<CapsuleerActivitySource>();
+        Guid receiver = Guid.NewGuid();
+        activity.Update(receiver, Source, pilot.PilotId);
         Guid remote = Guid.NewGuid();
         activity.Update(remote, gate.DestinationSystemId!.Value, 90000002);
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
@@ -122,11 +123,11 @@ public sealed class CapsuleerPopulationRetryTests
         Assert.Equal(1, pending.Visitor);
         if (observerLeaves)
         {
-            synchronization.BeforeInbound = () => activity.Update(remote, null);
+            synchronization.BeforeInbound = () => activity.Update(receiver, null);
             Assert.Null(preparation.PrepareNext().Failure);
             Assert.Null(scheduler.NextInboundPreparation());
             synchronization.BeforeInbound = null;
-            activity.Update(remote, gate.DestinationSystemId.Value, 90000002);
+            activity.Update(receiver, Source, pilot.PilotId);
             Assert.Equal(pending, scheduler.NextInboundPreparation());
         }
         else

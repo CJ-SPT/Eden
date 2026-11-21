@@ -10,6 +10,37 @@ namespace Eden.Server.Administration.Components;
 
 public partial class SettingsPage
 {
+    private static readonly (string Group, (SettingsActivity Activity, string Label)[] Items)[] Categories =
+    [
+        (
+            "Pilot activity",
+            [
+                (SettingsActivity.Gathering, "Gathering"),
+                (SettingsActivity.Rewards, "Rewards"),
+                (SettingsActivity.Progression, "Progression"),
+                (SettingsActivity.Fitting, "Fitting"),
+                (SettingsActivity.Travel, "Travel"),
+            ]
+        ),
+        (
+            "Industry & trade",
+            [
+                (SettingsActivity.Industry, "Industry"),
+                (SettingsActivity.PlanetaryIndustry, "Planetary industry"),
+                (SettingsActivity.Structures, "Player structures"),
+                (SettingsActivity.Economy, "Economy & market"),
+            ]
+        ),
+        (
+            "World simulation",
+            [
+                (SettingsActivity.Environment, "NPCs & exploration"),
+                (SettingsActivity.PlayerBots, "Player bots"),
+                (SettingsActivity.Advanced, "Advanced"),
+            ]
+        ),
+    ];
+
     private ConfigurationState? State;
     private WorldConfigurationDraft Original = new();
     private readonly SettingsWorkspace Workspace = new();
@@ -86,15 +117,11 @@ public partial class SettingsPage
 
     private void ValidationChanged(object? sender, ValidationStateChangedEventArgs args) => StateHasChanged();
 
-    private void Invalid() => Error = "Review the validation messages before saving. Changes in other tabs are retained.";
-
-    private static string ActivityLabel(SettingsActivity activity) =>
-        activity switch
-        {
-            SettingsActivity.World => "World & economy",
-            SettingsActivity.PlanetaryIndustry => "Planetary industry",
-            _ => activity.ToString(),
-        };
+    private void Invalid()
+    {
+        Error = "Review the validation messages before saving. Changes in other sections are retained.";
+        Message = null;
+    }
 
     private async Task Validate() => await Act(save: false);
 

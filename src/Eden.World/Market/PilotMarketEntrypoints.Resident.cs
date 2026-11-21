@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
@@ -21,6 +22,10 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
+    private const int DemandLocationsPerTurn = 8;
+    private const int DemandSettlementsPerTurn = 16;
+    private static readonly TimeSpan s_demandOwnerBudget = TimeSpan.FromMilliseconds(25);
+
     private MarketResult ResidentBuy(
         Eden.World.Runtime.LiveWorld live,
         long pilotId,
@@ -155,35 +160,37 @@ internal sealed partial class PilotMarketStore
         return expired;
     }
 
-    private WorldEconomySettings ResidentSettings(Eden.World.Runtime.LiveWorld live)
-    {
-        using var world = live.Economy.Begin();
-        var settings = world.Set<SavedWorldEconomy>().Single();
-        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
-    }
+    private static WorldEconomySettings ResidentSettings(LiveWorld live) =>
+        live.Economy.Inspect(static world =>
+        {
+            var settings = world.Set<SavedWorldEconomy>().Single();
+            return new WorldEconomySettings(
+                settings.TestingMarket,
+                settings.TestingGrants,
+                settings.InstitutionalStock,
+                world.Settings.FreshUniverse
+            );
+        });
 
-    private long ResidentObserve(Eden.World.Runtime.LiveWorld live, long pilotId)
-    {
-        using var world = live.Economy.Begin();
-        return world.MarketHead(pilotId);
-    }
+    private static long ResidentObserve(LiveWorld live, long pilotId) => live.Economy.Inspect(world => world.MarketHead(pilotId));
 
-    private IReadOnlyList<PersonalMarketChange> ResidentChanges(Eden.World.Runtime.LiveWorld live, long pilotId, long after)
+    private static IReadOnlyList<PersonalMarketChange> ResidentChanges(LiveWorld live, long pilotId, long after)
     {
-        using var world = live.Economy.Begin();
-        if (after >= world.MarketHead(pilotId))
+        if (!live.Economy.HasMarketChanges(pilotId, after))
         {
             return [];
         }
-        return world
-            .Set<SavedMarketChange>()
-            .AsNoTracking()
-            .Where(c => c.PilotId == pilotId && c.Id > after)
-            .OrderBy(c => c.Id)
-            .Take(PersonalMarketRules.ChangeBatch)
-            .AsEnumerable()
-            .Select(c => JsonSerializer.Deserialize<PersonalMarketChange>(c.Payload)! with { Id = c.Id })
-            .ToArray();
+        return live.Economy.Inspect<IReadOnlyList<PersonalMarketChange>>(world =>
+            after >= world.MarketHead(pilotId)
+                ? []
+                : world
+                    .Filter<SavedMarketChange>(c => c.PilotId == pilotId && c.Id > after)
+                    .OrderBy(c => c.Id)
+                    .Take(PersonalMarketRules.ChangeBatch)
+                    .AsEnumerable()
+                    .Select(c => JsonSerializer.Deserialize<PersonalMarketChange>(c.Payload)! with { Id = c.Id })
+                    .ToArray()
+        );
     }
 
     private IReadOnlyList<MarketOrder> ResidentPersonalOrders(Eden.World.Runtime.LiveWorld live, long pilotId, bool history = false)
@@ -192,7 +199,11 @@ internal sealed partial class PilotMarketStore
         return world
             .Set<SavedPersonalOrder>()
             .AsNoTracking()
-            .Where(o => o.PilotId == pilotId && (history ? o.Status != PersonalOrderStatus.Open : o.Status == PersonalOrderStatus.Open))
+            .Where(o =>
+                o.PilotId == pilotId
+                && o.CorporationId == null
+                && (history ? o.Status != PersonalOrderStatus.Open : o.Status == PersonalOrderStatus.Open)
+            )
             .OrderByDescending(o => o.Id)
             .AsEnumerable()
             .Select(o => o.Snapshot())
@@ -202,8 +213,43 @@ internal sealed partial class PilotMarketStore
     private MarketEscrow ResidentEscrow(Eden.World.Runtime.LiveWorld live, long pilotId)
     {
         using var world = live.Economy.Begin();
-        var orders = world.Set<SavedPersonalOrder>().Where(o => o.PilotId == pilotId && o.Status == PersonalOrderStatus.Open).ToArray();
+        var orders = world
+            .Set<SavedPersonalOrder>()
+            .Where(o => o.PilotId == pilotId && o.CorporationId == null && o.Status == PersonalOrderStatus.Open)
+            .ToArray();
         return new(orders.Sum(o => o.EscrowCents), orders.Where(o => !o.Bid).Sum(o => checked(o.PriceCents * o.Remaining)));
+    }
+
+    private MarketSummary? ChangedRegionAsks(LiveWorld live, long pilot, long catalog, long now, long active)
+    {
+        const int maximumIncrementalTypes = 8;
+        if (
+            live.MarketSummaries.ReadDirtyRegion(pilot, catalog, database.Settings, now, active) is not { } changed
+            || changed.Types.Count > maximumIncrementalTypes
+        )
+        {
+            return null;
+        }
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryChangedTypes");
+        var previous = changed.Summary;
+        var updated = changed.Types.Select(type => ResidentReadOrders(live, pilot, type, MarketScope.Region)).ToArray();
+        if (
+            updated.Any(summary => summary.RegionId != previous.RegionId) || !live.MarketSummaries.CanReplaceRegion(previous, changed.Types)
+        )
+        {
+            return null;
+        }
+        var orders = previous
+            .Orders.Where(order => !changed.Types.Contains(order.TypeId))
+            .Concat(updated.SelectMany(summary => summary.Orders))
+            .OrderBy(order => order.Id)
+            .ToArray();
+        return updated[0] with
+        {
+            Orders = orders.SequenceEqual(previous.Orders) ? previous.Orders : Array.AsReadOnly(orders),
+            ExpiresAt = Math.Min(previous.ExpiresAt, updated.Min(summary => summary.ExpiresAt)),
+            ActiveUntil = Math.Min(previous.ActiveUntil, updated.Min(summary => summary.ActiveUntil)),
+        };
     }
 
     private MarketSummary ResidentReadOrders(Eden.World.Runtime.LiveWorld live, long pilotId, int? typeId, MarketScope? scope)
@@ -434,50 +480,82 @@ internal sealed partial class PilotMarketStore
         {
             throw new ArgumentOutOfRangeException(nameof(limit));
         }
+        if (database.Settings.Economy is { StandardMarket: true } or { ProgressiveMarkets: false })
+        {
+            return 0;
+        }
         var snapshot = activity?.Read();
         if (snapshot is not { Active: true } || snapshot.ElapsedTicks < signal.DemandDeadline)
         {
             return 0;
         }
-        using var world = live.Economy.Begin();
-        if (!RegionalMarketStore.Enabled(world))
+        using var owner = live.EnterShared("market demand");
+        long started = Stopwatch.GetTimestamp();
+        if (!live.Economy.Inspect(RegionalMarketStore.Enabled))
         {
-            world.Commit();
             signal.ScheduleDemand(long.MaxValue, 0);
             return 0;
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
         long cursor = signal.DemandCursor;
-        var open = world
-            .Set<SavedPersonalOrder>()
-            .Where(o => !o.Bid && o.Status == PersonalOrderStatus.Open && o.Expires > now && o.Remaining > 0);
-        var page = open.Where(o => o.Id > cursor).OrderBy(o => o.Id).Take(limit).ToArray();
-        int settled = 0;
-        foreach (var location in page.Select(o => new DemandLocation(o.StationId, o.TypeId)).Distinct())
+        var page = live.Economy.OpenSellOrdersAfter(cursor, now).Take(limit).ToArray();
+        if (cursor == 0 && page.Length == 0)
         {
-            Seed(world, catalog, Station(catalog, location.StationId), location.TypeId);
-            settled += SettleRestingSales(world, catalog, location.StationId, location.TypeId, limit - settled);
-            if (settled == limit)
-            {
-                break;
-            }
+            signal.ScheduleDemand(long.MaxValue, 0);
+            return 0;
         }
-        bool more = page.Length == limit || settled == limit;
-        long next = long.MaxValue;
-        if (!more && open.Any())
+        int settlementLimit = Math.Min(limit, DemandSettlementsPerTurn);
+        // Cheaper asks at the same location take priority, including sellers beyond this page of IDs.
+        // Only those sellers can receive a payment. Importing unrelated combat here made a poll grow with every bot system.
+        var locations = page.Select(o => new DemandLocation(o.StationId, o.TypeId)).Distinct().Take(DemandLocationsPerTurn);
+        var sellers = locations.SelectMany(location => live.Economy.DemandSellers(location.StationId, location.TypeId, now));
+        using var world = live.Economy.Begin(new(pilots: sellers));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        int settled = 0;
+        HashSet<DemandLocation> attempted = [];
+        RegionalMarketStore regional = new(activity);
+        foreach (var entry in page)
         {
-            long fallback = checked(snapshot.ElapsedTicks + RegionalMarketRules.RecoveryIntervalTicks);
-            var boundaries =
-                from stock in world.Set<SavedRegionalMarketStock>()
-                join bid in world.Set<NpcMarketOrder>() on stock.OrderId equals bid.Id
-                where
-                    bid.Kind == NpcMarketKind.Regional
-                    && bid.Bid
-                    && bid.Issued > 0
-                    && open.Any(o => o.StationId == bid.StationId && o.TypeId == bid.TypeId)
-                select (long?)stock.RefreshedTicks;
-            next = Math.Min(fallback, checked((boundaries.Min() ?? snapshot.ElapsedTicks) + RegionalMarketRules.RecoveryIntervalTicks));
+            if (attempted.Add(new(entry.StationId, entry.TypeId)))
+            {
+                if (
+                    attempted.Count > DemandLocationsPerTurn
+                    || attempted.Count > 1 && Stopwatch.GetElapsedTime(started) >= s_demandOwnerBudget
+                )
+                {
+                    break;
+                }
+                var station = Station(catalog, entry.StationId);
+                regional.Advance(world, catalog, station.RegionId, station.Id, now, entry.TypeId);
+                settled += SettleRestingSales(world, catalog, station.Id, entry.TypeId, settlementLimit - settled);
+                if (settled == settlementLimit)
+                {
+                    // This location may still have listings ready to fill.
+                    break;
+                }
+            }
+            cursor = entry.Id;
+        }
+        bool more = page.Length == limit || page.Length > 0 && cursor < page[^1].Id;
+        long next = long.MaxValue;
+        if (!more)
+        {
+            // Read the listings after settlement. A closed listing no longer needs a recovery wake.
+            var demand = live
+                .Economy.OpenSellOrdersAfter(0, now)
+                .Where(o => world.PersonalOrderStillOpen(o.Id))
+                .Select(o => new NpcMarketAssortment(o.StationId, o.TypeId, true, NpcMarketKind.Regional, 0))
+                .ToHashSet();
+            if (demand.Count > 0)
+            {
+                var stock = world.Set<SavedRegionalMarketStock>();
+                long earliest = world
+                    .NpcMarketOrders(demand)
+                    .Where(bid => bid.Issued > 0)
+                    .Select(bid => stock.Find(bid.Id)?.RefreshedTicks)
+                    .Aggregate(snapshot.ElapsedTicks, (ticks, refreshed) => Math.Min(ticks, refreshed ?? ticks));
+                next = checked(earliest + RegionalMarketRules.RecoveryIntervalTicks);
+            }
         }
         world.SaveChanges();
         world.Commit();
@@ -485,9 +563,9 @@ internal sealed partial class PilotMarketStore
         {
             signal.Changed(demand: false);
         }
-        // Failed transactions never advance the cursor or deadline. A full page
-        // continues next poll so expensive/unfillable listings cannot starve later IDs.
-        signal.ScheduleDemand(more ? 0 : next, more ? page[^1].Id : 0);
+        // Resume after the last fully processed listing. A failed transaction
+        // leaves its work pending for the next poll.
+        signal.ScheduleDemand(more ? 0 : next, more ? cursor : 0);
         return settled;
     }
 }

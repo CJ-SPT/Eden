@@ -5,6 +5,7 @@ namespace Eden.Gameplay.Structures;
 
 public static class StructureRules
 {
+    public const int FuelBlockGroup = 1136;
     public const long FirstStructureId = 1_000_000_000_000;
     public const int CategoryId = 65;
     public const int ServiceCategoryId = 66;
@@ -50,12 +51,16 @@ public static class StructureRules
                 or StructureService.Manufacturing
                 or StructureService.BasicManufacturing
                 or StructureService.CapitalManufacturing
+                or StructureService.SupercapitalManufacturing
                 or StructureService.Laboratory
                 or StructureService.TimeResearch
                 or StructureService.MaterialResearch
                 or StructureService.Copying
                 or StructureService.Invention
                 or StructureService.MoonMining
+                or StructureService.CynoBeacon
+                or StructureService.CynoJammer
+                or StructureService.JumpBridge
                 or StructureService.CompositeReactions
                 or StructureService.HybridReactions
                 or StructureService.BiochemicalReactions;

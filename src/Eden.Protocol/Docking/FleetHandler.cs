@@ -13,7 +13,9 @@ internal sealed class FleetHandler(
     ShipDogmaBuilder dogma,
     DeferredRefitPrimes refits,
     PilotBrain brain,
-    ICargoContainers containers
+    ICargoContainers containers,
+    IPilotShipSharing? sharing = null,
+    IPilotShipMaintenance? maintenance = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -30,13 +32,67 @@ internal sealed class FleetHandler(
         }
         if ((service, method) == ("ship", "GetShipConfiguration"))
         {
-            return args is [long id] && id == (context.ControlledStructureId ?? context.Pilot.ShipId)
-                ? new ShipSharingConfiguration()
-                : new PilotCallResult.Failure("Read the configuration of your active ship.");
+            if (args is not [long id] || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Choose a ship to read its sharing configuration.");
+            }
+            var settings = sharing?.Configuration(context.Pilot.PilotId, id);
+            return id == (context.ControlledStructureId ?? context.Pilot.ShipId) || settings is not null
+                ? new ShipSharingConfigurationWire(settings)
+                : new PilotCallResult.Failure("The ship sharing configuration is unavailable at your current location.");
         }
         if ((service, method) == ("ship", "ConfigureShip"))
         {
-            return new PilotCallResult.Failure("Fleet and corporation access to personal ship holds is not available yet.");
+            try
+            {
+                if (
+                    sharing is null
+                    || context.ControlledStructureId is not null
+                    || args is not [Dictionary<string, object?> fields]
+                    || fields.Count == 0
+                    || keywords is { Count: > 0 }
+                    || fields.Any(field =>
+                        field.Value is not bool && field.Value is not (0L or 1L)
+                        || field.Key
+                            is not (
+                                ShipSharingConfigurationWire.FleetHangarFleet
+                                or ShipSharingConfigurationWire.FleetHangarCorporation
+                                or ShipSharingConfigurationWire.MaintenanceFleet
+                                or ShipSharingConfigurationWire.MaintenanceCorporation
+                            )
+                    )
+                )
+                {
+                    throw new InvalidDataException("Choose fleet or corporation access for a shared bay on your active ship.");
+                }
+                sharing.Configure(
+                    context.Pilot.PilotId,
+                    context.Pilot.ShipId,
+                    new(
+                        Setting(ShipSharingConfigurationWire.FleetHangarFleet),
+                        Setting(ShipSharingConfigurationWire.FleetHangarCorporation),
+                        Setting(ShipSharingConfigurationWire.MaintenanceFleet),
+                        Setting(ShipSharingConfigurationWire.MaintenanceCorporation)
+                    )
+                );
+                return PilotCallResult.None;
+
+                bool? Setting(string name) =>
+                    fields.GetValueOrDefault(name) switch
+                    {
+                        bool value => value,
+                        long value => value != 0,
+                        _ => null,
+                    };
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+        }
+        if (service == "ship" && method is "StoreVessel" or "BoardStoredShip")
+        {
+            return UseMaintenanceBay(context, method, args, keywords);
         }
         if (
             !(service == "ship" && method is "AssembleShip" or "Board" or "LeaveShip")
@@ -103,6 +159,45 @@ internal sealed class FleetHandler(
                 return dogma.ShipState(boarding.Pilot);
             }
             return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult UseMaintenanceBay(
+        PilotCallContext context,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords
+    )
+    {
+        if (maintenance is null || keywords is { Count: > 0 } || context.ControlledStructureId is not null)
+        {
+            return PilotCallResult.Unsupported;
+        }
+        try
+        {
+            InventoryTransfers.CheckRefitFlight(context);
+            var pilot = context.Pilot;
+            var changed = (method, args) switch
+            {
+                ("StoreVessel", [long host]) => maintenance.Store(pilot.PilotId, pilot.ShipId, host),
+                ("BoardStoredShip", [long host, long stored]) => maintenance.Board(pilot.PilotId, pilot.ShipId, host, stored),
+                _ => throw new InvalidDataException("Choose an available ship maintenance bay and stored ship."),
+            };
+            refits.Clear();
+            context.Flight.RetireStoredShip();
+            context.ChangeShip(changed.Pilot);
+            // The system stays the same, so send the new ego's ballpark state with the ship change.
+            context.Flight.Snapshot();
+            RefreshBrain(context);
+            foreach (var change in changed.Changes)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change);
+            }
+            return method == "StoreVessel" ? (PilotCallResult)changed.Pilot.ShipId : dogma.ShipState(changed.Pilot);
         }
         catch (InvalidDataException error)
         {

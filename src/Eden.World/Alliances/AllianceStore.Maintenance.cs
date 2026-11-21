@@ -1,6 +1,7 @@
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Alliances;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 
@@ -37,6 +38,8 @@ internal sealed partial class AllianceStore
                 alliance is not { ClosedAt: null }
                 || world.Set<SavedCorporation>().Find(application.CorporationId) is not { ClosedAt: null }
                 || world.Set<SavedAllianceMember>().Find(application.CorporationId) is not null
+                || MilitiaOrganizationStore.AllianceAdmissionFailure(world, application.CorporationId, application.AllianceId, now)
+                    is not null
             )
             {
                 application.Status = AllianceApplicationStatus.Rejected;

@@ -41,20 +41,33 @@ public sealed record CalendarChange(long Id, CalendarChangeKind Kind, CalendarEv
 
 public sealed record CalendarChanges(long Cursor, IReadOnlyList<CalendarChange> Items, bool More);
 
-public interface IPilotCalendar
+public interface ICalendarEvents
 {
-    long Revision { get; }
-    long Observe(long pilotId);
-    CalendarChanges Changes(long pilotId, long after);
     IReadOnlyList<CalendarEvent> Month(long pilotId, int month, int year);
     CalendarDetails Details(long pilotId, long eventId, long ownerId);
     IReadOnlyList<PersonalCalendarResponse> Responses(long pilotId);
     IReadOnlyList<CalendarAttendance> Attendance(long pilotId, long eventId, long ownerId);
+    void Respond(long pilotId, long eventId, long ownerId, CalendarResponse response);
+    void Delete(long pilotId, long eventId, long ownerId);
+}
+
+public interface IOrganizationCalendar : ICalendarEvents
+{
+    bool IsOwner(long ownerId);
+    long Create(long pilotId, CalendarEventDraft draft);
+    void Edit(long pilotId, long eventId, long oldTime, CalendarEventDraft draft);
+}
+
+public interface ICorporationCalendar : IOrganizationCalendar;
+
+public interface IPilotCalendar : ICalendarEvents
+{
+    long Revision { get; }
+    long Observe(long pilotId);
+    CalendarChanges Changes(long pilotId, long after);
     long Create(long pilotId, CalendarEventDraft draft, IReadOnlyList<long> invitees);
     void Edit(long pilotId, long eventId, long oldTime, CalendarEventDraft draft);
     void UpdateParticipants(long pilotId, long eventId, IReadOnlyList<long> add, IReadOnlyList<long> remove);
-    void Respond(long pilotId, long eventId, long ownerId, CalendarResponse response);
-    void Delete(long pilotId, long eventId, long ownerId);
 }
 
 public static class CalendarRules
@@ -132,6 +145,32 @@ public static class CalendarRules
         {
             throw new InvalidDataException("Invite up to fifty distinct other pilots.");
         }
+    }
+
+    public static void CheckMutable(CalendarEvent entry, long now)
+    {
+        if (entry.Deleted)
+        {
+            throw new InvalidDataException("This calendar event has been cancelled.");
+        }
+        CheckTime(entry.Time, now);
+    }
+
+    public static CalendarEvent Edit(CalendarEvent entry, long oldTime, CalendarEventDraft draft, long now)
+    {
+        CheckMutable(entry, now);
+        if (entry.Time != oldTime)
+        {
+            throw new InvalidDataException("The event time changed. Reload before editing.");
+        }
+        return entry with
+        {
+            Time = draft.Time,
+            DurationMinutes = draft.DurationMinutes,
+            Title = draft.Title,
+            Important = draft.Important,
+            Modified = Math.Max(now, entry.Modified + 1),
+        };
     }
 
     public static void CheckResponse(CalendarResponse response)

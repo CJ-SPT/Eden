@@ -1,13 +1,20 @@
 using System.Text.Json;
+using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Corporations;
+using Eden.Gameplay.Capsuleers;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Economy;
 
+internal readonly record struct CapsuleerAgentSlot(int System, CapsuleerCareer Career, int Slot);
+
 internal sealed partial class ResidentEconomy
 {
     private void RegisterBotTables()
     {
+        RegisterShipSharing();
+        RegisterRegionalConflicts();
         Register(
             new EconomyTable<Eden.Data.World.Agents.SavedMission, EconomySavedMission>(
                 "WorldMission",
@@ -269,6 +276,7 @@ internal sealed partial class ResidentEconomy
                     new("FounderModuleId", row => row.FounderModuleId),
                     new("FounderShipId", row => row.FounderShipId),
                     new("Slot", row => row.Slot),
+                    new(nameof(CapsuleerAgentSlot), row => new CapsuleerAgentSlot(row.CommunitySystemId, row.Career, row.Slot)),
                 ],
                 primaryColumn: "PilotId"
             )
@@ -1717,7 +1725,8 @@ internal sealed partial class ResidentEconomy
                         row.StationId,
                         row.SystemId,
                         row.Ticker,
-                        row.ClosedAt
+                        row.ClosedAt,
+                        row.CapsuleerFoundingSystemId
                     ),
                 state => new Eden.Data.World.Corporations.SavedCorporation
                 {
@@ -1732,10 +1741,12 @@ internal sealed partial class ResidentEconomy
                     StationId = state.StationId,
                     SystemId = state.SystemId,
                     Ticker = state.Ticker,
+                    CapsuleerFoundingSystemId = state.CapsuleerFoundingSystemId,
                     ClosedAt = state.ClosedAt,
                 },
                 ProjectSavedCorporation,
-                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker,ClosedAt",
+                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker,ClosedAt,"
+                    + "CapsuleerFoundingSystemId",
                 reader =>
                     new(
                         reader.GetInt32(1),
@@ -1749,7 +1760,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(9),
                         reader.GetInt32(10),
                         reader.GetString(11),
-                        reader.IsDBNull(12) ? null : reader.GetInt64(12)
+                        reader.IsDBNull(12) ? null : reader.GetInt64(12),
+                        reader.IsDBNull(13) ? null : reader.GetInt32(13)
                     ),
                 state => new(state.Id),
                 indexes:
@@ -1761,6 +1773,7 @@ internal sealed partial class ResidentEconomy
                     new("StationId", row => row.StationId),
                     new("SystemId", row => row.SystemId),
                     new("Ticker", row => row.Ticker),
+                    new(nameof(SavedCorporation.CapsuleerFoundingSystemId), row => row.CapsuleerFoundingSystemId),
                 ],
                 primaryColumn: "Id"
             )
@@ -2002,6 +2015,7 @@ internal sealed partial class ResidentEconomy
                 [
                     new("ItemId", row => row.ItemId),
                     new("ControllerShipId", row => row.ControllerShipId),
+                    new("Activity", row => (int)row.Activity),
                     new("CorporationId", row => row.CorporationId),
                     new("DelegateFleetId", row => row.DelegateFleetId),
                     new("DelegatePilotId", row => row.DelegatePilotId),
@@ -2130,6 +2144,7 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt32(1), reader.GetBoolean(2), reader.GetDecimal(3), reader.GetBoolean(4), reader.GetInt32(5)),
                 state => new(state.Id),
                 indexes: [new("Id", row => row.Id)],
+                changed: (_, _) => _industryMapCosts = null,
                 primaryColumn: "Id"
             )
         );
@@ -2793,12 +2808,16 @@ internal sealed partial class ResidentEconomy
                         row.TargetingReadyAt,
                         row.VelocityX,
                         row.VelocityY,
-                        row.VelocityZ
+                        row.VelocityZ,
+                        row.GateCloakUntil,
+                        row.FieldScrambledUntil
                     ),
                 state => new Eden.Data.World.Propulsion.SpatialNavigationState
                 {
                     ShipId = state.ShipId,
                     CloakModuleId = state.CloakModuleId,
+                    GateCloakUntil = state.GateCloakUntil,
+                    FieldScrambledUntil = state.FieldScrambledUntil,
                     CloakReactivationMilliseconds = state.CloakReactivationMilliseconds,
                     CloakTargetingMilliseconds = state.CloakTargetingMilliseconds,
                     HeadingX = state.HeadingX,
@@ -2814,7 +2833,8 @@ internal sealed partial class ResidentEconomy
                 },
                 ProjectSpatialNavigationState,
                 "ShipId,CloakModuleId,CloakReactivationMilliseconds,CloakTargetingMilliseconds,HeadingX,HeadingY,"
-                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ",
+                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ,"
+                    + "GateCloakUntil,FieldScrambledUntil",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2830,7 +2850,9 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(11),
                         reader.GetDouble(12),
                         reader.GetDouble(13),
-                        reader.GetDouble(14)
+                        reader.GetDouble(14),
+                        reader.GetInt64(15),
+                        reader.GetInt64(16)
                     ),
                 state => new(state.ShipId),
                 indexes:
@@ -3549,6 +3571,17 @@ internal sealed partial class EconomyTransaction
 
     private void ValidateBotRows()
     {
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedRegionalConflict>())
+        {
+            if (
+                row.RegionId != row.State.RegionId
+                || row.State.Groups.Length > Eden.Gameplay.Capsuleers.RegionalConflictRules.MaximumGroups
+                || row.State.Operations.Length > Eden.Gameplay.Capsuleers.RegionalConflictRules.MaximumOperations
+            )
+            {
+                throw new InvalidDataException("Invalid resident regional conflict state.");
+            }
+        }
         foreach (var row in Retained<Eden.Data.World.Agents.SavedResearchProject>())
         {
             if (!PilotExists(row.PilotId) || !double.IsFinite(row.Points) || !double.IsFinite(row.PointsPerDay))
@@ -3629,7 +3662,7 @@ internal sealed partial class EconomyTransaction
             }
         }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAdmission>()) { }
-        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>())
+        foreach (var row in Retained<SavedCapsuleerAgent>())
         {
             if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>().Find(row.CommunitySystemId) is null)
             {
@@ -3639,15 +3672,17 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
+            var agents = (EconomySet<SavedCapsuleerAgent, EconomySavedCapsuleerAgent>)Set<SavedCapsuleerAgent>();
+            var slot = new CapsuleerAgentSlot(row.CommunitySystemId, row.Career, row.Slot);
             if (
-                true
-                && Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>()
+                !agents.HasUniqueCommittedKey(new(row.PilotId), nameof(CapsuleerAgentSlot), slot)
+                && agents
+                    .IndexedSnapshots(nameof(CapsuleerAgentSlot), slot)
                     .Any(other =>
-                        true
-                        && other.CommunitySystemId == row.CommunitySystemId
+                        other.CommunitySystemId == row.CommunitySystemId
                         && other.Career == row.Career
                         && other.Slot == row.Slot
-                        && (other.PilotId != row.PilotId)
+                        && other.PilotId != row.PilotId
                     )
             )
             {
@@ -3968,7 +4003,7 @@ internal sealed partial class EconomyTransaction
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
         }
-        foreach (var row in Retained<Eden.Data.World.Corporations.SavedCorporation>())
+        foreach (var row in Retained<SavedCorporation>())
         {
             if (Set<Eden.Data.World.Characters.Pilot>().Find(row.CeoId) is null)
             {
@@ -3978,26 +4013,22 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
+            var corporations = (EconomySet<SavedCorporation, EconomySavedCorporation>)Set<SavedCorporation>();
             if (
-                true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => row.ClosedAt == null && other.ClosedAt == null && other.CeoId == row.CeoId && (other.Id != row.Id))
-            )
-            {
-                throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");
-            }
-            if (
-                true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => row.ClosedAt == null && other.ClosedAt == null && other.Name == row.Name && other.Id != row.Id)
-            )
-            {
-                throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");
-            }
-            if (
-                true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => true && other.Ticker == row.Ticker && (other.Id != row.Id))
+                row.ClosedAt == null
+                    && !corporations.HasUniqueCommittedKey(new(row.Id), nameof(SavedCorporation.CeoId), row.CeoId)
+                    && corporations
+                        .IndexedSnapshots(nameof(SavedCorporation.CeoId), row.CeoId)
+                        .Any(other => other.ClosedAt == null && other.CeoId == row.CeoId && other.Id != row.Id)
+                || row.ClosedAt == null
+                    && !corporations.HasUniqueCommittedKey(new(row.Id), nameof(SavedCorporation.Name), row.Name)
+                    && corporations
+                        .IndexedSnapshots(nameof(SavedCorporation.Name), row.Name)
+                        .Any(other => other.ClosedAt == null && other.Name == row.Name && other.Id != row.Id)
+                || !corporations.HasUniqueCommittedKey(new(row.Id), nameof(SavedCorporation.Ticker), row.Ticker)
+                    && corporations
+                        .IndexedSnapshots(nameof(SavedCorporation.Ticker), row.Ticker)
+                        .Any(other => other.Ticker == row.Ticker && other.Id != row.Id)
             )
             {
                 throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");
@@ -4193,17 +4224,19 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
+            var ledger =
+                (EconomySet<Eden.Data.World.Mining.SavedPersonalMiningLog, EconomySavedPersonalMiningLog>)
+                    Set<Eden.Data.World.Mining.SavedPersonalMiningLog>();
             if (
-                true
-                && Set<Eden.Data.World.Mining.SavedPersonalMiningLog>()
+                ledger
+                    .IndexedSnapshots(nameof(Eden.Data.World.Mining.SavedPersonalMiningLog.PilotId), row.PilotId)
                     .Any(other =>
-                        true
-                        && other.PilotId == row.PilotId
+                        other.PilotId == row.PilotId
                         && other.Day == row.Day
                         && other.CorporationId == row.CorporationId
                         && other.SystemId == row.SystemId
                         && other.TypeId == row.TypeId
-                        && (other.Id != row.Id)
+                        && other.Id != row.Id
                     )
             )
             {
@@ -4269,7 +4302,9 @@ internal sealed partial class EconomyTransaction
         foreach (var row in Retained<Eden.Data.World.Propulsion.SpatialNavigationState>())
         {
             if (
-                !double.IsFinite(row.CloakReactivationMilliseconds)
+                row.GateCloakUntil < 0
+                || row.FieldScrambledUntil < 0
+                || !double.IsFinite(row.CloakReactivationMilliseconds)
                 || !double.IsFinite(row.CloakTargetingMilliseconds)
                 || !double.IsFinite(row.HeadingX)
                 || !double.IsFinite(row.HeadingY)

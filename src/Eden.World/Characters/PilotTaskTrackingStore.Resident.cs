@@ -60,9 +60,21 @@ internal sealed partial class PilotTaskTrackingStore
 
     internal static void Record(WorldAction world, CatalogDbContext catalog, long pilotId, long now, string name, long count = 1)
     {
+        Increment(world, pilotId, name, count);
+        Complete(world, pilotId, now, Definitions(catalog), Counters(world, pilotId));
+    }
+
+    internal static void RecordMining(WorldAction world, CatalogDbContext catalog, long pilotId, long now, long quantity)
+    {
+        Increment(world, pilotId, TaskEvents.Mined, 1);
+        Increment(world, pilotId, TaskEvents.TotalMined, quantity);
+        Complete(world, pilotId, now, Definitions(catalog), Counters(world, pilotId));
+    }
+
+    private static void Increment(WorldAction world, long pilotId, string name, long count)
+    {
         var saved =
             world.Set<SavedTaskCounter>().Find(pilotId, name) ?? world.Add(new SavedTaskCounter { PilotId = pilotId, Name = name }).Entity;
         saved.Count = TaskTrackingRules.Increment(saved.Count, count);
-        Complete(world, pilotId, now, Definitions(catalog), Counters(world, pilotId));
     }
 }

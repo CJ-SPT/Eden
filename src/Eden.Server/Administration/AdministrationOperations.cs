@@ -4,6 +4,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Skills;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Skills;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,10 @@ internal sealed record AdminPopulationSnapshot(
     int MaterializedPilots,
     IReadOnlyList<CapsuleerSystemSummary> Systems,
     CapsuleerPopulationPolicy Policy
-);
+)
+{
+    public IReadOnlyList<RegionalConflictRegion> RegionalConflicts { get; init; } = [];
+}
 
 internal sealed record AdminRecordView(CatalogStoredRecord Record, IReadOnlyList<CatalogRelatedRecord> Relationships);
 
@@ -40,15 +44,27 @@ internal sealed partial class AdministrationOperations(
     ICapsuleerScene scene,
     Eden.World.Modding.ModStore mods,
     Eden.Server.Modding.ModPublisher modPublisher,
-    Eden.World.Storage.WorldDatabase database
+    Eden.World.Storage.WorldDatabase database,
+    CapsuleerCorporationIdentityStore corporationIdentities,
+    OptionalDataImports optionalDataImports,
+    IRegionalConflictDiagnostics? regionalConflicts = null
 )
 {
+    internal IReadOnlyDictionary<int, string> RegionNames => catalog.Regions;
+    internal IReadOnlyDictionary<int, CatalogSystemDefinition> SolarSystems => catalog.Systems;
+
     private async Task Authorize(ClaimsPrincipal user)
     {
         if (!(await authorization.AuthorizeAsync(user, null, AdministratorAccounts.Policy)).Succeeded || !administrators.IsCurrent(user))
         {
             throw new UnauthorizedAccessException("Sign in with the current local administrator account.");
         }
+    }
+
+    internal async Task<WorldWipePlan> WipeWorld(ClaimsPrincipal user, string confirmation, WorldWipeRequest wipe)
+    {
+        await Authorize(user);
+        return wipe.Prepare(confirmation);
     }
 
     internal async Task<ConfigurationState> Read(ClaimsPrincipal user)
@@ -72,7 +88,28 @@ internal sealed partial class AdministrationOperations(
             scene.MaterializedPilots,
             population.Systems(),
             configuration.Read().Active.Draft.Settings.Capsuleers
-        );
+        )
+        {
+            RegionalConflicts = regionalConflicts?.ReadConflicts() ?? [],
+        };
+    }
+
+    internal async Task<CapsuleerCorporationNamePreview?> PreviewCorporationName(ClaimsPrincipal user, int id)
+    {
+        await Authorize(user);
+        return corporationIdentities.Preview(id);
+    }
+
+    internal async Task<bool> ApplyCorporationName(ClaimsPrincipal user, CapsuleerCorporationNamePreview preview)
+    {
+        await Authorize(user);
+        return corporationIdentities.Apply(preview);
+    }
+
+    internal async Task<CapsuleerRosterReport?> CorporationRoster(ClaimsPrincipal user, int id)
+    {
+        await Authorize(user);
+        return CapsuleerCorporations.Roster(database, id);
     }
 
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)

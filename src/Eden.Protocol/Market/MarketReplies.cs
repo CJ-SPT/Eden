@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Eden.Gameplay.Inventory;
@@ -29,6 +30,25 @@ internal sealed record WalletJournalFilter(int? Year, int? Month)
 internal sealed record MarketOrderRow(MarketOrder Order, int? Duration = null) : BlueModel
 {
     public override object ToBlue() => MarketWire.Row(Order, Duration);
+}
+
+internal sealed record MarketBestAsks : BlueModel
+{
+    private static readonly ConditionalWeakTable<IReadOnlyList<MarketOrder>, MarketBestAsks> s_replies = new();
+    private readonly IReadOnlyList<MarketOrder> _orders;
+    private readonly Lazy<byte[]> _encoded;
+
+    private MarketBestAsks(IReadOnlyList<MarketOrder> orders)
+    {
+        _orders = orders;
+        _encoded = new(() => BlueMarshal.Encode(this));
+    }
+
+    internal static MarketBestAsks Read(IReadOnlyList<MarketOrder> orders) => s_replies.GetValue(orders, static orders => new(orders));
+
+    public override object ToBlue() => _orders.ToDictionary(order => (long)order.TypeId, order => (object?)new MarketOrderRow(order));
+
+    internal override byte[] EncodeReply() => _encoded.Value;
 }
 
 internal sealed record MarketOrderRows(IReadOnlyList<MarketOrder> Orders) : BlueModel
@@ -64,23 +84,9 @@ internal sealed record CachedMarketOrders(IBlueWritable Result, long Version) : 
             {
                 new Dictionary<string, object?> { ["versionCheck"] = "always", ["sessionInfo"] = "regionid" },
                 payload,
-                new object?[] { Version, PayloadChecksum(payload) },
+                new object?[] { Version, CachedMethodPayload.Checksum(payload) },
             }
         );
-    }
-
-    // Native object caching compares the Adler-32 field to decide whether the payload changed.
-    private static int PayloadChecksum(ReadOnlySpan<byte> payload)
-    {
-        const uint adlerModulus = 65521;
-        uint sum = 1;
-        uint accumulated = 0;
-        foreach (byte value in payload)
-        {
-            sum = (sum + value) % adlerModulus;
-            accumulated = (accumulated + sum) % adlerModulus;
-        }
-        return unchecked((int)((accumulated << 16) | sum));
     }
 }
 

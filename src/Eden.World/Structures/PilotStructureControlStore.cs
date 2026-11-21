@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Structures;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
@@ -8,7 +9,12 @@ using Eden.World.Storage;
 namespace Eden.World.Structures;
 
 [Injectable]
-internal sealed class PilotStructureControlStore(WorldDatabase database, IPilotStructures structures) : IPilotStructureControl
+internal sealed class PilotStructureControlStore(
+    WorldDatabase database,
+    IPilotStructures structures,
+    IStandupFighterFlight? fighters = null,
+    TimeProvider? clock = null
+) : IPilotStructureControl
 {
     private LiveWorld Live =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Structure control requires the resident world.");
@@ -31,11 +37,9 @@ internal sealed class PilotStructureControlStore(WorldDatabase database, IPilotS
             throw new InvalidDataException("Another pilot is controlling this structure.");
         }
         var token = new StructureControlToken(structureId, pilotId, sessionId, Guid.NewGuid());
-        var lease = new ResidentStructureControl(token, live, database.Path);
-        if (!live.StructureControllers.TryAdd(structureId, lease))
-        {
-            throw new InvalidDataException("Another pilot is controlling this structure.");
-        }
+        var lease = new ResidentStructureControl(token, live, database.Path, fighters, clock ?? TimeProvider.System);
+        fighters?.Assign(pilotId, structureId);
+        live.StructureControllers[structureId] = lease;
         return lease;
     }
 
@@ -64,7 +68,13 @@ internal sealed class PilotStructureControlStore(WorldDatabase database, IPilotS
     }
 }
 
-internal sealed class ResidentStructureControl(StructureControlToken token, LiveWorld owner, string path) : IStructureControlLease
+internal sealed class ResidentStructureControl(
+    StructureControlToken token,
+    LiveWorld owner,
+    string path,
+    IStandupFighterFlight? fighters,
+    TimeProvider clock
+) : IStructureControlLease
 {
     private readonly Lock _gate = new();
     public StructureControlToken Token { get; } = token;
@@ -115,6 +125,7 @@ internal sealed class ResidentStructureControl(StructureControlToken token, Live
                 }
                 action.Commit();
             }
+            fighters?.Release(Token.PilotId, Token.StructureId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             if (owner.StructureControllers.TryRemove(KeyValuePair.Create(Token.StructureId, this)))
             {
                 if (owner.TargetLocks is IPilotLockBreaks breaks)

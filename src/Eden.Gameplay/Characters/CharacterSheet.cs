@@ -36,7 +36,8 @@ public sealed record PublicCharacterProfile(
     int? AncestryId,
     long? CreatedAt,
     string Biography,
-    long? CorporationJoinedAt = null
+    long? CorporationJoinedAt = null,
+    Eden.Gameplay.FactionWarfare.MilitiaFaction? MilitiaFaction = null
 );
 
 public interface IPilotCharacterSheet

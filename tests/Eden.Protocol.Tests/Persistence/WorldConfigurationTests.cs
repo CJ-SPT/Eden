@@ -6,9 +6,12 @@ using Eden.Data.World.Mining;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Content;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Server.Configuration;
 using Eden.World.Configuration;
+using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -20,13 +23,24 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class WorldConfigurationTests
 {
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void StartingEquipmentPolicyAppliesOnlyToNewPilotsInResidentWorld(bool enabled)
+    [InlineData(true, 14, 2, 3, 30002547, 60015162, 588)]
+    [InlineData(true, 11, 4, 5, 30003489, 60015154, 596)]
+    [InlineData(true, 18, 1, 1, 30001392, 60015159, 601)]
+    [InlineData(true, 22, 8, 7, 30005305, 60015161, 606)]
+    [InlineData(false, 18, 1, 1, 30001392, 60015159, 601)]
+    public async Task StartingEquipmentPolicyAppliesOnlyToNewPilotsInResidentWorld(
+        bool enabled,
+        int school,
+        int race,
+        int bloodline,
+        int system,
+        int station,
+        int hull
+    )
     {
         using TestWorld fixture = new();
         WorldDatabase database = new(fixture.Path);
-        TestCatalog.AddSchool(database.CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        TestCatalog.AddSchool(database.CatalogPath, school, race, bloodline, system, station, hull);
         var config = new WorldConfigurationStore(database, TimeProvider.System);
         var state = config.Read();
         config.Save(
@@ -41,24 +55,52 @@ public sealed class WorldConfigurationTests
             "admin"
         );
         WorldInitialization.Initialize(database);
+        const long account = 1000001;
+        const long existingPilot = 90000001;
         long pilot;
+        long ship;
+        InventoryItem[] fit;
+        var existingStation = fixture.Store.FindPilot(account, existingPilot)!.StationId;
+        var existingEquipment = fixture.Services.GetRequiredService<IPilotInventory>().List(existingPilot, existingStation);
+        Assert.NotEmpty(existingEquipment);
         using (var host = Eden.Server.ServerServices.Build(database, liveWorld: true))
         {
-            pilot = host.GetRequiredService<ICharacterCreation>().Create(1000001, new("Equipment Pilot", 1, 1, 1, 64, [1], [2], 18));
-            using WorldDbContext world = new(database.Path);
-            var equipment = world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.OwnerId == pilot).ToArray();
-            Assert.Equal(enabled ? 2 : 0, equipment.Length);
+            var character = new NewCharacter("Equipment Pilot", race, bloodline, 1, 64, [1], [2], school);
+            pilot = host.GetRequiredService<ICharacterCreation>().Create(account, character);
+            var spawned = host.GetRequiredService<SqliteWorld>().FindPilot(account, pilot)!;
+            Assert.Equal(hull, spawned.ShipTypeId);
+            ship = spawned.ShipId;
+            var inventory = host.GetRequiredService<IPilotInventory>();
+            fit = inventory.List(pilot, ship).OrderBy(item => item.FlagId).ToArray();
+            Assert.Empty(inventory.List(pilot, station));
             if (enabled)
             {
-                var kit = Eden.Gameplay.Content.BuildContentPolicy.Current.StartingEquipment;
-                Assert.Contains(equipment, item => item.TypeId == kit.MinerType && item.Quantity == 1);
-                Assert.Contains(equipment, item => item.TypeId == kit.WeaponType && item.Quantity == 1);
+                var kit = BuildContentPolicy.Current.StartingEquipment;
+                Assert.Equal(
+                    new[] { (kit.MinerType, (int)InventoryFlag.HighSlot0), (kit.WeaponType, (int)InventoryFlag.HighSlot1) },
+                    fit.Select(item => (item.TypeId, item.FlagId))
+                );
+                Assert.All(
+                    fit,
+                    item =>
+                        Assert.Equal(
+                            (pilot, ship, 1, true, true),
+                            (item.OwnerId, item.LocationId, item.Quantity, item.Singleton, item.Online)
+                        )
+                );
             }
-            Assert.NotEmpty(world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.OwnerId != pilot));
+            else
+            {
+                Assert.Empty(fit);
+            }
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
         }
         WorldInitialization.Initialize(database);
-        using WorldDbContext reopened = new(database.Path);
-        Assert.Equal(enabled ? 2 : 0, reopened.Set<Eden.Data.World.Inventory.OwnedItem>().Count(item => item.OwnerId == pilot));
+        using var reopened = Eden.Server.ServerServices.Build(database, liveWorld: true);
+        var reopenedInventory = reopened.GetRequiredService<IPilotInventory>();
+        Assert.Equal(fit, reopenedInventory.List(pilot, ship).OrderBy(item => item.FlagId));
+        Assert.Empty(reopenedInventory.List(pilot, station));
+        Assert.Equal(existingEquipment, reopenedInventory.List(existingPilot, existingStation));
     }
 
     [Fact]
@@ -75,6 +117,8 @@ public sealed class WorldConfigurationTests
             settings["economy"]!.AsObject().Remove(field);
         }
         settings["progression"]!.AsObject().Remove("grantStartingEquipment");
+        settings["capsuleers"]!.AsObject().Remove("exploration");
+        settings["capsuleers"]!.AsObject().Remove("wreckSalvage");
         var imported = store.Import(state.Generation, document.ToJsonString(), "legacy");
         var legacy = imported.Pending!.Draft.Settings;
         Assert.True(legacy.Economy.EmpireLpDatacores);
@@ -82,6 +126,8 @@ public sealed class WorldConfigurationTests
         Assert.True(legacy.Economy.RegionalHubSupply);
         Assert.True(legacy.Economy.BeginnerMarketSupply);
         Assert.True(legacy.Progression.GrantStartingEquipment);
+        Assert.True(legacy.Capsuleers.Exploration);
+        Assert.True(legacy.Capsuleers.WreckSalvage);
         var disabled = legacy with
         {
             Economy = legacy.Economy with
@@ -92,12 +138,14 @@ public sealed class WorldConfigurationTests
                 BeginnerMarketSupply = false,
             },
             Progression = legacy.Progression with { GrantStartingEquipment = false },
-            Capsuleers = legacy.Capsuleers with { Enabled = false },
+            Capsuleers = legacy.Capsuleers with { Enabled = false, Exploration = false, WreckSalvage = false },
         };
         var saved = store.Save(imported.Generation, imported.Pending.Draft with { Settings = disabled }, "admin");
         Assert.True(database.Settings.Economy.EmpireLpDatacores);
         Assert.True(database.Settings.Progression.GrantStartingEquipment);
         Assert.True(database.Settings.Capsuleers.Enabled);
+        Assert.True(database.Settings.Capsuleers.Exploration);
+        Assert.True(database.Settings.Capsuleers.WreckSalvage);
         var exported = store.Export(saved.Pending!.Id);
         var roundTrip = store.Import(saved.Generation, exported, "round trip");
         Assert.Equal(disabled, roundTrip.Pending!.Draft.Settings);

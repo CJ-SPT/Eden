@@ -27,6 +27,7 @@ public interface IPilotRepair
     void CheckStation(long pilotId, long stationId);
     IReadOnlyDictionary<long, IReadOnlyList<RepairQuote>> Quotes(long pilotId, long stationId, IReadOnlyList<long> itemIds);
     RepairResult Repair(long pilotId, long stationId, IReadOnlyList<long> itemIds, long paymentCents, long now);
+    RepairResult RepairInStructure(long pilotId, long structureId, IReadOnlyList<long> itemIds, long now);
     IReadOnlyList<RepairPayment> Payments(long pilotId);
 }
 

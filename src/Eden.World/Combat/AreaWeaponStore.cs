@@ -9,6 +9,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
@@ -31,6 +32,7 @@ internal sealed partial class AreaWeaponStore(
     TimeProvider clock,
     INpcEwarRoll rolls,
     IPilotLockBreaks locks,
+    IPilotTargetLocks targetLocks,
     PilotLossSettlement losses,
     SqliteWorld lookup,
     IPilotDamageEvents damageEvents,
@@ -69,7 +71,9 @@ internal sealed partial class AreaWeaponStore(
         SpacePosition direction,
         SpacePosition velocity,
         SpacePosition? point,
-        long now
+        long now,
+        long? target = null,
+        SpacePosition? secondPoint = null
     )
     {
         int system = Live.Economy.Inspect(world =>
@@ -84,9 +88,9 @@ internal sealed partial class AreaWeaponStore(
         var pilot = world.Pilots.Find(pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.RequireItem(item.TypeId).GroupId;
-        if (group == AreaWeaponRules.BombLauncherGroup && world.TetherProtected(shipId, now))
+        if (group is AreaWeaponRules.BombLauncherGroup or DoomsdayRules.Group && world.TetherProtected(shipId, now))
         {
-            throw new InvalidDataException("Release tethering before launching a bomb.");
+            throw new InvalidDataException("Release tethering before activating this weapon.");
         }
         if (
             pilot?.ActiveShipId != shipId
@@ -106,6 +110,7 @@ internal sealed partial class AreaWeaponStore(
             throw new InvalidDataException("Use an online fitted area weapon on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
         if (CrimewatchPersistence.System(catalog, pilot.ActiveShip) != system || presence.IsTravelProtected(system, shipId))
         {
             throw new InvalidDataException("The source ship is travelling or has changed systems.");
@@ -132,28 +137,104 @@ internal sealed partial class AreaWeaponStore(
             throw new InvalidDataException("A destroyed ship cannot activate area weapons.");
         }
         double security = CrimewatchPersistence.Security(catalog, system);
+        bool disruptive = effect == DogmaEffect.DisruptiveLance;
+        bool oscillator = effect == DogmaEffect.DoomsdayOscillator;
         if (module.Kind == AreaWeaponKind.BurstJammer)
         {
             bool alpha = world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha;
             SmartbombRules.CheckSafety(security, pilot.SafetyLevel, alpha);
         }
-        else if (security > 0)
+        else if (
+            security >= CrimewatchRules.HighSecurity
+            || security > 0 && module.Kind != AreaWeaponKind.Doomsday && !disruptive && !oscillator
+        )
         {
-            throw new InvalidDataException("This area weapon requires null-security or wormhole space.");
+            throw new InvalidDataException(
+                module.Kind == AreaWeaponKind.Doomsday
+                    ? "Targeted doomsdays require low-security, null-security or wormhole space."
+                    : "This area weapon requires null-security or wormhole space."
+            );
+        }
+        if ((disruptive || oscillator) && security > 0 && pilot.SafetyLevel != ShipSafetyLevel.Disabled)
+        {
+            throw new InvalidDataException("Use red safety before firing this area doomsday in low-security space.");
         }
         SpacePosition origin = new(saved.X, saved.Y, saved.Z);
-        List<InventoryChange> inventoryChanges = [];
-        if (module.Kind == AreaWeaponKind.Projector)
+        double sourceRadius = 0;
+        if (secondPoint is not null && module.Field?.Shape != DoomsdayFieldShape.Sweep)
         {
-            if (point is null || !Finite(point) || origin.DistanceTo(point) > module.Range)
+            throw new InvalidDataException("Only a Reaper accepts a second aim point.");
+        }
+        List<InventoryChange> inventoryChanges = [];
+        if (module.Kind == AreaWeaponKind.Doomsday)
+        {
+            if (
+                point is not null
+                || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId != (int)HullClass.Titan
+                || target is not long victimId
+                || DoomsdayTarget(world, catalog, pilot, victimId, system, now) is not { } victim
+            )
+            {
+                throw new InvalidDataException("Select a locked capital ship within targeting range.");
+            }
+            long firesAt = AreaWeaponRules.Deadline(now, module.Delay);
+            Aggression(world, catalog, pilot, shipId, module.TypeId, victim, system, now, firesAt);
+            SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
+        }
+        else if (module.Field is { } field)
+        {
+            if (
+                target is not null
+                || point is null
+                || !Finite(point)
+                || catalog.RequireItem(pilot.ActiveShip.TypeId) is not { } hull
+                || hull.GroupId != (int)(disruptive ? HullClass.LancerDreadnought : HullClass.Titan)
+            )
+            {
+                throw new InvalidDataException("Aim an online area doomsday from its compatible hull.");
+            }
+            if (disruptive && Eden.World.Flight.PilotCapitalTravelStore.ActiveMode(world, shipId, now)?.Effect != DogmaEffect.CapitalSiege)
+            {
+                throw new InvalidDataException("Activate siege before firing a disruptive lance.");
+            }
+            sourceRadius = hull.Radius ?? 0;
+            if (field.Shape == DoomsdayFieldShape.Sweep)
+            {
+                if (secondPoint is null || !Finite(secondPoint))
+                {
+                    throw new InvalidDataException("Choose both endpoints of the Reaper sweep.");
+                }
+                DoomsdayFieldRules.CheckSweep(origin, sourceRadius, module.Range, point, secondPoint);
+            }
+            else if (oscillator)
+            {
+                if (origin.DistanceTo(point) > sourceRadius + module.Range)
+                {
+                    throw new InvalidDataException("Aim the oscillator within its range.");
+                }
+            }
+            else
+            {
+                var aim = point - origin;
+                if (!double.IsFinite(aim.Length) || aim.Length < 1)
+                {
+                    throw new InvalidDataException("Choose a direction away from your ship for the area doomsday.");
+                }
+                point = origin + aim.Unit * (sourceRadius + module.Range);
+            }
+            SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
+        }
+        else if (module.Kind == AreaWeaponKind.Projector)
+        {
+            if (target is not null || point is null || !Finite(point) || origin.DistanceTo(point) > module.Range)
             {
                 throw new InvalidDataException("Choose a finite point within the projector's range.");
             }
             SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
         }
-        else if (point is not null)
+        else if (point is not null || target is not null)
         {
-            throw new InvalidDataException("This weapon does not accept a target point.");
+            throw new InvalidDataException("This weapon does not accept a target.");
         }
         MagazineChange? magazine = null;
         BombProfile? bomb = null;
@@ -211,6 +292,10 @@ internal sealed partial class AreaWeaponStore(
             }
         }
         double capacitor = ShipResources.SpendCapacitor(world, shipId, ship, module.CapacitorNeed, now);
+        if (module.Field is { } lance)
+        {
+            NeutralizeNearDoomsday(world, catalog, pilot, origin, system, module.TypeId, lance, now);
+        }
         long end = AreaWeaponRules.Deadline(now, module.Duration);
         long ready = AreaWeaponRules.Deadline(end, module.Reactivation);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId) ?? world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
@@ -219,14 +304,24 @@ internal sealed partial class AreaWeaponStore(
         var timer = CrimewatchPersistence.State(world, pilotId);
         timer.SystemId = system;
         var timers = timer.Timers();
-        timer.Apply(timers with { Weapons = CrimewatchRules.Extend(timers.Weapons, end, CrimewatchRules.WeaponsDuration) });
+        long aggressionEnd = module.Kind switch
+        {
+            AreaWeaponKind.DoomsdayField => AreaWeaponRules.Deadline(now, module.Delay + module.Field!.DamageDuration),
+            AreaWeaponKind.Doomsday => AreaWeaponRules.Deadline(now, module.Delay),
+            _ => end,
+        };
+        timer.Apply(timers with { Weapons = CrimewatchRules.Extend(timers.Weapons, aggressionEnd, CrimewatchRules.WeaponsDuration) });
         long? flightId = null;
         List<long> broken = [];
         if (module.Kind == AreaWeaponKind.BurstJammer)
         {
             Burst(world, catalog, pilot, module, origin, system, now, broken);
         }
-        else if (module.Kind == AreaWeaponKind.Projector || bomb is not null || intercepted is not null)
+        else if (
+            module.Kind is AreaWeaponKind.Projector or AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField
+            || bomb is not null
+            || intercepted is not null
+        )
         {
             var travel = bomb is not null ? direction.Unit * bomb.Speed : SpacePosition.Zero;
             long resolves = AreaWeaponRules.Deadline(now, bomb?.Lifetime ?? module.Delay);
@@ -251,15 +346,29 @@ internal sealed partial class AreaWeaponStore(
                 ModuleId = moduleId,
                 SystemId = system,
             };
-            row.Save(new(module, bomb, origin, travel, point ?? origin, now, resolves, intercepted?.Id ?? 0, bomb?.Defense.Undamaged));
+            row.Save(
+                new(
+                    module,
+                    bomb,
+                    origin,
+                    travel,
+                    point ?? origin,
+                    now,
+                    resolves,
+                    intercepted?.Id ?? target ?? 0,
+                    bomb?.Defense.Undamaged,
+                    EndPoint: secondPoint,
+                    SourceRadius: sourceRadius
+                )
+            );
             world.Add(row);
             flightId = row.Id;
         }
         var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
         transaction.Commit();
-        foreach (long target in broken)
+        foreach (long jammed in broken)
         {
-            locks.BreakOutgoing(target);
+            locks.BreakOutgoing(jammed);
         }
         if (heat is not null)
         {
@@ -292,7 +401,7 @@ internal sealed partial class AreaWeaponStore(
             .ToArray();
         if (stacks.Sum(item => item.Quantity) < quantity)
         {
-            throw new InvalidDataException("The projector requires more fuel in ordinary cargo.");
+            throw new InvalidDataException("The weapon requires more fuel in ordinary cargo.");
         }
         foreach (var item in stacks)
         {

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -7,7 +8,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Exploration;
 
 [Injectable]
-internal sealed class AgencyHandler(IAgencyDirectory directory, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class AgencyHandler(IAgencyDirectory directory, TimeProvider clock, IMilitiaComplexes? complexes = null)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -55,6 +57,9 @@ internal sealed class AgencyHandler(IAgencyDirectory directory, TimeProvider clo
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         return method switch
         {
+            "GetFactionWarfareInstances" when complexes?.Directory(now) is { Count: > 0 } militia => new AnomalyDirectory(militia),
+            "GetFactionWarfareBattlefieldInstances" when complexes?.Directory(now, battlefields: true) is { Count: > 0 } fields =>
+                new AnomalyDirectory(fields),
             "GetSignatureInstances" => new AgencyCounts(directory.Signatures(now)),
             "GetIceBeltInstances" => new AnomalyDirectory(directory.Ice(now).Known),
             "GetIceBeltsCount" => new AgencyCounts(directory.Ice(now).Available),

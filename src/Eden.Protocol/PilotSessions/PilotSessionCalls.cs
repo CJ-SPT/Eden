@@ -83,6 +83,7 @@ internal sealed class PilotSessionCalls(
         PilotCallResult result = PilotCallResult.None;
         void Dispatch()
         {
+            using var arrivalContext = updates.AdoptConduit(context) ? context.Flight.UseSystem() : null;
             using (SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh))
             {
                 presentation?.Refresh();
@@ -146,6 +147,7 @@ internal sealed class PilotSessionCalls(
                 || previous.ShipId != context.Pilot.ShipId
                 || previous.CorpId != context.Pilot.CorpId
                 || previous.Identity.AllianceId != context.Pilot.Identity.AllianceId
+                || previous.Identity.WarFaction != context.Pilot.Identity.WarFaction
                 || previous.Identity.Fleet != context.Pilot.Identity.Fleet
                 || previous.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
                 || previous.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess

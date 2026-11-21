@@ -106,37 +106,87 @@ internal sealed partial class LiveCombatRuntime
         ProjectContributions(world, after.ShipId, before.Contributions, after.Contributions);
     }
 
-    internal static void ProjectNpc(WorldDbContext world, LiveCombatNpc before, LiveCombatNpc after)
+    private sealed record NpcProjection(
+        long Id,
+        double? ShieldCharge,
+        double? ArmorDamage,
+        double? StructureDamage,
+        long? UpdatedAt,
+        double X,
+        double Y,
+        double Z,
+        double VelocityX,
+        double VelocityY,
+        double VelocityZ,
+        NpcNavigationState Navigation,
+        long MotionAt,
+        long ShieldRepairAt,
+        long ArmorRepairAt,
+        long RepairRevision
+    );
+
+    internal static void ProjectNpcs(WorldDbContext world, IReadOnlyList<CombatNpcChange> changes)
     {
-        if (
-            before.Health != after.Health
-            || before.Position != after.Position
-            || before.Velocity != after.Velocity
-            || before.Navigation != after.Navigation
-            || before.MotionAt != after.MotionAt
-            || before.RepairState != after.RepairState
-        )
+        const int rowsPerBatch = 128;
+        foreach (var batch in changes.Select(NpcState).OfType<NpcProjection>().Chunk(rowsPerBatch))
         {
-            bool healthChanged = before.Health != after.Health;
-            var health = after.Health;
-            double armor = health.ArmorDamage ?? health.Defense.Armor - health.Remaining.Armor;
-            double structure = health.StructureDamage ?? health.Defense.Structure - health.Remaining.Structure;
+            string rows = JsonSerializer.Serialize(batch);
             world.Database.ExecuteSql(
                 $"""
                 UPDATE WorldNpc SET
-                    ShieldCharge=CASE WHEN {healthChanged} THEN {health.Remaining.Shield} ELSE ShieldCharge END,
-                    ArmorDamage=CASE WHEN {healthChanged} THEN {armor} ELSE ArmorDamage END,
-                    StructureDamage=CASE WHEN {healthChanged} THEN {structure} ELSE StructureDamage END,
-                    UpdatedAt=CASE WHEN {healthChanged} THEN {health.UpdatedAt} ELSE UpdatedAt END,
-                    X={after.Position.X},Y={after.Position.Y},Z={after.Position.Z},
-                    VelocityX={after.Velocity.X},VelocityY={after.Velocity.Y},VelocityZ={after.Velocity.Z},
-                    Navigation={(int)after.Navigation},MotionAt={after.MotionAt},
-                    ShieldRepairAt={after.RepairState.ShieldReadyAt},ArmorRepairAt={after.RepairState.ArmorReadyAt},
-                    RepairRevision={after.RepairState.Revision} WHERE Id={after.Id}
+                    ShieldCharge=coalesce(json_extract(saved.value,'$.ShieldCharge'),ShieldCharge),
+                    ArmorDamage=coalesce(json_extract(saved.value,'$.ArmorDamage'),ArmorDamage),
+                    StructureDamage=coalesce(json_extract(saved.value,'$.StructureDamage'),StructureDamage),
+                    UpdatedAt=coalesce(json_extract(saved.value,'$.UpdatedAt'),UpdatedAt),
+                    X=json_extract(saved.value,'$.X'),Y=json_extract(saved.value,'$.Y'),Z=json_extract(saved.value,'$.Z'),
+                    VelocityX=json_extract(saved.value,'$.VelocityX'),VelocityY=json_extract(saved.value,'$.VelocityY'),
+                    VelocityZ=json_extract(saved.value,'$.VelocityZ'),Navigation=json_extract(saved.value,'$.Navigation'),
+                    MotionAt=json_extract(saved.value,'$.MotionAt'),ShieldRepairAt=json_extract(saved.value,'$.ShieldRepairAt'),
+                    ArmorRepairAt=json_extract(saved.value,'$.ArmorRepairAt'),RepairRevision=json_extract(saved.value,'$.RepairRevision')
+                FROM json_each({rows}) AS saved WHERE WorldNpc.Id=json_extract(saved.value,'$.Id')
                 """
             );
         }
-        ProjectContributions(world, after.Id, before.Contributions, after.Contributions);
+        foreach (var (before, after) in changes)
+        {
+            ProjectContributions(world, after.Id, before.Contributions, after.Contributions);
+        }
+    }
+
+    private static NpcProjection? NpcState(CombatNpcChange change)
+    {
+        var (before, after) = change;
+        bool healthChanged = before.Health != after.Health;
+        if (
+            !healthChanged
+            && before.Position == after.Position
+            && before.Velocity == after.Velocity
+            && before.Navigation == after.Navigation
+            && before.MotionAt == after.MotionAt
+            && before.RepairState == after.RepairState
+        )
+        {
+            return null;
+        }
+        var health = after.Health;
+        return new(
+            after.Id,
+            healthChanged ? health.Remaining.Shield : null,
+            healthChanged ? health.ArmorDamage ?? health.Defense.Armor - health.Remaining.Armor : null,
+            healthChanged ? health.StructureDamage ?? health.Defense.Structure - health.Remaining.Structure : null,
+            healthChanged ? health.UpdatedAt : null,
+            after.Position.X,
+            after.Position.Y,
+            after.Position.Z,
+            after.Velocity.X,
+            after.Velocity.Y,
+            after.Velocity.Z,
+            after.Navigation,
+            after.MotionAt,
+            after.RepairState.ShieldReadyAt,
+            after.RepairState.ArmorReadyAt,
+            after.RepairState.Revision
+        );
     }
 
     private static void ProjectContributions(

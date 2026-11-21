@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation calendar events](#corporation-calendar-events)
 - [Corporation chat MOTD, November 15, 2026](#corporation-chat-motd-november-15-2026)
 
 - [Chat idle connection keepalives, November 15, 2026](#chat-idle-connection-keepalives-november-15-2026)
@@ -30,6 +31,46 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
 
+
+## Corporation calendar events
+
+The November 21, 2026 comparison matched 993 service/method pairs from Eden's pinned route inventory to literal
+`Handle_` definitions in the local EVE.js service tree. Of these, 398 method names had no exact quoted spelling in
+`src/Eden.Protocol` at the start of the pass. Dynamic dispatch, bound aliases and handlers in other projects affect that
+count. The calendar showed the opposite problem. All 13 route names appeared in both projects, but Eden explicitly
+rejected the two corporation management calls.
+
+| Pinned client call | Behavior |
+| --- | --- |
+| `calendarMgr.CreateCorporationEvent(time, duration, title, description, importance)` | Returns a new calendar event ID. The corporation owns the event. The pilot who creates it is recorded separately and starts with an accepted RSVP. |
+| `calendarMgr.EditCorporationEvent(id, oldTime, time, duration, title, description, importance)` | Validates the previous start time, saves the edit and returns Python None. Rescheduling resets accepted and tentative replies to undecided, including the creator's. |
+| `calendarProxy.GetEventList`, `GetEventDetails` and `calendarMgr.GetResponsesForCharacter`, `GetResponsesToEvent`, `SendEventResponse` | Read the pilot's current membership. Members can see events created before they joined, read attendance and answer for themselves. |
+| `calendarMgr.DeleteEvent(id, ownerID)` | An authorized editor can cancel once. The calendar keeps the cancelled event and its status across reconnects. |
+
+Creation, editing and cancellation use the current Communications Officer role (`corpRoleChatManager`), including CEO and
+director authority. World schema 213 checkpoints corporation-owned events, attendance and the ordered member notifications.
+All event types share the calendar ID allocator. The recipient's current corporation is checked again when draining queued
+changes, so leaving revokes both reads and queued notifications. Official events and paid personal invitations remain open.
+
+Build **3662168** (`code.ccp` SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`)
+sends five positional arguments in `CalendarSvc.CreateNewEvent` at bytecode offset 378 and seven in
+`CalendarSvc.EditEvent` at offset 210. Its `OnEditCalendarEvent` compares the event owner with the character ID on
+reschedule. A corporation-owned event therefore resets the creator's positive RSVP along with other members' replies.
+The local EVE.js **261108.1** snapshot instead exempts the creator. Compared `calendarMgrService.js` (`8a1f814f2efd`),
+`calendarAccess.js` (`5303c18b2ba5`) and `calendarRuntimeState.js` (`0f6cde6ad334`) under `server/src/services/calendar`.
+[EVE University corporation roles](https://wiki.eveuniversity.org/Managing_corporation_members) ·
+[Carbon Blue tuple and list encoding](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+
+**Automated validation.** The exact method `CorporationEventsUseCurrentRolesNotifyMembersAndReopenThroughTheNativeCalendar`
+passed in 7.07 seconds (build 11.26 seconds). The solution build produced zero warnings and errors. All 36 tests passed
+in 18.22 seconds with the filter
+`FullyQualifiedName~CorporationCalendarTests|FullyQualifiedName~CalendarServiceTests|FullyQualifiedName~Persistence.CalendarTests|FullyQualifiedName~AllianceSocialTests|FullyQualifiedName~CorporationCommunicationTests|FullyQualifiedName~CorporationAdministrationTests`.
+The eight catalog and nine formatting policy tests passed. Formatting and line width passed across 2,938 files.
+Total milestone validation took 72.21 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
 
 ## Corporation chat MOTD (November 15, 2026)
 

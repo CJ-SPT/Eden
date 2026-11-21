@@ -141,7 +141,7 @@ public sealed class CapsuleerMaintenanceTests
         public bool IsEntered => actual.IsEntered;
         public TaskCompletionSource BetweenJobs { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private int _acquisitions;
+        public int Calls { get; private set; }
 
         public IReadOnlyList<CapsuleerJob> Jobs() => scheduler.Jobs();
 
@@ -151,14 +151,62 @@ public sealed class CapsuleerMaintenanceTests
 
         public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {
-            if (++_acquisitions == 2)
+            var batch = scheduler.Run(destinyStamp, maximumActions);
+            if (++Calls == 1)
             {
                 Assert.False(IsEntered);
                 BetweenJobs.SetResult();
                 Resume.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             }
-            return scheduler.Run(destinyStamp, maximumActions);
+            return batch;
         }
+    }
+
+    [Fact]
+    public async Task HostShutdownStopsBetweenAtomicJobsAndSavesTheCommittedJob()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000141);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var original = scheduler.Jobs().ToArray();
+        Assert.Equal(2, original.Length);
+        var synchronization = host.GetRequiredService<IWorldSynchronization>();
+        PauseAfterFirstJob gate = new(scheduler, synchronization);
+        ManualWakeClock clock = new();
+        using CancellationTokenSource shutdown = new();
+        using CapsuleerMaintenance worker = new(
+            gate,
+            host.GetRequiredService<ICapsuleerHandoff>(),
+            host.GetRequiredService<ICapsuleerScene>(),
+            host.GetRequiredService<ChatRuntime>(),
+            clock,
+            synchronization,
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
+        );
+        f.Clock.Seconds++;
+        worker.Start(shutdown.Token);
+        try
+        {
+            (await clock.NextWake()).Fire();
+            await gate.BetweenJobs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            shutdown.Cancel();
+        }
+        finally
+        {
+            gate.Resume.TrySetResult();
+        }
+        await worker.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(1, gate.Calls);
+        selected.Dispose();
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+
+        string reopenedPath = Path.Combine(Path.GetDirectoryName(f.Database.Path)!, "shutdown-jobs.sqlite");
+        File.Copy(f.Database.Path, reopenedPath);
+        using WorldDbContext reopened = new(reopenedPath);
+        var saved = CapsuleerPopulationStore.Jobs(reopened).ToDictionary(job => job.PilotId);
+        Assert.Equal(original[0].Sequence + 1, saved[original[0].PilotId].Sequence);
+        Assert.Equal(original[1], saved[original[1].PilotId]);
     }
 
     [Theory]
@@ -208,13 +256,17 @@ public sealed class CapsuleerMaintenanceTests
         Assert.Equal(timing.LastPresentation, scheduler.Read().LastPresentation);
     }
 
-    [Fact]
-    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs(bool stalled, bool overdue)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         ManualWakeClock clock = new();
-        BackloggedScheduler scheduler = new(clock);
+        BackloggedScheduler scheduler = new(clock, stalled, overdue);
         using CapsuleerMaintenance maintenance = new(
             scheduler,
             host.GetRequiredService<ICapsuleerHandoff>(),
@@ -222,37 +274,60 @@ public sealed class CapsuleerMaintenanceTests
             host.GetRequiredService<ChatRuntime>(),
             clock,
             host.GetRequiredService<IWorldSynchronization>(),
-            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>(),
+            diagnostics: scheduler
         );
         maintenance.Start();
         var initial = await clock.NextWake();
         initial.Fire();
-        for (int completed = 1; completed < 3; completed++)
+        (int Attempts, int Completed, int DelayMilliseconds)[] wakes = (stalled, overdue) switch
+        {
+            (true, true) => [(2, 1, 50)],
+            (false, true) => [],
+            (true, false) => [(1, 1, 40), (2, 1, 50), (3, 2, 40)],
+            _ => [(1, 1, 40), (4, 4, 20)],
+        };
+        foreach (var wake in wakes)
         {
             var next = await clock.NextWake();
-            Assert.Equal(completed, scheduler.Calls);
-            Assert.Equal(CapsuleerJobQueue.WakeInterval, next.Delay);
+            Assert.Equal(wake.Attempts, scheduler.Calls);
+            Assert.Equal(wake.Completed, scheduler.Completed);
+            Assert.Equal(TimeSpan.FromMilliseconds(wake.DelayMilliseconds), next.Delay);
             Assert.False(scheduler.Current.Task.IsCompleted);
             next.Fire();
         }
         await scheduler.Current.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.Equal(3, scheduler.Calls);
+        Assert.Equal(5, scheduler.Completed);
+        Assert.Equal(stalled ? 6 : 5, scheduler.Calls);
     }
 
-    private sealed class BackloggedScheduler(ManualWakeClock clock) : ICapsuleerScheduler
+    private sealed class BackloggedScheduler(ManualWakeClock clock, bool stalled, bool overdue) : ICapsuleerScheduler, ICapsuleerDiagnostics
     {
         public TaskCompletionSource Current { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int Calls { get; private set; }
+        public int Completed { get; private set; }
+
+        public CapsuleerRuntimeSummary Read() =>
+            CapsuleerRuntimeSummary.Empty with
+            {
+                OldestDelayTicks = overdue ? 2 * CapsuleerJobQueue.WakeInterval.Ticks : 0,
+            };
 
         public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {
+            Assert.Equal(1, maximumActions);
             Calls++;
             clock.Elapsed += CapsuleerJobQueue.ExecutionBudget;
-            if (Calls == 3)
+            if (stalled && Calls == 2)
+            {
+                return new(new(0, 200, 1, true), [], []);
+            }
+            Completed++;
+            if (Completed == 5)
             {
                 Current.SetResult();
             }
-            return new(new(1, 200, Calls < 3 ? 1 : null, true), [], []);
+            return new(new(1, 200, Completed < 5 ? 1 : null, true), [], []);
         }
 
         public IReadOnlyList<CapsuleerJob> Jobs() => [];

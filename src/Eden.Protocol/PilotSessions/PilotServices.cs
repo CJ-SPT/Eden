@@ -34,7 +34,9 @@ internal sealed class PilotServices(
     Eden.Modding.IModSessionEvents? modEvents = null,
     Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
-    Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null
+    Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
+    SessionFrameMonitor? frames = null,
+    Eden.Gameplay.FactionWarfare.IFactionWarzones? warzones = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -92,7 +94,8 @@ internal sealed class PilotServices(
             presentation,
             autoMining: autoMining,
             abyss: abyss,
-            environments: environments
+            environments: environments,
+            warzoneUpdates: warzones is null ? null : new Eden.Protocol.FactionWarfare.FactionWarzoneUpdates(warzones)
         );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
@@ -107,29 +110,44 @@ internal sealed class PilotServices(
             {
                 var incoming = ReadArrivalAsync();
                 // Account rewards can change while the native character selector is open.
+                bool ticking;
                 while (
-                    updates.IsAccountMonitoring
-                    || (
-                        context.ActiveFlight is { } flight
-                        && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
-                    )
+                    ticking =
+                        updates.IsAccountMonitoring
+                        || (
+                            context.ActiveFlight is { } flight
+                            && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
+                        )
                 )
                 {
                     schedule ??= new SessionTickSchedule(clock);
+                    schedule.ResumeMeasurement();
                     checkpoint ??= Task.Delay(schedule.Remaining, clock, cancellationToken);
                     await Task.WhenAny(incoming, checkpoint);
                     if (checkpoint.IsCompleted)
                     {
                         await checkpoint;
+                        bool measure = frames is not null && context.Selected;
+                        long started = measure ? clock.GetTimestamp() : 0;
+                        var startDelay = measure ? schedule.StartDelay(started) : TimeSpan.Zero;
                         await tick.AdvanceAsync(context, output, report, accountId, clientId);
                         modSession.Observe();
+                        var elapsed = measure ? clock.GetElapsedTime(started) : TimeSpan.Zero;
                         schedule.Complete();
+                        if (measure)
+                        {
+                            frames!.Record(elapsed, startDelay);
+                        }
                         checkpoint = null;
                     }
                     if (incoming.IsCompleted)
                     {
                         break;
                     }
+                }
+                if (!ticking)
+                {
+                    schedule?.PauseMeasurement();
                 }
                 var arrived = await incoming;
                 SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);

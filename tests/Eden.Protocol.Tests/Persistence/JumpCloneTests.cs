@@ -172,7 +172,7 @@ public sealed class JumpCloneTests
         clones.Install(JumpCloneTestData.PilotId);
         var bodies = clones.Read(JumpCloneTestData.PilotId).Clones;
         Assert.Equal(2, bodies.Count);
-        Assert.All(bodies, c => Assert.Equal(HomeStationTestData.Origin, c.StationId));
+        Assert.All(bodies, c => Assert.Equal(HomeStationTestData.Origin, c.LocationId));
         Assert.Equal(2, clones.InstallLimit(JumpCloneTestData.PilotId));
         Assert.Throws<InvalidDataException>(() => clones.Install(JumpCloneTestData.PilotId));
         clones.Rename(JumpCloneTestData.PilotId, bodies[0].Id, "  Étude — 学習  ");
@@ -180,7 +180,7 @@ public sealed class JumpCloneTests
         Assert.Throws<InvalidDataException>(() => clones.Destroy(90000002, bodies[0].Id));
         Assert.Throws<InvalidDataException>(() => clones.Rename(JumpCloneTestData.PilotId, bodies[0].Id, new('x', 101)));
         Assert.Throws<InvalidDataException>(() => clones.Rename(JumpCloneTestData.PilotId, bodies[0].Id, "bad\nname"));
-        Assert.Equal(HomeStationTestData.Origin, clones.Destroy(JumpCloneTestData.PilotId, bodies[1].Id));
+        Assert.Equal(HomeStationTestData.Origin, clones.Destroy(JumpCloneTestData.PilotId, bodies[1].Id).LocationId);
         Assert.Throws<InvalidDataException>(() => clones.Destroy(JumpCloneTestData.PilotId, bodies[1].Id));
         WorldInitialization.Open(db.Path);
         using var reopened = ServerServices.Build(new(db.Path));
@@ -244,7 +244,7 @@ public sealed class JumpCloneTests
         long time = clock.Now;
         Assert.Equal(time, clones.Read(pilot.PilotId).LastJump);
         var outgoing = Assert.Single(clones.Read(pilot.PilotId).Clones);
-        Assert.Equal(HomeStationTestData.Other, outgoing.StationId);
+        Assert.Equal(HomeStationTestData.Other, outgoing.LocationId);
         Assert.Equal(HomeStationTestData.Origin, db.Services.GetRequiredService<IPilotHomeStation>().Read(pilot.PilotId).Id);
         Assert.Throws<InvalidDataException>(() => clones.Destroy(pilot.PilotId, target.Id));
         WorldInitialization.Open(db.Path);

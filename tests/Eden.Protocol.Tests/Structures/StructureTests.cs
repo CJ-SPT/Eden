@@ -122,6 +122,16 @@ public sealed class StructureTests
     public void PublishedHullsUseTheirDeploymentLifecycleWithoutDuplicatingInventory(int typeId)
     {
         using Fixture f = new();
+        if (typeId is CapitalTravelRules.Pharolux or CapitalTravelRules.Tenebrex or JumpBridgeRules.Ansiblex)
+        {
+            long item = f.Item(typeId);
+            Assert.Throws<InvalidDataException>(() => f.Structures.Deploy(f.PilotId, new(item, Fixture.Point, 0, "Navigation")));
+            Assert.Contains(
+                f.Db.Services.GetRequiredService<Eden.Gameplay.Inventory.IPilotInventory>().List(f.PilotId, f.ShipId),
+                cargo => cargo.Id == item && cargo.Quantity == 1
+            );
+            return;
+        }
         if (typeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId)
         {
             long item = f.Item(typeId);
@@ -740,7 +750,6 @@ public sealed class StructureTests
 
     [Theory]
     [InlineData(35832)]
-    [InlineData(35841)]
     [InlineData(81826)]
     public void DecommissioningRecoversOneHullWithoutDuplicatingIntegralEquipment(int typeId)
     {

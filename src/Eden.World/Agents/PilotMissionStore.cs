@@ -5,11 +5,13 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -110,7 +112,7 @@ internal sealed partial class PilotMissionStore(
                     )
                     .SingleOrDefault();
                 bool content =
-                    agent.Type is AgentType.Basic or AgentType.Event
+                    agent.Type is AgentType.Basic or AgentType.Event or AgentType.FactionalWarfare
                     && access.Allowed
                     && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
                 bool fixedService = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
@@ -151,7 +153,7 @@ internal sealed partial class PilotMissionStore(
     {
         bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
         if (
-            (agent.Type is not (AgentType.Basic or AgentType.Research) && !fixedAgent)
+            (agent.Type is not (AgentType.Basic or AgentType.Research or AgentType.FactionalWarfare) && !fixedAgent)
             || agent.Level is < 1 or > MissionRules.MaximumAgentLevel
         )
         {
@@ -167,6 +169,13 @@ internal sealed partial class PilotMissionStore(
         )
         {
             return new(false, "This one-time agent assignment is unavailable or has already ended.", 0, 0, 0, 0);
+        }
+        if (
+            agent.Type == AgentType.FactionalWarfare
+            && (world is not EconomyTransaction || (int?)MilitiaEnlistmentStore.Effective(world, pilot) != agent.FactionId)
+        )
+        {
+            return new(false, "Enlist in this agent's militia to request missions.", 0, 0, 0, 0);
         }
         // Pinned standingUtil.GetStandingBonusSkillTypeID and appConst.factionsPirates.
         var factionKind = (AgentStandingFaction?)agent.FactionId;
@@ -452,9 +461,9 @@ internal sealed partial class PilotMissionStore(
     {
         long pilotId = pilot.Id;
         long agentId = agent.Id;
-        if (world is not EconomyTransaction && MissionCatalog.FixedAgentIds.Contains(agentId))
+        if (world is not EconomyTransaction && (agent.Type == AgentType.FactionalWarfare || MissionCatalog.FixedAgentIds.Contains(agentId)))
         {
-            throw new InvalidDataException("One-time agent actions require the resident world.");
+            throw new InvalidDataException("One-time and militia agent actions require the resident world.");
         }
         var row = world.Set<SavedMission>().SingleOrDefault(m => m.PilotId == pilotId && m.AgentId == agentId && m.ClosedAt == null);
         if (row is not null && Expire(world, row, now))
@@ -522,6 +531,13 @@ internal sealed partial class PilotMissionStore(
                 {
                     RequireStation(pilot, row.DestinationStation);
                 }
+                else if (agent.Type == AgentType.FactionalWarfare)
+                {
+                    if ((int?)MilitiaEnlistmentStore.Effective(world, pilot) != agent.FactionId || pilot.ActiveShip.Position is not null)
+                    {
+                        throw new InvalidDataException("Dock while enlisted in the issuing militia to complete the mission.");
+                    }
+                }
                 else
                 {
                     RequireAgentLocation(pilot, agent);
@@ -544,7 +560,7 @@ internal sealed partial class PilotMissionStore(
                     changes.Add(rewardChange);
                 }
                 Close(world, row, MissionState.Completed, now);
-                if (!row.Storyline)
+                if (!row.Storyline && agent.Type != AgentType.FactionalWarfare)
                 {
                     Progress(world, catalog, pilot, agent, row.Level, now);
                 }
@@ -556,16 +572,46 @@ internal sealed partial class PilotMissionStore(
                 var decline =
                     world.Set<SavedAgentDecline>().Find(pilotId, agentId)
                     ?? world.Add(new SavedAgentDecline { PilotId = pilotId, AgentId = agentId }).Entity;
-                if (decline.LastFreeDeclineAt > 0 && now < decline.LastFreeDeclineAt + MissionRules.FreeDeclineInterval.Ticks)
+                bool free = decline.LastFreeDeclineAt == 0 || now >= decline.LastFreeDeclineAt + MissionRules.FreeDeclineInterval.Ticks;
+                if (!free)
                 {
-                    throw new InvalidDataException("Wait four hours after your last free decline before declining another offer.");
+                    if (MilitiaMissionCatalog.Issuer(row!.MissionId) is not { } issuer)
+                    {
+                        throw new InvalidDataException("Wait four hours after your last free decline before declining another offer.");
+                    }
+                    MilitiaProgressionStore.AdjustStanding(
+                        world,
+                        pilot,
+                        issuer,
+                        -MilitiaProgressionRules.MissionFailureFraction,
+                        StandingEvent.AgentMissionDeclined,
+                        row.SystemId,
+                        now,
+                        standings
+                    );
                 }
-                decline.LastFreeDeclineAt = now;
+                else
+                {
+                    decline.LastFreeDeclineAt = now;
+                }
                 Close(world, row!, MissionState.Declined, now);
                 eventName = "offer_declined";
                 break;
             case MissionAction.Quit:
                 RequireState(row, MissionState.Accepted);
+                if (MilitiaMissionCatalog.Issuer(row!.MissionId) is { } quitIssuer)
+                {
+                    MilitiaProgressionStore.AdjustStanding(
+                        world,
+                        pilot,
+                        quitIssuer,
+                        -MilitiaProgressionRules.MissionFailureFraction,
+                        StandingEvent.AgentMissionFailed,
+                        row.SystemId,
+                        now,
+                        standings
+                    );
+                }
                 Close(world, row!, MissionState.Quit, now);
                 eventName = "quit";
                 break;

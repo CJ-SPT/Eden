@@ -2,7 +2,9 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -14,7 +16,9 @@ internal sealed class CharacterSheetHandler(
     INpcDirectory npcs,
     IPlayerCorporations corporations,
     ICorporationRoles corporationRoles,
-    IAlliances alliances
+    IAlliances alliances,
+    ICharacterDirectory directory,
+    IMilitiaProgression? militia = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -26,6 +30,29 @@ internal sealed class CharacterSheetHandler(
     )
     {
         var pilot = context.Pilot;
+        if (service == "charMgr" && method == "GetCharacterCreationDate")
+        {
+            return args.Length == 0 && keywords is null or { Count: 0 }
+                ? pilot.Identity.Profile.CreatedAt
+                : new PilotCallResult.Failure("The selected character's creation date does not accept arguments.");
+        }
+        if (service == "charMgr" && method == "GetOrganizationInfoForCharacters")
+        {
+            if (
+                keywords is { Count: > 0 }
+                || args is not [List<object?> ids]
+                || ids.Count > ContactRules.MaximumBatchSize
+                || ids.Any(id => id is not (long and > 0))
+            )
+            {
+                return new PilotCallResult.Failure("Supply a list of positive character IDs.");
+            }
+            var requested = ids.Cast<long>().Distinct().ToArray();
+            var affiliations = directory.Affiliations(requested);
+            return new BlueMap<long, CharacterAffiliationReply>(
+                requested.ToDictionary(id => id, id => new CharacterAffiliationReply(affiliations.GetValueOrDefault(id)))
+            );
+        }
         if (service == "charMgr" && method == "GetPrivateInfo")
         {
             if (keywords is { Count: > 0 } || args is not [long character] || character <= 0)
@@ -74,15 +101,18 @@ internal sealed class CharacterSheetHandler(
             {
                 return new PilotCallResult.Failure("Invalid public character request.");
             }
-            // Build 3662168 DecorationsPanel.ShowMyRanks and Info.UpdateDataRank
-            // iterate the overview. Eden pilots have no earned militia ranks.
-            return method == "GetMyCharacterRankOverview" ? BlueEmpty.List : PilotCallResult.None;
+            return method == "GetMyCharacterRankOverview"
+                ? new MilitiaRankOverview(militia?.Ranks(pilot.PilotId) ?? [])
+                : Rank(pilot.PilotId);
         }
         if (
             (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
             || (service == "corpRegistry" && method == "GetInfoWindowDataForChar")
-            || (service == "corporationSvc" && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers")
-            || (service == "facWarMgr" && method == "GetCharacterRankInfo")
+            || (
+                service == "corporationSvc"
+                && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers" or "GetEmploymentRecord"
+            )
+            || (service == "facWarMgr" && method is "GetCharacterRankInfo" or "GetCharacterRankOverview")
         )
         {
             if (keywords is { Count: > 0 } || args is not [long id] || id <= 0)
@@ -90,6 +120,7 @@ internal sealed class CharacterSheetHandler(
                 return new PilotCallResult.Failure("Invalid public character request.");
             }
             var profile = sheet.ReadPublicProfile(id);
+            bool player = profile is not null;
             if (profile is null && npcs.Character(id) is { } npc)
             {
                 if (method == "GetPublicInfo")
@@ -116,30 +147,41 @@ internal sealed class CharacterSheetHandler(
             return method switch
             {
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
-                "GetInfoWindowDataForChar" => sheet.ReadPublicProfile(id) is null
-                    ? new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId))
-                    : PublicCorporationInfo(id, profile.CorporationId),
+                "GetInfoWindowDataForChar" => player
+                    ? PublicCorporationInfo(profile)
+                    : new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId)),
                 "GetMedalsReceived" => new PublicCharacterMedals(),
+                "GetEmploymentRecord" => new CharacterEmploymentHistory(
+                    player ? corporations.Employment(id)
+                    : profile.CreatedAt is long born ? [new(profile.CorporationId, born)]
+                    : []
+                ),
                 "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(
                     profile,
-                    sheet.ReadPublicProfile(id) is null ? null : corporations.Employment(id)
+                    player ? corporations.Employment(id) : null
                 ),
-                "GetCharacterRankInfo" => PilotCallResult.None,
+                "GetCharacterRankInfo" => player ? Rank(id) : PilotCallResult.None,
+                "GetCharacterRankOverview" => new MilitiaRankOverview(player ? militia?.Ranks(id) ?? [] : []),
                 _ => new PublicCharacterInfo(profile),
             };
         }
         return PilotCallResult.Unsupported;
     }
 
-    private CharacterCorporationInfo PublicCorporationInfo(long pilotId, int corporationId)
+    private PilotCallResult Rank(long id) => militia?.Rank(id) is { } rank ? new MilitiaRankReply(rank) : PilotCallResult.None;
+
+    private CharacterCorporationInfo PublicCorporationInfo(PublicCharacterProfile profile)
     {
+        long pilotId = profile.CharacterId;
+        int corporationId = profile.CorporationId;
         var member = corporations.Members(pilotId).Single(m => m.PilotId == pilotId);
         long mask = member.Access?.TitleMask ?? 0;
         return new(
             corporationId,
             member.Access?.Title ?? "",
             corporationRoles.Titles(pilotId).Where(t => (mask & t.Id) != 0).ToArray(),
-            alliances.Affiliation(corporationId)
+            alliances.Affiliation(corporationId),
+            (int?)profile.MilitiaFaction
         );
     }
 }

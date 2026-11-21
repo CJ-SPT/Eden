@@ -2,67 +2,67 @@
 
 ## Project organization
 
-- Put catalog payloads and saved database entity models in [Eden.Data](src/Eden.Data/). Keep catalog models under `Eden.Data.Catalog` and saved-world models under `Eden.Data.World`, organized by feature. Data may reference Gameplay and EF Core metadata abstractions, but never World, Protocol, Server or Infrastructure. Keep contexts, mappings, migrations, queries and transactions in World; keep host authentication operations in Server.
-- Put typed gameplay rules, state, commands, and persistence interfaces in [Eden.Gameplay](src/Eden.Gameplay/). Gameplay must build without Protocol, Server, EF Core, protobuf, or a DI container.
-- Put wire formats and client protocol behavior in [Eden.Protocol](src/Eden.Protocol/). Put authoritative state, catalog access and SQLite persistence in [Eden.World](src/Eden.World/). Keep startup, listeners and background scheduling in [Eden.Server](src/Eden.Server/).
-- Put shared registration metadata, operation scopes, logging and diagnostics in [Eden.Infrastructure](src/Eden.Infrastructure/). It depends only on .NET. World and Protocol each reference Gameplay and Infrastructure, never each other; Server composes them. Eden.Modding provides versioned package/plugin contracts and depends only on Gameplay and .NET; World, Protocol and Server may reference it. Build checks enforce this dependency graph.
-- Organize world operations, entities and feature-specific catalog readers by the owning Gameplay feature. Use Storage for database plumbing and migrations, Catalog for shared catalog infrastructure, and Runtime for resident state and checkpoints. Keep host-managed scheduling in Server/Maintenance.
-- Place automated tests in [Eden.Protocol.Tests](tests/Eden.Protocol.Tests/) and development scripts in [tools](tools/). Keep the EVE installation, resource cache, and runtime data such as the local world database outside version control.
-- Keep project status and build instructions in the [README](README.md), protocol findings and acceptance results in the [protocol notes](docs/protocol.md), and staging and launch instructions in the [Windows client guide](docs/development-client.md).
-- Use the [documentation index](docs/README.md) to find each guide. Add protocol records to the owning topic page under `docs/protocol/` and link them from the protocol index; preserve historical evidence and existing section anchors when moving records.
+- Put typed gameplay rules, state, commands and persistence interfaces in `Eden.Gameplay`. World owns catalog access, authoritative
+  state and persistence. Protocol adapts client calls to Gameplay interfaces implemented by World. World and Protocol never
+  reference each other. Server composes them and owns authentication, listeners and background scheduling.
+- Keep catalog payloads and saved entities in `Eden.Data.Catalog` and `Eden.Data.World`. Keep contexts, mappings and migrations
+  in World, shared registration and diagnostics in Infrastructure, and plugin contracts in Modding. See the
+  [runtime guide](docs/architecture.md#projects-and-conventions) and [dependency checks](Directory.Build.targets).
+- Group source files by feature and prefix namespaces with the owning project. Put tests in `tests/Eden.Protocol.Tests` and
+  scripts in `tools`. Keep client files, resource caches and runtime data out of Git.
+- Use the README for the project overview, quick start and build instructions. Track gameplay coverage and limits in
+  [feature notes](docs/feature-notes.md). Record protocol findings, source revisions and validation on the owning topic page
+  under `docs/protocol/`, link the record from the [protocol index](docs/protocol.md) and preserve evidence and anchors.
+  [Documentation index](docs/README.md)
 
 ## Code style
 
-- Follow the root [.editorconfig](.editorconfig) and [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions). In C#, use four spaces, file-scoped namespaces, braces around control-statement bodies, and opening braces on their own lines. Put `System` imports first.
-- Keep authored C# and project/configuration lines within 140 characters, including indentation. Expand nonempty executable brace bodies in methods, constructors, control flow, catches, accessors and block lambdas. Auto-properties, empty bodies, initializers, patterns and expression-bodied members may remain compact. Use expression-bodied trivial accessors to avoid CSharpier's inline block-accessor layout.
-- Run `.\tools\Format.ps1` to apply formatting and `.\tools\Format.ps1 -Check` to verify it. CSharpier 1.3.0 owns layout; `dotnet format style` owns style fixes. Do not run the full `dotnet format` command or re-enable the conflicting `IDE0055` whitespace diagnostic. Restore the pinned formatter with `dotnet tool restore`.
-- Wrap long code or safely split literals before adding a width exception. Unavoidable exceptions belong in `tools/formatting-exceptions.json` with an exact repository-relative path, full line and specific reason. Remove stale entries; duplicate and unused exceptions fail verification. See [formatting coverage and editor setup](README.md#formatting) for generated/data exclusions and integration instructions.
-- Start each namespace with the owning project name (`Eden.Data`, `Eden.Gameplay`, `Eden.Infrastructure`, `Eden.World`, `Eden.Protocol`, `Eden.Server`, or `Eden.Protocol.Tests`, or `Eden.Modding`). Use that namespace for types at the project root. Append feature folders to the namespace, for example `Eden.World.Inventory` or `Eden.Protocol.Inventory`.
-- Use two spaces in project (`.csproj`), solution (`.slnx`), `.props`, `.targets`, JSON and YAML files. Save files as UTF-8 with a final newline and trim trailing whitespace.
-- Choose names that describe a value's role. Comment on non-obvious wire constants and client quirks so the next contributor can tell why the code handles them that way.
-- Avoid magic numbers in code. Use enums for related protocol or gameplay values, such as inventory flags, dogma attributes and service identifiers, where appropriate. Use descriptive named constants for other fixed IDs, limits and wire values. Keep numeric conversions at serialization or persistence boundaries, and document build-specific values and their source instead of scattering unexplained integers through behavior.
-- Use the SDK pinned in [global.json](global.json). Follow the [shared build settings](Directory.Build.props), which enable nullable reference types, enforce code style during builds, and treat warnings as errors.
+- Follow [EditorConfig](.editorconfig) and the SDK policy in [global.json](global.json). Use `.\tools\Format.ps1` and
+  `.\tools\Format.ps1 -Check`. The [formatting guide](README.md#formatting) covers the 140-character limit and exceptions.
+- Use enums for related values and named constants for fixed IDs and limits. Document the source of build-specific values and
+  client quirks. Keep numeric conversions at wire and persistence boundaries.
 
 ## Services and protocol calls
 
-- Always search for a relevant [EVE University Wiki](https://wiki.eveuniversity.org/) page when implementing or investigating an EVE gameplay feature. Use it as a gameplay reference, follow its supporting sources where available, and reconcile its descriptions with the pinned client and catalog for build-specific behavior.
-- Consult the [open-source Carbon engine](https://github.com/carbonengine) when implementing or investigating behavior it owns, such as Blue serialization, transport, or Destiny simulation. Check gameplay service methods and response fields against the pinned client and catalog. Record the relevant source revision and live observations in the protocol notes.
-- Mark service classes with `[Injectable]` from Infrastructure and declare dependencies in their public constructor. The server explicitly scans the Server, Protocol and World assemblies at startup. Each class is available by its concrete type and its Eden interfaces, including Gameplay and Infrastructure contracts.
-- Use the default transient lifetime for stateless handlers. Use `[Injectable(InjectionType.Scoped)]` for one instance per client connection and `[Injectable(InjectionType.Singleton)]` for shared infrastructure. Keep service resolution in the host. Pass connection data, such as the authenticated session ID, to the operation that uses it.
-- Add gameplay methods to a feature handler implementing `ISelectedPilotCallHandler`. Use `IPilotCallHandler` for account-level calls available before character selection. Give each service/method pair one owner within its phase. Return `PilotCallResult.Unsupported` for an unhandled call and `PilotCallResult.None` for successful Python None. Return named `BlueModel` replies or explicit primitive values for success, and `PilotCallResult.Failure` or `NamedFailure` for errors. The router owns bound references and selection gating. The session loop sends replies and notifications.
-- Keep gameplay calculations in Eden.Gameplay. Load catalog and saved inputs in Eden.World, invoke typed rules within the operation's transaction, and commit related changes together. Convert typed results into client replies and notifications in Eden.Protocol.
-- Keep pure codecs and packet builders independent of the DI container. Protocol services depend on narrow persistence interfaces implemented by World.
-- Use named immutable models for known requests, replies, events, and intermediate data in new or changed code. Use typed collections for homogeneous values and named properties instead of positional arrays or string-keyed dictionaries in gameplay logic. Reuse existing feature models where their meaning matches.
-- Keep flexible Python values (`object`, heterogeneous arrays, and dictionaries) inside explicit wire adapters and the low-level Blue codec, or at genuinely dynamic boundaries such as appearance data. Preserve tuple/list distinctions, None, field order, native class forms, and numeric wire representations with explicit conversion; do not use reflection-based serialization or hide untyped data inside a generic result wrapper.
-- Implement outbound model conversion through `BlueModel.ToBlue()` (`IBlueWritable`). Parse variable service arguments at the dispatch boundary before calling typed operations. Queue named `PilotNotification` and `DestinyCommand` records; preserve the before-flight notification queue. Use `BlueRead` for inert wire validation and `BlueRows` for shared native row descriptors. The [remaining-object audit](docs/protocol/architecture.md#named-protocol-models-final-audit) explains the intentional dynamic boundaries.
+- Search the [EVE University Wiki](https://wiki.eveuniversity.org/) and check the EVE.js reference for gameplay or service work.
+  Consult [Carbon](https://github.com/carbonengine) for engine behavior such as Blue, transport and Destiny. Verify build-specific
+  behavior against Eden's pinned client and catalog.
+- Register services with `[Injectable]` and constructor injection. Use transient handlers, scoped connection state and singleton
+  shared infrastructure. Keep service resolution in Server and pass connection data to the operation that needs it.
+- Give each service/method pair one owner per phase. Use `IPilotCallHandler` before selection and `ISelectedPilotCallHandler`
+  after selection. Keep routing and selection gating in the router and output in the session loop. Preserve the
+  `PilotCallResult` distinctions between unsupported calls, successful Python None, replies and errors.
+- Use named immutable models for known requests, replies and events. Parse at dispatch with `BlueRead` for wire validation and
+  serialize through `BlueModel.ToBlue()`, preserving native shapes and numeric types. Use `BlueRows` for shared row descriptors
+  and keep dynamic Python values at explicit wire boundaries. Queue typed notifications and Destiny commands, preserving the
+  before-flight queue. Keep codecs independent of DI. [Protocol model audit](docs/protocol/architecture.md#named-protocol-models-final-audit)
 
 ## Simulation performance
 
-- Keep ordinary movement, target acquisition, resource updates and nonfatal combat on typed resident state under the existing world owner. Use SQL for initial loading, checkpoint projection and atomic inventory/destruction/ownership transitions. Account for projection and checkpoint capture separately from tick timing.
-- Share current system contacts and immutable catalog profiles across sessions. Observer reads must not rebuild fits, reload skills or open database connections once warmed. Read each simulation input once per relevant change, with explicit invalidation for catalog, skill, fitting, settings and membership changes.
-- Add a cheap ownership or membership lookup when a handler needs only existence. Advance authoritative state before publishing observer contacts. Preserve immediate visibility of committed commands, including repeated reads within the same tick.
-- Integrate resident changes with checkpoints and SQL boundaries. Project dirty state before a transaction reads or changes it, publish only committed changes, preserve state after rollback and serialize concurrent commands with the existing world owner. Keep saved deadlines so duplicate or late callbacks cannot replay combat.
-- Treat background monitoring as part of the simulation budget. Cache unchanged and absent results against their actual row dependencies; distinguish coordinate updates from docking or membership changes. A read-only monitor must not force a full combat projection each tick. Keep transaction projection for mutation boundaries and use the resident owner for coherent resident read snapshots.
-- Avoid work proportional to every possible pair or to the complete combat history per shot. Use conservative swept spatial candidates with stable legacy ordering and immutable contribution updates that preserve earlier snapshots. Update observer contacts by identity without rebuilding the complete scene per shot. Verify boundary contacts, dense-scene storage and allocation growth, as well as frame latency.
-- Keep checkpoint projection and file writing outside the world owner. Capture the relational image and immutable state from the same generation under the owner; retain dirty resident state for transaction synchronization and failed-save retries. Test concurrent advancement, projection rollback and reopened checkpoints.
-- Share unchanged observer records and skip acknowledged event polling. Key shared views by all state and deadline dependencies; preserve subsecond recharge, exact effect expiry and same-tick command visibility. Never round the clock or share personal output merely to improve a benchmark.
-- For simulation performance changes, use deterministic warmed tests that assert SQL command, connection and fitting-calculation counts alongside outcomes. Exercise owners and observers, empty systems and populated fleets. Measure complete session frames and checkpoint cost separately, using the same workload for baseline and optimized comparisons.
+- Use the resident world for new gameplay and service operations, including persistence tests. Commit related changes atomically
+  under the existing owner, publish after commit and persist durable state through checkpoints. At existing SQL boundaries,
+  project dirty state before dependent transactions and preserve it on rollback.
+- Capture a consistent generation under the owner and project and write checkpoints outside it. Preserve exact deadlines,
+  retry safety and same-tick visibility.
+- Share catalog inputs, fits and observer records with dependency-based invalidation. Use resident snapshots for warm observer
+  and monitor reads, indexed lookups for hot paths and spatial candidates for contact checks. Keep per-shot work independent
+  of total combat history.
+- Compare identical warmed workloads and assert outcomes, SQL commands, connections and fitting rebuilds. Measure whole
+  session frames and checkpoint costs separately, including populated systems and observers.
+  [Runtime guide](docs/architecture.md#session-performance-diagnostics)
 
 ## Testing
 
-Agents perform **automated testing only**. Do not launch the game, use Computer Use, or conduct interactive gameplay acceptance unless the user explicitly requests it. Do not replace client testing with an extended manual server-testing session. The [Windows client guide](docs/development-client.md) contains optional maintainer procedures and historical observations, not required agent acceptance.
-
-For small bug fixes, reuse or extend existing focused flow checks. Do not create a separate regression test for every minor bug;
-add new cases when the risk or behavior warrants them.
-
-1. During development, build changed code and run focused tests for the affected behavior and its immediate dependencies. Start with an exact method filter through `.\tools\Test-Feature.ps1 -Filter`, then combine affected classes and immediate dependencies. Record the filter used. Test pure calculation and rejection variants directly against typed Gameplay inputs. Use real worlds and sessions for persistence and protocol boundaries. For bug fixes, add a focused regression when practical that covers the actual failure and relevant boundary conditions.
-2. After the milestone's code changes are stable, validate from the repository root: tool restore, solution restore, build, focused .NET tests for the affected behavior and immediate dependencies, both Python policy suites, and formatting verification, in the [README build order](README.md#build-and-run). Run the **full .NET suite only when the user explicitly requests a regression check**. A normal milestone, merge, commit or push does not authorize a full run. Documentation-only changes require relevant documentation checks rather than gameplay tests.
-3. Check gameplay rules, protocol replies and notifications, and persistence wherever a change crosses those boundaries. Assert expected results, not just successful calls. Inventory and ownership changes need rejection and unchanged-state checks; persistence changes need reopen/restart coverage. Timing and synchronization regressions should use the existing `TestClock` and simulated sessions to exercise repeated cycles and ordering. Cover catalog variants with automated, data-driven cases rather than manually exercising every hull or module.
-4. Do not run or rerun the full suite without an explicit user request for a regression check, including after shared serialization, initialization or fixture changes. Use affected tests and required build/format checks for corrections. When a regression check is requested, run it once; do not repeat a successful full suite for reporting, committing, pushing or unchanged code. Stop a failing validation sequence, investigate the concrete failure, and avoid blind retries. Record interrupted or incomplete runs accurately, including which revision or subsequent corrections each result covers.
-5. Separate every milestone report into **Automated validation** (checks, results, elapsed time, and limitations), **Live acceptance** ("Not performed; agent client testing is disabled." unless explicitly requested and exercised), and **Optional maintainer checks** (at most three short actions for behavior automated tests cannot establish; state none when unnecessary). Native rendering, input, and gameplay feel remain explicitly unverified until tested. Keep historical client observations as historical evidence.
+- Build changed code and start with an exact method filter in `.\tools\Test-Feature.ps1 -Filter`. Cover affected behavior and immediate
+  dependencies, reusing focused flows for small fixes. Follow the [README build order](README.md#build-and-run) for code milestones
+  and the [testing guide](docs/testing.md) for coverage, failure handling and documentation checks.
+- Run the full .NET suite only when the user explicitly requests a regression check. Live testing, including game launch,
+  Computer Use and manual server acceptance, also requires an explicit request.
+- Report automated checks, filters, results, elapsed time and limitations under **Automated validation**. Under **Live acceptance**,
+  use “Not performed; agent client testing is disabled.” unless exercised. Under **Optional maintainer checks**, list up to
+  three checks or state none.
 
 ## Milestones
 
-Automated validation and remote verification establish milestone completion under this policy; unperformed live acceptance does not block it. After verifying a milestone, commit its code, tests, and documentation together and push the commit to GitHub. Confirm the commit is on the remote branch before reporting the milestone complete or starting the next one.
-
-After merging a task branch, always remove its worktree once the merge is verified on the remote target branch. Preserve unrelated work and remove only the completed task's worktree; do not force removal of a worktree containing uncommitted changes.
+Commit and push verified milestones. Confirm the commit on the remote branch before reporting completion or starting
+the next milestone. Once a merge is verified on the remote target, remove the completed task worktree when clean.

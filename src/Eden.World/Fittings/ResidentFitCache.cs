@@ -26,6 +26,9 @@ internal sealed record FittingSnapshot(
     MissileFittingSnapshot? Missiles
 )
 {
+    internal double DroneCapacity { get; init; }
+    internal double DroneBandwidth { get; init; }
+
     internal static FittingSnapshot Capture(
         DogmaGraph graph,
         long pilot,
@@ -51,7 +54,11 @@ internal sealed record FittingSnapshot(
                     graph.Read(ship, DogmaAttributeId.MaxTargetRange),
                     graph.Read(pilot, DogmaAttributeId.MissileDamageMultiplier)
                 )
-        );
+        )
+        {
+            DroneCapacity = graph.Read(ship, DogmaAttributeId.DroneCapacity),
+            DroneBandwidth = graph.Read(ship, DogmaAttributeId.DroneBandwidth),
+        };
     }
 }
 
@@ -141,7 +148,10 @@ internal sealed class ResidentFitCache : IDisposable
     }
 
     internal static ResidentFitCache? Find(string path) =>
-        s_worlds.TryGetValue(Path.GetFullPath(path), out var weak) && weak.TryGetTarget(out var cache) ? cache : null;
+        (s_worlds.TryGetValue(path, out var weak) || s_worlds.TryGetValue(Path.GetFullPath(path), out weak))
+        && weak.TryGetTarget(out var cache)
+            ? cache
+            : null;
 
     internal Dictionary<DogmaAttributeId, double>? Read(FitCacheKey key, string revision)
     {

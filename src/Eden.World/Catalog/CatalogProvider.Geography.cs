@@ -2,9 +2,12 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
+
+internal readonly record struct CatalogSystemPolitics(double? Security, long? FactionId);
 
 public sealed partial class CatalogProvider
 {
@@ -13,7 +16,10 @@ public sealed partial class CatalogProvider
     private readonly Lazy<FrozenDictionary<int, string>> _regions;
     private readonly Lazy<FrozenDictionary<int, CatalogConstellationDefinition>> _constellations;
     private readonly Lazy<FrozenDictionary<int, CatalogGateDefinition>> _gates;
-    private readonly Lazy<FrozenDictionary<int, double>> _systemSecurity;
+    private readonly Lazy<FrozenDictionary<int, CatalogCelestialDefinition>> _gateBodies;
+    private readonly Lazy<FrozenDictionary<int, CatalogSystemPolitics>> _systemPolitics;
+    private readonly Lazy<SystemSecurityIndex> _systemSecurity;
+    private readonly Lazy<FrozenDictionary<int, ImmutableArray<CatalogCelestialDefinition>>> _systemBelts;
     private readonly Lazy<FrozenDictionary<int, string>> _stationNames;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<CatalogStationDefinition>>> _systemStations;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<CatalogGateDefinition>>> _systemGates;
@@ -23,7 +29,22 @@ public sealed partial class CatalogProvider
     public IReadOnlyDictionary<int, string> Regions => _regions.Value;
     public IReadOnlyDictionary<int, CatalogConstellationDefinition> Constellations => _constellations.Value;
     public IReadOnlyDictionary<int, CatalogGateDefinition> Gates => _gates.Value;
-    internal IReadOnlyDictionary<int, double> SystemSecurity => _systemSecurity.Value;
+    internal IReadOnlyDictionary<int, double> SystemSecurity => _systemSecurity.Value.Values;
+    internal IReadOnlyDictionary<int, CatalogSystemPolitics> SystemPolitics => _systemPolitics.Value;
+
+    internal double? SystemContentSecurity(int systemId)
+    {
+        var security = _systemSecurity.Value;
+        return security.Values.TryGetValue(systemId, out double value) && !security.Missing.Contains(systemId) ? value : null;
+    }
+
+    internal ImmutableArray<CatalogCelestialDefinition> BeltAnchors(int systemId) => _systemBelts.Value.GetValueOrDefault(systemId, []);
+
+    internal void WarmGateBodies() => _ = _gateBodies.Value;
+
+    internal CatalogCelestialDefinition? FindGateBody(long id) =>
+        id is >= int.MinValue and <= int.MaxValue ? _gateBodies.Value.GetValueOrDefault((int)id) : null;
+
     public IReadOnlyDictionary<int, string> StationNames => _stationNames.Value;
 
     public ImmutableArray<CatalogStationDefinition> StationsInSystem(int systemId) => _systemStations.Value.GetValueOrDefault(systemId, []);
@@ -171,9 +192,59 @@ public sealed partial class CatalogProvider
         return rows;
     }
 
-    private sealed record SystemSecurityRow(int Id, double Security);
+    private FrozenDictionary<int, CatalogCelestialDefinition> LoadGateBodies()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        var bodies = from gate in catalog.Set<Stargate>() join body in catalog.Set<Celestial>() on gate.Id equals body.Id select body;
+        var rows = CelestialRows(bodies).AsEnumerable().ToFrozenDictionary(body => body.Id);
+        Interlocked.Increment(ref _loads);
+        Interlocked.Add(ref _pinnedRecords, rows.Count);
+        return rows;
+    }
 
-    private FrozenDictionary<int, double> LoadSystemSecurity()
+    private sealed record SystemPoliticsRow(int Id, double? Security, long? FactionId);
+
+    private FrozenDictionary<int, CatalogSystemPolitics> LoadSystemPolitics()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        // Population and Crimewatch need two scalar fields from the pinned system dataset.
+        var rows = catalog
+            .Database.SqlQuery<SystemPoliticsRow>(
+                $"""
+                SELECT CAST(Key AS INTEGER) AS Id, json_extract(Data, '$.securityStatus') AS Security,
+                       json_extract(Data, '$.factionID') AS FactionId
+                FROM SourceRecord WHERE Dataset={CatalogData.Client.Systems.Name}
+                """
+            )
+            .AsEnumerable()
+            .ToFrozenDictionary(row => row.Id, row => new CatalogSystemPolitics(row.Security, row.FactionId));
+        Interlocked.Increment(ref _loads);
+        Interlocked.Add(ref _pinnedRecords, rows.Count);
+        return rows;
+    }
+
+    private FrozenDictionary<int, ImmutableArray<CatalogCelestialDefinition>> LoadBeltAnchors()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        var belts = CelestialRows(
+                catalog.Set<Celestial>().Where(body => body.GroupId == AsteroidDefinitions.BeltGroup).OrderBy(body => body.Id)
+            )
+            .AsEnumerable()
+            .GroupBy(body => body.SolarSystemId)
+            .ToFrozenDictionary(group => group.Key, group => group.ToImmutableArray());
+        Interlocked.Increment(ref _loads);
+        Interlocked.Add(ref _pinnedRecords, belts.Values.Sum(group => group.Length));
+        return belts;
+    }
+
+    private sealed record SystemSecurityIndex(FrozenDictionary<int, double> Values, FrozenSet<int> Missing);
+
+    private sealed record SystemSecurityRow(int Id, double? Security);
+
+    private SystemSecurityIndex LoadSystemSecurity()
     {
         RequireCurrent();
         using CatalogDbContext catalog = new(Identity.Path);
@@ -181,15 +252,17 @@ public sealed partial class CatalogProvider
         var rows = catalog
             .Database.SqlQuery<SystemSecurityRow>(
                 $"""
-                SELECT CAST(Key AS INTEGER) AS Id, COALESCE(json_extract(Data, '$.security'), 0) AS Security
+                SELECT CAST(Key AS INTEGER) AS Id, json_extract(Data, '$.security') AS Security
                 FROM SourceRecord WHERE Dataset={CatalogData.Client.Solarsystemcontent.Name}
                 """
             )
-            .AsEnumerable()
-            .ToFrozenDictionary(row => row.Id, row => row.Security);
+            .ToArray();
         Interlocked.Increment(ref _loads);
-        Interlocked.Add(ref _pinnedRecords, rows.Count);
-        return rows;
+        Interlocked.Add(ref _pinnedRecords, rows.Length);
+        return new(
+            rows.ToFrozenDictionary(row => row.Id, row => row.Security ?? 0),
+            rows.Where(row => row.Security is null).Select(row => row.Id).ToFrozenSet()
+        );
     }
 
     private FrozenDictionary<int, string> LoadStationNames()

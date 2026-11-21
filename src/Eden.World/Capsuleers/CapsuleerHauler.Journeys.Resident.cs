@@ -16,6 +16,6 @@ internal sealed partial class CapsuleerHauler
             return null;
         }
         var agent = world.Set<SavedCapsuleerAgent>().Find(pilotId)!;
-        return JourneyInputs(agent, job.DueTicks);
+        return JourneyInputs(agent, job.DueTicks, CapsuleerCorporations.Organization(world, pilotId).OperatingStationId);
     }
 }

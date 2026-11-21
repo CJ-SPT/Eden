@@ -152,7 +152,7 @@ internal sealed partial class PilotInsuranceStore(WorldDatabase database, TimePr
         {
             var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
             if (
-                !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId)
+                !Eden.World.Structures.PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId)
                 || !Eden
                     .World.Structures.PilotStructureStore.Snapshot(world, catalog, structure)
                     .Services.Contains(Eden.Gameplay.Structures.StructureService.Insurance)

@@ -60,6 +60,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
             return;
         }
         weapons.Advance(context.Pilot.SystemId, Now);
+        RefreshDoomsdayFields(context);
         foreach (var (module, cycle) in _cycles.ToArray())
         {
             if (cycle.Effect.ShipId != context.Pilot.ShipId || !context.Flight.CanTarget)
@@ -92,30 +93,48 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != "superWeaponMgr" || method != "ActivateSinglePointTargetedModule")
+        if (service != "superWeaponMgr" || method is not ("ActivateSinglePointTargetedModule" or "ActivateSlashModule"))
         {
             return PilotCallResult.Unsupported;
         }
-        if (
-            keywords is { Count: > 0 }
-            || args is not [long module, long effect, var value]
-            || effect is < int.MinValue or > int.MaxValue
-            || !AreaWeaponRules.IsProjector((DogmaEffect)effect)
-        )
+        if (keywords is { Count: > 0 })
         {
             return new PilotCallResult.Failure("Invalid point-targeted module activation.");
         }
         try
         {
-            var coordinates = BlueRead.Tuple(value, 3);
-            SpacePosition point = new(Number(coordinates[0]), Number(coordinates[1]), Number(coordinates[2]));
-            return Activate(context, module, (DogmaEffect)effect, 0, point);
+            if (method == "ActivateSlashModule" && args is [long slash, var first, var second])
+            {
+                return Activate(context, slash, DogmaEffect.DoomsdaySlash, 0, Point(first), secondPoint: Point(second));
+            }
+            if (
+                method == "ActivateSinglePointTargetedModule"
+                && args is [long module, long effect, var value]
+                && effect is >= int.MinValue and <= int.MaxValue
+                && (
+                    DoomsdayFieldRules.IsEffect((DogmaEffect)effect) && (DogmaEffect)effect != DogmaEffect.DoomsdaySlash
+                    || AreaWeaponRules.IsProjector((DogmaEffect)effect)
+                )
+            )
+            {
+                return Activate(context, module, (DogmaEffect)effect, 0, Point(value));
+            }
+            return new PilotCallResult.Failure("Invalid point-targeted module activation.");
         }
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
         }
     }
+
+    private static SpacePosition Point(object? value)
+    {
+        var coordinates = BlueRead.Tuple(value, 3);
+        return new(Number(coordinates[0]), Number(coordinates[1]), Number(coordinates[2]));
+    }
+
+    private void RefreshDoomsdayFields(PilotCallContext context) =>
+        context.Flight.RefreshDoomsdayFields(weapons.DoomsdayFields(context.Pilot.SystemId, Now));
 
     private static double Number(object? value) =>
         value switch
@@ -136,9 +155,13 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         {
             if (_cycles.TryGetValue(module, out var cycle))
             {
-                if (AreaWeaponRules.IsProjector(cycle.Effect.Effect))
+                if (
+                    AreaWeaponRules.IsProjector(cycle.Effect.Effect)
+                    || DoomsdayRules.IsTargeted(cycle.Effect.Effect)
+                    || DoomsdayFieldRules.IsEffect(cycle.Effect.Effect)
+                )
                 {
-                    return new PilotCallResult.Failure("A paid burst projector cycle cannot be stopped early.");
+                    return new PilotCallResult.Failure("A paid superweapon cycle cannot be stopped early.");
                 }
                 _cycles[module] = cycle with { Stopping = true };
             }
@@ -148,6 +171,12 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         {
             return PilotCallResult.Unsupported;
         }
+        if (DoomsdayRules.IsTargeted(effect))
+        {
+            return target is long id && id > 0
+                ? Activate(context, item, effect, repeats, null, id)
+                : new PilotCallResult.Failure("Select a locked capital ship.");
+        }
         if (target is not null && !Equals(target, context.Pilot.ShipId))
         {
             return new PilotCallResult.Failure("Activate this area weapon without a locked target.");
@@ -155,7 +184,15 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         return Activate(context, item, effect, repeats, null);
     }
 
-    private PilotCallResult Activate(PilotCallContext context, long module, DogmaEffect effect, long repeats, SpacePosition? point)
+    private PilotCallResult Activate(
+        PilotCallContext context,
+        long module,
+        DogmaEffect effect,
+        long repeats,
+        SpacePosition? point,
+        long? target = null,
+        SpacePosition? secondPoint = null
+    )
     {
         if (!context.Flight.CanTarget || context.Flight.Cloaked || repeats is < 0 or > int.MaxValue)
         {
@@ -168,7 +205,15 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         try
         {
             context.Flight.Checkpoint();
-            Start(context, module, effect, effect == DogmaEffect.BurstJammer ? repeats : 0, point);
+            Start(
+                context,
+                module,
+                effect,
+                effect == DogmaEffect.BurstJammer ? repeats : 0,
+                point,
+                target: target,
+                secondPoint: secondPoint
+            );
             return PilotCallResult.None;
         }
         catch (Exception error) when (error is InvalidDataException or OverflowException)
@@ -177,7 +222,16 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         }
     }
 
-    private void Start(PilotCallContext context, long item, DogmaEffect effect, long repeats, SpacePosition? point, Cycle? previous = null)
+    private void Start(
+        PilotCallContext context,
+        long item,
+        DogmaEffect effect,
+        long repeats,
+        SpacePosition? point,
+        Cycle? previous = null,
+        long? target = null,
+        SpacePosition? secondPoint = null
+    )
     {
         long now = Now;
         var result = weapons.Activate(
@@ -188,24 +242,35 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
             context.Flight.Heading,
             context.Flight.Velocity,
             point,
-            now
+            now,
+            target,
+            secondPoint
         );
         var module = result.Module;
-        DogmaActiveEffect active = new(item, context.Pilot.PilotId, context.Pilot.ShipId, null, effect, now, module.Duration, repeats);
+        bool doomsday = module.Kind == AreaWeaponKind.Doomsday;
+        bool field = module.Kind == AreaWeaponKind.DoomsdayField;
+        var notifications = doomsday || field ? context.NotificationsBeforeFlight : context.Notifications;
+        DogmaActiveEffect active = new(item, context.Pilot.PilotId, context.Pilot.ShipId, target, effect, now, module.Duration, repeats);
         WeaponContact contact = new(
             item,
             module.TypeId,
             0,
-            null,
+            target,
             now,
             module.Duration,
-            effect == DogmaEffect.BurstJammer ? "effects.ECMBurst" : "effects.MissileDeployment"
+            doomsday ? DoomsdayRules.Graphic(effect)
+                : effect == DogmaEffect.BurstJammer ? "effects.ECMBurst"
+                : "effects.MissileDeployment"
         );
         _cycles[item] = new(active, contact, AreaWeaponRules.Deadline(now, module.Duration));
         if (previous is null)
         {
-            context.Notifications.Add(new ShipEffectChanged(active, now, true, true));
-            if (effect == DogmaEffect.BurstJammer)
+            notifications.Add(new ShipEffectChanged(active, now, true, true));
+            if (doomsday || field)
+            {
+                context.Flight.StopForCapitalModule();
+            }
+            if (doomsday || effect == DogmaEffect.BurstJammer)
             {
                 context.Flight.SetWeaponEffect(contact, true);
             }
@@ -220,9 +285,9 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         }
         foreach (var change in result.InventoryChanges)
         {
-            InventoryChangesWire.NotifyItemChange(context, change);
+            InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: doomsday || field);
         }
-        context.Notifications.Add(
+        notifications.Add(
             new ModuleAttributesChanged([
                 new(
                     context.Pilot.PilotId,
@@ -234,6 +299,10 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
                 new(context.Pilot.PilotId, new DogmaItemKey.Item(item), DogmaAttributeId.NextActivationTime, now, result.ReadyAt),
             ])
         );
+        if (field)
+        {
+            RefreshDoomsdayFields(context);
+        }
         context.Flight.RefreshMissiles();
     }
 }

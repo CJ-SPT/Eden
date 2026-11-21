@@ -20,6 +20,45 @@ public sealed class WormholeLifecycleTests
     private const int Remote = 31000356;
 
     [Fact]
+    public async Task DormantWormholeSignaturesRemainReadableDuringUnrelatedWorldWork()
+    {
+        using Fixture f = new();
+        WormholeTravelTests.AddRoute(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var travel = f.Db.Services.GetRequiredService<IWormholeTravel>();
+        var source = travel.Signatures(Known);
+        Assert.Single(source);
+        Assert.Empty(travel.Signatures(Remote));
+        using ManualResetEventSlim acquired = new();
+        using ManualResetEventSlim release = new();
+        var holder = Task.Run(() =>
+        {
+            using var owner = live.EnterShared("unrelated world work");
+            acquired.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        try
+        {
+            Assert.True(acquired.Wait(TimeSpan.FromSeconds(15)));
+            await Task.Run(() =>
+                {
+                    using var metrics = SessionPerformance.Begin("warm wormhole signatures", _ => { }, force: true)!;
+                    Assert.Same(source, travel.Signatures(Known));
+                    Assert.Empty(travel.Signatures(Remote));
+                    Assert.Equal(0, metrics.Commands);
+                    Assert.Equal(0, metrics.Connections);
+                    Assert.Equal(0, metrics.FittingCalculations);
+                })
+                .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            await holder;
+        }
+    }
+
+    [Fact]
     public void OversizedShipRejectionPreservesMassPositionAndPolarization()
     {
         using Fixture f = new();
@@ -60,7 +99,7 @@ public sealed class WormholeLifecycleTests
                 catalog.Database.ExecuteSql(
                     $"""
                     INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z)
-                    VALUES ({celestial},{system},52673,8,2000,0,0,0)
+                    VALUES ({celestial + 100},{system},52673,8,2000,0,0,0),({celestial},{system},52673,8,2000,1,2,3)
                     """
                 );
             }
@@ -92,9 +131,16 @@ public sealed class WormholeLifecycleTests
             }
         }
         using CatalogDbContext source = new(f.CatalogPath);
-        var authority = WormholeCatalog.Read(source);
+        List<string> queries = [];
+        WormholeAuthority authority;
+        using (SessionPerformance.Begin("cold wormhole catalog", _ => { }, force: true, command: queries.Add))
+        {
+            authority = WormholeCatalog.Read(source);
+        }
+        Assert.Single(queries, sql => sql.Contains("\"Celestial\"", StringComparison.Ordinal));
         for (int i = 0; i < systems.Length; i++)
         {
+            Assert.Equal(new SpacePosition(1, 2, 3), authority.Systems[systems[i]].Anchor);
             var slots = authority.Slots[systems[i]];
             Assert.Equal(i + 1 is 2 or 4 ? 2 : 1, slots.Length);
             foreach (var slot in slots)
@@ -191,9 +237,16 @@ public sealed class WormholeLifecycleTests
             expiry = live.Economy.Inspect(w => Assert.Single(w.Set<SavedWormholeConnection>()).ExpiresAt);
             travel.Activate(Known, endpoint);
             Assert.Equal(expiry, live.Economy.Inspect(w => Assert.Single(w.Set<SavedWormholeConnection>()).ExpiresAt));
-            f.Clock.AdvanceWallTime(TimeSpan.FromHours(2));
+            Assert.Empty(travel.Signatures(Remote));
+            f.Clock.AdvanceWallTime(TimeSpan.FromHours(1) - TimeSpan.FromTicks(1));
+            Assert.Empty(travel.Signatures(Remote));
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
             Assert.Single(travel.Signatures(Remote));
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(expiry - f.Clock.Now - 4 * TimeSpan.TicksPerHour - 1));
+            Assert.Equal(1, Assert.Single(Assert.Single(travel.Signatures(Known)).Objects).Wormhole!.Age);
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
             var warmed = travel.Signatures(Known);
+            Assert.Equal(2, Assert.Single(Assert.Single(warmed).Objects).Wormhole!.Age);
             using (var measured = SessionPerformance.Begin("wormhole lifecycle warm reads", _ => { }, force: true)!)
             {
                 Assert.Same(warmed, travel.Signatures(Known));

@@ -92,9 +92,11 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadSpatialModules(string path) => Load(path, "SpatialModuleCatalog.json", null);
 
+    internal static void LoadCapitalTravel(string path) => Load(path, "CapitalTravelCatalog.json", null);
+
     internal static void LoadAssaultDamageControls(string path) => Load(path, "AssaultDamageControlCatalog.json", null);
 
-    internal static void LoadOverload(string path) => Load(path, "OverloadCatalog.json", null);
+    internal static void LoadOverload(string path, IReadOnlySet<int>? types = null) => Load(path, "OverloadCatalog.json", types);
 
     internal static void LoadAncillaryRemoteRepairs(string path, int? hullType = null) =>
         Load(path, "AncillaryRemoteRepairCatalog.json", null, hullType: hullType);
@@ -118,7 +120,7 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadStructures(string path) => Load(path, "StructureCatalog.json", null);
 
-    internal static void LoadInformation(string path) => Load(path, "InformationCatalog.json", null);
+    internal static void LoadInformation(string path, IReadOnlySet<int>? types = null) => Load(path, "InformationCatalog.json", types);
 
     internal static void LoadCapacitorModules(string path, IReadOnlySet<int>? types = null) =>
         Load(path, "CapacitorModuleCatalog.json", types);
@@ -139,7 +141,7 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadStarterProduction(string path) => Load(path, "StarterProductionCatalog.json", null);
 
-    internal static void LoadStarterMarket(string path) => Load(path, "StarterMarketCatalog.json", null);
+    internal static void LoadStarterMarket(string path, IReadOnlySet<int>? types = null) => Load(path, "StarterMarketCatalog.json", types);
 
     internal static void LoadFrigateHulls(string path) => Load(path, "FrigateHullCatalog.json", null);
 
@@ -306,7 +308,7 @@ internal static class PassiveCatalogFixture
                 continue;
             }
             string key = record.Key.ToString(CultureInfo.InvariantCulture);
-            if (record.Dataset is "client/blueprints" or "client/dbuffcollections")
+            if (record.Dataset is "client/blueprints" or "client/dbuffcollections" or "client/fighterabilitiesbytype")
             {
                 key = JsonSerializer.Serialize(key);
             }

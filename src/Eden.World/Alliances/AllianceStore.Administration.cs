@@ -10,6 +10,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -19,10 +20,17 @@ internal sealed partial class AllianceStore
 {
     public AllianceCreation Create(long actorId, AllianceDetails details)
     {
-        details = AllianceRules.Validate(details);
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
-        var corporation = CorporationRoleStore.Current(world, actorId);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Create(world, catalog, actorId, details, Now);
+        world.Commit();
+        return result;
+    }
+
+    internal AllianceCreation Create(WorldAction world, CatalogDbContext catalog, long actorId, AllianceDetails details, long now)
+    {
+        details = AllianceRules.Validate(details);
+        var corporation = CorporationRoleStore.Current(world, actorId);
         double rank = catalog.FittingAttributes(AllianceRules.EmpireControlSkill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
         if (rank <= 0)
         {
@@ -37,23 +45,11 @@ internal sealed partial class AllianceStore
             level,
             wallet?.Cents ?? 0
         );
-        if (
-            world
-                .Set<SavedAlliance>()
-                .AsEnumerable()
-                .Any(row =>
-                    string.Equals(row.Name, details.Name, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(row.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
-                )
-            || world
-                .Set<SavedCorporation>()
-                .AsEnumerable()
-                .Any(row =>
-                    string.Equals(row.Name, details.Name, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(row.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
-                )
-            || catalog.NpcCorporationNameExists(details.Name)
-        )
+        if (MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, null, now) is { } failure)
+        {
+            throw new InvalidDataException(failure);
+        }
+        if (IdentityTaken(world, catalog, details))
         {
             throw new InvalidDataException("That owner name or ticker is already taken.");
         }
@@ -62,7 +58,6 @@ internal sealed partial class AllianceStore
         {
             id = checked((int)world.Next("WorldAlliance", AllianceRules.FirstAllianceId - 1));
         } while (world.Set<InventoryOwner>().Find((long)id) is not null);
-        long now = Now;
         world.Add(new InventoryOwner { Id = id });
         world.Add(
             new SavedAlliance
@@ -112,10 +107,18 @@ internal sealed partial class AllianceStore
         var result = Snapshot(world, id)!;
         Issue(world, id, now, now + AllianceBillingRules.MaintenancePeriod.Ticks);
         Record(world, new(0, id, corporation.Id, After: result, MemberAfter: new(corporation.Id, id, now, corporation.Id)));
-        world.Commit();
-        database.NotifyAccessGroupsChanged();
+        world.AfterCommit(database.NotifyAccessGroupsChanged);
         return new(result, balance);
     }
+
+    internal static bool IdentityTaken(WorldAction world, CatalogDbContext catalog, AllianceDetails details) =>
+        world.Set<SavedAlliance>().AsEnumerable().Any(row => Matches(row.Name, row.Ticker, details))
+        || world.Set<SavedCorporation>().AsEnumerable().Any(row => Matches(row.Name, row.Ticker, details))
+        || catalog.NpcCorporationNameExists(details.Name);
+
+    private static bool Matches(string name, string ticker, AllianceDetails details) =>
+        string.Equals(name, details.Name, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(ticker, details.Ticker, StringComparison.OrdinalIgnoreCase);
 
     public void Update(long actorId, string description, string url)
     {

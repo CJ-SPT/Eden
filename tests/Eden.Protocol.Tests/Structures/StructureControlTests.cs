@@ -1,6 +1,7 @@
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.Protocol.Docking;
@@ -8,6 +9,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Structures;
+using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Catalog;
 using Eden.World.Storage;
@@ -53,6 +55,76 @@ public sealed class StructureControlTests
         using var restored = restarted.Acquire(structure.Id, f.PilotId, 101);
         Assert.NotEqual(first.Token.LeaseId, restored.Token.LeaseId);
         Assert.Throws<InvalidDataException>(() => restarted.Require(first.Token));
+    }
+
+    [Fact]
+    public async Task UpwellControllerLocksWithStructureSensorsAndClearsOutgoingLocksOnRelease()
+    {
+        using Fixture f = new(liveWorld: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            // The minimal test corvette omits sensor attributes.
+            catalog.Database.ExecuteSqlRaw("INSERT OR REPLACE INTO TypeAttribute VALUES (601,552,52)");
+        }
+        var structure = f.Online();
+        var docking = f.Db.Services.GetRequiredService<IStationDocking>();
+        var pilot = docking.Dock(f.PilotId, f.ShipId, structure.Id);
+        var wing = f.Db.Store.FindPilot(1000002)!;
+        f.Db.Store.SetPosition(wing.ShipId, structure.Position + new SpacePosition(structure.Profile.Radius + 1000, 0, 0), pilot.SystemId);
+        wing = f.Db.Store.FindPilot(1000002)!;
+        using var scope = f.Db.Services.CreateScope();
+        var factory = scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
+        using var target = factory.Create(wing);
+        target.RefreshPeers();
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot], factory.Create, 53, SignedSettings.Empty);
+        context.Select(pilot);
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var targeting = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
+        var locks = scope.ServiceProvider.GetRequiredService<SharedTargetLocks>();
+        Assert.IsType<PilotCallResult.NamedFailure>(Call("dogmaIM", "AddTarget", [wing.ShipId]));
+        Assert.Same(PilotCallResult.None, Call("structureControl", "TakeControl", [structure.Id]));
+        Assert.False(context.Flight.CanTarget);
+        Assert.Equal(pilot.ShipId, context.Pilot.ShipId);
+        Assert.Contains(
+            context.Flight.Updates,
+            update =>
+                update.Command is DestinyCommand.SetState setState
+                && setState.Snapshot.Ego == structure.Id
+                && setState.Snapshot.Slims.OfType<ShipSlimItem>().Any(slim => slim.Ship.Pilot.ShipId == wing.ShipId)
+        );
+        var result = Call("dogmaIM", "AddTarget", [wing.ShipId]);
+        Assert.True(result is PilotCallResult.Success { Reply: TargetLockReply }, result.ToString());
+        var scan = (TargetLockReply)((PilotCallResult.Success)result).Reply;
+        Assert.True(scan.Pending);
+        Assert.False(targeting.IsLocked(wing.ShipId));
+        Assert.True(locks.HasOutgoing(structure.Id));
+        Assert.False(locks.HasOutgoing(pilot.ShipId));
+        f.Clock.AdvanceWallTime(TimeSpan.FromMinutes(5));
+        targeting.Advance(context);
+        Assert.IsType<PilotCallResult.Success>(await scan.Completion!.WaitAsync(TimeSpan.FromSeconds(3)));
+        Assert.True(locks.Contains(structure.Id, wing.ShipId));
+        Assert.Equal(
+            new[] { wing.ShipId },
+            Assert.IsType<BlueList<long>>(Assert.IsType<PilotCallResult.Success>(Call("dogmaIM", "GetTargets", [])).Reply).Items
+        );
+        locks.Add(wing.ShipId, structure.Id);
+        Assert.Same(PilotCallResult.None, Call("structureControl", "ReleaseControl", []));
+        Assert.False(locks.HasOutgoing(structure.Id));
+        Assert.True(locks.Contains(wing.ShipId, structure.Id));
+        Assert.False(targeting.IsLocked(wing.ShipId));
+        Assert.Same(PilotCallResult.None, Call("structureControl", "TakeControl", [structure.Id]));
+        Assert.Empty(Assert.IsType<BlueList<long>>(Assert.IsType<PilotCallResult.Success>(Call("dogmaIM", "GetTargets", [])).Reply).Items);
+        var retry = Assert.IsType<TargetLockReply>(
+            Assert.IsType<PilotCallResult.Success>(Call("dogmaIM", "AddTarget", [wing.ShipId])).Reply
+        );
+        Assert.Same(PilotCallResult.None, Call("structureControl", "ReleaseControl", []));
+        targeting.Advance(context);
+        Assert.Equal(
+            "TargetingAttemptCancelled",
+            Assert.IsType<PilotCallResult.NamedFailure>(await retry.Completion!.WaitAsync(TimeSpan.FromSeconds(3))).Name
+        );
+
+        PilotCallResult Call(string service, string method, object?[] args) => router.Call(context, service, method, args, _ => { });
     }
 
     [Fact]

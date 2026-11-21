@@ -15,7 +15,9 @@ internal sealed class EconomyQueryProvider<T>(EconomySet<T> source) : IQueryProv
     public TResult Execute<TResult>(Expression expression)
     {
         var rewritten = new Rewrite(source).Visit(expression);
-        return Expression.Lambda<Func<TResult>>(Expression.Convert(rewritten, typeof(TResult))).Compile(preferInterpretation: true)();
+        return rewritten is ConstantExpression { Value: TResult result }
+            ? result
+            : Expression.Lambda<Func<TResult>>(Expression.Convert(rewritten, typeof(TResult))).Compile(preferInterpretation: true)();
     }
 
     public object? Execute(Expression expression) => Execute<object?>(expression);

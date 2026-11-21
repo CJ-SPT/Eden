@@ -7,9 +7,11 @@ using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Tests.Combat;
 using Eden.Server;
@@ -26,7 +28,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class PilotSpaceActivitiesTests
+public sealed partial class PilotSpaceActivitiesTests
 {
     private const int Station = 60015157;
     private const int SystemId = 30000141;
@@ -324,6 +326,8 @@ public sealed class PilotSpaceActivitiesTests
         );
         CapsuleerDefenseState? defense = null;
         var pilot = f.Pilot;
+        var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
+        Assert.Equal(0, points.Balance(pilot.PilotId));
         NavigationState navigation = new();
         bool destroyed = false;
         for (int i = 0; i < 180; i++)
@@ -340,21 +344,40 @@ public sealed class PilotSpaceActivitiesTests
             }
         }
         Assert.True(destroyed);
+        Assert.Equal(2, points.Balance(pilot.PilotId));
         using WorldDbContext saved = new(f.Db.Path);
         var reward = Assert.Single(saved.Set<NpcBounty>().Where(b => b.NpcId == enemy.Id));
         long balance = saved.Set<PilotWallet>().Find(pilot.PilotId)!.Cents;
         controller.Advance(pilot, navigation, defense, f.Clock.Now, 200, []);
+        Assert.Equal(2, points.Balance(pilot.PilotId));
         using WorldDbContext reread = new(f.Db.Path);
         Assert.Equal(reward.Id, Assert.Single(reread.Set<NpcBounty>().Where(b => b.NpcId == enemy.Id)).Id);
         Assert.Equal(balance, reread.Set<PilotWallet>().Find(pilot.PilotId)!.Cents);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task TravelerPausesAtABeltWhenUnobservedAndReturnsToTheActualStation(bool loot)
+    [Fact]
+    public void DockedTravelerScoutsAColdCombatAnomalyAndUndocksOnTheSameTradeJob()
     {
         using CapsuleerHaulerTests.Fixture f = new();
+        PassiveCatalogFixture.LoadCombatAnomalies(f.Database.CatalogPath);
+        long pilot = PrepareDockedRatter(f, anomaly: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, SystemId);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var job = scheduler.Jobs().Single(job => job.PilotId == pilot);
+        Assert.Equal(CapsuleerAction.Trade, job.Action);
+        var observation = CapsuleerTestDriver.Hauler(host, f.Clock);
+        Assert.Equal(job.Revision + 1, scheduler.Jobs().Single(job => job.PilotId == pilot).Revision);
+        Assert.Equal(0, scheduler.Read().Failures);
+        Assert.NotNull(observation.Pilot.Position);
+        var sortie = Assert.IsType<RattingProgress>(observation.Work.Ratting);
+        Assert.NotNull(sortie.AnomalyPosition);
+        var sites = host.GetRequiredService<ICombatAnomalies>().List(SystemId, f.Clock.Now);
+        Assert.Contains(sites, site => site.Id == observation.Work.TargetId && site.Position == sortie.AnomalyPosition);
+    }
+
+    private static long PrepareDockedRatter(CapsuleerHaulerTests.Fixture f, bool anomaly = false)
+    {
         long pilot = FitTraveler(f);
         using (WorldDbContext world = new(f.Database.Path))
         {
@@ -370,7 +393,9 @@ public sealed class PilotSpaceActivitiesTests
                     FlagId = (int)InventoryFlag.Cargo,
                 }
             );
-            long choice = Enumerable.Range(1, 100).First(i => RattingRules.Choose(pilot, i));
+            long choice = Enumerable
+                .Range(1, 100)
+                .First(i => RattingRules.Choose(pilot, i) && (i % RattingRules.AnomalyDepartureInterval == 0) == anomaly);
             var progress = new HaulerProgress(
                 HaulerActivity.Docked,
                 0,
@@ -390,6 +415,18 @@ public sealed class PilotSpaceActivitiesTests
             );
             world.SaveChanges();
         }
+        return pilot;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TravelerRatsUnobservedAndPausesWhenTheLastHumanLeaves(bool loot)
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        long pilot = PrepareDockedRatter(f);
+        const long pirateId = 4000000000050;
+        const int pirateType = 990300;
         if (loot)
         {
             using (CatalogDbContext edited = new(f.Database.CatalogPath, writable: true))
@@ -449,10 +486,54 @@ public sealed class PilotSpaceActivitiesTests
                 world.SaveChanges();
             }
         }
+        else
+        {
+            using (CatalogDbContext edited = new(f.Database.CatalogPath, writable: true))
+            {
+                edited.Database.ExecuteSqlRaw(
+                    """
+                    INSERT OR IGNORE INTO ItemCategory VALUES (11,'Entity');
+                    INSERT OR IGNORE INTO ItemGroup VALUES (286,'Minor Threat',11),(186,'Wreck',2);
+                    INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Mass,Radius)
+                        VALUES (990300,'Belt Pirate',286,1500100,20),(26557,'Wreck',186,10000,14);
+                    INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','990300','{{"wreckTypeID":26557}}');
+                    INSERT OR IGNORE INTO DogmaAttribute VALUES (9,'hp'),(37,'maxVelocity'),(265,'armorHP'),(263,'shieldCapacity'),
+                        (416,'entityFlyRange'),(508,'entityCruiseSpeed'),(552,'signatureRadius'),(665,'entityChaseMaxDistance');
+                    INSERT OR REPLACE INTO TypeAttribute VALUES (990300,9,12),(990300,37,40),(990300,265,12),(990300,263,12),
+                        (990300,416,1250),(990300,508,20),(990300,552,40),(990300,665,1875);
+                    """
+                );
+                int bounty = (int)Eden.Gameplay.Dogma.DogmaAttributeId.EntityKillBounty;
+                edited.Database.ExecuteSql($"INSERT OR IGNORE INTO DogmaAttribute VALUES ({bounty},'entityKillBounty')");
+                edited.Database.ExecuteSql($"INSERT OR REPLACE INTO TypeAttribute VALUES ({pirateType},{bounty},1000)");
+            }
+            using CatalogDbContext catalog = new(f.Database.CatalogPath);
+            var belt = SystemObjects.Geometry(catalog, SystemId).Single(c => c.Id == 40009051);
+            using WorldDbContext world = new(f.Database.Path);
+            world.Add(
+                new WorldNpc
+                {
+                    Id = pirateId,
+                    BeltId = (int)belt.Id,
+                    SystemId = SystemId,
+                    TypeId = pirateType,
+                    Role = NpcRole.Pirate,
+                    AnchorKind = NpcAnchorKind.Belt,
+                    X = belt.Position.X + 1000,
+                    Y = belt.Position.Y,
+                    Z = belt.Position.Z,
+                    ShieldCharge = 12,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
+            world.SaveChanges();
+        }
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         Guid observer = Guid.NewGuid();
         var presence = host.GetRequiredService<IHumanPresence>();
-        presence.Update(observer, SystemId);
+        const int distant = 30000142;
+        presence.Update(observer, distant);
+        var live = host.GetRequiredService<LiveWorld>();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
         HaulerObservation? state = null;
@@ -469,16 +550,38 @@ public sealed class PilotSpaceActivitiesTests
         Assert.NotNull(state!.Work.Ratting);
         Assert.Equal(RattingPhase.TravellingToBelt, state.Work.Ratting.Phase);
         Assert.Equal(40009051L, state.Work.Ratting.Belts.Single());
-        presence.Update(observer, 30000142);
-        maintenance.Tick();
-        long remaining = scheduler.Hauler(pilot)!.Work.Ratting!.RemainingTicks;
-        var job = scheduler.Jobs().Single(j => j.PilotId == pilot);
-        f.Clock.Seconds += 180;
+        long launched = state.Work.Ratting.RemainingTicks;
+        f.Clock.Seconds++;
         maintenance.Tick();
         var remote = scheduler.Hauler(pilot)!;
-        Assert.Equal(remaining, remote.Work.Ratting!.RemainingTicks);
-        Assert.Contains(job, scheduler.Jobs());
-        presence.Update(observer, SystemId);
+        Assert.True(remote.Work.Ratting!.RemainingTicks < launched);
+        Assert.False(live.IsDetailedSystem(SystemId));
+        if (!loot)
+        {
+            for (int i = 0; i < 200 && remote.Work.Ratting?.Phase != RattingPhase.Fighting; i++)
+            {
+                f.Clock.Seconds++;
+                maintenance.Tick();
+                remote = scheduler.Hauler(pilot)!;
+            }
+            Assert.Equal(RattingPhase.Fighting, remote.Work.Ratting?.Phase);
+        }
+        presence.Update(observer, null);
+        var paused = scheduler.Jobs().Single(j => j.PilotId == pilot);
+        long elapsed = live.CapsuleerActivity.Read().ElapsedTicks;
+        f.Clock.Seconds += 180;
+        maintenance.Tick();
+        Assert.Equal(elapsed, live.CapsuleerActivity.Read().ElapsedTicks);
+        var afterPause = scheduler.Hauler(pilot)!;
+        Assert.Equal(remote.Pilot.Position, afterPause.Pilot.Position);
+        Assert.Equal(remote.Work.Ratting!.RemainingTicks, afterPause.Work.Ratting!.RemainingTicks);
+        Assert.Equal(remote.Work.Ratting.Phase, afterPause.Work.Ratting.Phase);
+        Assert.Contains(paused, scheduler.Jobs());
+        if (!loot)
+        {
+            Assert.False(live.Economy.Read(world => world.Set<WorldNpc>().Find(pirateId)!.DestroyedAt.HasValue));
+        }
+        presence.Update(observer, distant);
         state = remote;
         bool completed = state.Work.Ratting is null && state.Pilot.Position is null;
         for (int i = 0; i < 1000 && !completed; i++)
@@ -495,26 +598,26 @@ public sealed class PilotSpaceActivitiesTests
         }
         Assert.True(completed, $"Last phase {state!.Work.Ratting?.Phase}, activity {state.Work.Activity}");
         Assert.Equal(Station, state!.Pilot.StationId);
+        Assert.False(live.IsDetailedSystem(SystemId));
+        await live.FlushAsync();
+        host.Dispose();
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using WorldDbContext reopened = new(f.Database.Path);
         if (loot)
         {
-            using (WorldDbContext saved = new(f.Database.Path))
-            {
-                Assert.Equal(
-                    100,
-                    saved.Set<OwnedItem>().Where(i => i.OwnerId == pilot && i.LocationId == Station && i.TypeId == 34).Sum(i => i.Quantity)
-                );
-                Assert.Empty(saved.Set<OwnedItem>().Where(i => i.LocationId == 8000000000099));
-                Assert.Equal(100, saved.Set<OwnedItem>().Single(i => i.LocationId == 8000000000100).Quantity);
-                Assert.Equal(100, saved.Set<OwnedItem>().Single(i => i.LocationId == 8000000000101).Quantity);
-            }
-            await host.GetRequiredService<LiveWorld>().FlushAsync();
-            host.Dispose();
-            WorldInitialization.Initialize(f.Database, f.Clock);
-            using WorldDbContext reopened = new(f.Database.Path);
             Assert.Equal(
                 100,
                 reopened.Set<OwnedItem>().Where(i => i.OwnerId == pilot && i.LocationId == Station && i.TypeId == 34).Sum(i => i.Quantity)
             );
+            Assert.Empty(reopened.Set<OwnedItem>().Where(i => i.LocationId == 8000000000099));
+            Assert.Equal(100, reopened.Set<OwnedItem>().Single(i => i.LocationId == 8000000000100).Quantity);
+            Assert.Equal(100, reopened.Set<OwnedItem>().Single(i => i.LocationId == 8000000000101).Quantity);
+        }
+        else
+        {
+            Assert.NotNull(reopened.Set<WorldNpc>().Find(pirateId)!.DestroyedAt);
+            var reward = Assert.Single(reopened.Set<NpcBounty>().Where(row => row.PilotId == pilot && row.NpcId == pirateId));
+            Assert.True(reward.AmountCents > 0);
         }
     }
 }

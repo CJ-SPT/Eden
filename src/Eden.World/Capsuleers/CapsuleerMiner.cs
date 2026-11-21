@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Mining;
@@ -9,9 +10,11 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -39,12 +42,17 @@ internal sealed class CapsuleerMinerFactory(
     IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerIndustry industry,
+    PilotFleetStore fleet,
+    CapsuleerCareerTraining careerTraining
 )
 {
-    internal CapsuleerMiner Create(long pilotId) =>
+    internal CapsuleerMiner Create(long pilotId, IReadOnlyCollection<long> crew, Func<long, bool> suspended) =>
         new(
             pilotId,
+            crew,
+            suspended,
             database,
             ships,
             systems,
@@ -58,12 +66,17 @@ internal sealed class CapsuleerMinerFactory(
             tackle,
             health,
             marketSignal,
-            defense
+            defense,
+            industry,
+            fleet,
+            careerTraining
         );
 }
 
-internal sealed class CapsuleerMiner(
+internal sealed partial class CapsuleerMiner(
     long pilotId,
+    IReadOnlyCollection<long> crew,
+    Func<long, bool> suspended,
     WorldDatabase database,
     SqliteWorld ships,
     CapsuleerGeometry systems,
@@ -77,9 +90,16 @@ internal sealed class CapsuleerMiner(
     IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerIndustry industry,
+    PilotFleetStore fleet,
+    CapsuleerCareerTraining careerTraining
 )
 {
+    private static readonly CatalogDefinition<bool> s_miningBelt = new(
+        "capsuleer-usable-mining-belt",
+        CapsuleerProvisioningCatalog.UsableOre
+    );
     private const int RetrySeconds = 60;
     private const double ApproachRange = 500;
     private bool _loaded;
@@ -88,6 +108,7 @@ internal sealed class CapsuleerMiner(
     private CapsuleerOperation _operation = null!;
     private long _threatenedShip;
     private long _nextLook;
+    private long _resumedAt;
 
     private bool WatchBelt(long elapsed)
     {
@@ -97,21 +118,17 @@ internal sealed class CapsuleerMiner(
             || _navigation.Warp is not null
             || Work.Activity is not (MinerActivity.ApproachingOre or MinerActivity.Locking or MinerActivity.Mining)
             || elapsed < _nextLook
-            || Work.LeaveAfterCycle
         )
         {
             return false;
         }
         _nextLook = elapsed + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
-        if (
-            TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
-                == TrafficSecurityBand.High
-            || !defense.Observe(Pilot, elapsed).Any(s => PilotAwareness.ArmedHull(s.Hull))
-        )
+        var danger = defense.ObserveCivilianDanger(Pilot, _navigation.Velocity, elapsed);
+        if (danger == CivilianDanger.Clear)
         {
             return false;
         }
-        if (PilotAwareness.Cautious(pilotId) || Work.Activity != MinerActivity.Mining)
+        if (danger == CivilianDanger.Escape || PilotAwareness.Cautious(pilotId) || Work.Activity != MinerActivity.Mining)
         {
             return true;
         }
@@ -133,6 +150,7 @@ internal sealed class CapsuleerMiner(
     private DockedPilot? _pilot;
     internal DockedPilot? PreparationPilot => _pilot;
     private InventoryItem? _laser;
+    private double _miningReach;
     private MinerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
@@ -162,10 +180,11 @@ internal sealed class CapsuleerMiner(
         {
             Load();
         }
+        RefreshCorporation();
         return _pilot is null ? null : Observation(includeHealth);
     }
 
-    internal CapsuleerJob Resume(CapsuleerJob job, long elapsed, long pausedAt)
+    internal CapsuleerJob Resume(CapsuleerJob job, long elapsed, long pausedAt, bool observed = false)
     {
         if (!_loaded)
         {
@@ -179,8 +198,25 @@ internal sealed class CapsuleerMiner(
         _resumeCount = -1;
         long delay = Math.Max(0, elapsed - Math.Max(Work.ActiveTicks, pausedAt));
         var resumed = CapsuleerPauseRules.Resume(Work, delay);
+        if (
+            Work.WarpReadyAt == 0
+            && Pilot.Position is not null
+            && _target is not null
+            && _navigation.Warp is null
+            && _navigation.WarpDestination is not null
+        )
+        {
+            var navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
+            long ready = CapsuleerWarpRules.Begin(navigation, new(Pilot, _target, Work.Stamp, ApproachRange), elapsed);
+            resumed = resumed with { WarpReadyAt = ready, Navigation = navigation.Capture() };
+        }
         long earliest = checked(elapsed + 1);
-        var next = job.Next(Math.Max(earliest, checked(job.DueTicks + delay)), job.Action);
+        long due = Math.Max(earliest, checked(job.DueTicks + delay));
+        if (observed && (resumed.Navigation.Warp is not null || Work.Activity == MinerActivity.Mining && job.DueTicks == Work.DueTicks))
+        {
+            due = Math.Min(due, checked(elapsed + TimeSpan.TicksPerSecond));
+        }
+        var next = job.Next(due, job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
         if (
             resumed.Activity == MinerActivity.Mining
@@ -192,7 +228,9 @@ internal sealed class CapsuleerMiner(
             resumed = paid;
         }
         operation.Commit(next, new MinerCheckpoint(pilotId, resumed), null);
+        _navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
         _work = resumed;
+        _resumedAt = elapsed;
         return next;
     }
 
@@ -217,7 +255,7 @@ internal sealed class CapsuleerMiner(
         return true;
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes)
+    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes, bool background = false)
     {
         if (!_loaded)
         {
@@ -235,7 +273,27 @@ internal sealed class CapsuleerMiner(
                 Load();
             }
         }
-        ObserveDanger(destinyStamp);
+        bool canWork = CanWorkHere;
+        if (!canWork && !(_target?.DestinationGateId is not null && Work.Activity is MinerActivity.FlyingToGate or MinerActivity.Jumping))
+        {
+            using CapsuleerOperation hold = new(database, job, marketSignal);
+            var next = CapsuleerWorkRegions.Retry(job, activeNow);
+            _work = CapsuleerPauseRules.Resume(Work, Math.Max(0, job.DueTicks - Work.ActiveTicks)) with
+            {
+                WaitingReason = CapsuleerWorkRegions.TransitOnlyReason,
+            };
+            hold.Commit(next, new MinerCheckpoint(pilotId, Work), null);
+            return next;
+        }
+        if (Work.WaitingReason == CapsuleerWorkRegions.TransitOnlyReason)
+        {
+            _work = Work with { WaitingReason = null };
+        }
+        RefreshCorporation();
+        if (canWork)
+        {
+            ObserveDanger(destinyStamp);
+        }
         if (Pilot.Position is not null)
         {
             RefreshTackle();
@@ -244,12 +302,24 @@ internal sealed class CapsuleerMiner(
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
         _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
-        if (defended.Escape || WatchBelt(job.DueTicks))
+        if (canWork && (defended.Escape || WatchBelt(job.DueTicks)))
         {
             ObserveAggression(Pilot.ShipId);
         }
         if (
+            canWork
+            && database.Settings.Capsuleers.SituationalAwareness
+            && Pilot.Position is not null
+            && _navigation.Warp is null
+            && CapsuleerMiningRules.WorkingField(Work)
+            && CrewDanger(job.DueTicks)
+        )
+        {
+            _work = Work with { Activity = MinerActivity.ReadyToReturn, LeaveAfterCycle = false };
+        }
+        if (
             Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
+            && canWork
             && Pilot.Position is not null
             && Work.Activity != MinerActivity.Returning
         )
@@ -267,6 +337,7 @@ internal sealed class CapsuleerMiner(
         var beforePilot = Pilot;
         var before = Work;
         var beforeLaser = _laser;
+        double beforeReach = _miningReach;
         var beforeTarget = _target;
         var beforeObjects = _objects;
         var beforeObstacles = _obstacles;
@@ -275,6 +346,10 @@ internal sealed class CapsuleerMiner(
         _operation = new(database, job, marketSignal);
         try
         {
+            if (canWork && defended.NewThreat)
+            {
+                RegionalConflictStore.Attack(_operation, database, Pilot, Work.Defense, Work.WorkingBelt, Work.ActiveTicks);
+            }
             if (_resumeCount != resumes && Work.Activity == MinerActivity.Mining && Work.PaidUntil != 0 && Work.DueTicks > activeNow)
             {
                 if (!TryRebasePaidCycle(_operation, Work, activeNow, out var paid))
@@ -291,7 +366,11 @@ internal sealed class CapsuleerMiner(
             {
                 Step();
             }
-            var next = Commit(job);
+            var next = Commit(
+                job,
+                background && before.Activity is MinerActivity.Locking or MinerActivity.Mining,
+                background && before.Navigation.Warp is not null && Work.Defense is null && _navigation.Warp is not null
+            );
             _resumeCount = resumes;
             return next;
         }
@@ -306,6 +385,7 @@ internal sealed class CapsuleerMiner(
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             _laser = beforeLaser;
+            _miningReach = beforeReach;
             _operation = new(database, job, marketSignal);
             _navigation.AdoptHull();
             _work = Work with
@@ -331,6 +411,7 @@ internal sealed class CapsuleerMiner(
                 _obstacles = beforeObstacles;
                 RestorePosition(beforePilot);
                 _laser = beforeLaser;
+                _miningReach = beforeReach;
                 throw;
             }
         }
@@ -344,6 +425,7 @@ internal sealed class CapsuleerMiner(
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             _laser = beforeLaser;
+            _miningReach = beforeReach;
             throw;
         }
         finally
@@ -360,19 +442,71 @@ internal sealed class CapsuleerMiner(
         }
     }
 
-    private CapsuleerJob Commit(CapsuleerJob job)
+    private CapsuleerJob Commit(CapsuleerJob job, bool quietBackground = false, bool backgroundWarp = false)
     {
         _work = Work with { Navigation = _navigation.Capture() };
-        var schedule = Schedule();
+        var schedule = Schedule(quietBackground);
+        if (
+            backgroundWarp
+            && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
+        )
+        {
+            // Preserve the phase of the original one-second samples, including fractional lock deadlines.
+            long steps = (exit - Work.ActiveTicks + TimeSpan.TicksPerSecond - 1) / TimeSpan.TicksPerSecond;
+            schedule = schedule with { DueTicks = checked(Work.ActiveTicks + steps * TimeSpan.TicksPerSecond) };
+        }
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
         return next;
     }
 
-    private CapsuleerSchedule Schedule()
+    private CapsuleerSchedule Schedule(bool quietBackground)
     {
-        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        bool sleep = quietBackground && WatchableCycle();
+        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, sleep);
         return schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
+    }
+
+    internal int CompletedCycles => _work?.Cycles ?? 0;
+
+    private bool WatchableCycle() =>
+        Work is { Activity: MinerActivity.Mining, PaidUntil: > 0, Defense: null, MoonExtractionId: null, RefineryIceType: null }
+        && Work.WorkingBelt != 0
+        && _incoming.Length == 0
+        && Live is { } live
+        && !live.Economy.HasIncomingNpcMissiles(pilotId)
+        && TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
+            == TrafficSecurityBand.High;
+
+    internal bool WatchesPaidCycle(CapsuleerJob job, out long started)
+    {
+        started = Math.Max(_work?.ActiveTicks ?? 0, _resumedAt);
+        return _work is { Activity: MinerActivity.Mining, PaidUntil: > 0 } && job.DueTicks == _work.DueTicks;
+    }
+
+    internal bool BeltIsQuiet(long elapsed)
+    {
+        if (
+            !_loaded
+            || !WatchableCycle()
+            || _pilot?.Position is not { } position
+            || Volatile.Read(ref _threatenedShip) != 0
+            || Live is not { } live
+            || _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId)
+            || database.Settings.Capsuleers.SituationalAwareness && CrewDanger(elapsed)
+            || live.CombatForSystem(Pilot.SystemId) is not { } combatSystem
+        )
+        {
+            return false;
+        }
+        long now = Now;
+        // One due population refresh serves every miner in this system. A contact entering
+        // the belt then wakes the affected pilots in canonical queue order.
+        if (combatSystem.MiningPopulationDue(Pilot.SystemId, now))
+        {
+            encounters.Advance(Pilot.SystemId, now);
+        }
+        return combatSystem.QuietMiningBelt(Pilot.SystemId, Pilot.ShipId, position, Pilot.Flight.ShipRadius, now);
     }
 
     internal bool Sample(long throughTicks)
@@ -403,8 +537,11 @@ internal sealed class CapsuleerMiner(
         return true;
     }
 
-    private MinerObservation Observation(bool includeHealth) =>
-        new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
+    private MinerObservation Observation(bool includeHealth)
+    {
+        using var system = includeHealth ? Live?.UseSystem(Pilot.SystemId) : null;
+        return new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
+    }
 
     private void ObserveDanger(int destinyStamp)
     {
@@ -412,16 +549,18 @@ internal sealed class CapsuleerMiner(
         {
             return;
         }
-        var visible = encounters
-            .Advance(Pilot.SystemId, Now)
-            .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
-            .Select(n => n.Id)
-            .ToHashSet();
+        var contacts = encounters.Advance(Pilot.SystemId, Now);
+        var position = Pilot.Position;
+        bool InSight(NpcSimulationContact npc) => !npc.Warping && npc.Position.DistanceTo(position) <= AsteroidDefinitions.VisibilityRange;
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
         warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
-        var attackers = combat.Aggressors(Pilot.ShipId).Where(visible.Contains).ToArray();
+        var attackers = combat.Aggressors(Pilot.ShipId);
         foreach (long npc in attackers)
         {
+            if (!contacts.Any(contact => contact.Id == npc && InSight(contact)))
+            {
+                continue;
+            }
             var shot = combat.Fire(
                 Pilot.PilotId,
                 Pilot.ShipId,
@@ -486,20 +625,41 @@ internal sealed class CapsuleerMiner(
             {
                 _work = Work with
                 {
+                    CareerPlan = previous?.CareerPlan,
+                    DeepCoreProvisioned = previous?.DeepCoreProvisioned == true,
+                    Mercoxit = Pilot.Position is null ? null : previous?.Mercoxit,
                     ActiveTicks = anchor,
                     ClockOffsetTicks = previous?.ClockOffsetTicks ?? anchor,
                     Stamp = previous?.Stamp ?? 0,
                 };
+            }
+            // Older mid-shift checkpoints recorded only the rock, including after its last unit was mined.
+            if (Work.WorkingBelt == 0 && Work.TargetId > 0 && world.Set<WorldAsteroid>().Find(Work.TargetId) is { BeltId: > 0 } deposit)
+            {
+                _work = Work with { WorkingBelt = deposit.BeltId };
             }
             _incoming = [];
             _warpBlocked = false;
             _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
             using CatalogDbContext catalog = new(database.CatalogPath);
             _laser = PilotInventoryStore.List(world, catalog, id, Pilot.ShipId).FirstOrDefault(i => i.Id == Work.ModuleId);
+            _miningReach = _laser is null ? 0 : MiningReach(world, catalog, _laser);
+            var stagedReturn =
+                Work.FactoryStage is { StructureId: > 0 } stage && Work.TargetId == stage.StructureId
+                    ? FactoryTarget(world, catalog, stage.StructureId)
+                    : null;
+            var iceTarget =
+                Work.RefineryIceType.HasValue && Work.Activity == MinerActivity.FlyingToBelt
+                    ? AsteroidFieldStore.List(world, catalog, Pilot.SystemId).FirstOrDefault(rock => rock.Id == Work.TargetId)
+                    : null;
             transaction.Commit();
             transaction.Dispose();
             RefreshObjects();
-            _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
+            _target = stagedReturn ?? iceTarget ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId);
+            if (Work.WorkingBelt == 0 && _target is { GroupId: AsteroidDefinitions.BeltGroup } belt)
+            {
+                _work = Work with { WorkingBelt = belt.Id };
+            }
         }
         _loaded = true;
     }
@@ -541,8 +701,12 @@ internal sealed class CapsuleerMiner(
                 PrepareTrip();
                 break;
             case MinerActivity.FlyingToBelt:
+            case MinerActivity.FlyingToGate:
             case MinerActivity.Returning:
                 Travel();
+                break;
+            case MinerActivity.Jumping when Work.ActiveTicks >= Work.DueTicks:
+                CompleteExpeditionJump();
                 break;
             case MinerActivity.ApproachingOre:
                 Approach();
@@ -570,18 +734,72 @@ internal sealed class CapsuleerMiner(
         }
     }
 
+    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.SystemId, Pilot.RegionId);
+
+    internal void RefreshCorporation()
+    {
+        if (
+            _pilot is not null
+            && Live is { } live
+            && live.Economy.CorporationAffiliation(pilotId) != (_pilot.CorpId, _pilot.Identity.AllianceId)
+        )
+        {
+            var current = ships.FindPilot(CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            _pilot = _pilot with { Identity = current.Identity };
+        }
+    }
+
+    private void JoinCorporationAtDock()
+    {
+        if (
+            Live is not null
+            && _operation.World is EconomyTransaction world
+            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now, Work.ActiveTicks)
+        )
+        {
+            _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+        }
+    }
+
     private void PrepareTrip()
     {
+        bool fresh = database.Settings.FreshUniverse;
+        if (LeaveUnavailableFactory())
+        {
+            return;
+        }
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            throw new InvalidDataException("Waiting for a replacement mining ship.");
+            if (!fresh)
+            {
+                AttemptShipReplacement();
+                return;
+            }
+            _pilot = fleet.RecoverCorvette(_operation.World, _operation.Catalog, pilotId, Pilot.ShipId, Pilot.StationId).Pilot;
+            _navigation = new();
+            _work = Work with { ShipId = Pilot.ShipId, Navigation = _navigation.Capture(), PaidUntil = 0, ModuleId = 0 };
         }
-        CapsuleerSupplyStore.Ensure(
-            _operation.World,
-            _operation.Catalog,
-            pilotId,
-            _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!.FounderShipId
-        );
+        using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCorporation"))
+        {
+            JoinCorporationAtDock();
+            if (TryCorporationRelocation())
+            {
+                return;
+            }
+        }
+        if (Work.FactoryStage is not null && _operation.World is EconomyTransaction stagedWorld)
+        {
+            UnloadFactoryCargo(stagedWorld);
+        }
+        if (!fresh)
+        {
+            CapsuleerSupplyStore.Ensure(
+                _operation.World,
+                _operation.Catalog,
+                pilotId,
+                _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!.FounderShipId
+            );
+        }
         var aboard = PilotInventoryStore.List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId);
         var ore = aboard.Where(i => i.CategoryId == AsteroidDefinitions.Category && ShipHoldRules.IsHold(i.FlagId)).ToArray();
         if (ore.Length > 0)
@@ -590,25 +808,148 @@ internal sealed class CapsuleerMiner(
                 _operation.World,
                 _operation.Catalog,
                 Pilot.PilotId,
-                Pilot.StationId,
+                Pilot.DockedLocationId,
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
         }
-        _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));
+        FactorySupplyRequest? supply = null;
+        CapsuleerIndustry.MoonMiningTrip? moon = null;
+        bool starterTradeSettled = fresh && CapsuleerIndustry.StarterTradeSettled(_operation.World, pilotId);
+        if (fresh && !starterTradeSettled && _operation.World is EconomyTransaction starterWorld)
+        {
+            _operation.MarketChanged |= industry.WorkStarterIndustry(starterWorld, _operation.Catalog, Pilot, Now, out var oreTypes);
+            _work = Work with { StarterOreTypes = oreTypes };
+        }
+        if (
+            fresh
+            && starterTradeSettled
+            && Pilot.ShipGroupId != (int)HullClass.Corvette
+            && _operation.World is EconomyTransaction freshFactory
+            && CapsuleerIndustry.Employer(freshFactory, pilotId, Pilot.CorpId) is not null
+        )
+        {
+            _operation.MarketChanged |= industry.ProduceScheduled(freshFactory, _operation.Catalog, Pilot, Now, out supply);
+        }
+        if (
+            !fresh
+            && Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
+            && _operation.World is EconomyTransaction supplyWorld
+        )
+        {
+            using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerIndustry");
+            var moonSupply = CapsuleerIndustry.AssignedMoonSupply(supplyWorld, Pilot, Now);
+            industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot, sponsored: moonSupply is not null);
+            if (moonSupply is not null && TryTravelToMoonSupply(moonSupply))
+            {
+                return;
+            }
+            if (moonSupply is not null && TryReturnMoonProducts(supplyWorld, moonSupply))
+            {
+                return;
+            }
+            if (TryStageFactory(supplyWorld))
+            {
+                return;
+            }
+            if (moonSupply is not null && !Pilot.InStructure)
+            {
+                industry.SettleMoonStationJobs(supplyWorld, _operation.Catalog, Pilot, Now);
+            }
+            else
+            {
+                _operation.MarketChanged |= industry.ProduceScheduled(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
+            }
+            if (moonSupply is not null)
+            {
+                if (TryReturnMoonProducts(supplyWorld, moonSupply))
+                {
+                    return;
+                }
+                if (Pilot.InStructure)
+                {
+                    if (CapsuleerIndustry.HasPendingMoonJob(supplyWorld, Pilot.PilotId))
+                    {
+                        _work = Work with { DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks };
+                    }
+                    else
+                    {
+                        ReturnFromFactory();
+                    }
+                    return;
+                }
+                _operation.MarketChanged |= industry.PrepareMoonSupply(
+                    supplyWorld,
+                    _operation.Catalog,
+                    Pilot,
+                    moonSupply,
+                    Now,
+                    out var supplies,
+                    out var ice
+                );
+                supply ??= supplies;
+                if (ice.Length > 0 && TryLaunchRefineryIce(supplyWorld, aboard, ice))
+                {
+                    _work = Work with { FactorySupply = supply };
+                    return;
+                }
+            }
+            moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now, moonSupply);
+        }
+        _work = Work with { FactorySupply = supply };
+        if (_operation.World is EconomyTransaction resident)
+        {
+            using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCareer");
+            var training = careerTraining.Advance(resident, _operation.Catalog, Pilot, CapsuleerProfession.Mining, Work.CareerPlan, Now);
+            _work = Work with { CareerPlan = training.Plan };
+            _operation.MarketChanged |= training.MarketChanged;
+            if (training.LevelChanged)
+            {
+                _pilot = ships.FindPilot(resident, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            }
+            bool starterWorkshop =
+                fresh && CapsuleerProvisioningCatalog.StarterIndustry(_operation.Catalog, Pilot.SystemId).HomeStationId == Pilot.StationId;
+            if (!fresh || starterTradeSettled)
+            {
+                var fleetDemand =
+                    starterWorkshop && starterTradeSettled
+                        ? industry.WorkStarterFleetOrders(resident, _operation.Catalog, Pilot, Now)
+                        : null;
+                var acquisition =
+                    fleetDemand ?? industry.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now, starterWorkshop);
+                _operation.MarketChanged |= acquisition.MarketChanged;
+                if (starterWorkshop)
+                {
+                    _work = Work with { StarterOreTypes = acquisition.OreTypes ?? [] };
+                }
+                if (acquisition.Boarded)
+                {
+                    _pilot = ships.FindPilot(resident, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+                    ResetMiningHull();
+                    aboard = PilotInventoryStore.List(resident, _operation.Catalog, pilotId, Pilot.ShipId);
+                }
+            }
+        }
+        using var equipment = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerEquipment");
+        var expedition = !fresh && moon is null ? PrepareMercoxitExpedition(aboard) : null;
+        var laserType =
+            fresh && Pilot.ShipGroupId == (int)HullClass.Corvette ? MiningLaserType.Civilian
+            : expedition is null ? CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId)
+            : MiningLaserType.DeepCoreMiningLaserI;
+        _laser = aboard.FirstOrDefault(i => i.TypeId == (int)laserType && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)
         {
             var kit =
                 PilotInventoryStore
-                    .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.StationId)
-                    .FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI)
+                    .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.DockedLocationId)
+                    .FirstOrDefault(i => i.TypeId == (int)laserType)
                 ?? throw new InvalidDataException("Waiting for a mining laser.");
             PilotFittingStore.Fit(
                 _operation.World,
                 _operation.Catalog,
                 Pilot.PilotId,
                 [kit.Id],
-                Pilot.StationId,
+                Pilot.DockedLocationId,
                 (int)InventoryFlag.AutoFit,
                 Now
             );
@@ -621,43 +962,101 @@ internal sealed class CapsuleerMiner(
             PilotFittingStore.SetOnline(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, _laser.Id, true, Now);
             _laser = _laser with { Online = true };
         }
+        _miningReach = MiningReach(_operation.World, _operation.Catalog, _laser);
         RefreshObjects();
-        var fields = _objects
-            .Where(o =>
-                o.GroupId == AsteroidDefinitions.BeltGroup && CapsuleerProvisioningCatalog.UsableOre(_operation.Catalog, checked((int)o.Id))
-            )
-            .OrderBy(o => o.Id)
-            .ToArray();
-        if (fields.Length == 0)
+        _work = Work with { StrippedBelts = Work.StrippedBelts.Where(b => b.Until > Work.ActiveTicks).ToArray() };
+        if (moon is not null)
         {
-            throw new InvalidDataException("Waiting for a known asteroid belt.");
+            _work = Work with { MoonExtractionId = moon.ExtractionId, Mercoxit = null };
+            LaunchMiningShip(moon.MoonId);
+            StartCourse(moon.Target, MinerActivity.FlyingToBelt);
+            return;
         }
-        if (database.Settings.Capsuleers.SituationalAwareness && Work.AvoidedBelts.Length > 0)
+        if (expedition is not null && expedition.Systems.Length > 1)
         {
-            var permitted = fields.Where(f => !Work.AvoidedBelts.Any(b => b.BeltId == f.Id && b.Until > Work.ActiveTicks)).ToArray();
-            if (permitted.Length == 0)
+            LaunchMiningShip(0);
+            ContinueExpedition(expedition);
+            return;
+        }
+        _work = Work with { Mercoxit = expedition };
+        var field = NextBelt(out long retryAt, out bool knownBelts);
+        if (field is null)
+        {
+            _work = Work with
             {
-                long ready = Work.AvoidedBelts.Where(b => b.Until > Work.ActiveTicks).Min(b => b.Until);
-                _work = Work with
-                {
-                    Activity = MinerActivity.Waiting,
-                    DueTicks = ready,
-                    DueStamp = CapsuleerScheduleRules.Stamp(ready, Work.ClockOffsetTicks),
-                    WaitingReason = "Sheltering until the belt is clear.",
-                };
-                return;
-            }
-            fields = permitted;
+                Activity = MinerActivity.Waiting,
+                DueTicks = retryAt,
+                DueStamp = CapsuleerScheduleRules.Stamp(retryAt, Work.ClockOffsetTicks),
+                WaitingReason =
+                    !knownBelts ? "Waiting for a known asteroid belt."
+                    : Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear."
+                    : "Waiting to revisit stripped belts.",
+            };
+            return;
         }
-        var field = fields[(int)((uint)(_seed + Work.Trips) % (uint)fields.Length)];
+        LaunchMiningShip(field.Id);
+        StartCourse(field, MinerActivity.FlyingToBelt);
+    }
+
+    private void LaunchMiningShip(long belt)
+    {
+        UndockMiner();
+        _work = Work with { ModuleId = _laser!.Id, Cycles = 0, Trips = Work.Trips + 1, WorkingBelt = belt, LeaveAfterCycle = false };
+    }
+
+    private void UndockMiner()
+    {
         var launch = StationUndocking.Launch(Pilot.ShipId, Pilot.Home, Pilot.Flight);
         SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, launch.Position, Pilot.SystemId, Now);
         _operation.TravelChanged = true;
         _pilot = Pilot with { Position = launch.Position };
         _navigation.AdoptHull();
         _navigation.SetVelocity(launch.Velocity);
-        _work = Work with { ModuleId = _laser.Id, Cycles = 0, Trips = Work.Trips + 1, WorkingBelt = field.Id, LeaveAfterCycle = false };
-        StartCourse(field, MinerActivity.FlyingToBelt);
+    }
+
+    private StaticSpaceObject? NextBelt(out long retryAt, out bool knownBelts)
+    {
+        var fields = _objects
+            .Where(o =>
+                o.GroupId == AsteroidDefinitions.BeltGroup
+                && (
+                    Work.Mercoxit is null
+                        ? database.Catalog.Definition(s_miningBelt, checked((int)o.Id))
+                            && (
+                                Work.StarterOreTypes.Length == 0
+                                || CapsuleerProvisioningCatalog.BeltHasOre(_operation.Catalog, o.Id, Work.StarterOreTypes)
+                            )
+                        : CapsuleerTrafficRoutes.MercoxitBelt(_operation.Catalog, o.Id)
+                )
+            )
+            .OrderBy(o => o.Id)
+            .ToArray();
+        knownBelts = fields.Length > 0;
+        if (!knownBelts)
+        {
+            // The docked industry action can commit while there is no mining trip available.
+            retryAt = checked(Work.ActiveTicks + TimeSpan.FromSeconds(RetrySeconds).Ticks);
+            return null;
+        }
+        var peers = Crewmates().ToArray();
+        long elapsed = Work.ActiveTicks;
+        BeltMemory[] stripped = [.. Work.StrippedBelts, .. peers.SelectMany(work => work.StrippedBelts)];
+        BeltMemory[] avoided = database.Settings.Capsuleers.SituationalAwareness
+            ? [.. Work.AvoidedBelts, .. peers.SelectMany(work => work.AvoidedBelts)]
+            : [];
+        var occupied = peers
+            .Where(CapsuleerMiningRules.WorkingField)
+            .Select(work => (long?)work.WorkingBelt)
+            .Where(belt =>
+                !stripped.Any(b => b.BeltId == belt && b.Until > elapsed) && !avoided.Any(b => b.BeltId == belt && b.Until > elapsed)
+            )
+            .Min();
+        if (occupied is long belt && fields.FirstOrDefault(field => field.Id == belt) is { } shared)
+        {
+            retryAt = 0;
+            return shared;
+        }
+        return PilotAwareness.NextMiningBelt(fields, unchecked(_seed + Work.Trips), stripped, avoided, elapsed, out retryAt);
     }
 
     private void StartCourse(StaticSpaceObject target, MinerActivity activity)
@@ -668,10 +1067,10 @@ internal sealed class CapsuleerMiner(
         {
             throw new InvalidDataException("Warp disruption prevents the miner from leaving.");
         }
-        if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, target, 0, Work.Stamp))
+        _work = Work with
         {
-            Follow(target);
-        }
+            WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, new(Pilot, target, Work.Stamp, ApproachRange), Work.ActiveTicks),
+        };
     }
 
     private void Follow(StaticSpaceObject target) =>
@@ -687,7 +1086,20 @@ internal sealed class CapsuleerMiner(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
-        if (_target is not null && (_navigation.WarpDestination is not null || Work.EscapingBubble))
+        if (_target is not null)
+        {
+            _work = Work with
+            {
+                WarpReadyAt = CapsuleerWarpRules.Advance(
+                    _navigation,
+                    new(Pilot, _target, Work.Stamp, ApproachRange),
+                    Work.WarpReadyAt,
+                    Work.ActiveTicks,
+                    _warpBlocked
+                ),
+            };
+        }
+        if (_target is not null && Work.ActiveTicks >= Work.WarpReadyAt && (_navigation.WarpDestination is not null || Work.EscapingBubble))
         {
             bool escaping = defense.NavigateField(
                 Pilot,
@@ -731,20 +1143,52 @@ internal sealed class CapsuleerMiner(
 
     private void Travel()
     {
-        Move();
-        if (_navigation.Warp is not null || _navigation.WarpDestination is not null || Work.EscapingBubble)
+        if (Work.Activity == MinerActivity.Returning && _target is null)
         {
+            ReturnHome();
+            return;
+        }
+        Move();
+        if (
+            _navigation.Warp is not null
+            || _navigation.WarpDestination is not null
+            || Work.EscapingBubble
+            || Work.WarpReadyAt > Work.ActiveTicks
+        )
+        {
+            return;
+        }
+        if (Work.Activity == MinerActivity.FlyingToGate)
+        {
+            ArriveAtExpeditionGate();
             return;
         }
         if (Work.Activity == MinerActivity.Returning)
         {
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
-                _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
+                if (
+                    Work.FactoryStage is { StructureId: > 0 } stage
+                    && _target!.Id == stage.StructureId
+                    && FactoryTarget(_operation.World, _operation.Catalog, stage.StructureId) is null
+                )
+                {
+                    ReturnHome();
+                    return;
+                }
+                _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, _target!.Id);
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
-                _work = Work with { Activity = MinerActivity.Docked, TargetId = 0 };
+                _work = Work with
+                {
+                    Activity = MinerActivity.Docked,
+                    TargetId = 0,
+                    Mercoxit = null,
+                    MoonExtractionId = null,
+                    RefineryIceType = null,
+                };
+                FinishCorporationRelocation();
             }
             else
             {
@@ -752,27 +1196,74 @@ internal sealed class CapsuleerMiner(
             }
             return;
         }
+        // Finish a short subwarp leg before judging whether the destination field is stripped.
+        if (_target is { GroupId: AsteroidDefinitions.BeltGroup } belt && Distance(belt) > AsteroidDefinitions.OuterFieldRadius)
+        {
+            Follow(belt);
+            return;
+        }
+        FindOre();
+    }
+
+    private void FindOre()
+    {
         var available = _operation.HasWorld
             ? AsteroidFieldStore.List(_operation.World, _operation.Catalog, Pilot.SystemId)
             : belts.List(Pilot.SystemId);
-        var rock =
-            available.Where(o => Distance(o) <= AsteroidDefinitions.VisibilityRange).MinBy(o => Distance(o))
-            ?? throw new InvalidDataException("No ore is visible at this belt.");
+        var rock = SelectRock(available);
+        if (rock is null)
+        {
+            if (Work.MoonExtractionId.HasValue || Work.RefineryIceType.HasValue)
+            {
+                ReturnHome();
+                return;
+            }
+            if (Work.WorkingBelt > 0)
+            {
+                // Keep the whole outbound circuit, including systems with more than six belts.
+                _work = Work with
+                {
+                    StrippedBelts =
+                    [
+                        .. Work.StrippedBelts.Where(b => b.BeltId != Work.WorkingBelt),
+                        new(Work.WorkingBelt, checked(Work.ActiveTicks + PilotAwareness.MemoryTicks)),
+                    ],
+                };
+            }
+            var next = NextBelt(out _, out _);
+            if (next is null)
+            {
+                ReturnHome();
+                return;
+            }
+            _work = Work with { WorkingBelt = next.Id };
+            StartCourse(next, MinerActivity.FlyingToBelt);
+            return;
+        }
         _target = rock;
-        Follow(rock);
+        _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position!, Pilot.Flight.ShipRadius, rock, _miningReach, false, true);
         _work = Work with { Activity = MinerActivity.ApproachingOre, TargetId = rock.Id };
     }
 
     private void Approach()
     {
-        if (_target is not { } target || _laser is null)
+        if (_target is null)
+        {
+            FindOre();
+            return;
+        }
+        var target = _target;
+        if (_laser is null)
         {
             throw new InvalidDataException("Mining target or fitted laser unavailable.");
         }
-        Move();
-        if (Distance(target) > ApproachRange * 2)
+        if (Distance(target) > _miningReach)
         {
-            return;
+            Move();
+            if (Distance(target) > _miningReach)
+            {
+                return;
+            }
         }
         var attributes = _operation.HasWorld
             ? PilotFittingStore.ShipAttributes(_operation.World, _operation.Catalog, Pilot.PilotId)
@@ -807,15 +1298,22 @@ internal sealed class CapsuleerMiner(
     {
         var world = _operation.World;
         var catalog = _operation.Catalog;
-        var start = PilotMiningStore.Begin(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, Now);
+        if (world.Set<WorldAsteroid>().Find(Work.TargetId) is not { Quantity: > 0 })
+        {
+            FindOre();
+            return;
+        }
+        long now = Now;
+        var start = PilotMiningStore.Begin(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, now);
+        long duration = checked((long)Math.Ceiling(start.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         int seconds = checked((int)Math.Ceiling(start.Laser.DurationMilliseconds / 1000));
         var next = Work with
         {
             Activity = MinerActivity.Mining,
             DueStamp = Work.Stamp + seconds,
             CycleSeconds = seconds,
-            DueTicks = checked(Work.ActiveTicks + (long)Math.Ceiling(start.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond)),
-            PaidUntil = checked(Now + (long)(start.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond)),
+            DueTicks = checked(Work.ActiveTicks + duration),
+            PaidUntil = checked(now + duration),
             Navigation = _navigation.Capture(),
         };
         _work = next;
@@ -827,44 +1325,81 @@ internal sealed class CapsuleerMiner(
         var catalog = _operation.Catalog;
         if (world.Set<WorldAsteroid>().Find(Work.TargetId) is not { Quantity: > 0 })
         {
-            var searching = Work with { Activity = MinerActivity.FlyingToBelt, Navigation = _navigation.Capture() };
-            _work = searching;
+            StopPaidCycle();
+            if (Work.LeaveAfterCycle && database.Settings.Capsuleers.SituationalAwareness)
+            {
+                LeaveThreatenedBelt();
+                return;
+            }
+            FindOre();
             return;
         }
         var random = new Random(unchecked(_seed + Work.DueStamp));
         MiningRolls rolls = new(random.NextDouble(), random.NextDouble(), random.NextDouble(), random.NextDouble(), random.NextDouble());
         var result = PilotMiningStore.Collect(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, new(1, true, rolls), Now);
-        var next = Work with { Activity = MinerActivity.Locking, Cycles = checked(Work.Cycles + 1), Navigation = _navigation.Capture() };
-        if (result.CargoFull)
-        {
-            next = next with { Activity = MinerActivity.ReadyToReturn };
-        }
-        if (result.Depleted && !result.CargoFull)
-        {
-            next = next with { Activity = MinerActivity.FlyingToBelt };
-        }
+        _work = Work with { Activity = MinerActivity.Locking, Cycles = checked(Work.Cycles + 1), PaidUntil = 0 };
         if (Work.LeaveAfterCycle && database.Settings.Capsuleers.SituationalAwareness)
         {
-            next = next with
-            {
-                Activity = MinerActivity.ReadyToReturn,
-                LeaveAfterCycle = false,
-                AvoidedBelts = PilotAwareness.Remember(Work.AvoidedBelts, Work.WorkingBelt, Work.ActiveTicks),
-            };
+            LeaveThreatenedBelt();
         }
-        _work = next;
+        else if (
+            result.CargoFull
+            || Work.MoonExtractionId.HasValue && MoonOreReadyToRefine(world, catalog)
+            || Work.FactoryStage is { StructureId: > 0 } stage
+                && CapsuleerIndustry.FactoryDeliveryReady(world, catalog, Pilot, stage.StructureId, Now)
+        )
+        {
+            _work = Work with { Activity = MinerActivity.ReadyToReturn };
+        }
+        else if (result.Depleted)
+        {
+            FindOre();
+        }
     }
 
-    private void ReturnHome()
+    private void LeaveThreatenedBelt() =>
+        _work = Work with
+        {
+            Activity = MinerActivity.ReadyToReturn,
+            LeaveAfterCycle = false,
+            AvoidedBelts = PilotAwareness.Remember(Work.AvoidedBelts, Work.WorkingBelt, Work.ActiveTicks),
+        };
+
+    private void StopPaidCycle()
     {
         if (Work.PaidUntil != 0)
         {
             PilotMiningStore.Stop(_operation.World, Pilot.PilotId, Work.ModuleId, Work.PaidUntil);
             _work = Work with { PaidUntil = 0 };
         }
+    }
+
+    private void ReturnHome()
+    {
+        StopPaidCycle();
         if (_objects.Count == 0)
         {
             RefreshObjects();
+        }
+        if (Work.Mercoxit is null && _operation.World is EconomyTransaction world && ContinueCorporationRelocation(world))
+        {
+            return;
+        }
+        if (Work.Mercoxit is { } expedition)
+        {
+            ContinueExpedition(expedition with { Returning = true });
+            return;
+        }
+        if (Work.FactoryStage is { } stage)
+        {
+            if (stage.StructureId > 0 && FactoryTarget(_operation.World, _operation.Catalog, stage.StructureId) is { } factory)
+            {
+                StartCourse(factory, MinerActivity.Returning);
+                return;
+            }
+            _work = Work with { FactoryStage = stage with { StructureId = 0 } };
+            StartCourse(_objects.Single(o => o.Id == stage.StationId), MinerActivity.Returning);
+            return;
         }
         StartCourse(_objects.Single(o => o.Id == Pilot.StationId), MinerActivity.Returning);
     }

@@ -1,9 +1,11 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Alliances;
 using Eden.Protocol.Docking;
+using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -22,6 +24,8 @@ internal sealed partial class CorporationHandler(
     AllianceSocialMonitor allianceSocial
 ) : ISelectedPilotCallHandler
 {
+    private MilitiaAffiliation? _lastMilitia;
+
     public void Advance(PilotCallContext context)
     {
         if (!context.Selected)
@@ -32,12 +36,19 @@ internal sealed partial class CorporationHandler(
         DrainAllianceChanges(context);
         allianceSocial.Advance(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
+        var militia = identity.Militia;
+        if (_lastMilitia is not null && _lastMilitia != militia || context.Pilot.Identity.WarFaction != identity.WarFaction)
+        {
+            context.Notifications.Add(new MilitiaEnlistmentUpdated(militia ?? new(null, null, 0)));
+        }
+        _lastMilitia = militia;
         if (
             context.Pilot.CorpId == identity.Id
             && context.Pilot.Identity.CorporationRoles == identity.Roles
             && context.Pilot.Identity.CorporationAccess == identity.Access
             && context.Pilot.Identity.CorporationAccountKey == identity.AccountKey
             && context.Pilot.Identity.AllianceId == identity.AllianceId
+            && context.Pilot.Identity.WarFaction == identity.WarFaction
         )
         {
             return;

@@ -56,6 +56,7 @@ internal static class WormholeCatalog
                 types.Add(type.Id, profile);
             }
         }
+        var anchors = catalog.FirstCelestialPositions();
         Dictionary<int, WormholeSystem> systems = [];
         foreach (var (id, source) in catalog.Records(CatalogData.Client.Systems))
         {
@@ -67,10 +68,9 @@ internal static class WormholeCatalog
             {
                 continue;
             }
-            var anchor = catalog.CelestialsInSystem((int)id).OrderBy(c => c.Id).FirstOrDefault();
-            if (anchor is not null)
+            if (anchors.TryGetValue((int)id, out var anchor))
             {
-                systems.Add((int)id, new((int)id, (int)source.WormholeClassID.Value, new(anchor.X, anchor.Y, anchor.Z)));
+                systems.Add((int)id, new((int)id, (int)source.WormholeClassID.Value, anchor));
             }
         }
         var classes = systems.Values.GroupBy(s => s.Class).ToFrozenDictionary(g => g.Key, g => g.OrderBy(s => s.Id).ToArray());

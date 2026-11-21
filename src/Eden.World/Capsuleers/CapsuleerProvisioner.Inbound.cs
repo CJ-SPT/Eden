@@ -19,12 +19,16 @@ internal sealed partial class CapsuleerProvisioner
         CancellationToken cancellationToken
     )
     {
+        if (database.Settings.FreshUniverse)
+        {
+            return null;
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         _startupBlueprints?.BeginPreparation();
         var gate = request.Gate;
         using (synchronization.Enter("inbound observer snapshot"))
         {
-            if (!BothOccupied(gate))
+            if (!ReceiverOccupied(gate))
             {
                 return null;
             }
@@ -32,8 +36,8 @@ internal sealed partial class CapsuleerProvisioner
         int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
         int slot = checked(gateSlot + request.Visitor * TrafficJourneyRules.VisitorSlotStride);
         int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
-        var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, request.BothObserved, request.Visitor);
-        if (route is null || route.Systems[0] != gate.SourceSystemId)
+        var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, request.BothObserved, request.Visitor, database.Settings.Capsuleers);
+        if (route is null)
         {
             return null;
         }
@@ -70,6 +74,11 @@ internal sealed partial class CapsuleerProvisioner
             {
                 return snapshot.Existing;
             }
+            int cap = database.Settings.Capsuleers.ActivePilotCap;
+            if (cap > 0 && LiveWorld.Find(database.Path) is { } live && live.Economy.AdmittedCapsuleerCount >= cap)
+            {
+                return null;
+            }
             seed = snapshot.Seed;
             reservations = snapshot.Reservations!;
             roster = snapshot.Roster;
@@ -82,17 +91,24 @@ internal sealed partial class CapsuleerProvisioner
         }
         PrepareMovementCatalog(catalog, route.Systems);
         {
-            var profile = TrafficProvisioning.SelectPrepared(
-                database,
+            var profile = CapsuleerPatrolFit.Select(
                 catalog,
+                database.Settings.Capsuleers,
                 seed,
                 community,
                 slot,
-                route,
-                reservations: reservations,
-                roster: roster
+                () =>
+                    TrafficProvisioning.SelectPrepared(
+                        database,
+                        catalog,
+                        seed,
+                        community,
+                        slot,
+                        route,
+                        reservations: reservations,
+                        roster: roster
+                    )
             );
-            profile ??= CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, community, slot);
             if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
             {
                 return null;
@@ -107,7 +123,7 @@ internal sealed partial class CapsuleerProvisioner
         }
         cancellationToken.ThrowIfCancellationRequested();
         using var owner = synchronization.Enter("inbound prepared founder");
-        if (!BothOccupied(gate))
+        if (!ReceiverOccupied(gate))
         {
             return null;
         }
@@ -131,23 +147,27 @@ internal sealed partial class CapsuleerProvisioner
         }
     }
 
-    private bool BothOccupied(WatchedTrafficGate gate)
+    private bool ReceiverOccupied(WatchedTrafficGate gate)
     {
         var systems = LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems;
-        return systems?.Contains(gate.SourceSystemId) == true && systems.Contains(gate.ObserverSystemId);
+        return systems?.Contains(gate.ObserverSystemId) == true;
     }
 
     internal long? EnsureInbound(WatchedTrafficGate gate, bool sourceObserved = false, int visitor = 0)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(visitor);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(visitor, CapsuleerPopulationRules.MaximumGateVisitors);
+        if (database.Settings.FreshUniverse)
+        {
+            return null;
+        }
         using (database.EnterMovement())
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
             sourceObserved =
                 sourceObserved
                 || LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems.Contains(gate.SourceSystemId) == true;
-            var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved, visitor);
+            var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved, visitor, database.Settings.Capsuleers);
             if (route is null)
             {
                 return null;
@@ -181,6 +201,13 @@ internal sealed partial class CapsuleerProvisioner
             }
             var policy = world.Settings.Capsuleers;
             if (!policy.Enabled || visitor >= policy.GateVisitors)
+            {
+                return null;
+            }
+            if (
+                policy.ActivePilotCap > 0
+                && world.Set<SavedCapsuleerAgent>().Count() - world.Set<SavedCapsuleerSuspension>().Count() >= policy.ActivePilotCap
+            )
             {
                 return null;
             }

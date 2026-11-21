@@ -27,6 +27,7 @@ internal sealed class CapsuleerOperation(
     internal bool MarketChanged { get; set; }
     internal bool TravelChanged { get; set; }
     internal bool HasWorld => _action is not null;
+    internal List<HaulerCheckpoint> GangEnrollments { get; } = [];
 
     internal WorldAction World
     {
@@ -35,12 +36,10 @@ internal sealed class CapsuleerOperation(
             if (_action is null)
             {
                 var live = LiveWorld.Find(database.Path);
-                long ship =
-                    live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
-                    ?? live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
-                    ?? 0;
-                TransactionParticipants? participants = declared ?? new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
+                var miner = live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
                 var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
+                long ship = miner?.ShipId ?? work?.ShipId ?? 0;
+                TransactionParticipants? participants = declared ?? new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
                 bool inbound = expected.Action == CapsuleerAction.Arrival && work?.Activity == HaulerActivity.Inbound;
                 if (coarse is not null)
                 {
@@ -48,7 +47,10 @@ internal sealed class CapsuleerOperation(
                 }
                 else if (expected.Action == CapsuleerAction.GateTransfer || inbound)
                 {
-                    long? sourceGate = inbound ? work?.TrafficLane?.DepartureGateId : work?.TargetId;
+                    long? sourceGate =
+                        inbound ? work?.TrafficLane?.DepartureGateId
+                        : miner is { Activity: MinerActivity.Jumping } ? miner.TargetId
+                        : work?.TargetId;
                     if (sourceGate is > 0 and <= int.MaxValue && database.Catalog.Gates.TryGetValue((int)sourceGate, out var gate))
                     {
                         participants = new(
@@ -90,6 +92,23 @@ internal sealed class CapsuleerOperation(
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.commitPublication");
         var live = LiveWorld.Find(database.Path);
+        if (
+            hauler is not null
+            && live?.HaulerCheckpoints.GetValueOrDefault(hauler.PilotId)?.Work.Gang is { } committedGang
+            && (
+                hauler.Work.Gang is null
+                || hauler.Work.Gang.Id == committedGang.Id
+                    && hauler.Work.Gang.Sequence == committedGang.Sequence
+                    && hauler.Work.Gang.Revision < committedGang.Revision
+            )
+        )
+        {
+            // A paused or sampled worker may still hold an earlier command revision.
+            hauler = hauler with
+            {
+                Work = hauler.Work with { Gang = committedGang },
+            };
+        }
         if (live?.CapsuleerJobs.TryGetValue(expected.PilotId, out var current) == true && current != expected)
         {
             throw new InvalidOperationException("A stale capsuleer job cannot commit.");
@@ -132,6 +151,41 @@ internal sealed class CapsuleerOperation(
         }
         if (live is not null)
         {
+            if (
+                database.Settings.Capsuleers.RegionalConflicts
+                && hauler is not null
+                && hauler.Work.RegionalEscort is null
+                && !hauler.Work.Retreating
+                && live.HaulerCheckpoints.GetValueOrDefault(hauler.PilotId)?.Work.RegionalEscort is { } escort
+                && escort.ShipId == hauler.Work.ShipId
+                && hauler.Work.ActiveTicks < escort.Operation.ExpiresAt
+                && RegionalConflictStore.Operation(database, escort.Operation.Key)?.Status == RegionalOperationStatus.Active
+            )
+            {
+                hauler = hauler with { Work = hauler.Work with { RegionalEscort = escort } };
+            }
+            // Enrollment and shared command revisions publish only after the owning action commits.
+            // The existing checkpoint capture persists these immutable records in the same generation.
+            foreach (var enrollment in GangEnrollments)
+            {
+                live.HaulerCheckpoints[enrollment.PilotId] = enrollment;
+            }
+            if (hauler?.Work.Gang is { } gang)
+            {
+                foreach (var member in gang.Members)
+                {
+                    if (
+                        live.HaulerCheckpoints.GetValueOrDefault(member.PilotId) is { } checkpoint
+                        && checkpoint.Work.Gang is { } previous
+                        && previous.Id == gang.Id
+                        && previous.Sequence == gang.Sequence
+                        && previous.Revision < gang.Revision
+                    )
+                    {
+                        live.HaulerCheckpoints[member.PilotId] = checkpoint with { Work = checkpoint.Work with { Gang = gang } };
+                    }
+                }
+            }
             if (miner is not null)
             {
                 live.MinerCheckpoints[miner.PilotId] = miner;

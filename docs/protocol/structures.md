@@ -16,6 +16,50 @@ Historical foundation limitations below describe their original milestones; this
 | Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers and targeted stasis webifiers implemented. Other EWAR, warp tackle and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
+### Structures gap audit
+
+The defense branch covers resident gunner leases, fitting, target locks, ammunition, defensive missiles against ships and
+drones, capacitor warfare and targeted webs. The integration uses that lease for Standup fighter assignment and automatic
+recall. Ship locks on the structure survive a change of gunner. Controlled flight snapshots use the structure as the
+ballpark ego while the pilot's personal ship stays docked. Schema 214 adds structure tackle source support to main's
+schema 213 and also accepts the earlier structure-branch format.
+
+| Area | Existing coverage and remaining gaps |
+| --- | --- |
+| Defense | Launch and recall of Standup fighters, guided missiles, webs and neutralizers work. Scripted warp tackle, other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
+| Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
+| Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
+| Deployment | Corporation age, collision separation, some restricted systems, cores and hull restrictions are enforced. The full restricted-system list and conquest-index anchoring rules still need pinned coverage. |
+
+The service audit compared Eden's onlining allowlist and directory routes with EVE.js **261108.1** and CCP's published
+profiles and hull rules. The EVE.js reference manifest records the checked profile and service module hashes. Service
+coverage for the navigation hulls and Skyhooks is recorded on the [capital travel](capital-logistics.md#pharolux-and-tenebrex)
+and [sovereignty](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) pages.
+[CCP Upwell quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts) ·
+[CCP structure profiles](https://support.eveonline.com/hc/en-us/articles/208289635-Profiles) ·
+[CCP Equinox notes](https://www.eveonline.com/news/view/equinox-expansion-notes) ·
+[UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures)
+
+**Automated validation**
+
+The focused integration filter joined the test namespaces or classes for `Structures`, `Docking`, `Ammunition`,
+`Propulsion`, `Flight.CapitalTravelTests`, `GateCloakTests`, `GateActivityProtocolTests`, `AutoNavigationTests`,
+`WarpCapacitorTests`, `Combat.CapacitorWarfare`, `ResidentFitTests`, `LiveSimulationTests`, `SessionPerformanceTests`,
+`AreaWeaponInteractionTests`, `CrimewatchTests`, `Persistence.WorldMigrationTests`, `DetachedCheckpointTests`,
+`PilotSessions.TypedSessionTests`, `Capsuleers.CapsuleerInboundGateAcceptanceTests` and `Hosting`.
+It completed in 570.88 seconds with 889 passed and the existing opt-in Standard market Rhea replay skipped.
+The solution built without warnings. Both Python policy suites (8 and 9 cases), CSharpier, line width and local links passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
+the other ship retains its lock on the Astrahus.
+
 ### Standup stasis webifiers
 
 A gunner can slow a locked pilot ship or NPC with a fitted, online Standup Stasis Webifier. The module uses the structure's
@@ -418,6 +462,38 @@ passed. No full .NET suite was requested or run.
 
 **Optional maintainer checks:** None required for this authority-only milestone; native defensive interaction remains
 unverified until the corresponding feature is implemented and exercised.
+### Native Upwell repair shop
+
+The November 21, 2026 EVE.js follow-up found two missing pieces in Eden's docked Upwell repair path. Pinned build
+**3662168** `base_repairshop.RepairSvc.GetRemoteRepairMgr` binds `repairSvc` with
+`(structureID, solarSystemID, groupSolarSystem)` while docked in an Upwell structure. The NPC station form uses
+`(stationID, stationID, groupStation)`. Its repair button sends `RepairItemsInStructure(itemIDs)` for Upwell facilities.
+This form has no payment argument.
+
+Eden validates the current dockable location, system and group before opening the bound repair service. Structure quotes
+show a zero ISK unit cost. The repair call commits through the resident world's existing repair transaction with its
+core, access and assembled-item ownership checks. Active hull and module damage updates use the existing client
+notifications. The free operation creates no wallet entry. NPC stations retain their paid repair path.
+
+Compared EVE.js **261108.1** (build **3396210**) `server/src/services/station/repairService.js` and `repairRuntime.js`,
+SHA-256 prefixes `49912b2b21a9` and `bec61da2c6cc`. The pinned client archive SHA-256 was
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Inspected bytecode as data.
+[EVE University Upwell services](https://wiki.eveuniversity.org/Upwell_structure#Upwell_Structure_Services) ·
+[EVE University docked repairs](https://wiki.eveuniversity.org/Overheating#Docked_repairs)
+
+**Automated validation.** The exact `UpwellRepairMonikerQuotesAndRepairsForFreeThroughTheResidentWorld` case passed
+in 6.94 seconds including the runner. It covers the native nested quote and repair requests, zero pricing, invalid
+binding and item selection, missing core, damage notifications, the wallet, and checkpointed damage.
+The solution build took 5.62 seconds with zero warnings or errors. The focused filter below passed 101 tests in
+45.27 seconds including the runner. The catalog and formatting policy suites passed eight and nine cases respectively.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Repair.RepairTests|FullyQualifiedName~StructureServiceTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~RepairHeatTests|FullyQualifiedName~StructureTetherTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Dock a damaged ship in a cored Upwell structure and use the repair shop's Repair All action.
 
 ### Resident tethering and repair
 

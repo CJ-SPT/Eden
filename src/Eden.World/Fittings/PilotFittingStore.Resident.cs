@@ -15,6 +15,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Sovereignty;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -61,6 +62,7 @@ internal sealed partial class PilotFittingStore
         var usage = calculation.ResourceUsage(catalog);
         var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
         WorldTuningRules.ScaleMiningHolds(world.Settings.MiningHolds, result);
+        WorldTuningRules.ScaleFitting(world.Settings.ShipFitting, result);
         WorldTuningRules.ScaleTravel(world.Settings.Navigation, result);
         world.StageFit(key, revision, result);
         return result;
@@ -73,6 +75,20 @@ internal sealed partial class PilotFittingStore
             double npcSignature = PlayerEwarStore
                 .NpcAttributes(world, itemId, ReadAttributes(catalog, typeId))
                 .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+            if (npcSignature <= 0 && typeId == SovereigntyWarfareRules.CommandNodeTypeId)
+            {
+                // Build 3662168 command nodes omit the dogma signature attribute.
+                return Math.Max(1, catalog.FittingType(typeId)?.Radius ?? 0);
+            }
+            if (
+                npcSignature <= 0
+                && world.Set<Eden.Data.World.Mining.WorldAsteroid>().Find(itemId) is { } asteroid
+                && asteroid.TypeId == typeId
+            )
+            {
+                // Mineable ore and ice can omit signature data. The spawned deposit has a physical radius.
+                return asteroid.Radius;
+            }
             if (npcSignature <= 0 && catalog.FittingType(typeId) is { GroupId: MiningDefinitions.GasCloudGroup } cloud)
             {
                 // Gas types have no dogma signature. Use their physical catalog radius for locking.
@@ -107,13 +123,17 @@ internal sealed partial class PilotFittingStore
         bool completeOnline = false,
         FittingCheckpoint? batchCheckpoint = null,
         CargoContainerAccess? containerAccess = null,
-        Ship? fittingShip = null
+        Ship? fittingShip = null,
+        bool mobileRefit = false
     )
     {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = fittingShip ?? pilot.ActiveShip;
-        RequireFittingShip(pilot, ship);
-        CheckFittingService(world, ship, pilotId);
+        if (!mobileRefit)
+        {
+            RequireFittingShip(pilot, ship);
+        }
+        CheckFittingService(world, catalog, ship, pilotId);
         bool fromContainer = sourceId != ship.Id && sourceId != ship.DockedLocationId;
         if (fromContainer)
         {
@@ -125,7 +145,7 @@ internal sealed partial class PilotFittingStore
             }
         }
         if (
-            ship.Position is not null
+            ship.Position is not null && !mobileRefit
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
             || placements is not null && (placements.Count != itemIds.Count || itemIds.Any(id => !placements.ContainsKey(id)))
@@ -208,6 +228,14 @@ internal sealed partial class PilotFittingStore
                 if (other is not null)
                 {
                     var (otherFirst, otherSlots) = SlotsFor(other.TypeId);
+                    if (
+                        mobileRefit
+                        && world.Set<ActiveFittedModule>().Find(other.Id) is { } active
+                        && (active.ExpiresAt == 0 || active.ExpiresAt > now)
+                    )
+                    {
+                        throw new InvalidDataException("Stop the active module before exchanging slots.");
+                    }
                     if (
                         other.OwnerId != pilotId
                         || !other.Singleton
@@ -329,6 +357,10 @@ internal sealed partial class PilotFittingStore
             var definition =
                 FittingCatalog.Definition(catalog, typeId)
                 ?? throw new InvalidDataException("This module family or effect is not supported yet.");
+            if (mobileRefit && definition.Rack == ModuleRack.Rig)
+            {
+                throw new InvalidDataException("This fitting service supports high, medium and low power modules.");
+            }
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
             CheckHull(catalog, typeId, ship.TypeId);
             int first = definition.FirstFlag;
@@ -351,12 +383,12 @@ internal sealed partial class PilotFittingStore
         }
     }
 
-    private static void CheckFittingService(WorldAction world, Ship ship, long pilotId)
+    private static void CheckFittingService(WorldAction world, CatalogDbContext catalog, Ship ship, long pilotId)
     {
         if (ship.Position is null && ship.StructureId is long structureId)
         {
             var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
-            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId))
             {
                 throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
             }
@@ -370,7 +402,8 @@ internal sealed partial class PilotFittingStore
         long shipId,
         long itemId,
         bool online,
-        long now
+        long now,
+        bool mobileRefit = false
     )
     {
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
@@ -383,7 +416,7 @@ internal sealed partial class PilotFittingStore
                 && i.FlagId >= (int)InventoryFlag.LowSlot0
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             );
-        if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null)
+        if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null && !mobileRefit)
         {
             throw new InvalidDataException("Change module online state on your docked active ship.");
         }
@@ -492,34 +525,37 @@ internal sealed partial class PilotFittingStore
         FittingCalculation? calculation = null
     )
     {
-        // Read mutable condition alongside pilot membership, outside the committed fitting cache.
         bool isModule = module.CategoryId == (int)InventoryCategory.Module;
-        var damage = ModuleConditionPersistence.OwnedDamage(world, pilotId, module.Id);
-        var current = world
-            .Pilots.Where(p => p.Id == pilotId)
-            .Select(p => new { Pilot = p, Damage = isModule ? damage.FirstOrDefault() : 0 })
-            .Single();
-        var pilot = current.Pilot;
-        var snapshot = calculation is null ? world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId)) : null;
-        Dictionary<DogmaAttributeId, double> attributes;
-        if (snapshot is not null)
+        var (pilot, damage) = ReadModuleCondition(world, pilotId, module.Id, isModule);
+        string? revision = calculation is null ? world.FitRevision(pilotId) : null;
+        var key = new FitCacheKey(pilotId, pilot.ActiveShipId, module.Id);
+        bool retain = revision is not null && module.Id > 0 && InventoryDefinitions.IsMiningGroup(module.GroupId);
+        var attributes = retain ? world.CachedFit(key, revision) : null;
+        if (attributes is null)
         {
-            attributes = snapshot.Modules.TryGetValue(module.Id, out var fitted)
-                ? fitted.ToDictionary()
-                : MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId).ToDictionary();
-        }
-        else
-        {
-            calculation ??= FittingCalculation.Read(world, catalog, pilot);
-            attributes = (
-                calculation.Modules.Any(m => m.Item.Id == module.Id)
-                    ? calculation.Graph.Attributes(module.Id)
-                    : MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId)
-            ).ToDictionary();
+            var snapshot = calculation is null ? world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, revision) : null;
+            IReadOnlyDictionary<DogmaAttributeId, double>? fitted = null;
+            if (snapshot is not null)
+            {
+                fitted = snapshot.Modules.GetValueOrDefault(module.Id);
+            }
+            else
+            {
+                calculation ??= FittingCalculation.Read(world, catalog, pilot);
+                if (calculation.Modules.Any(m => m.Item.Id == module.Id))
+                {
+                    fitted = calculation.Graph.Attributes(module.Id);
+                }
+            }
+            if (retain && fitted is not null)
+            {
+                world.StageFit(key, revision, fitted);
+            }
+            attributes = (fitted ?? MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId)).ToDictionary();
         }
         if (isModule)
         {
-            attributes[DogmaAttributeId.Damage] = current.Damage;
+            attributes[DogmaAttributeId.Damage] = damage;
         }
         // Deadlines are live state and must not be captured with the fitted graph.
         if (
@@ -528,6 +564,7 @@ internal sealed partial class PilotFittingStore
                     or SignatureSuppressionRules.Group
                     or SpatialModuleRules.CloakGroup
                     or SpatialModuleRules.MicroJumpGroup
+                    or SpatialModuleRules.CapitalMicroJumpGroup
             || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.AssaultDamageControl)
             || module.TypeId == BreacherRules.CounterType
         )
@@ -543,5 +580,26 @@ internal sealed partial class PilotFittingStore
             attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;
         }
         return attributes;
+    }
+
+    private static (Pilot Pilot, double Damage) ReadModuleCondition(WorldAction world, long pilotId, long moduleId, bool isModule)
+    {
+        if (world is EconomyTransaction)
+        {
+            var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidOperationException("Unknown pilot.");
+            double damage =
+                isModule
+                && world.Set<SavedModuleCondition>().Find(moduleId) is { } condition
+                && world.Set<OwnedItem>().Find(moduleId)?.OwnerId == pilotId
+                    ? condition.Damage
+                    : 0;
+            return (pilot, damage);
+        }
+        var owned = ModuleConditionPersistence.OwnedDamage(world, pilotId, moduleId);
+        var current = world
+            .Pilots.Where(p => p.Id == pilotId)
+            .Select(p => new { Pilot = p, Damage = isModule ? owned.FirstOrDefault() : 0 })
+            .Single();
+        return (current.Pilot, current.Damage);
     }
 }

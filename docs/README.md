@@ -1,16 +1,18 @@
 # Eden documentation
 
-[Upwell completion](protocol/structures.md#upwell-completion-program--november-16-2026) tracks structure combat,
-reinforcement, destruction, asset recovery and remaining services.
+[Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
+covers paid structure attacks, reinforcement, asset recovery and saved tether repairs.
 
-[Incoming structure combat and loss](protocol/structures.md#incoming-weapons-destruction-and-automatic-custody) records
-paid attacks, reinforcement eligibility, fatal custody and exact-deadline unanchoring.
+[Regional loss accounting](protocol/capsuleers.md#regional-loss-accounting-across-refuge-regions--november-17-2026)
+fixes ship-loss settlement for nullsec communities with a refuge station in another region.
 
-[Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) covers manual collection,
-timed delivery, paid recovery and public wormhole/Pochven loot.
+[Bot PvP improvements](protocol/capsuleers.md#bot-pvp-improvements--november-17-2026) records capacitor management,
+fighting retreats, shared primaries, neutral raids, saved warp preparation, movement, support assignments and paid ammo/heat decisions.
 
-[Resident tethering](protocol/structures.md#resident-tethering-and-repair) covers authoritative protection, native effect replay
-and saved, engagement-only repair settlement.
+[Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
+rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.
+
+[Smarter bots and persistent roaming gangs](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026) adds role-based hunting decisions, saved gang commands, coordinated nullsec travel and resident combat without native scenes.
 
 [Resident structure control](protocol/structures.md#resident-structure-control-authority) records exclusive leases and
 authoritative validation for subsequent defensive commands.
@@ -21,6 +23,8 @@ Standard preset's imported live order books, original locations/quantities and c
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
 
 [Sovereignty](protocol/sovereignty.md) records deployment, Entosis capture, vulnerability windows, campaigns, activity indices, capitals, live ADM, Skyhook resources and upgrades.
+
+[Faction Warfare](protocol/faction-warfare.md) records resident warzones, individual and organization enlistment, militia communications, combat, complexes, and territorial conquest.
 
 [Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
 
@@ -309,6 +313,7 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 | [Automated validation](testing.md) | Build order, focused test selection, infrastructure, reporting and documentation checks. |
 | [Formatting](../README.md#formatting) | Pinned formatters, coverage, width exceptions and editor integration. |
 | [Architecture and runtime](architecture.md) | Typed boundaries, initialization, dependency injection, diagnostics and resident checkpoints. |
+| [World wipe](world-wipe.md) | Administration control, retained accounts, mandatory backups and stopped-server restoration. |
 | [Typed catalog schemas](../src/Eden.Data/Catalog/CatalogSchema.g.json) | Generated dataset coverage, key/value shapes, source fingerprints and declared relationships for build 3662168. |
 | [Catalog adoption and remaining constants](catalog-adoption.md) | Shared access rules, build policy, compatibility exceptions and architectural checks. |
 | [Catalog migration inventory](catalog-runtime-audit.json) | Reproducible inventory of catalog access and content-specific decisions; regenerate with `tools/catalog/audit_runtime.py`. |
@@ -319,12 +324,14 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 | --- | --- |
 | [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and local administration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
 | [Capsuleer encounters](capsuleer-population.md) | Galaxy-wide station and gate traffic, local mining, saved rosters, shared observation and historical simulation evidence. |
+| [Bot development milestones](bot-development-plan.md) | Fresh-universe progression, first claims, fleet replacement, regional trade, offscreen industry and dedicated-server capacity. |
+| [Bot corporation recruitment, relocation, and identity](bot-corporation-plan.md) | Proposed recruitment decisions, multi-system rosters, operating-base moves, and names for bot-led corporations. |
 
 ## Features and implementation records
 
 | Reference | Use it for |
 | --- | --- |
-| [Feature implementation notes](feature-notes.md) | Detailed coverage, restrictions and examples grouped by feature. The [README status](../README.md#current-status) is the short overview. |
+| [Feature implementation notes](feature-notes.md) | Gameplay overview, coverage, limitations and examples. |
 | [Protocol records by topic](protocol.md) | Native call/reply findings, source revisions, milestone validation and historical client observations. |
 | [Cooperative fleets](protocol/fleets.md) | Fleet creation/invites, leadership, broadcasts, fleet chat, coordinated travel and current limits. |
 | [Corporation roadmap](corporations.md) | Published standalone corporation milestones and remaining scope. |
@@ -339,7 +346,9 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 
 ## Keeping documentation organized
 
-Keep the root README focused on the project overview, current status, build/run commands and formatting. Put setup and launch instructions in the Windows client guide, hosting configuration in the launcher guide, and architecture details in the runtime guide.
+Use the root README for the project overview, quick start, build commands and formatting. Track gameplay coverage and limits in the
+[feature notes](feature-notes.md). Put detailed setup and launch instructions in the Windows client guide, hosting configuration
+in the launcher guide, and architecture details in the runtime guide.
 
 Add native protocol findings and milestone evidence to the relevant page under `docs/protocol/`, then add a link to the [protocol index](protocol.md). Preserve existing section anchors when moving records, and update repository links to their new destination. Keep dates, source revisions, automated results and live observations with their record. Older observations are historical evidence, not acceptance of later changes.
 

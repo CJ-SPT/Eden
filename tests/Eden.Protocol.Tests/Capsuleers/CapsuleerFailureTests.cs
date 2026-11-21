@@ -99,6 +99,7 @@ public sealed class CapsuleerFailureTests
         Assert.Equal(1, scheduler.Run(2, maximumActions: 1).Turn.Completed);
         Assert.Equal(committed.Revision + 1, scheduler.Jobs().Single(job => job.PilotId == original.PilotId).Revision);
         Assert.Equal(1, host.GetRequiredService<LiveWorld>().MinerCheckpoints[original.PilotId].Work.Trips);
+        human.Dispose();
         await host.GetRequiredService<LiveWorld>().FlushAsync();
         var saved = scheduler.Jobs().Single(job => job.PilotId == original.PilotId);
         host.Dispose();

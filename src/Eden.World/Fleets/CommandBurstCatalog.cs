@@ -54,6 +54,10 @@ internal static class CommandBurstCatalog
 
     private static bool ValidateModule(CatalogDbContext catalog, int type, int group)
     {
+        if (group == CommandBurstRules.PhenomenaGroup)
+        {
+            return ValidatePhenomena(catalog, type);
+        }
         if (
             group != CommandBurstRules.Group
             || catalog.Read(CatalogData.Client.Types, (long)type)?.Published != 1
@@ -83,6 +87,39 @@ internal static class CommandBurstCatalog
                     checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1)),
                     attributes
                 ) && InventoryDefinitions.RequiresSpecificShip(attributes);
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
+    }
+
+    private static bool ValidatePhenomena(CatalogDbContext catalog, int type)
+    {
+        if (
+            !CommandBurstRules.IsPhenomena(type)
+            || catalog.Read(CatalogData.Client.Types, (long)type)?.Published != 1
+            || FittingCatalog.DefaultEffect(catalog, type) != DogmaEffect.TitanPhenomena
+            || !FittingCatalog.Effects(catalog, type).SetEquals([DogmaEffect.HighPower, DogmaEffect.Online, DogmaEffect.TitanPhenomena])
+        )
+        {
+            return false;
+        }
+        try
+        {
+            var attrs = catalog.FittingAttributes(type);
+            _ = CommandBurstRules.Define(0, type, DogmaEffect.TitanPhenomena, attrs);
+            foreach (var slot in s_slots)
+            {
+                _ = Collection(catalog, checked((int)attrs.GetValueOrDefault(slot.Id)));
+                if (!double.IsFinite(attrs.GetValueOrDefault(slot.Strength)))
+                {
+                    return false;
+                }
+            }
+            return InventoryDefinitions.RequiresSpecificShip(attrs)
+                && attrs.GetValueOrDefault(DogmaAttributeId.ConsumptionType) > 0
+                && attrs.GetValueOrDefault(DogmaAttributeId.ConsumptionQuantity) > 0;
         }
         catch (InvalidDataException)
         {

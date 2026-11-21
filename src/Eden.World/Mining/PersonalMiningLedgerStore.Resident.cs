@@ -20,15 +20,31 @@ internal sealed partial class PersonalMiningLedgerStore
             return;
         }
         long day = MiningLedgerRules.Day(now);
-        var saved = world
-            .Set<SavedPersonalMiningLog>()
-            .SingleOrDefault(l =>
+        var logs = world.Set<SavedPersonalMiningLog>();
+        SavedPersonalMiningLog? saved;
+        if (logs is EconomySet<SavedPersonalMiningLog, EconomySavedPersonalMiningLog> resident)
+        {
+            var daily = resident
+                .IndexedSnapshots(nameof(SavedPersonalMiningLog.PilotId), pilot.Id)
+                .SingleOrDefault(l =>
+                    l.PilotId == pilot.Id
+                    && l.Day == day
+                    && l.CorporationId == pilot.CorporationId
+                    && l.SystemId == resource.SystemId
+                    && l.TypeId == resource.TypeId
+                );
+            saved = daily is null ? null : resident.Find(daily.Id);
+        }
+        else
+        {
+            saved = logs.SingleOrDefault(l =>
                 l.PilotId == pilot.Id
                 && l.Day == day
                 && l.CorporationId == pilot.CorporationId
                 && l.SystemId == resource.SystemId
                 && l.TypeId == resource.TypeId
             );
+        }
         if (saved is null)
         {
             // Retire only this pilot's old daily buckets, when a new bucket is first written.

@@ -1,10 +1,18 @@
+using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Capsuleers;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
+using Eden.World.Catalog;
+using Eden.World.Docking;
+using Eden.World.Maps;
+using Eden.World.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Maps;
@@ -148,6 +156,9 @@ public sealed class MapNavigationTests
             PilotServicesTests.Request("search", "Query", ["Jita", new List<object?> { 6L, 7L, 8L, 9L }]),
             PilotServicesTests.Request("structureDirectory", "GetStructureMapData", [30000142L]),
             PilotServicesTests.Request("stationSvc", "GetStation", [60003760L]),
+            PilotServicesTests.Request("machoNet", "GetClusterGameStatisticsForClient", ClusterArguments()),
+            PilotServicesTests.Request("map", "GetIndustryJobsOverLast24Hours", [null]),
+            PilotServicesTests.Request("map", "GetIndustryCostModifier", [(long)Eden.Gameplay.Industry.IndustryActivity.Reaction]),
         ];
         Queue<object?> input = new(requests.Select(packet => BlueMarshal.Decode(BlueMarshal.Encode(packet))));
         List<BlueInstance> output = [];
@@ -191,7 +202,205 @@ public sealed class MapNavigationTests
         var station = BlueRead.Fields(Assert.IsType<BlueInstance>(replies[9]).State);
         Assert.Equal(60003760L, station["stationID"]);
         Assert.Equal(30000142L, station["solarSystemID"]);
+        var population = BlueRead.Tuple(replies[10], 3);
+        Assert.Equal(1L, population[2]);
+        var jobs = BlueRead.Fields(Assert.IsType<BlueInstance>(replies[11]).State);
+        Assert.Empty(Assert.IsType<List<object?>>(jobs["lines"]));
+        Assert.Contains(30000142L, Assert.IsType<Dictionary<long, object?>>(replies[12]).Keys);
         Assert.Equal(before, world.Store.FindPilot(1000001));
+    }
+
+    [Fact]
+    public async Task GateHistoryPublishesCommittedArrivalsAndExpiresAfterCheckpointReopen()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        using var scope = world.Services.CreateScope();
+        var pilot = world.Store.FindPilot(1000001)!;
+        var gate = world.Objects.Single(body => body.DestinationGateId.HasValue);
+        world.Store.SetPosition(pilot.ShipId, gate.Position);
+        var statistics = world.Services.GetRequiredService<IMapStatistics>();
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        using (CatalogDbContext catalog = new(new Eden.World.Storage.WorldDatabase(world.Path).CatalogPath))
+        using (var action = live.Economy.Begin(new(systems: [gate.DestinationSystemId!.Value], pilots: [pilot.PilotId])))
+        {
+            PilotGateTravelStore.TransferDetailed(
+                action,
+                catalog,
+                pilot.PilotId,
+                pilot.ShipId,
+                gate.Id,
+                gate.DestinationGateId!.Value,
+                clock.Now
+            );
+            Assert.Empty(statistics.History(MapHistoryStatistic.Jumps, 1).Rows);
+        }
+        Assert.Empty(statistics.History(MapHistoryStatistic.Jumps, 1).Rows);
+        var travel = world.Services.GetRequiredService<IPilotGateTravel>();
+        travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId!.Value);
+        Assert.Throws<InvalidDataException>(() => travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId.Value));
+        Assert.Equal(1, Assert.Single(statistics.History(MapHistoryStatistic.Jumps, 1).Rows).Counts.Jumps);
+        var arrived = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            arrived.Account,
+            [arrived],
+            p => new(world.Store, p, clock, new(), []),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(arrived);
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using (var metrics = SessionPerformance.Begin("map jump history", _ => { }, force: true)!)
+        {
+            var reply = Assert.IsType<PilotCallResult.Success>(
+                router.Call(context, "map", "GetHistory", new object?[] { 1L, 1L }, _ => { })
+            );
+            var lines = ReadHistory(BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply))).Lines;
+            Assert.Equal(new object?[] { (long)arrived.SystemId, 1L, 0L, 0L }, Assert.IsType<object?[]>(Assert.Single(lines)));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        await live.FlushAsync();
+        scope.Dispose();
+        world.Services.Dispose();
+        clock.AdvanceWallTime(TimeSpan.FromHours(1) - TimeSpan.FromMilliseconds(1));
+        using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<IMapStatistics>();
+        Assert.Equal(arrived.SystemId, Assert.Single(restored.History(MapHistoryStatistic.Jumps, 1).Rows).SystemId);
+        clock.AdvanceWallTime(TimeSpan.FromMilliseconds(1));
+        Assert.Empty(restored.History(MapHistoryStatistic.Jumps, 1).Rows);
+        Assert.Single(restored.History(MapHistoryStatistic.Jumps, 24).Rows);
+        clock.AdvanceWallTime(TimeSpan.FromHours(23));
+        Assert.Empty(restored.History(MapHistoryStatistic.Jumps, 24).Rows);
+    }
+
+    [Fact]
+    public async Task PopulationAveragesSelectedPlayersAndOffscreenBotsAcrossSamplesAndRestart()
+    {
+        const int Perimeter = 30000144;
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        var founder = fixture.Founder();
+        var clock = fixture.Clock;
+        using (var host = ServerServices.Build(fixture.Database, clock, liveWorld: true))
+        {
+            var ships = host.GetRequiredService<SqliteWorld>();
+            var player = ships.FindPilot(1000001)!;
+            int homeSystem = player.HomeSystemId;
+            ships.SetPosition(founder.FounderShipId, SpacePosition.Zero, Perimeter);
+            ships.SetPosition(player.ShipId, SpacePosition.Zero, Perimeter);
+            var presence = host.GetRequiredService<IHumanPresence>();
+            using var selected = presence.Select(player.PilotId, Perimeter);
+            using var duplicate = presence.Select(player.PilotId, Perimeter);
+            var live = host.GetRequiredService<LiveWorld>();
+            var statistics = host.GetRequiredService<IMapStatistics>();
+            using (var metrics = SessionPerformance.Begin("map population sample", _ => { }, force: true)!)
+            {
+                live.SampleMapPilots();
+                Assert.Equal(new(2, 0), statistics.Population().Systems[Perimeter]);
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+                Assert.Equal(0, metrics.FittingCalculations);
+            }
+            clock.Seconds += 60;
+            ships.SetPosition(player.ShipId, null);
+            selected.Transfer(homeSystem);
+            duplicate.Dispose();
+            live.SampleMapPilots();
+            var counts = statistics.Population();
+            Assert.Equal(2, counts.Samples);
+            Assert.Equal(new(3, 0), counts.Systems[Perimeter]);
+            Assert.True(counts.Systems[homeSystem].Docked > 0);
+
+            using var scope = host.CreateScope();
+            player = ships.FindPilot(1000001)!;
+            using PilotCallContext context = new(
+                1000001,
+                player.Account,
+                [player],
+                p => new(ships, p, clock, new(), []),
+                42,
+                SignedSettings.Empty
+            );
+            var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            Assert.Same(PilotCallResult.Unsupported, Call(ClusterArguments()));
+            context.Select(player);
+            Assert.IsType<PilotCallResult.Failure>(Call([]));
+            var reply = Assert.IsType<PilotCallResult.Success>(Call(ClusterArguments()));
+            var state = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply)), 3);
+            Assert.Equal(2L, state[2]);
+            var totals = Assert.IsType<Dictionary<long, object?>>(state[0]);
+            var docked = Assert.IsType<Dictionary<long, object?>>(state[1]);
+            Assert.Equal(3L, totals[Perimeter - 30_000_000L]);
+            Assert.False(docked.ContainsKey(Perimeter - 30_000_000L));
+            Assert.Equal((long)counts.Systems[homeSystem].Docked, docked[homeSystem - 30_000_000L]);
+            await live.FlushAsync();
+
+            PilotCallResult Call(object?[] args) =>
+                router.Call(
+                    context,
+                    "machoNet",
+                    "GetClusterGameStatisticsForClient",
+                    BlueMarshal.Decode(BlueMarshal.Encode(args)),
+                    _ => { }
+                );
+        }
+        using var reopened = ServerServices.Build(fixture.Database, clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<IMapStatistics>();
+        Assert.Equal(new(3, 0), restored.Population().Systems[Perimeter]);
+        clock.Seconds += 29 * 60;
+        Assert.Equal(new(1, 0), restored.Population().Systems[Perimeter]);
+        clock.Seconds += 60;
+        Assert.Empty(restored.Population().Systems);
+    }
+
+    private static object?[] ClusterArguments() => ["EVE", new object?[] { BlueEmpty.Dictionary, BlueEmpty.Dictionary, 0L }];
+
+    [Fact]
+    public void KillHistoryUsesNativeShipNpcAndPodFieldsForBothWindows()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        using var scope = world.Services.CreateScope();
+        var pilot = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(world.Store, p, clock, new(), []),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            MapStatisticsStore.Record(action, pilot.SystemId, clock.Now, MapActivityKind.ShipLoss);
+            MapStatisticsStore.Record(action, pilot.SystemId, clock.Now, MapActivityKind.NpcShipLoss);
+            MapStatisticsStore.Record(action, pilot.SystemId, clock.Now, MapActivityKind.CapsuleLoss);
+            MapStatisticsStore.Record(action, 31_000_005, clock.Now, MapActivityKind.CapsuleLoss);
+            action.Commit();
+        }
+        var (version, lines) = ReadHistory(Reply(1));
+        Assert.Equal(new object?[] { (long)pilot.SystemId, 2L, 1L, 1L }, Assert.IsType<object?[]>(Assert.Single(lines)));
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+        Assert.Equal(version, ReadHistory(Reply(1)).Version);
+        Assert.Equal(lines, ReadHistory(Reply(24)).Lines);
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(59));
+        var expired = ReadHistory(Reply(1));
+        Assert.Empty(expired.Lines);
+        Assert.NotEqual(version[1], expired.Version[1]);
+        Assert.Single(ReadHistory(Reply(24)).Lines);
+
+        object? Reply(long hours)
+        {
+            var reply = Assert.IsType<PilotCallResult.Success>(
+                router.Call(context, "map", "GetHistory", new object?[] { 3L, hours }, _ => { })
+            );
+            return BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply));
+        }
     }
 
     private static void AssertStructureMap(object? reply, long timestamp)
@@ -208,13 +417,21 @@ public sealed class MapNavigationTests
 
     private static void AssertHistory(object? reply)
     {
+        var (version, lines) = ReadHistory(reply);
+        Assert.Equal(1L, version[0]);
+        Assert.Empty(lines);
+    }
+
+    private static (object?[] Version, List<object?> Lines) ReadHistory(object? reply)
+    {
         var cached = Assert.IsType<BlueInstance>(reply);
         Assert.Equal("carbon.common.script.net.objectCaching.CachedMethodCallResult", cached.Name);
         var state = BlueRead.Tuple(cached.State, 3);
         var details = BlueRead.Fields(state[0]);
-        Assert.Equal("run", BlueMarshal.Text(details["versionCheck"]));
+        Assert.Equal("1 minute", BlueMarshal.Text(details["versionCheck"]));
         Assert.False(details.ContainsKey("sessionInfo"));
-        Assert.Equal(new object?[] { 1L, 0L }, BlueRead.Tuple(state[2], 2));
+        var version = BlueRead.Tuple(state[2], 2);
+        Assert.Equal((long)CachedMethodPayload.Checksum(BlueRead.Bytes(state[1])), version[1]);
         var rows = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueRead.Bytes(state[1])));
         Assert.Equal("eve.common.script.sys.rowset.Rowset", rows.Name);
         var fields = BlueRead.Fields(rows.State);
@@ -222,6 +439,6 @@ public sealed class MapNavigationTests
             new[] { "solarSystemID", "value1", "value2", "value3" },
             Assert.IsType<List<object?>>(fields["header"]).Select(BlueMarshal.Text)
         );
-        Assert.Empty(Assert.IsType<List<object?>>(fields["lines"]));
+        return (version, Assert.IsType<List<object?>>(fields["lines"]));
     }
 }

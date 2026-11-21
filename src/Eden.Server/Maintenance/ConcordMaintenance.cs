@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
@@ -6,7 +7,13 @@ using Eden.Infrastructure.Registration;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class ConcordMaintenance(IConcord concord, TimeProvider clock, IWorldSynchronization synchronization) : IDisposable
+internal sealed class ConcordMaintenance(
+    IConcord concord,
+    TimeProvider clock,
+    IWorldSynchronization synchronization,
+    IMilitiaNavy? militiaNavy = null,
+    IMilitiaHubs? militiaHubs = null
+) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -15,6 +22,7 @@ internal sealed class ConcordMaintenance(IConcord concord, TimeProvider clock, I
     {
         if (_timer is null)
         {
+            militiaHubs?.Sweep(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
         }
@@ -22,8 +30,11 @@ internal sealed class ConcordMaintenance(IConcord concord, TimeProvider clock, I
 
     internal void Tick()
     {
-        using var ownership = synchronization.Enter("CONCORD enforcement");
-        concord.Sweep(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        using var ownership = synchronization.Enter("Empire enforcement");
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        concord.Sweep(now);
+        militiaNavy?.Sweep(now);
+        militiaHubs?.Sweep(now);
     }
 
     private async Task Run(PeriodicTimer timer)
@@ -36,7 +47,7 @@ internal sealed class ConcordMaintenance(IConcord concord, TimeProvider clock, I
             }
             catch (Exception error)
             {
-                ServerLog.Console.Error($"CONCORD enforcement failed; retrying next interval: {error.Message}");
+                ServerLog.Console.Error($"Empire enforcement failed; retrying next interval: {error.Message}");
             }
         }
     }

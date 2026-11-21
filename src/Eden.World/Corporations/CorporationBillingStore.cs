@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Corporations;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -20,8 +21,7 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
             world =>
             {
                 var corporation = Authorize(world, actorId, false);
-                var saved = world.Set<SavedCorporationBillPaymentSettings>().Find(corporation.Id);
-                var settings = saved is null ? null : JsonSerializer.Deserialize<CorporationBillPaymentSettings>(saved.DataJson);
+                var settings = Saved(world, corporation.Id);
                 var rules = BillTypes()
                     .Select(id => new CorporationBillPaymentRule(id, settings?.Rules.Any(r => r.BillTypeId == id && r.Enabled) == true));
                 return new(corporation.Id, settings?.DivisionKey ?? CorporationWalletRules.MasterKey, rules.ToArray());
@@ -48,11 +48,36 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
         {
             throw new InvalidDataException("Withdrawal access is required for the automatic payment division.");
         }
-        var saved =
-            world.Set<SavedCorporationBillPaymentSettings>().Find(corporation.Id)
-            ?? world.Add(new SavedCorporationBillPaymentSettings { CorporationId = corporation.Id }).Entity;
-        saved.DataJson = JsonSerializer.Serialize(settings);
+        Store(world, settings);
         transaction.Commit();
+    }
+
+    internal static CorporationBillPaymentSettings? Saved(WorldAction world, int corporation) =>
+        world.Set<SavedCorporationBillPaymentSettings>().Find(corporation) is { } row
+            ? JsonSerializer.Deserialize<CorporationBillPaymentSettings>(row.DataJson)
+            : null;
+
+    internal static bool DefaultAllianceMaintenance(WorldAction world, long actorId)
+    {
+        var corporation = Authorize(world, actorId, true);
+        var settings = Saved(world, corporation.Id) ?? new(corporation.Id, CorporationWalletRules.MasterKey, []);
+        if (
+            settings.Rules.All(rule => rule.BillTypeId != AllianceBillingRules.MaintenanceBillType)
+            && CorporationWalletRules.CanTake(CorporationRoleStore.Effective(world, actorId, corporation).Roles, settings.DivisionKey)
+        )
+        {
+            Store(world, settings with { Rules = [.. settings.Rules, new(AllianceBillingRules.MaintenanceBillType, true)] });
+            return true;
+        }
+        return false;
+    }
+
+    private static void Store(WorldAction world, CorporationBillPaymentSettings settings)
+    {
+        var saved =
+            world.Set<SavedCorporationBillPaymentSettings>().Find(settings.CorporationId)
+            ?? world.Add(new SavedCorporationBillPaymentSettings { CorporationId = settings.CorporationId }).Entity;
+        saved.DataJson = JsonSerializer.Serialize(settings);
     }
 
     private int[] BillTypes()

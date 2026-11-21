@@ -31,6 +31,141 @@ The evejs `allianceViewState.js` snapshot SHA-256 is
 All new wire models use the existing codec. Its reference remains
 [Carbon Blue Marshal.cpp, af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
 
+## Alliance membership age and EverMark donations
+
+The personal and corporation EverMark panels in build **3662168** ask `allianceRegistry.GetDaysInAlliance(allianceID, corporationID)`
+for whole elapsed days in the corporation's current membership. A missing member or vacant executor returns zero.
+The executor's corporation panel also calls `GetAllianceMembersOlderThan(allianceID, minimumDays)`. It expects a Python
+list of corporation IDs and includes members at the exact threshold. Leaving removes the corporation from that list.
+Rejoining starts the clock at the new admission time.
+
+| Source wallet | Eligible EverMark recipients |
+| --- | --- |
+| Personal | The pilot's own player corporation after 30 days of personal membership. The alliance executor also qualifies when both corporations have 30 days of current alliance membership. |
+| Member corporation | Its alliance executor once both corporations qualify. Accountant, director or CEO authority is required. |
+| Executor corporation | A qualifying member corporation in its own alliance. The same financial role and membership requirements apply. |
+
+The two existing `LPSvc` transfer calls recheck the route, current membership and authority in the same resident
+transaction that debits the source, credits the recipient and records the transfer. Balances are checkpointed by issuer.
+The original personal and corporation wallet bytecode (`personalDonateEMPanel` offsets 81 and 180,
+`corpDonateEMPanel` offsets 66 and 192) was inspected from archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Eden uses the pinned 30-day default.
+The local EVE.js **261108.1** snapshot uses whole days and the inclusive comparison, with its donation threshold
+configured to zero. Compared `allianceRegistryRuntime.js` (`073f759c9ea8`), `allianceViewState.js` (`ebaee4bb2f6d`)
+and `lpWalletState.js` (`4da2d5a25706`) under `server/src/services/corporation`.
+[CCP's EverMark donation rules](https://support.eveonline.com/hc/en-us/articles/6807979979036-Heraldry-and-Emblems) ·
+[Corporation loyalty wallets and pinned constants](corporations.md#corporate-lp-and-evermark-wallets)
+
+**Automated validation.** The exact method `MembershipAgeUnlocksEverMarkDonationsAtTheDeadlineAndDepartureRevokesThem`
+passed in 10.45 seconds (build 12.30 seconds). Its first run crossed an unpaid maintenance deadline and correctly
+dissolved the test alliance. The fixture now pays its invoice before advancing the clock. Coverage includes the last
+tick before eligibility, the exact deadline, departure and readmission, stale-session requests, and balances after reopening.
+Warmed membership lookups issued zero SQL commands and opened zero connections.
+The solution built with zero warnings and errors. The filter
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~CorporationLoyaltyTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~CorporationCalendarTests`
+passed 62 tests in 25.21 seconds. Eight catalog and nine formatting policy tests passed. Formatting and line width
+passed across 2,939 files. Total milestone validation took 71.36 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
+## Autonomous bot alliances
+
+An established bot-led corporation and a willing independent neighbor can form an ordinary alliance. Each corporation needs
+six unsuspended simulated members and an active bot CEO with director authority. Headquarters can share a system or connect
+through one reciprocal gate. The founder pays the native one-billion-ISK registration fee. If its CEO's wallet needs a top-up,
+the shortfall comes from its existing master wallet through a recorded corporation withdrawal. The designated bill division
+must be able to cover a month at the proposed membership after paying the registration shortfall. Eden qualifies the selected
+founder with Empire Control V and its catalog prerequisites once the funding and a second corporation are in place.
+
+The founder becomes the executor. Its partner submits a standard application and waits the native 24 hours after acceptance
+to become a member. The executor can recruit up to a target of three corporations, counting accepted applications as reserved
+places. An existing open application, previous application to that alliance, or earlier membership takes precedence over
+automated recruitment. Bot planning selects only bot-created alliances whose current executor is led by an active bot CEO.
+Player corporations and directors continue to use the existing alliance services.
+
+The bot founder defaults its maintenance bill to automatic payment in the existing corporation bill preferences. An explicit
+setting takes precedence. Native bill settlement, membership history, approval deadlines, owner caches and affiliation updates
+carry forward across checkpoints. Alliance membership feeds the existing gang, escort and patrol ally checks. The feature
+uses the existing save schema.
+
+The server's corporation maintenance timer reviews up to 32 station systems per 15 seconds, with at most one formation or
+accepted application per review. It rotates past unobserved headquarters while any player is in the world. The native scheduler
+continues to settle already accepted applications and bills on their saved wall-clock deadlines.
+
+The fee, skill and admission delay follow [EVE University](https://wiki.eveuniversity.org/Alliances) and Eden's existing
+[formation](#formation-and-public-identity--november-16-2026) and
+[membership](#membership-governance-and-session-affiliation--november-16-2026) contracts. The inspected local EVE.js
+`allianceApplicationEligibility.js` snapshot SHA-256 is `e0504a59e4648b6c8b6ebf29cb30e5a6f4ae00e9b927cca854b0c516037b241c`.
+
+### Automated validation
+
+The resident integration fixture begins with independent corporations on an existing save. It exercises the funding threshold,
+the empty-world pause, exact fee settlement, the accepted application across a restart, effective gang affiliation, manual
+application priority, the reserved third slot and recurring maintenance.
+
+- The exact filter
+  `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAllianceTests.FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart`
+  passed in 10.80 seconds. The solution restored and built in 9.02 seconds with zero warnings and errors.
+- All 126 focused tests passed in 57.03 seconds. The combined `FullyQualifiedName~` filter covered
+  `Eden.Protocol.Tests.Alliances`, `CapsuleerAllianceTests`, `CapsuleerCorporationTests`, `CapsuleerMaintenanceTests`,
+  `CapsuleerAmmunitionSupplyTests`, `RoamingGangTests`, `CorporationWalletTests`, `CorporationFinancialPanelTests`,
+  `CorporationMembershipTests`, `CorporationRoleTests` and `CorporationPublicInfoTests`.
+- The two Python policy suites passed all 17 cases. Formatting and diff whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Open a formed alliance in Show Info after admission and confirm both corporations appear in its member list.
+
+## First-claim hub procurement
+
+The alliance review can fund a single Sovereignty Hub order at the executor corporation's NPC headquarters market.
+The alliance must be bot-founded, have an active bot-led executor, have two admitted corporations and hold no claims.
+The planner checks the existing reciprocal, traversable gate graph out to three jumps and shares the sovereignty
+owner's claimability and occupancy rules. The candidate system also needs a catalog star. An open corporation hub bid
+or an owned packaged hub covers procurement. The selected system becomes a durable route assignment when an expedition
+can take custody of that hub.
+
+A docked, active bot submits one seven-day order at the catalog reference sell price. Normal corporate escrow and
+broker fees apply. The order may spend only the balance above a month's alliance bill reserve. The existing market
+settles any seller and places the package in the ordering pilot's station hangar. The review runs while anyone is online,
+including when headquarters and the potential claim are unobserved. The buy order and owned inventory checkpoint
+through the resident economy. They require no new save fields.
+
+Build 3662168 type 32458 is published and trades under market group 1275. Its packaged volume is 60,000 cubic meters.
+EVE.js package 261108.1 `server/src/space/modules/entosisLinkRuntime.js` distinguishes neutral hub capture from
+owned hubs and command nodes (SHA-256 `AFE03A1E9E0FA1525AA56A4D3782EF4E91BA06E509A49CE15803E3D1732E1D1D`).
+The procurement radius, threshold, price cap and duration are Eden policy. The next [development milestone](../bot-development-plan.md)
+handles ship capacity, travel, deployment and paid Entosis. [CCP sovereignty deployment and capture](https://www.eveonline.com/news/view/sovereignty-structures-and-transition)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem` case passed in
+8.74 seconds including runner startup. It tests zero human activity, an occupied reachable system, an insufficient budget,
+and a funded order with only a neighboring system observed. A player fills the order through the resident market. Two
+reopens verify the open escrow and the delivered hub with enough money available for a duplicate bid. Earlier development
+runs caught fixture configuration and funding errors, and reproduced a duplicate bid before the planner recognized the
+market's existing delivery into the placing pilot's hangar.
+
+Tool and solution restore and the solution build passed with zero warnings and errors. The affected .NET selection
+passed 256 cases in 1 minute 33 seconds. The `FullyQualifiedName~` filter combined `Eden.Protocol.Tests.Alliances`,
+`Eden.Protocol.Tests.Sovereignty`, `CapsuleerAllianceTests`, `CapsuleerCorporationTests`, `CapsuleerAmmunitionSupplyTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Market.ResidentEconomyTests`. Both Python policy suites passed (8 and 9 cases).
+Formatting and diff checks passed. The full sequence took 129.10 seconds and used isolated resident worlds.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Foundation — November 16, 2026
 
 Schema 174 adds saved alliance identity and one membership row per corporation. Membership uses the corporation ID as its

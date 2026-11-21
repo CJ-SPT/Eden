@@ -28,6 +28,11 @@ internal sealed partial class CapsuleerHauler
         return true;
     }
 
+    private bool GangContactBeyondGate(StaticSpaceObject gate) =>
+        Work.Gang is { Phase: RoamingGangPhase.Hunting } gang
+        && gate is { DestinationSystemId: { } system, DestinationGateId: { } destination }
+        && RoamingGangRules.Reported(gang, system, destination, Work.ActiveTicks) != 0;
+
     private bool TryPatrolTransitGate(StaticSpaceObject gate)
     {
         var policy = database.Settings.Capsuleers;
@@ -38,7 +43,8 @@ internal sealed partial class CapsuleerHauler
             || Work.Freight?.Stacks.Length > 0
             || Work.Resupply?.DestinationStationId is not null
             || Work.LastPatrolledGateId == gate.Id
-            || !PatrolRules.Choose(pilotId, gate.Id ^ (Work.Journey?.Sequence ?? Work.DwellSequence), policy.RoamPercent)
+            || GangContactBeyondGate(gate)
+            || !InActiveGang && !PatrolRules.Choose(pilotId, gate.Id ^ (Work.Journey?.Sequence ?? Work.DwellSequence), policy.RoamPercent)
         )
         {
             return false;
@@ -51,7 +57,7 @@ internal sealed partial class CapsuleerHauler
         var fit = defense.Profile(pilotId);
         if (
             !fit.Combat
-            || !fit.RattingWeapons.Any(weapon => weapon.AvailableShots > 0)
+            || !(fit.HasDamage || InActiveGang && fit.HasSupport)
             || health.Read(pilotId, Now) is not { } current
             || CapsuleerDefenseRules.Retreat(current, true)
         )
@@ -105,19 +111,9 @@ internal sealed partial class CapsuleerHauler
         {
             return null;
         }
-        if (activity.TargetId != 0)
-        {
-            var retained = defense.PatrolTarget(Pilot, activity.TargetId, _target.Position, Now);
-            if (retained is not null)
-            {
-                return retained;
-            }
-            activity = activity with { TargetId = 0, Phase = RattingPhase.Searching };
-            _work = Work with { Ratting = activity };
-        }
         if (Work.ActiveTicks < patrol.NextLook)
         {
-            return null;
+            return activity.TargetId == 0 ? null : defense.PatrolTarget(Pilot, activity.TargetId, _target.Position, Now);
         }
         patrol = patrol with
         {
@@ -125,14 +121,109 @@ internal sealed partial class CapsuleerHauler
             LeaveGridAt =
                 patrol.LeaveGridAt > 0
                     ? patrol.LeaveGridAt
-                    : Work.ActiveTicks + TimeSpan.FromSeconds(PatrolRules.DwellSeconds(pilotId, _target.Id)).Ticks,
+                    : PatrolRules.GridDeparture(pilotId, Pilot.SystemId, _target.Id, Work.ActiveTicks, Work.Gang),
         };
         var seen = defense.Observe(Pilot, Work.ActiveTicks);
-        var candidates = PatrolRules.Candidates(Pilot, _target.Position, seen);
-        var target = candidates
-            .Where(c => c.Radius <= 2 * Pilot.Flight.ShipRadius || !PilotAwareness.ArmedHull(c.Hull))
-            .Select(c => defense.PatrolTarget(Pilot, c.ShipId, _target.Position, Now))
-            .FirstOrDefault(c => c is not null);
+        ObserveRegional(seen, _target.Id);
+        var gang = InActiveGang ? Work.Gang : null;
+        int? regionalGroup =
+            database.Settings.Capsuleers.RegionalConflicts && Live is { } live
+                ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId)
+                : null;
+        bool Member(long other) => gang?.Members.Any(member => member.PilotId == other) == true;
+        var candidates = PatrolRules
+            .Candidates(Pilot, _target.Position, seen)
+            .Where(contact =>
+                !Member(contact.PilotId)
+                && !PatrolRules.Friendly(Pilot, contact, regionalGroup)
+                && (gang?.Regional is not { } order || RegionalConflictStore.CanTarget(database, order, contact, Work.ActiveTicks))
+            )
+            .Where(contact => defense.PatrolTarget(Pilot, contact.ShipId, _target.Position, Now) is not null)
+            .ToArray();
+        var profile = defense.Profile(pilotId);
+        double friendly =
+            PvpTactics.Threat((Eden.Gameplay.Ships.HullClass)Pilot.ShipGroupId)
+            + seen.Where(contact =>
+                    (Member(contact.PilotId) || PatrolRules.Friendly(Pilot, contact, regionalGroup))
+                    && contact.Position.DistanceTo(_target.Position) <= PatrolRules.PursuitMeters
+                )
+                .Sum(contact => PvpTactics.Threat(contact.Hull));
+        long reported = gang is null ? 0 : RoamingGangRules.Reported(gang, Pilot.SystemId, _target.Id, Work.ActiveTicks);
+        double opposition = candidates.Sum(contact => PvpTactics.Threat(contact.Hull));
+        bool reportingOnly = false;
+        var member = gang is null ? null : GangMember;
+        bool scout = member?.Role == PvpRole.Scout;
+        PvpDecision decision;
+        if (scout && candidates.Length > 0)
+        {
+            var contacts = candidates
+                .OrderByDescending(contact => contact.ShipId == reported)
+                .ThenByDescending(contact => PvpTactics.Threat(contact.Hull))
+                .ThenBy(contact => contact.ShipId)
+                .ToArray();
+            var engage = contacts.FirstOrDefault(contact =>
+                RoamingGangRules.CanScoutTackle(
+                    gang!,
+                    member!,
+                    Pilot.Position!,
+                    Pilot.Flight.ShipRadius,
+                    Pilot.Flight.MaxSpeed,
+                    Math.Min(profile.TackleRange, profile.TargetRange),
+                    contact,
+                    seen,
+                    opposition
+                )
+            );
+            reportingOnly = engage is null;
+            decision = new(
+                (engage ?? contacts[0]).ShipId,
+                0,
+                reportingOnly ? "Scouting a visible contact for the gang." : "Tackling with nearby gang support."
+            );
+        }
+        else
+        {
+            decision = PvpTactics.Select(
+                Pilot.Position!,
+                _navigation.Velocity,
+                profile.RattingWeapons,
+                candidates,
+                friendly,
+                activity.TargetId,
+                patrol.CommittedAt,
+                Work.ActiveTicks,
+                reported,
+                PilotAwareness.Cautious(pilotId),
+                Pilot.Flight.MaxSpeed,
+                Pilot.Flight.ShipRadius,
+                profile.HasSupport ? profile.SupportRange : 0
+            );
+        }
+        var target = decision.TargetId == 0 ? null : defense.PatrolTarget(Pilot, decision.TargetId, _target.Position, Now);
+        patrol = patrol with
+        {
+            CommittedAt = decision.TargetId != activity.TargetId ? Work.ActiveTicks : patrol.CommittedAt,
+            DecisionReason = decision.Reason,
+            WatchingForGang = scout && profile.TackleRange > 0 && target is not null,
+        };
+        if (gang is not null && target is not null)
+        {
+            if (scout || gang.LeaderId == pilotId || reported == 0)
+            {
+                _work = Work with { Gang = RoamingGangRules.Report(gang, target.ShipId, Pilot.SystemId, _target.Id, Work.ActiveTicks) };
+            }
+            if (reportingOnly)
+            {
+                target = null;
+            }
+        }
+        double gangStrength =
+            gang?.Members.Where(member => member.Status == RoamingGangMemberStatus.Active).Sum(member => PvpTactics.Threat(member.Hull))
+            ?? friendly;
+        if (gang is not null && opposition > gangStrength * 2)
+        {
+            _work = Work with { Gang = ReturnGang(Work.Gang!, decision.Reason) };
+        }
         _work = Work with
         {
             Ratting = activity with

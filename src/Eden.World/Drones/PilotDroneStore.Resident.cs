@@ -33,16 +33,19 @@ namespace Eden.World.Drones;
 
 internal sealed partial class PilotDroneStore
 {
-    internal static DroneContact Contact(WorldAction world, CatalogDbContext catalog, WorldDrone drone)
+    internal static DroneContact Contact(WorldAction world, CatalogDbContext catalog, WorldDrone drone, long? now = null)
     {
-        var profile = DroneCatalog.Skilled(
-            world,
-            catalog,
-            drone.PilotId,
-            world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId,
-            drone.ControllerShipId
-        );
-        profile = AreaWeaponRules.ApplyDroneEffects(profile, PlayerEwarStore.Active(world, drone.ItemId));
+        var item = world.Set<OwnedItem>().Find(drone.ItemId)!;
+        var profile = DroneCatalog.Skilled(world, catalog, drone.PilotId, item.TypeId, drone.ControllerShipId);
+        var effects = PlayerEwarStore.Active(world, drone.ItemId);
+        if (
+            now is long deadline
+            && effects.Any(effect => effect.Module.Effect == DogmaEffect.FighterTackle && effect.ExpiresAt <= deadline)
+        )
+        {
+            effects = effects.Where(effect => effect.Module.Effect != DogmaEffect.FighterTackle || effect.ExpiresAt > deadline).ToArray();
+        }
+        profile = AreaWeaponRules.ApplyDroneEffects(profile, effects);
         DroneContact contact = new(
             drone.ItemId,
             drone.PilotId,
@@ -69,7 +72,25 @@ internal sealed partial class PilotDroneStore
             drone.Orbiting,
             DroneDelegationPersistence.Read(drone)
         );
-        contact = contact with { WorkEffect = WorkEffect(drone, profile) };
+        var workEffect = WorkEffect(drone, profile, now);
+        if (
+            profile.Tackle is not null
+            && workEffect is { } tackle
+            && world.Set<WorldPlayerEwar>().Find(drone.ItemId, tackle.TargetId) is null
+        )
+        {
+            workEffect = null;
+        }
+        contact = contact with
+        {
+            SquadronSize = profile.FighterGroup == 0 ? 0 : item.Quantity,
+            WorkEffect = workEffect,
+            Mobility = profile.Mobility is null ? null : ReadWork(drone).FighterMobility,
+        };
+        if (now is long at)
+        {
+            contact = FighterMobilityRules.Apply(contact, at);
+        }
         if (
             drone.SystemId is int system
             && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system)

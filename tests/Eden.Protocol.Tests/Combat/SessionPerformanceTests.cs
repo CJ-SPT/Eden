@@ -30,6 +30,28 @@ public sealed class SessionPerformanceTests
         public void Disengage(long shipId, long? npcId = null) { }
     }
 
+    [Fact]
+    public void TotalsOnlyCaptureCountsWorkAndAnExplicitNestedTraceKeepsItsPhases()
+    {
+        List<PerformanceSample> totals = [];
+        List<PerformanceSample> traced = [];
+        using (SessionPerformance.Capture("ordinary traffic", totals.Add, includePhases: false))
+        {
+            Assert.Null(SessionPerformance.Phase("untraced step"));
+            SessionPerformance.ConnectionOpened();
+            using (SessionPerformance.Capture("selected trade", traced.Add))
+            using (SessionPerformance.Phase("reload"))
+            {
+                SessionPerformance.DatabaseCommand("SELECT 1");
+                SessionPerformance.FittingCalculated();
+            }
+            Assert.False(SessionPerformance.IncludesPhases);
+        }
+        var total = Assert.Single(totals);
+        Assert.Equal((1, 1, 1), (total.Commands, total.Connections, total.Fittings));
+        Assert.Equal(["reload", "selected trade"], traced.Select(sample => sample.Name));
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(24)]
@@ -136,7 +158,9 @@ public sealed class SessionPerformanceTests
         TestClock clock = new();
         SessionTickSchedule schedule = new(clock);
         Assert.Equal(TimeSpan.FromSeconds(1), schedule.Remaining);
+        Assert.Equal(TimeSpan.Zero, schedule.StartDelay(clock.GetTimestamp()));
         clock.Milliseconds = 1300;
+        Assert.Equal(TimeSpan.FromMilliseconds(300), schedule.StartDelay(clock.GetTimestamp()));
         schedule.Complete();
         Assert.Equal(TimeSpan.FromMilliseconds(700), schedule.Remaining);
         clock.Milliseconds = 4500;
@@ -144,6 +168,14 @@ public sealed class SessionPerformanceTests
         Assert.Equal(TimeSpan.FromMilliseconds(500), schedule.Remaining);
         clock.Milliseconds = 5000;
         Assert.Equal(TimeSpan.Zero, schedule.Remaining);
+
+        schedule.PauseMeasurement();
+        clock.Seconds = 20;
+        schedule.ResumeMeasurement();
+        clock.Milliseconds = 20010;
+        Assert.Equal(TimeSpan.FromMilliseconds(10), schedule.StartDelay(clock.GetTimestamp()));
+        schedule.Complete();
+        Assert.Equal(TimeSpan.FromMilliseconds(990), schedule.Remaining);
     }
 
     [Fact]

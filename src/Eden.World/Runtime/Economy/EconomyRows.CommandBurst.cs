@@ -8,7 +8,19 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class ResidentEconomy
 {
-    private sealed record CommandBurstRow(long Id, long ShipId, int SystemId, long ExpiresAt, string BoostsJson);
+    private sealed record CommandBurstRow(
+        long Id,
+        long ShipId,
+        int SystemId,
+        long ExpiresAt,
+        string BoostsJson,
+        bool IndustrialProtection,
+        bool Phenomena
+    );
+
+    private long _latestIndustrialProtection;
+
+    internal bool MayHaveIndustrialProtection(long now) => !IsLoaded || Volatile.Read(ref _latestIndustrialProtection) > now;
 
     private readonly SortedSet<(long Expiry, long Id)> _allCommandBurstDeadlines = [];
     private readonly ConcurrentDictionary<int, SortedSet<(long Expiry, long Id)>> _commandBurstDeadlines = new();
@@ -19,7 +31,7 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<WorldCommandBurst, CommandBurstRow>(
                 "WorldCommandBurst",
                 row => new(row.Id),
-                row => new(row.Id, row.ShipId, row.SystemId, row.ExpiresAt, row.BoostsJson),
+                row => new(row.Id, row.ShipId, row.SystemId, row.ExpiresAt, row.BoostsJson, row.IndustrialProtection, row.Phenomena),
                 state => new WorldCommandBurst
                 {
                     Id = state.Id,
@@ -27,10 +39,21 @@ internal sealed partial class ResidentEconomy
                     SystemId = state.SystemId,
                     ExpiresAt = state.ExpiresAt,
                     BoostsJson = state.BoostsJson,
+                    IndustrialProtection = state.IndustrialProtection,
+                    Phenomena = state.Phenomena,
                 },
                 ProjectCommandBursts,
-                "Id,ShipId,SystemId,ExpiresAt,BoostsJson",
-                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt32(3), reader.GetInt64(4), reader.GetString(5)),
+                "Id,ShipId,SystemId,ExpiresAt,BoostsJson,IndustrialProtection,Phenomena",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetInt32(3),
+                        reader.GetInt64(4),
+                        reader.GetString(5),
+                        reader.GetBoolean(6),
+                        reader.GetBoolean(7)
+                    ),
                 state => new(state.Id),
                 changed: CommandBurstChanged,
                 indexes: [new("ShipId", row => row.ShipId), new("SystemId", row => row.SystemId)],
@@ -52,6 +75,10 @@ internal sealed partial class ResidentEconomy
         }
         if (after is not null)
         {
+            if (after.IndustrialProtection && after.ExpiresAt > _latestIndustrialProtection)
+            {
+                Volatile.Write(ref _latestIndustrialProtection, after.ExpiresAt);
+            }
             _allCommandBurstDeadlines.Add((after.ExpiresAt, after.Id));
             _commandBurstDeadlines.GetOrAdd(after.SystemId, static _ => []).Add((after.ExpiresAt, after.Id));
         }
@@ -60,6 +87,7 @@ internal sealed partial class ResidentEconomy
     private void ClearCommandBursts()
     {
         _allCommandBurstDeadlines.Clear();
+        Volatile.Write(ref _latestIndustrialProtection, 0);
         _commandBurstDeadlines.Clear();
     }
 
@@ -93,9 +121,10 @@ internal sealed partial class ResidentEconomy
                 string rows = JsonSerializer.Serialize(added);
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldCommandBurst(Id,ShipId,SystemId,ExpiresAt,BoostsJson)
+                    INSERT INTO WorldCommandBurst(Id,ShipId,SystemId,ExpiresAt,BoostsJson,IndustrialProtection,Phenomena)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.ShipId'),json_extract(value,'$.SystemId'),
-                        json_extract(value,'$.ExpiresAt'),json_extract(value,'$.BoostsJson')
+                        json_extract(value,'$.ExpiresAt'),json_extract(value,'$.BoostsJson'),json_extract(value,'$.IndustrialProtection'),
+                        json_extract(value,'$.Phenomena')
                     FROM json_each({rows}) WHERE 1 ON CONFLICT(Id) DO NOTHING
                     """
                 );

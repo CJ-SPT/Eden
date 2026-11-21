@@ -18,7 +18,7 @@ internal sealed partial class PilotGateTravelStore(WorldDatabase database, Sqlit
         if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext residentCatalog = new(database.CatalogPath);
-            int? destination = residentCatalog.FindCelestial(exitGateId)?.SolarSystemId;
+            int? destination = residentCatalog.FindGateBody(exitGateId)?.SolarSystemId;
             using var action = live.Economy.Begin(new(systems: destination is int system ? [system] : [], pilots: [pilotId]));
             var transfer = TransferDetailed(
                 action,
@@ -69,8 +69,8 @@ internal sealed partial class PilotGateTravelStore(WorldDatabase database, Sqlit
         var position = pilot.ActiveShip.Position;
         int origin = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var gate = catalog.GatesInSystem(origin).SingleOrDefault(g => g.Id == sourceGateId && g.DestinationId == exitGateId);
-        var body = catalog.FindCelestial(sourceGateId);
-        var exit = catalog.FindCelestial(exitGateId);
+        var body = catalog.FindGateBody(sourceGateId);
+        var exit = catalog.FindGateBody(exitGateId);
         double radius = catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0;
         if (
             pilot.ActiveShipId != shipId

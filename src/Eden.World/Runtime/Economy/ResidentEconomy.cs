@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -18,13 +19,15 @@ internal sealed record EconomyCheckpoint(IReadOnlyList<IEconomyProjection> Table
 {
     internal int Count => Tables.Sum(t => t.Count) + Sequences.Count;
 
-    internal void Apply(WorldDbContext world)
+    internal void Apply(WorldDbContext world, WorldProjectionMetrics? metrics = null)
     {
         world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
         foreach (var table in Tables)
         {
+            using var measurement = metrics?.Measure(table.Table, table.Count);
             table.Apply(world);
         }
+        using var sequenceMeasurement = metrics?.Measure("sqlite_sequence", Sequences.Count);
         foreach (var sequence in Sequences)
         {
             world.Database.ExecuteSql($"UPDATE sqlite_sequence SET seq=MAX(seq,{sequence.Value}) WHERE name={sequence.Name}");
@@ -48,7 +51,7 @@ internal sealed partial class ResidentEconomy
     private LiveWorld _owner => _live ?? throw new InvalidOperationException("The fitting preview has no live world.");
     private WorldDatabase _database => _source ?? throw new InvalidOperationException("The fitting preview has no saved world.");
     private readonly Dictionary<Type, IEconomyTable> _tables = [];
-    private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly HashSet<string> _dirtySequences = [];
     private readonly Dictionary<long, EconomyStructure> _structures = [];
     private readonly HashSet<long> _cloaked = [];
@@ -83,9 +86,12 @@ internal sealed partial class ResidentEconomy
 
     private readonly Dictionary<int, InstitutionalPreparation> _prepared = [];
     private readonly SortedSet<(long Expires, long Id)> _openOrders = [];
-    private readonly Dictionary<long, long> _marketHeads = [];
-    private readonly HashSet<long> _staleHeads = [];
+    private readonly SortedSet<long> _openSellOrders = [];
+    private readonly ConcurrentDictionary<long, long> _marketHeads = [];
     internal long NextExpiry => _openOrders.Count == 0 ? long.MaxValue : _openOrders.Min.Expires;
+
+    private EconomyTable<SavedPersonalOrder, EconomySavedPersonalOrder> PersonalBook =>
+        (EconomyTable<SavedPersonalOrder, EconomySavedPersonalOrder>)_tables[typeof(SavedPersonalOrder)];
 
     internal IReadOnlyCollection<EconomyKey> NpcMarketOrders(NpcMarketAssortment assortment) =>
         ((EconomyTable<NpcMarketOrder, EconomyNpcMarketOrder>)_tables[typeof(NpcMarketOrder)]).Indexed(
@@ -95,6 +101,16 @@ internal sealed partial class ResidentEconomy
 
     private void OrderChanged(EconomySavedPersonalOrder? before, EconomySavedPersonalOrder? after)
     {
+        bool wasAsk = before is { Status: Eden.Gameplay.Market.PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };
+        bool isAsk = after is { Status: Eden.Gameplay.Market.PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };
+        if (wasAsk && !isAsk)
+        {
+            _openSellOrders.Remove(before!.Id);
+        }
+        else if (!wasAsk && isAsk)
+        {
+            _openSellOrders.Add(after!.Id);
+        }
         if (before is not null && after is not null && before.Status == after.Status && before.Expires == after.Expires)
         {
             return;
@@ -109,33 +125,47 @@ internal sealed partial class ResidentEconomy
         }
     }
 
-    private void MarketChangeChanged(EconomySavedMarketChange? before, EconomySavedMarketChange? after)
+    // The demand worker reads this committed page while holding the shared owner, before opening its settlement transaction.
+    internal IEnumerable<EconomySavedPersonalOrder> OpenSellOrdersAfter(long cursor, long now)
     {
-        if (
-            before is not null
-            && (after is null || after.PilotId != before.PilotId)
-            && _marketHeads.GetValueOrDefault(before.PilotId) == before.Id
-        )
+        if (_openSellOrders.Count == 0 || cursor >= _openSellOrders.Max)
         {
-            _staleHeads.Add(before.PilotId);
+            yield break;
         }
-        if (after is not null)
+        foreach (long id in _openSellOrders.GetViewBetween(cursor + 1, long.MaxValue))
         {
-            _marketHeads[after.PilotId] = Math.Max(_marketHeads.GetValueOrDefault(after.PilotId), after.Id);
+            if (PersonalBook.Snapshot(new(id)) is { } order && order.Expires > now)
+            {
+                yield return order;
+            }
         }
     }
 
-    internal long MarketHead(long pilot)
+    internal IEnumerable<long> DemandSellers(int station, int type, long now)
     {
-        if (_staleHeads.Remove(pilot))
+        var atStation = PersonalBook.Indexed(nameof(SavedPersonalOrder.StationId), station);
+        var ofType = PersonalBook.Indexed(nameof(SavedPersonalOrder.TypeId), type);
+        foreach (var key in atStation.Count <= ofType.Count ? atStation : ofType)
         {
-            var table =
-                (EconomyTable<Eden.Data.World.Market.SavedMarketChange, EconomySavedMarketChange>)
-                    _tables[typeof(Eden.Data.World.Market.SavedMarketChange)];
-            _marketHeads[pilot] = table.Matching(c => c.PilotId == pilot).Select(key => key.Id).DefaultIfEmpty().Max();
+            if (
+                PersonalBook.Snapshot(key) is { Bid: false, Remaining: > 0, Status: Eden.Gameplay.Market.PersonalOrderStatus.Open } order
+                && order.StationId == station
+                && order.TypeId == type
+                && order.Expires > now
+            )
+            {
+                yield return order.PilotId;
+            }
         }
-        return _marketHeads.GetValueOrDefault(pilot);
     }
+
+    private void MarketChangeChanged(EconomySavedMarketChange? before, EconomySavedMarketChange? after) =>
+        UpdateFeedHead<SavedMarketChange, EconomySavedMarketChange>(_marketHeads, before?.PilotId, before?.Id, after?.PilotId, after?.Id);
+
+    internal long MarketHead(long pilot) => _marketHeads.GetValueOrDefault(pilot);
+
+    internal bool HasMarketChanges(long pilot, long cursor) =>
+        !_loaded || _active is not null || _owner.HasUnpublishedSqlChanges || cursor < MarketHead(pilot);
 
     internal int StructureSystemId(long id) =>
         _structures.TryGetValue(id, out var structure) ? structure.SystemId : throw new InvalidDataException("Unknown structure.");
@@ -297,6 +327,7 @@ internal sealed partial class ResidentEconomy
         _sequences.Clear();
         _prepared.Clear();
         _openOrders.Clear();
+        _openSellOrders.Clear();
         ClearTimedModules();
         ClearCommandBursts();
         ClearCombatIndexes();
@@ -304,7 +335,8 @@ internal sealed partial class ResidentEconomy
         _marketHeads.Clear();
         _mailHeads.Clear();
         _listHeads.Clear();
-        _staleHeads.Clear();
+        _industryMapHistory.Clear();
+        _industryMapCosts = null;
         foreach (var table in _tables.Values)
         {
             using var phase = SessionPerformance.Phase($"resident.load.{table.Name}");
@@ -332,7 +364,14 @@ internal sealed partial class ResidentEconomy
     internal long? ActivePilot(long ship)
     {
         var table = (EconomyTable<Eden.Data.World.Characters.Pilot, EconomyPilot>)_tables[typeof(Eden.Data.World.Characters.Pilot)];
-        return table.Matching(p => p.ActiveShipId == ship).Select(key => (long?)key.Id).SingleOrDefault();
+        return table.Indexed(nameof(EconomyPilot.ActiveShipId), ship).Select(key => (long?)key.Id).SingleOrDefault();
+    }
+
+    internal (int Corporation, int? Alliance) CorporationAffiliation(long pilot)
+    {
+        var table = (EconomyTable<Eden.Data.World.Characters.Pilot, EconomyPilot>)_tables[typeof(Eden.Data.World.Characters.Pilot)];
+        int corporation = table.Snapshot(new(pilot))?.CorporationId ?? 0;
+        return (corporation, Peek<Eden.Data.World.Alliances.SavedAllianceMember>(corporation)?.AllianceId);
     }
 
     internal bool IsPilot(long id) => _pilotIdentities.ContainsKey(id);

@@ -1,5 +1,7 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Eden.Gameplay.Capsuleers;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime;
 
 namespace Eden.Server.Administration;
@@ -44,6 +46,7 @@ public sealed record ServerPerformanceSnapshot(
 )
 {
     public ServerCapsuleerPerformance? Capsuleers { get; init; }
+    public ImmutableArray<SessionFrameInterval> FrameHistory { get; init; } = [];
 }
 
 // One shared, demand-driven sample bounds overhead across administrator circuits.
@@ -53,7 +56,8 @@ internal sealed class ServerPerformanceMonitor(
     PilotGate pilots,
     LiveWorld? world = null,
     Func<ServerResourceSample>? readResources = null,
-    Func<ServerCapsuleerPerformance>? readCapsuleers = null
+    Func<ServerCapsuleerPerformance>? readCapsuleers = null,
+    SessionFrameMonitor? frames = null
 )
 {
     internal static readonly TimeSpan SampleInterval = TimeSpan.FromSeconds(2);
@@ -108,6 +112,7 @@ internal sealed class ServerPerformanceMonitor(
             )
             {
                 Capsuleers = readCapsuleers?.Invoke(),
+                FrameHistory = frames?.Read() ?? [],
             };
             return _latest;
         }

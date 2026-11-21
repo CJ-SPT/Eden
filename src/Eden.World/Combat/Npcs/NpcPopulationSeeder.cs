@@ -27,9 +27,11 @@ internal sealed partial class NpcPopulationSeeder(
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var policy = database.Settings.NpcPopulation;
+        _ = catalog.Definitions.SystemPolitics;
         if (policy.Pirates)
         {
             _ = profiles.Profiles;
+            _ = catalog.BeltAnchors(0);
         }
         if (policy.Guards)
         {
@@ -42,6 +44,31 @@ internal sealed partial class NpcPopulationSeeder(
         if (policy.Mining)
         {
             mining.WarmCatalog(catalog);
+        }
+    }
+
+    internal static void WarmSystem(WorldDatabase database, CatalogDbContext catalog, int systemId)
+    {
+        if (catalog.FindSystem(systemId) is not { } system || NpcRegions.Pirates(system.RegionId) is null)
+        {
+            return;
+        }
+        var politics = catalog.SystemPolitics(systemId);
+        if (politics.Security is not double security)
+        {
+            return;
+        }
+        var policy = database.Settings.NpcPopulation;
+        if (policy.Guards && NpcSpawnRules.SecurityBand(security) != NpcSecurityBand.Null)
+        {
+            NpcGuardSeeder.WarmSystem(catalog, systemId);
+        }
+        if (policy.Mining && politics.FactionId.HasValue && NpcConvoyRules.Eligible(security))
+        {
+            _ = catalog.ReadMany(
+                CatalogData.Client.Asteroidcountbytypeidbeltid,
+                catalog.BeltAnchors(systemId).Select(belt => (long)belt.Id)
+            );
         }
     }
 
@@ -65,15 +92,14 @@ internal sealed partial class NpcPopulationSeeder(
 
     public void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
-        var excluded = NpcSpecialTypes.Excluded.ToArray();
-        var retired = world
-            .Filter<WorldNpc>(n =>
-                n.SystemId == systemId
-                && n.Role == NpcRole.Pirate
-                && Enumerable.Contains(excluded, n.TypeId)
-                && n.DestroyedAt == null
-                && n.RetiredAt == null
-            )
+        int rookie = NpcEncounterDefinitions.GuristasRookieType;
+        var legacy = NpcPopulationMember
+            .InSystem(world, systemId)
+            .Where(n => n.Active && (n.TypeId == rookie || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)))
+            .ToArray();
+        var retired = legacy
+            .Where(n => n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId))
+            .Select(n => world.Set<WorldNpc>().Find(n.Id)!)
             .ToArray();
         foreach (var npc in retired)
         {
@@ -92,11 +118,14 @@ internal sealed partial class NpcPopulationSeeder(
                 missile.EndedAt = now;
             }
         }
-        world.SaveChanges();
+        if (retired.Length != 0)
+        {
+            world.SaveChanges();
+        }
         foreach (long encounterId in retired.Select(n => n.EncounterId).Distinct())
         {
             if (
-                !world.Set<WorldNpc>().Any(n => n.EncounterId == encounterId && n.DestroyedAt == null && n.RetiredAt == null)
+                !NpcPopulationMember.AtAnchor(world, encounterId).Any(n => n.Active)
                 && world.Set<WorldNpcEncounter>().Find(encounterId) is { } encounter
             )
             {
@@ -105,16 +134,14 @@ internal sealed partial class NpcPopulationSeeder(
         }
         // Production policy retires the old fixture on activation. Tests inject
         // their own seeder, keeping that fixture isolated from normal space.
-        int rookie = NpcEncounterDefinitions.GuristasRookieType;
-        foreach (
-            var npc in world.Filter<WorldNpc>(n =>
-                n.SystemId == systemId && n.TypeId == rookie && n.DestroyedAt == null && n.RetiredAt == null
-            )
-        )
+        foreach (var member in legacy.Where(n => n.TypeId == rookie))
         {
-            npc.RetiredAt = now;
+            world.Set<WorldNpc>().Find(member.Id)!.RetiredAt = now;
         }
-        world.SaveChanges();
+        if (legacy.Length != 0)
+        {
+            world.SaveChanges();
+        }
         var system = catalog.FindSystem(systemId);
         if (system is null)
         {
@@ -126,8 +153,8 @@ internal sealed partial class NpcPopulationSeeder(
         {
             return;
         }
-        var definition = catalog.Read(CatalogData.Client.Systems, (long)systemId);
-        if (definition?.SecurityStatus is not double security)
+        var politics = catalog.SystemPolitics(systemId);
+        if (politics.Security is not double security)
         {
             Report($"system {systemId} has no pinned security metadata; no population was substituted.");
             return;
@@ -136,7 +163,7 @@ internal sealed partial class NpcPopulationSeeder(
         var policy = world.Settings.NpcPopulation;
         if (policy.Guards)
         {
-            guards.Seed(world, catalog, systemId, definition, band, now);
+            guards.Seed(world, catalog, systemId, band, now);
         }
         if (policy.Convoys)
         {
@@ -144,20 +171,25 @@ internal sealed partial class NpcPopulationSeeder(
         }
         if (policy.Mining)
         {
-            mining.Seed(world, catalog, systemId, definition, security, now);
+            mining.Seed(world, catalog, systemId, politics.FactionId, security, now);
         }
         if (!policy.Pirates)
         {
             return;
         }
-        var belts = catalog
-            .CelestialsInSystem(systemId)
-            .Where(c => c.GroupId == AsteroidDefinitions.BeltGroup)
-            .OrderBy(c => c.Id)
-            .ToArray();
+        var belts = catalog.BeltAnchors(systemId);
+        var encounters = world.Set<WorldNpcEncounter>();
         foreach (var belt in belts)
         {
-            var encounter = world.Set<WorldNpcEncounter>().Find((long)belt.Id);
+            if (
+                encounters is EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter> resident
+                && resident.ReadSnapshot(new(belt.Id)) is { Version: NpcSpawnRules.PopulationVersion } scheduled
+                && (!scheduled.Occupied || scheduled.NextSpawnAt is not long next || now < next)
+            )
+            {
+                continue;
+            }
+            var encounter = encounters.Find((long)belt.Id);
             if (encounter is null)
             {
                 encounter = new()
@@ -182,7 +214,7 @@ internal sealed partial class NpcPopulationSeeder(
             {
                 continue;
             }
-            if (world.Set<WorldNpc>().Any(n => n.EncounterId == encounter.Id && n.DestroyedAt == null && n.RetiredAt == null))
+            if (NpcPopulationMember.AtAnchor(world, encounter.Id).Any(n => n.Active))
             {
                 continue;
             }

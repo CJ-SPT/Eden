@@ -12,7 +12,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Propulsion;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModules modules, SharedTargetLocks locks)
+internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModules modules, SharedTargetLocks locks, SharedSpace space)
     : IModuleEffectSource,
         IDisposable
 {
@@ -22,6 +22,8 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
 
     private long Now() => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
+    internal const string MicroJumpEffect = "microJumpDrive";
+
     internal static bool Handles(string name) => Effect(name) is not null;
 
     private static DogmaEffect? Effect(string name) =>
@@ -30,7 +32,8 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             "cloaking" => DogmaEffect.Cloaking,
             "cloakingPrototype" => DogmaEffect.PrototypeCloaking,
             "cloakingWarpSafe" => DogmaEffect.CovertCloaking,
-            "microJumpDrive" => DogmaEffect.MicroJumpDrive,
+            MicroJumpEffect => DogmaEffect.MicroJumpDrive,
+            "microJumpPortalDriveCapital" => DogmaEffect.CapitalMicroJumpField,
             _ => null,
         };
 
@@ -55,7 +58,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
 
     internal bool BlocksModule(PilotCallContext context, bool offensive)
     {
-        if (!context.Flight.Cloaked)
+        if (!context.Flight.ModuleCloaked)
         {
             return false;
         }
@@ -139,7 +142,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             }
             if (activation.Module.Cloak)
             {
-                if (!context.Flight.Cloaked || context.Flight.HasCloakObstacle())
+                if (!context.Flight.Cloaked || context.Flight.InMilitiaCaptureRange || context.Flight.HasCloakObstacle())
                 {
                     Stop(context, cycle);
                 }
@@ -147,9 +150,22 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             }
             if (activation.EndsAt <= Now())
             {
-                var jump = modules.CompleteJump(cycle.PilotId, cycle.ShipId, activation.Module.ItemId, activation.StartedAt, Now());
+                using var system = activation.Module.Field is null ? null : context.Flight.UseSystem();
+                var candidates = activation.Module.Field is { } field ? space.MicroJumpCandidates(context.Pilot, field.Radius) : null;
+                var jump = modules.CompleteJump(
+                    cycle.PilotId,
+                    cycle.ShipId,
+                    activation.Module.ItemId,
+                    activation.StartedAt,
+                    Now(),
+                    candidates
+                );
                 if (jump is not null)
                 {
+                    foreach (var passenger in jump.Passengers)
+                    {
+                        space.TranslateForMicroJump(context.Pilot.SystemId, passenger);
+                    }
                     context.Flight.AdoptMicroJump(jump);
                 }
                 Stop(context, cycle);
@@ -205,9 +221,16 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             {
                 throw new InvalidDataException("Activate your spatial module outside warp and session transitions.");
             }
-            if (SpatialModuleRules.IsCloak(effect) && context.Flight.HasCloakObstacle())
+            if (SpatialModuleRules.IsCloak(effect))
             {
-                throw new InvalidDataException("Move at least 2 km clear of nearby objects before cloaking.");
+                if (context.Flight.InMilitiaCaptureRange)
+                {
+                    throw new InvalidDataException("Move outside the militia capture radius before cloaking.");
+                }
+                if (context.Flight.HasCloakObstacle())
+                {
+                    throw new InvalidDataException("Move at least 2 km clear of nearby objects before cloaking.");
+                }
             }
             var activated = modules.Activate(context.Pilot.PilotId, module, effect, context.Flight.Heading, context.Flight.Velocity, Now());
             Cycle cycle = new(context.Pilot.PilotId, context.Pilot.ShipId, activated);

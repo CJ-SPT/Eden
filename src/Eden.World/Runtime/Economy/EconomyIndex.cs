@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Eden.World.Runtime.Economy;
 
@@ -165,6 +166,10 @@ internal static class EconomyCandidates
         if (expression is BinaryExpression { NodeType: ExpressionType.AndAlso } and)
         {
             var left = Find(and.Left, row, lookup);
+            if (left is { Count: 0 })
+            {
+                return left;
+            }
             var right = Find(and.Right, row, lookup);
             return left is null ? right
                 : right is null || left.Count <= right.Count ? left
@@ -230,7 +235,19 @@ internal static class EconomyCandidates
 
         IReadOnlyCollection<EconomyKey>? Equal(Expression first, Expression second)
         {
-            if (first is not MemberExpression { Expression: var source } member || source != row || !Independent(second, row))
+            if (first is not MemberExpression { Expression: var source } member || source != row)
+            {
+                return null;
+            }
+            if (second is ConstantExpression constant)
+            {
+                return lookup(member.Member.Name, constant.Value);
+            }
+            if (second is MemberExpression { Member: FieldInfo field, Expression: ConstantExpression { Value: { } target } })
+            {
+                return lookup(member.Member.Name, field.GetValue(target));
+            }
+            if (!Independent(second, row))
             {
                 return null;
             }

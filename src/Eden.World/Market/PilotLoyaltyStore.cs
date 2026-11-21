@@ -138,7 +138,10 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
             && (
                 type.CategoryId == (int)InventoryCategory.Blueprint
                     ? offer.Quantity > 0 && ManufacturingCatalog.Recipes(catalog).ContainsKey(offer.TypeId)
-                    : RedemptionRules.Deliverable((InventoryCategory)type.CategoryId)
+                    : (
+                        RedemptionRules.Deliverable((InventoryCategory)type.CategoryId)
+                        || Eden.Gameplay.FactionWarfare.MilitiaObjectiveRules.IsDeployable(type.Id)
+                    )
             )
             && offer.RequiredItems.All(item => catalog.Definitions.Items.ContainsKey(item.TypeId));
     }

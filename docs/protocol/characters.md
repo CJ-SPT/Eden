@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [World skill training speed, November 21, 2026](#world-skill-training-speed-november-21-2026)
 - [Ship Tree recent-skill lookup, November 15, 2026](#ship-tree-recent-skill-lookup-november-15-2026)
 
 - [Player corporation banners in Character Show Info, November 13, 2026](#player-corporation-banners-in-character-show-info-november-13-2026)
@@ -50,6 +51,52 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+- [Initial corvette fitting](#initial-corvette-fitting)
+
+## World skill training speed, November 21, 2026
+
+The active `progression.trainingSpeedMultiplier` scales SP per minute after the primary and secondary learning attributes and
+the clone-grade modifier. It also scales each period of a level that crosses a cerebral accelerator expiry. Skill ranks,
+level thresholds, clone restrictions and SP awards follow their existing rules.
+
+Queue rows and any rate periods retain their saved times across restart. Subsequent scheduling uses the active configuration.
+Saving an active queue with the same head retains that head's deadline while scheduling its tail. Pausing banks whole SP at
+the saved rate, and resuming schedules the remaining levels at the active rate. Queue changes persist through resident-world
+checkpoints.
+
+Inert inspection of the build **3662168** archive (SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`) confirms that `GetSkillTrainingTimeCalculator`
+uses character attributes and deducts expired booster bonuses locally. The skill service and skill group controller also
+calculate SP per minute for display. The signed login adapter scales the rate used by those three paths. The neural remap
+editor still consumes actual character attributes. Queue rows carry saved timestamps and fractional booster-period data
+for progress and duration estimates. A draft keeps the saved active head's timeline when the head remains in place, and
+estimates new or reordered entries at the current rate. The pinned catalog lists Perception, Willpower and rank 1 for
+skill type 3327 under dogma attributes 180, 181 and 275.
+
+The EVE.js build 3396210 reference uses a server rate in `skillTrainingMath.js` and scales reported learning attributes in
+`skillTrainingSpeed.js` for client estimates. The inspected `skillTrainingSpeed.js` SHA-256 is
+`1221EA51CE15770CFEACFACD238CD5CFB3A5367512D1B3403EDB86D84D726F08`. [EVE University training formula](https://wiki.eveuniversity.org/Skill_training#Effects_on_skill_training)
+
+**Automated validation**
+
+The solution built in 26.60 seconds with zero warnings or errors. The focused run passed 179 tests in 90 seconds with
+`EDEN_TEST_CLIENT_ROOT` set to the pinned build. Class filters covered `WorldSettingsPageTests`, `WorldConfigurationTests`,
+`TrainingRulesTests`, `PilotTrainingTests`, `PilotSkillBookTests`, `BoosterTimingTests`, `BoosterMutationTests`,
+`CharacterSheetTests`, `CloneGradeTests`, `FreeSkillPointTests`, `SkillInjectorLifecycleTests`, `CharacterSheetServiceTests`,
+`BoosterServiceTests`, `ImplantServiceTests`, `FreeSkillPointServiceTests`, `TrainingSpeedClientTests`, `FreePointClientTests`,
+`ConcordOverviewTests`, `PilotLoginTests` and `PlanetaryClientTests`. Exact method filters also covered the rendered settings
+page, revision save and export, repeated Blazor saves, training with booster expiry and clone changes, implant-driven queue
+rebasing, and `FreshProfileStartsEmptyAndPersistsAcrossRestart`. The catalog and formatting policy suites passed 8 and 9
+checks respectively. Formatting and diff checks passed. The milestone sequence took 157 seconds. Client adapter checks ran
+headlessly.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
 
 ## Player corporation banners in Character Show Info, November 13, 2026
 
@@ -520,7 +567,7 @@ Inert inspection of the pinned `clonejumpsvc.pyj`, `jumpClonesPanel.pyj` and sta
 
 Installation requires station service **24**, Jump Clone Facility. Capacity comes from earned Infomorph Psychology **24242**, Advanced **33407** and Elite **73910**, with ranks **1/5/12** from the catalog. Each trained effective level adds one body. Pinned race-specific Alpha grades cap Psychology at I and exclude the other clone skills. Alpha pilots can continue using bodies acquired as Omega, consistent with [CCP's Alpha facts](https://support.eveonline.com/hc/en-us/articles/213811425-Alpha-Clones-and-Omega-Clone-lapsing-Quick-Facts). Capacity is checked for new installations rather than deleting existing bodies after a lapse. Character primes and native brain modifiers expose `maxJumpClones` **979** and `cloneJumpCoolDown` **1921** using the same effective skills as the server. Infomorph skill completion also sends character attribute updates to the existing godma cache, so the panel need not reconnect to observe its new cooldown or capacity.
 
-Cross-station jumps require a capsule and a **24-hour** cooldown reduced by one hour per effective Infomorph Synchronizing **33399** level (catalog rank **2**). The exact deadline is allowed. Swapping within the current NPC station bypasses that check and neither clears nor restarts an existing cross-station timer, following [CCP's 20.07 patch](https://www.eveonline.com/news/view/patch-notes-version-20-07) and the pinned panel's `validate_jump_to`. A body is left at departure even if that station lacks an installation facility; no capacity is consumed by the swap. Remote wormhole destinations other than **Thera 31000005** and Pochven are rejected, following [CCP's jump-clone restrictions](https://support.eveonline.com/hc/en-us/articles/203217202-Jump-Clones). Special Pochven standings/installation rules, Upwell services, capital vat bays and non-learning implant effects remain unavailable; learning implant ownership/transfer is implemented in the later milestone.
+Cross-station jumps require a capsule and a **24-hour** cooldown reduced by one hour per effective Infomorph Synchronizing **33399** level (catalog rank **2**). The exact deadline is allowed. Swapping within the current NPC station bypasses that check and neither clears nor restarts an existing cross-station timer, following [CCP's 20.07 patch](https://www.eveonline.com/news/view/patch-notes-version-20-07) and the pinned panel's `validate_jump_to`. A body is left at departure even if that station lacks an installation facility; no capacity is consumed by the swap. Remote wormhole destinations other than **Thera 31000005** and Pochven are rejected, following [CCP's jump-clone restrictions](https://support.eveonline.com/hc/en-us/articles/203217202-Jump-Clones). [Mobile capital vat bays](capital-logistics.md#mobile-jump-clones) now support invite-based installation and capsule arrivals from NPC stations. Special Pochven standings and installation rules, Upwell cloning services and non-learning implant effects remain open.
 
 The native client automatically calls `ship.LeaveShip(currentShipID)` when starting a jump from a hull. Eden now supports that docked operation, preserving the old ship, modules and cargo and selecting an existing local Capsule **670** or creating one. A clone jump retires only the departure capsule and selects a new capsule at the destination; it does not record a pod death, insurance payout or recovery grant. Home station and other assets stay in place. Actual home-clone self-destruction retires the active named body while preserving stored bodies and the jump timer. Old location bindings are released, and inventory changes, the brain, clone-cache invalidation and balance notifications precede the native session delta. Service bindings require the client's exact current-location/group tuple rather than None or an arbitrary location.
 
@@ -853,6 +900,31 @@ Each of the 12 standard schools has one listed starting station in its mapped sy
 **Live Windows client.** On a copy of the local world, Caldari pilot `test` entered Amsen in an Ibis. The location panel initially failed in `InfoPanelLocationInfo.UpdateMainLocationInfo` when the corruption lookup returned 501. Eden now returns stage zero and zero progress with denominator one. After a server and client restart the panel displayed **Amsen 0.9**, **Sela**, **Lonetrek**, and **Amsen VI – AIR Laboratories**. Eden Pilot resumed in Jita near the Perimeter gate and Inventory showed **Ibis (Ibis)**. A Gallente Federal Navy Academy pilot created in the third slot received a Velator at Duripant VII – AIR Laboratories, station 60015160. The maintainer confirmed the ship and home-station checks. After restarting both processes, the same pilot and ship item returned to the same station, and the panel showed Duripant 0.9, Crux and Essence.
 
 **Automated checks.** Restore, build and formatting verification passed. All 80 tests passed, including the 12 standard schools, an explicit starter-space station, all four corvettes, immediate keyword selection, saved avatar rows, pilot ownership, duplicate names, full slots, rollback after a skill grant failure, and migration of a two-pilot version-11 save.
+
+## Initial corvette fitting
+
+`CreateCharacterWithDoll` previously placed Eden's two starting modules in the station hangar. With
+`settings.progression.grantStartingEquipment` enabled, creation now commits the active hull and its online Civilian Miner
+(type 3651, flag 27) and Civilian Gatling Railgun (type 3638, flag 28) in the same resident transaction. Each module is a
+singleton located on the hull. The kit is shared with recovery corvettes and persists through the normal checkpoint. With
+the setting disabled, character creation grants an empty corvette. Existing pilots can fit their original hangar grants
+manually.
+
+The build 3662168 catalog gives the Reaper, Impairor, Ibis and Velator two high slots and two turret hardpoints each.
+The kit draws 69 tf CPU and 8 MW power, within the base budgets of all four hulls. EVE.js package 261108.1 also fits a
+rookie ship during `CreateCharacterWithDoll`. Eden uses its established two-module recovery kit for all four races.
+[EVE University Corvette reference](https://wiki.eveuniversity.org/Corvettes)
+
+**Automated validation.** The starting-equipment regression reproduced the loose hangar grants on the original code.
+The exact `StartingEquipmentPolicyAppliesOnlyToNewPilotsInResidentWorld` and
+`CreatorCanSelectItsNewCharacterByKeywordAndReadBackTheAvatar` filters passed all six cases in 19.93 seconds.
+They cover all four hulls, the disabled setting, checkpoint and reopen, first selection and the fitted status in ship dogma.
+The affected suite passed 92 tests in 33.91 seconds using
+`FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~CharacterCreationTests|FullyQualifiedName~CorvetteRecoveryTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~InventoryOwnershipTests`.
+The solution built in 2.71 seconds with zero warnings and errors. Catalog policy (8 cases), formatting policy (9 cases),
+repository formatting, and diff checks passed. The complete sequence took 114.66 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
 
 ## Character Show Info from a player corporation — November 8, 2026
 

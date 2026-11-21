@@ -143,9 +143,14 @@ public sealed class ResidentPopulationTests
     }
 
     [Fact]
-    public void PreparedJobIsRejectedWhenItsSystemBecomesEmpty()
+    public void TravelCanBePreparedAfterLocalDepartureUntilTheLastHumanLeaves()
     {
-        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerBackgroundPreparationTests.PrepareStartup(fixture);
+        using (CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock))
+        {
+            provisioner.EnsureSystem(Home);
+        }
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         using var human = host.GetRequiredService<IHumanPresence>().Select(Human, Home);
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
@@ -162,8 +167,14 @@ public sealed class ResidentPopulationTests
         }
         Assert.True(scheduler.PreparationCurrent(input));
         human.Transfer(Remote);
-        Assert.False(scheduler.PreparationCurrent(input));
+        var background = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
+        Assert.Equal(input.Job, background.Job);
+        Assert.Empty(background.Geometry);
+        Assert.True(scheduler.PreparationCurrent(background));
+        human.Dispose();
+        Assert.False(scheduler.PreparationCurrent(background));
         Assert.Null(scheduler.CapturePreparation());
-        Assert.Equal(input.Job, live.CapsuleerJobs[input.Job.PilotId]);
+        Assert.DoesNotContain(input.Job.PilotId, live.CapsuleerJobs.Keys);
+        Assert.Contains(input.Job, scheduler.Jobs());
     }
 }

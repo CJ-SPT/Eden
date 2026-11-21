@@ -17,7 +17,8 @@ public sealed record MarketOrder(
     int DurationDays = MarketDefinitions.NpcOrderDays,
     long EscrowCents = 0,
     int Range = MarketDefinitions.StationRange,
-    int MinimumVolume = 1
+    int MinimumVolume = 1,
+    bool IsCorporation = false
 );
 
 public sealed record MarketSale(long ItemId, int StationId, int TypeId, long LimitPriceCents, int Quantity);
@@ -74,6 +75,8 @@ public interface IPilotMarket
     void CheckStation(long pilotId, int stationId);
     long Balance(long pilotId);
     IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null);
+
+    // An immutable snapshot, shared across reads while the best asks are unchanged.
     IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope);
     IReadOnlyList<MarketTrade> Transactions(long pilotId, MarketTransactionQuery? query = null);
     IReadOnlyList<WalletEntryDefinition> EntryTypes();

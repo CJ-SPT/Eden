@@ -12,6 +12,7 @@ using Eden.Server.Administration;
 using Eden.World.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Eden.Protocol.Tests.Administration;
 
@@ -83,10 +84,24 @@ public sealed partial class AdministrationTests
         await using var fixture = await Fixture.Start();
         await fixture.SignIn();
         string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
-        foreach (string label in new[] { "Gathering", "Rewards", "Progression", "Industry", "World & economy", "Advanced" })
+        foreach (
+            string label in new[]
+            {
+                "Gathering",
+                "Rewards",
+                "Progression",
+                "Fitting",
+                "Industry",
+                "Economy & market",
+                "NPCs & exploration",
+                "Player bots",
+                "Advanced",
+            }
+        )
         {
             Assert.Contains(label, html);
         }
+        Assert.Contains("Help for Renewal hour (UTC)", html);
         Assert.Contains("Save for restart", html);
         Assert.Contains("Discard unsaved changes", html);
         Assert.Contains("Changed values", html);
@@ -94,12 +109,17 @@ public sealed partial class AdministrationTests
         Assert.Contains("Active settings", html);
         Assert.Contains("aria-pressed=\"true\"", html);
         Assert.Contains("Reset Ore mining yield to 1×", html);
+        Assert.Contains("Reset Ship CPU output to 1×", html);
+        Assert.Contains("Reset Ship power grid output to 1×", html);
+        Assert.Contains("Reset Rig calibration to 1×", html);
+        Assert.Contains("Reset Drone bandwidth to 1×", html);
         Assert.Contains("Reset Mining skill points to 1\u00d7", html);
         Assert.Contains("Reference ISK per SP", html);
         Assert.Contains("Base SP rate (% of gross bounty)", html);
         Assert.Contains("Reset to 400 ISK", html);
         Assert.Contains("Active now: 2,500 SP", html);
-        Assert.Contains("Training speed and skill requirements are unchanged", html);
+        Assert.Contains("Reset Skill training speed to 1×", html);
+        Assert.Contains("Pause and resume to apply it to ongoing training", html);
     }
 
     [Fact]
@@ -109,13 +129,26 @@ public sealed partial class AdministrationTests
         await fixture.SignIn();
         string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
         Assert.Contains("Enable player bots", html);
-        Assert.Contains("Simulated miners", html);
+        Assert.Contains("Simulated mining fleets", html);
         Assert.Contains("Station traffic density (×)", html);
         Assert.Contains("Visitors per watched gate", html);
-        Assert.Contains("without deleting them", html);
-        Assert.Contains("prepared globally on restart", html);
+        Assert.Contains("Regional conflicts", html);
+        Assert.Contains("Regional operations per group", html);
+        Assert.Contains("reuses them when slots reopen", html);
+        Assert.Contains("Dedicated courier pilots", html);
+        Assert.Contains("Dedicated bounty hunters", html);
+        Assert.Contains("Ambient traffic", html);
+        Assert.Contains("Explore data and relic sites", html);
+        Assert.Contains("Salvage NPC wrecks", html);
         var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
-        var policy = new CapsuleerPopulationPolicy(false, false, false, 0.5m, 2);
+        var policy = new CapsuleerPopulationPolicy(false, false, false, 0.5m, 2)
+        {
+            RegionalConflicts = false,
+            RegionalOperationsPerGroup = 3,
+            Exploration = false,
+            WreckSalvage = false,
+        };
+        Assert.Equal(policy, SettingsForm.From(new() { Capsuleers = policy }).Build().Capsuleers);
         var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Capsuleers = policy } };
         using var saved = await fixture.Client.PostAsJsonAsync("/api/admin/revisions", new AdminSaveRequest(state.Generation, draft));
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
@@ -126,6 +159,8 @@ public sealed partial class AdministrationTests
         Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Capsuleers);
         var differences = await fixture.Client.GetFromJsonAsync<RevisionDifference[]>("/api/admin/compare?left=1&right=2");
         Assert.Contains(differences!, c => c.Field == "Station traffic density");
+        Assert.Contains(differences!, c => c.Field == "Explore data and relic sites" && c.After == "Off");
+        Assert.Contains(differences!, c => c.Field == "Salvage NPC wrecks" && c.After == "Off");
         using var invalid = await fixture.Client.PostAsJsonAsync(
             "/api/admin/validate",
             draft with
@@ -134,10 +169,21 @@ public sealed partial class AdministrationTests
             }
         );
         Assert.False((await invalid.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
+        using var unknownSystem = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/validate",
+            draft with
+            {
+                Settings = draft.Settings with
+                {
+                    Capsuleers = policy with { SystemAccess = policy.SystemAccess.Add(1, CapsuleerRegionAccess.TransitOnly) },
+                },
+            }
+        );
+        Assert.False((await unknownSystem.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
     }
 
     [Fact]
-    public async Task MiningSkillPointControlSavesExportsAndComparesPendingRates()
+    public async Task ProgressionControlsSaveExportAndComparePendingRates()
     {
         await using var fixture = await Fixture.Start();
         await fixture.SignIn();
@@ -147,12 +193,14 @@ public sealed partial class AdministrationTests
             MiningSkillPointMultiplier = 2.5m,
             KillSkillPointPercent = 1.25m,
             MiningIskPerSkillPoint = 125.5m,
+            TrainingSpeedMultiplier = 10,
         };
         var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Progression = policy } };
         using var saved = await fixture.Client.PostAsJsonAsync("/api/admin/revisions", new AdminSaveRequest(state.Generation, draft));
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
         var pending = (await saved.Content.ReadFromJsonAsync<ConfigurationState>())!;
         Assert.Equal(1, pending.Active.Draft.Settings.Progression.MiningSkillPointMultiplier);
+        Assert.Equal(1, pending.Active.Draft.Settings.Progression.TrainingSpeedMultiplier);
         Assert.Equal(policy, pending.Pending!.Draft.Settings.Progression);
         using var export = await fixture.Client.GetAsync($"/api/admin/export/{pending.Pending.Id}");
         Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Progression);
@@ -160,6 +208,15 @@ public sealed partial class AdministrationTests
         Assert.Contains(differences!, c => c.Field == "Mining skill points" && c.After == "2.5\u00d7");
         Assert.Contains(differences!, c => c.Field == "NPC kill base SP rate (%)" && c.After == "1.25");
         Assert.Contains(differences!, c => c.Field == "Mining reference ISK per SP" && c.After == "125.5");
+        Assert.Contains(differences!, c => c.Field == "Skill training speed" && c.After == "10×");
+        using var invalid = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/validate",
+            draft with
+            {
+                Settings = draft.Settings with { Progression = policy with { TrainingSpeedMultiplier = 0 } },
+            }
+        );
+        Assert.False((await invalid.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
     }
 
     private const string Password = "local administrator password";
@@ -182,9 +239,18 @@ public sealed partial class AdministrationTests
             Client = new(handler);
         }
 
-        internal static async Task<Fixture> Start(bool liveWorld = false)
+        internal static async Task<Fixture> Start(bool liveWorld = false, string? culture = null)
         {
             Fixture fixture = new(liveWorld);
+            if (culture is not null)
+            {
+                fixture.App.UseRequestLocalization(
+                    new RequestLocalizationOptions()
+                        .SetDefaultCulture(culture)
+                        .AddSupportedCultures(culture)
+                        .AddSupportedUICultures(culture)
+                );
+            }
             await fixture.App.StartAsync();
             fixture.Client.BaseAddress = new Uri(Assert.Single(fixture.App.Urls));
             return fixture;
@@ -221,6 +287,18 @@ public sealed partial class AdministrationTests
             await App.DisposeAsync();
             World.Dispose();
         }
+    }
+
+    [Fact]
+    public async Task AdministrationLogsCircuitFailuresWithoutEnablingRoutineFrameworkMessages()
+    {
+        await using var fixture = await Fixture.Start();
+        var logs = fixture.App.Services.GetRequiredService<ILoggerFactory>();
+        var circuit = logs.CreateLogger("Microsoft.AspNetCore.Components.Server.Circuits.CircuitHost");
+        Assert.True(circuit.IsEnabled(LogLevel.Warning));
+        Assert.True(circuit.IsEnabled(LogLevel.Error));
+        Assert.False(circuit.IsEnabled(LogLevel.Information));
+        Assert.False(logs.CreateLogger("Microsoft.AspNetCore.Hosting.Diagnostics").IsEnabled(LogLevel.Warning));
     }
 
     [Fact]
@@ -310,8 +388,13 @@ public sealed partial class AdministrationTests
         Assert.Equal(before, scheduler.Jobs());
         string html = await fixture.Client.GetStringAsync("/population");
         Assert.Contains("Autonomous population", html);
+        Assert.Contains("Regional conflicts", html);
+        Assert.Contains("No regional operations have been established yet", html);
+        Assert.Empty(snapshot.RegionalConflicts);
         Assert.Contains("href=\"/population\"", html);
         Assert.Contains("Active population settings", html);
+        Assert.Contains("Explore data and relic sites: On", html);
+        Assert.Contains("Salvage NPC wrecks: On", html);
         Assert.Contains("Saved pilots", html);
         Assert.DoesNotContain("Recent system returns", html);
         Assert.DoesNotContain("Forgone remote seconds on return", html);
@@ -347,12 +430,16 @@ public sealed partial class AdministrationTests
         Assert.True(snapshot.Resources.Uptime > TimeSpan.Zero);
         Assert.True(snapshot.Resources.ProcessThreads > 0);
         Assert.Equal(0, snapshot.ActiveSessions);
+        Assert.Equal(Eden.Infrastructure.Diagnostics.SessionFrameMonitor.HistoryLength, snapshot.FrameHistory.Length);
+        Assert.All(snapshot.FrameHistory, interval => Assert.Equal(0, interval.Count));
         Assert.False(snapshot.ResidentWorld);
         Assert.Null(snapshot.LastCheckpoint);
         Assert.Equal(TimeSpan.FromMilliseconds(11), snapshot.Capsuleers!.Runtime.LastSimulation);
         string html = await fixture.Client.GetStringAsync("/performance");
         Assert.Contains("Server performance", html);
         Assert.Contains("Memory in RAM", html);
+        Assert.Contains("Session frame latency", html);
+        Assert.Contains("No completed pilot frames", html);
         Assert.Contains("Last traffic maintenance pass", html);
         Assert.Contains("Saved communities / pilots", html);
         Assert.Contains("Scheduled pilots", html);

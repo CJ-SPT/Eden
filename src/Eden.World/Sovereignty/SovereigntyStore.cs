@@ -27,9 +27,11 @@ internal sealed class SovereigntyStore(WorldDatabase database) : ISovereignty
                     .ToImmutableArray()
         );
 
-    public SovereigntySystem? System(int systemId)
+    public SovereigntySystem? System(int systemId) => System(database.Catalog, systemId);
+
+    internal static SovereigntySystem? System(CatalogProvider catalog, int systemId)
     {
-        var row = database.Catalog.Find(CatalogData.Sde.MapSolarSystems, (long)systemId);
+        var row = catalog.Find(CatalogData.Sde.MapSolarSystems, (long)systemId);
         if (
             row is null
             || row.RegionID is not > 0 or > int.MaxValue
@@ -39,8 +41,8 @@ internal sealed class SovereigntyStore(WorldDatabase database) : ISovereignty
         {
             return null;
         }
-        var constellation = database.Catalog.Find(CatalogData.Sde.MapConstellations, row.ConstellationID.Value);
-        var region = database.Catalog.Find(CatalogData.Sde.MapRegions, row.RegionID.Value);
+        var constellation = catalog.Find(CatalogData.Sde.MapConstellations, row.ConstellationID.Value);
+        var region = catalog.Find(CatalogData.Sde.MapRegions, row.RegionID.Value);
         if (constellation is null || region is null || constellation.RegionID != row.RegionID)
         {
             return null;

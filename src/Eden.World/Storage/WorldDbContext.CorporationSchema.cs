@@ -14,6 +14,7 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        CorporationCalendarSchema.Configure(model);
         model
             .Entity<SavedCorporationOffice>()
             .ToTable("WorldCorporationOffice", t => t.HasCheckConstraint("CK_CorporationOffice_Fee", "FeeCents>=0"))

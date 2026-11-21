@@ -1,14 +1,19 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.FactionWarfare;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
 using Eden.World.Characters;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +21,64 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CharacterSheetServiceTests
 {
+    [Fact]
+    public void CharacterCreationDateAndOrganizationFallbackUseTheSelectedPilotAndCommittedAffiliations()
+    {
+        const long own = 90000001;
+        const long other = 90000002;
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        using var scope = db.Services.CreateScope();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(db.Store, p, clock, new(), db.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        object?[] requested = [new List<object?> { own, other, other, long.MaxValue }];
+        Assert.Same(PilotCallResult.Unsupported, Call("GetCharacterCreationDate", []));
+        Assert.Same(PilotCallResult.Unsupported, Call("GetOrganizationInfoForCharacters", requested));
+        context.Select(pilot);
+
+        Assert.Equal(pilot.Identity.Profile.CreatedAt, Reply(Call("GetCharacterCreationDate", [])));
+        Assert.IsType<PilotCallResult.Failure>(Call("GetCharacterCreationDate", [other]));
+        Assert.IsType<PilotCallResult.Failure>(Call("GetOrganizationInfoForCharacters", [new List<object?> { "90000002" }]));
+        var before = Organizations();
+        Assert.Equal(3, before.Count);
+        Assert.Equal((long)pilot.CorpId, Fields(before[own])["corporationID"]);
+        Assert.All(Fields(before[long.MaxValue]).Values, value => Assert.Equal(0L, value));
+        Assert.Equal(0L, Fields(before[other])["warFactionID"]);
+
+        using (var action = db.Services.GetRequiredService<LiveWorld>().Economy.Begin(TransactionParticipants.None))
+        {
+            action.Add(new SavedMilitiaEnlistment { PilotId = other, DirectFaction = MilitiaFaction.Caldari });
+            Assert.Equal(0L, Fields(Organizations()[other])["warFactionID"]);
+            action.Commit();
+        }
+        var after = Fields(Organizations()[other]);
+        Assert.Equal((long)db.Store.FindPilot(1000002)!.CorpId, after["corporationID"]);
+        Assert.Equal(0L, after["allianceID"]);
+        Assert.Equal((long)MilitiaFaction.Caldari, after["warFactionID"]);
+        Assert.Empty(context.Notifications);
+
+        PilotCallResult Call(string method, object?[] args) =>
+            router.Call(context, "charMgr", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { });
+
+        Dictionary<long, object?> Organizations() =>
+            Assert.IsType<Dictionary<long, object?>>(Reply(Call("GetOrganizationInfoForCharacters", requested)));
+
+        static Dictionary<string, object?> Fields(object? value)
+        {
+            var keyval = Assert.IsType<BlueInstance>(value);
+            Assert.Equal("utillib.KeyVal", keyval.Name);
+            return BlueRead.Fields(keyval.State);
+        }
+    }
+
     [Theory]
     [InlineData(90000001L)]
     [InlineData(90000002L)]

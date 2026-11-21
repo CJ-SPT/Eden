@@ -3,7 +3,10 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.PilotSessions;
+using Eden.Server;
+using Eden.World.Capsuleers;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +16,38 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class CloneGradeTests
 {
+    [Fact]
+    public void RestartRepairsTheBotAccountAndResidentWritesKeepItOmega()
+    {
+        using TestWorld db = new();
+        WorldDatabase database = new(db.Path);
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(
+                new Account
+                {
+                    Id = CapsuleerCommunityStore.MinerAccountId,
+                    UserName = "Capsuleer Community",
+                    CloneGrade = AccountCloneGrade.Alpha,
+                }
+            );
+            world.SaveChanges();
+        }
+        WorldInitialization.Initialize(database);
+        using var host = ServerServices.Build(database, liveWorld: true, population: new TestNpcPopulationSeeder());
+        var live = host.GetRequiredService<LiveWorld>();
+        Assert.Equal(AccountCloneGrade.Omega, Grade(CapsuleerCommunityStore.MinerAccountId));
+        Assert.Equal(AccountCloneGrade.Alpha, Grade(1000001L));
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<Account>().Find(CapsuleerCommunityStore.MinerAccountId)!.CloneGrade = AccountCloneGrade.Alpha;
+            Assert.Throws<InvalidDataException>(action.Commit);
+        }
+        Assert.Equal(AccountCloneGrade.Omega, Grade(CapsuleerCommunityStore.MinerAccountId));
+
+        AccountCloneGrade Grade(long account) => live.Economy.Inspect(world => world.Set<Account>().Find(account)!.CloneGrade);
+    }
+
     [Theory]
     [InlineData(AccountCloneGrade.Alpha, 1000)]
     [InlineData(AccountCloneGrade.Omega, 500)]

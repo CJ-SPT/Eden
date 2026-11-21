@@ -31,9 +31,18 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         }
     }
 
-    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, ClientSystems system, double security, long now)
+    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long? factionId, double security, long now)
     {
-        if (!NpcConvoyRules.Eligible(security) || system.FactionID is not long faction)
+        if (!NpcConvoyRules.Eligible(security) || factionId is not long faction)
+        {
+            return;
+        }
+        long id = NpcMiningRules.EncounterId(systemId);
+        var encounters = world.Set<WorldNpcEncounter>();
+        if (
+            encounters is EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter> resident
+            && resident.ReadSnapshot(new(id))?.NextSpawnAt > now
+        )
         {
             return;
         }
@@ -42,13 +51,12 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         {
             return;
         }
-        long id = NpcMiningRules.EncounterId(systemId);
-        var operation = world.Set<WorldNpcMiningOperation>().Find(id);
-        var encounter = world.Set<WorldNpcEncounter>().Find(id);
+        var encounter = encounters.Find(id);
         if (encounter?.NextSpawnAt > now)
         {
             return;
         }
+        var operation = world.Set<WorldNpcMiningOperation>().Find(id);
         if (operation is null)
         {
             AsteroidFieldStore.Populate(world, catalog, systemId, now);
@@ -91,12 +99,15 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
             SpawnMiners(world, catalog, operation, encounter, rock, now);
         }
         encounter!.NextSpawnAt = checked(now + TimeSpan.TicksPerSecond);
-        var active = world
-            .Filter<WorldNpc>(n => n.EncounterId == id && n.DestroyedAt == null && n.RetiredAt == null)
-            .OrderBy(n => n.Id)
+        var npcs = world.Set<WorldNpc>();
+        var active = NpcPopulationMember
+            .AtAnchor(world, id)
+            .Where(npc => npc.Active)
+            .OrderBy(npc => npc.Id)
+            .Select(npc => npcs.Find(npc.Id)!)
             .ToArray();
-        var activeIds = active.Select(n => n.Id).ToArray();
-        var members = world.Filter<WorldNpcMiningMember>(m => Enumerable.Contains(activeIds, m.NpcId)).ToArray();
+        var miningMembers = world.Set<WorldNpcMiningMember>();
+        var members = active.Select(npc => miningMembers.Find(npc.Id)).OfType<WorldNpcMiningMember>().ToArray();
         if (operation.ResetAt is long reset && now >= reset)
         {
             foreach (var npc in active)
@@ -275,10 +286,11 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         {
             return;
         }
-        var hostiles = world
-            .Filter<SavedNpcStanding>(s => s.SourceId == operation.CorporationId && s.Value <= NpcMiningRules.HostileStanding)
-            .Select(s => s.PilotId)
-            .ToArray();
+        var hostiles = NpcPopulationSchedule.HostilePilots(world, operation.CorporationId).ToArray();
+        if (hostiles.Length == 0)
+        {
+            return;
+        }
         var positions = world
             .Filter<Pilot>(p => Enumerable.Contains(hostiles, p.Id))
             .Where(p => p.ActiveShip.Position != null)

@@ -19,6 +19,35 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
         ICharacterDirectory,
         ILocalCharacterSearch
 {
+    public IReadOnlyDictionary<long, CharacterAffiliation> Affiliations(IReadOnlyList<long> ids)
+    {
+        Dictionary<long, CharacterAffiliation> affiliations = [];
+        if (ids.Count == 0)
+        {
+            return affiliations;
+        }
+        var live =
+            LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Character affiliations require the resident world.");
+        var snapshot = live.OwnerDirectory.Snapshot;
+        foreach (long id in ids)
+        {
+            if (snapshot.Pilots.GetValueOrDefault(id) is { } pilot)
+            {
+                int corporation = pilot.CorporationId;
+                affiliations[id] = new(corporation, snapshot.AllianceMemberships.GetValueOrDefault(corporation), snapshot.PilotMilitia(id));
+            }
+        }
+        var missing = ids.Where(id => !affiliations.ContainsKey(id)).ToArray();
+        if (missing.Length > 0)
+        {
+            foreach (var npc in npcs.Characters(missing))
+            {
+                affiliations[npc.Identity.Id] = new(npc.CorporationId);
+            }
+        }
+        return affiliations;
+    }
+
     public int? Corporation(long characterId)
     {
         if (LiveWorld.Find(database.Path) is { } live)

@@ -66,7 +66,12 @@ internal sealed partial class ResidentEconomy
                         reader.GetString(7)
                     ),
                 row => new(row.Id),
-                indexes: [new("SystemId", row => row.SystemId), new("ModuleId", row => row.ModuleId)],
+                indexes:
+                [
+                    new("SystemId", row => row.SystemId),
+                    new("ModuleId", row => row.ModuleId),
+                    new("SourceShipId", row => row.SourceShipId),
+                ],
                 changed: AreaWeaponChanged,
                 rowIdIsKey: true
             )

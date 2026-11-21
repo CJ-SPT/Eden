@@ -86,6 +86,7 @@ public sealed class SavedMarketPayment
 
 public sealed class SavedPersonalOrder
 {
+    public int? CorporationId { get; set; }
     public long Id { get; set; }
     public long PilotId { get; set; }
     public int StationId { get; set; }
@@ -104,7 +105,22 @@ public sealed class SavedPersonalOrder
     public PersonalOrderStatus Status { get; set; }
 
     public MarketOrder Snapshot() =>
-        new(Id, StationId, SystemId, RegionId, PilotId, TypeId, Bid, PriceCents, Remaining, Entered, Issued, DurationDays, EscrowCents);
+        new(
+            Id,
+            StationId,
+            SystemId,
+            RegionId,
+            CorporationId ?? PilotId,
+            TypeId,
+            Bid,
+            PriceCents,
+            Remaining,
+            Entered,
+            Issued,
+            DurationDays,
+            EscrowCents,
+            IsCorporation: CorporationId.HasValue
+        );
 }
 
 public sealed class SavedRedeemedCurrency

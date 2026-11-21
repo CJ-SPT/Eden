@@ -1,0 +1,17 @@
+@page "/world"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+<PageTitle>World · Eden</PageTitle>
+<h1>Wipe world</h1>
+<p>This permanently removes every character, player bot, ship, item, corporation, alliance, structure,
+    market order, wallet, industry job and other saved gameplay state, including mod world state.</p>
+<p>Accounts, passwords, account roles and clone grades remain. Server configuration, installed mods,
+    catalog data and administrator access remain.</p>
+<p>The server disconnects players and stops cleanly, saves the latest world, then creates and verifies
+    a backup before deleting anything. If shutdown or backup fails, the wipe does not proceed.</p>
+<p class="error">The server stays stopped afterward. Wait for the console to report completion before restarting it.
+    Restart creates fresh NPC populations and market supply according to your settings. Players create new characters.</p>
+<form method="post" action="/api/admin/world/wipe">
+    <AntiforgeryToken />
+    <label>Type WIPE WORLD to confirm <input name="confirmation" autocomplete="off" required pattern="WIPE WORLD" /></label>
+    <button type="submit">Back up, wipe world and stop server</button>
+</form>

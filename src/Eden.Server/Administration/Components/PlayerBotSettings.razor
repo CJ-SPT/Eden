@@ -1,0 +1,195 @@
+<section class="card settings-group">
+    <h3>Mining</h3>
+    <div class="settings-fields">
+        <SettingField Label="Simulated mining fleets"
+                      Help="Allows simulated mining pilots to work asteroid belts in eligible systems.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.SimulatedMiners" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="React to ships and remember dangerous belts"
+                      Help="Allows simulated pilots to use observed threats and remember dangerous belts when choosing where to work.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.SituationalAwareness" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>Hauling &amp; deliveries</h3>
+    <p class="muted">Budget ranges apply to new shipments. Actual cargo value depends on what fits in the hold and which goods are available.</p>
+    <div class="settings-fields">
+        <SettingField Label="Dedicated courier pilots"
+                      Help="Admits dedicated pilots who take station-agent delivery contracts in fresh universes.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.FreshCourierPilots" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Carry trade goods on civilian routes"
+                      Help="Loads new trade-good shipments for eligible travelers. Cargo already aboard and player-market supply jobs continue.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.TradeGoodsFreight" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Use regional hauler hulls"
+                      Help="Chooses generated hauler hulls from regional profiles.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.FreightVariedHulls" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Ordinary freight minimum budget (ISK)"
+                      Help="Lower end of the target budget for ordinary shipments.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightOrdinaryMinimumIsk" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Ordinary freight maximum budget (ISK)"
+                      Help="Upper end of the target budget for ordinary shipments.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightOrdinaryMaximumIsk" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Courier minimum budget (ISK)"
+                      Help="Lower end of the target budget for valuable courier shipments.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightCourierMinimumIsk" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Courier maximum budget (ISK)"
+                      Help="Upper end of the target budget for valuable courier shipments.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightCourierMaximumIsk" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Valuable trips among eligible couriers (%)"
+                      Help="Chance for an eligible courier to take a valuable shipment.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightCourierPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Empty subsequent freight trips (%)"
+                      Help="Chance for a hauler to travel empty on a later trip.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightEmptyReturnPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Freight stacks surviving destruction (%)"
+                      Help="Chance per freight stack to survive in the wreck, using the setting active at the time of loss.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.FreightWreckSurvivalPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Freight cargo type IDs"
+                      Help="Enter comma-separated catalog type IDs for trade goods. Leave blank to use the standard assortment.">
+            <Control Context="field"><InputText id="@field.Input" @bind-Value="Form.FreightCargoTypeIds" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>PvE combat &amp; salvage</h3>
+    <div class="settings-fields">
+        <SettingField Label="Dedicated bounty hunters"
+                      Help="Admits dedicated combat pilots in fresh universes. Requires belt ratting.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.FreshBountyPilots" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Run belt-ratting sorties"
+                      Help="Allows eligible combat pilots to hunt NPC pirates in asteroid belts.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BeltRatting" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Run ordinary combat anomalies"
+                      Help="Allows eligible combat pilots to visit ordinary combat anomalies.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.AnomalyRatting" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Salvage NPC wrecks"
+                      Help="Allows bot ratters to fit salvagers and recover salvage from their own wrecks. Ordinary wreck looting is separate.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BotWreckSalvage" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>Exploration</h3>
+    <div class="settings-fields">
+        <SettingField Label="Explore data and relic sites"
+                      Help="Allows eligible bots to fit exploration ships, scan and hack high-security pirate sites. An explorer already in flight returns to its departure station after this is turned off.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BotExploration" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>PvP gate camps</h3>
+    <div class="settings-fields">
+        <SettingField Label="Temporary gate camps"
+                      Help="Allows eligible combat pilots to form temporary camps at stargates.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.GateCamps" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Lowsec camps against legal targets"
+                      Help="Extends gate camps to low-security systems, where campers engage legal targets.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.LowsecGateCamps" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Launch fitted interdiction probes"
+                      Help="Allows fitted interdictors to launch bubbles during nullsec camps.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.CampBubbles" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Camp chance per departure (%)"
+                      Help="Chance for an eligible departing pilot to start a camp during an open shift.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.CampPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Gate camp shift length (seconds)"
+                      Help="Duration of a temporary gate camp shift.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.CampSeconds" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Interdictors among generated nullsec combat fits (%)"
+                      Help="Share of new nullsec combat fits generated as interdictors.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.InterdictorPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>PvP roams &amp; regional conflicts</h3>
+    <div class="settings-fields">
+        <SettingField Label="Nullsec PvP roams"
+                      Help="Allows eligible armed pilots to hunt targets while traveling in nullsec.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RoamingPvp" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Persistent roaming gangs"
+                      Help="Allows eligible nullsec pilots to assemble coordinated gangs using their existing ships.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RoamingGangs" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Roaming gang size (3–6)"
+                      Help="Number of pilots required to assemble a roaming gang.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.RoamingGangSize" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Roam chance per departure (%)"
+                      Help="Chance per eligible departure to start a roam. Also used for gang formation.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.RoamPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Combat fits among generated nullsec pilots (%)"
+                      Help="Share of new nullsec pilots generated with combat fits.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.GeneratedCombatPercent" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Regional conflicts"
+                      Help="Allows groups to raid rival corridors, escort owned freight and respond to witnessed attacks.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RegionalConflicts" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Simultaneous regional operations per group (1–3)"
+                      Help="Caps how many regional operations a group can carry out at once.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.RegionalOperationsPerGroup" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>Corporations, alliances &amp; sovereignty</h3>
+    <div class="settings-fields">
+        <SettingField Label="Automatic corporation formation and recruitment"
+                      Help="Lets bots found corporations, advertise, seek employers and make automatic offers to human applicants. Existing bot applications continue through review.">
+            <Control Context="field">
+                <InputCheckbox id="@field.Input" @bind-Value="Form.AutomaticRecruitment" aria-describedby="@field.Help" />
+            </Control>
+        </SettingField>
+        <SettingField Label="Form and grow bot alliances"
+                      Help="Lets bot corporations found alliances and initiate new admissions. Accepted applications and alliance dues continue.">
+            <Control Context="field">
+                <InputCheckbox id="@field.Input" @bind-Value="Form.AutomaticAlliances" aria-describedby="@field.Help" />
+            </Control>
+        </SettingField>
+        <SettingField Label="Start new sovereignty claims"
+                      Help="Lets bot alliances order infrastructure hubs and launch first-claim expeditions. Active expeditions, existing orders and defense continue.">
+            <Control Context="field">
+                <InputCheckbox id="@field.Input" @bind-Value="Form.NewSovereigntyClaims" aria-describedby="@field.Help" />
+            </Control>
+        </SettingField>
+    </div>
+</section>
+<details class="card settings-group ambient-traffic">
+    <summary>Ambient traffic</summary>
+    <div class="settings-fields">
+        <SettingField Label="Station traffic density (×)"
+                      Help="Scales the general-purpose traveler roster in established worlds. 1× uses the usual roster and 0 pauses it.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.TrafficMultiplier" min="0" max="10" step="0.1" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Visitors per watched gate"
+                      Help="Both ends of a watched stargate share this pool of visitors. 0 disables additional gate visitors.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.GateVisitors" min="0" max="16" step="1" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</details>
+
+@code {
+    [Parameter, EditorRequired] public SettingsForm Form { get; set; } = default!;
+}

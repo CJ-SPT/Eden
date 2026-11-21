@@ -7,6 +7,82 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Star map Industry filters, November 20, 2026
+
+The native Industry menu shows starts over the last 24 hours for all jobs and for manufacturing,
+time efficiency research, material efficiency research, copying and invention. Installed reactions also
+contribute to the all-jobs total. The map counts each start once regardless of runs, and keeps the start
+through delivery or cancellation until it expires. Player and bot starts share the same resident job
+index, including bot work in offscreen systems and jobs installed at structures. Eden counts committed
+records and rebuilds the recent window from the saved job rows on reopen. Existing saves can therefore
+show recent work immediately after updating.
+
+All six cost overlays show Eden's configured system index. Per-system overrides and the saved default
+match the system rates used for paid installation by players and bots. Eden applies this rate across
+manufacturing, both research activities, copying, invention and reactions. Free-service worlds show
+zero. Job activity affects the start counts. Pricing continues to follow the saved economy policy.
+
+Pinned build 3662168's `mapFilterJobs24Hours.pyj` calls `map.GetIndustryJobsOverLast24Hours` with None
+for all activities and IDs 1, 3, 4, 5 or 8 for the five specialized overlays. The call also accepts the
+legacy zero selector and reaction ID 9. Its native rowset uses `solarSystemID` and `noOfJobs`.
+`mapFilterCostIndex.pyj` calls `map.GetIndustryCostModifier` with IDs 1, 3, 4, 5, 8 or 9 and consumes
+a known-space system-ID dictionary of fractional indices. The tooltip multiplies the index by 100.
+Both calls use the existing selected-character router and ordinary Blue serialization.
+
+The staged client archive inspected for these calls has SHA-256
+`238ef5811fcecd77db8ecdb8f143f0e74bbd337d225a2582ed25132def900d8c`. The local evejs 261108.1
+`mapService.js` (SHA-256 `6c06a8e47c57e514381da2d0b35cc7aad6fbf39c3da480fa6d2b1baa90fafbb1`)
+and `industrySystemCostIndex.js` (SHA-256 `aac9a2d045a07438405a83a3bb47dbfdcb57b78d2239a3fa202a9f851e6534d1`)
+confirmed the two wire shapes and offered a comparable configured-index policy. The gameplay reference
+describes the role of system costs in choosing a facility. [EVE University Industry](https://wiki.eveuniversity.org/Industry)
+[CCP's industry installation cost reference](https://www.eveonline.com/news/view/industry-3rd-party-developers)
+
+### Automated validation
+
+The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Maps.IndustryMapTests.InstalledJobCountsOnceAfterCommitAndSurvivesCancellationAndRestartUntilExpiry`
+passed in 6.98 seconds of test command time. It checks rollback, one count for a multi-run install,
+cancellation, reopen and expiry at exactly 24 hours. Warmed reads use zero SQL commands, connections
+and fitting calculations.
+
+On base `002e999d`, tool and solution restore took 0.19 and 0.93 seconds. The solution built
+in 24.44 seconds with zero warnings and errors. The focused run passed 183 tests in 320.75 seconds
+of command time with zero failures and two opt-in installed-catalog tests skipped. Native replies
+covered all six cost requests, the activity selectors, default and overridden rates, and startup
+calls from docked and in-space sessions. Offscreen factory and Athanor reaction scenarios verified
+bot starts after checkpoint reopen.
+
+The filter used these `FullyQualifiedName~` clauses joined by `|`.
+
+```text
+Eden.Protocol.Tests.Maps, Eden.Protocol.Tests.Industry,
+ManufacturingValidatesQuoteAndFundsThenPersistsPaidJobWithoutCancellationRefund,
+PriceInputsRoundTripThroughNativeReplyAndSavedWorld,
+NativeInstallAcceptsThePricedQuoteAndNotifiesWalletAndJobChanges,
+FreshEconomySavesExplicitInputsWhileExistingWorldRejectsCreationOverrides,
+UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart,
+BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction
+```
+
+Both Python policy suites passed all 17 cases in 1.89 seconds combined. Style, CSharpier and the
+140-character width check passed in 33.87 seconds. Git whitespace and documentation-link checks passed.
+
+After integrating the offscreen mining scheduler change from `ecb980ec`, the solution rebuilt in
+23.44 seconds with zero warnings and errors. The focused integration run passed all 47 cases in
+24.73 seconds. It selected `Eden.Protocol.Tests.Maps`, `ScienceJobTests`, `ReactionJobTests`,
+`UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart` and
+`BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction` using the same filter syntax.
+Both policy suites, formatting verification (31.03 seconds) and Git whitespace checks passed again.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Start a job on the updated host and check its system in the all-jobs and matching activity overlays.
+Open a cost overlay and compare the tooltip with that system's configured index.
+
 ## Standard live order market and unified economy settings (November 16, 2026)
 
 The administration **Economy & market** section replaces the separate Economy and Development supply cards.
@@ -1843,6 +1919,55 @@ No full .NET regression suite was requested or run.
 **Optional maintainer checks:** After updating/restarting the host with Regional hub supply enabled, inspect native
 market categories and buy an NPC trade good at a regional hub. Native rendering and input remain unverified.
 
+## Market presets on fresh worlds and demand batching
+
+Fresh-universe worlds can stage market presets in **Economy & market** and activate them at restart. Standard
+still requires a compatible live order snapshot. NPC only uses the station corporation assortment. The default
+fresh market remains progressive with both supply supplements disabled. It supplies starter ore buyers,
+blueprints and skillbooks. The fresh profile requires starting skills and equipment and disables testing grants.
+Starter miners use the selected market's bids when an administrator switches away from the bootstrap market.
+[Market settings](../world-configuration.md#market-presets)
+
+The local EVE.js build 3396210 market-seeder guide describes how its Tranquility snapshot keeps station prices
+and volumes in `doc/MARKET_SEEDER.md` (SHA-256 prefix `7B354E099F4287301`). Fresh-world preset
+compatibility is Eden policy. [EVE University on regional markets](https://wiki.eveuniversity.org/Trading)
+
+A follow-up server capture showed recurring market-demand owner holds of roughly 400–550 ms. The previous
+change indexed recovery-deadline lookups. The maintenance turn could still prepare and settle a full page of
+listings while holding the world owner. Each resident poll now visits up to eight station/item pairs and
+settles up to 16 listings. It checks a 25 ms elapsed budget between pairs. A single pair and the commit can
+overrun that budget. The poll advances regional stock directly for those pairs, and resumes at the first
+unfinished listing or pair after commit. Existing price priority and recovery deadlines govern settlement.
+
+### Automated validation
+
+The solution built in 4.73 s with zero warnings or errors. The four exact cases passed in 9.29 s.
+They staged NPC only, Standard and Testing from fresh settings, restarted with an existing player bid
+and balance, and bought stock from the selected market. Standard rejected a missing snapshot before
+the test installed its compatible fixture. The demand test resumed past 24 unfillable listings and
+settled the later sale once. Revision `9ad486ef` rejected the preset changes and processed all 25
+demand locations in the first poll.
+
+A broader 96-case run passed 94 cases in 114.67 s. Both corvette industry replays failed while comparing
+human and bot starter equipment. Both reproduced the same mismatch on `9ad486ef`, before any market
+trading in those replays. The run omitted the previously documented SQL-trigger rollback fixture.
+
+The market, configuration and administration filter passed 59 cases in 20.92 s. Both Python policy suites
+passed all 17 checks. Formatting and the two new local documentation links passed verification.
+
+```text
+(FullyQualifiedName~StandardMarketTests|FullyQualifiedName~NpcRestingOrderTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~AdministrationComponentTests|FullyQualifiedName~FreshProfileStartsEmptyAndPersistsAcrossRestart)&FullyQualifiedName!~MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Select **NPC only** on an existing fresh world, save, and restart.
+- Compare the server's market-demand owner holds during population growth.
+
 ## Progressive regional markets — November 8, 2026
 
 Historical implementation: the production-driven policy recorded below supersedes the time-based unlocks and material-derived quotes in this section. Existing section anchors and validation evidence are retained.
@@ -2367,3 +2492,52 @@ Not performed; agent client testing is disabled.
 
 - Relaunch through Eden Launcher, search for a mining system and unload station, then verify the native panel layout.
 - Check visible rat escape and fleet following with player clients; native presentation and gameplay feel remain unverified.
+
+## Development market supply for bots
+
+The resident development market seeds individual types for bot shopping, resupply and purchases. It shares the
+catalog eligibility, pricing, stock refresh and order identity rules with ordinary development-market seeding.
+Opening the player market still prepares the local catalog. Finite NPC bids and regional and Standard market policies
+keep their existing behavior.
+
+On the dedicated 8 GB host, one checkpoint interval added 2,337,236 development orders at 121 stations. Market
+tables and indexes gained 263 MiB. Projecting that checkpoint took 38.51 seconds and allocated about 2.08 GiB.
+Hauler progress was 32.6 MiB, with the largest saved record at 2,451 bytes after the earlier navigation migration.
+
+Schema 191 deletes untouched development asks that can be reconstructed from catalog defaults. It preserves executed
+order IDs and history, depleted orders, finite bids and regional stock records. Startup compacts the database before
+copying it into RAM. Stations previously marked complete can rebuild the full catalog when a player opens the market.
+
+### Automated validation
+
+The focused regression quotes one catalog type and buys another as a saved bot, verifies that the third type never
+seeds, replenishes the bought order, and reopens schema 190 through migration. The bought order and its ledger entry
+retain their ID after migration.
+
+The matched Release probe requested four item types at each of four previously unprepared stations in a copied
+23,323-bot world. It seeded 77,264 orders and allocated 361.3 MiB before the change. It seeded 20 orders, including
+configured bids, and allocated 2.2 MiB after the change. Checkpoint projection allocation fell from 69.3 MiB to 0.3 MiB.
+The updated 121-station probe seeded 605 orders, allocated 45.8 MiB during shopping, and retained 1.9 MiB after
+collection. Its checkpoint projection allocated 0.9 MiB.
+
+The solution built with zero warnings. The affected run passed 205 of 206 cases in 146 seconds. The only failure,
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`, reproduced on unchanged
+`3343af3c` with the same Windows fixture cleanup error on the world owner file. The filter was:
+
+```text
+FullyQualifiedName~TestingMarketTests|FullyQualifiedName~Market.MarketTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~MarketSummaryPerformanceTests|FullyQualifiedName~PersonalMarketTests|FullyQualifiedName~StandardMarketTests|FullyQualifiedName~RegionalMarketTests|FullyQualifiedName~NpcSupplyTests|FullyQualifiedName~CapsuleerSupplyTests|FullyQualifiedName~CapsuleerAmmunitionSupplyTests|FullyQualifiedName~ResidentBotEconomyTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests
+```
+
+A final focused run passed 55 cases in 39 seconds. Both Python policy suites and formatting passed.
+
+```text
+FullyQualifiedName~TestingMarketTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~CapsuleerAmmunitionSupplyTests|FullyQualifiedName~ResidentBotEconomyTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~WorldInitializationTests
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Check checkpoint size and process memory after several minutes of normal bot activity at the current traffic multiplier.

@@ -67,6 +67,11 @@ internal static class CorporationSchema
                 CorporationId INTEGER PRIMARY KEY REFERENCES WorldCorporation(Id) ON DELETE CASCADE, DataJson TEXT NOT NULL);
             """
         );
+        var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporation')");
+        if (!columns.Contains("CapsuleerFoundingSystemId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCorporation ADD COLUMN CapsuleerFoundingSystemId INTEGER");
+        }
         if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporation')").Contains("ClosedAt"))
         {
             world.Database.ExecuteSqlRaw(

@@ -14,6 +14,24 @@ public static class ReactionRules
         double facilityTime
     )
     {
+        var plan = Plan(request.Runs, baseSeconds, activeJobs, bonuses, ingredients, facilityTime);
+        if (plan.DurationSeconds != request.QuotedSeconds)
+        {
+            throw new InvalidDataException("Reaction time changed; reopen the formula to refresh the quote.");
+        }
+        IndustryMaterials.CheckQuote(plan.Materials, request.QuotedMaterials);
+        return plan;
+    }
+
+    public static ManufacturingPlan Plan(
+        int runs,
+        long baseSeconds,
+        int activeJobs,
+        IReadOnlyList<IndustryCharacterBonus> bonuses,
+        IReadOnlyList<ManufacturingMaterial> ingredients,
+        double facilityTime
+    )
+    {
         int slots = checked(1 + (int)bonuses.Where(b => b.Additive && b.Attribute == DogmaAttributeId.ReactionSlotLimit).Sum(b => b.Value));
         if (activeJobs >= slots)
         {
@@ -27,20 +45,13 @@ public static class ReactionRules
         if (
             !double.IsFinite(secondsPerRun)
             || secondsPerRun <= 0
-            || request.Runs < 1
-            || request.Runs
-                > Math.Min(IndustryDefinitions.MaximumJobRuns, Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / secondsPerRun))
+            || runs < 1
+            || runs > Math.Min(IndustryDefinitions.MaximumJobRuns, Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / secondsPerRun))
         )
         {
             throw new InvalidDataException("The job exceeds the reaction run-length limit.");
         }
-        long seconds = Math.Max(IndustryDefinitions.MinimumJobSeconds, EconomicRules.ClientRound(secondsPerRun * request.Runs, 0));
-        if (seconds != request.QuotedSeconds)
-        {
-            throw new InvalidDataException("Reaction time changed; reopen the formula to refresh the quote.");
-        }
-        var materials = IndustryMaterials.Calculate(ingredients, request.Runs);
-        IndustryMaterials.CheckQuote(materials, request.QuotedMaterials);
-        return new(seconds, materials);
+        long seconds = Math.Max(IndustryDefinitions.MinimumJobSeconds, EconomicRules.ClientRound(secondsPerRun * runs, 0));
+        return new(seconds, IndustryMaterials.Calculate(ingredients, runs));
     }
 }

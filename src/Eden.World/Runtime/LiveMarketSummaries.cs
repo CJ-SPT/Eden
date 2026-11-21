@@ -1,5 +1,6 @@
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Market;
 using Eden.World.Runtime.Combat;
 
@@ -15,7 +16,10 @@ internal sealed class LiveMarketSummaries
     private readonly Dictionary<(MarketScope Scope, int Location), Entry> _views = [];
     private long _catalog;
 
-    private sealed record Entry(MarketSummary Summary, long Catalog, WorldSettings Settings, long At, long ActiveAt);
+    private sealed record Entry(MarketSummary Summary, long Catalog, WorldSettings Settings, long At, long ActiveAt)
+    {
+        internal HashSet<int> DirtyTypes { get; } = [];
+    }
 
     private readonly record struct PilotLocation(long ShipId, int StationId, int SystemId, int RegionId);
 
@@ -40,17 +44,7 @@ internal sealed class LiveMarketSummaries
     {
         lock (_gate)
         {
-            if (
-                _catalog == catalog
-                && _locations.TryGetValue(pilot, out var location)
-                && _views.TryGetValue((scope, Location(location, scope)), out var entry)
-                && entry.Catalog == catalog
-                && entry.Settings == settings
-                && now >= entry.At
-                && now < entry.Summary.ExpiresAt
-                && active >= entry.ActiveAt
-                && active < entry.Summary.ActiveUntil
-            )
+            if (Current(pilot, scope, catalog, settings, now, active) is { DirtyTypes.Count: 0 } entry)
             {
                 orders = entry.Summary.Orders;
                 return true;
@@ -58,6 +52,45 @@ internal sealed class LiveMarketSummaries
         }
         orders = [];
         return false;
+    }
+
+    private Entry? Current(long pilot, MarketScope scope, long catalog, WorldSettings settings, long now, long active) =>
+        _catalog == catalog
+        && _locations.TryGetValue(pilot, out var location)
+        && _views.TryGetValue((scope, Location(location, scope)), out var entry)
+        && entry.Catalog == catalog
+        && entry.Settings == settings
+        && now >= entry.At
+        && now < entry.Summary.ExpiresAt
+        && active >= entry.ActiveAt
+        && active < entry.Summary.ActiveUntil
+            ? entry
+            : null;
+
+    internal (MarketSummary Summary, HashSet<int> Types)? ReadDirtyRegion(
+        long pilot,
+        long catalog,
+        WorldSettings settings,
+        long now,
+        long active
+    )
+    {
+        lock (_gate)
+        {
+            return Current(pilot, MarketScope.Region, catalog, settings, now, active) is { DirtyTypes.Count: > 0 } entry
+                ? (entry.Summary, new(entry.DirtyTypes))
+                : null;
+        }
+    }
+
+    internal bool CanReplaceRegion(MarketSummary summary, HashSet<int> updated)
+    {
+        lock (_gate)
+        {
+            return _views.TryGetValue((MarketScope.Region, summary.RegionId), out var entry)
+                && ReferenceEquals(entry.Summary, summary)
+                && entry.DirtyTypes.IsSubsetOf(updated);
+        }
     }
 
     internal void Publish(MarketSummary summary, MarketScope scope, long catalog, WorldSettings settings, long now, long active)
@@ -89,6 +122,27 @@ internal sealed class LiveMarketSummaries
 
     internal void Observe(IReadOnlyCollection<CombatRowChange> changes, IReadOnlyList<MarketLocation>? locations)
     {
+        if (
+            locations is not { Count: > 0 }
+            && !changes.Any(c =>
+                c.Table
+                    is "schema"
+                        or "WorldMarketMembership"
+                        or "WorldMarketUnlock"
+                        or "WorldEconomy"
+                        or "WorldConfigurationState"
+                        or "WorldMarketOrder"
+                        or "WorldPersonalOrder"
+                        or "WorldRegionalMarketStock"
+                        or "WorldPilot"
+                        or "WorldShip"
+                        or "WorldPositionMembership"
+            )
+        )
+        {
+            return;
+        }
+        using var phase = SessionPerformance.Phase("market.summaryInvalidation");
         lock (_gate)
         {
             if (
@@ -107,7 +161,10 @@ internal sealed class LiveMarketSummaries
                 {
                     _views.Remove((MarketScope.Station, location.Station));
                     _views.Remove((MarketScope.System, location.System));
-                    _views.Remove((MarketScope.Region, location.Region));
+                    if (_views.TryGetValue((MarketScope.Region, location.Region), out var region))
+                    {
+                        region.DirtyTypes.Add(location.TypeId);
+                    }
                 }
             }
             foreach (var change in changes)

@@ -37,7 +37,7 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Failed to select the pinned converter revision.' }
             & git -C $toolRoot submodule update --init --recursive
             if ($LASTEXITCODE -ne 0) { throw 'Failed to obtain the pinned converter dependencies.' }
-            # The upstream revision targets a newer SDK. Its reader also builds against Eden's pinned .NET 10 SDK.
+            # The upstream revision targets a newer SDK. Its reader also builds against .NET 10.
             # Isolate its build from Eden's parent-directory policies and change only the target frameworks.
             [IO.File]::WriteAllText((Join-Path $toolRoot 'Directory.Build.props'), "<Project />`n")
             [IO.File]::WriteAllText((Join-Path $toolRoot 'Directory.Build.targets'), "<Project />`n")

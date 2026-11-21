@@ -1,7 +1,9 @@
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
@@ -11,6 +13,7 @@ using Eden.Gameplay.Reprocessing;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Inventory;
@@ -44,7 +47,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             );
             var snapshot = Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, structure);
             if (
-                !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilot.Id)
+                !Eden.World.Structures.PilotStructureStore.ServiceAccess(world, catalog, structure, pilot.Id)
                 || !snapshot.Services.Contains(Eden.Gameplay.Structures.StructureService.Reprocessing)
             )
             {
@@ -223,6 +226,48 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         return new((double)tax, station.Efficiency, quotes);
     }
 
+    internal bool RefineForProduction(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int stationId,
+        OwnedItem item,
+        IReadOnlyDictionary<int, int> missing,
+        SavedCorporation? sponsor = null
+    )
+    {
+        if (
+            !SupportsNpcReprocessing(catalog, stationId)
+            || catalog.Read(CatalogData.Client.Typematerials, (long)item.TypeId)?.Materials is not { } materials
+            || !materials.Any(material => material.MaterialTypeID is long id && missing.ContainsKey((int)id))
+        )
+        {
+            return false;
+        }
+        var pilot = ReadPilot(world, pilotId);
+        if (sponsor is not null && sponsor.Id != pilot.CorporationId)
+        {
+            return false;
+        }
+        var station = Station(world, catalog, pilot, stationId);
+        var quote = Quote(world, catalog, pilot, item, station.Efficiency, Tax(world, pilot, station));
+        if (
+            quote.Portions == 0
+            || !quote.Recoverables.Any(row => row.Quantity > 0 && missing.ContainsKey(row.TypeId))
+            || quote.CostCents > (sponsor?.BalanceCents ?? world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0)
+        )
+        {
+            return false;
+        }
+        Reprocess(world, catalog, pilotId, stationId, [item.Id], stationId, null, stationId, (int)InventoryFlag.Hangar, sponsor);
+        return true;
+    }
+
+    internal static bool SupportsNpcReprocessing(CatalogDbContext catalog, int stationId) =>
+        catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId)
+            is { ReprocessingEfficiency: > 0 and <= 1, ReprocessingStationsTake: >= 0 and <= 1, OperationID: long operation }
+        && StationCapabilities.Has(catalog, operation, StationService.Reprocessing);
+
     public ReprocessingResult Reprocess(
         long pilotId,
         long stationId,
@@ -236,7 +281,29 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Reprocess(world, catalog, pilotId, stationId, itemIds, sourceId, ownerId, outputLocationId, outputFlagId);
+        scope.Commit();
+        return result;
+    }
+
+    internal ReprocessingResult Reprocess(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long stationId,
+        IReadOnlyList<long> itemIds,
+        long sourceId,
+        long? ownerId,
+        long outputLocationId,
+        int outputFlagId,
+        SavedCorporation? sponsor = null
+    )
+    {
         var pilot = ReadPilot(world, pilotId);
+        if (sponsor is not null && sponsor.Id != pilot.CorporationId)
+        {
+            throw new InvalidDataException("The pilot must belong to the corporation paying for reprocessing.");
+        }
         var station = Station(world, catalog, pilot, stationId);
         var ship = pilot.ActiveShip;
         if (
@@ -281,8 +348,18 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         long cost = quotes.Sum(q => q.CostCents);
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        long? balance =
-            cost > 0 ? EconomicStore.Pay(world, pilotId, station.OwnerId, stationId, WalletEntryType.ReprocessingTax, cost, now) : null;
+        long? balance = null;
+        if (cost > 0)
+        {
+            if (sponsor is not null)
+            {
+                CorporationWalletStore.Pay(world, sponsor.Id, station.OwnerId, stationId, WalletEntryType.ReprocessingTax, -cost, now);
+            }
+            else
+            {
+                balance = EconomicStore.Pay(world, pilotId, station.OwnerId, stationId, WalletEntryType.ReprocessingTax, cost, now);
+            }
+        }
         List<InventoryChange> changes = [];
         foreach (var (item, quote) in items.Zip(quotes))
         {
@@ -305,7 +382,6 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
             TaskEvents.Reprocessed
         );
-        scope.Commit();
         return new(items.Select(i => i.Id).ToArray(), output, changes, balance);
     }
 }

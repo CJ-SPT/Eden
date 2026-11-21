@@ -19,7 +19,7 @@ internal sealed record EconomySavedHomeCloneTransfer(
 
 internal sealed record EconomySavedImplantState(long PilotId, long Revision);
 
-internal sealed record EconomySavedJumpClone(long Id, long PilotId, bool Active, int? StationId, string Name);
+internal sealed record EconomySavedJumpClone(long Id, long PilotId, bool Active, long? LocationId, bool InShip, string Name);
 
 internal sealed record EconomySavedPilotImplant(long ItemId, long CloneId, int TypeId, int Slot, DogmaAttributeId Attribute, int Bonus);
 
@@ -116,28 +116,30 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedJumpClone, EconomySavedJumpClone>(
                 "WorldJumpClone",
                 row => new(row.Id),
-                row => new(row.Id, row.PilotId, row.Active, row.StationId, row.Name),
+                row => new(row.Id, row.PilotId, row.Active, row.LocationId, row.InShip, row.Name),
                 state => new SavedJumpClone
                 {
                     Id = state.Id,
                     PilotId = state.PilotId,
                     Active = state.Active,
-                    StationId = state.StationId,
+                    LocationId = state.LocationId,
+                    InShip = state.InShip,
                     Name = state.Name,
                 },
                 ProjectSavedJumpClone,
-                "Id,PilotId,Active,StationId,Name",
+                "Id,PilotId,Active,LocationId,InShip,Name",
                 reader =>
                     new(
                         reader.GetInt64(1),
                         reader.GetInt64(2),
                         reader.GetBoolean(3),
-                        reader.IsDBNull(4) ? null : reader.GetInt32(4),
-                        reader.GetString(5)
+                        reader.IsDBNull(4) ? null : reader.GetInt64(4),
+                        reader.GetBoolean(5),
+                        reader.GetString(6)
                     ),
                 state => new(state.Id),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId)],
+                indexes: [new("PilotId", row => row.PilotId), new("LocationId", row => row.LocationId)],
                 primaryColumn: "Id"
             )
         );
@@ -433,12 +435,13 @@ internal sealed partial class ResidentEconomy
             {
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldJumpClone(Id,PilotId,Active,StationId,Name)
-                    VALUES({row.Id},{row.PilotId},{row.Active},{row.StationId},{row.Name})
+                    INSERT INTO WorldJumpClone(Id,PilotId,Active,LocationId,InShip,Name)
+                    VALUES({row.Id},{row.PilotId},{row.Active},{row.LocationId},{row.InShip},{row.Name})
                     ON CONFLICT(Id) DO UPDATE SET
                         PilotId=excluded.PilotId,
                         Active=excluded.Active,
-                        StationId=excluded.StationId,
+                        LocationId=excluded.LocationId,
+                        InShip=excluded.InShip,
                         Name=excluded.Name
                     """
                 );

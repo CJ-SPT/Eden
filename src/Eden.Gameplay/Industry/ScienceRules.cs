@@ -64,7 +64,7 @@ public static class ScienceRules
             _ => throw new InvalidDataException("Unsupported science activity."),
         };
 
-    public static SciencePlan Plan(IndustryRequest request, ScienceInputs inputs)
+    public static SciencePlan Plan(IndustryRequest request, ScienceInputs inputs, bool checkQuote = true)
     {
         var timeAttribute = TimeAttribute(request.Activity);
         var blueprint = inputs.Blueprint;
@@ -151,13 +151,16 @@ public static class ScienceRules
             IndustryDefinitions.MinimumJobSeconds,
             EconomicRules.ClientRound(inputs.BaseSeconds * units * multiplier, 0)
         );
-        if (duration <= 0 || request.QuotedSeconds != duration)
+        if (duration <= 0 || checkQuote && request.QuotedSeconds != duration)
         {
             throw new InvalidDataException("Science time changed; reopen the blueprint to refresh the quote.");
         }
         int materialRuns = request.Activity == IndustryActivity.Copying ? checked(request.Runs * request.LicensedRuns) : request.Runs;
         var materials = IndustryMaterials.Calculate(inputs.Materials, materialRuns);
-        IndustryMaterials.CheckQuote(materials, request.QuotedMaterials);
+        if (checkQuote)
+        {
+            IndustryMaterials.CheckQuote(materials, request.QuotedMaterials);
+        }
         double probability = invention
             ? Math.Clamp(inputs.BaseProbability * (1 + inputs.SkillProbabilityBonus) * (inputs.Decryptor?.Probability ?? 1), 0, 1)
             : 1;

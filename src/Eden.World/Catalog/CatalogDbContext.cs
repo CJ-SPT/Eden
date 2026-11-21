@@ -27,6 +27,9 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
     internal T Definition<T>(CatalogDefinition<T> definition, int typeId) =>
         writable ? definition.Load(this, typeId) : Definitions.Definition(definition, typeId);
 
+    internal T GlobalDefinition<T>(CatalogDefinition<T> definition)
+        where T : class => writable ? definition.Load(this, 0) : Definitions.GlobalDefinition(definition);
+
     internal IReadOnlyDictionary<TKey, TValue> ReadMany<TKey, TValue>(CatalogSource<TKey, TValue> source, IEnumerable<TKey> keys)
         where TKey : notnull
         where TValue : class =>

@@ -86,12 +86,20 @@ internal sealed partial class ResidentEconomy
 
     internal bool HasShipLoss(long ship) => _tables[typeof(ShipLoss)].Contains(new(ship));
 
+    internal IEnumerable<EconomyWorldNpc> PopulationMembers(int system)
+    {
+        var npcs = (EconomyTable<WorldNpc, EconomyWorldNpc>)_tables[typeof(WorldNpc)];
+        return npcs.Indexed(nameof(WorldNpc.SystemId), system).Select(npcs.Snapshot).OfType<EconomyWorldNpc>();
+    }
+
     internal bool HasMissileReports(long pilot) => _missileReportPilots.ContainsKey(pilot);
 
     internal bool MissileImpacted(long id) => _missileImpacts.ContainsKey(id);
 
+    internal bool HasIncomingNpcMissiles(long pilot) => _npcMissilePilots.ContainsKey(pilot);
+
     internal bool HasNpcMissileWork(long pilot, long oldest) =>
-        _npcMissilePilots.ContainsKey(pilot) || Volatile.Read(ref _oldestNpcMissileEnd) < oldest;
+        HasIncomingNpcMissiles(pilot) || Volatile.Read(ref _oldestNpcMissileEnd) < oldest;
 
     internal IEnumerable<long> ExpiredMissileHistory(long oldest, bool npcOnly) =>
         (npcOnly ? _npcMissileEnds : _reportedMissileEnds).TakeWhile(row => row.EndedAt < oldest).Select(row => row.Id);

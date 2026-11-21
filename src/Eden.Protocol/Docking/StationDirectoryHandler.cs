@@ -1,12 +1,16 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class StationDirectoryHandler(IStationDirectory stations, Eden.Gameplay.Structures.IPilotStructures structures)
-    : ISelectedPilotCallHandler
+internal sealed class StationDirectoryHandler(
+    IStationDirectory stations,
+    Eden.Gameplay.Structures.IPilotStructures structures,
+    IFactionWarzones warzones
+) : ISelectedPilotCallHandler
 {
     // Pinned build 3662168 structures/services.pyj SERVICE_DOCKING, distinct from station service IDs.
     private const long StructureDockingService = 1;
@@ -33,7 +37,15 @@ internal sealed class StationDirectoryHandler(IStationDirectory stations, Eden.G
             }
             return serviceId == StructureDockingService
                 && locationId is > 0 and <= int.MaxValue
-                && stations.Read().Stations.Any(station => station.Id == locationId);
+                && stations.Read().Stations.FirstOrDefault(station => station.Id == locationId) is { } npcStation
+                && (
+                    context.Pilot.Identity.WarFaction is not { } faction
+                    || MilitiaRules.CanUseDocking(
+                        warzones.System(npcStation.SystemId),
+                        faction,
+                        context.Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup
+                    )
+                );
         }
         if (service == "stationSvc" && method == "GetStation")
         {
@@ -62,7 +74,7 @@ internal sealed class StationDirectoryHandler(IStationDirectory stations, Eden.G
                 ? new CorporationStationSystemsReply(owned.Select(station => station.SystemId).Distinct().Order().ToArray())
                 : new OwnerStationsReply(owned);
         }
-        if (service != "map" || method != "GetStationInfo")
+        if (service != "map" || method is not ("GetStationInfo" or "GetStationCount"))
         {
             return PilotCallResult.Unsupported;
         }
@@ -70,6 +82,6 @@ internal sealed class StationDirectoryHandler(IStationDirectory stations, Eden.G
         {
             return new PilotCallResult.Failure("Station information does not accept arguments.");
         }
-        return new StationDirectoryReply(stations.Read());
+        return method == "GetStationCount" ? new StationCountReply(stations.CountsBySystem()) : new StationDirectoryReply(stations.Read());
     }
 }

@@ -257,7 +257,15 @@ public sealed class CapsuleerInboundRuntimeTests
             host.GetRequiredService<MarketChangeSignal>(),
             host.GetRequiredService<CapsuleerDefense>(),
             host.GetRequiredService<CapsuleerResupply>(),
-            host.GetRequiredService<CapsuleerRatting>()
+            host.GetRequiredService<CapsuleerRatting>(),
+            host.GetRequiredService<Eden.World.Information.PilotInformationStore>(),
+            host.GetRequiredService<Eden.Gameplay.Exploration.ICombatAnomalies>(),
+            host.GetRequiredService<Eden.World.Exploration.PirateExplorationStore>(),
+            host.GetRequiredService<CapsuleerIndustry>(),
+            host.GetRequiredService<Eden.World.Sovereignty.PilotEntosisStore>(),
+            host.GetRequiredService<CapsuleerCareerTraining>(),
+            host.GetRequiredService<Eden.World.Agents.PilotMissionStore>(),
+            host.GetRequiredService<Eden.World.Corporations.PilotFleetStore>()
         );
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);
         _ = hauler.Read();
