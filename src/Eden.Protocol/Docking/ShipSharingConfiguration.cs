@@ -8,13 +8,15 @@ internal sealed record ShipSharingConfigurationWire(ShipSharingConfiguration? Se
 {
     internal const string FleetHangarFleet = "FleetHangar_AllowFleetAccess";
     internal const string FleetHangarCorporation = "FleetHangar_AllowCorpAccess";
+    internal const string MaintenanceFleet = "SMB_AllowFleetAccess";
+    internal const string MaintenanceCorporation = "SMB_AllowCorpAccess";
 
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             [FleetHangarFleet] = Settings?.FleetHangarFleet == true,
             [FleetHangarCorporation] = Settings?.FleetHangarCorporation == true,
-            ["SMB_AllowFleetAccess"] = false,
-            ["SMB_AllowCorpAccess"] = false,
+            [MaintenanceFleet] = Settings?.MaintenanceFleet == true,
+            [MaintenanceCorporation] = Settings?.MaintenanceCorporation == true,
         };
 }

@@ -758,6 +758,33 @@ and moved the module back to cargo at the deadline. Both Python suites passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Shared ship maintenance bays
+
+Build 3662168 `menusvc.pyj` sends `ship.StoreVessel(hostID)` and
+`menuSvcExtras/menuFunctions.pyj` sends `ship.BoardStoredShip(hostID, shipID)`.
+`ShipMaintenanceBay` uses inventory flag 90 and the normal bound ship-inventory list. The pinned
+catalog restricts Rorqual maintenance bays through attribute 1891 and uses type list 11 for admissible
+cargo. EVE.js `shipService.js`, `ejectRuntime.js` and `shipMaintenanceBayRules.js` corroborate the
+ship calls, eligibility checks and 5,000 m surface limit for storage and boarding. Bay inventory
+listing is available within 2,500 m.
+[CCP Retribution notes](https://www.eveonline.com/news/view/patch-notes-for-retribution-1)
+
+Fleet and corporation access are independent per hull and default off in schema 211. A guest can
+store an eligible fitted ship and leave in a capsule, board their own stored ship, or exchange their
+current eligible ship for their own stored ship. The resident operation checks access, capacity,
+cargo, flight state and weapons restrictions before committing the swap. Stored ships retain their
+owner, fittings and cargo across checkpoints. Destroying a host rolls each stored ship as a unit
+and moves survivors and their contents to the wreck. Guest launch and scoop routes are open.
+
+**Automated validation.** The exact store, checkpoint and board case passed in 8.04 seconds. It
+verifies the capsule ballpark, range-bound inventory listing, renewed authorization after reconnect
+and return to the original ship with its cargo. The two exact host-loss outcomes passed in
+8.77 seconds. The broader maintenance, storage, flight boundary, refitting, inventory and migration
+filter passed 354 tests in 64.49 seconds after a 12.47-second build. Both Python suites, formatting
+and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -768,7 +795,7 @@ and moved the module back to cargo at the deadline. Both Python suites passed.
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
-| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Shared maintenance-bay storage, clone bays and fresh-world resupply remain open. |
+| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Authorized pilots can store and board their own ships through shared maintenance bays. Clone bays and fresh-world resupply remain open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.

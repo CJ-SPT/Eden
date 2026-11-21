@@ -27,7 +27,8 @@ internal sealed class InventoryHandler(
     IPilotInventoryStacks stacks,
     ICorporationStorage corporationStorage,
     Eden.Gameplay.Structures.IPilotStructures structures,
-    IPilotShipSharing? sharing = null
+    IPilotShipSharing? sharing = null,
+    IPilotShipMaintenance? maintenance = null
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     internal const string ShipInventoryPrefix = "@ship:";
@@ -49,8 +50,20 @@ internal sealed class InventoryHandler(
         {
             result.AddRange(fleet.Ships(pilot.PilotId, pilot.DockedLocationId).Select(Item));
         }
-        result.AddRange(inventory.List(pilot.PilotId, location).Where(i => flag is null || i.FlagId == flag).Select(Item));
+        result.AddRange(
+            ShipItems(pilot, location, flag is null or (long)InventoryFlag.ShipMaintenanceBay)
+                .Where(i => flag is null || i.FlagId == flag)
+                .Select(Item)
+        );
         return new(result);
+    }
+
+    private IEnumerable<InventoryItem> ShipItems(DockedPilot pilot, long location, bool includeMaintenance)
+    {
+        var items = inventory.List(pilot.PilotId, location);
+        return includeMaintenance && location == pilot.ShipId && maintenance?.Bay(pilot.PilotId, location) is { } bay
+            ? items.Concat(bay.Vessels).DistinctBy(item => item.Id)
+            : items;
     }
 
     internal static long ShipContainer(string service, DockedPilot pilot) =>
@@ -277,20 +290,37 @@ internal sealed class InventoryHandler(
             {
                 return MoveFromWire(context, service, method, args, keywords);
             }
-            if (context.Flight.InWarp || context.Flight.PreparingWarp || sharing?.FleetHangar(pilot.PilotId, shared) is not { } hangar)
+            if (context.Flight.InWarp || context.Flight.PreparingWarp || context.Flight.Cloaked)
             {
-                return new PilotCallResult.Failure("The shared fleet hangar is unavailable at your current location.");
+                return new PilotCallResult.Failure("Wait until your ship can use shared storage.");
             }
-            const long flag = (long)InventoryFlag.FleetHangar;
+            const long hangarFlag = (long)InventoryFlag.FleetHangar;
+            const long bayFlag = (long)InventoryFlag.ShipMaintenanceBay;
+            var hangar = sharing?.FleetHangar(pilot.PilotId, shared);
+            var bay = maintenance?.Bay(pilot.PilotId, shared);
+            if (hangar is null && bay is null)
+            {
+                return new PilotCallResult.Failure("Shared storage is unavailable at your current location.");
+            }
+            IEnumerable<InventoryItem> items = (hangar?.Items ?? []).Concat(bay?.Vessels ?? []);
             return method switch
             {
-                "List" when args is [] or [null or flag] => new BlueList<InventoryRow>(hangar.Items.Select(Item).ToArray()),
-                "List" => BlueEmpty.List,
-                "ListByFlags" when keywords?.GetValueOrDefault("flags") is List<object?> flags && flags.Contains(flag) =>
-                    new BlueList<InventoryRow>(hangar.Items.Select(Item).ToArray()),
-                "ListByFlags" => BlueEmpty.List,
-                "GetSelfInvItem" when args.Length == 0 => Item(hangar.Ship),
-                "GetCapacity" when args is [] or [null or flag] => new CargoContainerCapacity(hangar.Capacity, hangar.Used),
+                "List" when args is [] or [null] => new BlueList<InventoryRow>(items.Select(Item).ToArray()),
+                "List" when args is [long flag] => new BlueList<InventoryRow>(
+                    items.Where(item => item.FlagId == flag).Select(Item).ToArray()
+                ),
+                "ListByFlags" when keywords?.GetValueOrDefault("flags") is List<object?> flags => new BlueList<InventoryRow>(
+                    items.Where(item => flags.Contains((long)item.FlagId)).Select(Item).ToArray()
+                ),
+                "GetSelfInvItem" when args.Length == 0 => Item(hangar?.Ship ?? bay!.Ship),
+                "GetCapacity" when hangar is not null && args is ([] or [null or hangarFlag]) => new CargoContainerCapacity(
+                    hangar.Capacity,
+                    hangar.Used
+                ),
+                "GetCapacity" when bay is not null && args is ([] or [null or bayFlag]) => new CargoContainerCapacity(
+                    bay.Capacity,
+                    bay.Used
+                ),
                 _ => PilotCallResult.Unsupported,
             };
         }
@@ -376,12 +406,24 @@ internal sealed class InventoryHandler(
             )
             {
                 return new BlueList<InventoryRow>(
-                    inventory.List(pilot.PilotId, container).Where(i => flags.Contains((long)i.FlagId)).Select(Item).ToArray()
+                    ShipItems(pilot, container, flags.Contains((long)InventoryFlag.ShipMaintenanceBay))
+                        .Where(i => flags.Contains((long)i.FlagId))
+                        .Select(Item)
+                        .ToArray()
                 );
             }
             if (method == "GetSelfInvItem")
             {
                 return container == pilot.ShipId ? ShipDogmaBuilder.Item(pilot, "ship") : Item(ship);
+            }
+            if (
+                method == "GetCapacity"
+                && container == pilot.ShipId
+                && args is [(long)InventoryFlag.ShipMaintenanceBay]
+                && maintenance?.Bay(pilot.PilotId, container) is { } bay
+            )
+            {
+                return new CargoContainerCapacity(bay.Capacity, bay.Used);
             }
             if (method == "GetAvailableTurretSlots")
             {
@@ -426,10 +468,8 @@ internal sealed class InventoryHandler(
                     && pilot.Position is not null
                     && !context.Flight.InWarp
                     && !context.Flight.PreparingWarp
-                    && sharing?.FleetHangar(pilot.PilotId, id) is not null => context.Reference(
-                $"{SharedShipInventoryPrefix}{id}",
-                PilotBindingLifetime.Location
-            ),
+                    && (sharing?.FleetHangar(pilot.PilotId, id) is not null || maintenance?.Bay(pilot.PilotId, id) is not null) =>
+                context.Reference($"{SharedShipInventoryPrefix}{id}", PilotBindingLifetime.Location),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference(
                 "@pilot",
                 PilotBindingLifetime.Pilot

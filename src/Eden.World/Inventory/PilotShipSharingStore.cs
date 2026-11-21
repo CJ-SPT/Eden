@@ -9,6 +9,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Corporations;
+using Eden.World.Docking;
 using Eden.World.Industry;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -22,8 +23,9 @@ internal sealed partial class PilotShipSharingStore(
     ICooperativeFleets fleets,
     IPilotCombatPresence presence,
     Eden.Gameplay.Flight.ICapitalInventoryEvents events,
-    TimeProvider clock
-) : IPilotShipSharing, IPilotMobileRefitting
+    TimeProvider clock,
+    SqliteWorld lookup
+) : IPilotShipSharing, IPilotMobileRefitting, IPilotShipMaintenance
 {
     private const int FleetHangarFlag = (int)InventoryFlag.FleetHangar;
 
@@ -49,19 +51,28 @@ internal sealed partial class PilotShipSharingStore(
         );
     }
 
-    public void ConfigureFleetHangar(long pilotId, long shipId, bool? fleet, bool? corporation)
+    public void Configure(long pilotId, long shipId, ShipSharingChange change)
     {
         var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Ship sharing requires the resident world.");
         using var world = live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var actor = world.Pilots.Find(pilotId);
-        if (actor?.ActiveShipId != shipId || actor.ActiveShip.OwnerId != pilotId || Capacity(world, catalog, actor, FleetHangarFlag) <= 0)
+        if (
+            actor?.ActiveShipId != shipId
+            || actor.ActiveShip.OwnerId != pilotId
+            || (change.FleetHangarFleet is not null || change.FleetHangarCorporation is not null)
+                && Capacity(world, catalog, actor, FleetHangarFlag) <= 0
+            || (change.MaintenanceFleet is not null || change.MaintenanceCorporation is not null)
+                && Capacity(world, catalog, actor, MaintenanceFlag) <= 0
+        )
         {
-            throw new InvalidDataException("Configure the fleet hangar of your own active ship.");
+            throw new InvalidDataException("Configure a supported bay on your own active ship.");
         }
         var settings = world.Set<SavedShipSharing>().Find(shipId) ?? world.Add(new SavedShipSharing { ShipId = shipId }).Entity;
-        settings.FleetHangarFleet = fleet ?? settings.FleetHangarFleet;
-        settings.FleetHangarCorporation = corporation ?? settings.FleetHangarCorporation;
+        settings.FleetHangarFleet = change.FleetHangarFleet ?? settings.FleetHangarFleet;
+        settings.FleetHangarCorporation = change.FleetHangarCorporation ?? settings.FleetHangarCorporation;
+        settings.MaintenanceFleet = change.MaintenanceFleet ?? settings.MaintenanceFleet;
+        settings.MaintenanceCorporation = change.MaintenanceCorporation ?? settings.MaintenanceCorporation;
         world.Commit();
     }
 
@@ -258,17 +269,24 @@ internal sealed partial class PilotShipSharingStore(
         return source.Position.DistanceTo(target.Position) - radii <= range ? host : null;
     }
 
-    private bool Permitted(WorldAction world, Pilot pilot, Pilot host)
+    private bool Permitted(WorldAction world, Pilot pilot, Pilot host, bool maintenance = false)
     {
         var settings = ReadConfiguration(world, host.ActiveShipId);
-        return (settings.FleetHangarCorporation && pilot.CorporationId == host.CorporationId)
+        return (
+                (maintenance ? settings.MaintenanceCorporation : settings.FleetHangarCorporation)
+                && pilot.CorporationId == host.CorporationId
+            )
             || (
-                settings.FleetHangarFleet && fleets.Identity(pilot.Id) is { } member && fleets.Identity(host.Id)?.FleetId == member.FleetId
+                (maintenance ? settings.MaintenanceFleet : settings.FleetHangarFleet)
+                && fleets.Identity(pilot.Id) is { } member
+                && fleets.Identity(host.Id)?.FleetId == member.FleetId
             );
     }
 
     private static ShipSharingConfiguration ReadConfiguration(WorldAction world, long shipId) =>
-        world.Set<SavedShipSharing>().Find(shipId) is { } row ? new(row.FleetHangarFleet, row.FleetHangarCorporation) : new();
+        world.Set<SavedShipSharing>().Find(shipId) is { } row
+            ? new(row.FleetHangarFleet, row.FleetHangarCorporation, row.MaintenanceFleet, row.MaintenanceCorporation)
+            : new();
 
     private static double Capacity(WorldAction world, CatalogDbContext catalog, Pilot pilot, int flag) =>
         PilotInventoryStore.HoldCapacity(world, catalog, pilot.Id, pilot.ActiveShipId, flag);

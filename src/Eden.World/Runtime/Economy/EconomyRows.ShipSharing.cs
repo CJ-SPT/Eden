@@ -5,7 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Economy;
 
-internal sealed record EconomyShipSharing(long ShipId, bool FleetHangarFleet, bool FleetHangarCorporation);
+internal sealed record EconomyShipSharing(
+    long ShipId,
+    bool FleetHangarFleet,
+    bool FleetHangarCorporation,
+    bool MaintenanceFleet,
+    bool MaintenanceCorporation
+);
 
 internal sealed partial class ResidentEconomy
 {
@@ -14,16 +20,18 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedShipSharing, EconomyShipSharing>(
                 "WorldShipSharing",
                 row => new(row.ShipId),
-                row => new(row.ShipId, row.FleetHangarFleet, row.FleetHangarCorporation),
+                row => new(row.ShipId, row.FleetHangarFleet, row.FleetHangarCorporation, row.MaintenanceFleet, row.MaintenanceCorporation),
                 state => new SavedShipSharing
                 {
                     ShipId = state.ShipId,
                     FleetHangarFleet = state.FleetHangarFleet,
                     FleetHangarCorporation = state.FleetHangarCorporation,
+                    MaintenanceFleet = state.MaintenanceFleet,
+                    MaintenanceCorporation = state.MaintenanceCorporation,
                 },
                 ProjectShipSharing,
-                "ShipId,FleetHangarFleet,FleetHangarCorporation",
-                reader => new(reader.GetInt64(1), reader.GetBoolean(2), reader.GetBoolean(3)),
+                "ShipId,FleetHangarFleet,FleetHangarCorporation,MaintenanceFleet,MaintenanceCorporation",
+                reader => new(reader.GetInt64(1), reader.GetBoolean(2), reader.GetBoolean(3), reader.GetBoolean(4), reader.GetBoolean(5)),
                 state => new(state.ShipId),
                 primaryColumn: "ShipId"
             )
@@ -45,11 +53,13 @@ internal sealed partial class ResidentEconomy
                 string values = JsonSerializer.Serialize(rows);
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldShipSharing(ShipId,FleetHangarFleet,FleetHangarCorporation)
+                    INSERT INTO WorldShipSharing(ShipId,FleetHangarFleet,FleetHangarCorporation,MaintenanceFleet,MaintenanceCorporation)
                     SELECT json_extract(value,'$.ShipId'),json_extract(value,'$.FleetHangarFleet'),
-                        json_extract(value,'$.FleetHangarCorporation') FROM json_each({values}) WHERE 1
+                        json_extract(value,'$.FleetHangarCorporation'),json_extract(value,'$.MaintenanceFleet'),
+                        json_extract(value,'$.MaintenanceCorporation') FROM json_each({values}) WHERE 1
                     ON CONFLICT(ShipId) DO UPDATE SET FleetHangarFleet=excluded.FleetHangarFleet,
-                        FleetHangarCorporation=excluded.FleetHangarCorporation
+                        FleetHangarCorporation=excluded.FleetHangarCorporation,MaintenanceFleet=excluded.MaintenanceFleet,
+                        MaintenanceCorporation=excluded.MaintenanceCorporation
                     """
                 );
             }

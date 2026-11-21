@@ -14,7 +14,8 @@ internal sealed class FleetHandler(
     DeferredRefitPrimes refits,
     PilotBrain brain,
     ICargoContainers containers,
-    IPilotShipSharing? sharing = null
+    IPilotShipSharing? sharing = null,
+    IPilotShipMaintenance? maintenance = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -53,17 +54,26 @@ internal sealed class FleetHandler(
                     || fields.Any(field =>
                         field.Value is not bool && field.Value is not (0L or 1L)
                         || field.Key
-                            is not (ShipSharingConfigurationWire.FleetHangarFleet or ShipSharingConfigurationWire.FleetHangarCorporation)
+                            is not (
+                                ShipSharingConfigurationWire.FleetHangarFleet
+                                or ShipSharingConfigurationWire.FleetHangarCorporation
+                                or ShipSharingConfigurationWire.MaintenanceFleet
+                                or ShipSharingConfigurationWire.MaintenanceCorporation
+                            )
                     )
                 )
                 {
-                    throw new InvalidDataException("Choose fleet or corporation access for the active ship's fleet hangar.");
+                    throw new InvalidDataException("Choose fleet or corporation access for a shared bay on your active ship.");
                 }
-                sharing.ConfigureFleetHangar(
+                sharing.Configure(
                     context.Pilot.PilotId,
                     context.Pilot.ShipId,
-                    Setting(ShipSharingConfigurationWire.FleetHangarFleet),
-                    Setting(ShipSharingConfigurationWire.FleetHangarCorporation)
+                    new(
+                        Setting(ShipSharingConfigurationWire.FleetHangarFleet),
+                        Setting(ShipSharingConfigurationWire.FleetHangarCorporation),
+                        Setting(ShipSharingConfigurationWire.MaintenanceFleet),
+                        Setting(ShipSharingConfigurationWire.MaintenanceCorporation)
+                    )
                 );
                 return PilotCallResult.None;
 
@@ -79,6 +89,10 @@ internal sealed class FleetHandler(
             {
                 return new PilotCallResult.Failure(error.Message);
             }
+        }
+        if (service == "ship" && method is "StoreVessel" or "BoardStoredShip")
+        {
+            return UseMaintenanceBay(context, method, args, keywords);
         }
         if (
             !(service == "ship" && method is "AssembleShip" or "Board" or "LeaveShip")
@@ -145,6 +159,45 @@ internal sealed class FleetHandler(
                 return dogma.ShipState(boarding.Pilot);
             }
             return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult UseMaintenanceBay(
+        PilotCallContext context,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords
+    )
+    {
+        if (maintenance is null || keywords is { Count: > 0 } || context.ControlledStructureId is not null)
+        {
+            return PilotCallResult.Unsupported;
+        }
+        try
+        {
+            InventoryTransfers.CheckRefitFlight(context);
+            var pilot = context.Pilot;
+            var changed = (method, args) switch
+            {
+                ("StoreVessel", [long host]) => maintenance.Store(pilot.PilotId, pilot.ShipId, host),
+                ("BoardStoredShip", [long host, long stored]) => maintenance.Board(pilot.PilotId, pilot.ShipId, host, stored),
+                _ => throw new InvalidDataException("Choose an available ship maintenance bay and stored ship."),
+            };
+            refits.Clear();
+            context.Flight.RetireStoredShip();
+            context.ChangeShip(changed.Pilot);
+            // The system stays the same, so send the new ego's ballpark state with the ship change.
+            context.Flight.Snapshot();
+            RefreshBrain(context);
+            foreach (var change in changed.Changes)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change);
+            }
+            return method == "StoreVessel" ? (PilotCallResult)changed.Pilot.ShipId : dogma.ShipState(changed.Pilot);
         }
         catch (InvalidDataException error)
         {

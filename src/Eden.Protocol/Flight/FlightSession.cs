@@ -885,6 +885,12 @@ internal sealed partial class FlightSession(
         }
     }
 
+    internal void RetireStoredShip()
+    {
+        space.Leave(Pilot.ShipId);
+        Pilot = Pilot with { Position = null };
+    }
+
     public void PrepareDisconnect()
     {
         if (!_disconnecting && crimewatch is not null)

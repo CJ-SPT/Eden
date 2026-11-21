@@ -264,6 +264,10 @@ internal sealed partial class EconomyTransaction
                 {
                     throw new InvalidDataException("The resident Ship still has Pilot references.");
                 }
+                if (Ships.Any(ship => ship.StoredInId == removed.Id && ship.OwnerId != removed.OwnerId))
+                {
+                    throw new InvalidDataException("Remove guest vessels before disposing of a maintenance-bay ship.");
+                }
                 RemoveRange(Set<Eden.Data.World.Combat.NpcAggression>().Where(child => child.TargetShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.Npcs.WorldNpcEwar>().Where(child => child.TargetShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.SavedWeaponLink>().Where(child => child.ShipId == removed.Id));

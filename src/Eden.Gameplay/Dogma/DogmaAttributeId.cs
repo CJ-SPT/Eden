@@ -182,6 +182,7 @@ public enum DogmaAttributeId
     SpecialQuafeHoldCapacity = 1804,
     FleetHangarCapacity = 912,
     FighterCapacity = 2055,
+    CapitalIndustrialMaintenanceAllowed = 1891,
     FighterEvasiveEmResonance = 2118,
     FighterEvasiveThermalResonance = 2119,
     FighterEvasiveKineticResonance = 2120,
