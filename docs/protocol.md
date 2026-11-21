@@ -852,6 +852,7 @@ fit-based procurement, factory prerequisites, and corporate reserves.
 - [Pilot services subscription and checkout, November 8, 2026](protocol/characters.md#pilot-services-subscription-and-checkout-november-8-2026)
 
 - [Sovereignty plan and resident foundation, November 16, 2026](protocol/sovereignty.md)
+- [Theaters of War shipcaster reads, November 21, 2026](protocol/faction-warfare.md#theaters-of-war-shipcaster-reads--november-21-2026)
 - [Faction Warfare militia missions, ranks and combat statistics, November 20, 2026](protocol/faction-warfare.md#militia-missions-ranks-and-combat-statistics--november-20-2026)
 - [Faction Warfare Advantage and battlefields, November 20, 2026](protocol/faction-warfare.md#advantage-and-battlefields--november-20-2026)
 - [Faction Warfare warzone foundation, November 20, 2026](protocol/faction-warfare.md#resident-warzone-foundation--november-20-2026)

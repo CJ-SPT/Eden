@@ -97,6 +97,53 @@ public sealed class FactionWarzoneProtocolTests
     }
 
     [Fact]
+    public void WarzoneShipcasterReadsReturnEmptyListsForSelectedPilots()
+    {
+        using TestWorld world = new(liveWorld: true);
+        using var scope = world.Services.CreateScope();
+        var pilot = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            current => new(world.Store, current, TimeProvider.System, new(), world.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        const string pads = "shipCasterLandingPadMgr";
+        const string launchers = "shipCasterLauncherMgr";
+        Assert.Same(PilotCallResult.Unsupported, Call(pads, "GetFactionLandingPads", [500001]));
+        Assert.Same(PilotCallResult.Unsupported, Call(pads, "GetAllLandingPads", []));
+        Assert.Same(PilotCallResult.Unsupported, Call(launchers, "GetFactionsWithShipcaster", []));
+
+        context.Select(pilot);
+        AssertEmptyList(pads, "GetFactionLandingPads", [500001]);
+        AssertEmptyList(launchers, "GetFactionsWithShipcaster", []);
+        AssertEmptyList(pads, "GetAllLandingPads", []);
+
+        context.ChangeShip(pilot with { Position = new SpacePosition(0, 0, 0) });
+        AssertEmptyList(pads, "GetFactionLandingPads", [500004]);
+        AssertEmptyList(launchers, "GetFactionsWithShipcaster", []);
+        AssertEmptyList(pads, "GetAllLandingPads", []);
+
+        Assert.IsType<PilotCallResult.Failure>(Call(pads, "GetFactionLandingPads", []));
+        Assert.IsType<PilotCallResult.Failure>(Call(pads, "GetFactionLandingPads", ["500001"]));
+        Assert.IsType<PilotCallResult.Failure>(Call(pads, "GetAllLandingPads", [500001]));
+        Assert.IsType<PilotCallResult.Failure>(Call(launchers, "GetFactionsWithShipcaster", [], new() { ["factionID"] = 500001L }));
+        Assert.Same(PilotCallResult.Unsupported, Call(launchers, "GetAllLandingPads", []));
+
+        void AssertEmptyList(string service, string method, object?[] args)
+        {
+            var reply = Assert.IsType<PilotCallResult.Success>(Call(service, method, args, new() { ["machoVersion"] = 1L }));
+            Assert.Empty(Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply))));
+        }
+
+        PilotCallResult Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+            router.Call(context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+    }
+
+    [Fact]
     public void AdvantageReadEchoesSystemAndReturnsTerrainFloors()
     {
         using TestWorld world = new(liveWorld: true);

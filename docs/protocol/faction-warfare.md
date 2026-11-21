@@ -1,5 +1,36 @@
 # Faction warfare
 
+## Theaters of War shipcaster reads — November 21, 2026
+
+The empire warzone panel calls `shipCasterLandingPadMgr.GetFactionLandingPads(factionID)` and sorts the result before
+building the Interstellar Shipcaster section. It then checks faction membership in the result of
+`shipCasterLauncherMgr.GetFactionsWithShipcaster()`. The warzone map also iterates
+`shipCasterLandingPadMgr.GetAllLandingPads()` to place landing-pad markers.
+
+Eden returns empty Python lists for these selected-pilot reads. The client uses its shipcaster-not-built view and
+skips shipcaster and landing-pad markers. Building and using shipcasters requires a separate gameplay implementation.
+The warzone map continues to use the existing occupation, headquarters, battlefield and visible-insurgency reads.
+
+Build 3662168's `shipcasterSvc.pyj`, `shipCasterVisualization.pyj` and `warzoneMapPanel.pyj` establish these call sites
+and collection uses. The inspected archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The older evejs shipcaster runtime also sends empty lists in its default state
+(`shipcasterRuntime.js` SHA-256 `4fc40271b4e5e2b590abdcceb424ee1a3e80be333a1e23a8e1e06e50d55209c7`).
+CCP documents the landing-pad objects used by the live feature. [Havoc expansion notes](https://www.eveonline.com/news/view/havoc-expansion-notes)
+
+**Automated validation.** `WarzoneShipcasterReadsReturnEmptyListsForSelectedPilots` reproduced the unsupported call
+before the fix. It passed in 6.97 seconds after the fix, checking list encoding, selection gating and malformed
+arguments. Tool and solution restores and a warning-free build passed in 1.80 seconds. The focused run below
+passed all 34 tests in 19.89 seconds. Both Python policy suites passed all 17 checks in 1.70 seconds.
+Formatting and width verification passed in 51.13 seconds. The full .NET suite was not run.
+
+```text
+FullyQualifiedName~FactionWarzoneProtocolTests|FullyQualifiedName~FactionWarzoneFoundationTests|FullyQualifiedName~Exploration.AgencyTests|FullyQualifiedName~MilitiaComplexTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Open both empire warzone maps and switch factions in the Interstellar Shipcaster panel.
+
 ## Militia missions, ranks, and combat statistics — November 20, 2026
 
 ### Mission content and rewards
