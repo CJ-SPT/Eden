@@ -438,8 +438,11 @@ public sealed partial class AdministrationTests
         string html = await fixture.Client.GetStringAsync("/performance");
         Assert.Contains("Server performance", html);
         Assert.Contains("Memory in RAM", html);
+        Assert.Contains("Estimated .NET heap usage.", html);
         Assert.Contains("Session frame latency", html);
         Assert.Contains("No completed pilot frames", html);
+        Assert.Contains("<dt>Managed allocation rate</dt>", html);
+        Assert.Contains("including short-lived objects whose memory can be reused after collection", html);
         Assert.Contains("Last traffic maintenance pass", html);
         Assert.Contains("Saved communities / pilots", html);
         Assert.Contains("Scheduled pilots", html);

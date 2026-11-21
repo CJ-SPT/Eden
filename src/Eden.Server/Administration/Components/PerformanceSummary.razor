@@ -22,7 +22,7 @@
     <section class="card">
         <h2>Managed memory</h2>
         <p class="metric">@Memory(Snapshot.Resources.ManagedMemoryBytes)</p>
-        <p class="muted">Allocation rate @(Snapshot.AllocatedBytesPerSecond is { } rate ? $"{Memory(rate)}/s" : "collecting…")</p>
+        <p class="muted">Estimated .NET heap usage.</p>
     </section>
 </div>
 <FramePerformance History="Snapshot.FrameHistory" />
@@ -33,8 +33,13 @@
             <div><dt>Process threads</dt><dd>@Snapshot.Resources.ProcessThreads</dd></div>
             <div><dt>Thread pool threads</dt><dd>@Snapshot.Resources.ThreadPoolThreads</dd></div>
             <div><dt>Queued thread pool work</dt><dd>@Snapshot.Resources.PendingWorkItems</dd></div>
+            <div>
+                <dt>Managed allocation rate</dt>
+                <dd>@(Snapshot.AllocatedBytesPerSecond is { } rate ? $"{Memory(rate)}/s" : "Collecting…")</dd>
+            </div>
             <div><dt>Gen 0 / 1 / 2 collections</dt><dd>@Snapshot.Resources.Gen0Collections / @Snapshot.Resources.Gen1Collections / @Snapshot.Resources.Gen2Collections</dd></div>
         </dl>
+        <p class="muted">Allocation rate measures newly allocated bytes, including short-lived objects whose memory can be reused after collection.</p>
         <p class="muted">Collection counts are cumulative since process start. Memory sampling does not force garbage collection.</p>
     </section>
     <section class="card">
