@@ -8,6 +8,7 @@ using Eden.Data.World.Docking;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Fleets;
@@ -184,7 +185,10 @@ internal sealed partial class PilotDroneStore(
             .ToArray();
         double used = active.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
         int maximumCount = DroneCatalog.ControlLimit(fitting);
-        double maximumBandwidth = shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth);
+        double maximumBandwidth = WorldTuningRules.ScaleDroneBandwidth(
+            world.Settings.ShipFitting,
+            shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth)
+        );
         int remainingSlots = maximumCount - active.Length;
         double remainingBandwidth = maximumBandwidth - used;
         List<InventoryChange> changes = [];
@@ -385,7 +389,10 @@ internal sealed partial class PilotDroneStore(
                 selected.Length,
                 selected.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d!.ItemId)!.TypeId).Bandwidth),
                 DroneCatalog.ControlLimit(fitting),
-                fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+                WorldTuningRules.ScaleDroneBandwidth(
+                    world.Settings.ShipFitting,
+                    fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+                )
             );
         }
         foreach (var entry in selected)

@@ -3,6 +3,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
@@ -27,10 +28,12 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class ResidentDroneTests
 {
     [Theory]
-    [InlineData(0, 50, 5)]
-    [InlineData(2, 50, 3)]
-    [InlineData(0, 17, 3)]
-    public void FullStackLaunchUsesOnlyAvailableControlAndBandwidth(int alreadyLaunched, double bandwidth, int expected)
+    [InlineData(0, 50, 1, 5)]
+    [InlineData(2, 50, 1, 3)]
+    [InlineData(0, 17, 1, 3)]
+    [InlineData(0, 17, 1.5, 5)]
+    [InlineData(0, 50, 0.2, 2)]
+    public void FullStackLaunchUsesOnlyAvailableControlAndBandwidth(int alreadyLaunched, double bandwidth, double multiplier, int expected)
     {
         const int brutix = 16229;
         const int warriorTwo = 2488;
@@ -47,8 +50,23 @@ public sealed class ResidentDroneTests
         long stack = f.Bay(warriorTwo, quantity);
         long initialStack = alreadyLaunched == 0 ? 0 : f.Bay(warriorTwo, alreadyLaunched);
         var database = f.Base.Db.Services.GetRequiredService<WorldDatabase>();
+        if (multiplier != 1)
+        {
+            var configuration = f.Base.Db.Services.GetRequiredService<IWorldConfiguration>();
+            var state = configuration.Read();
+            configuration.Save(
+                state.Generation,
+                state.Active.Draft with
+                {
+                    Settings = state.Active.Draft.Settings with { ShipFitting = new(DroneBandwidthMultiplier: (decimal)multiplier) },
+                },
+                "drone bandwidth replay"
+            );
+            WorldInitialization.Initialize(database, f.Base.Clock);
+        }
         using LiveWorld live = new(database, f.Base.Clock, _ => { });
         f.Space();
+        Assert.Equal(bandwidth * multiplier, f.Base.Fitting.ShipAttributes(f.Pilot)[DogmaAttributeId.DroneBandwidth]);
         if (initialStack != 0)
         {
             Assert.Equal(
@@ -67,6 +85,7 @@ public sealed class ResidentDroneTests
         Assert.Equal(stack, Assert.Single(decoded).Key);
         Assert.Equal(expected, ids.Distinct().Count());
         Assert.Equal(alreadyLaunched + expected, context.Flight.VisibleDrones.Count);
+        Assert.False(f.Tick().ControlChanged);
         Assert.Equal((alreadyLaunched + expected) * DroneRules.LightBandwidth, f.Drones.Control(f.Pilot).UsedBandwidth);
 
         int remainder = quantity - expected;

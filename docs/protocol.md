@@ -1225,6 +1225,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Fitting and module families
 
+- [Configurable ship fitting budgets](protocol/fitting.md#configurable-ship-fitting-budgets)
 - [Native Multifit batches, November 15, 2026](protocol/fitting.md#native-multifit-batches-november-15-2026)
 - [Resident inventory and fitting commands](protocol/fitting.md#resident-inventory-and-fitting-commands)
 - [Apply a simulated fitting to the active ship](protocol/fitting.md#apply-a-simulated-fitting-to-the-active-ship)

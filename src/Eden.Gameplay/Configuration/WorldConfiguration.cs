@@ -37,6 +37,13 @@ public sealed record ResourcePolicy(
 
 public sealed record MiningHoldPolicy(decimal GeneralMultiplier = 1, decimal IceMultiplier = 1, decimal GasMultiplier = 1);
 
+public sealed record ShipFittingPolicy(
+    decimal CpuMultiplier = 1,
+    decimal PowerGridMultiplier = 1,
+    decimal CalibrationMultiplier = 1,
+    decimal DroneBandwidthMultiplier = 1
+);
+
 public sealed record RewardPolicy(
     decimal BountyMultiplier = 1,
     decimal MissionIskMultiplier = 1,
@@ -137,6 +144,7 @@ public sealed record WorldSettings
     public DevelopmentSupplyPolicy DevelopmentSupply { get; init; } = new();
     public ResourcePolicy Resources { get; init; } = new();
     public MiningHoldPolicy MiningHolds { get; init; } = new();
+    public ShipFittingPolicy ShipFitting { get; init; } = new();
     public RewardPolicy Rewards { get; init; } = new();
     public IndustryPolicy Industry { get; init; } = new();
     public PlanetaryPolicy PlanetaryIndustry { get; init; } = new();

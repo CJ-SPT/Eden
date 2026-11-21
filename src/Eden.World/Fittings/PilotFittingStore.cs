@@ -89,6 +89,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
         var usage = calculation.ResourceUsage(catalog);
         var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
         WorldTuningRules.ScaleMiningHolds(world.Settings.MiningHolds, result);
+        WorldTuningRules.ScaleFitting(world.Settings.ShipFitting, result);
         world.StageFit(key, revision, result);
         return result;
     }

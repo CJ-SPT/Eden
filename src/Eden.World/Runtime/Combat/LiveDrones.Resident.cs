@@ -1,6 +1,7 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.World.Catalog;
@@ -115,7 +116,10 @@ internal sealed partial class LiveCombatRuntime
         }
         return new DronePilot(
             DroneCatalog.ControlLimit(fit),
-            fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth),
+            WorldTuningRules.ScaleDroneBandwidth(
+                world.Settings.ShipFitting,
+                fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+            ),
             fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
             saved is null ? new() : new(saved.Aggressive, saved.FocusFire),
             qualified

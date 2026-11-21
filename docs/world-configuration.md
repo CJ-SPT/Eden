@@ -27,6 +27,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Pilot activities | Situational awareness, belt ratting and public combat anomaly ratting. |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 | Travel | Warp speed and align speed multipliers; autopilot gate landing distance, from 0 to 100,000 metres. |
+| Fitting | Ship CPU, power grid, rig calibration and drone bandwidth multipliers. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
 
@@ -225,6 +226,29 @@ Exports retain the existing `settings.navigation` group for compatibility:
 Older exports missing the multipliers load them as 1×; exports missing the entire navigation group also keep the
 15,000 m gate default. Forms, imports and command/API validation share the 0.1–100× multiplier bounds.
 See the [protocol record](protocol/navigation.md#travel-configuration-november-15-2026).
+
+## Fitting
+
+Open **Settings → Fitting**, edit the World settings draft and choose **Save for restart**. Each
+multiplier accepts **0.1–100×** and defaults to **1×**, including in older configuration exports. The
+server applies the factors to fitted ship budgets after hull, skill and equipment bonuses.
+
+| Option | Effect |
+| --- | --- |
+| Ship CPU | Increases or decreases CPU available to online modules. |
+| Ship power grid | Increases or decreases power grid available to online modules. |
+| Rig calibration | Changes the total calibration available when installing rigs. |
+| Drone bandwidth | Changes the bandwidth available for drones in space. A hull with zero bandwidth still has zero bandwidth. |
+
+At **1.5× CPU and 2× power grid**, a skilled and fitted ship with 200 tf and 50 MW gets 300 tf and
+100 MW. Module costs, required skills, slots, hardpoints, drone bay capacity and drone control count
+follow their normal rules. Lowering budgets leaves existing gear installed. Normal fitting
+reconciliation can offline modules that exceed the new CPU or power grid budget. Newly installed rigs
+and online operations must fit within the applicable budget.
+
+Exports use `settings.shipFitting` with `cpuMultiplier`, `powerGridMultiplier`,
+`calibrationMultiplier` and `droneBandwidthMultiplier`.
+See the [protocol record](protocol/fitting.md#configurable-ship-fitting-budgets).
 
 ## Planetary industry
 

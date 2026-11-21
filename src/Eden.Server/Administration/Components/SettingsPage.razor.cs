@@ -18,6 +18,7 @@ public partial class SettingsPage
                 (SettingsActivity.Gathering, "Gathering"),
                 (SettingsActivity.Rewards, "Rewards"),
                 (SettingsActivity.Progression, "Progression"),
+                (SettingsActivity.Fitting, "Fitting"),
                 (SettingsActivity.Travel, "Travel"),
             ]
         ),

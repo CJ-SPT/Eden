@@ -3,6 +3,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -70,7 +71,10 @@ internal sealed partial class PilotDroneStore
             controlled.Length,
             controlled.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth),
             DroneCatalog.ControlLimit(fitting),
-            fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+            WorldTuningRules.ScaleDroneBandwidth(
+                world.Settings.ShipFitting,
+                fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+            )
         );
         int assigned = 0;
         Dictionary<long, DroneDelegateMember?> owners = [];

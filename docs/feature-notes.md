@@ -240,6 +240,9 @@ At a station with **Repair Facilities**, quote owned assembled ships and pay for
 
 ## Fitting, weapons and modules
 
+World settings can scale player-ship CPU, power grid, rig calibration and drone bandwidth.
+The server applies the [fitting multipliers](world-configuration.md#fitting) at the next restart.
+
 Personal fitting plans can be saved, listed, overwritten, renamed and deleted through the native client, including while in space. They retain the hull, ordered module/cargo/drone entries, name and description across restarts without changing inventory or wallet balances. Corporation and alliance fitting storage and bulk import are now implemented. Alliance members read shared templates; executor CEOs, Directors and Fitting Managers edit them. See [alliance shared tools](protocol/alliances.md#shared-tools-and-affiliation-consumers--november-16-2026). See [personal saved fitting plans](protocol/fitting.md#personal-saved-fitting-plans-november-6-2026).
 
 **231 currently admitted hulls with drone bays** support launching and controlling **76 static light/medium/heavy/sentry combat-drone profiles**, including T1, T2, Navy, Integrated, Augmented and unusual-bandwidth variants. Each hull retains its own catalog bay capacity and bandwidth. Earned hull damage, health, tracking, range and speed traits apply to the matching drone operation sizes without requiring rigs. Control count/range use the same fitting graph for launches, continued control, reconnect and native values; Guardian-Vexor's catalog control bonus and Griffin Navy Issue's penalties are included. See [combat-drone hull bonuses and control limits](protocol/drones.md#combat-drone-hull-bonuses-and-control-limits-november-7-2026).

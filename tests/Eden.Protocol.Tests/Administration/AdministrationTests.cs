@@ -90,6 +90,7 @@ public sealed partial class AdministrationTests
                 "Gathering",
                 "Rewards",
                 "Progression",
+                "Fitting",
                 "Industry",
                 "Economy & market",
                 "NPCs & exploration",
@@ -108,6 +109,10 @@ public sealed partial class AdministrationTests
         Assert.Contains("Active settings", html);
         Assert.Contains("aria-pressed=\"true\"", html);
         Assert.Contains("Reset Ore mining yield to 1×", html);
+        Assert.Contains("Reset Ship CPU output to 1×", html);
+        Assert.Contains("Reset Ship power grid output to 1×", html);
+        Assert.Contains("Reset Rig calibration to 1×", html);
+        Assert.Contains("Reset Drone bandwidth to 1×", html);
         Assert.Contains("Reset Mining skill points to 1\u00d7", html);
         Assert.Contains("Reference ISK per SP", html);
         Assert.Contains("Base SP rate (% of gross bounty)", html);

@@ -142,6 +142,22 @@ public sealed class SettingsForm
     public decimal AlignSpeedMultiplier { get; set; } = 1;
 
     [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Ship CPU output")]
+    public decimal ShipCpuMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Ship power grid output")]
+    public decimal ShipPowerGridMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Rig calibration")]
+    public decimal ShipCalibrationMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Drone bandwidth")]
+    public decimal ShipDroneBandwidthMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ore mining yield")]
     public decimal OreYieldMultiplier { get; set; } = 1;
 
@@ -271,6 +287,10 @@ public sealed class SettingsForm
             GeneralMiningHoldMultiplier = settings.MiningHolds.GeneralMultiplier,
             IceHoldMultiplier = settings.MiningHolds.IceMultiplier,
             GasHoldMultiplier = settings.MiningHolds.GasMultiplier,
+            ShipCpuMultiplier = settings.ShipFitting.CpuMultiplier,
+            ShipPowerGridMultiplier = settings.ShipFitting.PowerGridMultiplier,
+            ShipCalibrationMultiplier = settings.ShipFitting.CalibrationMultiplier,
+            ShipDroneBandwidthMultiplier = settings.ShipFitting.DroneBandwidthMultiplier,
             BountyMultiplier = settings.Rewards.BountyMultiplier,
             MissionIskMultiplier = settings.Rewards.MissionIskMultiplier,
             MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
@@ -388,6 +408,7 @@ public sealed class SettingsForm
             ),
             Resources = new(RenewBelts, RenewalHourUtc, OreYieldMultiplier, IceYieldMultiplier, GasYieldMultiplier),
             MiningHolds = new(GeneralMiningHoldMultiplier, IceHoldMultiplier, GasHoldMultiplier),
+            ShipFitting = new(ShipCpuMultiplier, ShipPowerGridMultiplier, ShipCalibrationMultiplier, ShipDroneBandwidthMultiplier),
             Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             PlanetaryIndustry = new(

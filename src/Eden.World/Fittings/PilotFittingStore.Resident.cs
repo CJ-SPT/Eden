@@ -62,6 +62,7 @@ internal sealed partial class PilotFittingStore
         var usage = calculation.ResourceUsage(catalog);
         var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
         WorldTuningRules.ScaleMiningHolds(world.Settings.MiningHolds, result);
+        WorldTuningRules.ScaleFitting(world.Settings.ShipFitting, result);
         WorldTuningRules.ScaleTravel(world.Settings.Navigation, result);
         world.StageFit(key, revision, result);
         return result;

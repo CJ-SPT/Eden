@@ -2,6 +2,44 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Configurable ship fitting budgets
+
+World configuration scales final CPU output, power output, calibration capacity and drone
+bandwidth after fitting bonuses. Resident module onlining and full-fit validation use the tuned
+CPU and power grid. Rig admission uses the same calibration capacity reported by ship dogma.
+Drone launch, continued control, reconnect and delegation use the tuned bandwidth. The world
+stores the policy as a configuration revision and activates it at startup.
+
+Build 3662168 catalog IDs are 48 (`cpuOutput`), 11 (`powerOutput`), 1132
+(`upgradeCapacity`) and 1271 (`droneBandwidth`). The original archive has SHA-256 prefix
+`37FB2AF4FA0EC5C8F`. In `clientDogmaLocation.pyj`, `CheckApplyBrainEffects` applies ship
+effects to loaded dogma items and `OnlineModule` runs local activation. In
+`baseDogmaLocation.pyj`, `CheckPowerCpuRequirementForOnlineModules` reads both capacity
+attributes. Eden sends non-default factors through the existing native item post-multiply
+brain effects. The local EVE.js comparison checked `moduleOperation.js` (SHA-256 prefix
+`C27F281DEB63C503`), whose online operation compares load against fitted CPU and power output.
+See the [CCP fitting window guide](https://support.eveonline.com/hc/en-us/articles/213287845-Fitting-Window).
+
+**Automated validation.** The exact filter passed nine cases in 22 seconds. It covered
+`ConfiguredBudgetsDriveResidentFittingAndNativeModifiersAcrossRestart`,
+`FullStackLaunchUsesOnlyAvailableControlAndBandwidth`,
+`SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves` and
+`WorldSettingsPageRendersAllActivityTabsAndTheSharedRestartSaveBar`.
+
+The focused fitting, drone, pilot brain and world configuration suites passed 237 of
+238 cases in 5 minutes 22 seconds. The only failure, in
+`FittingSnapshotTests.ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes`,
+counted 10 SQL commands against a limit of 9. An isolated replay on the previous main
+commit (`abdddb2d`) reproduced the same result. The solution build, both Python policy
+suites and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Save a higher CPU multiplier, restart and confirm the active
+ship's Fitting window and module onlining use the larger budget.
+
+[World settings and export keys](../world-configuration.md#fitting)
+
 ## Resident inventory and fitting commands
 
 Ship assembly, naming, boarding, capsule exit, corvette recovery, repackaging, and
@@ -328,6 +366,8 @@ Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle.
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
 ## Contents
+
+- [Configurable ship fitting budgets](#configurable-ship-fitting-budgets)
 
 - [Bulk and corporation saved fittings, November 11, 2026](#bulk-and-corporation-saved-fittings--november-11-2026)
 

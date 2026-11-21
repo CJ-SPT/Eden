@@ -175,6 +175,35 @@ else
                             </div>
                         </section>
                     </section>
+                    <section id="settings-Fitting" class="settings-panel" aria-labelledby="heading-Fitting"
+                             hidden="@(Workspace.Activity != SettingsActivity.Fitting)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Fitting">Fitting</h2>
+                            <p class="muted">Scale ship budgets after skills and fitted bonuses.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Module and rig budgets</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Ship CPU output" @bind-Value="Form.ShipCpuMultiplier"
+                                    Description="Changes the CPU available to bring modules online."
+                                    ExampleAmount="180" ExampleUnit="tf" />
+                                <MultiplierControl Label="Ship power grid output" @bind-Value="Form.ShipPowerGridMultiplier"
+                                    Description="Changes the power grid available to bring modules online."
+                                    ExampleAmount="50" ExampleUnit="MW" />
+                                <MultiplierControl Label="Rig calibration" @bind-Value="Form.ShipCalibrationMultiplier"
+                                    Description="Changes how much calibration you can spend on rigs in the hull's available rig slots."
+                                    ExampleAmount="400" ExampleUnit="calibration points" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Drones</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Drone bandwidth" @bind-Value="Form.ShipDroneBandwidthMultiplier"
+                                    Description="Changes how much bandwidth you can spend on deployed drones. The hull still needs a drone bay."
+                                    ExampleAmount="25" ExampleUnit="Mbit/s" />
+                            </div>
+                        </section>
+                    </section>
                     <section id="settings-Travel" class="settings-panel" aria-labelledby="heading-Travel"
                              hidden="@(Workspace.Activity != SettingsActivity.Travel)">
                         <div class="settings-panel-heading">
