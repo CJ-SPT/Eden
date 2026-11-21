@@ -12,12 +12,14 @@ public sealed record WorldDatabase(string Path)
     public Eden.World.Market.LiveMarketSnapshotCatalog MarketSnapshot => _marketSnapshot ??= new(this);
     private Eden.World.Capsuleers.TrafficSnapshot? _traffic;
     internal Eden.World.Capsuleers.TrafficSnapshot Traffic => _traffic ??= ReadTraffic();
+    internal string TrafficSnapshotPath =>
+        System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(Path))!, "traffic.sqlite");
 
     internal void LoadTraffic() => _traffic = ReadTraffic();
 
     private Eden.World.Capsuleers.TrafficSnapshot ReadTraffic()
     {
-        string path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(Path))!, "traffic.sqlite");
+        string path = TrafficSnapshotPath;
         if (!File.Exists(path))
         {
             return Eden.World.Capsuleers.TrafficSnapshot.Empty;

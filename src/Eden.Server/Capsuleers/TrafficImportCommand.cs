@@ -40,9 +40,32 @@ internal static class TrafficImportCommand
         string output = Path.GetFullPath(Value("--import-traffic")!);
         string directory = Path.GetDirectoryName(output)!;
         string catalog = Path.GetFullPath(Value("--catalog") ?? Path.Combine(directory, "catalog.sqlite"));
+        var metadata = await ImportPublished(
+            catalog,
+            output,
+            Value("--from") is { } first ? Parse(first) : null,
+            Value("--through") is { } last ? Parse(last) : null,
+            Console.WriteLine,
+            cancellationToken
+        );
+        Console.WriteLine(JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true }));
+        return true;
+
+        static DateOnly Parse(string value) => DateOnly.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+    }
+
+    internal static async Task<TrafficSnapshotManifest> ImportPublished(
+        string catalog,
+        string output,
+        DateOnly? first,
+        DateOnly? last,
+        Action<string> log,
+        CancellationToken cancellationToken
+    )
+    {
         DateOnly yesterday = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-1);
-        DateOnly through = Value("--through") is { } last ? Parse(last) : yesterday;
-        DateOnly from = Value("--from") is { } first ? Parse(first) : through.AddDays(1 - DefaultWindowDays);
+        DateOnly through = last ?? yesterday;
+        DateOnly from = first ?? through.AddDays(1 - DefaultWindowDays);
         if (from > through || through > yesterday)
         {
             throw new InvalidDataException("Traffic imports require an ordered range of complete UTC dates.");
@@ -51,31 +74,24 @@ internal static class TrafficImportCommand
         {
             throw new InvalidDataException("Traffic output must be separate from the pinned catalog.");
         }
-        Directory.CreateDirectory(directory);
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
         using FileStream ownership = new(output + ".import.owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         using HttpClient client = new(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All })
         {
             Timeout = TimeSpan.FromMinutes(5),
         };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("Eden-Traffic/1.0 (+https://github.com/CJ-SPT/Eden)");
-        if (Value("--through") is null)
+        if (last is null)
         {
-            through = await new TrafficDownloader(client, output + ".cache", Console.WriteLine).LatestCompleteDate(
-                yesterday,
-                cancellationToken
-            );
-            from = Value("--from") is { } requestedFrom ? Parse(requestedFrom) : through.AddDays(1 - DefaultWindowDays);
+            through = await new TrafficDownloader(client, output + ".cache", log).LatestCompleteDate(yesterday, cancellationToken);
+            from = first ?? through.AddDays(1 - DefaultWindowDays);
             if (from > through)
             {
                 throw new InvalidDataException("The requested start follows the latest published complete archive.");
             }
-            Console.WriteLine($"Using published complete UTC archives {from:yyyy-MM-dd} through {through:yyyy-MM-dd}.");
+            log($"Using published complete UTC archives {from:yyyy-MM-dd} through {through:yyyy-MM-dd}.");
         }
-        var metadata = await Import(client, catalog, output, from, through, Console.WriteLine, cancellationToken);
-        Console.WriteLine(JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true }));
-        return true;
-
-        static DateOnly Parse(string value) => DateOnly.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return await Import(client, catalog, output, from, through, log, cancellationToken);
     }
 
     internal static async Task<TrafficSnapshotManifest> Import(

@@ -6,6 +6,9 @@ covers zero-ISK delivery and combat starts, earned skill points, and paid recove
 [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 covers the reload banner while editing settings on servers that use a decimal comma.
 
+[Optional data imports in server administration](protocol/world-configuration.md#optional-data-imports-in-server-administration)
+covers background downloads, snapshot replacement, and restart adoption for market orders and zKillboard traffic.
+
 [First bot career ships](protocol/capsuleers.md#first-bot-career-ships) covers qualifying for, paying for, fitting, and
 flying a bot's first career hull in a fresh universe.
 

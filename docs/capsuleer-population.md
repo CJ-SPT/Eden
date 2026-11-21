@@ -291,6 +291,10 @@ Onboard freight retains its identity until delivery or destruction. Wreck surviv
 
 An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot uses generated Tech I freighters with regional hull and shipment variety. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
 
+In server administration, open **Optional data** and choose **Import zKillboard traffic**. The page shows the
+installed UTC range, counts, and import status. Use **Re-import zKillboard traffic** to download a new weekly snapshot,
+then restart Eden to adopt it. The import keeps running if you close the page.
+
 Create or refresh the snapshot from the repository root:
 
 ```powershell

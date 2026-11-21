@@ -406,3 +406,35 @@ Optional maintainer checks:
 1. Review tab switching, invalid-input reset and pending-restart status in the administrator page.
 2. Compare native ore/ice/gas module information with actual completed-cycle extraction under custom rates.
 3. Compare native manufacturing/science previews and installed deadlines, including the one-second minimum.
+
+## Optional data imports in server administration
+
+The authenticated **Optional data** page stages the existing [EVE Ref market snapshot](industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
+and [zKill traffic snapshot](capsuleers.md#zkill-backed-traffic--november-8-2026) beside the selected world using its active
+catalog. The provider format and catalog compatibility rules are shared with the command-line importers.
+The [EVE Ref dataset format](https://docs.everef.net/datasets/market-orders.html) and
+[zKillboard archive documentation](https://zkillboard.com/api/docs/) describe the external inputs. Reference checks also
+covered EVE.js `averageMarketPrices.js` and `killmailItemPayload.js` in the local checkout, which has no Git revision
+metadata. This administration change uses Eden's existing providers and introduces no native client calls or saved gameplay changes.
+
+The page shows the installed market capture and traffic archive range. Administrator-authenticated, antiforgery-protected
+forms start background imports. The host runs one web import at a time, and jobs outlive the browser session. The traffic
+command shares the same download/cache and publication path with the page. The market import uses the packaged Python
+script in a staging directory and publishes the validated manifest after moving its generation into place. Previous snapshots
+stay installed on failure. The server adopts the files on restart.
+
+**Automated validation.** The focused filter joined `AdministrationTests`, `AdministrationComponentTests`,
+`TrafficImportTests`, `TrafficSnapshotTests` and `StandardMarketTests` using `FullyQualifiedName~` and `|`.
+In 26.56 seconds, 101 passed and the opt-in browser test was skipped. The exact optional-data page test passed
+again in 11.25 seconds after the final copy update. It checks missing-data explanations, administrator and
+antiforgery gates, and an import failure that preserves the installed traffic snapshot. The Standard market
+refresh test checks staging, preservation of the old capture until restart, and use of the new stock after reopen.
+The solution built with zero warnings and errors. Eight catalog policy, nine formatting policy and four offline
+market importer checks passed. The Docker publish helper verified the packaged market importer in 125.74 seconds.
+Formatting passed in 41.04 seconds. Documentation links and whitespace checks passed.
+After rebasing onto `9e2a7cdd`, the solution build and the same focused filter passed in 37.91 seconds with 101
+passing tests and one opt-in skip. All three Python checks passed again.
+
+**Live acceptance.** Not performed. Agent client testing is disabled. Provider downloads were not exercised.
+
+**Optional maintainer checks.** Import a snapshot on the server and verify that Eden adopts it on restart.

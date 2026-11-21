@@ -3,6 +3,8 @@
 [Documentation index](README.md)
 
 The administration **World** page can [back up and wipe gameplay state](world-wipe.md) while retaining accounts and configuration.
+Use **Optional data** to import or refresh [live market orders](#market-presets) and
+[zKillboard traffic](capsuleer-population.md#zkill-backed-travelers).
 
 Schema 99 adds immutable configuration revisions to each saved world. Upgrading captures its existing development supply, economic policies, adjusted prices, manufacturing indices and renewal schedule. Existing worlds retain their values; normal new-world defaults remain unchanged.
 
@@ -51,8 +53,14 @@ The existing hub and starter supply supplements do not alter imported orders. Th
 are hidden for Standard because the imported quantities and prices are authoritative. Initial wallet grants
 remain under Progression.
 
-Import a snapshot before selecting Standard. From the repository root, with the server's installed catalog and
-the destination **beside its saved world**:
+Before selecting Standard, open **Optional data** and choose **Import market orders**. Use **Re-import market
+orders** to refresh the snapshot. The server downloads and validates the data in the background, and the page shows
+the installed capture and the import result. Standard requires a compatible snapshot. Testing, Progressive and
+NPC-only markets work without one.
+
+Market imports require Python 3.8 or newer on the server. The Docker image includes it. On other installations,
+use Python on the server's PATH or set `EDEN_PYTHON` to the executable. To import manually from the repository
+root, point the importer at the server's installed catalog and write beside its saved world:
 
 ```powershell
 python tools/Import-LiveMarket.py --catalog src/Eden.Server/data/catalog.sqlite --output src/Eden.Server/data/market-orders
@@ -77,8 +85,9 @@ market access and retires removed orders; it intentionally establishes a new ext
 an offline snapshot, with no network requests during gameplay and no automatic continuous synchronization.
 
 Keep `market-orders/` beside the world when deploying or restoring it, including its manifest and referenced
-generation directory. The files are runtime data excluded from Git. Failed imports leave the previous manifest
-active. Servers keep their current immutable snapshot until restart, so an import can be staged while running.
+generation directory. If Standard is already active and the files are missing or incompatible, restore or re-import
+the snapshot with the command above before starting Eden. The files are runtime data excluded from Git. Failed imports
+leave the previous manifest active. Servers keep their current immutable snapshot until restart, so an import can be staged while running.
 Do not remove a generation still referenced by a running server. Selection and activation reject missing or
 incompatible manifests; regional checksums and order validation reject corrupt data before publishing orders.
 
