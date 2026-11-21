@@ -28,7 +28,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class PilotSpaceActivitiesTests
+public sealed partial class PilotSpaceActivitiesTests
 {
     private const int Station = 60015157;
     private const int SystemId = 30000141;

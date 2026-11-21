@@ -57,6 +57,7 @@ public static class CapsuleerPauseRules
                 ? ratting with
                 {
                     LastObservedAt = now,
+                    Salvage = ratting.Salvage is { } salvage ? salvage with { DueTicks = checked(salvage.DueTicks + delay) } : null,
                     Patrol = ratting.Patrol is { } patrol
                         ? patrol with
                         {

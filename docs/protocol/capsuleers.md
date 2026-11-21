@@ -2,6 +2,61 @@
 
 [Protocol index](../protocol.md)
 
+## Bot wreck salvage and trade
+
+Combat pilots can recover salvage from their own NPC wrecks on belt and public anomaly sorties. A pilot with a free
+high slot and enough CPU and power can fit an owned Salvager I or spend up to a quarter of its current wallet on a
+station offer. Pilots can qualify through normal skillbooks, earned skill points and the training queue. The same
+recovery routine recognizes supported online salvagers already fitted to the ship.
+The activity follows the existing belt-ratting and anomaly-ratting settings.
+
+The pilot clears nearby pirates, approaches the wreck and collects any ordinary loot it can carry. It can also salvage
+a wreck with an empty cargo hold. The standard targeting formula governs the lock delay. Eden's information module
+owner charges capacitor, starts the cycle and rolls for access at completion. A failed access attempt can be retried
+within the sortie budget. The pilot leaves other owners' wrecks alone and aborts recovery when it leaves the site or
+retreats. The world checkpoints the paid cycle with the pilot's routine. Its remaining simulation time is preserved
+when the last human leaves and across a restart. A wreck can still expire on its normal deadline.
+
+The pilot unloads recovered stock into its station hangar. When a local personal or corporate buy order has funded
+demand, the pilot submits an immediate sale through the market. The normal market rules apply to matching, escrow,
+tax and delivery. Any unsold quantity stays in the hangar.
+
+Build 3662168 supplies Salvager I (25861), fitting and cycle attributes, and NPC wreck access difficulty. The local
+EVE.js build 3396210 reference splits activation validation, cycle resolution, salvage inventory and preservation of
+unlooted contents in `server/src/space/modules/salvagerRuntime.js` (SHA-256
+`9659E071D1D199889F3CA4688BA81F8329EADCB9B738DAEE94089AA606ACCBE9`). Eden uses its existing
+[information and salvage operations](information.md#scanners-and-salvage-operations-november-8-2026).
+[EVE University Salvaging](https://wiki.eveuniversity.org/Salvaging)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PilotSpaceActivitiesTests.RatterBuysSalvagerAndResumesPaidRecoveryBeforeSellingIntoFundedDemand`
+passed in 8.97 seconds including runner overhead. The replay uses a reduced build 3662168 catalog with a deterministic
+salvage roll and an already qualified pilot. It follows a purchased Salvager I from fitting through a paid cycle,
+an empty-world pause, and a checkpoint reopen. With the observer in a different system, the pilot recovers three
+units from its own wreck and returns to station. The funded bid takes one unit and the pilot retains two. The other
+pilot's wreck remains untouched.
+
+The solution built without warnings in 14.37 seconds. The focused fixture run passed 129 cases in 61.84 seconds,
+including runner overhead. It covered ratting, traffic settings, inbound traffic, information modules and world
+startup. The pre-existing `ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` theory was excluded. Both
+Python policy suites passed 17 checks, and formatting passed.
+
+The `FullyQualifiedName~Eden.Protocol.Tests.Industry.FreshUniverseTests` filter passed four cases in 166.86 seconds
+with `EDEN_FRESH_UNIVERSE_CATALOG` pointing to the installed build 3662168 catalog.
+
+```text
+(FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~RattingRulesTests|FullyQualifiedName~CapsuleerPopulationSettingsTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~Eden.Protocol.Tests.Information.|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~FreshUniverseTests)&FullyQualifiedName!~ShoppingChoosesRealAffordableStockAndHonorsThreatMemory
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Watch a fitted combat bot finish a belt or anomaly sortie, stop near its wreck, and dock with recovered salvage.
+
 ## Fresh-universe hauling and bounty careers
 
 The fresh profile can admit a courier and a bounty hunter alongside the existing miners. Each begins docked

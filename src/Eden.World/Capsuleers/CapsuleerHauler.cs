@@ -20,6 +20,7 @@ using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Fittings;
+using Eden.World.Information;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Propulsion;
@@ -47,6 +48,7 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
+    PilotInformationStore information,
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
     CapsuleerCareerTraining careerTraining,
@@ -71,6 +73,7 @@ internal sealed class CapsuleerHaulerFactory(
             defense,
             resupply,
             ratting,
+            information,
             ammunitionSupply,
             entosis,
             careerTraining,
@@ -95,6 +98,7 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
+    PilotInformationStore information,
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
     CapsuleerCareerTraining careerTraining,

@@ -118,7 +118,7 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadStructures(string path) => Load(path, "StructureCatalog.json", null);
 
-    internal static void LoadInformation(string path) => Load(path, "InformationCatalog.json", null);
+    internal static void LoadInformation(string path, IReadOnlySet<int>? types = null) => Load(path, "InformationCatalog.json", types);
 
     internal static void LoadCapacitorModules(string path, IReadOnlySet<int>? types = null) =>
         Load(path, "CapacitorModuleCatalog.json", types);

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade) covers paid salvager fitting,
+wreck recovery, restart and sale into funded station demand.
+
 [Fresh-universe hauling and bounty careers](protocol/capsuleers.md#fresh-universe-hauling-and-bounty-careers)
 covers zero-ISK delivery and combat starts, earned skill points, and paid recovery after ship loss.
 

@@ -73,13 +73,13 @@ internal sealed class CapsuleerRatting(
             .OrderBy(n => n.Id)
             .ToArray();
 
-    internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, StaticSpaceObject site, long now) =>
+    internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, StaticSpaceObject site, long now, bool includeEmpty) =>
         wrecks
             .List(pilot.SystemId, now)
             .Where(w =>
                 w.OwnerId == pilot.PilotId
                 && WithinSite(site, w.Position)
-                && !w.Empty
+                && (!w.Empty || includeEmpty && w.GroupId == WreckDefinitions.Group)
                 && w.Id < WreckDefinitions.FirstPlayerWreckId
                 && pilot.Position!.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange
             )
