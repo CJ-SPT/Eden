@@ -631,11 +631,13 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
         Assert.Equal(0, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
     }
 
-    [Fact]
-    public async Task FailedAtomicInstallKeepsOriginalCheckpointAndCleansStagingFile()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FailedAtomicInstallKeepsOriginalCheckpointAndCleansStagingFile(bool diskCapture)
     {
         using TestWorld db = new();
-        using LiveWorld live = new(new(db.Path), new TestClock(), _ => { });
+        using LiveWorld live = new(new(db.Path), new TestClock(), _ => { }, diskCheckpointCapture: diskCapture);
         using (WorldDbContext first = new(db.Path))
         {
             first.Database.ExecuteSqlRaw("UPDATE WorldPilot SET Name='First atomic save' WHERE Id=90000001");
@@ -654,6 +656,7 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
             Assert.True(error is IOException or UnauthorizedAccessException, error?.ToString());
             Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='First atomic save'"));
             Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(db.Path)!, "*.save-*"));
+            Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(db.Path)!, "*.checkpoint-capture-*"));
         }
         finally
         {

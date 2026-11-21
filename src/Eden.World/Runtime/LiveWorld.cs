@@ -58,7 +58,7 @@ internal sealed partial class LiveWorld : IDisposable
     private readonly SqliteConnection _memory;
     private readonly FileStream _ownership;
     private readonly TimeProvider _clock;
-    private readonly Action<SqliteConnection, string> _persist;
+    private readonly Action<SqliteConnection, string>? _persist;
     private readonly Action<SqliteConnection, SqliteConnection>? _copy;
     internal Action<int>? CheckpointStepCompleted { get; set; }
     private readonly Action<string> _report;
@@ -506,7 +506,7 @@ internal sealed partial class LiveWorld : IDisposable
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
         _reportTrace = report ?? ServerLog.Console.Trace;
-        _persist = persist ?? PersistSnapshot;
+        _persist = persist;
         _copy = copy;
         _diskCheckpointCapture = diskCheckpointCapture;
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
@@ -845,7 +845,15 @@ internal sealed partial class LiveWorld : IDisposable
             var projection = snapshot.Project(MeasureCheckpoints);
             long started = Stopwatch.GetTimestamp();
             long allocated = GC.GetAllocatedBytesForCurrentThread();
-            _persist(snapshot.Database, _path);
+            if (_persist is null && snapshot.CaptureFile is { } captureFile)
+            {
+                snapshot.Database.Close();
+                InstallCheckpointFile(captureFile, _path);
+            }
+            else
+            {
+                (_persist ?? PersistSnapshot)(snapshot.Database, _path);
+            }
             TimeSpan write = Stopwatch.GetElapsedTime(started);
             long writeAllocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
             WorldCheckpoint completed = new(
@@ -928,22 +936,27 @@ internal sealed partial class LiveWorld : IDisposable
                 disk.Open();
                 snapshot.BackupDatabase(disk);
             }
-            using (FileStream file = new(staging, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
-            {
-                file.Flush(flushToDisk: true);
-            }
-            if (File.Exists(path))
-            {
-                File.Replace(staging, path, path + ".previous");
-            }
-            else
-            {
-                File.Move(staging, path);
-            }
+            InstallCheckpointFile(staging, path);
         }
         finally
         {
             File.Delete(staging);
+        }
+    }
+
+    private static void InstallCheckpointFile(string staging, string path)
+    {
+        using (FileStream file = new(staging, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
+        {
+            file.Flush(flushToDisk: true);
+        }
+        if (File.Exists(path))
+        {
+            File.Replace(staging, path, path + ".previous");
+        }
+        else
+        {
+            File.Move(staging, path);
         }
     }
 

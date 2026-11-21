@@ -35,8 +35,8 @@ internal sealed partial class LiveWorld
             database.Open();
             if (captureFile is not null)
             {
-                // This image can be regenerated after a crash. The separate durable
-                // staging file still syncs before it replaces the saved world.
+                // This image can be regenerated after a crash. The completed file
+                // is synced before it replaces the saved world.
                 using var configure = database.CreateCommand();
                 configure.CommandText = "PRAGMA synchronous=OFF";
                 configure.ExecuteNonQuery();

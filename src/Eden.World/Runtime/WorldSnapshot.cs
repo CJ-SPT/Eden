@@ -32,6 +32,7 @@ internal sealed class WorldSnapshot(
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
+    internal string? CaptureFile => captureFile;
     internal long Generation => generation;
     internal TimeSpan Wait => wait;
     internal TimeSpan Capture => capture;
