@@ -130,6 +130,44 @@ public sealed class NpcCombatTests
     }
 
     [Fact]
+    public void ResidentNpcLossParticipantsUseIndexedTargetsAndSeePrivateChanges()
+    {
+        using Fixture f = new(liveWorld: true);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        long[] ids = f.Db.Services.GetRequiredService<INpcEncounters>().List(f.Npc.SystemId, f.Clock.Now).Select(npc => npc.Id).ToArray();
+        Assert.Equal(2, ids.Length);
+        const long Ship = Fixture.ShipId;
+        using (var write = live.Economy.Begin(new(systems: [f.Npc.SystemId])))
+        {
+            foreach (long npc in ids)
+            {
+                write.Add(NpcAggression.Start(npc, Ship, 7500, f.Clock.Now));
+            }
+            write.Commit();
+        }
+        using var read = live.Economy.Begin();
+        long[] SavedParticipants() => ShipLossPersistence.LossNpcParticipants(read, string.Empty, Ship).Order().ToArray();
+        Assert.Equal(ids.Order().ToArray(), SavedParticipants());
+        const int iterations = 32;
+        long start = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < iterations; i++)
+        {
+            _ = SavedParticipants();
+        }
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - start;
+        Assert.True(allocated <= 2048 * iterations, $"Warm participant discovery allocated {allocated} bytes over {iterations} reads.");
+
+        var aggressions = read.Set<NpcAggression>();
+        aggressions.Find(ids[0])!.TargetShipId = Ship + 1;
+        read.Remove(aggressions.Find(ids[1])!);
+        long added = ids.Max() + 1;
+        read.Add(NpcAggression.Start(added, Ship, 7500, f.Clock.Now));
+        Assert.Equal([added], SavedParticipants());
+        aggressions.Find(ids[0])!.TargetShipId = Ship;
+        Assert.Equal(new[] { ids[0], added }.Order().ToArray(), SavedParticipants());
+    }
+
+    [Fact]
     public void ArrivalUsesCatalogDelayAndRestartRequiresFreshAggressionAndReaction()
     {
         using Fixture f = new();

@@ -252,7 +252,6 @@ internal sealed partial class NpcCombatStore(
                     resources: ShipLossPersistence
                         .LossNpcParticipants(world, database.Path, shipId)
                         .Append(npcId)
-                        .Distinct()
                         .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
                 )
         );

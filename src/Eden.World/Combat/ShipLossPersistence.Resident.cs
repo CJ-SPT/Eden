@@ -217,7 +217,13 @@ internal static partial class ShipLossPersistence
 
     internal static IEnumerable<long> LossNpcParticipants(WorldAction world, string path, long ship)
     {
-        var aggressors = world.Set<NpcAggression>().Where(row => row.TargetShipId == ship).Select(row => row.NpcId);
+        var rows = world.Set<NpcAggression>();
+        var aggressors = rows is EconomySet<NpcAggression, EconomyNpcAggression> resident
+            ? resident
+                .IndexedSnapshots(nameof(NpcAggression.TargetShipId), ship)
+                .Where(row => row.TargetShipId == ship)
+                .Select(row => row.NpcId)
+            : rows.Where(row => row.TargetShipId == ship).Select(row => row.NpcId);
         var physical = LiveWorld.Find(path)?.CombatForShip(ship)?.Aggressors(ship) ?? [];
         return aggressors.Concat(physical).Concat(ConcordResponders(world, ship));
     }
