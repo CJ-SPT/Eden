@@ -26,12 +26,12 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
     private Snapshot Read()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return catalog.Definition(s_snapshot, 0);
+        return catalog.GlobalDefinition(s_snapshot);
     }
 
     public IReadOnlyList<CatalogAgent> Agents() => Read().Agents;
 
-    internal static IReadOnlyList<CatalogAgent> Agents(CatalogDbContext catalog) => catalog.Definition(s_snapshot, 0).Agents;
+    internal static IReadOnlyList<CatalogAgent> Agents(CatalogDbContext catalog) => catalog.GlobalDefinition(s_snapshot).Agents;
 
     public CatalogAgent? Agent(long id) => NpcCharacterIds.Contains(id) ? Read().AgentById.GetValueOrDefault(id) : null;
 
