@@ -1,4 +1,5 @@
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Corporations;
@@ -12,7 +13,9 @@ internal sealed class MilitiaEnlistmentHandler(
     IMilitiaEnlistment militia,
     IPilotCharacterSheet characters,
     CorporationHandler corporations,
-    IMilitiaOrganizations organizations
+    IMilitiaOrganizations organizations,
+    IPlayerCorporations playerCorporations,
+    INpcCorporationDirectory npcCorporations
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -98,7 +101,12 @@ internal sealed class MilitiaEnlistmentHandler(
                 case ("GetCorpFactionalWarStatus", [long owner]) when owner is > 0 and <= int.MaxValue:
                     return new MilitiaCorporationStatusReply(organizations.Status((int)owner));
                 case ("GetCorporationWarFactionID", [long owner]) when owner is > 0 and <= int.MaxValue:
-                    var status = organizations.Status((int)owner);
+                    int corporationId = (int)owner;
+                    if (MilitiaRules.CorporationFaction(corporationId) is null && playerCorporations.Read(corporationId) is null)
+                    {
+                        _ = npcCorporations.Read(corporationId);
+                    }
+                    var status = organizations.Status(corporationId);
                     return FactionReply(status.Phase is { } phase && MilitiaOrganizationRules.Inherits(phase) ? status.Faction : null);
                 case ("GetAllianceWarFactionID", [long owner]) when owner is > 0 and <= int.MaxValue:
                     return FactionReply(organizations.AllianceFaction((int)owner));
