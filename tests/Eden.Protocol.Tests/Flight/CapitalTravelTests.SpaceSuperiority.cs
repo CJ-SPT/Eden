@@ -1,7 +1,9 @@
 using Eden.Data.World.Drones;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Protocol.Fighters;
 using Eden.Protocol.PilotSessions;
 using Eden.World.Catalog;
 using Eden.World.Drones;
@@ -43,14 +45,30 @@ public sealed partial class CapitalTravelTests
         await attacker.TickAsync();
         var targeting = attacker.Call("dogmaIM", "AddTarget", victim);
         Assert.True(targeting is PilotCallResult.Success, targeting.ToString());
+        Assert.IsType<PilotCallResult.Success>(attacker.Call("dogmaIM", "AddTarget", enemyShip));
         fixture.Clock.Seconds += 180;
         await attacker.TickAsync();
+
+        using CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        var ownDeck = fixture.Db.Services.GetRequiredService<IPilotFighterDeck>();
+        var effects = fixture.Db.Services.GetRequiredService<IPilotElectronicWarfare>();
+        double normalSpeed = ReadSquadron().Profile.MaximumSpeed;
+        Assert.Contains("hostile drone or fighter", Assert.IsType<PilotCallResult.Failure>(Tackle(enemyShip)).Message);
+        var tackled = Tackle(victim);
+        Assert.True(tackled is PilotCallResult.Success, tackled.ToString());
+        var effect = Assert.Single(effects.Incoming(victim));
+        Assert.Equal(DogmaEffect.FighterTackle, effect.Module.Effect);
+        Assert.Equal(-4, effect.Applied!.WebPercent);
+        Assert.Equal(1, effect.Applied.WarpStrength);
+        Assert.Equal(normalSpeed * .96, ReadSquadron().Profile.MaximumSpeed, precision: 3);
+        Assert.Equal(TimeSpan.FromSeconds(10).Ticks, effect.ExpiresAt - effect.StartedAt);
+        Assert.Single(attacker.Context.NotificationsBeforeFlight.OfType<FighterTackleStarted>());
 
         var health = fixture.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotHealth>();
         var carrierHealth = health.Read(enemy.PilotId, fixture.Clock.Now).Remaining;
         var attack = attacker.Call("fighterMgr", "CmdActivateAbilitySlots", new List<object?> { interceptor }, 0, victim);
         Assert.True(attack is PilotCallResult.Success, attack.ToString());
-        using CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        Assert.NotNull(Assert.Single(ownDeck.Read(source.PilotId, source.ShipId).Squadrons).Tackle);
         var initial = ReadSquadron();
         double finalShield = initial.Health.Remaining.Shield;
         for (int attempt = 0; attempt < 20 && finalShield >= initial.Health.Remaining.Shield; attempt++)
@@ -61,6 +79,19 @@ public sealed partial class CapitalTravelTests
         }
         Assert.True(finalShield < initial.Health.Remaining.Shield);
         Assert.Equal(carrierHealth, health.Read(enemy.PilotId, fixture.Clock.Now).Remaining);
+        if (fixture.Clock.Now < effect.ExpiresAt)
+        {
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(effect.ExpiresAt - fixture.Clock.Now));
+        }
+        await attacker.TickAsync();
+        Assert.Empty(effects.Incoming(victim));
+        Assert.Equal(normalSpeed, ReadSquadron().Profile.MaximumSpeed);
+        Assert.IsType<PilotCallResult.Success>(Tackle(victim));
+        Assert.IsType<PilotCallResult.Success>(attacker.Call("fighterMgr", "RecallFightersToTubes", new List<object?> { interceptor }));
+        Assert.Empty(effects.Incoming(victim));
+
+        PilotCallResult Tackle(long target) =>
+            attacker.Call("fighterMgr", "CmdActivateAbilitySlots", new List<object?> { interceptor }, 2L, target);
 
         void Launch(Client pilot, long stack)
         {

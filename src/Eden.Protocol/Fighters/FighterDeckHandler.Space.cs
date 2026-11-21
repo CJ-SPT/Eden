@@ -61,16 +61,16 @@ internal sealed partial class FighterDeckHandler
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(squads.ToDictionary(id => id, _ => (object?)null));
-            case ("CmdActivateAbilitySlots", [var fighters, (long)FighterSalvoCycle.Slot, long salvoTarget]):
+            case ("CmdActivateAbilitySlots", [var fighters, (long)FighterDeckRules.SecondarySlot, long salvoTarget]):
                 var firing = ReadSelection(fighters);
                 targeting.Advance(context);
-                orders.SetSalvo(pilot.PilotId, pilot.ShipId, firing, salvoTarget, targeting.IsLocked(salvoTarget), Now);
+                orders.SetSecondaryAbility(pilot.PilotId, pilot.ShipId, firing, salvoTarget, targeting.IsLocked(salvoTarget), Now);
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(firing.ToDictionary(id => id, _ => (object?)null));
-            case ("CmdDeactivateAbilitySlots", [var fighters, (long)FighterSalvoCycle.Slot]):
+            case ("CmdDeactivateAbilitySlots", [var fighters, (long)FighterDeckRules.SecondarySlot]):
                 var ceasing = ReadSelection(fighters);
-                orders.SetSalvo(pilot.PilotId, pilot.ShipId, ceasing, null, false, Now);
+                orders.SetSecondaryAbility(pilot.PilotId, pilot.ShipId, ceasing, null, false, Now);
                 Advance(context);
                 return new BlueMap<long, object?>(ceasing.ToDictionary(id => id, _ => (object?)null));
             case ("ExecuteMovementCommandOnFighters", [var fighters, var instruction, long home, _])
@@ -120,7 +120,11 @@ internal sealed partial class FighterDeckHandler
             }
             if (squad.SalvoActive && present.GetValueOrDefault(squad.SquadronId)?.SalvoActive != true)
             {
-                context.NotificationsBeforeFlight.Add(new FighterSalvoEnded(squad.SquadronId));
+                context.NotificationsBeforeFlight.Add(new FighterSecondaryEnded(squad.SquadronId));
+            }
+            if (squad.Tackle is not null && present.GetValueOrDefault(squad.SquadronId)?.Tackle is null)
+            {
+                context.NotificationsBeforeFlight.Add(new FighterSecondaryEnded(squad.SquadronId));
             }
             if (!present.ContainsKey(squad.SquadronId))
             {
@@ -151,6 +155,10 @@ internal sealed partial class FighterDeckHandler
             if (squad is { SalvoActive: true, Salvo: { } salvo } && old?.Salvo?.StartedAt != salvo.StartedAt)
             {
                 context.NotificationsBeforeFlight.Add(new FighterSalvoStarted(squad.SquadronId, salvo));
+            }
+            if (squad.Tackle is { } tackle && old?.Tackle != tackle)
+            {
+                context.NotificationsBeforeFlight.Add(new FighterTackleStarted(squad.SquadronId, tackle));
             }
             if (old is null || (old.Activity == DroneActivity.ReturningToBay) != (squad.Activity == DroneActivity.ReturningToBay))
             {
@@ -220,10 +228,10 @@ internal static class FighterAbilityState
         }
         if (squadron.Salvo is { } salvo)
         {
-            charges[FighterSalvoCycle.Slot] = salvo.Charges;
+            charges[FighterDeckRules.SecondarySlot] = salvo.Charges;
             if (SalvoCooldown(salvo) is { } cooldown)
             {
-                cooldowns[FighterSalvoCycle.Slot] = cooldown;
+                cooldowns[FighterDeckRules.SecondarySlot] = cooldown;
             }
         }
         return [new BlueMap<int, object?>(charges).ToBlue(), new BlueMap<int, object?>(cooldowns).ToBlue()];
@@ -259,7 +267,7 @@ internal sealed record FighterSalvoStarted(long Squadron, FighterSalvoCycle Cycl
     public override object?[] Arguments =>
         [
             Squadron,
-            FighterSalvoCycle.Slot,
+            FighterDeckRules.SecondarySlot,
             Cycle.Charges,
             Cycle.StartedAt,
             (Cycle.EndsAt - Cycle.StartedAt) / TimeSpan.TicksPerMillisecond,
@@ -267,7 +275,20 @@ internal sealed record FighterSalvoStarted(long Squadron, FighterSalvoCycle Cycl
         ];
 }
 
-internal sealed record FighterSalvoEnded(long Squadron) : PilotNotification("OnFighterAbilitySlotDeactivated")
+internal sealed record FighterSecondaryEnded(long Squadron) : PilotNotification("OnFighterAbilitySlotDeactivated")
 {
-    public override object?[] Arguments => [Squadron, FighterSalvoCycle.Slot, null];
+    public override object?[] Arguments => [Squadron, FighterDeckRules.SecondarySlot, null];
+}
+
+internal sealed record FighterTackleStarted(long Squadron, FighterTackleCycle Cycle) : PilotNotification("OnFighterAbilitySlotActivated")
+{
+    public override object?[] Arguments =>
+        [
+            Squadron,
+            FighterDeckRules.SecondarySlot,
+            null,
+            Cycle.StartedAt,
+            (Cycle.EndsAt - Cycle.StartedAt) / TimeSpan.TicksPerMillisecond,
+            null,
+        ];
 }

@@ -744,6 +744,29 @@ and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Space-superiority fighter tackle
+
+Build 3662168 puts ability 16 in slot two on all twelve space-superiority variants.
+Effect 6464 uses `effects.WarpScramble` with a ten-second duration. T1 squadrons
+have an 18 km surface limit and a 4 percent web. T2 and Navy or Fleet squadrons reach
+20 km, with 6 and 5 percent webs respectively. All apply one point per squadron.
+The pinned `fightersSvc.pyj` uses the same targeted activation and deactivation calls
+as for salvos. EVE.js `fighterRuntime.js` limits this ability to fighters and drones
+and applies the penalty per squadron. [CCP Fighter Controls](https://support.eveonline.com/hc/en-us/articles/207659599-Fighter-Controls)
+
+Eden checks the controller's target lock, range and aggression rights. The secondary
+cycle preserves the primary attack and slows the hostile squadron through the resident
+electronic warfare rules. It clears on expiry, recall, disconnection or when the
+target leaves range. The point is recorded with the effect for small-craft travel.
+
+**Automated validation.** The exact Equite case passed in 11.41 seconds. It covers
+the carrier rejection, speed and point, simultaneous primary attack, expiry and recall.
+The final fighter, player electronic warfare, resident drone, pilot drone and smartbomb
+filter passed 145 tests in 155.61 seconds after a 23.35-second build. Both Python suites,
+formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Shared fleet hangars
 
 Build 3662168 `shipConfigSvc.pyj` uses `ship.GetShipConfiguration(shipID)` and sends a one-key dictionary

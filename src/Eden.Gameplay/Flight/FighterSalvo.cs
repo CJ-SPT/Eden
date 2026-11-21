@@ -15,8 +15,6 @@ public sealed record FighterSalvo(
 
 public sealed record FighterSalvoCycle(int Charges, int Maximum, long RearmTicks, long StartedAt = 0, long EndsAt = 0, long RearmAt = 0)
 {
-    public const int Slot = 2;
-
     public static FighterSalvoCycle Full(FighterSalvo salvo) =>
         new(salvo.Charges, salvo.Charges, (long)Math.Ceiling(salvo.RearmMilliseconds * TimeSpan.TicksPerMillisecond));
 

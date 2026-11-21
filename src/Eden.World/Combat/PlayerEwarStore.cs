@@ -264,9 +264,15 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         using CatalogDbContext catalog = new(database.CatalogPath);
         foreach (var row in world.Set<WorldPlayerEwar>().ToArray())
         {
-            if (AreaWeaponRules.IsProjector(row.Contact().Module.Effect))
+            var contact = row.Contact();
+            if (contact.Module.Effect == DogmaEffect.FighterTackle)
             {
-                if (row.Contact().ExpiresAt <= now)
+                Eden.World.Drones.PilotDroneStore.SweepFighterTackle(world, catalog, row, now);
+                continue;
+            }
+            if (AreaWeaponRules.IsProjector(contact.Module.Effect))
+            {
+                if (contact.ExpiresAt <= now)
                 {
                     world.Remove(row);
                 }
@@ -291,7 +297,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
                             row.SourceShipId,
                             row.TargetId,
                             row.SystemId,
-                            row.Contact().ExpiresAt,
+                            contact.ExpiresAt,
                             now
                         )
                         : item is { Online: true, Singleton: true }

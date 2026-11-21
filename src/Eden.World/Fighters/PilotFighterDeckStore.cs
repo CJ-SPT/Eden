@@ -126,6 +126,12 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
                     MobilityActive = cycle?.Active(now) == true,
                     Salvo = work?.FighterSalvo?.Refresh(now),
                     SalvoActive = work?.FighterSalvo?.Active(now) == true,
+                    Tackle =
+                        work?.FighterTackle is { } tackle
+                        && tackle.Active(now)
+                        && world.Set<Eden.Data.World.Combat.WorldPlayerEwar>().Find(item.Id, tackle.TargetId) is not null
+                            ? tackle
+                            : null,
                 };
             });
 

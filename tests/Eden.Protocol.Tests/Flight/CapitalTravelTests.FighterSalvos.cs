@@ -57,7 +57,7 @@ public sealed partial class CapitalTravelTests
             new object?[]
             {
                 fighter,
-                FighterSalvoCycle.Slot,
+                FighterDeckRules.SecondarySlot,
                 charges - 1,
                 cycle.StartedAt,
                 (long)duration,

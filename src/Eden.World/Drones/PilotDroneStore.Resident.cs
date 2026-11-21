@@ -37,7 +37,15 @@ internal sealed partial class PilotDroneStore
     {
         var item = world.Set<OwnedItem>().Find(drone.ItemId)!;
         var profile = DroneCatalog.Skilled(world, catalog, drone.PilotId, item.TypeId, drone.ControllerShipId);
-        profile = AreaWeaponRules.ApplyDroneEffects(profile, PlayerEwarStore.Active(world, drone.ItemId));
+        var effects = PlayerEwarStore.Active(world, drone.ItemId);
+        if (
+            now is long deadline
+            && effects.Any(effect => effect.Module.Effect == DogmaEffect.FighterTackle && effect.ExpiresAt <= deadline)
+        )
+        {
+            effects = effects.Where(effect => effect.Module.Effect != DogmaEffect.FighterTackle || effect.ExpiresAt > deadline).ToArray();
+        }
+        profile = AreaWeaponRules.ApplyDroneEffects(profile, effects);
         DroneContact contact = new(
             drone.ItemId,
             drone.PilotId,
@@ -64,10 +72,19 @@ internal sealed partial class PilotDroneStore
             drone.Orbiting,
             DroneDelegationPersistence.Read(drone)
         );
+        var workEffect = WorkEffect(drone, profile, now);
+        if (
+            profile.Tackle is not null
+            && workEffect is { } tackle
+            && world.Set<WorldPlayerEwar>().Find(drone.ItemId, tackle.TargetId) is null
+        )
+        {
+            workEffect = null;
+        }
         contact = contact with
         {
             SquadronSize = profile.FighterGroup == 0 ? 0 : item.Quantity,
-            WorkEffect = WorkEffect(drone, profile),
+            WorkEffect = workEffect,
             Mobility = profile.Mobility is null ? null : ReadWork(drone).FighterMobility,
         };
         if (now is long at)

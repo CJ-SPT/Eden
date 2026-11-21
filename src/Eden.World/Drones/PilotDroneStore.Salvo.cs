@@ -20,14 +20,14 @@ namespace Eden.World.Drones;
 
 internal sealed partial class PilotDroneStore
 {
-    public void SetSalvo(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? targetId, bool locked, long now)
+    public void SetSecondaryAbility(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? targetId, bool locked, long now)
     {
         CheckIds(squadrons);
         if (squadrons.Count > FighterDeckRules.MaximumTubes || targetId is not null && !locked)
         {
-            throw new InvalidDataException("Lock a target before firing a fighter salvo.");
+            throw new InvalidDataException("Lock a target before using the fighter ability.");
         }
-        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Fighter salvos require the resident world.");
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Fighter abilities require the resident world.");
         using var world = live.Economy.Begin(new(pilots: [pilotId], ships: targetId is long id ? [shipId, id] : [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId, requireDroneHull: false);
@@ -37,9 +37,18 @@ internal sealed partial class PilotDroneStore
             throw new InvalidDataException("Use the fighter controls on your active carrier.");
         }
         world.RequireUncloaked(shipId);
+        if (targetId is not null)
+        {
+            Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
+            var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilot));
+            if (PilotHealthStore.Read(world, shipId, defense, now).Remaining.Destroyed)
+            {
+                throw new InvalidDataException("A destroyed ship cannot command fighter abilities.");
+            }
+        }
         int system = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
         var origin = Position(pilot.ActiveShip.Position!);
-        var target = targetId is long targetItem ? ResolveSalvoTarget(world, catalog, pilot, targetItem, system, now) : null;
+        var target = targetId is long targetItem ? ResolveFighterAbilityTarget(world, catalog, pilot, targetItem, system, now) : null;
         bool destroyed = false;
         foreach (long squadron in squadrons)
         {
@@ -59,8 +68,13 @@ internal sealed partial class PilotDroneStore
                 throw new InvalidDataException("Select deployed squadrons controlled by this ship.");
             }
             var contact = Contact(world, catalog, row, now);
-            var salvo = contact.Profile.Salvo ?? throw new InvalidDataException("That fighter has no supported salvo.");
             var work = ReadWork(row);
+            if (contact.Profile.Tackle is { } tackle)
+            {
+                SetFighterTackle(world, catalog, pilot, row, contact, work, tackle, target, system, now);
+                continue;
+            }
+            var salvo = contact.Profile.Salvo ?? throw new InvalidDataException("That fighter has no supported secondary ability.");
             var cycle = (work.FighterSalvo ?? FighterSalvoCycle.Full(salvo)).Refresh(now);
             if (target is null)
             {
@@ -98,7 +112,7 @@ internal sealed partial class PilotDroneStore
         world.Commit();
     }
 
-    private sealed record SalvoTarget(
+    private sealed record FighterAbilityTarget(
         long Id,
         SpacePosition Position,
         SpacePosition Velocity,
@@ -107,11 +121,32 @@ internal sealed partial class PilotDroneStore
         Pilot? Player = null,
         AggressionDecision? Decision = null,
         WorldNpc? Npc = null,
-        SavedStructure? Structure = null
+        SavedStructure? Structure = null,
+        FighterCompanionTarget? Companion = null
     );
 
-    private SalvoTarget ResolveSalvoTarget(WorldAction world, CatalogDbContext catalog, Pilot pilot, long target, int system, long now)
+    private FighterAbilityTarget ResolveFighterAbilityTarget(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        long target,
+        int system,
+        long now
+    )
     {
+        if (FighterTarget(world, catalog, pilot, target, system, now) is { } companion)
+        {
+            var decision = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, companion.Owner, system, now);
+            return new(
+                target,
+                companion.Contact.Position,
+                companion.Contact.Velocity,
+                companion.Contact.Profile.Radius,
+                catalog.FittingAttributes(companion.Contact.Profile.TypeId),
+                Decision: decision,
+                Companion: companion
+            );
+        }
         if (
             world.Set<WorldNpc>().Find(target) is { DestroyedAt: null, RetiredAt: null } npc
             && npc.SystemId == system
@@ -155,7 +190,7 @@ internal sealed partial class PilotDroneStore
                 decision
             );
         }
-        throw new InvalidDataException("The fighter salvo target is unavailable.");
+        throw new InvalidDataException("The fighter ability target is unavailable.");
     }
 
     private bool ApplySalvo(
@@ -165,7 +200,7 @@ internal sealed partial class PilotDroneStore
         WorldDrone row,
         DroneContact contact,
         FighterSalvo salvo,
-        SalvoTarget target,
+        FighterAbilityTarget target,
         int system,
         long now,
         long end
@@ -173,13 +208,22 @@ internal sealed partial class PilotDroneStore
     {
         double application = MissileRules.Application(
             salvo.Warhead,
-            Math.Max(1, target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius)),
+            Math.Max(
+                1,
+                target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius)
+                    * (target.Companion?.Contact.MobilitySignatureMultiplier ?? 1)
+            ),
             target.Velocity.Length
         );
         double resistance = salvo.TargetResistance is { } id
             ? target.Attributes.GetValueOrDefault(id, catalog.Read(CatalogData.Client.Dogmaattributes, (long)id)?.DefaultValue ?? 1)
             : 1;
         var damage = salvo.Warhead.Damage.Scale(contact.SquadronSize * application * resistance);
+        if (target.Companion is { } companion)
+        {
+            CrimewatchPersistence.Player(world, catalog, pilot.Id, companion.Owner.Id, system, target.Decision!, now, end);
+            return SmartbombStore.DamageDrone(world, companion.Row, companion.Contact, damage, now).Health.Remaining.Destroyed;
+        }
         if (target.Player is { } victim)
         {
             CrimewatchPersistence.Player(world, catalog, pilot.Id, victim.Id, system, target.Decision!, now, end);

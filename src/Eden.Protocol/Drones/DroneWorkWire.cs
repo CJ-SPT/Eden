@@ -27,7 +27,7 @@ internal static class DroneWorkWire
                 UtilityDroneKind.Salvaging => "effects.Salvaging",
                 _ => "effects.Laser",
             },
-            drone.Profile.Utility?.Offensive == true,
+            drone.Profile.Utility?.Offensive == true || work.Kind == UtilityDroneKind.WarpDisrupting,
             active,
             false,
             work.DurationMilliseconds,

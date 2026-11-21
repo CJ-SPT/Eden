@@ -20,6 +20,7 @@ public sealed record FighterInSpace(int Flag, long SquadronId, int TypeId, int C
     public bool MobilityActive { get; init; }
     public FighterSalvoCycle? Salvo { get; init; }
     public bool SalvoActive { get; init; }
+    public FighterTackleCycle? Tackle { get; init; }
 }
 
 public sealed record FighterDeckSnapshot(IReadOnlyList<FighterTube> Tubes, IReadOnlyList<FighterInSpace> Squadrons);
@@ -40,7 +41,7 @@ public interface IPilotFighterDeck
 public interface IPilotFighterOrders
 {
     void OrderFighters(long pilotId, IReadOnlyList<long> squadrons, DroneOrder order, long? target, IReadOnlySet<long> locks, long now);
-    void SetSalvo(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? target, bool locked, long now);
+    void SetSecondaryAbility(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? target, bool locked, long now);
 }
 
 public static class FighterDeckRules
@@ -48,6 +49,7 @@ public static class FighterDeckRules
     // Build 3662168 inventory flags, from the client inventory constants.
     public const int FirstTube = 159;
     public const int MaximumTubes = 5;
+    public const int SecondarySlot = 2;
     public const int Caiman = 45647;
     public const int Komodo = 45649;
 
