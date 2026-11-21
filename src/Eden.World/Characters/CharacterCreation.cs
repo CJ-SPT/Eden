@@ -5,6 +5,7 @@ using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
@@ -68,7 +69,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             }
             if (action.Settings.Progression.GrantStartingEquipment)
             {
-                PilotInventoryStore.GrantStarterEquipment(action, pilotId, origin.Station);
+                PilotFleetStore.FitNewCorvette(action, pilotId, shipId);
             }
             TestingWalletFunding.Grant(action, pilotId, created);
             action.Add(new SavedHomeStation { PilotId = pilotId, StationId = origin.Station });
@@ -142,7 +143,8 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var (corp, hull, station, shipName) = ReadOrigin(new SqlWorldAction(world), catalog, accountId, character);
+        var action = new SqlWorldAction(world);
+        var (corp, hull, station, shipName) = ReadOrigin(action, catalog, accountId, character);
         long pilotId = checked((world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1);
         long shipId = InventoryPersistence.NextId(world);
         long created = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -165,7 +167,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         }
         if (database.Settings.Progression.GrantStartingEquipment)
         {
-            PilotInventoryStore.GrantStarterEquipment(world, pilotId, station);
+            PilotFleetStore.FitNewCorvette(action, pilotId, shipId);
         }
         TestingWalletFunding.Grant(world, pilotId, created);
         world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });
