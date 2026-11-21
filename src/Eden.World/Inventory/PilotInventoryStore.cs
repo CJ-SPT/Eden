@@ -381,12 +381,6 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
         return miner;
     }
 
-    internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)
-    {
-        GrantStarterMiner(world, pilotId, stationId);
-        GrantStarterWeapon(world, pilotId, stationId);
-    }
-
     internal static void GrantStarterWeapon(WorldDbContext world, long pilotId, int stationId)
     {
         long id = InventoryPersistence.NextId(world);

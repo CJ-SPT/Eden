@@ -3,7 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
-using Eden.Gameplay.Combat;
+using Eden.Gameplay.Content;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -25,11 +25,34 @@ namespace Eden.World.Corporations;
 [Injectable]
 internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup, TimeProvider? clock = null) : IPilotFleet
 {
-    private static readonly (int TypeId, InventoryFlag Slot)[] s_recoveryEquipment =
+    private static readonly (int TypeId, InventoryFlag Slot)[] s_corvetteEquipment =
     [
-        (InventoryDefinitions.CivilianMinerType, InventoryFlag.HighSlot0),
-        ((int)CombatWeaponType.CivilianGatlingRailgun, InventoryFlag.HighSlot1),
+        (BuildContentPolicy.Current.StartingEquipment.MinerType, InventoryFlag.HighSlot0),
+        (BuildContentPolicy.Current.StartingEquipment.WeaponType, InventoryFlag.HighSlot1),
     ];
+
+    internal static OwnedItem[] FitNewCorvette(WorldAction world, long pilotId, long shipId)
+    {
+        var modules = new OwnedItem[s_corvetteEquipment.Length];
+        for (int index = 0; index < modules.Length; index++)
+        {
+            var (typeId, slot) = s_corvetteEquipment[index];
+            var module = new OwnedItem
+            {
+                Id = world.NextItemId(),
+                OwnerId = pilotId,
+                TypeId = typeId,
+                LocationId = shipId,
+                FlagId = (int)slot,
+                Quantity = 1,
+                Singleton = true,
+                Online = true,
+            };
+            world.Add(module);
+            modules[index] = module;
+        }
+        return modules;
+    }
 
     internal static InventoryItem Read(CatalogDbContext catalog, Ship ship)
     {
@@ -371,7 +394,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             throw new InvalidDataException("The recovery hull is not a corvette.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
-        foreach (var equipment in s_recoveryEquipment)
+        foreach (var equipment in s_corvetteEquipment)
         {
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, equipment.TypeId);
         }
@@ -391,7 +414,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         // Stripped/damaged hulls and ships elsewhere remain untouched.
         var recovered = candidates.FirstOrDefault(s =>
             !world.Set<ShipHealthState>().Any(h => h.ShipId == s.Id && (h.ArmorDamage > 0 || h.StructureDamage > 0))
-            && s_recoveryEquipment.All(e =>
+            && s_corvetteEquipment.All(e =>
                 world
                     .Set<OwnedItem>()
                     .Any(i =>
@@ -409,22 +432,21 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         {
             var attributes = catalog.FittingAttributes(typeId);
             double Load(DogmaAttributeId attribute) =>
-                s_recoveryEquipment.Sum(e => catalog.FittingAttributes(e.TypeId).GetValueOrDefault(attribute));
+                s_corvetteEquipment.Sum(e => catalog.FittingAttributes(e.TypeId).GetValueOrDefault(attribute));
             if (
-                attributes.GetValueOrDefault(DogmaAttributeId.HighSlots) < s_recoveryEquipment.Length
-                || attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) < s_recoveryEquipment.Length
+                attributes.GetValueOrDefault(DogmaAttributeId.HighSlots) < s_corvetteEquipment.Length
+                || attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) < s_corvetteEquipment.Length
                 || Load(DogmaAttributeId.Cpu) > attributes.GetValueOrDefault(DogmaAttributeId.CpuOutput)
                 || Load(DogmaAttributeId.Power) > attributes.GetValueOrDefault(DogmaAttributeId.PowerOutput)
             )
             {
                 throw new InvalidDataException("The catalog's corvette cannot support the recovery equipment.");
             }
-            long nextId = world.NextItemId();
             recovered = world
                 .Ships.Add(
                     new()
                     {
-                        Id = nextId++,
+                        Id = world.NextItemId(),
                         OwnerId = pilotId,
                         TypeId = typeId,
                         StationId = active.StationId,
@@ -434,24 +456,8 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                 )
                 .Entity;
             changes.Add(new(Read(catalog, recovered), null));
-            foreach (var equipment in s_recoveryEquipment)
+            foreach (var module in FitNewCorvette(world, pilotId, recovered.Id))
             {
-                var module = world
-                    .Set<OwnedItem>()
-                    .Add(
-                        new()
-                        {
-                            Id = nextId++,
-                            OwnerId = pilotId,
-                            TypeId = equipment.TypeId,
-                            LocationId = recovered.Id,
-                            FlagId = (int)equipment.Slot,
-                            Quantity = 1,
-                            Singleton = true,
-                            Online = true,
-                        }
-                    )
-                    .Entity;
                 changes.Add(new(PilotInventoryStore.Read(catalog, module), null));
             }
         }

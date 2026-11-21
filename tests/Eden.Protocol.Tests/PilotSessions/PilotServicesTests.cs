@@ -838,7 +838,8 @@ public sealed class PilotServicesTests
             Request("charUnboundMgr", "CreateCharacterWithDoll", ["New Pilot", 8, 7, 1, 64, appearance, portrait, 22, null, null]),
             Request("charUnboundMgr", "SelectCharacterID", [], keywords: new() { ["charID"] = 90000003L, ["skipTutorial"] = true }),
             Request("paperDollServer", "GetPaperDollData", [90000003L]),
-            Request("home_station", "get_home_station", [])
+            Request("home_station", "get_home_station", []),
+            Request("dogmaIM", "GetAllInfo", [true, true, true])
         );
         Assert.Equal(90000003L, Result(replies[0]));
         Assert.EndsWith(".SessionChangeNotification", replies[1].Name);
@@ -847,6 +848,14 @@ public sealed class PilotServicesTests
         var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(replies[4])).State);
         Assert.Equal(60015161L, home["id"]);
         Assert.Equal(30005305L, home["solar_system_id"]);
+        Assert.EndsWith(".CallRsp", replies[5].Name);
+        var pilot = world.Store.FindPilot(1000001, 90000003)!;
+        using var scope = world.Services.CreateScope();
+        var dogma = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>().AllInfo(pilot);
+        Assert.Contains(pilot.ShipId, dogma.ShipInfo.Keys);
+        var modules = dogma.ShipInfo.Keys.Where(id => id != pilot.ShipId).ToArray();
+        Assert.Equal(2, modules.Length);
+        Assert.All(modules, module => Assert.True(dogma.ShipState.Instances[module].Online));
     }
 
     [Fact]

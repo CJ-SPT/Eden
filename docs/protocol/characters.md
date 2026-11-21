@@ -50,6 +50,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+- [Initial corvette fitting](#initial-corvette-fitting)
 
 ## Player corporation banners in Character Show Info, November 13, 2026
 
@@ -853,6 +854,31 @@ Each of the 12 standard schools has one listed starting station in its mapped sy
 **Live Windows client.** On a copy of the local world, Caldari pilot `test` entered Amsen in an Ibis. The location panel initially failed in `InfoPanelLocationInfo.UpdateMainLocationInfo` when the corruption lookup returned 501. Eden now returns stage zero and zero progress with denominator one. After a server and client restart the panel displayed **Amsen 0.9**, **Sela**, **Lonetrek**, and **Amsen VI – AIR Laboratories**. Eden Pilot resumed in Jita near the Perimeter gate and Inventory showed **Ibis (Ibis)**. A Gallente Federal Navy Academy pilot created in the third slot received a Velator at Duripant VII – AIR Laboratories, station 60015160. The maintainer confirmed the ship and home-station checks. After restarting both processes, the same pilot and ship item returned to the same station, and the panel showed Duripant 0.9, Crux and Essence.
 
 **Automated checks.** Restore, build and formatting verification passed. All 80 tests passed, including the 12 standard schools, an explicit starter-space station, all four corvettes, immediate keyword selection, saved avatar rows, pilot ownership, duplicate names, full slots, rollback after a skill grant failure, and migration of a two-pilot version-11 save.
+
+## Initial corvette fitting
+
+`CreateCharacterWithDoll` previously placed Eden's two starting modules in the station hangar. With
+`settings.progression.grantStartingEquipment` enabled, creation now commits the active hull and its online Civilian Miner
+(type 3651, flag 27) and Civilian Gatling Railgun (type 3638, flag 28) in the same resident transaction. Each module is a
+singleton located on the hull. The kit is shared with recovery corvettes and persists through the normal checkpoint. With
+the setting disabled, character creation grants an empty corvette. Existing pilots can fit their original hangar grants
+manually.
+
+The build 3662168 catalog gives the Reaper, Impairor, Ibis and Velator two high slots and two turret hardpoints each.
+The kit draws 69 tf CPU and 8 MW power, within the base budgets of all four hulls. EVE.js package 261108.1 also fits a
+rookie ship during `CreateCharacterWithDoll`. Eden uses its established two-module recovery kit for all four races.
+[EVE University Corvette reference](https://wiki.eveuniversity.org/Corvettes)
+
+**Automated validation.** The starting-equipment regression reproduced the loose hangar grants on the original code.
+The exact `StartingEquipmentPolicyAppliesOnlyToNewPilotsInResidentWorld` and
+`CreatorCanSelectItsNewCharacterByKeywordAndReadBackTheAvatar` filters passed all six cases in 19.93 seconds.
+They cover all four hulls, the disabled setting, checkpoint and reopen, first selection and the fitted status in ship dogma.
+The affected suite passed 92 tests in 33.91 seconds using
+`FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~CharacterCreationTests|FullyQualifiedName~CorvetteRecoveryTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~InventoryOwnershipTests`.
+The solution built in 2.71 seconds with zero warnings and errors. Catalog policy (8 cases), formatting policy (9 cases),
+repository formatting, and diff checks passed. The complete sequence took 114.66 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
 
 ## Character Show Info from a player corporation — November 8, 2026
 

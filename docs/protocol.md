@@ -1070,6 +1070,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="skill-training-queue-november-2-2026"></a>[Skill training queue, November 2, 2026](protocol/characters.md#skill-training-queue-november-2-2026)
 - <a id="local-skill-plan-gateway-november-2-2026"></a>[Local skill-plan gateway, November 2, 2026](protocol/characters.md#local-skill-plan-gateway-november-2-2026)
 - <a id="character-creation-and-first-spawn-november-2-2026"></a>[Character creation and first spawn, November 2, 2026](protocol/characters.md#character-creation-and-first-spawn-november-2-2026)
+- <a id="initial-corvette-fitting"></a>[Initial corvette fitting](protocol/characters.md#initial-corvette-fitting)
 
 ### Chat, mail and contacts
 
