@@ -116,6 +116,7 @@ internal sealed partial class EconomyTransaction(
     }
 
     internal override long ActiveTicks => owner?.CapsuleerActivity.Read().ElapsedTicks ?? 0;
+    internal int AdmittedCapsuleerCount => store.AdmittedCapsuleerCount;
     internal int Materializations => _sets.Values.Sum(set => set.Materializations);
     internal override WorldSettings Settings => database?.Settings ?? WorldConfigurationSlot.Defaults;
     internal override string WorldPath => database?.Path ?? string.Empty;

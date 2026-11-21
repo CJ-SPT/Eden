@@ -268,7 +268,7 @@ internal static partial class CapsuleerCorporations
         SaveOrganization(
             world,
             pilot.Id,
-            ChooseOperatingBase(appointed, catalog, pilot.ActiveShip.StationId, corporation, hull, profession)
+            ChooseOperatingBase(appointed, catalog, pilot.ActiveShip.StationId, corporation, hull, profession, world.Settings.Capsuleers)
         );
         world.AfterCommit(database.NotifyAccessGroupsChanged);
         return true;
@@ -350,7 +350,8 @@ internal static partial class CapsuleerCorporations
             pilot.ActiveShip.StationId,
             station.Id,
             hull,
-            maximumJumps: CapsuleerRecruitmentRules.MaximumJumps
+            maximumJumps: CapsuleerRecruitmentRules.MaximumJumps,
+            policy: world.Settings.Capsuleers
         );
         if (route is null)
         {

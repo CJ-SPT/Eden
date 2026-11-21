@@ -2,6 +2,53 @@
 
 [Protocol index](../protocol.md)
 
+## Bot population limits and work regions
+
+The active cap counts admitted pilots world-wide, including saved pilots with offscreen or idle work. On activation
+Eden keeps eligible admitted pilots in pilot-ID order, restores eligible paused pilots into any reopened slots, and
+preserves the start of each remaining suspension. Resident founder and gate-visitor turns check capacity before
+allocating a pilot. The existing suspension removes excess pilots from presentation, scheduling and combat.
+
+Regions default to **Work and transit**. An override can make a region **Transit only**, or an administrator can set
+transit-only as the default and open selected regions for work. The route graph still permits reciprocal stargate
+links through transit systems. Station stops and local activities require work access. A saved ship already following a
+gate leg can leave the region. Saved work blocked by policy retains its checkpoint and appears among waiting pilots.
+Already committed world timers keep their normal rules. [Administrator settings](../world-configuration.md#autonomous-population)
+
+Region membership uses the build 3662168 catalog's system and constellation records. Traffic uses the existing
+reciprocal gates. The local EVE.js build 3396210 reference handles validated gate transfer and arrival in
+`server/src/space/runtime/spaceRuntime/stargateJump.js` (SHA-256 prefix `6E84A01FB47C541A`). Eden's work-versus-transit
+distinction is server policy. [EVE University on the star map](https://wiki.eveuniversity.org/Star_Map)
+
+Fresh worlds prepare occupied systems first and rotate through eligible unvisited high-security station systems while
+someone has a selected character. Preparation uses the existing resident founder turn, with at most one new founder per
+turn. Each new pilot follows the normal fresh-universe starting equipment, economic and scheduling rules.
+
+**Automated validation**
+
+The exact-method filter covered resident founder and gate-visitor capacity, a restart with a lowered and restored cap,
+route selection and eight-jump flight through a transit-only corridor, the authenticated Blazor save, and a fresh-world
+replay with the pinned catalog. The replay reached the cap while the human stayed in the starter system, observed
+founders in unvisited systems within the work region, and reopened the same saved roster.
+
+The final solution build passed with zero warnings and errors. The focused filter passed **243** cases in
+**313.16 seconds**. It covered capsuleer population settings, global and background preparation, retry,
+traffic routes and navigation, inbound provisioning and runtime, ammunition supply, corporations, alliances,
+regional conflicts and pilot space activities. It also covered world settings, administration population and
+save interaction, configuration persistence, and the fresh-world population and profile methods.
+The filter omitted the previously recorded `ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` theory.
+The smaller population, retry, inbound and configuration filter passed 57 cases in 50.61 seconds.
+Both Python policy suites passed all 17 checks. Formatting and local documentation link checks passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+- Save a cap and a region override, restart, and check the active values under **Population**.
+- Select a character in a fresh world and refresh **Population** to see coverage grow as unvisited systems prepare.
+
 ## Bot activity settings
 
 The web editor stages `capsuleers.exploration` and `capsuleers.wreckSalvage` in the world configuration revision.

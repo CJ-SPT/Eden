@@ -21,6 +21,21 @@
             Station traffic: @snapshot.Policy.TrafficMultiplier× · Visitors per watched gate: @snapshot.Policy.GateVisitors</p>
         <p>Explore data and relic sites: @(snapshot.Policy.Exploration ? "On" : "Off") ·
             Salvage NPC wrecks: @(snapshot.Policy.WreckSalvage ? "On" : "Off")</p>
+        <p>Active bot cap: @(snapshot.Policy.ActivePilotCap == 0 ? "Unlimited" : snapshot.Policy.ActivePilotCap.ToString()) ·
+            Default region access: @CapsuleerPopulationRules.Describe(snapshot.Policy.DefaultRegionAccess)</p>
+        @if (snapshot.Policy.ActivePilotCap > 0 && snapshot.Population.EnabledAgents >= snapshot.Policy.ActivePilotCap)
+        {
+            <p role="status">All active bot slots are in use. Eden will defer additional founders.</p>
+        }
+        @if (snapshot.Policy.RegionAccess.Count > 0)
+        {
+            <ul>
+                @foreach (var rule in snapshot.Policy.RegionAccess.OrderBy(rule => Catalog.Regions.GetValueOrDefault(rule.Key)))
+                {
+                    <li>@Catalog.Regions.GetValueOrDefault(rule.Key, rule.Key.ToString()) · @CapsuleerPopulationRules.Describe(rule.Value)</li>
+                }
+            </ul>
+        }
         <p class="muted">Traffic and visitor limits are separate. They do not guarantee every saved pilot is in your current system.</p>
     </section>
     <section class="card">
@@ -35,7 +50,8 @@
             <div><dt>Scheduled pilots</dt><dd>@snapshot.Runtime.ScheduledAgents</dd></div>
             <div><dt>Pilots in watched systems</dt><dd>@snapshot.MaterializedPilots</dd></div>
         </dl>
-        <p class="muted">Saved totals include dormant pilots. Founders are prepared on demand in occupied systems.</p>
+        <p class="muted">Saved totals include dormant pilots. Occupied systems prepare first.
+            Fresh worlds also prepare eligible unvisited systems while players are online.</p>
     </section>
     <section class="card">
         <h2>Waiting pilots</h2>
@@ -84,10 +100,12 @@
             <button class="secondary" @onclick="Load">Refresh</button>
         </div>
         <p class="muted">@Filtered.Count matching systems. Eligibility changes never remove an established community.</p>
-        <div class="scroll"><table><thead><tr><th>System</th><th>Eligibility</th><th>Settings</th><th>Community</th><th>Home / destination</th></tr></thead><tbody>
+        <div class="scroll"><table><thead><tr><th>System</th><th>Region access</th><th>Eligibility</th><th>Settings</th><th>Community</th><th>Home / destination</th></tr></thead><tbody>
             @foreach (var system in Filtered.Skip(Page * PageSize).Take(PageSize))
             {
-                <tr><td>@Name(system.SystemId) (@system.SystemId)</td><td>@CapsuleerProvisioningRules.Description(system.Eligibility)</td>
+                <tr><td>@Name(system.SystemId) (@system.SystemId)</td>
+                    <td>@(CapsuleerPopulationRules.AllowsWork(snapshot.Policy, Catalog.Systems.GetValueOrDefault(system.SystemId)?.RegionId ?? 0) ? "Work and transit" : "Transit only")</td>
+                    <td>@CapsuleerProvisioningRules.Description(system.Eligibility)</td>
                     <td>@(system.CurrentPolicy ? "Current" : "Pending preparation")</td>
                     <td>@(system.Provisioned ? "Established" : "Not provisioned")</td><td>@system.HomeStationId / @system.DestinationStationId</td></tr>
             }

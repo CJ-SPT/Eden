@@ -36,7 +36,7 @@ internal sealed partial class CapsuleerProvisioner
         int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
         int slot = checked(gateSlot + request.Visitor * TrafficJourneyRules.VisitorSlotStride);
         int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
-        var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, request.BothObserved, request.Visitor);
+        var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, request.BothObserved, request.Visitor, database.Settings.Capsuleers);
         if (route is null)
         {
             return null;
@@ -73,6 +73,11 @@ internal sealed partial class CapsuleerProvisioner
             if (snapshot.Existing is not null)
             {
                 return snapshot.Existing;
+            }
+            int cap = database.Settings.Capsuleers.ActivePilotCap;
+            if (cap > 0 && LiveWorld.Find(database.Path) is { } live && live.Economy.AdmittedCapsuleerCount >= cap)
+            {
+                return null;
             }
             seed = snapshot.Seed;
             reservations = snapshot.Reservations!;
@@ -162,7 +167,7 @@ internal sealed partial class CapsuleerProvisioner
             sourceObserved =
                 sourceObserved
                 || LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems.Contains(gate.SourceSystemId) == true;
-            var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved, visitor);
+            var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved, visitor, database.Settings.Capsuleers);
             if (route is null)
             {
                 return null;
@@ -196,6 +201,13 @@ internal sealed partial class CapsuleerProvisioner
             }
             var policy = world.Settings.Capsuleers;
             if (!policy.Enabled || visitor >= policy.GateVisitors)
+            {
+                return null;
+            }
+            if (
+                policy.ActivePilotCap > 0
+                && world.Set<SavedCapsuleerAgent>().Count() - world.Set<SavedCapsuleerSuspension>().Count() >= policy.ActivePilotCap
+            )
             {
                 return null;
             }

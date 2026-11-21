@@ -102,7 +102,8 @@ internal sealed partial class CapsuleerHauler
     private bool TryRegionalGrid()
     {
         if (
-            Work.Gang is not { Phase: RoamingGangPhase.Hunting, Regional: { } order }
+            !CanWorkHere
+            || Work.Gang is not { Phase: RoamingGangPhase.Hunting, Regional: { } order }
             || order.TargetSystemId != Pilot.SystemId
             || Work.RegionalObjectiveVisited
             || Work.GangReturning

@@ -212,6 +212,8 @@ internal sealed partial class EconomyTable<TRow, TState>(
     internal IEnumerable<EconomyKey> Keys =>
         groupedRows?.Keys ?? (_integerRows is not null ? _integerRows.Keys.Select(static id => new EconomyKey(id)) : _rows!.Keys);
 
+    internal int RowCount => _integerRows?.Count ?? _rows?.Count ?? Keys.Count();
+
     internal IReadOnlyCollection<EconomyKey> Indexed(string column, object? value) => _indexes[column].Find(value);
 
     internal EconomyKey Key(TRow row) => key(row);

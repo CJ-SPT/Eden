@@ -418,10 +418,29 @@ internal sealed partial class CapsuleerHauler(
                 Load();
             }
         }
+        bool canWork = CanWorkHere;
+        if (!canWork && !CanContinueTransit())
+        {
+            using CapsuleerOperation hold = new(database, job, marketSignal);
+            var next = CapsuleerWorkRegions.Retry(job, Live?.CapsuleerActivity.Read().ElapsedTicks ?? job.DueTicks);
+            _work = CapsuleerPauseRules.Resume(Work, Math.Max(0, job.DueTicks - Work.ActiveTicks), Now) with
+            {
+                WaitingReason = CapsuleerWorkRegions.TransitOnlyReason,
+            };
+            hold.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+            return next;
+        }
+        if (Work.WaitingReason == CapsuleerWorkRegions.TransitOnlyReason)
+        {
+            _work = Work with { WaitingReason = null };
+        }
         RefreshCorporation();
-        SynchronizeGang(reconcile: true);
+        if (canWork)
+        {
+            SynchronizeGang(reconcile: true);
+        }
         _background = background && !RequiresDetail;
-        if (!_background && Work.Activity != HaulerActivity.Inbound)
+        if (canWork && !_background && Work.Activity != HaulerActivity.Inbound)
         {
             ObserveDanger(destinyStamp);
         }
@@ -447,8 +466,8 @@ internal sealed partial class CapsuleerHauler(
             EndSortie(sortie);
         }
         bool capsule = Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup;
-        var proactive = capsule ? null : ProactiveTarget();
-        var combatRole = InActiveGang ? GangMember?.Role : null;
+        var proactive = capsule || !canWork ? null : ProactiveTarget();
+        var combatRole = canWork && InActiveGang ? GangMember?.Role : null;
         if (combatRole == PvpRole.Scout && proactive is { Npc: false })
         {
             combatRole = PvpRole.Tackle;
@@ -468,7 +487,7 @@ internal sealed partial class CapsuleerHauler(
                     Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
                     proactive: proactive,
                     pvpRole: combatRole,
-                    gang: InActiveGang ? Work.Gang : null
+                    gang: canWork && InActiveGang ? Work.Gang : null
                 );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
@@ -519,11 +538,14 @@ internal sealed partial class CapsuleerHauler(
                 return Commit(job);
             }
             // Scouting can populate the system's public sites. Finish that work before opening the station transaction.
-            var scoutedAnomaly = capsule ? null : ScoutDepartureAnomaly();
-            var signatures = ExplorationSignatures();
-            SynchronizeGang(reconcile: true);
-            PublishRegionalReports();
-            if (defended.NewThreat)
+            var scoutedAnomaly = capsule || !canWork ? null : ScoutDepartureAnomaly();
+            var signatures = canWork ? ExplorationSignatures() : [];
+            if (canWork)
+            {
+                SynchronizeGang(reconcile: true);
+                PublishRegionalReports();
+            }
+            if (canWork && defended.NewThreat)
             {
                 RegionalConflictStore.Attack(
                     _operation,
@@ -534,13 +556,17 @@ internal sealed partial class CapsuleerHauler(
                     Work.ActiveTicks
                 );
             }
-            ApplyGangReturn();
+            if (canWork)
+            {
+                ApplyGangReturn();
+            }
             if (Pilot.Position is not null && _warpBlocked && _navigation.Warp is null && _navigation.WarpDestination is not null)
             {
                 throw new InvalidDataException("Warp disruption interrupts the hauler's alignment.");
             }
             if (
-                Volatile.Read(ref _threatenedShip) == Pilot.ShipId
+                canWork
+                && Volatile.Read(ref _threatenedShip) == Pilot.ShipId
                 && Pilot.Position is not null
                 && Work.Activity != HaulerActivity.Jumping
                 && !Work.Retreating
@@ -634,7 +660,10 @@ internal sealed partial class CapsuleerHauler(
 
     private CapsuleerJob Commit(CapsuleerJob job)
     {
-        FinishRegional();
+        if (CanWorkHere)
+        {
+            FinishRegional();
+        }
         _work = Work with { Navigation = _navigation.Capture() };
         var schedule = Schedule();
         var next = job.Next(schedule.DueTicks, schedule.Action);
@@ -901,7 +930,11 @@ internal sealed partial class CapsuleerHauler(
                 break;
             case HaulerActivity.Waiting when Work.ActiveTicks >= Work.DueTicks:
                 _work = Work with { WaitingReason = null };
-                if (Pilot.Position is not null && Work.SovereigntyExpedition is { Returning: true } returning)
+                if (!CanWorkHere)
+                {
+                    BeginTravel();
+                }
+                else if (Pilot.Position is not null && Work.SovereigntyExpedition is { Returning: true } returning)
                 {
                     ContinueSovereigntyReturn(returning);
                 }
@@ -933,6 +966,17 @@ internal sealed partial class CapsuleerHauler(
         }
     }
 
+    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.RegionId);
+
+    private bool CanContinueTransit() =>
+        Pilot.Position is not null
+        && Work is { Ratting: null, Exploration: null }
+        && (
+            _target?.DestinationGateId is not null
+                && Work.Activity is HaulerActivity.Flying or HaulerActivity.Jumping or HaulerActivity.Waiting
+            || Work.Activity == HaulerActivity.Inbound && Work.TrafficLane is not null
+        );
+
     private void AdvanceCapsuleEscape()
     {
         if (Work.Activity == HaulerActivity.Waiting && Work.ActiveTicks < Work.DueTicks)
@@ -945,7 +989,7 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _route =
-            CapsuleerTrafficRoutes.EscapeRoute(_operation.Catalog, Pilot.SystemId)
+            CapsuleerTrafficRoutes.EscapeRoute(_operation.Catalog, Pilot.SystemId, database.Settings.Capsuleers)
             ?? throw new InvalidDataException("The capsule has no reachable NPC station.");
         _work = Work with
         {
@@ -1104,7 +1148,13 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
-        if (Work.Retreating || Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
+        bool restrictedRoute = !database.Settings.Capsuleers.CanUse(_operation.Catalog.Definitions, _route);
+        if (restrictedRoute && Work.Freight is not null)
+        {
+            Wait("The saved freight route needs a region that allows bot work.", (int)CapsuleerWorkRegions.HoldInterval.TotalSeconds);
+            return;
+        }
+        if (restrictedRoute || Work.Retreating || Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
         {
             AssignJourney();
         }
@@ -1180,12 +1230,21 @@ internal sealed partial class CapsuleerHauler(
 
     private void BeginTravel()
     {
-        if (Work.SovereigntyExpedition is { Returning: false } expedition && Pilot.SystemId == expedition.TargetSystemId)
+        bool canWork = CanWorkHere;
+        if (canWork && Work.SovereigntyExpedition is { Returning: false } expedition && Pilot.SystemId == expedition.TargetSystemId)
         {
             BeginSovereigntyGrid(expedition);
             return;
         }
         var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
+        if (!canWork && leg.NextSystemId is null)
+        {
+            _target = null;
+            _work = Work with { TargetId = 0 };
+            _navigation.SetAtRest();
+            Wait(CapsuleerWorkRegions.TransitOnlyReason, (int)CapsuleerWorkRegions.HoldInterval.TotalSeconds);
+            return;
+        }
         _work = Work with
         {
             RouteIndex = leg.Index,
@@ -1372,7 +1431,7 @@ internal sealed partial class CapsuleerHauler(
         }
         if (_target.DestinationGateId is not null)
         {
-            if (!_background && GateIsDangerous())
+            if (CanWorkHere && !_background && GateIsDangerous())
             {
                 _work = Work with
                 {
@@ -1391,7 +1450,7 @@ internal sealed partial class CapsuleerHauler(
                 {
                     return;
                 }
-                if (TryPatrolTransitGate(_target))
+                if (CanWorkHere && TryPatrolTransitGate(_target))
                 {
                     return;
                 }

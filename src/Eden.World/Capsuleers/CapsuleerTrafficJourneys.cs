@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 
@@ -14,11 +15,16 @@ internal static partial class CapsuleerTrafficRoutes
     private const int JourneyNodeEstimatedBytes = 32;
     private const ulong StationDrawSalt = 0x9E3779B97F4A7C15UL;
 
-    internal static CapsuleerTrafficRoute[] RegionalRoutes(CatalogDbContext catalog, int station) =>
+    internal static CapsuleerTrafficRoute[] RegionalRoutes(
+        CatalogDbContext catalog,
+        int station,
+        CapsuleerPopulationPolicy? policy = null
+    ) =>
         catalog
             .Definition(s_journeys, station)
             .Where(route =>
                 route.Systems.Length <= RoamingGangRules.MaximumJumps + 1
+                && policy?.CanUse(catalog.Definitions, route) != false
                 && route.Systems.All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
             )
             .OrderBy(route => route.Systems.Length)
@@ -26,11 +32,17 @@ internal static partial class CapsuleerTrafficRoutes
             .Take(MaximumRegionalRoutes)
             .ToArray();
 
-    internal static CapsuleerTrafficRoute? Roam(CatalogDbContext catalog, int station, long seed) =>
+    internal static CapsuleerTrafficRoute? Roam(
+        CatalogDbContext catalog,
+        int station,
+        long seed,
+        CapsuleerPopulationPolicy? policy = null
+    ) =>
         catalog
             .Definition(s_journeys, station)
             .Where(route =>
                 route.Systems.Length is > 1 and <= RoamingGangRules.MaximumJumps + 1
+                && policy?.CanUse(catalog.Definitions, route) != false
                 && route.Systems.All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
             )
             .OrderBy(route => TravelerRoutineRules.Mix((ulong)route.DestinationStationId ^ (ulong)seed))
@@ -70,7 +82,8 @@ internal static partial class CapsuleerTrafficRoutes
         int previousStationId,
         HullClass hull,
         TravelerRoutine? routine = null,
-        long elapsed = 0
+        long elapsed = 0,
+        CapsuleerPopulationPolicy? policy = null
     )
     {
         if (!TrafficRules.RouteAllows(hull, false))
@@ -137,7 +150,7 @@ internal static partial class CapsuleerTrafficRoutes
                 {
                     break;
                 }
-                if (excluded?.Contains(system) == true)
+                if (excluded?.Contains(system) == true || policy?.CanWork(catalog.Definitions, system) == false)
                 {
                     continue;
                 }
@@ -204,8 +217,9 @@ internal static partial class CapsuleerTrafficRoutes
         int destinationStation,
         HullClass hull,
         IReadOnlySet<int>? avoided = null,
-        int maximumJumps = TrafficJourneyRules.MaximumJumps
-    ) => ToSystem(catalog, sourceStation, destinationStation, hull, avoided, maximumJumps);
+        int maximumJumps = TrafficJourneyRules.MaximumJumps,
+        CapsuleerPopulationPolicy? policy = null
+    ) => ToSystem(catalog, sourceStation, destinationStation, hull, avoided, maximumJumps, policy: policy);
 
     internal static CapsuleerTrafficRoute? ToClaimSystem(
         CatalogDbContext catalog,
@@ -213,8 +227,9 @@ internal static partial class CapsuleerTrafficRoutes
         int system,
         HullClass hull,
         IReadOnlySet<int> avoided,
-        int maximumJumps = CapsuleerAllianceRules.FirstClaimMaximumJumps
-    ) => ToSystem(catalog, headquarters, headquarters, hull, avoided, maximumJumps, system);
+        int maximumJumps = CapsuleerAllianceRules.FirstClaimMaximumJumps,
+        CapsuleerPopulationPolicy? policy = null
+    ) => ToSystem(catalog, headquarters, headquarters, hull, avoided, maximumJumps, system, policy);
 
     private static CapsuleerTrafficRoute? ToSystem(
         CatalogDbContext catalog,
@@ -223,7 +238,8 @@ internal static partial class CapsuleerTrafficRoutes
         HullClass hull,
         IReadOnlySet<int>? avoided,
         int maximumJumps,
-        int? destinationSystem = null
+        int? destinationSystem = null,
+        CapsuleerPopulationPolicy? policy = null
     )
     {
         if (!TrafficRules.RouteAllows(hull, false))
@@ -237,7 +253,12 @@ internal static partial class CapsuleerTrafficRoutes
         bool unrestricted = TrafficRules.RouteAllows(hull, true);
         bool Allows(int system) =>
             unrestricted || TrafficRules.SecurityBand(security.GetValueOrDefault(system)) != TrafficSecurityBand.High;
-        if (!Allows(source) || !Allows(destination) || avoided?.Contains(destination) == true)
+        if (
+            !Allows(source)
+            || !Allows(destination)
+            || avoided?.Contains(destination) == true
+            || policy is not null && (!policy.CanWork(catalog.Definitions, source) || !policy.CanWork(catalog.Definitions, destination))
+        )
         {
             return null;
         }

@@ -155,12 +155,19 @@ internal sealed partial class CapsuleerHauler
             destination,
             (HullClass)Pilot.ShipGroupId,
             AvoidedSupplierSystems(),
-            maximumJumps
+            maximumJumps,
+            policy: database.Settings.Capsuleers
         );
         if (route is null && Pilot.Position is not null)
         {
             // Dock at the staging station while an unsafe regional route is unavailable.
-            route = CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, Pilot.StationId, (HullClass)Pilot.ShipGroupId);
+            route = CapsuleerTrafficRoutes.ToStation(
+                _operation.Catalog,
+                Pilot.StationId,
+                Pilot.StationId,
+                (HullClass)Pilot.ShipGroupId,
+                policy: database.Settings.Capsuleers
+            );
         }
         if (route is null)
         {

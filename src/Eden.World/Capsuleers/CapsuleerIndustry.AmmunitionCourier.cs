@@ -79,7 +79,8 @@ internal sealed partial class CapsuleerIndustry
                 offer.StationId,
                 HullClass.Hauler,
                 avoided,
-                Rules.MaximumSupplierJumps
+                Rules.MaximumSupplierJumps,
+                policy: world.Settings.Capsuleers
             );
             if (route is not null && route.Systems.Length > 1)
             {

@@ -89,6 +89,11 @@ internal sealed partial class CapsuleerAlliances(
 
     private bool ReviewSystem(EconomyTransaction world, CatalogDbContext catalog, int system, long now)
     {
+        var policy = world.Settings.Capsuleers;
+        if (!policy.CanWork(catalog.Definitions, system))
+        {
+            return false;
+        }
         var local = world
             .Filter<SavedCorporation>(row => row.SystemId == system)
             .AsEnumerable()
@@ -106,6 +111,7 @@ internal sealed partial class CapsuleerAlliances(
                 : CapsuleerTrafficRoutes
                     .Neighbours(catalog, system)
                     .Prepend(system)
+                    .Where(home => policy.CanWork(catalog.Definitions, home))
                     .SelectMany(home => world.Filter<SavedCorporation>(row => row.SystemId == home).AsEnumerable())
                     .Where(row => Viable(world, row))
                     .OrderByDescending(row => row.SystemId == system)

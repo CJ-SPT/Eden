@@ -5,6 +5,10 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class ResidentEconomy
 {
+    internal int AdmittedCapsuleerCount =>
+        ((EconomyTable<SavedCapsuleerAgent, EconomySavedCapsuleerAgent>)_tables[typeof(SavedCapsuleerAgent)]).RowCount
+        - ((EconomyTable<SavedCapsuleerSuspension, EconomySavedCapsuleerSuspension>)_tables[typeof(SavedCapsuleerSuspension)]).RowCount;
+
     // Use the committed job index without materializing pilot, ship or progress rows.
     internal IEnumerable<(long DueTicks, long Pilot)> CapsuleerStartCandidates()
     {

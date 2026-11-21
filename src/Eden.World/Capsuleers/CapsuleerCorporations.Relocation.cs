@@ -1,6 +1,7 @@
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
@@ -30,7 +31,8 @@ internal static partial class CapsuleerCorporations
         int source,
         SavedCorporation corporation,
         HullClass hull,
-        CapsuleerProfession profession
+        CapsuleerProfession profession,
+        CapsuleerPopulationPolicy policy
     )
     {
         int destination = corporation.StationId;
@@ -47,7 +49,7 @@ internal static partial class CapsuleerCorporations
         {
             return organization with { OperatingStationId = destination };
         }
-        return RelocationRoute(catalog, source, destination, hull) is not null
+        return RelocationRoute(catalog, source, destination, hull, policy) is not null
             ? organization with
             {
                 Relocation = new(corporation.Id, corporation.StationId, destination),
@@ -76,7 +78,12 @@ internal static partial class CapsuleerCorporations
             FinishRelocation(world, catalog, pilot, now);
             return null;
         }
-        var route = RelocationRoute(catalog, pilot.StationId, move.DestinationId, (HullClass)pilot.ShipGroupId);
+        var policy = world.Settings.Capsuleers;
+        if (!policy.CanWorkAtStation(catalog.Definitions, move.DestinationId))
+        {
+            return null;
+        }
+        var route = RelocationRoute(catalog, pilot.StationId, move.DestinationId, (HullClass)pilot.ShipGroupId, policy);
         if (route is null)
         {
             SaveOrganization(world, pilot.PilotId, organization with { Relocation = null });
@@ -142,9 +149,22 @@ internal static partial class CapsuleerCorporations
         return true;
     }
 
-    private static CapsuleerTrafficRoute? RelocationRoute(CatalogDbContext catalog, int source, int destination, HullClass hull) =>
+    private static CapsuleerTrafficRoute? RelocationRoute(
+        CatalogDbContext catalog,
+        int source,
+        int destination,
+        HullClass hull,
+        CapsuleerPopulationPolicy policy
+    ) =>
         catalog.FindStation(source) is not null && catalog.FindStation(destination) is not null
-            ? CapsuleerTrafficRoutes.ToStation(catalog, source, destination, hull, maximumJumps: CapsuleerRecruitmentRules.MaximumJumps)
+            ? CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                source,
+                destination,
+                hull,
+                maximumJumps: CapsuleerRecruitmentRules.MaximumJumps,
+                policy: policy
+            )
             : null;
 
     private static RelocationCargo[] PackRelocation(WorldAction world, CatalogDbContext catalog, DockedPilot pilot, long now)

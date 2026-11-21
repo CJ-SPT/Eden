@@ -1,7 +1,10 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
@@ -13,11 +16,27 @@ namespace Eden.World.Capsuleers;
 
 internal sealed record FreshCareerRoutes(CapsuleerTrafficRoute? Courier, CatalogAgent? Agent, CapsuleerTrafficRoute? Combat)
 {
-    private static readonly CatalogDefinition<FreshCareerRoutes> s_routes = new("capsuleer-rookie-career-routes", Load);
+    private static readonly CatalogDefinition<FreshCareerRoutes> s_routes = new(
+        "capsuleer-rookie-career-routes",
+        (catalog, system) => Load(catalog, system)
+    );
+    private static readonly ConditionalWeakTable<
+        CapsuleerPopulationPolicy,
+        ConcurrentDictionary<(long Catalog, int System), FreshCareerRoutes>
+    > s_restrictedRoutes = new();
 
-    internal static FreshCareerRoutes Read(CatalogDbContext catalog, int system) => catalog.Definition(s_routes, system);
+    internal static FreshCareerRoutes Read(CatalogDbContext catalog, int system, CapsuleerPopulationPolicy? policy = null)
+    {
+        if (policy is null || policy.Unrestricted())
+        {
+            return catalog.Definition(s_routes, system);
+        }
+        return s_restrictedRoutes
+            .GetOrCreateValue(policy)
+            .GetOrAdd((catalog.Definitions.Identity.Generation, system), _ => Load(catalog, system, policy));
+    }
 
-    private static FreshCareerRoutes Load(CatalogDbContext catalog, int system)
+    private static FreshCareerRoutes Load(CatalogDbContext catalog, int system, CapsuleerPopulationPolicy? policy = null)
     {
         if (!HighSecurity(catalog, system))
         {
@@ -56,7 +75,7 @@ internal sealed record FreshCareerRoutes(CapsuleerTrafficRoute? Courier, Catalog
                 .Where(gate => HighSecurity(catalog, gate.DestinationSystemId))
                 .SelectMany(gate => catalog.Definitions.StationsInSystem(gate.DestinationSystemId))
                 .Concat(stations)
-                .Where(station => station.Id != source)
+                .Where(station => station.Id != source && policy?.CanWork(catalog.Definitions, station.SolarSystemId) != false)
                 .OrderBy(station => station.SolarSystemId == system)
                 .ThenBy(station => station.OwnerId != agent.CorporationId)
                 .ThenBy(station => station.Id);

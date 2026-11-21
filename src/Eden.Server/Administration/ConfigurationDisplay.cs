@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 
 namespace Eden.Server.Administration;
@@ -66,6 +67,9 @@ internal static class ConfigurationDisplay
         ["economy.beginnerMarketSupply"] = "Beginner market supply",
         ["progression.grantStartingEquipment"] = "Starting equipment for new pilots",
         ["capsuleers.enabled"] = "Player bots",
+        ["capsuleers.activePilotCap"] = "Active bot cap",
+        ["capsuleers.defaultRegionAccess"] = "Default region access",
+        ["capsuleers.regionAccess"] = "Region overrides",
         ["capsuleers.roamingGangs"] = "Persistent roaming gangs",
         ["capsuleers.roamingGangSize"] = "Roaming gang size",
         ["capsuleers.regionalConflicts"] = "Regional conflicts",
@@ -203,6 +207,15 @@ internal static class ConfigurationDisplay
     {
         Dictionary<string, string> values = [];
         Add(JsonSerializer.SerializeToElement(settings, JsonSerializerOptions.Web), "");
+        values["capsuleers.activePilotCap"] = settings.Capsuleers.ActivePilotCap == 0 ? "Unlimited" : values["capsuleers.activePilotCap"];
+        values["capsuleers.defaultRegionAccess"] = CapsuleerPopulationRules.Describe(settings.Capsuleers.DefaultRegionAccess);
+        values["capsuleers.regionAccess"] =
+            settings.Capsuleers.RegionAccess.Count == 0
+                ? "None"
+                : string.Join(
+                    ", ",
+                    settings.Capsuleers.RegionAccess.Select(rule => $"{rule.Key} · {CapsuleerPopulationRules.Describe(rule.Value)}")
+                );
         return values;
 
         void Add(JsonElement group, string prefix)
@@ -210,6 +223,10 @@ internal static class ConfigurationDisplay
             foreach (var field in group.EnumerateObject())
             {
                 string path = prefix.Length == 0 ? field.Name : prefix + "." + field.Name;
+                if (path == "capsuleers.regionAccess")
+                {
+                    continue;
+                }
                 if (field.Value.ValueKind == JsonValueKind.Object)
                 {
                     Add(field.Value, path);

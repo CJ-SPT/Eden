@@ -81,7 +81,8 @@ internal static partial class CapsuleerCorporations
             pilot.ActiveShip.StationId,
             corporation,
             hull,
-            profession
+            profession,
+            world.Settings.Capsuleers
         );
     }
 

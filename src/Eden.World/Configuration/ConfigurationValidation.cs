@@ -68,6 +68,10 @@ internal static class ConfigurationValidation
             throw new InvalidDataException("Standard market requires testing and progressive markets to be disabled.");
         }
         Eden.Gameplay.Capsuleers.CapsuleerPopulationRules.Validate(settings.Capsuleers);
+        if (settings.Capsuleers.RegionAccess.Keys.Any(region => !catalog.Regions.ContainsKey(region)))
+        {
+            throw new InvalidDataException("Bot region overrides require region IDs from the installed catalog.");
+        }
         var supply = settings.DevelopmentSupply;
         NpcSupplyRules.ValidateStock(supply.InstitutionalStock);
         if (

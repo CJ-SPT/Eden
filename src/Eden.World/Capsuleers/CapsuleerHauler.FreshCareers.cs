@@ -59,7 +59,7 @@ internal sealed partial class CapsuleerHauler
 
         if (profession == CapsuleerProfession.Hauling)
         {
-            var routes = FreshCareerRoutes.Read(catalog, agent.CommunitySystemId);
+            var routes = FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, world.Settings.Capsuleers);
             if (
                 routes.Agent is { } issuer
                 && routes.Courier is { } delivery
@@ -70,7 +70,8 @@ internal sealed partial class CapsuleerHauler
                     station,
                     (HullClass)Pilot.ShipGroupId,
                     AvoidedSupplierSystems(),
-                    FreshCareerRules.DeliveryJumps
+                    FreshCareerRules.DeliveryJumps,
+                    policy: world.Settings.Capsuleers
                 )
                     is { } route
             )

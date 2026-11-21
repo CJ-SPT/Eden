@@ -113,6 +113,10 @@ public sealed record CapsuleerPopulationPolicy(
     public bool AnomalyRatting { get; init; } = true;
     public bool Exploration { get; init; } = true;
     public bool WreckSalvage { get; init; } = true;
+    public int ActivePilotCap { get; init; }
+    public CapsuleerRegionAccess DefaultRegionAccess { get; init; }
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> RegionAccess { get; init; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
     public CapsuleerFreightPolicy Freight { get; init; } = CapsuleerFreightPolicy.Default;
 }
 

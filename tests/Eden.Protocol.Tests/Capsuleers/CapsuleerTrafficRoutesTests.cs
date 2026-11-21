@@ -1,4 +1,5 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Capsuleers;
@@ -58,6 +59,49 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Equal(FirstStation + 1, forward.DestinationStationId);
         Assert.Equal(Enumerable.Range(FirstSystem, 6), forward.Systems);
         AssertPathsAreReal(catalog, plan, FirstSystem + 2);
+    }
+
+    [Fact]
+    public void TransitOnlyRegionCanBeCrossedButCannotBeADestination()
+    {
+        const int transitRegion = 10000003;
+        int transit = FirstSystem + 1;
+        int destination = FirstSystem + 2;
+        using Fixture fixture = new();
+        fixture.AddStation(FirstStation, FirstSystem);
+        fixture.AddStation(FirstStation + 1, transit);
+        fixture.AddStation(FirstStation + 2, destination);
+        fixture.Connect(FirstSystem, transit);
+        fixture.Connect(transit, destination);
+        using (CatalogDbContext edit = new(fixture.Path, writable: true))
+        {
+            edit.Database.ExecuteSql(
+                $"""
+                INSERT INTO Region VALUES ({transitRegion},'Transit region');
+                INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000021,{transitRegion},'Transit constellation');
+                UPDATE SolarSystem SET ConstellationId=20000021 WHERE Id={transit};
+                """
+            );
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        CapsuleerPopulationPolicy policy = new()
+        {
+            DefaultRegionAccess = CapsuleerRegionAccess.TransitOnly,
+            RegionAccess = new CapsuleerPopulationPolicy().RegionAccess.Add(10000002, CapsuleerRegionAccess.WorkAndTransit),
+        };
+        Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 1, HullClass.Hauler, policy: policy));
+        var route = CapsuleerTrafficRoutes.Journey(
+            catalog,
+            FirstStation,
+            TrafficJourneyKind.Regional,
+            1,
+            0,
+            HullClass.Hauler,
+            policy: policy
+        );
+        Assert.NotNull(route);
+        Assert.Equal(FirstStation + 2, route.DestinationStationId);
+        Assert.Equal([FirstSystem, transit, destination], route.Systems);
     }
 
     [Fact]

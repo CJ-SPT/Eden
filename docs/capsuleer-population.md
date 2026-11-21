@@ -4,21 +4,22 @@
 
 ## Population controls
 
-Open **Player bots → Population & traffic** in the local config editor. Enable/pause the whole simulated population,
-allow simulated miners, choose station traffic density (**0–10×**, default **1×**), and set visitors per watched gate
-(**0–16**, default **4**). Save for restart, then restart the server separately to apply the revision.
-These are simulated capsuleer controls; the adjacent NPC switches manage pirates, empire forces and mining fleets.
+Open **Player bots** in the server web editor. Use **Active population & regions** to set the global cap and choose
+where bots may work or pass through. **Population & traffic** controls the overall population, miners, station
+traffic density (**0–10×**, default **1×**), and visitors per watched gate (**0–16**, default **4**). Save for restart
+and restart the server to apply the revision.
 
-Reducing a limit despawns and pauses excess saved pilots without deleting their identities, ships, possessions, losses or
-activity. Increasing it reuses the same eligible saved pilots before creating missing roster slots throughout the galaxy at restart.
+Reducing a limit pauses excess pilots and preserves their identities, ships, possessions, losses and activity. When
+slots reopen, Eden reuses eligible saved pilots before preparing new ones.
 Station traffic and gate visitors have independent limits. A zero station density can still admit configured gate visitors;
 the main population switch pauses both, including miners. Reciprocal gate observers share visitor identities.
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
-The station-traffic multiplier scales each system's geography-based traveler roster. Players activate the roster by
-selecting a character in the system. A traveler based there can finish a trip through empty systems and return while
-a player stays behind, including a player who stays docked. Dedicated miners work the belts in their home system.
+The station-traffic multiplier scales each system's geography-based traveler roster. Established worlds prepare new
+rosters as players enter systems. Fresh worlds also prepare eligible unvisited high-security station systems while
+someone has a selected character. Occupied systems get priority. Existing travelers can continue through empty
+systems and dedicated miners can work the belts in their home systems.
 
 Watching either end of a stargate can bring additional visitors through it. Those pilots use the same ships, station
 waits and gate transfers throughout their trips. An established visitor can continue while either system is occupied,
@@ -29,9 +30,9 @@ When the last player leaves the world, the simulation clock pauses. Re-entry res
 positions and deadlines. [Returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026)
 
 A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.
-Unexpected system and gate-visitor preparation failures retry automatically while their systems remain occupied, with
-backoff from one to thirty seconds. Already committed founders and visitors are reused. Retry waits wake early when
-membership changes, and a busy or failed system does not prevent preparation in other occupied systems.
+Unexpected system and gate-visitor preparation failures retry automatically while the system remains eligible for
+preparation, with backoff from one to thirty seconds. Already committed founders and visitors are reused. Membership
+changes wake retry waits early, and a busy system can defer its turn while others prepare.
 See the [retry implementation record](protocol/capsuleers.md#population-preparation-retries---november-16-2026).
 
 New traffic ships are prepared in a separate memory workspace and written in bounded community batches.
@@ -41,12 +42,10 @@ See the [startup performance record](protocol/capsuleers.md#batched-population-s
 for measurements and automated persistence checks. A running server must be rebuilt and restarted to use these changes.
 
 
-The **Population** page shows the active settings and separates saved, enabled, paused, scheduled and watched-system pilots.
-Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Community preparation runs for occupied systems using the active settings and traffic snapshot. Prepared totals can
-include saved communities whose systems are currently empty.
-Deferred systems retain a pending-preparation label. Transient failures retry while occupied; catalog-ineligible slots
-retain their existing deferral rules. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
-visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
+The **Population** page shows the active cap, region access and counts for saved, enabled, paused, scheduled and
+watched-system pilots. Prepared totals include saved communities in empty systems. Deferred systems keep a
+pending-preparation label. Use **Refresh population** while pilots travel. Local shows pilots currently in your
+system. Delayed Local keeps its normal privacy rules.
 
 ## Mining fleets
 

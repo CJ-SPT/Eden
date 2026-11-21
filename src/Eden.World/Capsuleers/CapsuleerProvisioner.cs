@@ -145,6 +145,20 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
     )
     {
         using var transaction = world.Database.BeginTransaction();
+        var policy = world.Settings.Capsuleers;
+        if (!policy.CanWork(catalog.Definitions, systemId))
+        {
+            return new(1, 0, 0);
+        }
+        if (policy.ActivePilotCap > 0)
+        {
+            int admitted = world.Set<SavedCapsuleerAgent>().Count() - world.Set<SavedCapsuleerSuspension>().Count();
+            maximumFounders = Math.Min(maximumFounders, CapsuleerPopulationRules.AvailableSlots(policy.ActivePilotCap, admitted));
+            if (maximumFounders == 0)
+            {
+                return new(1, 0, 1);
+            }
+        }
         var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
         if (state is null)
         {
@@ -153,14 +167,13 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
-        var policy = world.Settings.Capsuleers;
         string fingerprint = Fingerprint(database, catalog, seed, policy);
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
         }
         var mining = CapsuleerProvisioningCatalog.Mining(catalog, systemId);
-        var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId);
+        var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId, policy);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic.Routes.Length > 0;
         bool canHaul =
@@ -325,8 +338,16 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         );
         string trafficIdentity = database.Traffic.Manifest?.Identity ?? "fallback";
         string miningIdentity = resident && policy.Miners && CapsuleerProvisioningCatalog.HasMiningFleets(catalog) ? "|mining-crews-1" : "";
+        string regionIdentity = policy.Unrestricted()
+            ? ""
+            : $"|work-regions={policy.DefaultRegionAccess}:"
+                + string.Join(',', policy.RegionAccess.Select(rule => $"{rule.Key}={rule.Value}"));
+        string careerIdentity = database.Settings.FreshUniverse ? "|fresh-careers" : "";
         return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
-            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}{miningIdentity}";
+            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}"
+            + miningIdentity
+            + regionIdentity
+            + careerIdentity;
     }
 
     private static CapsuleerTrafficRoute SelectRoute(

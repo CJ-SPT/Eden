@@ -42,10 +42,26 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         int maximum = CapsuleerIndustryRules.MaximumRefinerySupplyJumps;
-        var route = CapsuleerTrafficRoutes.ToStation(catalog, courier.StationId, task.FactoryStationId, HullClass.Hauler, avoided, maximum);
+        var route = CapsuleerTrafficRoutes.ToStation(
+            catalog,
+            courier.StationId,
+            task.FactoryStationId,
+            HullClass.Hauler,
+            avoided,
+            maximum,
+            policy: world.Settings.Capsuleers
+        );
         if (
             route is null
-            || CapsuleerTrafficRoutes.ToStation(catalog, task.FactoryStationId, task.StagingStationId, HullClass.Hauler, avoided, maximum)
+            || CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                task.FactoryStationId,
+                task.StagingStationId,
+                HullClass.Hauler,
+                avoided,
+                maximum,
+                policy: world.Settings.Capsuleers
+            )
                 is null
         )
         {

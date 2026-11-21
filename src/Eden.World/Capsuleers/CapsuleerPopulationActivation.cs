@@ -20,42 +20,63 @@ internal static class CapsuleerPopulationActivation
         long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var suspended = world.Set<SavedCapsuleerSuspension>().ToDictionary(s => s.PilotId);
-        foreach (var community in world.Set<SavedCapsuleerAgent>().AsNoTracking().ToArray().GroupBy(a => a.CommunitySystemId))
-        {
-            // Restoring saved policy limits needs local counts, not a route search for every dormant community.
-            var traffic = CapsuleerTrafficRoutes.Geography(catalog, community.Key);
-            int count = CapsuleerEncounterRules.Haulers(seed, community.Key, traffic.GateCount, traffic.StationCount, policy);
-            foreach (var agent in community)
+        var agents = world.Set<SavedCapsuleerAgent>().AsNoTracking().ToArray();
+        bool fresh = world.Settings.FreshUniverse;
+        var eligibleAgents = agents
+            .GroupBy(agent => agent.CommunitySystemId)
+            .Where(community => policy.CanWork(catalog.Definitions, community.Key))
+            .SelectMany(community =>
             {
-                bool eligible = CapsuleerPopulationRules.Included(agent.Career, agent.Slot, count, policy);
-                if (!eligible && !suspended.ContainsKey(agent.PilotId))
+                var traffic = CapsuleerTrafficRoutes.Geography(catalog, community.Key);
+                int count = CapsuleerEncounterRules.Haulers(seed, community.Key, traffic.GateCount, traffic.StationCount, policy);
+                return community.Where(agent =>
+                    fresh && agent.Career == CapsuleerCareer.Hauling
+                        ? policy.Enabled
+                            && (
+                                agent.Slot == FreshCareerRules.CourierSlot
+                                || agent.Slot == FreshCareerRules.CombatSlot && policy.BeltRatting
+                            )
+                        : CapsuleerPopulationRules.Included(agent.Career, agent.Slot, count, policy)
+                );
+            });
+        if (policy.ActivePilotCap > 0)
+        {
+            eligibleAgents = eligibleAgents
+                .OrderBy(agent => suspended.ContainsKey(agent.PilotId))
+                .ThenBy(agent => agent.PilotId)
+                .Take(policy.ActivePilotCap);
+        }
+        var admitted = eligibleAgents.Select(agent => agent.PilotId).ToHashSet();
+        foreach (var agent in agents)
+        {
+            bool eligible = admitted.Contains(agent.PilotId);
+            if (!eligible && !suspended.ContainsKey(agent.PilotId))
+            {
+                world.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId, StartedTicks = elapsed });
+            }
+            else if (eligible && suspended.TryGetValue(agent.PilotId, out var pause))
+            {
+                long delay = Math.Max(0, elapsed - pause.StartedTicks);
+                if (agent.Career == CapsuleerCareer.Mining)
                 {
-                    world.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId, StartedTicks = elapsed });
+                    var row = world.Set<SavedCapsuleerCommunity>().Single(c => c.PilotId == agent.PilotId);
+                    if (MinerCheckpoint.Read(row.Progress) is { } work)
+                    {
+                        new MinerCheckpoint(agent.PilotId, CapsuleerPauseRules.Resume(work, delay)).Apply(world);
+                    }
                 }
-                else if (eligible && suspended.TryGetValue(agent.PilotId, out var pause))
+                else
                 {
-                    long delay = Math.Max(0, elapsed - pause.StartedTicks);
-                    if (agent.Career == CapsuleerCareer.Mining)
+                    var row = world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == agent.PilotId);
+                    if (HaulerCheckpoint.Read(row.Progress) is { } work)
                     {
-                        var row = world.Set<SavedCapsuleerCommunity>().Single(c => c.PilotId == agent.PilotId);
-                        if (MinerCheckpoint.Read(row.Progress) is { } work)
-                        {
-                            new MinerCheckpoint(agent.PilotId, CapsuleerPauseRules.Resume(work, delay)).Apply(world);
-                        }
+                        new HaulerCheckpoint(agent.PilotId, CapsuleerPauseRules.Resume(work, delay, now)).Apply(world);
                     }
-                    else
-                    {
-                        var row = world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == agent.PilotId);
-                        if (HaulerCheckpoint.Read(row.Progress) is { } work)
-                        {
-                            new HaulerCheckpoint(agent.PilotId, CapsuleerPauseRules.Resume(work, delay, now)).Apply(world);
-                        }
-                    }
-                    var job = world.Set<SavedCapsuleerJob>().Find(agent.PilotId)!;
-                    job.DueTicks = Math.Max(checked(elapsed + TimeSpan.TicksPerSecond), checked(job.DueTicks + delay));
-                    job.Revision = checked(job.Revision + 1);
-                    world.Remove(pause);
                 }
+                var job = world.Set<SavedCapsuleerJob>().Find(agent.PilotId)!;
+                job.DueTicks = Math.Max(checked(elapsed + TimeSpan.TicksPerSecond), checked(job.DueTicks + delay));
+                job.Revision = checked(job.Revision + 1);
+                world.Remove(pause);
             }
         }
         world.SaveChanges();

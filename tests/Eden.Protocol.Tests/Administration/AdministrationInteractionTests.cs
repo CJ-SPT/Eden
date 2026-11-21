@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Security.Claims;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration;
@@ -89,6 +90,10 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.GasHoldMultiplier), "3");
             await renderer.Click("Player bots");
             await renderer.Change(nameof(SettingsForm.BotExploration), false);
+            await renderer.Change(nameof(SettingsForm.ActivePilotCap), "250");
+            await renderer.ChangeSelection("bot-region", "10000002");
+            await renderer.ChangeSelection("bot-region-access", nameof(CapsuleerRegionAccess.TransitOnly));
+            Assert.Contains("The Forge", renderer.Text);
             Assert.Contains("Unsaved changes", renderer.Text);
             Assert.False(renderer.Button("Save for restart").Disabled);
             await renderer.Submit();
@@ -102,6 +107,9 @@ public sealed partial class AdministrationTests
             Assert.False(saved.Pending.Draft.Settings.Capsuleers.Exploration);
             Assert.True(saved.Pending.Draft.Settings.Capsuleers.WreckSalvage);
             Assert.True(saved.Active.Draft.Settings.Capsuleers.Exploration);
+            Assert.Equal(0, saved.Active.Draft.Settings.Capsuleers.ActivePilotCap);
+            Assert.Equal(250, saved.Pending.Draft.Settings.Capsuleers.ActivePilotCap);
+            Assert.Equal(CapsuleerRegionAccess.TransitOnly, saved.Pending.Draft.Settings.Capsuleers.RegionAccess[10000002]);
             await renderer.Change(nameof(SettingsForm.BotWreckSalvage), false);
             await renderer.Click("Rewards");
             await renderer.Change(nameof(SettingsForm.BountyMultiplier), "3");
@@ -230,6 +238,13 @@ public sealed partial class AdministrationTests
         internal Task Click(string text) => Dispatch(Button(text), "onclick", new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
 
         internal Task Change(string property, object value) => Dispatch(Input(property), "onchange", new ChangeEventArgs { Value = value });
+
+        internal Task ChangeSelection(string name, string value) =>
+            Dispatch(
+                Elements(Root).Single(element => element.Name == "select" && Equals(element.Attributes.GetValueOrDefault("name"), name)),
+                "onchange",
+                new ChangeEventArgs { Value = value }
+            );
 
         internal Task Submit() => Dispatch(Elements(Root).Single(element => element.Name == "form"), "onsubmit", EventArgs.Empty);
 

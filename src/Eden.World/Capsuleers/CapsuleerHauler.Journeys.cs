@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Runtime.Economy;
@@ -50,7 +51,7 @@ internal sealed partial class CapsuleerHauler
             operatingStation
         );
 
-    internal static PreparedJourney PlanJourney(CatalogDbContext catalog, JourneyInput input)
+    internal static PreparedJourney PlanJourney(CatalogDbContext catalog, JourneyInput input, CapsuleerPopulationPolicy? policy = null)
     {
         var previous = input.Previous;
         var routine = input.Routine;
@@ -82,7 +83,8 @@ internal sealed partial class CapsuleerHauler
         ulong pathSeed = TravelerRoutineRules.Draw(routine, sequence);
         var hull = (HullClass)input.GroupId;
         CapsuleerTrafficRoute? route;
-        if (kind == TrafficJourneyKind.Local && input.StationId != home && avoidedSystems.Count == 0)
+        bool allowedHome = policy?.CanWorkAtStation(catalog.Definitions, home) != false;
+        if (kind == TrafficJourneyKind.Local && input.StationId != home && avoidedSystems.Count == 0 && allowedHome)
         {
             route =
                 previous is not null && previous.Kind == TrafficJourneyKind.Local && previous.SourceStationId == home
@@ -95,7 +97,8 @@ internal sealed partial class CapsuleerHauler
                 kind != TrafficJourneyKind.Local
                 && (input.OperatingStation.HasValue || previous is not null)
                 && previous?.SourceStationId != home
-                && input.StationId != home;
+                && input.StationId != home
+                && allowedHome;
             route = returnHome ? CapsuleerTrafficRoutes.JourneyHome(catalog, input.StationId, home, hull, pathSeed, avoidedSystems) : null;
             route ??= CapsuleerTrafficRoutes.Journey(
                 catalog,
@@ -105,7 +108,8 @@ internal sealed partial class CapsuleerHauler
                 previous?.SourceStationId ?? input.SourceStationId,
                 hull,
                 routine,
-                input.ActiveTicks
+                input.ActiveTicks,
+                policy
             );
         }
         if (route is null)
@@ -123,7 +127,10 @@ internal sealed partial class CapsuleerHauler
             ? CapsuleerCorporations.Organization(world, pilotId).OperatingStationId
             : null;
         var input = JourneyInputs(agent, Work.ActiveTicks, operatingStation);
-        var prepared = _preparedJourney is { } candidate && candidate.Input == input ? candidate : PlanJourney(_operation.Catalog, input);
+        var prepared =
+            _preparedJourney is { } candidate && candidate.Input == input
+                ? candidate
+                : PlanJourney(_operation.Catalog, input, database.Settings.Capsuleers);
         _route = prepared.Route;
         _work = Work with { Journey = prepared.Journey, TrafficLane = null, Routine = input.Routine };
     }
