@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
@@ -8,6 +9,7 @@ public enum CapitalJumpTarget
 {
     FleetModule,
     Structure,
+    FleetDeployable,
 }
 
 public sealed record CapitalJumpRequest(
@@ -35,7 +37,8 @@ public sealed record CynosuralField(
     int SystemId,
     long StartedAt,
     long EndsAt,
-    StaticSpaceObject Beacon
+    StaticSpaceObject Beacon,
+    long? DeployableId = null
 );
 
 public sealed record CynoActivation(CynosuralField Field, IReadOnlyList<InventoryChange> FuelChanges, double Capacitor);
@@ -52,7 +55,13 @@ public interface IPilotCapitalTravel
     IReadOnlyList<CynosuralField> Fields(int systemId);
     IReadOnlyList<CynosuralField> FleetFields(long pilotId);
     IReadOnlyDictionary<int, int> BeaconCounts();
+    CynoDeployment Deploy(long pilotId, long shipId, IReadOnlyList<long> itemIds, SpacePosition heading);
+    IReadOnlyList<StaticSpaceObject> Deployables(int systemId);
 }
+
+public sealed record CynoDeployment(IReadOnlyDictionary<long, long> Launched, IReadOnlyList<InventoryChange> Changes);
+
+public sealed record CynoDeployableActivation(bool Active, long OnlineAt, long ExpiresAt, ShipHealth Health, long DamagedAt);
 
 public static class CapitalTravelRules
 {
@@ -61,6 +70,10 @@ public static class CapitalTravelRules
     public const int IndustrialField = 52696;
     public const int StandardGenerator = 21096;
     public const int StandardField = 21094;
+    public const int MobileBeacon = 57319;
+    public const int MobileField = 57425;
+    public const int MobileInhibitor = 33476;
+    public const double MobileArrivalClearance = 5_000;
     public const int GeneratorGroup = 658;
     public const int FieldGroup = 2020;
     public const int IndustrialCycleMilliseconds = 600_000;
@@ -75,7 +88,6 @@ public static class CapitalTravelRules
     public const int TenebrexService = 35914;
     public const int CynosuralNavigationUpgrade = 81615;
     public const int CynosuralSuppressionUpgrade = 81619;
-    public const int MaximumJammers = 3;
     public const double StructureArrivalClearance = 12_000;
     public const double LightYearMeters = 9_460_730_472_580_800;
 

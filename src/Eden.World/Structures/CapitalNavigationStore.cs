@@ -80,11 +80,10 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
         {
             throw new InvalidDataException("Deploy in an alliance-held system with the required online sovereignty upgrade.");
         }
-        int limit = typeId == CapitalTravelRules.Pharolux ? 1 : CapitalTravelRules.MaximumJammers;
         if (
             world
                 .Filter<SavedStructure>(row => row.SystemId == systemId && row.TypeId == typeId)
-                .Count(row => row.State != StructureState.Destroyed && row.State != StructureState.Unanchored) >= limit
+                .Any(row => row.State != StructureState.Destroyed && row.State != StructureState.Unanchored)
         )
         {
             throw new InvalidDataException("This system already has the maximum number of this navigation structure.");

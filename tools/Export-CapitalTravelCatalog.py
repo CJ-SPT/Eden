@@ -24,7 +24,7 @@ def export(source, destination):
 
         if read('sde/_sde', '"sde"')['buildNumber'] != 3662168:
             raise ValueError('Expected client build 3662168')
-        pending = {34, 648, 11963, 12729, 12731, 21094, 21096, 28844, 28846, 28848, 28850, 32880, 89648, 52694, 52696,
+        pending = {34, 648, 3638, 11963, 12729, 12731, 21094, 21096, 28844, 28846, 28848, 28850, 32880, 33476, 89648, 52694, 52696, 57319, 57425,
                    16273, 16274, 17887, 17888, 17889,
                    34122, 34124, 34126, 1531, 2016, 3456, 21610, 21611, 21603}
         visited = set()
@@ -46,6 +46,8 @@ def export(source, destination):
                 keep('client/dogmaeffects', effect['effectID'])
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
         keep('client/typelist', 343)
+        for deployable in (33476, 57319):
+            keep('client/spacecomponentsbytype', deployable)
         for system_id in (30000142, 30001385, 30000251):
             keep('client/systems', system_id, ('center', 'securityStatus', 'wormholeClassID', 'regionID', 'factionID'))
         systems = catalog.execute('SELECT s.Id,s.Name,c.Id,c.Name,r.Id,r.Name FROM SolarSystem s '

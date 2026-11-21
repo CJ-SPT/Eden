@@ -232,6 +232,7 @@ internal sealed class CombatHandler(
     {
         context.Flight.RefreshWrecks();
         context.Flight.RefreshNpcs();
+        context.Flight.RefreshCynos();
     }
 
     private static WeaponContact Contact(Cycle cycle) =>

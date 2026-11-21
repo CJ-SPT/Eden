@@ -117,17 +117,20 @@ internal sealed partial class ResidentEconomy
                     new(nameof(SavedCynosuralField.SystemId), row => row.SystemId),
                     new(nameof(SavedCynosuralField.FleetId), row => row.FleetId),
                 ],
-                changed: (_, row) =>
-                {
-                    if (row is not null && row.EndsAt > _latestCynoDeadline)
-                    {
-                        Volatile.Write(ref _latestCynoDeadline, row.EndsAt);
-                    }
-                },
+                changed: (_, row) => ObserveCynoDeadline(row?.EndsAt),
                 primaryColumn: "PilotId",
                 rowIdIsKey: true
             )
         );
+        RegisterCynoDeployables();
+    }
+
+    private void ObserveCynoDeadline(long? at)
+    {
+        if (at is long deadline && deadline > _latestCynoDeadline)
+        {
+            Volatile.Write(ref _latestCynoDeadline, deadline);
+        }
     }
 
     private static void ProjectJumpTimers(WorldDbContext world, IReadOnlyList<EconomyChange<TimerRow>> changes)

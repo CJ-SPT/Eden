@@ -107,6 +107,35 @@ internal static partial class CrimewatchPersistence
         state.Apply(state.Timers() with { Npc = CrimewatchRules.Extend(state.Timers().Npc, end, CrimewatchRules.NpcDuration) });
     }
 
+    internal static void PersonalDeployable(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot attacker,
+        long owner,
+        int system,
+        long now,
+        long end
+    )
+    {
+        // Personal deployables carry at most a suspect flag for an unlawful attack.
+        var ownerTimers = world.Set<SavedCrimewatch>().Find(owner)?.Timers() ?? CrimewatchTimers.Empty;
+        bool authorized = attacker.Id == owner || Engagement(world, attacker.Id, owner)?.ExpiresAt > now;
+        var decision = CrimewatchRules.Decide(
+            new(
+                Math.Min(Security(catalog, system), Math.BitDecrement(CrimewatchRules.HighSecurity)),
+                attacker.SafetyLevel,
+                false,
+                false,
+                ownerTimers.Flag(now),
+                (world.Set<SavedSecurityStatus>().Find(owner)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
+                authorized
+            )
+        );
+        var state = State(world, attacker.Id);
+        state.SystemId = system;
+        state.Apply(CrimewatchRules.Player(state.Timers(), end, decision.Flag, true, now));
+    }
+
     internal static void CheckTravel(
         WorldAction world,
         CatalogDbContext catalog,

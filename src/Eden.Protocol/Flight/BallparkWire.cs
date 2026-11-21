@@ -101,6 +101,11 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.CynoDeployable is { } deployable)
+        {
+            fields["component_activate"] = new object?[] { deployable.Active, deployable.Active ? null : deployable.OnlineAt };
+            fields["component_decay"] = deployable.ExpiresAt;
+        }
         if (Body.AgentId is long agentId)
         {
             fields["charID"] = agentId;

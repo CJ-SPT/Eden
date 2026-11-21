@@ -135,6 +135,7 @@ internal sealed class FlightScene(
                         MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
+                        || o.CynoDeployable is not null
                         || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
                     )
                 )
@@ -401,12 +402,13 @@ internal sealed class FlightScene(
 
     internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
     {
-        var previous = Objects.Where(body => body.GroupId == CapitalTravelRules.FieldGroup).ToArray();
+        static bool Cyno(StaticSpaceObject body) => body.GroupId == CapitalTravelRules.FieldGroup || body.CynoDeployable is not null;
+        var previous = Objects.Where(Cyno).ToArray();
         if (previous.SequenceEqual(current))
         {
             return;
         }
-        Objects = Objects.Where(body => body.GroupId != CapitalTravelRules.FieldGroup).Concat(current).ToArray();
+        Objects = Objects.Where(body => !Cyno(body)).Concat(current).ToArray();
         if (!context.InBallpark)
         {
             return;
@@ -414,6 +416,27 @@ internal sealed class FlightScene(
         foreach (var removed in previous.ExceptBy(current.Select(body => body.Id), body => body.Id))
         {
             update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        foreach (var changed in current)
+        {
+            if (
+                previous.FirstOrDefault(prior => prior.Id == changed.Id)?.CynoDeployable is { } before
+                && changed.CynoDeployable is { } after
+            )
+            {
+                if (before.Active != after.Active)
+                {
+                    update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+                }
+                if (
+                    before.DamagedAt != after.DamagedAt
+                    || before.Health.Remaining.Armor != after.Health.Remaining.Armor
+                    || before.Health.Remaining.Structure != after.Health.Remaining.Structure
+                )
+                {
+                    NotifyHealth(after.Health);
+                }
+            }
         }
         var added = current.ExceptBy(previous.Select(body => body.Id), body => body.Id).ToArray();
         if (added.Length > 0)

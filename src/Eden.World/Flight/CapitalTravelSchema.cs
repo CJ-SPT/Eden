@@ -19,6 +19,9 @@ internal static class CapitalTravelSchema
         fields.HasOne<Pilot>().WithMany().HasForeignKey(row => row.PilotId).OnDelete(DeleteBehavior.Cascade);
         fields.HasOne<Ship>().WithMany().HasForeignKey(row => row.ShipId).OnDelete(DeleteBehavior.Cascade);
         fields.HasIndex(row => row.SystemId);
+        var deployables = model.Entity<SavedCynoDeployable>().ToTable("WorldCynoDeployable");
+        deployables.HasKey(row => row.Id);
+        deployables.HasIndex(row => row.SystemId);
     }
 
     internal static void Upgrade(WorldDbContext world)
@@ -37,6 +40,12 @@ internal static class CapitalTravelSchema
                 Radius REAL NOT NULL, SpawnRadius REAL NOT NULL, TypeId INTEGER NOT NULL, StartedAt INTEGER NOT NULL
             );
             CREATE INDEX IF NOT EXISTS IX_WorldCynosuralField_SystemId ON WorldCynosuralField(SystemId);
+            CREATE TABLE IF NOT EXISTS WorldCynoDeployable (
+                Id INTEGER PRIMARY KEY, BeaconId INTEGER NOT NULL, PilotId INTEGER NOT NULL, FleetId INTEGER NOT NULL,
+                SystemId INTEGER NOT NULL, TypeId INTEGER NOT NULL, OnlineAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL,
+                X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, Shield REAL, Armor REAL, Structure REAL, DamagedAt INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS IX_WorldCynoDeployable_SystemId ON WorldCynoDeployable(SystemId);
             """
         );
         var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCynosuralField')").ToArray();

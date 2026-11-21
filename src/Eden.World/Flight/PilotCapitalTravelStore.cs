@@ -37,8 +37,12 @@ using Eden.World.Thermal;
 namespace Eden.World.Flight;
 
 [Injectable]
-internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorld ships, ICooperativeFleets fleets, TimeProvider clock)
-    : IPilotCapitalTravel
+internal sealed partial class PilotCapitalTravelStore(
+    WorldDatabase database,
+    SqliteWorld ships,
+    ICooperativeFleets fleets,
+    TimeProvider clock
+) : IPilotCapitalTravel
 {
     private sealed record JumpPlan(
         Pilot Pilot,
@@ -68,6 +72,10 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         if (CapitalNavigationStore.Jammed(action, catalog, system, now))
         {
             throw new InvalidDataException("This solar system is cynosural jammed.");
+        }
+        if (Inhibited(action, catalog, system, new(position.X, position.Y, position.Z), now))
+        {
+            throw new InvalidDataException("A mobile inhibitor blocks cynosural ignition at this position.");
         }
         var field = action.Set<SavedCynosuralField>().Find(pilotId);
         if (Active(action, field, now))
@@ -209,7 +217,15 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         long now = Now;
         return LiveWorld.Find(database.Path) is { Economy: var economy } && economy.MayHaveCynos(now)
             ? economy.Inspect(
-                world => ProjectFields(world, world.Filter<SavedCynosuralField>(row => row.SystemId == systemId), now),
+                world =>
+                    ProjectFields(world, world.Filter<SavedCynosuralField>(row => row.SystemId == systemId), now)
+                        .Concat(
+                            MobileRows(world, systemId, now)
+                                .AsEnumerable()
+                                .Where(row => MobileBeaconActive(row, now))
+                                .Select(MobileBeaconContact)
+                        )
+                        .ToArray(),
                 new(systems: [systemId])
             )
             : [];
@@ -226,10 +242,18 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         {
             return [];
         }
-        return economy
-            .Inspect(world => ProjectFields(world, world.Filter<SavedCynosuralField>(row => row.FleetId == fleet), now))
-            .Where(field => fleets.Identity(field.PilotId)?.FleetId == fleet)
-            .ToArray();
+        return economy.Inspect(world =>
+            ProjectFields(world, world.Filter<SavedCynosuralField>(row => row.FleetId == fleet), now)
+                .Where(field => fleets.Identity(field.PilotId)?.FleetId == fleet)
+                .Concat(
+                    world
+                        .Filter<SavedCynoDeployable>(row => row.FleetId == fleet)
+                        .AsEnumerable()
+                        .Where(row => MobileBeaconActive(row, now))
+                        .Select(MobileBeaconContact)
+                )
+                .ToArray()
+        );
     }
 
     public IReadOnlyDictionary<int, int> BeaconCounts() =>
@@ -241,7 +265,16 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
                 return world
                     .Set<SavedCynosuralField>()
                     .Where(row => Active(world, row, now))
-                    .GroupBy(row => row.SystemId)
+                    .Select(row => row.SystemId)
+                    .AsEnumerable()
+                    .Concat(
+                        world
+                            .Set<SavedCynoDeployable>()
+                            .AsEnumerable()
+                            .Where(row => MobileBeaconActive(row, now))
+                            .Select(row => row.SystemId)
+                    )
+                    .GroupBy(system => system)
                     .ToDictionary(group => group.Key, group => group.Count());
             })
         ?? new Dictionary<int, int>();
@@ -321,6 +354,20 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
 
     private JumpDestination Destination(WorldAction world, CatalogDbContext catalog, long pilotId, CapitalJumpRequest request, long now)
     {
+        if (request.Target == CapitalJumpTarget.FleetDeployable)
+        {
+            if (
+                MobileTarget(world, request.EmitterId, now) is not { } deployable
+                || deployable.SystemId != request.SystemId
+                || deployable.BeaconId != request.BeaconId
+                || deployable.FleetId != fleets.Identity(pilotId)?.FleetId
+                || !MobileBeaconActive(deployable, now)
+            )
+            {
+                throw new InvalidDataException("That fleet deployable beacon is unavailable.");
+            }
+            return new(CapitalTravelRules.MobileField, MobilePosition(deployable), CapitalTravelRules.MobileArrivalClearance);
+        }
         if (request.Target == CapitalJumpTarget.Structure)
         {
             if (

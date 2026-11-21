@@ -31,6 +31,8 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
         bool plain = keywords is null or { Count: 0 };
         switch (service, method)
         {
+            case ("ship", "Drop"):
+                return Drop(context, args, plain);
             case ("jumpTimers", "GetTimers"):
                 return plain && args is [long id] && id == pilot.PilotId
                     ? new PilotCallResult.Success(new JumpTimerState(travel.Timers(id)))
@@ -51,6 +53,18 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
                     return new PilotCallResult.Failure("Choose a valid fleet cynosural field.");
                 }
                 return StartJump(context, new(emitter, beacon, (int)system));
+            case ("beyonce", "CmdJumpToFleetDeployableBeacon"):
+                if (
+                    !plain
+                    || args is not [long deployable, long deployableSystem, long deployedBeacon]
+                    || deployable <= 0
+                    || deployedBeacon <= 0
+                    || deployableSystem is <= 0 or > int.MaxValue
+                )
+                {
+                    return new PilotCallResult.Failure("Choose a valid fleet deployable beacon.");
+                }
+                return StartJump(context, new(deployable, deployedBeacon, (int)deployableSystem, CapitalJumpTarget.FleetDeployable));
             case ("structureCynoBeaconMgr", "CmdJumpToStructureBeacon"):
                 if (!plain || args is not [long structure, long destination] || structure <= 0 || destination is <= 0 or > int.MaxValue)
                 {
@@ -59,6 +73,51 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
                 return StartJump(context, new(0, structure, (int)destination, CapitalJumpTarget.Structure));
             default:
                 return PilotCallResult.Unsupported;
+        }
+    }
+
+    private PilotCallResult Drop(PilotCallContext context, object?[] args, bool plain)
+    {
+        var pilot = context.Pilot;
+        if (!plain || args is not [List<object?> items, var owner, bool _] || owner is not (null or 0L) && !Equals(owner, pilot.PilotId))
+        {
+            return new PilotCallResult.Failure("Choose mobile deployables to launch for your pilot.");
+        }
+        long[] ids = items
+            .Select(value =>
+                value switch
+                {
+                    long id => id,
+                    object?[] and [long id, 1L] => id,
+                    _ => 0,
+                }
+            )
+            .ToArray();
+        if (ids.Any(id => id <= 0))
+        {
+            return new PilotCallResult.Failure("Choose one unit from each cargo stack.");
+        }
+        var flight = context.Flight;
+        if (!flight.CanUseSelfModules || flight.InWarp || flight.PreparingWarp || flight.Cloaked || flight.MicroJumpSpooling)
+        {
+            return new PilotCallResult.Failure("Launch a deployable from your active ship in space outside warp.");
+        }
+        try
+        {
+            flight.Checkpoint();
+            var deployment = travel.Deploy(pilot.PilotId, pilot.ShipId, ids, flight.Heading);
+            foreach (var change in deployment.Changes)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: true);
+            }
+            flight.RefreshCynos();
+            return new BlueMap<long, BlueList<long>>(
+                deployment.Launched.ToDictionary(row => row.Key, row => new BlueList<long>([row.Value]))
+            );
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 

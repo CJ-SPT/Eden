@@ -1,9 +1,11 @@
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Flight;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
@@ -39,6 +41,104 @@ public sealed class CapitalTravelTests
     private const int LiquidOzone = 16273;
     private const int Cargo = 34;
     private static readonly SpacePosition s_station = new(-102770810880, 7849451520, 353786634240);
+
+    [Fact]
+    public async Task TurretDamagePersistsAndDestructionRetiresFleetDeployable()
+    {
+        using Fixture fixture = new(armed: true);
+        var (item, _) = fixture.PrepareDeployables();
+        using Client freighter = fixture.Select(1000001);
+        using Client emitter = fixture.Select(1000002);
+        fixture.Join(emitter);
+        Assert.IsType<PilotCallResult.Success>(emitter.Call("ship", "Drop", new List<object?> { item }, null, false));
+        long pilot = emitter.Pilot.PilotId;
+        long deployable = Assert.Single(fixture.Travel.Deployables(Jan)).Id;
+        fixture.Clock.Seconds += 120;
+        var field = Assert.Single(fixture.Travel.FleetFields(freighter.Pilot.PilotId));
+        var combat = fixture.Db.Services.GetRequiredService<IPilotCombat>();
+        var hit = combat.Fire(pilot, fixture.Gun!.Value, deployable, SpacePosition.Zero, fixture.Clock.Now, 0.1, WeaponActivation.Laser);
+        Assert.True(hit.Applied > 0);
+        Assert.False(hit.Destroyed);
+        Assert.Equal(hit.Health, Assert.Single(fixture.Travel.Deployables(Jan)).CynoDeployable!.Health);
+        await fixture.Live.FlushAsync();
+        fixture.Reopen();
+        Assert.Equal(hit.Health, Assert.Single(fixture.Travel.Deployables(Jan)).CynoDeployable!.Health);
+
+        fixture.Clock.Seconds += 60;
+        using (var action = fixture.Live.Economy.Begin(new(systems: [Jan])))
+        {
+            var saved = action.Set<SavedCynoDeployable>().Find(deployable)!;
+            saved.Shield = saved.Armor = 0;
+            saved.Structure = 0.01;
+            saved.DamagedAt = fixture.Clock.Now;
+            action.Commit();
+        }
+        var fatal = combat.Fire(pilot, fixture.Gun.Value, deployable, SpacePosition.Zero, fixture.Clock.Now, 0.1, WeaponActivation.Laser);
+        Assert.True(fatal.Destroyed);
+        Assert.Empty(fixture.Travel.Fields(Jan));
+        Assert.Empty(fixture.Travel.Deployables(Jan));
+        Assert.Empty(fixture.Travel.FleetFields(freighter.Pilot.PilotId));
+        Assert.IsType<PilotCallResult.Failure>(
+            freighter.Call("beyonce", "CmdJumpToFleetDeployableBeacon", deployable, Jan, field.Beacon.Id)
+        );
+    }
+
+    [Fact]
+    public async Task MobileCynoWarmsForLaunchFleetAndInhibitsModuleIgnition()
+    {
+        using Fixture fixture = new();
+        var (beaconItem, inhibitorItem) = fixture.PrepareDeployables();
+        using Client freighter = fixture.Select(1000001);
+        using Client operatorPilot = fixture.Select(1000002);
+        Assert.IsType<PilotCallResult.Failure>(Drop(beaconItem));
+        long fleet = fixture.Join(operatorPilot);
+        var launch = Assert.IsType<PilotCallResult.Success>(Drop(beaconItem));
+        var result = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(launch.Reply)));
+        long deployable = Assert.IsType<long>(Assert.Single(Assert.IsType<List<object?>>(result[beaconItem])));
+        Assert.IsType<PilotCallResult.Success>(Drop(inhibitorItem));
+        Assert.Equal(0, Quantity(fixture, operatorPilot, CapitalTravelRules.MobileBeacon));
+        Assert.Equal(0, Quantity(fixture, operatorPilot, CapitalTravelRules.MobileInhibitor));
+        Assert.False(Assert.Single(fixture.Travel.Deployables(Jan), body => body.Id == deployable).CynoDeployable!.Active);
+        Assert.Empty(fixture.Travel.FleetFields(freighter.Pilot.PilotId));
+        fixture.Fleets.Leave(operatorPilot.Pilot.PilotId, fleet);
+
+        fixture.Clock.Seconds += 60;
+        Assert.IsType<PilotCallResult.Failure>(operatorPilot.Call("dogmaIM", "Activate", fixture.Module, "cynosuralGeneration", null, 0));
+        Assert.Equal(1000, Quantity(fixture, operatorPilot, LiquidOzone));
+        Assert.Empty(fixture.Travel.FleetFields(freighter.Pilot.PilotId));
+        fixture.Clock.Seconds += 60;
+        var field = Assert.Single(fixture.Travel.FleetFields(freighter.Pilot.PilotId));
+        Assert.Equal(deployable, field.DeployableId);
+        Assert.Equal(CapitalTravelRules.MobileField, field.Beacon.TypeId);
+        Assert.Equal(1, fixture.Travel.BeaconCounts()[Jan]);
+        await freighter.TickAsync();
+        Assert.Contains(freighter.Packets, packet => ContainsText(packet, "OnFleetJumpBeaconDeployableChange"));
+        Assert.IsType<PilotCallResult.Failure>(
+            freighter.Call("beyonce", "CmdJumpToFleetDeployableBeacon", deployable, Jan, field.Beacon.Id + 1)
+        );
+        Assert.IsType<PilotCallResult.Success>(
+            freighter.Call("beyonce", "CmdJumpToFleetDeployableBeacon", deployable, Jan, field.Beacon.Id)
+        );
+        await freighter.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await freighter.TickAsync();
+        Assert.Equal(Jan, freighter.Pilot.SystemId);
+        Assert.Equal(12_587, Quantity(fixture, freighter, Nitrogen));
+
+        freighter.Dispose();
+        operatorPilot.Dispose();
+        await fixture.Live.FlushAsync();
+        fixture.Reopen();
+        Assert.Equal(field, Assert.Single(fixture.Travel.Fields(Jan)));
+        Assert.Equal(2, fixture.Travel.Deployables(Jan).Count);
+        fixture.Clock.Seconds = 3600;
+        Assert.Empty(fixture.Travel.Fields(Jan));
+        Assert.Empty(fixture.Travel.Deployables(Jan));
+        Assert.Empty(fixture.Travel.BeaconCounts());
+
+        PilotCallResult Drop(long item) =>
+            operatorPilot.Call("ship", "Drop", new List<object?> { new object?[] { item, 1L } }, null, false);
+    }
 
     [Fact]
     public async Task PharoluxJumpRechecksAccessAndJammerDeadline()
@@ -297,6 +397,7 @@ public sealed class CapitalTravelTests
         internal IPilotStructures Structures => Db.Services.GetRequiredService<IPilotStructures>();
         internal long FreighterId { get; }
         internal long Module { get; }
+        internal long? Gun { get; }
         internal long CargoId { get; }
         private bool _joined;
 
@@ -305,7 +406,8 @@ public sealed class CapitalTravelTests
             int isotope = Nitrogen,
             int emitterHull = (int)StarterShipType.Venture,
             int generator = CapitalTravelRules.IndustrialGenerator,
-            bool structures = false
+            bool structures = false,
+            bool armed = false
         )
         {
             Db = new(clock: Clock);
@@ -334,6 +436,14 @@ public sealed class CapitalTravelTests
             Module = Grant(second.PilotId, second.StationId, InventoryFlag.Hangar, generator, 1);
             fitting.Fit(second.PilotId, [Module], second.StationId, (int)InventoryFlag.AutoFit);
             fitting.SetOnline(second.PilotId, venture, Module, true);
+            if (armed)
+            {
+                const int civilianRailgun = 3638;
+                Train(second.PilotId, [.. HullRequirements(civilianRailgun)]);
+                Gun = Grant(second.PilotId, second.StationId, InventoryFlag.Hangar, civilianRailgun, 1);
+                fitting.Fit(second.PilotId, [Gun.Value], second.StationId, (int)InventoryFlag.AutoFit);
+                fitting.SetOnline(second.PilotId, venture, Gun.Value, true);
+            }
             Grant(second.PilotId, venture, InventoryFlag.Cargo, LiquidOzone, 1000);
             Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, 14_000);
             Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, 46_000);
@@ -363,6 +473,18 @@ public sealed class CapitalTravelTests
         }
 
         internal Client Select(long account) => new(Db, Clock, account);
+
+        internal (long Beacon, long Inhibitor) PrepareDeployables()
+        {
+            const int anchoring = 11584;
+            var pilot = Db.Store.FindPilot(1000002)!;
+            Train(pilot.PilotId, (anchoring, 3));
+            Db.Store.SetPosition(pilot.ShipId, s_station + new SpacePosition(-250_000, 0, 0), Jan);
+            return (
+                Grant(pilot.PilotId, pilot.ShipId, InventoryFlag.Cargo, CapitalTravelRules.MobileBeacon, 1),
+                Grant(pilot.PilotId, pilot.ShipId, InventoryFlag.Cargo, CapitalTravelRules.MobileInhibitor, 1)
+            );
+        }
 
         internal (StructureSnapshot Beacon, StructureSnapshot Jammer) PrepareNavigation()
         {
@@ -457,6 +579,10 @@ public sealed class CapitalTravelTests
             }
             var beacon = Deploy(CapitalTravelRules.Pharolux, new(10_000_000, 0, 0), "Pharolux");
             var jammer = Deploy(CapitalTravelRules.Tenebrex, new(20_000_000, 0, 0), "Tenebrex");
+            var duplicate = Assert.Throws<InvalidDataException>(() =>
+                Deploy(CapitalTravelRules.Tenebrex, new(40_000_000, 0, 0), "Second Tenebrex")
+            );
+            Assert.Contains("maximum number", duplicate.Message, StringComparison.Ordinal);
             Clock.AdvanceWallTime(TimeSpan.FromHours(1));
             Assert.True(Structures.Read(pilot, beacon.Id)!.HasCore);
             Assert.True(Structures.Read(pilot, jammer.Id)!.HasCore);
@@ -492,15 +618,21 @@ public sealed class CapitalTravelTests
         {
             if (!_joined)
             {
-                long other = Db.Store.FindPilot(1000001)!.PilotId;
-                long fleet = Fleets.Create(emitter.Pilot.PilotId).Id;
-                Fleets.Invite(emitter.Pilot.PilotId, fleet, other, new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member));
-                Fleets.Accept(other, fleet);
-                _joined = true;
+                Join(emitter);
             }
             var response = emitter.Call("dogmaIM", "Activate", Module, "cynosuralGeneration", null, 0);
             Assert.True(response is PilotCallResult.Success, response.ToString());
             return Assert.IsType<CynosuralField>(Travel.Field(emitter.Pilot.PilotId));
+        }
+
+        internal long Join(Client emitter)
+        {
+            long other = Db.Store.FindPilot(1000001)!.PilotId;
+            long fleet = Fleets.Create(emitter.Pilot.PilotId).Id;
+            Fleets.Invite(emitter.Pilot.PilotId, fleet, other, new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member));
+            Fleets.Accept(other, fleet);
+            _joined = true;
+            return fleet;
         }
 
         internal PilotCallResult Jump(Client client, CynosuralField field) =>

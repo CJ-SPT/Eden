@@ -155,14 +155,17 @@ internal sealed partial class CooperativeFleetHandler(
         var current = capital?.FleetFields(context.Pilot.PilotId) ?? [];
         foreach (var removed in _sentCynos.ExceptBy(current.Select(field => field.Beacon.Id), field => field.Beacon.Id))
         {
-            context.Notifications.Add(new FleetModuleBeaconChanged(removed, false));
+            context.Notifications.Add(FleetBeacon(removed, false));
         }
         foreach (var added in current.ExceptBy(_sentCynos.Select(field => field.Beacon.Id), field => field.Beacon.Id))
         {
-            context.Notifications.Add(new FleetModuleBeaconChanged(added, true));
+            context.Notifications.Add(FleetBeacon(added, true));
         }
         _sentCynos = current;
     }
+
+    private static FleetNotification FleetBeacon(CynosuralField field, bool active) =>
+        field.DeployableId is long id ? new FleetDeployableBeaconChanged(id, field, active) : new FleetModuleBeaconChanged(field, active);
 
     private static bool IsInTransit(PilotCallContext context) => context.Flight.InWarp || context.Flight.Translocating;
 

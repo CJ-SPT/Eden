@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Protocol.Flight;
@@ -10,7 +11,16 @@ internal sealed partial class FlightSession
     {
         if (capitalTravel is { } travel)
         {
-            Scene.RefreshCynos(SceneContext, travel.Fields(Pilot.SystemId).Select(field => field.Beacon).ToArray());
+            var contacts = travel.Fields(Pilot.SystemId).Select(field => field.Beacon);
+            if (Pilot.Position is { } position)
+            {
+                contacts = contacts.Concat(
+                    travel
+                        .Deployables(Pilot.SystemId)
+                        .Where(body => position.DistanceTo(body.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                );
+            }
+            Scene.RefreshCynos(SceneContext, contacts.ToArray());
         }
     }
 

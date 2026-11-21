@@ -177,6 +177,12 @@ internal sealed record FleetModuleBeaconChanged(Eden.Gameplay.Flight.CynosuralFi
     public override object?[] Arguments => [Field.PilotId, Field.SystemId, Field.Beacon.Id, Field.Beacon.TypeId, Active];
 }
 
+internal sealed record FleetDeployableBeaconChanged(long Id, Eden.Gameplay.Flight.CynosuralField Field, bool Active)
+    : FleetNotification("OnFleetJumpBeaconDeployableChange")
+{
+    public override object?[] Arguments => [Id, Field.SystemId, Field.Beacon.Id, Field.PilotId, Active];
+}
+
 internal sealed record FleetStateNotification(IReadOnlyList<FleetTargetTag> Tags) : FleetNotification("OnFleetStateChange")
 {
     public override object?[] Arguments =>

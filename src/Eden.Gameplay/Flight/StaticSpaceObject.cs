@@ -21,6 +21,7 @@ public sealed record StaticSpaceObject(
     public SpacePosition? AccelerationGateDirection { get; init; }
     public int? HackingState { get; init; }
     public double? InterdictionRadius { get; init; }
+    public CynoDeployableActivation? CynoDeployable { get; init; }
     public bool Solid { get; init; } = true;
     public StaticCollisionGeometry? Collision { get; init; }
     public bool IsGlobal { get; init; } = true;

@@ -69,7 +69,7 @@ seconds. Both Python validation suites passed all 17 cases.
 
 Pharolux (`35840`) requires the online Cynosural Navigation upgrade (`81615`). Tenebrex (`37534`) requires
 Cynosural Suppression (`81619`). The structure owner must belong to the controlling alliance. A system can anchor
-one beacon and three jammers, with at most one jammer service online or spooling. The existing Upwell service cycle
+one of each, including the jammer limit from the Cradle of War update. The existing Upwell service cycle
 uses the pinned module fuel costs. Pharolux consumes 1,080 blocks at startup and 15 per hour. Tenebrex consumes
 2,880 at startup and 40 per hour. Its five-minute spool deadline comes from attribute `2794` on service module
 `35914` and survives a checkpoint. Disabling the service, loss of fuel or loss of the required sovereignty state
@@ -83,7 +83,8 @@ uses the existing Upwell access entries for beacon access and checks them again 
 existing drive costs and timers. Arrival uses the structure and ship radii plus the 12 km clearance described
 by the EVE.js structural beacon runtime, with Eden's existing static geometry check.
 [CCP navigation structures](https://www.eveonline.com/news/view/navigation-structures-inbound) ·
-[CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures)
+[CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures) ·
+[CCP 24.01 notes](https://www.eveonline.com/news/view/patch-notes-version-24-01)
 
 The resident Jita–49-0LI case exercises anchoring, both module fuel deposits, access, the native directory rows, a
 jammer deadline reached during departure, an unpaid cancellation, persistence across checkpoint reopen, sovereignty
@@ -93,12 +94,38 @@ the optional service start timestamp. The focused capital travel, Upwell structu
 translocation and checkpoint suites passed all 325 cases in 130.06 seconds. Formatting, both Python policy suites
 and the whitespace check passed.
 
+## Mobile cynos and inhibitors
+
+In build 3662168, `eveMisc.LaunchFromShip` calls `ship.Drop(items, whoseBehalfID, ignoreWarning)` and expects a
+map from source stacks to the IDs of launched objects. The standard beacon (`57319`) and inhibitor (`33476`)
+use the pinned `client/spacecomponentsbytype` launch distances, warm-up deadlines and one-hour decay. Both
+require Anchoring III. The beacon starts a two-minute warm-up and binds to the launching fleet. It then
+projects field `57425` and publishes `OnFleetJumpBeaconDeployableChange(deployableID, solarSystemID, beaconID,
+ownerID, active)`. The client jumps with `CmdJumpToFleetDeployableBeacon(deployableID, solarSystemID, beaconID)`.
+The inhibitor activates after one minute and blocks standard and industrial field ignition in its 100 km range.
+[CCP fleet formations](https://www.eveonline.com/news/view/fleet-formations-now-live) ·
+[CCP Onslaught patch notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-onslaught)
+
+Schema 196 records deployable ownership, position, damage and deadlines. The existing turret path can damage or
+destroy both deployables. Destruction removes the projected field and invalidates new or pending jumps.
+The client activation and decay data comes from `spacecomponents/client/components/activate.pyj` and
+`spacecomponents/client/components/decay.pyj`. EVE.js `shipService.js`, `deployableCynoRuntime.js` and
+`beyonceService.js` confirm the native launch, fleet and jump paths.
+
+The two exact cases `MobileCynoWarmsForLaunchFleetAndInhibitsModuleIgnition` and
+`TurretDamagePersistsAndDestructionRetiresFleetDeployable` passed. They exercise the launch reply, cargo charges,
+fleet binding after the deployer leaves, inhibitor range at the fixture position, fuel payment, a native jump,
+warm-up and decay, turret damage, checkpoint reopen and loss of the jump destination on destruction.
+The focused capital travel, fleet, translocation, migration, checkpoint, Crimewatch and turret tests passed all 181
+cases in 102.00 seconds. Both Python validation suites passed all 17 cases.
+All 14 capital travel cases passed in 14.64 seconds after adding the build's one-jammer limit.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
 | --- | --- |
 | **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
-| **2. Standard cynos and sovereignty navigation** | Standard module cynos, Pharolux beacons and Tenebrex jammers are implemented with the paid jump-freighter path. Mobile beacons and inhibitors are still pending. |
+| **2. Standard cynos and sovereignty navigation** | Implemented. Standard module and mobile cynos, mobile inhibitors, Pharolux beacons and Tenebrex jammers use the paid jump-freighter path and resident sovereignty checks. |
 | **3. Ansiblex jump gates** | Link two authorized endpoints and exercise paid access and route discovery. Prove that loss of an endpoint, access or sovereignty affects the next transfer and route read. |
 | **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
 | **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |
