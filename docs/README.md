@@ -1,361 +1,56 @@
 # Eden documentation
 
-[Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
-covers paid structure attacks, reinforcement, asset recovery and saved tether repairs.
-
-[Regional loss accounting](protocol/capsuleers.md#regional-loss-accounting-across-refuge-regions--november-17-2026)
-fixes ship-loss settlement for nullsec communities with a refuge station in another region.
-
-[Bot PvP improvements](protocol/capsuleers.md#bot-pvp-improvements--november-17-2026) records capacitor management,
-fighting retreats, shared primaries, neutral raids, saved warp preparation, movement, support assignments and paid ammo/heat decisions.
-
-[Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
-rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.
-
-[Smarter bots and persistent roaming gangs](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026) adds role-based hunting decisions, saved gang commands, coordinated nullsec travel and resident combat without native scenes.
-
-[Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
-Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
-
-[Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
-
-[Sovereignty](protocol/sovereignty.md) records deployment, Entosis capture, vulnerability windows, campaigns, activity indices, capitals, live ADM, Skyhook resources and upgrades.
-
-[Faction Warfare](protocol/faction-warfare.md) records resident warzones, individual and organization enlistment, militia communications, combat, complexes, and territorial conquest.
-
-[Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
-
-[Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.
-
-[Complete NPC hub supply](protocol/industry.md#complete-npc-hub-supply-november-16-2026) supplies the full
-eligible NPC sell assortment at regional hubs, including trade goods, skillbooks, formulas and quantum cores.
-
-[Planetary Industry planet limits](world-configuration.md#planetary-industry) allow an optional per-pilot colony-count
-override while preserving skill-based defaults and existing colonies.
-
-[Custom gameplay options](world-configuration.md#custom-gameplay-options) control empire LP datacores, reference history,
-regional hub and beginner supplies, civilian starting equipment and player bots through saved administration settings.
-
-[Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)
-covers the pre-selection location-name request exposed after Regional Express activation.
-
-[Automatic signature resolution](world-configuration.md#exploration) makes cosmic signatures fully scanned
-for every pilot through an optional World & economy setting.
-
-[Regional Express](modding.md#regional-express) adds optional express stargates across empire and nullsec regions.
-
-[Client package retention](modding.md#client-package-retention) preserves active, pending and rollback generations
-while automatically pruning obsolete catalogs and abandoned builds.
-
-[Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
-cover lower-allocation discovery queries, staged ID visibility and complete two-session frame measurements.
-
-[Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)
-records arrival-related stalls, batched NPC slot validation and complete moving-session benchmark results.
-
-[Startup reconciliation and catalog warm-up](protocol/startup.md#startup-reconciliation-and-catalog-warm-up-november-15-2026)
-covers batched belt geometry, atomic downtime renewal, shared catalog reads and per-phase startup diagnostics.
-
-[Travel settings](world-configuration.md#travel) configure player warp speed, alignment and autopilot gate landings.
-
-[Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
-cover local ship cargo, stacking, corporation/container transfers, capacity checks and partial-loot metadata preservation.
-
-[Server lock contention](protocol/performance.md#server-lock-contention-november-15-2026)
-records recent server lock holds, bounded mission work and idle mail polling during checkpoints.
-
-[Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
-`XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
-
-[Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
-covers concurrent reconnects, host-bound tickets and remembered-sign-in recovery.
-
-[Container item menus](protocol/inventory.md#container-item-context-menus-november-15-2026) and
-[job facility lookups](protocol/industry.md#job-facility-batch-lookups-november-15-2026) cover native context-menu
-ancestry and completed-job facility-cache fixes.
-
-[Cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026) covers native
-opening, renaming, both passwords, configuration and resident checkpoint persistence.
-
-[Abyssal Deadspace](protocol/abyssal.md) records resident runs, pinned client contracts,
-checkpoint recovery, milestone scope and automated validation.
-
-[Wormholes](protocol/wormholes.md) records resident connection populations, mass/lifetime collapse,
-replacement identities, K162 visibility and checkpoint recovery.
-
-[Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) covers private notes,
-saved folders and shareable overview, inventory-filter and fleet-broadcast links.
-
-[Corporation owner cache correction](protocol/social.md#corporation-owner-cache-width-november-14-2026)
-records the missing field behind native Local, Guests and overview name failures, plus focused validation.
-
-[Resident NPC missiles and hull loss](protocol/performance.md#resident-npc-missiles-and-hull-loss-november-11-2026)
-records resident launch, flight, hull destruction, insurance and checkpoint retry.
-
-[Resident missile launches and report acknowledgement](protocol/performance.md#resident-missile-launches-and-report-acknowledgement-november-11-2026)
-records atomic volleys, cached fitted missile inputs, cancellation and retryable checkpoint saves.
-
-[Resident tackle transactions and core deadlines](protocol/performance.md#resident-tackle-transactions-and-core-deadlines-november-11-2026)
-records atomic paid repeats, cleanup, exact core expiry and retryable heat/effect checkpoints.
-
-[Resident player electronic warfare](protocol/performance.md#resident-player-electronic-warfare-november-11-2026)
-records paid contact replacement, bounded participants, cleanup and coherent heat/effect saves.
-
-[Resident capacitor transactions and resource reads](protocol/performance.md#resident-capacitor-transactions-and-resource-reads-november-11-2026)
-records paired player/NPC energy payment, rejected repeats, cached fits and coherent saves.
-
-[Resident NPC electronic-warfare cycles](protocol/performance.md#resident-npc-electronic-warfare-cycles-november-11-2026)
-records SQL-free paid cycles, exact deadlines, rejected drain and coherent checkpoint saves.
-
-[Resident monitoring indexes and cold scene reads](protocol/performance.md#resident-monitoring-indexes-and-cold-scene-reads-november-11-2026)
-records SQL-free missile/effect monitoring, private-view isolation, scene rehydration and restored deadline membership.
-
-[Resident repair, propulsion and timed defenses](protocol/performance.md#resident-repair-propulsion-and-timed-defenses-november-11-2026)
-records atomic module payments, resident expiry, fitting reads and coherent paid-cycle saves.
-
-[Resident population admission and owned blueprints](protocol/performance.md#resident-population-admission-and-owned-blueprints-november-11-2026)
-records atomic resident founders and gate visitors, copied fits, rollback and coherent saves.
-
-[Resident scheduler metadata and remote preparation](protocol/performance.md#resident-scheduler-metadata-and-remote-preparation-november-11-2026)
-records resident enrollment, preserved pending cursors and remote preparation outside world ownership.
-
-[Resident detail retirement and drone publication](protocol/performance.md#resident-detail-retirement-and-drone-publication-november-11-2026)
-records SQL-free detail retirement, paid drone publication and preservation of other pending combat work.
-
-[Resident fatal NPC settlement and filtered lookups](protocol/performance.md#resident-fatal-npc-settlement-and-filtered-lookups-november-11-2026)
-records atomic kill rewards, retryable checkpoints and bounded resident pilot lookups.
-
-[Resident bot action transactions](protocol/performance.md#resident-bot-action-transactions-november-11-2026)
-records complete resident miner/hauler mutations, atomic pilot-template refresh and coherent checkpoints.
-
-[Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
-records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
-
-[Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) covers shared locations, permissions, subscriptions and native updates.
-
-[Structure compression and gas decompression](protocol/structures.md#structure-compression-and-gas-decompression--november-11-2026) covers native resource conversion, losses and fuel/access checks.
-
-[Corporation contacts and standings](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026) covers shared contacts, labels, roles and native updates.
-
-[Personal mining ledger](protocol/industry.md#personal-mining-ledger--november-11-2026) covers committed daily mining totals and waste.
-
-[Bulk and corporation saved fittings](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026) covers atomic fitting imports/deletes and corporation access.
-
-[Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
-
-[Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.
-
-[Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) covers mission-panel goals and updates.
-
-[Resident remote bot routines](protocol/performance.md#resident-remote-bot-routines-november-11-2026)
-records SQL-free warm remote navigation and routine settlement, retained compact positions, and coherent detached saves.
-
-[Neocom skill startup](protocol/characters.md#neocom-skill-startup-november-11-2026) records the built-in service-manager
-lookup correction and automated native skill-button startup regression.
-
-[Ship Tree skill lookup](protocol/characters.md#ship-tree-recent-skill-lookup-november-15-2026) fixes the unsupported
-`GetSkillChangesForISIS` call; recent-training highlight deltas remain unavailable.
-
-[Native Multifit batches](protocol/fitting.md#native-multifit-batches-november-15-2026) assemble and fit packaged
-hangar hulls in an atomic resident transaction, with checkpoint persistence and unchanged active-ship selection.
-
-[Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
-covers repeated movement reads, docking fit reuse, schema-141 invalidation and matched remote-action work counts.
-
-[Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) covers
-remote hauler resource loading, repeated mining validation and measured-cost background admission.
-
-[Beginner market supply](protocol/industry.md#beginner-market-supply--november-11-2026) covers immediately purchasable
-combat frigates, Ventures, basic equipment and prerequisite skillbooks at starting stations and regional hubs.
-
-[Aligning and native autopilot](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026) covers target/bookmark
-alignment, native route travel and the configurable autopilot gate landing distance.
-
-[R&D agents and datacores](protocol/agents.md#rd-agents-and-datacores--november-11-2026) covers passive research,
-science fields, native journal/dialogs, paid datacore redemption, and cancellation.
-
-[Planetary industry](protocol/planetary.md) covers saved colonies, all 68 planetary schematics, extraction,
-routing, orbital cargo, Interbus customs, source evidence and automated validation.
-
-[Compact remote role reuse](protocol/performance.md#reusing-compact-remote-roles-november-11-2026)
-records repeated role-loading removal, committed input invalidation and enriched background-budget warnings.
-
-[Traffic ownership and market summaries](protocol/performance.md#traffic-ownership-and-market-summaries-november-10-2026)
-records prepared traffic actions, committed market views, measured invalidation costs and latency acceptance.
-
-[Bot queue throughput](protocol/performance.md#bot-queue-throughput-november-10-2026) records scheduler, travel and remote cleanup costs
-and the sustained replay.
-
-[Player Upwell structures](protocol/structures.md) records all-hull lifecycle support, dockable services,
-structure timing settings, automated validation and the remaining specialized systems.
-
-[Project overview and build instructions](../README.md)
-
-[The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
-saved signature counts, known/unknown ice fields and activities with empty directories.
-[Agents & Missions browsing and actions](protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
-records the Agent Finder, mission-card previews and supported conversation/journal integration.
-
-[Checkpoint copy outside system ownership](protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
-records milestone 5 coherent capture, independently measured copy/projection and queued database writes.
-
-[Tiered simulation and detail retention](protocol/performance.md#tiered-simulation-and-detail-retention-november-10-2026)
-records milestone 4 remote deadlines, resumable activation and safe scene eviction.
-
-[Independent system ownership](protocol/performance.md#independent-system-ownership-november-10-2026)
-records milestone 3 runtime ownership, persistence handoffs, traffic-refresh recovery and concurrent session validation.
-
-[Classified transactions and scheduler reuse](protocol/performance.md#classified-transactions-and-scheduler-reuse-november-10-2026)
-records milestone 2 projection isolation, committed invalidation, shared views and deadline checks.
-
-[Incremental population admission](protocol/performance.md#incremental-population-admission-november-10-2026) moves home and gate-visitor creation off live entry and commits one founder per background step.
-
-[Shared-owner stall relief](protocol/performance.md#shared-owner-stall-relief-november-10-2026) records the frozen
-concurrent-player replay, ordered admission, grouped frame updates and remaining per-system ownership work.
-
-[World tuning](protocol/world-configuration.md) records the activity-based administrator page and saved-world gathering,
-reward, progression and industry multipliers, including restart activation and native compatibility.
-
-[Science jobs](protocol/industry.md#science-jobs-november-8-2026) records research, copying, invention, blueprint persistence and current production limits.
-
-[Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) cover module visibility, saved delays, covert warp and paid standard-drive spools.
+[Project overview and quick start](../README.md)
 
 ## Setup and hosting
 
 | Guide | Use it for |
 | --- | --- |
-| [Windows client setup](development-client.md) | Stage build 3662168, prepare the catalog, manage saves, launch locally and use developer travel. Optional gameplay procedures are labeled separately. |
-| [Saved world configuration](world-configuration.md) | Use the local Blazor editor or commands to browse catalogs, stage settings, compare history and restore revisions. |
-| [Desktop launcher hosting](launcher.md) | Register accounts, configure developer access, host remotely and provision native chat trust. |
-| [Docker deployment](docker.md) | Build and run the Linux server container with persistent data and TLS. |
+| [Windows client setup](development-client.md) | Stage the pinned client, build the catalog, start a world and move saves. |
+| [Desktop launcher and remote hosting](launcher.md) | Connect accounts, configure developer access and set up remote chat trust. |
+| [Docker deployment](docker.md) | Build and run the Linux server with persistent data and TLS. |
+| [Saved world configuration](world-configuration.md) | Set market presets, bot populations, progression and other world rules. |
+| [World wipe](world-wipe.md) | Reset a world while retaining accounts, and restore the backup if needed. |
+| [Modding](modding.md) | Author, install and activate skill, server and client mod packages. |
 
-[Modding](modding.md) covers portable packages, offline references and host composition.
+## Gameplay and implementation
+
+| Reference | Use it for |
+| --- | --- |
+| [Gameplay coverage](feature-notes.md) | Supported activities, features and current limitations. |
+| [Supported agent missions](missions.md) | Supported mission definitions and the catalog audit. |
+| [Capsuleer encounters](capsuleer-population.md) | Bot careers, organizations, traffic and player encounters. |
+| [Corporation features](corporations.md) | Membership, administration, offices, wallets and governance. |
+| [Protocol findings by topic](protocol.md) | Native client calls, source revisions, milestones and validation evidence. |
+| [Client RPC route inventory](client-routes/README.md) | Generated handler candidates, compatibility routes and client call sites. |
 
 ## Development
 
-[Celestial Show Info](protocol/information.md#celestial-show-info-resource-reads--november-9-2026) covers sun/planet
-resource reads, native cache versions and the continued evejs window audit.
-
-[Deadline-driven background work](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026) covers sleeping
-maintenance, early threat/arrival wakes, persistent retry deadlines and matched observer-frame measurements.
-
-[Agent header data](protocol/agents.md#corporation-to-agent-show-info-header--november-9-2026) and
-[courier package volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026) correct two remaining native Show Info paths found through evejs and the pinned client.
-
-[Spatial NPC scenes](protocol/performance.md#spatial-npc-scenes-november-9-2026) cover shared geometry, local contact
-preparation, preserved visibility and warp tracking, and dispersed-system replay measurements.
-
-[Application icons](../assets/icons/README.md) contains the coordinated server, launcher and SDK artwork and export instructions.
-
-[Protocol buffer and library evaluation](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
-covers pooled encoding, selected in-memory LINQ queries, bounded console logging and repeatable library benchmarks.
-
-[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) covers pathfinder history caching, weather baseline replies and simulated search/navigation requests.
-
-[Universal native search](protocol/characters.md#universal-native-search-november-9-2026) covers mixed categories, current saved names, catalog indexing and owner-name resolution.
-
-[Direct skill purchasing](protocol/characters.md#direct-skill-purchasing-november-11-2026) covers character-sheet purchases,
-remote injection, catalog prices and atomic wallet history.
-
-[Ice harvesting and public ice fields](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)
-covers native ice tools, complete-cycle collection, public scanner discovery and saved field replacement.
-
-[Gas harvesting and Mykoserocin nebulae](protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026)
-covers gas scoops/harvesters, hull bonuses, finite probe signatures and saved resource-site replacement.
-
-[Modulated ore mining and crystals](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
-covers the three static modulated miners, 66 ordinary crystals, matching ore lists and saved crystal wear.
-
-[Insider tools and item creation](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026) covers Skill Tool profiles,
-command discovery, skill injectors and correct reward destinations. The
-[redemption correction](protocol/characters.md#native-redemption-pairs-and-batched-training-queues-november-9-2026) fixes native claim
-arguments and the batch-SP training-queue crash.
-
-[Mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) cover native NPC anchors, fixed batteries,
-restored scenery, room-local coordinate transforms and saved-position compatibility across the 50 existing combat definitions.
-
-[Anomaly warp-in collision correction](protocol/combat.md#anomaly-warp-in-collision-correction--november-9-2026) fixes oversized
-ore/scenery collision spheres and non-interactable wreckage in Drone Assembly and Drone Cluster.
-[Hacking and archaeology](protocol/information.md#hacking-and-archaeology-november-9-2026) covers native analyzer minigames, persistent pirate exploration containers, earned industrial inputs and the pinned-build content export.
-
-[Tech II supply audit and refinery bootstrap](protocol/industry.md#tech-ii-supply-audit-and-refinery-bootstrap) records
-legitimate input sources and blockers across the moon, reaction and advanced manufacturing chains.
-
-[Catalog-wide station production](protocol/industry.md#catalog-wide-station-production-november-9-2026) records broad manufacturing, ancient-relic invention, facility restrictions and preserved material-source gaps. The [production catalog audit](production-catalog.json) records every manufacturing recipe and exclusion.
-
-[Combat-site layout corrections](protocol/combat.md#combat-site-layout-corrections--november-9-2026) cover native spawn anchors,
-fixed battery positions, 19 corrected report bindings and saved-encounter compatibility.
-
-[Probe scanning and combat signatures](protocol/information.md#probe-scanning-and-combat-signatures-november-9-2026) covers native probes, progressive discovery, the basic explorer production chain and distinct scanner IDs.
-
-[Multifit capability discovery](protocol/fitting.md#multifit-item-creation-capability-november-9-2026) and [directional scanner restoration during undocking](protocol/information.md#directional-scanner-during-undocking-november-9-2026) record the fitting-window and undocking dialog corrections.
-
-[CONCORD criminal response](protocol/combat.md#concord-criminal-response--november-9-2026) records persistent high-security enforcement, response timing approximations, capsule immunity and insurance exclusion.
-
-[Character portraits](protocol/characters.md#character-portraits-across-the-client--november-9-2026) covers native local rendering, public appearance reads and defaults for pilots without creator data.
-
-[Modding SDK and client packages](modding.md) covers offline skill authoring, C# project generation, Python client extensions, migration, staged activation and launcher installation. [Historical skill-editor records](world-configuration.md#skill-editor) retain the earlier implementation evidence.
-
-[Supported agent missions](missions.md) lists all 437 admitted combat, delivery, trade, mining and Data Center definitions and links the complete catalog blocker audit. The [implementation record](protocol/agents.md) covers multi-room encounters, keyed gates and ship restrictions, combat retrieval, mission containers, destructible objectives, standing-based access, rewards, delivery storylines and native protocol evidence.
-
-[Production-driven market progression](protocol/industry.md#production-driven-market-progression--november-8-2026) records claimed-production unlocks, high-security regional hubs, dated price snapshots and migration behavior.
-
-Directional scanner behavior, off-grid names and automated coverage are recorded in [directional scanning](protocol/information.md#directional-scanning-completion-november-8-2026).
-
-Native loyalty store behavior, offline offer provenance and exclusions are recorded in [LP stores](protocol/industry.md#loyalty-point-stores-november-8-2026).
-
-| Guide | Use it for |
-| --- | --- |
-| [Contributor guide](../AGENTS.md) | Project boundaries, code style, native service ownership, testing policy and milestone publishing. |
-| [Automated validation](testing.md) | Build order, focused test selection, infrastructure, reporting and documentation checks. |
-| [Formatting](../README.md#formatting) | Pinned formatters, coverage, width exceptions and editor integration. |
-| [Architecture and runtime](architecture.md) | Typed boundaries, initialization, dependency injection, diagnostics and resident checkpoints. |
-| [World wipe](world-wipe.md) | Administration control, retained accounts, mandatory backups and stopped-server restoration. |
-| [Typed catalog schemas](../src/Eden.Data/Catalog/CatalogSchema.g.json) | Generated dataset coverage, key/value shapes, source fingerprints and declared relationships for build 3662168. |
-| [Catalog adoption and remaining constants](catalog-adoption.md) | Shared access rules, build policy, compatibility exceptions and architectural checks. |
-| [Catalog migration inventory](catalog-runtime-audit.json) | Reproducible inventory of catalog access and content-specific decisions; regenerate with `tools/catalog/audit_runtime.py`. |
+- [Contributor guide](../AGENTS.md)
+- [Architecture and runtime](architecture.md)
+- [Automated validation](testing.md)
+- [Optional maintainer client checks](live-checks.md)
+- [Formatting](../README.md#formatting)
+- [Typed catalog adoption](catalog-adoption.md)
+- [Carbon licensing notes](carbon-license.md)
 
 ## Long-term design
 
-| Reference | Use it for |
-| --- | --- |
-| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and local administration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
-| [Capsuleer encounters](capsuleer-population.md) | Galaxy-wide station and gate traffic, local mining, saved rosters, shared observation and historical simulation evidence. |
-| [Bot development milestones](bot-development-plan.md) | Fresh-universe progression, first claims, fleet replacement, regional trade, offscreen industry and dedicated-server capacity. |
-| [Bot corporation recruitment, relocation, and identity](bot-corporation-plan.md) | Proposed recruitment decisions, multi-system rosters, operating-base moves, and names for bot-led corporations. |
+- [Bot development milestones](bot-development-plan.md)
+- [Original sandbox design and its successors](sandbox-vision.md)
 
-## Features and implementation records
+## Data and audit artifacts
 
-| Reference | Use it for |
-| --- | --- |
-| [Feature implementation notes](feature-notes.md) | Gameplay overview, coverage, limitations and examples. |
-| [Protocol records by topic](protocol.md) | Native call/reply findings, source revisions, milestone validation and historical client observations. |
-| [Cooperative fleets](protocol/fleets.md) | Fleet creation/invites, leadership, broadcasts, fleet chat, coordinated travel and current limits. |
-| [Corporation roadmap](corporations.md) | Published standalone corporation milestones and remaining scope. |
-| [Corporation inventory ownership](inventory-ownership.md) | Storage ownership, migration guarantees and the office/asset boundary. |
-| [Client RPC route inventory](client-routes/README.md) | Generated handler candidates, compatibility routes, call sites and repeatable auditing. |
-| [Economy creation settings](economy-settings.example.json) | Example saved price, manufacturing-index and renewal overrides for a new economy world. |
-| [Starter production audit](starter-production.json) | Pinned Merlin/Venture/Badger recipes, starter fits, NPC suppliers, populated ore sources and stargate routes; reproduce with `tools/Export-StarterProduction.py`. |
-| [Tech I hull inventory](tech-one-hulls.json) | Machine-readable hull cohorts and deferred roles. |
-| [Ship and module completion](feature-notes.md#ship-and-module-completion-program) | Ordered role milestones and production-backed coverage inventory. |
-| [Information modules and salvage](protocol/information.md) | Native scanners, targeting equipment, tractor movement, saved salvage and distribution policy. |
-| [Carbon licensing notes](carbon-license.md) | Reference-source licensing and attribution. |
+- [Generated catalog schemas](../src/Eden.Data/Catalog/CatalogSchema.g.json)
+- [Catalog runtime audit](catalog-runtime-audit.json)
+- [Example economy creation settings](economy-settings.example.json)
+- [Starter ship production audit](starter-production.json)
+- [Tech I hull inventory](tech-one-hulls.json)
+- [Ship content coverage](ship-content-coverage.json)
 
 ## Keeping documentation organized
 
-Use the root README for the project overview, quick start, build commands and formatting. Track gameplay coverage and limits in the
-[feature notes](feature-notes.md). Put detailed setup and launch instructions in the Windows client guide, hosting configuration
-in the launcher guide, and architecture details in the runtime guide.
-
-Add native protocol findings and milestone evidence to the relevant page under `docs/protocol/`, then add a link to the [protocol index](protocol.md). Preserve existing section anchors when moving records, and update repository links to their new destination. Keep dates, source revisions, automated results and live observations with their record. Older observations are historical evidence, not acceptance of later changes.
-
-The RPC inventory and hull JSON are generated audit artifacts; use their documented tools rather than reorganizing their rows by hand. Agents perform automated checks only unless live testing is explicitly requested.
-
-[Industrial NPC demand](protocol/industry.md#industrial-npc-demand--november-9-2026) adds resource and product buyers
-independent of production-unlocked NPC supply, with finite active-play recovery and value-based quantities.
-
-[NPC purchases from resting sell orders](protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026)
-consume competitively priced listings during active play and preserve finite demand, taxes, escrow and saved recovery.
-
-[Inventory estimates and reference market history](protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
-cover separate average/adjusted values and deterministic simulated history generated from the existing market snapshot.
+Use the root README for quick start, the guides for procedures, and the feature notes for current coverage.
+Put native protocol findings, source revisions and validation on the owning topic page and link them from the
+[protocol index](protocol.md). Preserve section anchors, dated results and live observations when moving records.
+The RPC inventory and hull JSON document how to regenerate their audit data.

@@ -1,17 +1,17 @@
 # Wormholes
 
-## Resident connections â€” November 16, 2026
+## Resident connections — November 16, 2026
 
 World version **171** replaces the three permanent reservoir links with resident connection slots. The first
 generation preserves their source/destination choices when the pinned catalog contains them. Ordinary known-space
 systems receive a replenished wandering connection. C1/C3 systems receive a known-space static; C2 receives a
 known-space and a J-space static; C4 receives two distinct J-space static types; C5/C6 receive a J-space static.
 Slot choices and density are Eden population policies, not Tranquility's per-system assignments. The ordinary-region
-allowlist excludes Jove and other special known-space regions from both source and destination pools. Only classes 1â€“9
+allowlist excludes Jove and other special known-space regions from both source and destination pools. Only classes 1–9
 participate; Thera, small-ship shattered and Drifter connections are outside this population policy.
 
 Type target classes, lifetime in minutes, total mass, daily mass regeneration and individual jump mass come from
-build **3662168** dogma attributes **1381â€“1385**. Initial total mass varies deterministically within 90â€“110% of
+build **3662168** dogma attributes **1381–1385**. Initial total mass varies deterministically within 90–110% of
 the catalog limit. Destinations are selected from sorted, class-matching catalog systems and exclude the origin.
 Source slots are populated on system observation. Incoming K162 signatures become visible after the first
 successful transit, or deterministically after activation plus five minutes once no more than fifteen hours remain.
@@ -36,7 +36,7 @@ warmed observation and transfer tests assert zero SQL commands/connections and z
 The original archive at `E:\EdenDev\3662168\.eden-original-code.ccp` was verified as SHA-256
 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
 `WormholeSetup` in `evegraphics/controllers/clientControllerRegistry.pyj` accepts **1.0, 0.7, 0.4** size bands
-and mass classes **1â€“4**, rather than kilograms. `infoContentBase.update_description_caption_and_sub_caption`
+and mass classes **1–4**, rather than kilograms. `infoContentBase.update_description_caption_and_sub_caption`
 uses these fields for Show Info. The headless `wormhole_client_test.py` executes 48 combinations of the actual
 native controller with inert model objects. No renderer, client session or game is started.
 

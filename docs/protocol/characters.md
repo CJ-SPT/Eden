@@ -983,7 +983,7 @@ References: [EVE University Character Creator](https://wiki.eveuniversity.org/Ch
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
-**Optional maintainer checks.** After restarting host and client, compare the same pilot across the selection card, character sheet, Neocom, chat and station guest list; compare a newly created pilot against its submitted appearance and reopen windows to check cached rendering. See [portrait checks](../development-client.md#check-character-portraits).
+**Optional maintainer checks.** After restarting host and client, compare the same pilot across the selection card, character sheet, Neocom, chat and station guest list; compare a newly created pilot against its submitted appearance and reopen windows to check cached rendering. See [portrait checks](../live-checks.md#check-character-portraits).
 
 
 ## Universal native search, November 9, 2026

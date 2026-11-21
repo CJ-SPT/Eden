@@ -2,9 +2,10 @@
 
 ## Scope and references
 
-Alliances are corporation associations with resident authority and checkpoint persistence. Wars and sovereignty are
-explicitly outside this implementation. The six milestones are foundation, formation/public identity, membership/governance,
-billing/dissolution, diplomacy/communication, and shared tools/affiliation consumers.
+Alliances are corporation associations with resident authority and checkpoint persistence. The original six milestones
+cover identity, governance, billing, diplomacy and shared services. Later records cover
+[sovereignty](sovereignty.md) and [Faction Warfare enlistment](faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026).
+Corporation war declarations remain open.
 
 Gameplay references: [UniWiki Alliances](https://wiki.eveuniversity.org/Alliances),
 [corporation diplomacy](https://wiki.eveuniversity.org/Corporation_diplomacy), and
