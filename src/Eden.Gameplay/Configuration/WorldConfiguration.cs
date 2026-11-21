@@ -123,6 +123,7 @@ public sealed record CapsuleerPopulationPolicy(
     public bool WreckSalvage { get; init; } = true;
     public int ActivePilotCap { get; init; }
     public bool PrepareUnvisitedSystems { get; init; } = true;
+    public int FreshFounderCohortsPerSystem { get; init; } = FreshCareerRules.DefaultFounderCohorts;
     public bool FreshCourierPilots { get; init; } = true;
     public bool FreshBountyPilots { get; init; } = true;
     public bool TradeGoodsFreight { get; init; } = true;

@@ -348,6 +348,10 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 ? ""
                 : "|work-systems=" + string.Join(',', policy.SystemAccess.Select(rule => $"{rule.Key}={rule.Value}"));
         string careerIdentity = database.Settings.FreshUniverse ? "|fresh-careers" : "";
+        if (database.Settings.FreshUniverse && policy.FreshFounderCohortsPerSystem != FreshCareerRules.DefaultFounderCohorts)
+        {
+            careerIdentity += FormattableString.Invariant($"|fresh-cohorts={policy.FreshFounderCohortsPerSystem}");
+        }
         if (database.Settings.FreshUniverse && (!policy.FreshCourierPilots || !policy.FreshBountyPilots || !policy.BeltRatting))
         {
             careerIdentity += $":{policy.FreshCourierPilots}:{policy.FreshBountyPilots && policy.BeltRatting}";

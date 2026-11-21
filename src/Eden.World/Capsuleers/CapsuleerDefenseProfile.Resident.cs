@@ -205,7 +205,8 @@ internal sealed partial record CapsuleerDefenseProfile
         bool rookieCombat =
             world.Settings.FreshUniverse
             && catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId == (int)HullClass.Corvette
-            && world.Set<SavedCapsuleerAgent>().Find(pilotId) is { Career: CapsuleerCareer.Hauling, Slot: FreshCareerRules.CombatSlot };
+            && world.Set<SavedCapsuleerAgent>().Find(pilotId) is { Career: CapsuleerCareer.Hauling } agent
+            && FreshCareerRules.IsCombatSlot(agent.Slot);
         return new CapsuleerDefenseProfile(
             rookieCombat
                 || (

@@ -16,6 +16,13 @@
                     max="@CapsuleerPopulationRules.MaximumActivePilotCap" aria-describedby="@field.Help" />
             </Control>
         </SettingField>
+        <SettingField Label="Fresh founder cohorts per system"
+                      Help="Each cohort adds eligible starter miners, couriers and bounty pilots. The active bot cap still applies.">
+            <Control Context="field">
+                <InputNumber id="@field.Input" @bind-Value="Form.FreshFounderCohortsPerSystem" min="@FreshCareerRules.DefaultFounderCohorts"
+                    max="@FreshCareerRules.MaximumFounderCohorts" aria-describedby="@field.Help" />
+            </Control>
+        </SettingField>
         <SettingField Label="Prepare bots in unvisited systems"
                       Help="In fresh universes, prepare eligible high-security systems ahead of player visits while someone plays.">
             <Control Context="field">

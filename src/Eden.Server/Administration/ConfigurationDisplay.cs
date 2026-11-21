@@ -74,6 +74,7 @@ internal static class ConfigurationDisplay
         ["capsuleers.enabled"] = "Player bots",
         ["capsuleers.activePilotCap"] = "Active bot cap",
         ["capsuleers.prepareUnvisitedSystems"] = "Prepare bots in unvisited systems",
+        ["capsuleers.freshFounderCohortsPerSystem"] = "Fresh founder cohorts per system",
         ["capsuleers.freshCourierPilots"] = "Dedicated courier pilots",
         ["capsuleers.freshBountyPilots"] = "Dedicated bounty hunters",
         ["capsuleers.tradeGoodsFreight"] = "Carry trade goods on civilian routes",

@@ -89,6 +89,10 @@ public sealed class SettingsForm
     [Display(Name = "Active bot cap")]
     public int ActivePilotCap { get; set; }
     public bool PrepareUnvisitedSystems { get; set; }
+
+    [Range(FreshCareerRules.DefaultFounderCohorts, FreshCareerRules.MaximumFounderCohorts)]
+    [Display(Name = "Fresh founder cohorts per system")]
+    public int FreshFounderCohortsPerSystem { get; set; } = FreshCareerRules.DefaultFounderCohorts;
     public bool FreshCourierPilots { get; set; }
     public bool FreshBountyPilots { get; set; }
     public bool TradeGoodsFreight { get; set; }
@@ -375,6 +379,7 @@ public sealed class SettingsForm
             BotWreckSalvage = settings.Capsuleers.WreckSalvage,
             ActivePilotCap = settings.Capsuleers.ActivePilotCap,
             PrepareUnvisitedSystems = settings.Capsuleers.PrepareUnvisitedSystems,
+            FreshFounderCohortsPerSystem = settings.Capsuleers.FreshFounderCohortsPerSystem,
             FreshCourierPilots = settings.Capsuleers.FreshCourierPilots,
             FreshBountyPilots = settings.Capsuleers.FreshBountyPilots,
             TradeGoodsFreight = settings.Capsuleers.TradeGoodsFreight,
@@ -468,6 +473,7 @@ public sealed class SettingsForm
                 WreckSalvage = BotWreckSalvage,
                 ActivePilotCap = ActivePilotCap,
                 PrepareUnvisitedSystems = PrepareUnvisitedSystems,
+                FreshFounderCohortsPerSystem = FreshFounderCohortsPerSystem,
                 FreshCourierPilots = FreshCourierPilots,
                 FreshBountyPilots = FreshBountyPilots,
                 TradeGoodsFreight = TradeGoodsFreight,

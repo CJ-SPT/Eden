@@ -25,6 +25,9 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerProvisioner
 {
+    // Additional fresh miners keep a disjoint key range, including across future cohorts.
+    private const int AdditionalMinerIdStride = 16;
+
     internal CapsuleerProvisioningTurn Provision(
         int systemId,
         CatalogDbContext catalog,
@@ -86,7 +89,7 @@ internal sealed partial class CapsuleerProvisioner
         var miningRoster =
             policy.Enabled && policy.Miners && origins.Length > 0 && mining.Eligibility == CapsuleerEligibility.Eligible
                 ? fresh
-                    ? new CapsuleerMiningHull[StarterIndustryRules.CrewSize]
+                    ? new CapsuleerMiningHull[FreshCareerRules.FounderSlots(policy)]
                     : CapsuleerProvisioningCatalog.MiningRoster(catalog, mining, seed)
                 : [];
         var newMiners = Enumerable
@@ -111,13 +114,14 @@ internal sealed partial class CapsuleerProvisioner
             }
         }
 
-        var rookieSlots = new[]
-        {
-            (Slot: FreshCareerRules.CourierSlot, Route: freshRoutes?.Courier),
-            (Slot: FreshCareerRules.CombatSlot, Route: freshRoutes?.Combat),
-        }
-            .Where(entry => entry.Route is not null && FreshCareerRules.AllowsFounder(entry.Slot, policy))
-            .ToArray();
+        var rookieSlots = freshRoutes is null
+            ? []
+            : Enumerable
+                .Range(0, FreshCareerRules.FounderSlots(policy))
+                .Where(slot => FreshCareerRules.AllowsFounder(slot, policy))
+                .Select(slot => (Slot: slot, Route: FreshCareerRules.IsCombatSlot(slot) ? freshRoutes.Combat : freshRoutes.Courier))
+                .Where(entry => entry.Route is not null)
+                .ToArray();
         if (summary is null)
         {
             summary = new() { SystemId = systemId };
@@ -164,6 +168,16 @@ internal sealed partial class CapsuleerProvisioner
         long? createdPilot = null;
         bool pending = awaitingOre;
         int attempted = Math.Min(newMiners.Length, maximumFounders);
+        if (
+            fresh
+            && maximumFounders == 1
+            && newMiners.Length > 0
+            && newSlots.Length > 0
+            && newSlots[0] / FreshCareerRules.SlotsPerCohort < newMiners[0] / FreshCareerRules.SlotsPerCohort
+        )
+        {
+            attempted = 0;
+        }
         foreach (int slot in newMiners.Take(attempted))
         {
             long? added = CreateFounder(
@@ -254,6 +268,11 @@ internal sealed partial class CapsuleerProvisioner
         );
         world.SaveChanges();
     }
+
+    private static int MinerCommunityId(int system, int slot, bool fresh) =>
+        slot == 0 ? system
+        : fresh && slot >= FreshCareerRules.SlotsPerCohort ? int.MinValue + checked(system * AdditionalMinerIdStride + slot)
+        : -checked(system * (CapsuleerMiningRules.MaximumCrew - 1) + slot);
 
     private long? CreateFounder(
         WorldAction world,
@@ -411,8 +430,7 @@ internal sealed partial class CapsuleerProvisioner
             world.Add(
                 new SavedCapsuleerCommunity
                 {
-                    // Slot zero keeps its historic key. Additional rows use a disjoint range.
-                    Id = slot == 0 ? site.SystemId : -checked(site.SystemId * (CapsuleerMiningRules.MaximumCrew - 1) + slot),
+                    Id = MinerCommunityId(site.SystemId, slot, fresh),
                     PilotId = pilot,
                     Seed = (int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % int.MaxValue),
                     SchoolId = origin.SchoolId,

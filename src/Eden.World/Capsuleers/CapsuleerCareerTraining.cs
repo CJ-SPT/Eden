@@ -97,13 +97,12 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         {
             return new(plan);
         }
-        bool manager = world.Set<SavedCorporation>().Find(pilot.CorpId)?.CeoId == id || agent.Slot == StarterIndustryRules.ProducerSlot;
+        bool fresh = world.Settings.FreshUniverse;
+        bool primaryRole = fresh ? StarterIndustryRules.IsProducerSlot(agent.Slot) : agent.Slot == StarterIndustryRules.ProducerSlot;
+        bool manager = world.Set<SavedCorporation>().Find(pilot.CorpId)?.CeoId == id || primaryRole;
         bool factory =
             profession == CapsuleerProfession.Mining
-            && (
-                profile.CorporationId >= CorporationRules.FirstCorporationId
-                || world.Settings.FreshUniverse && agent.Slot == StarterIndustryRules.ProducerSlot
-            );
+            && (profile.CorporationId >= CorporationRules.FirstCorporationId || fresh && primaryRole);
         var focus = plan.NextFocus;
         for (int turn = 0; turn < 3; turn++, focus = CapsuleerCareerTrainingRules.Next(focus))
         {

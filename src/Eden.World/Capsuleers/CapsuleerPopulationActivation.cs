@@ -27,13 +27,17 @@ internal static class CapsuleerPopulationActivation
             .Where(community => policy.CanWork(catalog.Definitions, community.Key))
             .SelectMany(community =>
             {
+                if (fresh)
+                {
+                    return community.Where(agent =>
+                        agent.Career == CapsuleerCareer.Mining
+                            ? FreshCareerRules.AllowsMiningFounder(agent.Slot, policy)
+                            : FreshCareerRules.AllowsFounder(agent.Slot, policy)
+                    );
+                }
                 var traffic = CapsuleerTrafficRoutes.Geography(catalog, community.Key);
                 int count = CapsuleerEncounterRules.Haulers(seed, community.Key, traffic.GateCount, traffic.StationCount, policy);
-                return community.Where(agent =>
-                    fresh && agent.Career == CapsuleerCareer.Hauling
-                        ? FreshCareerRules.AllowsFounder(agent.Slot, policy)
-                        : CapsuleerPopulationRules.Included(agent.Career, agent.Slot, count, policy)
-                );
+                return community.Where(agent => CapsuleerPopulationRules.Included(agent.Career, agent.Slot, count, policy));
             });
         if (policy.ActivePilotCap > 0)
         {
