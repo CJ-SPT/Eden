@@ -117,7 +117,7 @@ public sealed partial class CapitalTravelTests
                 Jan,
                 pilot.ActiveShip.Position!,
                 fixture.Clock.Now,
-                new SharedBayLootRoll(survives),
+                new FixedCapitalLootRoll(survives),
                 new CombatParty(90000003, null, 1000035, null, 601, null, 0, 1000)
             );
             world.Commit();
@@ -149,7 +149,7 @@ public sealed partial class CapitalTravelTests
         });
     }
 
-    private sealed class SharedBayLootRoll(bool survives) : IShipLootRoll
+    private sealed class FixedCapitalLootRoll(bool survives) : IShipLootRoll
     {
         public bool Survives() => survives;
     }

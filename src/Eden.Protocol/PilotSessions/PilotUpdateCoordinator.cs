@@ -101,7 +101,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyGateway = null,
     Eden.Protocol.Flight.CapitalTravelHandler? capital = null,
     Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null,
-    Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null
+    Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null,
+    ShipCloneMonitor? shipClones = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -157,6 +158,7 @@ internal sealed class PilotUpdateCoordinator(
         corporationWallet.Enter(context);
         fleets.Advance(context);
         capital?.Advance(context);
+        shipClones?.Advance(context);
         chat.Advance(context);
         guests.Advance(context);
         trades.Advance(context);
@@ -340,6 +342,7 @@ internal sealed class PilotUpdateCoordinator(
             corporationContacts.Advance(context);
             fleets.Advance(context);
             capital?.Advance(context);
+            shipClones?.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
             trades.Advance(context);

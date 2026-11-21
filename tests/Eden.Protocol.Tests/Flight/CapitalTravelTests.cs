@@ -1156,7 +1156,10 @@ public sealed partial class CapitalTravelTests
             Context.Select(pilot);
             var updates = services.GetRequiredService<PilotUpdateCoordinator>();
             updates.Enter(Context);
-            Context.Flight.Snapshot();
+            if (pilot.Position is not null || pilot.InStructure)
+            {
+                Context.Flight.Snapshot();
+            }
             Context.Flight.Updates.Clear();
             _tick = new(clock, updates, services.GetRequiredService<SkillHandler>(), services.GetRequiredService<IAsteroidField>());
             _output = new(

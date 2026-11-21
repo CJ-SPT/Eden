@@ -10,8 +10,14 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Characters;
 
 [Injectable]
-internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPrimes refits, PilotBrain brain, ImplantHandler implants)
-    : ISelectedPilotCallHandler
+internal sealed class JumpCloneHandler(
+    IPilotJumpClones clones,
+    DeferredRefitPrimes refits,
+    PilotBrain brain,
+    ImplantHandler implants,
+    IPilotShipClones shipClones,
+    ShipCloneSignal signal
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -32,6 +38,10 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     or "SetJumpCloneName"
                     or "DestroyInstalledClone"
                     or "CloneJump"
+                    or "GetShipCloneState"
+                    or "OfferShipCloneInstallation"
+                    or "AcceptShipCloneInstallation"
+                    or "CancelShipCloneInstallation"
                 )
         )
         {
@@ -49,7 +59,8 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                 case ("GetCloneState", []):
                     return new JumpCloneState(clones.Read(pilot));
                 case ("GetPriceForClone", []):
-                    return (double)clones.Price(pilot) / MarketDefinitions.CentsPerIsk;
+                    long cents = context.Pilot.Position is null ? clones.Price(pilot) : shipClones.OfferPrice(pilot);
+                    return (double)cents / MarketDefinitions.CentsPerIsk;
                 case ("ValidateInstallJumpClone", []):
                     return new JumpCloneInstallValidation(clones.InstallLimit(pilot), clones.Read(pilot).Clones.Count);
                 case ("InstallCloneInStation", []):
@@ -62,10 +73,41 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     context.Notifications.Add(new JumpCloneCacheInvalidated());
                     return PilotCallResult.None;
                 case ("DestroyInstalledClone", [long id]):
-                    Changed(context, clones.Destroy(pilot, id));
+                    var removed = clones.Destroy(pilot, id);
+                    if (removed.VatHostId is long host)
+                    {
+                        signal.Send(removed.PilotId, new JumpCloneCacheInvalidated());
+                        signal.Send(host, new ShipCloneCacheInvalidated(removed.LocationId, removed.PilotId));
+                    }
+                    else
+                    {
+                        Changed(context, (int)removed.LocationId);
+                    }
                     return PilotCallResult.None;
-                case ("CloneJump", [long station, long id, var price, var confirmed]) when station is > 0 and <= int.MaxValue:
-                    _ = confirmed switch
+                case ("GetShipCloneState", []):
+                    return new CompatibilityRowset(
+                        ["jumpCloneID", "ownerID", "locationID"],
+                        shipClones.ShipClones(pilot, context.Pilot.ShipId).Select(clone => new ShipCloneRow(clone)).ToArray()
+                    );
+                case ("OfferShipCloneInstallation", [long target]):
+                    var offer = shipClones.Offer(pilot, context.Pilot.ShipId, target);
+                    signal.Send(target, new ShipCloneOfferChanged("OnShipJumpCloneInstallationOffered", offer));
+                    return PilotCallResult.None;
+                case ("AcceptShipCloneInstallation", []):
+                    var installedInShip = shipClones.Accept(pilot, context.Pilot.ShipId);
+                    NotifyOffer(installedInShip.Offer, "OnShipJumpCloneInstallationDone");
+                    signal.Send(installedInShip.Offer.HostId, new ShipCloneCacheInvalidated(installedInShip.Offer.ShipId, pilot));
+                    context.Notifications.Add(new JumpCloneCacheInvalidated());
+                    Balance(context, installedInShip.BalanceCents);
+                    return PilotCallResult.None;
+                case ("CancelShipCloneInstallation", []):
+                    if (shipClones.Cancel(pilot) is { } canceled)
+                    {
+                        NotifyOffer(canceled, "OnShipJumpCloneInstallationCanceled");
+                    }
+                    return PilotCallResult.None;
+                case ("CloneJump", [long location, long id, var price, var confirmed]) when location > 0:
+                    bool accepted = confirmed switch
                     {
                         bool flag => flag,
                         0L => false,
@@ -82,9 +124,28 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     {
                         throw new InvalidDataException("Request the current jump clone fee before jumping.");
                     }
-                    var transfer = clones.Jump(pilot, context.Pilot.ShipId, (int)station, id, JumpCloneRules.FeeCents);
+                    bool mobile = clones.Read(pilot).Clones.Any(body => body.Id == id && body.ShipId == location);
+                    if (mobile && !accepted)
+                    {
+                        return new PilotCallResult.NamedFailure("JumpCheckIntoShip", new ShipCloneConfirmation(location));
+                    }
+                    JumpCloneTransfer transfer;
+                    if (mobile)
+                    {
+                        var arrival = shipClones.JumpToShip(pilot, context.Pilot.ShipId, location, id, JumpCloneRules.FeeCents);
+                        transfer = arrival.Transfer;
+                        signal.Send(arrival.HostId, new ShipCloneCacheInvalidated(location, pilot));
+                    }
+                    else
+                    {
+                        transfer = clones.Jump(pilot, context.Pilot.ShipId, checked((int)location), id, JumpCloneRules.FeeCents);
+                    }
                     refits.Clear();
                     context.ChangeShip(transfer.Pilot);
+                    if (mobile)
+                    {
+                        context.Flight.Snapshot();
+                    }
                     implants.Refresh(context);
                     foreach (var change in transfer.Changes)
                     {
@@ -98,10 +159,17 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     throw new InvalidDataException("Invalid jump clone request.");
             }
         }
-        catch (InvalidDataException error)
+        catch (Exception error) when (error is InvalidDataException or OverflowException)
         {
             return new PilotCallResult.Failure(error.Message);
         }
+    }
+
+    private void NotifyOffer(ShipCloneOffer offer, string name)
+    {
+        var notice = new ShipCloneOfferChanged(name, offer);
+        signal.Send(offer.HostId, notice);
+        signal.Send(offer.PilotId, notice);
     }
 
     private static void Balance(PilotCallContext context, long cents) =>
@@ -141,7 +209,18 @@ internal sealed record JumpCloneImplantRow(InstalledImplant Implant) : BlueModel
 
 internal sealed record JumpCloneRow(JumpClone Body) : BlueModel
 {
-    public override object ToBlue() => new object?[] { Body.Id, Body.StationId, new BlueUnicode(Body.Name) };
+    public override object ToBlue() =>
+        new object?[] { Body.Id, Body.ShipId is long ship ? ship : (object)Body.StationId, new BlueUnicode(Body.Name) };
+}
+
+internal sealed record ShipCloneRow(ShipClone Body) : BlueModel
+{
+    public override object ToBlue() => new object?[] { Body.Id, Body.PilotId, Body.ShipId };
+}
+
+internal sealed record ShipCloneConfirmation(long ShipId) : BlueModel
+{
+    public override object ToBlue() => new Dictionary<string, object?> { ["shipID"] = ShipId };
 }
 
 internal sealed record JumpCloneInstallValidation(int? Limit, int Count) : BlueModel

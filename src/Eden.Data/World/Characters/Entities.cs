@@ -205,7 +205,8 @@ public sealed class SavedJumpClone
     public long Id { get; set; }
     public long PilotId { get; set; }
     public bool Active { get; set; }
-    public int? StationId { get; set; }
+    public long? LocationId { get; set; }
+    public bool InShip { get; set; }
     public string Name { get; set; } = "";
 }
 

@@ -156,6 +156,7 @@ public enum DogmaAttributeId
     EntitySecurityMaxGain = 563,
     FastTalkMutator = 415,
     MaxJumpClones = 979,
+    MaxOperationalDistance = 715,
     CloneJumpCooldown = 1921,
     ShipMaintenanceBayCapacity = 908,
     ReactionTimePerLevel = 2660,

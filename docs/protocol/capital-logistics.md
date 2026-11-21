@@ -796,7 +796,7 @@ visual GUID. [CCP jump clones](https://support.eveonline.com/hc/en-us/articles/2
 
 The vat uses the resident capital mode transaction for the fuel debit, movement lock,
 module cooldown and dogma updates. The paid cycle resumes through checkpoint reopen and
-ends at the original deadline. Clone offers, installation and arrival are separate work.
+ends at the original deadline.
 
 **Automated validation.** The exact Rorqual activation and reopen case passed in 7.99 seconds.
 It checks fuel refusal, a one-unit debit, immobilization, refusal to pay again while active,
@@ -804,6 +804,39 @@ the native module event and recovery of the ship's speed at the saved deadline. 
 capital modes, Rorqual services, micro jump and hull coverage filter passed 20 tests in
 28.81 seconds after a 12.74-second build. Both Python suites, formatting and `git diff --check`
 passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Mobile jump clones
+
+Build 3662168 `clonejumpsvc.pyj` uses the bound `jumpCloneSvc` for
+`GetShipCloneState`, `OfferShipCloneInstallation`, `AcceptShipCloneInstallation`,
+`CancelShipCloneInstallation` and `CloneJump`. `shipconfig.pyj` reads the
+`jumpCloneID`, `ownerID` and `locationID` rows and displays the fitted hull's
+`maxJumpClones`. The pinned hulls define their operating range and base capacity.
+Cloning Facility Operation effects 2411 and 3313 increase capacity by the trained
+15 percent per level. EVE.js `services/station/jumpCloneRuntime.js` corroborates
+the invitation notifications, confirmation and capsule arrival.
+[CCP jump clones](https://support.eveonline.com/hc/en-us/articles/203217202-Jump-Clones)
+
+The host starts a paid vat cycle and invites a nearby pilot. Acceptance rechecks
+the active cycle, surface range, host capacity, one clone per guest aboard that hull,
+Infomorph skills and funds. The guest pays 900,000 ISK to the host atomically with
+installation. Schema 212 records the new clone's containing hull and preserves bodies
+already saved in stations. The invitation expires after two minutes and is session state.
+
+To use a mobile clone, the pilot confirms the jump from a capsule docked at an NPC station.
+The destination vat must be active and the regular remote clone cooldown applies.
+The pilot pays 900,000 ISK, leaves their previous body and implants at the source,
+and arrives in a capsule near the host. Host loss destroys the clones that were still
+stored aboard. Upwell cloning-center installation is a separate flow.
+
+**Automated validation.** The four exact vat and station compatibility cases passed in
+10.56 seconds. The final clone service, implant, capsule combat, skill extraction,
+maintenance-bay loss and migration filter passed 117 tests in 60.98 seconds after a
+1.22-second build. It omitted the capsule rollback theory with the pre-existing
+resident fixture failure recorded in the covert travel section. Both Python suites,
+formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
@@ -817,7 +850,7 @@ passed.
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
-| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Authorized pilots can store and board their own ships through shared maintenance bays. Clone bays and fresh-world resupply remain open. |
+| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Authorized pilots can store and board their own ships through shared maintenance bays. Rorqual and Titan clone vats install clones for invited pilots and receive capsule arrivals. Fresh-world resupply remains open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.

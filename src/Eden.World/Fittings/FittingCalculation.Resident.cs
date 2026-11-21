@@ -553,6 +553,11 @@ internal sealed partial record FittingCalculation
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
             .Concat(
+                hull.GroupId is (int)HullClass.Titan or (int)HullClass.CapitalIndustrial
+                    ? [Eden.Gameplay.Flight.CapitalModeRules.CloningFacilityOperation]
+                    : []
+            )
+            .Concat(
                 Eden.Gameplay.Flight.CapitalTravelRules.JumpDrive(hull.GroupId)
                     ?
                     [

@@ -190,7 +190,7 @@ public sealed class SkillExtractionTests
         {
             var body = world.Set<SavedJumpClone>().Single(c => c.PilotId == SkillExtractionTestData.Pilot && c.Active);
             body.Active = false;
-            body.StationId = HomeStationTestData.Origin;
+            body.LocationId = HomeStationTestData.Origin;
             world.SaveChanges();
             world.Add(new SavedJumpClone { PilotId = SkillExtractionTestData.Pilot, Active = true });
             world.SaveChanges();
@@ -229,7 +229,7 @@ public sealed class SkillExtractionTests
         {
             for (int i = 0; i < count; i++)
             {
-                world.Add(new SavedJumpClone { PilotId = SkillExtractionTestData.Pilot, StationId = HomeStationTestData.Origin });
+                world.Add(new SavedJumpClone { PilotId = SkillExtractionTestData.Pilot, LocationId = HomeStationTestData.Origin });
             }
             world.SaveChanges();
         }

@@ -5,6 +5,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
@@ -20,8 +21,14 @@ using Eden.World.Storage;
 namespace Eden.World.Characters;
 
 [Injectable]
-internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock, PilotTrainingStore training)
-    : IPilotJumpClones
+internal sealed partial class PilotJumpCloneStore(
+    WorldDatabase database,
+    SqliteWorld lookup,
+    TimeProvider clock,
+    PilotTrainingStore training,
+    IPilotCombatPresence presence,
+    ShipCloneOffers offers
+) : IPilotJumpClones, IPilotShipClones
 {
     private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
@@ -102,7 +109,10 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
                 var bodies = world
                     .Filter<SavedJumpClone>(c => c.PilotId == pilotId && !c.Active)
                     .OrderBy(c => c.Id)
-                    .Select(c => new JumpClone(c.Id, c.StationId!.Value, c.Name))
+                    .AsEnumerable()
+                    .Select(c =>
+                        c.InShip ? new JumpClone(c.Id, 0, c.Name, c.LocationId) : new JumpClone(c.Id, (int)c.LocationId!.Value, c.Name)
+                    )
                     .ToArray();
                 var ids = bodies.Select(c => c.Id).ToArray();
                 return new(bodies, world.Set<SavedJumpCloneTimer>().Find(pilotId)?.Time)
@@ -186,7 +196,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             JumpCloneRules.FeeCents,
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );
-        var clone = world.Add(new SavedJumpClone { PilotId = pilotId, StationId = station.Id }).Entity;
+        var clone = world.Add(new SavedJumpClone { PilotId = pilotId, LocationId = station.Id }).Entity;
         world.SaveChanges();
         payment.CloneId = clone.Id;
         world.SaveChanges();
@@ -209,16 +219,24 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         transaction.Commit();
     }
 
-    public int Destroy(long pilotId, long cloneId)
+    public JumpCloneRemoval Destroy(long pilotId, long cloneId)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         var world = transaction.World;
-        var clone = Owned(world, pilotId, cloneId);
-        int station = clone.StationId!.Value;
+        var pilot = Pilot(world, pilotId);
+        var clone = world.Set<SavedJumpClone>().Find(cloneId);
+        if (
+            clone is not { Active: false, LocationId: long location }
+            || clone.PilotId != pilotId && (!clone.InShip || location != pilot.ActiveShipId)
+        )
+        {
+            throw new InvalidDataException("That installed jump clone is unavailable to your pilot.");
+        }
+        long? host = clone.InShip ? world.Ships.Find(location)?.OwnerId : null;
         world.Remove(clone);
         world.SaveChanges();
         transaction.Commit();
-        return station;
+        return new(clone.PilotId, location, host);
     }
 
     internal static void ResetActive(WorldDbContext world, long pilotId)
@@ -244,7 +262,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             throw new InvalidDataException("Leave your ship and jump from your current capsule.");
         }
         var incoming = Owned(world, pilotId, cloneId);
-        if (incoming.StationId != stationId)
+        if (incoming.InShip || incoming.LocationId != stationId)
         {
             throw new InvalidDataException("The jump clone is not at that destination.");
         }
@@ -273,22 +291,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
                 }
             )
             .Entity;
-        training.ChangeAttributes(
-            world,
-            pilotId,
-            () =>
-            {
-                var outgoing =
-                    world.Filter<SavedJumpClone>(c => c.PilotId == pilotId && c.Active).SingleOrDefault()
-                    ?? world.Add(new SavedJumpClone { PilotId = pilotId }).Entity;
-                outgoing.Active = false;
-                outgoing.StationId = source.Id;
-                // Release the filtered unique active-body key before activating the target.
-                world.SaveChanges();
-                incoming.Active = true;
-                incoming.StationId = null;
-            }
-        );
+        SwapBodies(world, pilotId, incoming, source.Id);
         if (source.Id != stationId)
         {
             timer ??= world.Add(new SavedJumpCloneTimer { PilotId = pilotId }).Entity;
@@ -308,4 +311,23 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         transaction.Commit();
         return new(activePilot, [new(previous with { Quantity = 0 }, previous), new(item, null)], payment.BalanceCents, source.Id);
     }
+
+    private void SwapBodies(WorldAction world, long pilotId, SavedJumpClone incoming, int sourceStationId) =>
+        training.ChangeAttributes(
+            world,
+            pilotId,
+            () =>
+            {
+                var outgoing =
+                    world.Filter<SavedJumpClone>(c => c.PilotId == pilotId && c.Active).SingleOrDefault()
+                    ?? world.Add(new SavedJumpClone { PilotId = pilotId }).Entity;
+                outgoing.Active = false;
+                outgoing.LocationId = sourceStationId;
+                // Release the filtered unique active-body key before activating the target.
+                world.SaveChanges();
+                incoming.Active = true;
+                incoming.LocationId = null;
+                incoming.InShip = false;
+            }
+        );
 }

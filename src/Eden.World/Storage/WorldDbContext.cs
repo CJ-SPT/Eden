@@ -289,12 +289,13 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<SavedJumpClone>().ToTable("WorldJumpClone").HasKey(clone => clone.Id);
         model.Entity<SavedJumpClone>().HasOne<Pilot>().WithMany().HasForeignKey(clone => clone.PilotId);
         model.Entity<SavedJumpClone>().HasIndex(clone => clone.PilotId).IsUnique().HasFilter("Active = 1");
+        model.Entity<SavedJumpClone>().HasIndex(clone => clone.LocationId).HasFilter("InShip = 1");
         model
             .Entity<SavedJumpClone>()
             .ToTable(table =>
                 table.HasCheckConstraint(
                     "CK_JumpClone_Location",
-                    "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
+                    "(Active = 1 AND LocationId IS NULL AND InShip = 0) OR (Active = 0 AND LocationId IS NOT NULL)"
                 )
             );
         model.Entity<SavedMailingList>().ToTable("WorldMailingList").HasKey(list => list.Id);
