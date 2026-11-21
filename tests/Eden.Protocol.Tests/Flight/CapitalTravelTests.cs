@@ -26,6 +26,7 @@ public sealed class CapitalTravelTests
     private const int Jan = 30001385;
     private const int JanStation = 60001714;
     private const int Rhea = 28844;
+    private const int Rapier = 11963;
     private const int Nitrogen = 17888;
     private const int LiquidOzone = 16273;
     private const int Cargo = 34;
@@ -103,6 +104,34 @@ public sealed class CapitalTravelTests
         Assert.Equal(JanStation, fixture.Db.Store.FindPilot(1000001)!.StationId);
         Assert.Contains(fixture.Inventory.List(freighterPilot, JanStation), item => item.TypeId == Cargo && item.Quantity == 14);
         Assert.Equal(beacon.Beacon.Id, fixture.Travel.Field(beacon.PilotId)?.Beacon.Id);
+    }
+
+    [Fact]
+    public async Task RapierStandardCynoAcceptsFleetJumpFreighter()
+    {
+        using Fixture fixture = new(emitterHull: Rapier, generator: CapitalTravelRules.StandardGenerator);
+        using Client freighter = fixture.Select(1000001);
+        using Client emitter = fixture.Select(1000002);
+        var field = fixture.Light(emitter);
+        Assert.Equal(CapitalTravelRules.StandardField, field.Beacon.TypeId);
+        Assert.Equal(910, Quantity(fixture, emitter, LiquidOzone));
+        Assert.Equal(fixture.Clock.Now, field.StartedAt);
+        Assert.Equal(5 * TimeSpan.TicksPerMinute, field.EndsAt - field.StartedAt);
+        Assert.Equal(field, Assert.Single(fixture.Travel.FleetFields(freighter.Pilot.PilotId)));
+        await freighter.TickAsync();
+        Assert.Contains(freighter.Packets, packet => ContainsText(packet, "OnFleetJumpBeaconModuleChange"));
+        Assert.IsType<PilotCallResult.Success>(fixture.Jump(freighter, field));
+        await freighter.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await freighter.TickAsync();
+        Assert.Equal(Jan, freighter.Pilot.SystemId);
+        Assert.Equal(12_587, Quantity(fixture, freighter, Nitrogen));
+
+        freighter.Dispose();
+        emitter.Dispose();
+        await fixture.Live.FlushAsync();
+        fixture.Reopen();
+        Assert.Equal(field, fixture.Travel.Field(field.PilotId));
     }
 
     [Fact]
@@ -191,7 +220,12 @@ public sealed class CapitalTravelTests
         internal long CargoId { get; }
         private bool _joined;
 
-        internal Fixture(int hull = Rhea, int isotope = Nitrogen, int emitterHull = (int)StarterShipType.Venture)
+        internal Fixture(
+            int hull = Rhea,
+            int isotope = Nitrogen,
+            int emitterHull = (int)StarterShipType.Venture,
+            int generator = CapitalTravelRules.IndustrialGenerator
+        )
         {
             Db = new(clock: Clock);
             var database = new WorldDatabase(Db.Path);
@@ -212,7 +246,7 @@ public sealed class CapitalTravelTests
             Train(second.PilotId, [.. HullRequirements(emitterHull), (CapitalTravelRules.CynosuralFieldTheory, 1)]);
             FreighterId = Board(first, hull);
             long venture = Board(second, emitterHull);
-            Module = Grant(second.PilotId, second.StationId, InventoryFlag.Hangar, CapitalTravelRules.IndustrialGenerator, 1);
+            Module = Grant(second.PilotId, second.StationId, InventoryFlag.Hangar, generator, 1);
             fitting.Fit(second.PilotId, [Module], second.StationId, (int)InventoryFlag.AutoFit);
             fitting.SetOnline(second.PilotId, venture, Module, true);
             Grant(second.PilotId, venture, InventoryFlag.Cargo, LiquidOzone, 1000);

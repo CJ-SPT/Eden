@@ -13,6 +13,7 @@ public sealed record CynosuralField(
     long ModuleId,
     long FleetId,
     int SystemId,
+    long StartedAt,
     long EndsAt,
     StaticSpaceObject Beacon
 );
@@ -38,6 +39,8 @@ public static class CapitalTravelRules
     // Build 3662168 client/types, client/typedogma and jumpFatigue/const.pyj.
     public const int IndustrialGenerator = 52694;
     public const int IndustrialField = 52696;
+    public const int StandardGenerator = 21096;
+    public const int StandardField = 21094;
     public const int GeneratorGroup = 658;
     public const int FieldGroup = 2020;
     public const int IndustrialCycleMilliseconds = 600_000;
@@ -47,6 +50,14 @@ public static class CapitalTravelRules
     public const int JumpDriveCalibration = 21611;
     public const int JumpFuelConservation = 21610;
     public const double LightYearMeters = 9_460_730_472_580_800;
+
+    public static int? ModuleField(int typeId) =>
+        typeId switch
+        {
+            IndustrialGenerator => IndustrialField,
+            StandardGenerator => StandardField,
+            _ => null,
+        };
 
     public static int Isotopes(double distance, double rate)
     {

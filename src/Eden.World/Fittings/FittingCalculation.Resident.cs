@@ -545,7 +545,7 @@ internal sealed partial record FittingCalculation
                     : Array.Empty<int>()
             )
             .Concat(
-                modules.Any(module => module.Item.TypeId == Eden.Gameplay.Flight.CapitalTravelRules.IndustrialGenerator)
+                modules.Any(module => Eden.Gameplay.Flight.CapitalTravelRules.ModuleField(module.Item.TypeId) is not null)
                     ? [Eden.Gameplay.Flight.CapitalTravelRules.CynosuralFieldTheory]
                     : Array.Empty<int>()
             )

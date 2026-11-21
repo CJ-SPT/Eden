@@ -25,7 +25,9 @@ internal sealed partial class ResidentEconomy
         double Y,
         double Z,
         float Radius,
-        double SpawnRadius
+        double SpawnRadius,
+        int TypeId,
+        long StartedAt
     );
 
     private void RegisterCapitalTravel()
@@ -68,7 +70,9 @@ internal sealed partial class ResidentEconomy
                         row.Y,
                         row.Z,
                         row.Radius,
-                        row.SpawnRadius
+                        row.SpawnRadius,
+                        row.TypeId,
+                        row.StartedAt
                     ),
                 row =>
                     new()
@@ -85,9 +89,11 @@ internal sealed partial class ResidentEconomy
                         Z = row.Z,
                         Radius = row.Radius,
                         SpawnRadius = row.SpawnRadius,
+                        TypeId = row.TypeId,
+                        StartedAt = row.StartedAt,
                     },
                 ProjectCynosuralFields,
-                "PilotId,ShipId,ModuleId,BeaconId,FleetId,SystemId,EndsAt,X,Y,Z,Radius,SpawnRadius",
+                "PilotId,ShipId,ModuleId,BeaconId,FleetId,SystemId,EndsAt,X,Y,Z,Radius,SpawnRadius,TypeId,StartedAt",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -101,7 +107,9 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(9),
                         reader.GetDouble(10),
                         reader.GetFloat(11),
-                        reader.GetDouble(12)
+                        reader.GetDouble(12),
+                        reader.GetInt32(13),
+                        reader.GetInt64(14)
                     ),
                 row => new(row.PilotId),
                 indexes:
@@ -150,13 +158,16 @@ internal sealed partial class ResidentEconomy
             world.Database.ExecuteSql(
                 $"""
                 DELETE FROM WorldCynosuralField WHERE PilotId IN (SELECT value FROM json_each({deleted}));
-                INSERT INTO WorldCynosuralField(PilotId,ShipId,ModuleId,BeaconId,FleetId,SystemId,EndsAt,X,Y,Z,Radius,SpawnRadius)
+                INSERT INTO WorldCynosuralField(
+                    PilotId,ShipId,ModuleId,BeaconId,FleetId,SystemId,EndsAt,X,Y,Z,Radius,SpawnRadius,TypeId,StartedAt)
                 SELECT value->>'PilotId',value->>'ShipId',value->>'ModuleId',value->>'BeaconId',value->>'FleetId',
-                    value->>'SystemId',value->>'EndsAt',value->>'X',value->>'Y',value->>'Z',value->>'Radius',value->>'SpawnRadius'
+                    value->>'SystemId',value->>'EndsAt',value->>'X',value->>'Y',value->>'Z',value->>'Radius',value->>'SpawnRadius',
+                    value->>'TypeId',value->>'StartedAt'
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(PilotId) DO UPDATE SET ShipId=excluded.ShipId,ModuleId=excluded.ModuleId,
                     BeaconId=excluded.BeaconId,FleetId=excluded.FleetId,SystemId=excluded.SystemId,EndsAt=excluded.EndsAt,
-                    X=excluded.X,Y=excluded.Y,Z=excluded.Z,Radius=excluded.Radius,SpawnRadius=excluded.SpawnRadius;
+                    X=excluded.X,Y=excluded.Y,Z=excluded.Z,Radius=excluded.Radius,SpawnRadius=excluded.SpawnRadius,
+                    TypeId=excluded.TypeId,StartedAt=excluded.StartedAt;
                 """
             );
         }

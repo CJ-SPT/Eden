@@ -115,7 +115,7 @@ public static class ModuleFittingRules
                         ),
                 ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
                 Sovereignty.EntosisRules.ModuleGroup => effects.Contains(Sovereignty.EntosisRules.Effect),
-                Flight.CapitalTravelRules.GeneratorGroup => typeId == Flight.CapitalTravelRules.IndustrialGenerator
+                Flight.CapitalTravelRules.GeneratorGroup => Flight.CapitalTravelRules.ModuleField(typeId) is not null
                     && effects.Contains(DogmaEffect.CynosuralGeneration),
                 Flight.CapitalTravelRules.EconomizerGroup => effects.Contains(DogmaEffect.JumpDriveEconomizer),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)

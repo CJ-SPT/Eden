@@ -25,8 +25,7 @@ Schema 193 records fields and timers. An offline emitter remains in space throug
 field survives a reconnect or restart while its anchor is valid. Eden's online-only fleet membership invalidates jump
 access when the emitter leaves or disconnects. Cargo isotopes can be carried separately and must be moved into the fuel
 bay before jumping. Placement uses the pinned 5 km spawn radius and checks static destination geometry. Arrival visuals
-and the precise behavior of the live game's beacon-loss race remain unverified. Standard and covert cynos, jammers and
-structure beacons are follow-up milestones.
+and the precise behavior of the live game's beacon-loss race remain unverified.
 
 The independent pinned input fixture can be regenerated with `tools/Export-CapitalTravelCatalog.py` against the
 build-3662168 catalog. Runtime and persistence tests provision and move the ships and items through the resident world.
@@ -51,12 +50,27 @@ FullyQualifiedName~CapitalTravelTests|FullyQualifiedName~TranslocationTests|Full
 **Optional maintainer checks.** Run the native Jita–Jan delivery. Verify the jump animation, capacitor gauge and
 timers after reconnect. Check beacon visibility and expiry from a third pilot.
 
+## Standard module cynos
+
+Standard Cynosural Field Generator I (`21096`) uses the same pinned activation effect (`2857`) as the industrial
+generator. Its field (`21094`) is in the jump freighter's compatibility list (`343`). Fitting and activation share the
+normal catalog checks, including the hull whitelist and Cynosural Field Theory. The pinned Rapier effects `2008` and
+`3526` reduce cycle time and ozone use. In the Jita–Jan fixture, a Rapier with Cynosural Field Theory I pays 90 Liquid
+Ozone for a five-minute standard cycle. The Rhea takes the native fleet jump and pays its normal drive costs.
+
+Schema 194 records the type and start of the paid field. Older industrial rows retain their existing identity and
+deadline. The exact `CapitalTravelTests.RapierStandardCynoAcceptsFleetJumpFreighter` case passed in 7.34 seconds,
+including the fleet notification, fuel charge, destination and equality of the field after checkpoint reopen.
+Capital travel, migration, detached checkpoints, ship coverage and fleet tests passed all 58 focused cases in 20.62
+seconds. Both Python validation suites passed all 17 cases.
+[CCP September 2019 release notes](https://www.eveonline.com/news/view/patch-notes-for-september-2019-release)
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
 | --- | --- |
 | **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
-| **2. Standard cynos and sovereignty navigation** | Admit standard cyno emitters and jump-freighter use of standard fields. Enable mobile beacons and inhibitors plus Pharolux beacons and Tenebrex jammers. Verify placement, warm-up, fuel and access, including the effect of a hub upgrade or jammer state change on travel. |
+| **2. Standard cynos and sovereignty navigation** | Standard module cynos and jump-freighter use of standard fields are implemented. Enable mobile beacons and inhibitors plus Pharolux beacons and Tenebrex jammers. Verify placement, warm-up, fuel and access, including the effect of a hub upgrade or jammer state change on travel. |
 | **3. Ansiblex jump gates** | Link two authorized endpoints and exercise paid access and route discovery. Prove that loss of an endpoint, access or sovereignty affects the next transfer and route read. |
 | **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
 | **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |

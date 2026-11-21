@@ -16,6 +16,8 @@ public sealed class SavedCynosuralField
     public long BeaconId { get; set; }
     public long FleetId { get; set; }
     public int SystemId { get; set; }
+    public int TypeId { get; set; }
+    public long StartedAt { get; set; }
     public long EndsAt { get; set; }
     public double X { get; set; }
     public double Y { get; set; }

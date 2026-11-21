@@ -69,7 +69,8 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         RequireReady(action, pilot, now);
         var item = action.Set<OwnedItem>().Find(moduleId);
         if (
-            item is not { TypeId: CapitalTravelRules.IndustrialGenerator, Online: true, Singleton: true }
+            item is not { Online: true, Singleton: true }
+            || CapitalTravelRules.ModuleField(item.TypeId) is not int fieldType
             || item.OwnerId != pilotId
             || item.LocationId != shipId
             || !InventoryDefinitions.IsHighSlot(item.FlagId)
@@ -81,7 +82,7 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
             )
         )
         {
-            throw new InvalidDataException("Fit and online an industrial cynosural field generator on your active ship.");
+            throw new InvalidDataException("Fit and online a supported cynosural field generator on your active ship.");
         }
         PilotSkillReader.CheckRequirements(action, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(action, catalog, moduleId, now);
@@ -90,14 +91,13 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         double maxSpeed = module.GetValueOrDefault(DogmaAttributeId.MaxVelocityActivationLimit);
         if (!double.IsFinite(speed) || speed < 0 || maxSpeed <= 0 || speed >= maxSpeed)
         {
-            throw new InvalidDataException("Slow down before activating the industrial cynosural field generator.");
+            throw new InvalidDataException("Slow down before activating the cynosural field generator.");
         }
         var ship = PilotFittingStore.ShipAttributes(action, catalog, pilot, calculation: fit);
         RequireLiving(action, pilot, ship, now);
         int ozone = checked((int)Math.Round(module[DogmaAttributeId.ConsumptionQuantity], 8));
         var fuel = Fuel(action, pilotId, shipId, InventoryFlag.Cargo, checked((int)module[DogmaAttributeId.ConsumptionType]), ozone);
-        var body =
-            catalog.FittingType(CapitalTravelRules.IndustrialField) ?? throw new InvalidDataException("Missing industrial cyno type.");
+        var body = catalog.FittingType(fieldType) ?? throw new InvalidDataException("Missing cynosural field type.");
         long ends = SpatialModuleRules.Deadline(now, module[DogmaAttributeId.Duration]);
         if (action.Set<ActiveFittedModule>().Find(moduleId) is { } oldCycle)
         {
@@ -120,6 +120,8 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         field.BeaconId = action.NextItemId();
         field.FleetId = fleets.Identity(pilotId)?.FleetId ?? 0;
         field.SystemId = system;
+        field.TypeId = fieldType;
+        field.StartedAt = now;
         field.EndsAt = ends;
         (field.X, field.Y, field.Z) = (position.X, position.Y, position.Z);
         field.Radius = (float)(body.Radius ?? 0);
@@ -264,7 +266,7 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         int origin = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         if (origin == field.SystemId || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId != (int)HullClass.JumpFreighter)
         {
-            throw new InvalidDataException("Use a jump freighter in a different system to jump to an industrial cyno.");
+            throw new InvalidDataException("Use a jump freighter in a different system to jump to a cyno.");
         }
         RequireCynoSystem(catalog, field.SystemId);
         RequireReady(world, pilot, now);
@@ -294,14 +296,14 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         RequireLiving(world, pilot, ship, now);
         long list = checked((long)ship[DogmaAttributeId.JumpDriveTargetBeaconTypeList]);
-        if (catalog.Read(CatalogData.Client.Typelist, list)?.IncludedTypeIDs?.Contains(CapitalTravelRules.IndustrialField) != true)
+        if (catalog.Read(CatalogData.Client.Typelist, list)?.IncludedTypeIDs?.Contains(field.TypeId) != true)
         {
-            throw new InvalidDataException("This ship cannot jump to an industrial cynosural field.");
+            throw new InvalidDataException("This ship cannot jump to that type of cynosural field.");
         }
         double distance = Center(catalog, origin).DistanceTo(Center(catalog, field.SystemId)) / CapitalTravelRules.LightYearMeters;
         if (!double.IsFinite(distance) || distance <= 0 || distance > ship[DogmaAttributeId.JumpDriveRange])
         {
-            throw new InvalidDataException("The industrial cynosural field is outside jump range.");
+            throw new InvalidDataException("The cynosural field is outside jump range.");
         }
         int isotopes = CapitalTravelRules.Isotopes(distance, ship[DogmaAttributeId.JumpDriveConsumptionAmount]);
         int type = checked((int)ship[DogmaAttributeId.JumpDriveConsumptionType]);
@@ -358,7 +360,7 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
             || data.RegionID is 10000004 or 10000017 or 10000019 or 10000070
         )
         {
-            throw new InvalidDataException("Industrial cynos require eligible low-security or null-security space.");
+            throw new InvalidDataException("Cynos require eligible low-security or null-security space.");
         }
     }
 
@@ -386,10 +388,11 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
             row.ModuleId,
             row.FleetId,
             row.SystemId,
+            row.StartedAt,
             row.EndsAt,
             new(
                 row.BeaconId,
-                CapitalTravelRules.IndustrialField,
+                row.TypeId,
                 CapitalTravelRules.FieldGroup,
                 (int)InventoryCategory.Celestial,
                 0,
@@ -398,7 +401,7 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
             )
             {
                 Solid = false,
-                Name = "Industrial Cynosural Field",
+                Name = row.TypeId == CapitalTravelRules.IndustrialField ? "Industrial Cynosural Field" : "Cynosural Field",
             }
         );
 

@@ -132,7 +132,7 @@ internal static class HullCatalog
     private static bool Operational(ClientDogmaeffectsModifierInfoItem source) =>
         (
             source.SkillTypeID == (int)HullBonusSkill.CynosuralFieldTheory
-            && source.ModifiedAttributeID == (int)DogmaAttributeId.ConsumptionQuantity
+            && source.ModifiedAttributeID is (int)DogmaAttributeId.ConsumptionQuantity or (int)DogmaAttributeId.Duration
         )
         || HullBonusRules.Operational(
             Capability(source),

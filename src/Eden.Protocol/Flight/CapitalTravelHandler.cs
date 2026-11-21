@@ -79,7 +79,7 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
             || repeats is < 0 or > int.MaxValue
         )
         {
-            return new PilotCallResult.Failure("Choose an industrial cynosural field generator on your own ship.");
+            return new PilotCallResult.Failure("Choose a cynosural field generator on your own ship.");
         }
         var flight = context.Flight;
         flight.Checkpoint();
@@ -145,8 +145,8 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
             field.ShipId,
             null,
             DogmaEffect.CynosuralGeneration,
-            field.EndsAt - CapitalTravelRules.IndustrialCycleMilliseconds * TimeSpan.TicksPerMillisecond,
-            CapitalTravelRules.IndustrialCycleMilliseconds,
+            field.StartedAt,
+            (field.EndsAt - field.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
             0
         );
 }
