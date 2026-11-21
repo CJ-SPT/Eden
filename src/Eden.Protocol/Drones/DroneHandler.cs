@@ -210,14 +210,14 @@ internal sealed class DroneHandler(
         }
     }
 
-    public void Advance(PilotCallContext context)
+    public void Advance(PilotCallContext context, bool fighterJumpDue = false)
     {
         if (!context.Selected || !context.Flight.CanTarget)
         {
             return;
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        if (now < _nextTick)
+        if (now < _nextTick && !fighterJumpDue)
         {
             return;
         }

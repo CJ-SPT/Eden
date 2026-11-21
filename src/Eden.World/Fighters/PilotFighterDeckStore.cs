@@ -122,7 +122,7 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
                 var cycle = work?.FighterMobility;
                 return new FighterInSpace(item.FlagId, item.Id, item.TypeId, item.Quantity, pair.Drone.Activity)
                 {
-                    Mobility = cycle?.ReadyAt > now ? cycle : null,
+                    Mobility = cycle is { Destination: not null } || cycle?.ReadyAt > now ? cycle : null,
                     MobilityActive = cycle?.Active(now) == true,
                     Salvo = work?.FighterSalvo?.Refresh(now),
                     SalvoActive = work?.FighterSalvo?.Active(now) == true,
@@ -135,7 +135,14 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
                 };
             });
 
-    public void SetMobility(long pilotId, long shipId, IReadOnlyList<long> squadrons, bool activate, long now)
+    public void SetMobility(
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> squadrons,
+        bool activate,
+        long now,
+        SpacePosition? destination = null
+    )
     {
         if (squadrons.Count is < 1 or > FighterDeckRules.MaximumTubes || squadrons.Distinct().Count() != squadrons.Count)
         {
@@ -171,12 +178,26 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
             FighterMobilityCycle cycle;
             if (activate)
             {
-                if (work.FighterMobility?.ReadyAt > now)
+                if (work.FighterMobility is { Destination: not null } || work.FighterMobility?.ReadyAt > now)
                 {
                     throw new InvalidDataException("The fighter mobility ability is active or cooling down.");
                 }
+                bool microJump = mobility.Kind == FighterMobilityKind.MicroJumpDrive;
+                if (
+                    microJump != (destination is not null)
+                    || destination is { } point
+                        && (
+                            !(point.DistanceTo(new(drone.X, drone.Y, drone.Z)) <= mobility.JumpRange)
+                            || PilotDroneStore.FighterJumpDisrupted(action, id, now)
+                        )
+                    || drone.Activity == DroneActivity.ReturningToBay
+                )
+                {
+                    throw new InvalidDataException("Choose a point within the fighter's micro-jump range and clear any tackle.");
+                }
                 long ends = SpatialModuleRules.Deadline(now, mobility.DurationMilliseconds);
-                cycle = new(now, ends, SpatialModuleRules.Deadline(ends, mobility.CooldownMilliseconds));
+                var planned = destination is null ? null : new FighterJumpDestination(destination.X, destination.Y, destination.Z);
+                cycle = new(now, ends, SpatialModuleRules.Deadline(ends, mobility.CooldownMilliseconds), planned);
             }
             else
             {
@@ -184,7 +205,14 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
                 {
                     throw new InvalidDataException("That fighter ability is no longer active.");
                 }
-                cycle = new(0, now, SpatialModuleRules.Deadline(now, mobility.CooldownMilliseconds));
+                cycle =
+                    mobility.Kind == FighterMobilityKind.MicroJumpDrive
+                        ? work.FighterMobility! with
+                        {
+                            StartedAt = 0,
+                            Destination = null,
+                        }
+                        : new(0, now, SpatialModuleRules.Deadline(now, mobility.CooldownMilliseconds));
             }
             PilotDroneStore.WriteWork(drone, work with { FighterMobility = cycle });
         }

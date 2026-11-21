@@ -6,6 +6,7 @@ namespace Eden.Gameplay.Flight;
 public enum FighterMobilityKind
 {
     Microwarpdrive = 4,
+    MicroJumpDrive = 5,
     Afterburner = 9,
     EvasiveManeuvers = 13,
 }
@@ -16,10 +17,19 @@ public sealed record FighterMobility(
     double CooldownMilliseconds,
     double SpeedMultiplier,
     double SignatureMultiplier,
-    DamageVector? ShieldResonance
+    DamageVector? ShieldResonance,
+    double JumpRange = 0
 );
 
-public sealed record FighterMobilityCycle(long StartedAt, long EndsAt, long ReadyAt)
+public sealed record FighterJumpDestination(double X, double Y, double Z);
+
+public sealed record FighterMobilityCycle(
+    long StartedAt,
+    long EndsAt,
+    long ReadyAt,
+    FighterJumpDestination? Destination = null,
+    long JumpedAt = 0
+)
 {
     public bool Active(long now) => StartedAt > 0 && EndsAt > now;
 }

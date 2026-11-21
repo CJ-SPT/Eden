@@ -35,7 +35,7 @@ public interface IPilotFighterDeck
     IReadOnlyList<FighterLaunch> Launch(long pilotId, long shipId, IReadOnlyList<int> flags, long now);
     FighterTubeChange Load(long pilotId, long shipId, long stackId, int flag);
     FighterTubeChange Unload(long pilotId, long shipId, int flag);
-    void SetMobility(long pilotId, long shipId, IReadOnlyList<long> squadrons, bool activate, long now);
+    void SetMobility(long pilotId, long shipId, IReadOnlyList<long> squadrons, bool activate, long now, SpacePosition? destination = null);
 }
 
 public interface IPilotFighterOrders

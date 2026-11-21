@@ -15,6 +15,7 @@ internal static class FighterCombatCatalog
     // Pinned default for attribute 2189. Fighter hulls explicitly override it.
     internal const double DefaultAntiFighterResistance = 0.05;
     private const int HeavyAttackRole = 4;
+    private const int HeavyLongRangeRole = 5;
 
     internal static DroneProfile Profile(
         CatalogItemDefinition type,
@@ -32,7 +33,9 @@ internal static class FighterCombatCatalog
         if (
             source?.Published != 1
             || (
-                !superiority && (fighterClass, role) is not ((FighterClass.Light, LightAttackRole) or (FighterClass.Heavy, HeavyAttackRole))
+                !superiority
+                && (fighterClass, role)
+                    is not ((FighterClass.Light, LightAttackRole) or (FighterClass.Heavy, HeavyAttackRole or HeavyLongRangeRole))
             )
             || type.Mass is not > 0
             || type.Radius is not > 0

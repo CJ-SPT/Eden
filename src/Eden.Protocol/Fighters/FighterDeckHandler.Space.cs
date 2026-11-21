@@ -12,6 +12,11 @@ internal sealed partial class FighterDeckHandler
     private long _seenShip;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
+    internal bool MicroJumpDue(PilotCallContext context) =>
+        context.Selected
+        && _seenShip == context.Pilot.ShipId
+        && _seen.Any(squadron => squadron.Mobility is { Destination: not null } jump && jump.EndsAt <= Now);
+
     private PilotCallResult Command(PilotCallContext context, string method, object?[] args)
     {
         var flight = context.Flight;
@@ -61,6 +66,12 @@ internal sealed partial class FighterDeckHandler
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(squads.ToDictionary(id => id, _ => (object?)null));
+            case ("CmdActivateAbilitySlots", [var fighters, (long)FighterMobilityRules.Slot, var point]):
+                var jumping = ReadSelection(fighters);
+                deck.SetMobility(pilot.PilotId, pilot.ShipId, jumping, true, Now, ReadPoint(point));
+                Advance(context);
+                flight.RefreshDrones();
+                return new BlueMap<long, object?>(jumping.ToDictionary(id => id, _ => (object?)null));
             case ("CmdActivateAbilitySlots", [var fighters, (long)FighterDeckRules.SecondarySlot, long salvoTarget]):
                 var firing = ReadSelection(fighters);
                 targeting.Advance(context);
@@ -187,6 +198,20 @@ internal sealed partial class FighterDeckHandler
             throw new InvalidDataException("Choose distinct fighter identities.");
         }
         return selected;
+    }
+
+    private static SpacePosition ReadPoint(object? raw)
+    {
+        var point = BlueRead.Tuple(raw is List<object?> list ? list.ToArray() : raw, 3);
+        return new(Coordinate(point[0]), Coordinate(point[1]), Coordinate(point[2]));
+
+        static double Coordinate(object? value) =>
+            value switch
+            {
+                double number when double.IsFinite(number) => number,
+                long number => number,
+                _ => throw new InvalidDataException("Choose a finite fighter target point."),
+            };
     }
 }
 

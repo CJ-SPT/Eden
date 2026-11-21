@@ -124,6 +124,11 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             {
                 update(new DestinyCommand.OnDamageStateChange(drone.Id, drone.Health.DamageState()));
             }
+            if (drone.Mobility is { JumpedAt: > 0 } jump && old is not null && old.Mobility?.JumpedAt != jump.JumpedAt)
+            {
+                update(new DestinyCommand.SetBallPosition(drone.Id, drone.Position.X, drone.Position.Y, drone.Position.Z));
+                update(new DestinyCommand.SetBallVelocity(drone.Id, 0, 0, 0));
+            }
             if (old?.WorkEffect != drone.WorkEffect)
             {
                 if (old?.WorkEffect is { } previousWork)
@@ -170,6 +175,7 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         string? graphic = drone.Profile.Mobility?.Kind switch
         {
             FighterMobilityKind.Microwarpdrive => "effects.MicroWarpDrive",
+            FighterMobilityKind.MicroJumpDrive => "effects.MicroJumpDriveEngage",
             FighterMobilityKind.Afterburner => "effects.Afterburner",
             _ => null,
         };

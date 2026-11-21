@@ -16,7 +16,7 @@ internal static class FighterMobilityCatalog
     {
         var key = type.ToString(CultureInfo.InvariantCulture);
         var slot = catalog.Read(CatalogData.Client.Fighterabilitiesbytype, key)?.AbilitySlot1;
-        if (slot?.AbilityID is not (4 or 9 or 13))
+        if (slot?.AbilityID is not (4 or 5 or 9 or 13))
         {
             return null;
         }
@@ -42,6 +42,11 @@ internal static class FighterMobilityCatalog
                 Value(DogmaAttributeId.FighterAfterburnerSpeed),
                 0
             ),
+            FighterMobilityKind.MicroJumpDrive => (
+                Value(DogmaAttributeId.FighterMicroJumpDuration),
+                0,
+                Value(DogmaAttributeId.FighterMicroJumpSignature)
+            ),
             _ => (
                 Value(DogmaAttributeId.FighterEvasiveDuration),
                 Value(DogmaAttributeId.FighterEvasiveSpeed),
@@ -57,13 +62,15 @@ internal static class FighterMobilityCatalog
                     Value(DogmaAttributeId.FighterEvasiveThermalResonance)
                 )
                 : null;
+        double range = slot.Kind == FighterMobilityKind.MicroJumpDrive ? Value(DogmaAttributeId.FighterMicroJumpRange) : 0;
         if (
             !double.IsFinite(duration)
             || duration <= 0
             || !double.IsFinite(slot.Cooldown)
             || slot.Cooldown <= 0
             || !double.IsFinite(speed)
-            || speed <= 0
+            || speed < 0
+            || slot.Kind == FighterMobilityKind.MicroJumpDrive && (!double.IsFinite(range) || range <= 0)
             || !double.IsFinite(signature)
             || signature <= -100
             || resistance is not null && (!double.IsFinite(resistance.Total) || resistance.Total <= 0)
@@ -71,6 +78,6 @@ internal static class FighterMobilityCatalog
         {
             throw new InvalidDataException("Invalid fighter mobility attributes.");
         }
-        return new(slot.Kind, duration, slot.Cooldown, 1 + speed / 100, 1 + signature / 100, resistance);
+        return new(slot.Kind, duration, slot.Cooldown, 1 + speed / 100, 1 + signature / 100, resistance, range);
     }
 }

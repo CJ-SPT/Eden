@@ -283,7 +283,7 @@ internal sealed class PilotUpdateCoordinator(
         information.Advance(context);
         hacking?.Advance(context);
         capacitorBoosters.Advance(context);
-        drones.Advance(context);
+        drones.Advance(context, fighterDeck?.MicroJumpDue(context) == true);
         fighterDeck?.Advance(context);
         hardeners.Advance(context);
         signatureSuppression.Advance(context);

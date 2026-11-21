@@ -717,6 +717,29 @@ suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Long-range heavy fighter micro jumps
+
+Build 3662168 assigns Ametat, Termite, Antaeus and Gungnir I and II to the heavy
+long-range role. Their primary weapons use the pinned attack missile attributes.
+Slot one uses point-targeted Micro Jump Drive ability 5 and effect 6442. The
+range is 100 km, the spool is 10 seconds on T1 and eight on T2, and cooldown
+is 90 seconds. The signature increases by 150 percent during the spool.
+`fightersSvc.pyj` sends the target point with the slot activation request.
+EVE.js `fighterRuntime.js` corroborates the range check, teleport and motion correction.
+[CCP Fighter Controls](https://support.eveonline.com/hc/en-us/articles/207659599-Fighter-Controls)
+
+The squadron persists its destination and deadline while spooling. At the deadline,
+the resident owner relocates it once and publishes an absolute motion update.
+Fighter tackle can prevent the jump. Recall cancels the pending destination.
+The bomb launcher occupies slot two and has its own settlement.
+
+**Automated validation.** The two exact Ametat micro-jump cases passed in 12.70 seconds.
+The 22-case fighter, mobility, launch, secondary ability and resident drone filter passed
+in 28.90 seconds after an 18.18-second build. Both Python suites, formatting and
+`git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Fighter rocket and torpedo salvos
 
 Build 3662168 `fighterabilitiesbytype` assigns slot two to Heavy Rocket Salvo (ability 33)

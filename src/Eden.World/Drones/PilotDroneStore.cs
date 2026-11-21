@@ -462,6 +462,10 @@ internal sealed partial class PilotDroneStore(
                 CollectInterruptedMining(world, catalog, pilot, drone, now);
             }
             CancelWork(world, drone, preserveTackle: fighter && order != DroneOrder.ReturnToBay);
+            if (fighter && order == DroneOrder.ReturnToBay)
+            {
+                CancelFighterMicroJump(drone);
+            }
             if (workOrder)
             {
                 var previous = ReadWork(drone);
@@ -748,6 +752,7 @@ internal sealed partial class PilotDroneStore(
             if (fighterTube)
             {
                 AdvanceFighterTackle(world, catalog, drone, now);
+                CompleteFighterMicroJump(world, drone, now);
             }
             var contact = Contact(world, catalog, drone, now);
             var profile = contact.Profile;
