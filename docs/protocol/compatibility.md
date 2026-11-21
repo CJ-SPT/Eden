@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [EVE.js comparison for account and station clone reads](#evejs-comparison-for-account-and-station-clone-reads)
 - [EVE.js comparison for map, character and dungeon routes](#evejs-comparison-for-map-character-and-dungeon-routes)
 - [In-game text for routine rejections](#in-game-text-for-routine-rejections)
 - [Client RPC backlog inventory (November 5, 2026)](#client-rpc-backlog-inventory-november-5-2026)
@@ -15,6 +16,46 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## EVE.js comparison for account and station clone reads
+
+On November 21, 2026, five routes were verified against Eden `83f8629a`, local EVE.js **261108.1** (client build **3396210**),
+and the original build **3662168** client archive with SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The client call sites were disassembled as data.
+
+| Route | Pinned client call and Eden reply |
+| --- | --- |
+| `charUnboundMgr.GetNumCharacters()` | `CharacterCreationContainer.CheckSkipTutorial` compares the result to one. The resident roster returns only the authenticated account's character count. Prepared characters count until biomass completes. |
+| `userSvc.GetCreateDate()` | `newFeatureNotify.UserIsTooNew` passes the result to `gametime.GetDaysSinceWallclockTime`. Eden returns the authenticated account's saved creation FILETIME. EVE.js derives this value from the current character when available. |
+| `loginRewardFacilities.get_my_clone_grade()` | `SeasonalLoginCampaignService._get_my_clone_grade_from_sever` reads the same saved Alpha/Omega scalar as Eden's subscription service. |
+| `cache.GetServerVersionAndBuild()` | `BugReportingService.CollectData` unpacks version and build. Eden returns the tuple `(24.01, 3662168)` from the boot metadata shared with the compatibility handshake and login challenge. |
+| `jumpCloneSvc.GetStationCloneState()` | `CloneJump.GetStationClones` calls a location-bound moniker. The reply uses the existing jump-clone rowset (`jumpCloneID`, `locationID`, `cloneName`) filtered to the selected pilot's inactive clones at their current NPC station. Renaming a station clone invalidates the native station cache. In space or docked at an Upwell structure the rowset is empty. |
+
+Reference files under `server/src/services` are `character/charService.js` (`5128a5ebd2f2`),
+`user/userService.js` (`ef2e6cded872`), `campaign/loginRewardFacilitiesService.js` (`ecf0c54ea2fd`),
+`cache/cacheService.js` (`3345cd30287f`), `station/jumpCloneService.js` (`340aba96bd46`), and
+`station/jumpCloneRuntime.js` (`9a1082e0c456`). These are SHA-256 prefixes because the reference lacks Git metadata.
+[EVE University jump clones](https://wiki.eveuniversity.org/Jump_clones) ·
+[CCP daily login campaigns](https://support.eveonline.com/hc/en-us/articles/360007432240-Daily-Login-Campaigns)
+
+The personal map visit filter requires checkpointed per-character travel history. The PLEX vault balance requires
+authoritative account PLEX storage. These remain follow-up candidates.
+
+**Automated validation.** The four exact method filters passed all seven cases in 9.37 seconds. The solution build passed
+with zero warnings or errors. The adjacent filter covered `PilotServicesTests`, `SubscriptionServiceTests`,
+`JumpCloneServiceTests`, `JumpCloneTests`, `CharacterCreationTests`, `CharacterDeletionTests`, `CloneGradeTests`,
+`CompatibilityHandshakeTests` and `InstalledRorqualCloneSurvivesRestartUntilUsedOrHostDestroyed`. It passed 113 of 119
+cases in 39.00 seconds. All six failures reproduced on baseline `83f8629a` in 14.70 seconds. Four were rejection-message
+assertions in `GameplayRejectionShowsTextAndKeepsTheModuleAndSessionIntact`, and two were missing resident world fixtures
+in `NativePilotServicesPacketsReturnSubscriptionTimeWithoutDestinationErrors`. With those two methods excluded, all 113
+cases passed in 36.43 seconds. Both Python policy suites passed (8 catalog and 9 formatting cases), along with the
+formatting and protocol link checks. The full .NET suite was outside this focused run.
+After rebasing onto `df6aa8d1`, the solution build passed in 18.35 seconds with zero warnings or errors and all seven exact
+cases passed again in 10.14 seconds.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Open the clone bay at an NPC station and verify the visible clone name after renaming it.
 
 ## EVE.js comparison for map, character and dungeon routes
 

@@ -55,7 +55,7 @@ internal sealed record LoginChallenge(byte[] Challenge, SignedSettings Expressio
             {
                 ["challenge_responsehash"] = ResponseHash,
                 ["macho_version"] = 496,
-                ["boot_version"] = 24.01,
+                ["boot_version"] = CompatibilityHandshake.BootVersion,
                 ["boot_build"] = CompatibilityHandshake.Build,
                 ["boot_codename"] = "V24.01",
                 ["boot_region"] = "ccp",
@@ -65,6 +65,11 @@ internal sealed record LoginChallenge(byte[] Challenge, SignedSettings Expressio
                 ["config_vals"] = new Dictionary<string, object?>(),
             },
         };
+}
+
+internal sealed record ServerVersionAndBuild : BlueModel
+{
+    public override object ToBlue() => new object[] { CompatibilityHandshake.BootVersion, CompatibilityHandshake.Build };
 }
 
 internal sealed record LoginSession(long AccountId, long ClientId, long Roles = (long)PilotRole.Player) : BlueModel

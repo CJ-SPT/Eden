@@ -50,6 +50,12 @@ public sealed partial class SqliteWorld
                 .ToArray()
         );
 
+    public int CountPilots(long accountId)
+    {
+        var live = LiveWorld.Find(_database.Path) ?? throw new InvalidOperationException("Character counts require the resident world.");
+        return ResidentPilotIds(live, accountId).Length;
+    }
+
     internal static bool SetPosition(
         WorldAction world,
         CatalogDbContext catalog,

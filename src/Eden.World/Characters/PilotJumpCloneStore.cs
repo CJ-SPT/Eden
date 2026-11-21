@@ -130,6 +130,27 @@ internal sealed partial class PilotJumpCloneStore(
             consistentFileRead: true
         );
 
+    public IReadOnlyList<JumpClone> ReadStationClones(long pilotId)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Station clone state requires the resident world.");
+        return live.Economy.Inspect<IReadOnlyList<JumpClone>>(world =>
+        {
+            var ship = Pilot(world, pilotId).ActiveShip;
+            if (ship.Position is not null || ship.StructureId.HasValue)
+            {
+                return [];
+            }
+            int stationId = ship.StationId;
+            return world
+                .Filter<SavedJumpClone>(clone =>
+                    clone.PilotId == pilotId && !clone.Active && !clone.InShip && clone.LocationId == stationId
+                )
+                .OrderBy(clone => clone.Id)
+                .Select(clone => new JumpClone(clone.Id, stationId, clone.Name, null))
+                .ToArray();
+        });
+    }
+
     public long Price(long pilotId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -210,14 +231,17 @@ internal sealed partial class PilotJumpCloneStore(
             ? clone
             : throw new InvalidDataException("That installed jump clone does not belong to you or is no longer available.");
 
-    public void Rename(long pilotId, long cloneId, string name)
+    public int? Rename(long pilotId, long cloneId, string name)
     {
         string value = JumpCloneRules.Name(name);
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         var world = transaction.World;
-        Owned(world, pilotId, cloneId).Name = value;
+        var clone = Owned(world, pilotId, cloneId);
+        clone.Name = value;
+        int? stationId = clone.InShip ? null : checked((int?)clone.LocationId);
         world.SaveChanges();
         transaction.Commit();
+        return stationId;
     }
 
     public JumpCloneRemoval Destroy(long pilotId, long cloneId)

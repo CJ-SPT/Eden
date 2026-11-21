@@ -32,6 +32,7 @@ internal sealed class JumpCloneHandler(
             || method
                 is not (
                     "GetCloneState"
+                    or "GetStationCloneState"
                     or "GetPriceForClone"
                     or "ValidateInstallJumpClone"
                     or "InstallCloneInStation"
@@ -63,6 +64,8 @@ internal sealed class JumpCloneHandler(
             {
                 case ("GetCloneState", []):
                     return new JumpCloneState(clones.Read(pilot));
+                case ("GetStationCloneState", []):
+                    return new JumpCloneRows(clones.ReadStationClones(pilot));
                 case ("GetPriceForClone", []):
                     long cents = context.Pilot.Position is null ? clones.Price(pilot) : shipClones.OfferPrice(pilot);
                     return (double)cents / MarketDefinitions.CentsPerIsk;
@@ -74,8 +77,14 @@ internal sealed class JumpCloneHandler(
                     Balance(context, installed.BalanceCents);
                     return PilotCallResult.None;
                 case ("SetJumpCloneName", [long id, string or byte[]]):
-                    clones.Rename(pilot, id, BlueMarshal.Text(args[1]));
-                    context.Notifications.Add(new JumpCloneCacheInvalidated());
+                    if (clones.Rename(pilot, id, BlueMarshal.Text(args[1])) is int station)
+                    {
+                        Changed(context, station);
+                    }
+                    else
+                    {
+                        context.Notifications.Add(new JumpCloneCacheInvalidated());
+                    }
                     return PilotCallResult.None;
                 case ("DestroyInstalledClone", [long id]):
                     var removed = clones.Destroy(pilot, id);
@@ -198,10 +207,7 @@ internal sealed record JumpCloneState(JumpCloneSnapshot Snapshot) : BlueModel
             "utillib.KeyVal",
             new Dictionary<string, object?>
             {
-                ["clones"] = new CompatibilityRowset(
-                    ["jumpCloneID", "locationID", "cloneName"],
-                    Snapshot.Clones.Select(clone => new JumpCloneRow(clone)).ToArray()
-                ),
+                ["clones"] = new JumpCloneRows(Snapshot.Clones),
                 ["implants"] = new CompatibilityRowset(
                     ["jumpCloneID", "typeID"],
                     Snapshot.Implants.Select(i => new JumpCloneImplantRow(i)).ToArray()
@@ -209,6 +215,15 @@ internal sealed record JumpCloneState(JumpCloneSnapshot Snapshot) : BlueModel
                 ["timeLastJump"] = Snapshot.LastJump,
             }
         );
+}
+
+internal sealed record JumpCloneRows(IReadOnlyList<JumpClone> Clones) : BlueModel
+{
+    public override object ToBlue() =>
+        new CompatibilityRowset(
+            ["jumpCloneID", "locationID", "cloneName"],
+            Clones.Select(clone => new JumpCloneRow(clone)).ToArray()
+        ).ToBlue();
 }
 
 internal sealed record JumpCloneImplantRow(InstalledImplant Implant) : BlueModel

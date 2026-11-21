@@ -35,6 +35,9 @@ internal sealed class AccountCompatibilityHandler(
         {
             ("machoNet", "GetServiceInfo") => BlueEmpty.Dictionary,
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            ("cache", "GetServerVersionAndBuild") => arguments is object?[] { Length: 0 } && keywords is not { Count: > 0 }
+                ? new ServerVersionAndBuild()
+                : new PilotCallResult.Failure("Server version does not accept arguments."),
             // Build 3662168 ClientStatsSvc.OnProcessExit also sends this before pilot selection.
             // It records exit intent; the transport closing owns disconnect cleanup.
             ("eventLog", "LogPlayerRequestedDisconnect") when arguments is object?[] { Length: 0 } && keywords is null or { Count: 0 } =>
@@ -48,6 +51,9 @@ internal sealed class AccountCompatibilityHandler(
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
             ("air_npe", "is_air_npe_enabled") => false,
             ("subscriptionMgr", "GetCloneGrade") => (int)context.Account.CloneGrade,
+            ("userSvc", "GetCreateDate") => arguments is object?[] { Length: 0 } && keywords is not { Count: > 0 }
+                ? context.Account.CreatedAt
+                : new PilotCallResult.Failure("Account creation date does not accept arguments."),
             ("map", "GetSecurityModifiedSystems") => new CompatibilityRowset(["solarSystemID", "security", "modifiedSecurity"], []),
             ("seasonalLoginCampaignManager", "get_active_campaign") => new SeasonalCampaignState(),
             ("alert", "BeanCount") => new AlertCountReply(),

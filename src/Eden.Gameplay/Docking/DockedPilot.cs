@@ -9,6 +9,7 @@ public interface IPilotLookup
 {
     AccountProfile ReadAccount(long accountId);
     IReadOnlyList<DockedPilot> ListPilots(long accountId);
+    int CountPilots(long accountId);
 }
 
 public interface IShipPositionStore

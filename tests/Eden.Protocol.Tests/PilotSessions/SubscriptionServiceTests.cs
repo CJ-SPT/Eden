@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Transport;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -156,12 +157,14 @@ public sealed class SubscriptionServiceTests
             42,
             SignedSettings.Empty
         );
+        CheckAccountReads();
         long before = ReadTime();
         context.Select(pilot);
         Assert.Equal(before, ReadTime());
         clock.AdvanceWallTime(TimeSpan.FromDays(3660));
         Assert.Equal(before, ReadTime());
         Assert.Equal((long)grade, Decode(Call("GetCloneGrade", Array.Empty<object?>())));
+        CheckAccountReads();
 
         foreach (object? args in new object?[] { null, new List<object?>(), new object?[] { null }, new object?[] { pilot.PilotId } })
         {
@@ -183,6 +186,19 @@ public sealed class SubscriptionServiceTests
         Assert.Equal(grade, reopened.ReadAccount(1000001).CloneGrade);
         Assert.Equal(otherAccount, reopened.ReadAccount(1000002));
 
+        void CheckAccountReads()
+        {
+            Assert.Equal((long)grade, Decode(AccountCall("loginRewardFacilities", "get_my_clone_grade", [])));
+            Assert.Equal(savedPilot.Account.CreatedAt, Decode(AccountCall("userSvc", "GetCreateDate", [])));
+            Assert.Equal(
+                new object?[] { CompatibilityHandshake.BootVersion, (long)CompatibilityHandshake.Build },
+                BlueRead.Tuple(Decode(AccountCall("cache", "GetServerVersionAndBuild", [])), 2)
+            );
+            Assert.IsType<PilotCallResult.Failure>(AccountCall("loginRewardFacilities", "get_my_clone_grade", [1000002L]));
+            Assert.IsType<PilotCallResult.Failure>(AccountCall("userSvc", "GetCreateDate", [1000002L]));
+            Assert.IsType<PilotCallResult.Failure>(AccountCall("cache", "GetServerVersionAndBuild", [1000002L]));
+        }
+
         long ReadTime()
         {
             long expiry = Assert.IsType<long>(Decode(Call("GetSubscriptionTime", Array.Empty<object?>(), new() { ["machoVersion"] = 1L })));
@@ -192,6 +208,9 @@ public sealed class SubscriptionServiceTests
 
         PilotCallResult Call(string method, object? args, Dictionary<string, object?>? keywords = null) =>
             router.Call(context, "subscriptionMgr", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+
+        PilotCallResult AccountCall(string service, string method, object?[] args) =>
+            router.Call(context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, new() { ["machoVersion"] = 1L });
     }
 
     [Theory]
