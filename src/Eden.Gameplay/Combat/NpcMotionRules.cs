@@ -20,7 +20,9 @@ public static class NpcMotionRules
         return npc with { Position = npc.Position + initial * (inertia * (1 - decay)), Velocity = initial * decay };
     }
 
-    public static bool Engaged(NpcMotionState npc) => npc.Navigation is NpcNavigationState.Pursuing or NpcNavigationState.Orbiting;
+    public static bool Engaged(NpcMotionState npc) => Engaged(npc.Navigation);
+
+    internal static bool Engaged(NpcNavigationState navigation) => navigation is NpcNavigationState.Pursuing or NpcNavigationState.Orbiting;
 
     public static float Agility(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         attributes.GetValueOrDefault(DogmaAttributeId.Agility) is > 0 and var value ? (float)value : NpcEncounterDefinitions.DefaultAgility;

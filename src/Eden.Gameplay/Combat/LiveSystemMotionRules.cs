@@ -142,14 +142,23 @@ public static class LiveSystemMotionRules
             var sample = warp.Course(stamp, now, hull).Sample(stamp, Math.Min(hull.MaxSpeed / 2, 100));
             return npc with { Position = sample.Position, Velocity = sample.Velocity, MotionAt = now };
         }
-        NpcMotionState state = new(npc.Id, npc.Position, npc.Velocity, npc.Navigation);
-        long at = npc.MotionAt;
-        bool engaged = NpcMotionRules.Engaged(state);
-        bool pursue = !NpcPopulationRules.IsCivilian(npc.Role) && !contactsOnly && target is not null && (engaged || now >= readyAt);
-        if (contactsOnly && engaged && target is null)
+        var navigation = npc.Navigation;
+        bool engaged = NpcMotionRules.Engaged(navigation);
+        if (contactsOnly)
         {
-            state = state with { Navigation = NpcNavigationState.Returning };
+            if (engaged && target is null)
+            {
+                navigation = NpcNavigationState.Returning;
+            }
+            else if (navigation != NpcNavigationState.Returning)
+            {
+                return npc;
+            }
         }
+
+        NpcMotionState state = new(npc.Id, npc.Position, npc.Velocity, navigation);
+        long at = npc.MotionAt;
+        bool pursue = !NpcPopulationRules.IsCivilian(npc.Role) && !contactsOnly && target is not null && (engaged || now >= readyAt);
         if (pursue && !engaged || at == 0)
         {
             at = now;
@@ -189,10 +198,6 @@ public static class LiveSystemMotionRules
                 step,
                 returning: true
             );
-        }
-        else if (contactsOnly)
-        {
-            return state.Navigation == npc.Navigation ? npc : npc with { Navigation = state.Navigation };
         }
         else if (
             npc.Role is NpcRole.Navy or NpcRole.Customs
