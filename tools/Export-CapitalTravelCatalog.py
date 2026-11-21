@@ -67,7 +67,7 @@ def export(source, destination):
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
         for type_list in (330, 331, 332, 333, 334, 341, 342, 343, 348, 1000):
             keep('client/typelist', type_list)
-        for attribute in (3319, 3320, 3321, 3322, 3324, 5682, 6182, 6183, 6350):
+        for attribute in (3319, 3320, 3321, 3322, 3324, 3325, 5682, 6182, 6183, 6350):
             keep('client/dogmaattributes', attribute)
         keep('client/compressibletypes', 1230)
         for buff in (3, 4, 5, 6, 8, 9, *range(39, 55), 55, 56, 57, 58, 59, 61):

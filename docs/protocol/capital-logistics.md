@@ -673,6 +673,28 @@ micro jump, oscillator, spatial module, tether, warp capacitor and migration fil
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Rorqual industrial bridge
+
+The Rorqual opens a 20-second portal with an online Industrial Jump Portal Generator (`63140`).
+Build 3662168 `cynoTravelSvc.pyj` uses the ordinary `CmdBridgeToFleetModuleBeacon`,
+`CmdBridgeToFleetDeployableBeacon`, `CmdBridgeToStructureBeacon` and `CmdJumpThroughFleet` calls.
+The module publishes `jumpPortalGeneration` (`2152`), which uses the stock `effects.JumpPortal`.
+EVE.js `beyonceService.js` corroborates the `1e-9` per-kilogram fuel factor and source-owned fuel payment.
+
+The pinned destination list includes industrial and standard beacons. A passenger must have attribute
+`3325`, be in the fleet and be within the portal's activation range. The Venture and Porpoise have the
+attribute. The Badger and Orca do not. Opening costs 100 GJ. Each successful transit charges the host
+isotopes according to passenger mass, effective host fuel rate and distance. The host stays behind and
+each passenger receives their own jump timers.
+[CCP Version 20.04 notes](https://www.eveonline.com/news/view/patch-notes-version-20-04)
+
+**Automated validation.** Two exact cases passed in 8.86 seconds. A Venture paid 14 oxygen isotopes
+from the Rorqual's fuel bay for the pinned Jan-to-null route at the trained rate. The Badger was
+refused without spending isotopes. The 36-case portal, conduit, core, fleet and call result filter
+passed in 21.05 seconds after a 1.23-second build. Both Python suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |

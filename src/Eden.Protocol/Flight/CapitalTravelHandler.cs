@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -355,7 +356,9 @@ internal sealed partial class CapitalTravelHandler(
                     effect.ModuleId,
                     effect.Effect switch
                     {
-                        DogmaEffect.TitanJumpPortalGeneration => CapitalTravelRules.TitanPortalGenerator,
+                        DogmaEffect.TitanJumpPortalGeneration => flight.Pilot.ShipGroupId == (int)HullClass.CapitalIndustrial
+                            ? CapitalTravelRules.IndustrialPortalGenerator
+                            : CapitalTravelRules.TitanPortalGenerator,
                         DogmaEffect.CovertJumpPortalGeneration => CapitalTravelRules.CovertPortalGenerator,
                         _ => 0,
                     },
@@ -420,9 +423,9 @@ internal sealed partial class CapitalTravelHandler(
             portal.PilotId,
             portal.ShipId,
             null,
-            portal.ModuleTypeId == CapitalTravelRules.TitanPortalGenerator
-                ? DogmaEffect.TitanJumpPortalGeneration
-                : DogmaEffect.CovertJumpPortalGeneration,
+            portal.ModuleTypeId == CapitalTravelRules.CovertPortalGenerator
+                ? DogmaEffect.CovertJumpPortalGeneration
+                : DogmaEffect.TitanJumpPortalGeneration,
             portal.StartedAt,
             (portal.EndsAt - portal.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
             0

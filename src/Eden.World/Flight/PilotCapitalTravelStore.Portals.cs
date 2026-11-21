@@ -36,11 +36,12 @@ internal sealed partial class PilotCapitalTravelStore
         {
             (int)HullClass.Titan => CapitalTravelRules.TitanPortalGenerator,
             (int)HullClass.BlackOps => CapitalTravelRules.CovertPortalGenerator,
+            (int)HullClass.CapitalIndustrial => CapitalTravelRules.IndustrialPortalGenerator,
             _ => 0,
         };
         if (moduleType == 0 || fleets.Identity(pilotId) is not { FleetId: var fleet })
         {
-            throw new InvalidDataException("Use an eligible Titan or Black Ops ship in a fleet to open a jump portal.");
+            throw new InvalidDataException("Use an eligible Titan, Black Ops ship or Rorqual in a fleet to open a jump portal.");
         }
         RequireReady(world, host, now);
         AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
@@ -175,10 +176,12 @@ internal sealed partial class PilotCapitalTravelStore
         RequireLiving(world, host, hostAttributes, now);
         var module = fit.Graph.Attributes(row.ModuleId);
         var eligibility = (DogmaAttributeId)checked((int)module[DogmaAttributeId.JumpPortalPassengerRequiredAttribute]);
-        var requiredAttribute =
-            moduleType == CapitalTravelRules.TitanPortalGenerator
-                ? DogmaAttributeId.TitanPortalPassenger
-                : DogmaAttributeId.BlackOpsPortalPassenger;
+        var requiredAttribute = moduleType switch
+        {
+            CapitalTravelRules.TitanPortalGenerator => DogmaAttributeId.TitanPortalPassenger,
+            CapitalTravelRules.IndustrialPortalGenerator => DogmaAttributeId.IndustrialPortalPassenger,
+            _ => DogmaAttributeId.BlackOpsPortalPassenger,
+        };
         double defaultEligibility = catalog.Read(CatalogData.Client.Dogmaattributes, (long)requiredAttribute)?.DefaultValue ?? 0;
         if (eligibility != requiredAttribute || attributes.GetValueOrDefault(requiredAttribute, defaultEligibility) <= 0)
         {
@@ -226,7 +229,10 @@ internal sealed partial class PilotCapitalTravelStore
         && world.Positions.Find(row.ShipId)?.SystemId == row.Origin
         && world.Pilots.Find(row.PilotId)?.ActiveShipId == row.ShipId
         && world.Set<OwnedItem>().Find(row.ModuleId) is { Online: true, Singleton: true } fitted
-        && fitted.TypeId is CapitalTravelRules.CovertPortalGenerator or CapitalTravelRules.TitanPortalGenerator
+        && fitted.TypeId
+            is CapitalTravelRules.CovertPortalGenerator
+                or CapitalTravelRules.TitanPortalGenerator
+                or CapitalTravelRules.IndustrialPortalGenerator
         && InventoryDefinitions.IsHighSlot(fitted.FlagId)
         && fitted.LocationId == row.ShipId
         && world.Set<ShipLoss>().Find(row.ShipId) is null;

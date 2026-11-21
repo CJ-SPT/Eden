@@ -38,6 +38,7 @@ public enum DogmaAttributeId
     JumpPortalPassengerRequiredAttribute = 3318,
     TitanPortalPassenger = 3319,
     BlackOpsPortalPassenger = 3320,
+    IndustrialPortalPassenger = 3325,
     JumpPortalFuelBonusPercent = 1775,
     EnableConduitJump = 3126,
     ConduitFuelRate = 3131,
