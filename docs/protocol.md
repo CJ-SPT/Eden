@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[EVE.js comparison for account and station clone reads](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
+covers character counts, account age, login reward clone grade, bug report metadata and station clone state.
+
 [Alliance membership age and EverMark donations](protocol/alliances.md#alliance-membership-age-and-evermark-donations) covers wallet lookups and transfers between an executor and its member corporations.
 
 [Corporation calendar events](protocol/social.md#corporation-calendar-events) covers role-gated event management, member RSVPs and checkpointed notifications.

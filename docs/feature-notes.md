@@ -39,6 +39,10 @@
 
 Counts, schema versions, example pilots, fixture populations and native observations describe the recorded implementation. Read the linked follow-ups before treating an older example as current behavior. Automated support and historical client observations are distinct; native presentation remains unverified where stated.
 
+The client can read the account's current character count, creation date and login reward clone grade. Bug reports can read
+the server's advertised version and build. The NPC station clone bay can list the pilot's local jump clones and refresh their names.
+[EVE.js account and station clone comparison](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
+
 The star map can read NPC station counts, character customization can read the pilot's creation date, and Local can fill
 missing organization fields. Reconnecting pilots can recover their active Abyssal room or Ghost Site countdown.
 [EVE.js compatibility comparison](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)

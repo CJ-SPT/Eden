@@ -7,7 +7,7 @@ public static class CompatibilityHandshake
     public const int Build = 3662168;
     private const int HandshakeMarker = 170472;
     private const short MachoVersion = 496;
-    private const double BootVersion = 24.01;
+    internal const double BootVersion = 24.01;
 
     // Blue marshal version 0 signature and four-byte shared-object count.
     private static readonly byte[] s_preamble = [0x7e, 0, 0, 0, 0];

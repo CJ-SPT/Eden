@@ -9,6 +9,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
@@ -72,7 +73,7 @@ public sealed class JumpCloneServiceTests
         Assert.Null(Reply(f.Call("jumpCloneSvc", "DestroyInstalledClone", [id])));
         Assert.Single(Rows(Fields(Reply(f.Call("jumpCloneSvc", "GetCloneState", [])))["clones"]));
         Assert.Equal(4, f.Context.Notifications.OfType<JumpCloneCacheInvalidated>().Count());
-        Assert.Equal(3, f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>().Count());
+        Assert.Equal(4, f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>().Count());
         Assert.Equal(2, f.Context.Notifications.OfType<AccountBalanceChanged>().Count());
         var journal = Assert.IsType<BlueList<WalletJournalEntry>>(
             Assert.IsType<PilotCallResult.Success>(f.Call("account", "GetTransactions", [1000L, null, null, false])).Reply
@@ -91,6 +92,51 @@ public sealed class JumpCloneServiceTests
         var prime = f.Scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>().PrimePilot(f.Context.Pilot);
         Assert.Equal(2, prime.Attributes[DogmaAttributeId.MaxJumpClones]);
         Assert.Equal(22, prime.Attributes[DogmaAttributeId.CloneJumpCooldown]);
+    }
+
+    [Fact]
+    public void NativeStationCloneStateUsesTheBoundLocationAndRefreshesOnRename()
+    {
+        using Fixture f = new();
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        Assert.Same(PilotCallResult.Unsupported, f.Call("jumpCloneSvc", "GetStationCloneState", []));
+        f.Select();
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "InstallCloneInStation", [])));
+        HomeStationTestData.Travel(f.Db, HomeStationTestData.Other);
+        f.Context.ChangeShip(f.Db.Store.FindPilot(1000001)!);
+        Assert.Empty(Rows(Reply(f.Call("jumpCloneSvc", "GetStationCloneState", []))));
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "InstallCloneInStation", [])));
+
+        var binding = new object?[] { (long)HomeStationTestData.Other, 15L };
+        var boundCall = new object?[] { "GetStationCloneState", Array.Empty<object?>() };
+        var bound = Assert.IsType<BoundPilotReply>(
+            Assert.IsType<PilotCallResult.Success>(f.Call("jumpCloneSvc", "MachoBindObject", [binding, boundCall])).Reply
+        );
+        Assert.Equal("jumpCloneSvc", f.Context.ResolveReference(bound.Reference.Id));
+        var rowset = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(bound.Reply)));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", rowset.Name);
+        Assert.Equal(
+            new[] { "jumpCloneID", "locationID", "cloneName" },
+            Assert.IsType<List<object?>>(Fields(rowset)["header"]).Select(BlueMarshal.Text)
+        );
+        var body = Assert.IsType<object?[]>(Assert.Single(Rows(rowset)));
+        long id = Assert.IsType<long>(body[0]);
+        Assert.Equal((long)HomeStationTestData.Other, body[1]);
+        Assert.Equal("", BlueMarshal.Text(body[2]));
+        Assert.IsType<PilotCallResult.Failure>(f.Call("jumpCloneSvc", "GetStationCloneState", [(long)HomeStationTestData.Origin]));
+
+        f.Context.Notifications.Clear();
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "SetJumpCloneName", [id, new BlueUnicode("Étoile")])));
+        Assert.Equal(
+            new StationJumpCloneCacheInvalidated(HomeStationTestData.Other, f.Context.Pilot.PilotId),
+            Assert.Single(f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>())
+        );
+        var renamed = Assert.IsType<object?[]>(Assert.Single(Rows(Reply(f.Call("jumpCloneSvc", "GetStationCloneState", [])))));
+        Assert.Equal("Étoile", BlueMarshal.Text(renamed[2]));
+        Assert.Equal(2, Rows(Fields(Reply(f.Call("jumpCloneSvc", "GetCloneState", [])))["clones"]).Count);
+
+        f.Db.Store.SetPosition(f.Context.Pilot.ShipId, new(1_000_000, 0, 0), f.Context.Pilot.SystemId);
+        Assert.Empty(Rows(Reply(f.Call("jumpCloneSvc", "GetStationCloneState", []))));
     }
 
     [Fact]

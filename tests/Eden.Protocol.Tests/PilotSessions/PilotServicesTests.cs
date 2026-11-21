@@ -810,13 +810,17 @@ public sealed class PilotServicesTests
         packets = await ExchangeAsync(
             world,
             44,
+            Request("charUnboundMgr", "GetNumCharacters", []),
             Request("charUnboundMgr", "DeleteCharacter", [90000001L]),
+            Request("charUnboundMgr", "GetNumCharacters", []),
             Request("charUnboundMgr", "GetCharacterSelectionData", []),
             Request("charUnboundMgr", "SelectCharacterID", [90000001L])
         );
-        Assert.Null(Result(packets[0]));
-        Assert.Empty(Assert.IsType<List<object?>>(BlueRead.Tuple(Result(packets[1]), 4)[2]));
-        Assert.EndsWith(".ErrorResponse", packets[2].Name);
+        Assert.Equal(1L, Result(packets[0]));
+        Assert.Null(Result(packets[1]));
+        Assert.Equal(0L, Result(packets[2]));
+        Assert.Empty(Assert.IsType<List<object?>>(BlueRead.Tuple(Result(packets[3]), 4)[2]));
+        Assert.EndsWith(".ErrorResponse", packets[4].Name);
     }
 
     [Fact]
@@ -832,24 +836,34 @@ public sealed class PilotServicesTests
             }
         );
         BlueInstance portrait = new("utillib.KeyVal", new Dictionary<string, object?> { ["lightID"] = 15 });
+        var account = world.Store.ReadAccount(1000001);
         var replies = await ExchangeAsync(
             world,
             42,
+            Request("charUnboundMgr", "GetNumCharacters", []),
+            Request("charUnboundMgr", "GetNumCharacters", [1000002L]),
             Request("charUnboundMgr", "CreateCharacterWithDoll", ["New Pilot", 8, 7, 1, 64, appearance, portrait, 22, null, null]),
+            Request("charUnboundMgr", "GetNumCharacters", []),
             Request("charUnboundMgr", "SelectCharacterID", [], keywords: new() { ["charID"] = 90000003L, ["skipTutorial"] = true }),
+            Request("userSvc", "GetCreateDate", []),
             Request("paperDollServer", "GetPaperDollData", [90000003L]),
             Request("home_station", "get_home_station", []),
             Request("dogmaIM", "GetAllInfo", [true, true, true])
         );
-        Assert.Equal(90000003L, Result(replies[0]));
-        Assert.EndsWith(".SessionChangeNotification", replies[1].Name);
-        Assert.Null(Result(replies[2]));
-        Assert.Equal(BlueMarshal.Encode(appearance), BlueMarshal.Encode(Result(replies[3])));
-        var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(replies[4])).State);
+        Assert.Equal(1L, Result(replies[0]));
+        AssertUserError(replies[1], "CustomInfo", new() { ["info"] = "Character count does not accept arguments." });
+        Assert.Equal(90000003L, Result(replies[2]));
+        Assert.Equal(2L, Result(replies[3]));
+        Assert.EndsWith(".SessionChangeNotification", replies[4].Name);
+        Assert.Null(Result(replies[5]));
+        Assert.Equal(account.CreatedAt, Result(replies[6]));
+        Assert.Equal(BlueMarshal.Encode(appearance), BlueMarshal.Encode(Result(replies[7])));
+        var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(replies[8])).State);
         Assert.Equal(60015161L, home["id"]);
         Assert.Equal(30005305L, home["solar_system_id"]);
-        Assert.EndsWith(".CallRsp", replies[5].Name);
+        Assert.EndsWith(".CallRsp", replies[9].Name);
         var pilot = world.Store.FindPilot(1000001, 90000003)!;
+        Assert.NotEqual(account.CreatedAt, pilot.Profile.CreatedAt);
         using var scope = world.Services.CreateScope();
         var dogma = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>().AllInfo(pilot);
         Assert.Contains(pilot.ShipId, dogma.ShipInfo.Keys);
