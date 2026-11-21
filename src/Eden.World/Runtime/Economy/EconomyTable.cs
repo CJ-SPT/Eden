@@ -343,6 +343,8 @@ internal sealed partial class EconomyTable<TRow, TState>(
             project
         );
 
+    internal bool HasPendingProjection(EconomyChange<TState> row) => _sqlBaselines.ContainsKey(row.Key) && Same(row.Key, row.Value);
+
     public void Projected(WorldDbContext world, IEconomyProjection projection)
     {
         var rows = ((EconomyProjection<TState>)projection).Rows;

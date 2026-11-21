@@ -895,6 +895,17 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 Report(timing);
             }
+            if (snapshot.NpcMarketOrders is { } orders)
+            {
+                try
+                {
+                    Economy.RebaseSavedNpcMarketOrders(_memory, orders);
+                }
+                catch (Exception exception)
+                {
+                    Report($"World checkpoint market rebase deferred: {exception.Message}", failure: true);
+                }
+            }
             return null;
         }
         catch (Exception exception)

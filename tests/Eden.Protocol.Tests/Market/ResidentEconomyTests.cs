@@ -639,6 +639,133 @@ public sealed class ResidentEconomyTests
     }
 
     [Fact]
+    public async Task CheckpointRebasesOnlyDurableMarketRowsThatStillMatchTheCapturedGeneration()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        const int orderCount = 257;
+        const int initialStock = 10;
+        long changed = 0;
+        int attempts = 0;
+        LiveWorld? running = null;
+        using (
+            LiveWorld live = new(
+                fixture.Database,
+                new CheckpointClock(fixture.Clock),
+                _ => { },
+                (snapshot, path) =>
+                {
+                    if (++attempts == 1)
+                    {
+                        throw new IOException("Injected market save failure.");
+                    }
+                    if (attempts == 2)
+                    {
+                        using var action = running!.Economy.Begin();
+                        action.Set<NpcMarketOrder>().Find(changed)!.Remaining = 2;
+                        action.Commit();
+                    }
+                    LiveWorld.PersistSnapshot(snapshot, path);
+                }
+            )
+        )
+        {
+            running = live;
+            live.MeasureCheckpoints = true;
+            using (var action = live.Economy.Begin())
+            {
+                for (int index = 0; index < orderCount; index++)
+                {
+                    var order = action.Add(CheckpointOrder(fixture, 1000 + index, initialStock)).Entity;
+                    if (index == 0)
+                    {
+                        changed = order.Id;
+                    }
+                }
+                action.Commit();
+            }
+
+            await Assert.ThrowsAsync<IOException>(live.FlushAsync);
+            Assert.Equal(orderCount, MarketProjection(live).Count);
+            await live.FlushAsync();
+            Assert.Equal(orderCount, live.LastCheckpoint!.ProjectionTables!.Single(table => table.Table == "WorldMarketOrder").Rows);
+            Assert.Equal(changed, Assert.Single(MarketProjection(live).Rows).Key.Id);
+            using (var disk = WorldConnections.FileConnection(fixture.Database.Path))
+            {
+                disk.Open();
+                using var check = disk.CreateCommand();
+                check.CommandText = "SELECT Remaining FROM WorldMarketOrder WHERE Id=$id";
+                check.Parameters.AddWithValue("$id", changed);
+                Assert.Equal((long)initialStock, check.ExecuteScalar());
+            }
+
+            await live.FlushAsync();
+            Assert.Equal(1, live.LastCheckpoint!.ProjectionTables!.Single(table => table.Table == "WorldMarketOrder").Rows);
+            Assert.DoesNotContain(live.Economy.Capture().Tables, projection => projection.Table == "WorldMarketOrder");
+            await live.FlushAsync();
+        }
+        Assert.Equal(3, attempts);
+
+        using LiveWorld reopened = new(fixture.Database, new CheckpointClock(fixture.Clock), _ => { });
+        using var inspect = reopened.Economy.Begin();
+        var orders = inspect.Set<NpcMarketOrder>().Where(order => order.Kind == NpcMarketKind.Standard).ToArray();
+        Assert.Equal(orderCount, orders.Length);
+        Assert.Equal(2, orders.Single(order => order.Id == changed).Remaining);
+        Assert.Equal(orderCount - 1, orders.Count(order => order.Remaining == initialStock));
+
+        static EconomyProjection<EconomyNpcMarketOrder> MarketProjection(LiveWorld live) =>
+            live.Economy.Capture().Tables.OfType<EconomyProjection<EconomyNpcMarketOrder>>().Single();
+    }
+
+    [Fact]
+    public async Task CheckpointRetainsMarketSlotReplacementWhenCompatibilityRebaseEncountersTheOldOrder()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        long originalId;
+        long replacementId;
+        using (LiveWorld live = new(fixture.Database, new CheckpointClock(fixture.Clock), _ => { }))
+        {
+            using (var action = live.Economy.Begin())
+            {
+                originalId = action.Add(CheckpointOrder(fixture, 1000, 10)).Entity.Id;
+                action.Commit();
+            }
+            await live.FlushAsync();
+            Assert.DoesNotContain(live.Economy.Capture().Tables, projection => projection.Table == "WorldMarketOrder");
+
+            using (var action = live.Economy.Begin())
+            {
+                action.Remove(action.Set<NpcMarketOrder>().Find(originalId)!);
+                replacementId = action.Add(CheckpointOrder(fixture, 1000, 4)).Entity.Id;
+                action.Commit();
+            }
+            await live.FlushAsync();
+            Assert.Null(live.LastSaveFailure);
+            var pending = live.Economy.Capture().Tables.OfType<EconomyProjection<EconomyNpcMarketOrder>>().Single();
+            Assert.Contains(pending.Rows, row => row.Key.Id == originalId && row.Value is null);
+            Assert.Contains(pending.Rows, row => row.Key.Id == replacementId && row.Value?.Remaining == 4);
+        }
+
+        using LiveWorld reopened = new(fixture.Database, new CheckpointClock(fixture.Clock), _ => { });
+        using var inspect = reopened.Economy.Begin();
+        Assert.Null(inspect.Set<NpcMarketOrder>().Find(originalId));
+        Assert.Equal(4, inspect.Set<NpcMarketOrder>().Find(replacementId)!.Remaining);
+    }
+
+    private static NpcMarketOrder CheckpointOrder(CapsuleerHaulerTests.Fixture fixture, int sourceOrder, int stock) =>
+        new()
+        {
+            StationId = Station,
+            TypeId = Ammunition,
+            Kind = NpcMarketKind.Standard,
+            OwnerId = 1_000_001,
+            SourceOrderId = sourceOrder,
+            PriceCents = sourceOrder + 1,
+            Remaining = stock,
+            Entered = stock,
+            Issued = fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+        };
+
+    [Fact]
     public void LegacySqlTransactionsSeeCommittedResidentRowsAndPublishOnlyTheirOwnCommittedChanges()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();

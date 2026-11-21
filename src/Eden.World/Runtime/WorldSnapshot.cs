@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Eden.World.Maps;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 
@@ -23,7 +24,7 @@ internal sealed class WorldSnapshot(
     long copyAllocatedBytes = 0,
     long copyBytes = 0,
     Eden.World.Capsuleers.CapsuleerRoutineCheckpoint? routines = null,
-    Eden.World.Runtime.Economy.EconomyCheckpoint? economy = null,
+    EconomyCheckpoint? economy = null,
     TimeSpan maximumCopyPause = default,
     int copySteps = 1,
     MapStatisticsCheckpoint? mapStatistics = null
@@ -41,6 +42,8 @@ internal sealed class WorldSnapshot(
     internal int CopySteps => copySteps;
     internal long ProjectionAllocatedBytes { get; private set; }
     internal IReadOnlyList<WorldTableProjection>? ProjectionTables { get; private set; }
+    internal EconomyProjection<EconomyNpcMarketOrder>? NpcMarketOrders =>
+        economy?.Tables.OfType<EconomyProjection<EconomyNpcMarketOrder>>().SingleOrDefault();
 
     internal TimeSpan Project() => Project(measure: false);
 
