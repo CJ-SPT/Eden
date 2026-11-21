@@ -13,6 +13,23 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class OwnershipTimingTests
 {
     [Fact]
+    public void UncontendedOwnershipDoesNotAllocateWaiters()
+    {
+        OwnershipMonitor owner = new("test world");
+        using (owner.Enter("warm")) { }
+        const int acquisitions = 4_096;
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int index = 0; index < acquisitions; index++)
+        {
+            using var ownership = owner.Enter("routine action");
+        }
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.InRange(allocated, 1, acquisitions * 80L);
+        Assert.False(owner.IsEntered);
+        Assert.Equal(0, owner.WaitingCount);
+    }
+
+    [Fact]
     public async Task SessionHandoffSelectsTheRuntimeWithoutOwningTheCompleteFrame()
     {
         using TestWorld fixture = new();

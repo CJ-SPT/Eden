@@ -80,23 +80,30 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
         {
             lock (_admission)
             {
-                var request = _waiting.AddLast(new object());
-                try
+                if (_occupied || _waiting.First is not null)
                 {
-                    while (_occupied || _waiting.First != request)
+                    var request = _waiting.AddLast(new object());
+                    try
                     {
-                        Monitor.Wait(_admission);
+                        while (_occupied || _waiting.First != request)
+                        {
+                            Monitor.Wait(_admission);
+                        }
+                        Monitor.Enter(_gate);
                     }
-                    Monitor.Enter(_gate);
-                    _occupied = true;
+                    catch
+                    {
+                        _waiting.Remove(request);
+                        Monitor.PulseAll(_admission);
+                        throw;
+                    }
                     _waiting.Remove(request);
                 }
-                catch
+                else
                 {
-                    _waiting.Remove(request);
-                    Monitor.PulseAll(_admission);
-                    throw;
+                    Monitor.Enter(_gate);
                 }
+                _occupied = true;
             }
         }
         TimeSpan wait = Stopwatch.GetElapsedTime(started);
