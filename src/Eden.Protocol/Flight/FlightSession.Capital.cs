@@ -13,6 +13,8 @@ internal sealed partial class FlightSession
         || Pilot.ShipGroupId == (int)Eden.Gameplay.Ships.HullClass.Titan && capitalTravel?.DoomsdayMovementLocked(Pilot.ShipId) == true
         || CapitalTravelRules.RestrictedCapital(Pilot.ShipGroupId) && capitalTravel?.Mode(Pilot.ShipId) is not null;
 
+    internal void RefreshLances(IReadOnlyList<TitanLanceContact> contacts) => Scene.RefreshLances(SceneContext, contacts);
+
     internal void RefreshCynos()
     {
         if (capitalTravel is { } travel)

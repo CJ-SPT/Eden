@@ -60,6 +60,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
             return;
         }
         weapons.Advance(context.Pilot.SystemId, Now);
+        RefreshLances(context);
         foreach (var (module, cycle) in _cycles.ToArray())
         {
             if (cycle.Effect.ShipId != context.Pilot.ShipId || !context.Flight.CanTarget)
@@ -100,7 +101,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
             keywords is { Count: > 0 }
             || args is not [long module, long effect, var value]
             || effect is < int.MinValue or > int.MaxValue
-            || !AreaWeaponRules.IsProjector((DogmaEffect)effect)
+            || (DogmaEffect)effect != DogmaEffect.DoomsdayBeam && !AreaWeaponRules.IsProjector((DogmaEffect)effect)
         )
         {
             return new PilotCallResult.Failure("Invalid point-targeted module activation.");
@@ -116,6 +117,8 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
             return new PilotCallResult.Failure(error.Message);
         }
     }
+
+    private void RefreshLances(PilotCallContext context) => context.Flight.RefreshLances(weapons.Lances(context.Pilot.SystemId, Now));
 
     private static double Number(object? value) =>
         value switch
@@ -136,7 +139,11 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         {
             if (_cycles.TryGetValue(module, out var cycle))
             {
-                if (AreaWeaponRules.IsProjector(cycle.Effect.Effect) || DoomsdayRules.IsTargeted(cycle.Effect.Effect))
+                if (
+                    AreaWeaponRules.IsProjector(cycle.Effect.Effect)
+                    || DoomsdayRules.IsTargeted(cycle.Effect.Effect)
+                    || cycle.Effect.Effect == DogmaEffect.DoomsdayBeam
+                )
                 {
                     return new PilotCallResult.Failure("A paid superweapon cycle cannot be stopped early.");
                 }
@@ -214,7 +221,8 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         );
         var module = result.Module;
         bool doomsday = module.Kind == AreaWeaponKind.Doomsday;
-        var notifications = doomsday ? context.NotificationsBeforeFlight : context.Notifications;
+        bool lance = module.Kind == AreaWeaponKind.Lance;
+        var notifications = doomsday || lance ? context.NotificationsBeforeFlight : context.Notifications;
         DogmaActiveEffect active = new(item, context.Pilot.PilotId, context.Pilot.ShipId, target, effect, now, module.Duration, repeats);
         WeaponContact contact = new(
             item,
@@ -231,7 +239,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         if (previous is null)
         {
             notifications.Add(new ShipEffectChanged(active, now, true, true));
-            if (doomsday)
+            if (doomsday || lance)
             {
                 context.Flight.StopForCapitalModule();
             }
@@ -250,7 +258,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         }
         foreach (var change in result.InventoryChanges)
         {
-            InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: doomsday);
+            InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: doomsday || lance);
         }
         notifications.Add(
             new ModuleAttributesChanged([
@@ -264,6 +272,10 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
                 new(context.Pilot.PilotId, new DogmaItemKey.Item(item), DogmaAttributeId.NextActivationTime, now, result.ReadyAt),
             ])
         );
+        if (lance)
+        {
+            RefreshLances(context);
+        }
         context.Flight.RefreshMissiles();
     }
 }

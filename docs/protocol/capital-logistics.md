@@ -336,7 +336,7 @@ published light and heavy attack squadrons. Slot zero uses the attack missile pr
 and Heavy Fighters skills apply to Cyclops attack damage. Supercarriers also use the existing
 `superWeaponMgr.ActivateSinglePointTargetedModule` path for burst projectors. The racial effects `6615`–`6618`
 modify their associated projector cycles, alongside Burst Projector Operation. Other fighter roles and abilities,
-Standup fighter control, area doomsdays and Phenomena Generators remain open.
+Standup fighter control, additional area doomsdays and Phenomena Generators remain open.
 
 The pinned catalog cases exercise all eight hulls. The Avatar pays to bridge a Rapier from Jan to a Pharolux,
 then jumps itself and docks at the Keepstar. The Aeon fires Cyclops attack missiles at an Astrahus and applies a
@@ -370,8 +370,8 @@ travel. Doomsday Rapid Firing changes the weapon cycle independently of the trav
 names and catalog attributes drive activation. In the pinned client, `shipmodulebutton.pyj` acquires the
 active target before calling the fitted effect's activation. `environment/effects/superWeapon.pyj` plays the
 targeted warning. EVE.js `superweaponRuntime.js` served as a behavior cross-check.
-The current damage target path covers piloted capitals. Area weapons such as lances, reapers and the Bosonic
-Field Generator, the Gravitational Transportation Field Oscillator and Phenomena Generators are separate roles.
+The current targeted damage path covers piloted capitals. Lances use the point-aim path below. Reapers, the
+Bosonic Field Generator, the Gravitational Transportation Field Oscillator and Phenomena Generators are separate roles.
 
 `AvatarJudgmentPaysOnceAndSettlesAgainstALockedRevelation` exercises combat and the lost-lock counter.
 Both cases verify the fuel charge, warning effect, no early hit and exact travel-lock deadlines. One verifies
@@ -386,6 +386,34 @@ The final `CapitalTravelTests`, `AreaWeaponTests`, `SmartbombTests`, `TargetingT
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Titan lances
+
+Holy Destiny, Iron Pike, Phalarica and Geiravor (`40631`, `41439`–`41441`) share pinned effect `6472`.
+The client sends `superWeaponMgr.ActivateSinglePointTargetedModule(moduleID, effectID, destination)` from
+`positionalControl.pyj`. `tacticalNavigation/controlPaths.pyj` anchors the fixed-length cylinder at the firing
+hull's surface. `inventorycommon/const.pyj` supplies Modular Effect Beacon `41233`, and
+`environment/effects/superWeapon.pyj` uses a target ball to stretch the effect.
+EVE.js `superweaponRuntime.js` cross-checks the faction graphics, beacon-add order and on-grid pulse behavior.
+[CCP capital rework](https://www.eveonline.com/news/view/reworking-capital-ships-and-thus-it-begins)
+
+The fitted lance pays its isotope and capacitor costs atomically in nullsec or wormhole space. It immediately
+neutralizes nearby pilots with signature and energy-warfare resistance applied. The 200 km beam warms up for
+15 seconds, then checks occupants once per second for 15 seconds. Hulls have to intersect the 2.5 km cylinder.
+Targets can fly out during the warning or between pulses. Signatures below 5 km take proportionally less damage.
+A Titan short of capacitor cannot start the shot. The normal doomsday movement and travel restrictions apply.
+
+The resident scheduler stores the next pulse and the fixed aim. If a frame arrives late, it samples current
+occupants once and skips earlier pulses whose positions are unavailable. A full server restart cancels live
+fire while preserving the paid movement and travel deadlines. Damage already committed survives restart.
+
+**Automated validation.** Both exact `TitanLanceGivesAnEvadeWindowAndAppliesSignatureScaledPulses` cases
+passed in 10.14 seconds. The final run passed all 182 cases in 77.20 seconds after an 11.12-second build. It
+included `CapitalTravelTests`, `AreaWeaponTests`, `SmartbombTests`, `TargetingTests`,
+`SpatialModuleOperationTests`, `StructureTetherTests`, `FlightBoundaryTests`, `TypedCallResultTests` and
+`WorldMigrationTests`. Both Python suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -397,7 +425,7 @@ The final `CapitalTravelTests`, `AreaWeaponTests`, `SmartbombTests`, `TargetingT
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
-| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Area superweapons and phenomena remain open. |
+| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances add aimed beams and positional counters. Reapers, Bosonic and transport effects, and phenomena remain open. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·

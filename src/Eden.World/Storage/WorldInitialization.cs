@@ -160,7 +160,23 @@ public static class WorldInitialization
             .ExecuteDelete();
         Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
-        world.Set<SavedAreaWeapon>().ExecuteDelete();
+        // Drop combat in progress at startup, while retaining paid superweapon navigation restrictions.
+        foreach (var row in world.Set<SavedAreaWeapon>().ToArray())
+        {
+            var flight = row.Flight();
+            long ends = flight.Module.Doomsday is { } charge
+                ? Eden.Gameplay.Combat.AreaWeaponRules.Deadline(flight.StartedAt, charge.DriveLockMilliseconds)
+                : 0;
+            if (ends <= moduleReopen)
+            {
+                world.Remove(row);
+            }
+            else
+            {
+                row.Save(flight with { Active = true, ResolvesAt = ends });
+            }
+        }
+        world.SaveChanges();
         world.Set<WorldRemoteRepair>().ExecuteDelete();
         world.Set<WorldRemoteAssistance>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.

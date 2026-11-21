@@ -107,6 +107,10 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["component_jumpBridge"] = bridge.Revision;
             fields["activationState"] = bridge.Active;
         }
+        if (Body.TypeId == TitanLanceRules.BeaconType)
+        {
+            fields["component_activate"] = new object?[] { true, null };
+        }
         if (Body.CynoDeployable is { } deployable)
         {
             fields["component_activate"] = new object?[] { deployable.Active, deployable.Active ? null : deployable.OnlineAt };

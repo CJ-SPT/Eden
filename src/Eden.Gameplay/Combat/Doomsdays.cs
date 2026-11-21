@@ -36,6 +36,8 @@ public static class DoomsdayRules
             24552 => DogmaEffect.SuperWeaponCaldari,
             24554 => DogmaEffect.SuperWeaponGallente,
             23674 => DogmaEffect.SuperWeaponMinmatar,
+            TitanLanceRules.HolyDestiny or TitanLanceRules.IronPike or TitanLanceRules.Phalarica or TitanLanceRules.Geiravor =>
+                DogmaEffect.DoomsdayBeam,
             _ => null,
         };
 

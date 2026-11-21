@@ -45,6 +45,7 @@ internal sealed class FlightScene(
     private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
+    private TitanLanceContact[] _lances = [];
 
     private FlightNpcScene Npcs => _npcScene ??= new(space, clock, encounters, effects, update, send);
     private FlightDroneScene Drones => _droneScene ??= new(space, clock, drones, update);
@@ -93,6 +94,11 @@ internal sealed class FlightScene(
     {
         Objects = Objects.ExceptBy(_anomalies.Select(o => o.Id), o => o.Id).ToArray();
         _anomalies = [];
+        if (_lances.Length != 0)
+        {
+            Objects = Objects.Where(body => body.TypeId != TitanLanceRules.BeaconType).ToArray();
+            _lances = [];
+        }
         _peers = [];
         _peerOrderSequences.Clear();
         _cloakedPeers.Clear();
@@ -411,6 +417,55 @@ internal sealed class FlightScene(
             update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
         }
     }
+
+    internal void RefreshLances(FlightSceneContext context, IReadOnlyList<TitanLanceContact> current)
+    {
+        if (!context.InBallpark || context.Pilot.Position is not { } observer)
+        {
+            return;
+        }
+        var visible = current
+            .Where(lance => lance.SourcePosition.DistanceTo(observer) <= NpcEncounterDefinitions.VisibilityRange)
+            .ToArray();
+        if (_lances.SequenceEqual(visible))
+        {
+            return;
+        }
+        var removed = _lances.ExceptBy(visible.Select(lance => lance.Beacon.Id), lance => lance.Beacon.Id).ToArray();
+        var added = visible.ExceptBy(_lances.Select(lance => lance.Beacon.Id), lance => lance.Beacon.Id).ToArray();
+        _lances = visible;
+        Objects = Objects.Where(body => body.TypeId != TitanLanceRules.BeaconType).Concat(visible.Select(lance => lance.Beacon)).ToArray();
+        foreach (var lance in removed)
+        {
+            LanceEffect(lance, false);
+            update(new DestinyCommand.RemoveBall(lance.Beacon.Id, false));
+        }
+        if (added.Length != 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added.Select(lance => lance.Beacon), space.Stamp(clock))));
+            foreach (var lance in added)
+            {
+                LanceEffect(lance, true);
+            }
+        }
+    }
+
+    private void LanceEffect(TitanLanceContact lance, bool start) =>
+        update(
+            new DestinyCommand.TimedSpecialEffect(
+                lance.ShipId,
+                lance.ModuleId,
+                lance.TypeId,
+                lance.Beacon.Id,
+                0,
+                TitanLanceRules.Graphic(lance.TypeId),
+                true,
+                start,
+                false,
+                10_000,
+                lance.StartedAt
+            )
+        );
 
     internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
     {

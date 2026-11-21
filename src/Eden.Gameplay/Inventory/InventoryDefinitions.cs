@@ -113,6 +113,7 @@ public enum DogmaEffect
     SuperWeaponCaldari = 4490,
     SuperWeaponGallente = 4491,
     SuperWeaponMinmatar = 4492,
+    DoomsdayBeam = 6472,
     CovertJumpPortalGeneration = 3674,
     JumpDriveEconomizer = 5911,
     BurstJammer = 6714,

@@ -150,6 +150,7 @@ internal sealed partial class AreaWeaponStore(
             );
         }
         SpacePosition origin = new(saved.X, saved.Y, saved.Z);
+        SpacePosition? lanceStart = null;
         List<InventoryChange> inventoryChanges = [];
         if (module.Kind == AreaWeaponKind.Doomsday)
         {
@@ -164,6 +165,26 @@ internal sealed partial class AreaWeaponStore(
             }
             long firesAt = AreaWeaponRules.Deadline(now, module.Delay);
             Aggression(world, catalog, pilot, shipId, module.TypeId, victim, system, now, firesAt);
+            SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
+        }
+        else if (module.Kind == AreaWeaponKind.Lance)
+        {
+            if (
+                target is not null
+                || point is null
+                || !Finite(point)
+                || catalog.RequireItem(pilot.ActiveShip.TypeId) is not { GroupId: (int)HullClass.Titan } titan
+            )
+            {
+                throw new InvalidDataException("Aim an online lance from its compatible Titan.");
+            }
+            var aim = point - origin;
+            if (!double.IsFinite(aim.Length) || aim.Length < 1)
+            {
+                throw new InvalidDataException("Choose a direction away from your ship for the lance.");
+            }
+            lanceStart = origin + aim.Unit * (titan.Radius ?? 0);
+            point = lanceStart + aim.Unit * module.Range;
             SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
         }
         else if (module.Kind == AreaWeaponKind.Projector)
@@ -234,6 +255,10 @@ internal sealed partial class AreaWeaponStore(
             }
         }
         double capacitor = ShipResources.SpendCapacitor(world, shipId, ship, module.CapacitorNeed, now);
+        if (module.Lance is { } lance)
+        {
+            NeutralizeNearLance(world, catalog, pilot, origin, system, module.TypeId, lance, now);
+        }
         long end = AreaWeaponRules.Deadline(now, module.Duration);
         long ready = AreaWeaponRules.Deadline(end, module.Reactivation);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId) ?? world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
@@ -242,7 +267,12 @@ internal sealed partial class AreaWeaponStore(
         var timer = CrimewatchPersistence.State(world, pilotId);
         timer.SystemId = system;
         var timers = timer.Timers();
-        long aggressionEnd = module.Kind == AreaWeaponKind.Doomsday ? AreaWeaponRules.Deadline(now, module.Delay) : end;
+        long aggressionEnd = module.Kind switch
+        {
+            AreaWeaponKind.Lance => AreaWeaponRules.Deadline(now, module.Delay + module.Lance!.DamageDuration),
+            AreaWeaponKind.Doomsday => AreaWeaponRules.Deadline(now, module.Delay),
+            _ => end,
+        };
         timer.Apply(timers with { Weapons = CrimewatchRules.Extend(timers.Weapons, aggressionEnd, CrimewatchRules.WeaponsDuration) });
         long? flightId = null;
         List<long> broken = [];
@@ -250,7 +280,11 @@ internal sealed partial class AreaWeaponStore(
         {
             Burst(world, catalog, pilot, module, origin, system, now, broken);
         }
-        else if (module.Kind is AreaWeaponKind.Projector or AreaWeaponKind.Doomsday || bomb is not null || intercepted is not null)
+        else if (
+            module.Kind is AreaWeaponKind.Projector or AreaWeaponKind.Doomsday or AreaWeaponKind.Lance
+            || bomb is not null
+            || intercepted is not null
+        )
         {
             var travel = bomb is not null ? direction.Unit * bomb.Speed : SpacePosition.Zero;
             long resolves = AreaWeaponRules.Deadline(now, bomb?.Lifetime ?? module.Delay);
@@ -276,7 +310,17 @@ internal sealed partial class AreaWeaponStore(
                 SystemId = system,
             };
             row.Save(
-                new(module, bomb, origin, travel, point ?? origin, now, resolves, intercepted?.Id ?? target ?? 0, bomb?.Defense.Undamaged)
+                new(
+                    module,
+                    bomb,
+                    lanceStart ?? origin,
+                    travel,
+                    point ?? origin,
+                    now,
+                    resolves,
+                    intercepted?.Id ?? target ?? 0,
+                    bomb?.Defense.Undamaged
+                )
             );
             world.Add(row);
             flightId = row.Id;

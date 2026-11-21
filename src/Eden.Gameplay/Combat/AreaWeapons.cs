@@ -13,6 +13,7 @@ public enum AreaWeaponKind
     Defender,
     Projector,
     Doomsday,
+    Lance,
 }
 
 public sealed record AreaWeaponProfile(
@@ -30,7 +31,8 @@ public sealed record AreaWeaponProfile(
     int FuelType,
     int FuelQuantity,
     NpcEwarPower Power,
-    DoomsdayCharge? Doomsday = null
+    DoomsdayCharge? Doomsday = null,
+    TitanLanceProfile? Lance = null
 );
 
 public sealed record BombProfile(
@@ -87,6 +89,7 @@ public interface IPilotAreaWeapons
         long? target = null
     );
     void Advance(int systemId, long now);
+    IReadOnlyList<TitanLanceContact> Lances(int systemId, long now);
     IReadOnlyList<MissileContact> Projectiles(int systemId, long now);
     void Cancel(long pilotId, long shipId, long now);
     void CancelModule(long pilotId, long shipId, long moduleId);
@@ -146,7 +149,9 @@ public static class AreaWeaponRules
         {
             BurstJammerGroup when effect == DogmaEffect.BurstJammer => AreaWeaponKind.BurstJammer,
             ProjectorGroup when IsProjector(effect) => AreaWeaponKind.Projector,
-            DoomsdayRules.Group when DoomsdayRules.EffectForType(type) == effect => AreaWeaponKind.Doomsday,
+            DoomsdayRules.Group when DoomsdayRules.EffectForType(type) == effect => effect == DogmaEffect.DoomsdayBeam
+                ? AreaWeaponKind.Lance
+                : AreaWeaponKind.Doomsday,
             BombLauncherGroup when effect == DogmaEffect.UseMissiles => AreaWeaponKind.Bomb,
             DefenderLauncherGroup when effect == DogmaEffect.UseMissiles => AreaWeaponKind.Defender,
             _ => throw new InvalidDataException("Unsupported area weapon program."),
@@ -195,7 +200,8 @@ public static class AreaWeaponRules
             checked((int)Value(DogmaAttributeId.ConsumptionType)),
             checked((int)Value(DogmaAttributeId.ConsumptionQuantity)),
             power,
-            kind == AreaWeaponKind.Doomsday ? DoomsdayRules.Charge(attributes) : null
+            kind is AreaWeaponKind.Doomsday or AreaWeaponKind.Lance ? DoomsdayRules.Charge(attributes) : null,
+            kind == AreaWeaponKind.Lance ? TitanLanceRules.Profile(attributes) : null
         );
         if (
             new[]
@@ -210,7 +216,9 @@ public static class AreaWeaponRules
             }.Any(value => !double.IsFinite(value) || value < 0)
             || result.Duration <= 0
             || kind == AreaWeaponKind.BurstJammer && result.Range <= 0
-            || kind == AreaWeaponKind.Doomsday && (result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
+            || kind is AreaWeaponKind.Doomsday or AreaWeaponKind.Lance
+                && (result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
+            || kind == AreaWeaponKind.Lance && result.Range <= 0
             || kind == AreaWeaponKind.Projector
                 && (result.Range <= 0 || result.Radius <= 0 || result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
         )

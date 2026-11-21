@@ -53,7 +53,13 @@ internal sealed partial class AreaWeaponStore
             return new TransactionParticipants(systems: [system], pilots: pilots, ships: ships, resources: npcs);
         });
 
-    private IReadOnlyList<Target> Targets(WorldAction world, CatalogDbContext catalog, int system, long now)
+    private IReadOnlyList<Target> Targets(
+        WorldAction world,
+        CatalogDbContext catalog,
+        int system,
+        long now,
+        Func<SpacePosition, double, bool>? intersects = null
+    )
     {
         List<Target> targets = [];
         foreach (
@@ -74,34 +80,32 @@ internal sealed partial class AreaWeaponStore
             {
                 continue;
             }
+            var saved = pilot.ActiveShip.Position!;
+            var position = presence.FindArea(system, pilot.ActiveShipId)?.Position ?? new(saved.X, saved.Y, saved.Z);
+            double radius = catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0;
+            if (intersects is not null && !intersects(position, radius))
+            {
+                continue;
+            }
             var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot);
             if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed)
             {
                 continue;
             }
-            var saved = pilot.ActiveShip.Position!;
-            var position = presence.FindArea(system, pilot.ActiveShipId)?.Position ?? new(saved.X, saved.Y, saved.Z);
-            targets.Add(
-                new(
-                    pilot.ActiveShipId,
-                    pilot.ActiveShip.TypeId,
-                    position,
-                    catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0,
-                    attributes,
-                    Pilot: pilot
-                )
-            );
+            targets.Add(new(pilot.ActiveShipId, pilot.ActiveShip.TypeId, position, radius, attributes, Pilot: pilot));
         }
         foreach (var npc in world.Filter<WorldNpc>(row => row.SystemId == system && row.DestroyedAt == null && row.RetiredAt == null))
         {
-            if (npc.Navigation != NpcNavigationState.Warping)
+            var position = NpcMotion.Position(npc);
+            double radius = catalog.RequireItem(npc.TypeId).Radius ?? 0;
+            if (npc.Navigation != NpcNavigationState.Warping && (intersects is null || intersects(position, radius)))
             {
                 targets.Add(
                     new(
                         npc.Id,
                         npc.TypeId,
-                        NpcMotion.Position(npc),
-                        catalog.RequireItem(npc.TypeId).Radius ?? 0,
+                        position,
+                        radius,
                         PilotTackleStore.NpcAttributes(world, npc.Id, catalog.FittingAttributes(npc.TypeId)),
                         Npc: npc
                     )
@@ -111,14 +115,23 @@ internal sealed partial class AreaWeaponStore
         foreach (var drone in world.Filter<WorldDrone>(row => row.SystemId == system))
         {
             var item = world.Set<OwnedItem>().Find(drone.ItemId);
-            if (item is not null && !PilotDroneStore.Contact(world, catalog, drone).Health.Remaining.Destroyed)
+            if (item is null)
+            {
+                continue;
+            }
+            SpacePosition position = new(drone.X, drone.Y, drone.Z);
+            double radius = catalog.RequireItem(item.TypeId).Radius ?? 0;
+            if (
+                (intersects is null || intersects(position, radius))
+                && !PilotDroneStore.Contact(world, catalog, drone).Health.Remaining.Destroyed
+            )
             {
                 targets.Add(
                     new(
                         drone.ItemId,
                         item.TypeId,
-                        new(drone.X, drone.Y, drone.Z),
-                        catalog.RequireItem(item.TypeId).Radius ?? 0,
+                        position,
+                        radius,
                         PlayerEwarStore.NpcAttributes(world, drone.ItemId, catalog.FittingAttributes(item.TypeId)),
                         Drone: drone
                     )
@@ -290,6 +303,10 @@ internal sealed partial class AreaWeaponStore
             if (flight.Module.Kind == AreaWeaponKind.Doomsday)
             {
                 SettleDoomsday(world, catalog, row, flight, now, damage);
+            }
+            else if (flight.Module.Kind == AreaWeaponKind.Lance)
+            {
+                destroyedNpc |= SettleLance(world, catalog, row, flight, now, damage);
             }
             else if (flight.Module.Kind == AreaWeaponKind.Defender)
             {
