@@ -184,6 +184,19 @@ public sealed partial class ServerPerformanceReplayTests
             live.MeasureCheckpoints = true;
             live.MeasureBotReplay = true;
             live.TrafficActions.ReportedTradePilots = s_slowTradePilots;
+            if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_PREFILL_ROSTER") == "1")
+            {
+                Assert.True(database.Settings.FreshUniverse);
+                Assert.True(requiredPilots is > 0);
+                await PrefillThroughputRoster(
+                    host.GetRequiredService<ICapsuleerBackgroundPreparation>(),
+                    live,
+                    requiredPilots.Value,
+                    admissionTimeout,
+                    progress
+                );
+                await live.FlushAsync();
+            }
             using var ownershipObservation = live.ObserveOwnership(timing =>
             {
                 if (timing.Hold.TotalMilliseconds >= 25 || timing.Wait.TotalMilliseconds >= 25)
@@ -559,6 +572,38 @@ public sealed partial class ServerPerformanceReplayTests
                 Directory.Delete(directory, recursive: true);
             }
         }
+    }
+
+    private static async Task PrefillThroughputRoster(
+        ICapsuleerBackgroundPreparation preparation,
+        LiveWorld live,
+        int target,
+        int timeoutSeconds,
+        string progress
+    )
+    {
+        Stopwatch elapsed = Stopwatch.StartNew();
+        int nextReport = live.Economy.AdmittedCapsuleerCount + 250;
+        while (live.Economy.AdmittedCapsuleerCount < target)
+        {
+            var turn = preparation.PrepareNext();
+            Assert.Null(turn.Failure);
+            int founded = live.Economy.AdmittedCapsuleerCount;
+            if (founded >= nextReport)
+            {
+                File.AppendAllText(progress, $"Prepared {founded} of {target} pilots for the timed workload.\n");
+                nextReport = founded + 250;
+            }
+            Assert.True(
+                founded >= target || !turn.Complete && elapsed.Elapsed.TotalSeconds < timeoutSeconds,
+                $"Prepared only {founded} of {target} pilots before the timed workload."
+            );
+            if (turn.RetryLater && founded < target)
+            {
+                await Task.Delay(turn.RetryAfter ?? CapsuleerJobQueue.WakeInterval);
+            }
+        }
+        File.AppendAllText(progress, $"Prepared roster in {elapsed.Elapsed.TotalSeconds:F1}s.\n");
     }
 
     private static async Task WaitForThroughputPopulation(
