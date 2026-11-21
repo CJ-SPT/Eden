@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
@@ -264,10 +265,12 @@ internal sealed partial class CapsuleerScheduler
             }
         }
         cancellationToken.ThrowIfCancellationRequested();
+        TimeSpan? ownerWait = null;
         using var measurement = Live?.TrafficActions.Measure(
             input.Job,
             input.Systems,
-            () => (Live!.CheckpointCopies, Live.CheckpointCopying)
+            () => (Live!.CheckpointCopies, Live.CheckpointCopying),
+            () => ownerWait
         );
         Dictionary<int, AsteroidFieldStore.PreparedBelt> belts = [];
         CapsuleerHauler.PreparedJourney? journey = null;
@@ -362,7 +365,9 @@ internal sealed partial class CapsuleerScheduler
             throw;
         }
         cancellationToken.ThrowIfCancellationRequested();
+        long waiting = Stopwatch.GetTimestamp();
         using var owner = synchronization.Enter("traffic maintenance");
+        ownerWait = Stopwatch.GetElapsedTime(waiting);
         cancellationToken.ThrowIfCancellationRequested();
         var currentActivity = PrepareMembership();
         if (!PreparationCurrent(input, currentActivity))

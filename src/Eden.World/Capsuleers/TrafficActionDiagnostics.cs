@@ -25,9 +25,15 @@ internal sealed class TrafficActionDiagnostics
     internal IReadOnlySet<long>? ReportedTradePilots { get; set; }
     internal IReadOnlyList<TrafficActionTiming> ReportedTrades => _reportedTrades.ToArray();
 
-    internal IDisposable Measure(CapsuleerJob job, IReadOnlyList<int> systems, Func<(long Count, bool Copying)> checkpointCopies)
+    internal IDisposable Measure(
+        CapsuleerJob job,
+        IReadOnlyList<int> systems,
+        Func<(long Count, bool Copying)> checkpointCopies,
+        Func<TimeSpan?>? ownerReacquire = null
+    )
     {
         var before = checkpointCopies();
+        var gcPauseAtStart = GC.GetTotalPauseDuration();
         bool reportedTrade = job.Action == CapsuleerAction.Trade && ReportedTradePilots?.Contains(job.PilotId) == true;
         // SQL, fits, allocations and wall time are counted for every action. Explicit tracing,
         // selected trades and repeats of a slow action also capture the individual phase timings.
@@ -68,6 +74,7 @@ internal sealed class TrafficActionDiagnostics
                 {
                     return;
                 }
+                double gcPause = (GC.GetTotalPauseDuration() - gcPauseAtStart).TotalMilliseconds;
                 _lastSlow[job.Action] = Stopwatch.GetTimestamp();
                 Retain(_slow, timing);
                 string breakdown = string.Join(
@@ -87,11 +94,14 @@ internal sealed class TrafficActionDiagnostics
                         .Take(4)
                         .Select(p => $"{p.Name}={p.Elapsed.TotalMilliseconds:F2} ms (SQL={p.Commands}, connections={p.Connections})")
                 );
+                string wait = ownerReacquire?.Invoke() is { } elapsed
+                    ? $"ownerReacquire={elapsed.TotalMilliseconds:F2} ms, "
+                    : string.Empty;
                 ServerLog.Console.Warning(
                     $"Slow traffic action {job.Action} pilot={job.PilotId}: "
                         + $"total={sample.Elapsed.TotalMilliseconds:F2} ms, SQL={sample.Commands}, connections={sample.Connections}, "
                         + $"fits={sample.Fittings}, allocated={sample.AllocatedBytes}, "
-                        + $"checkpointOverlap={timing.CheckpointOverlap}. {breakdown}"
+                        + $"{wait}gcPause={gcPause:F2} ms, checkpointOverlap={timing.CheckpointOverlap}. {breakdown}"
                 );
             },
             includePhases: detail

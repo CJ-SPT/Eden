@@ -34,7 +34,7 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
 
     public IReadOnlyList<CombatAnomaly> Anomalies(int systemId, long now)
     {
-        sovereignty?.AdvanceAll();
+        sovereignty?.AdvanceSites(systemId);
         var ice = Get(systemId, now, MiningFamily.Ice);
         var ore = SovereigntyOres(systemId, now);
         if (ore.Count == 0)

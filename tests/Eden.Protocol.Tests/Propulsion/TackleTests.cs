@@ -567,6 +567,24 @@ public sealed partial class TackleTests
         Assert.Empty(Store(f).Incoming(Wing(f)));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WebAndScrambleKeepStationaryNpcAtRest(bool explicitZero)
+    {
+        Dictionary<DogmaAttributeId, double> attributes = new() { [DogmaAttributeId.WarpScrambleStatus] = 0 };
+        if (explicitZero)
+        {
+            attributes[DogmaAttributeId.MaxVelocity] = 0;
+        }
+        TackleModule web = new(1, 526, DogmaEffect.StasisWebifier, 5000, 5, 10000, 0, -50, 0, 0);
+        var scram = web with { ItemId = 2, Effect = DogmaEffect.WarpScrambler, Strength = 2 };
+        var effective = TackleDefinitions.NpcAttributes(attributes, [web, scram]);
+        Assert.Equal(0, effective[DogmaAttributeId.MaxVelocity]);
+        Assert.Equal(0, effective[DogmaAttributeId.EntityCruiseSpeed]);
+        Assert.Equal(2, effective[DogmaAttributeId.WarpScrambleStatus]);
+    }
+
     [Fact]
     public void NpcWebsUseDiminishingSpeedAndPreserveCruiseRatio()
     {

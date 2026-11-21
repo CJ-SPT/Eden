@@ -52,7 +52,7 @@ internal sealed partial class PirateExplorationStore(
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            sovereignty?.AdvanceAll();
+            sovereignty?.AdvanceSites(systemId);
             long sovereigntyVersion = Eden.World.Sovereignty.SovereigntySites.Version(database.Path, systemId);
             var live = LiveWorld.Find(database.Path);
             MilitiaFaction? operationOccupier =

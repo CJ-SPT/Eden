@@ -8,6 +8,7 @@ namespace Eden.World.Runtime;
 internal sealed partial class LiveReadModels
 {
     private readonly ResidentSnapshot<(int System, int Constellation), bool> _sovereigntyWork = new("resident.sovereigntyWork");
+    private readonly ResidentSnapshot<int, bool> _siteUpgrades = new("resident.siteUpgrades");
     private readonly ResidentSnapshot<long, IReadOnlyList<EntosisCycle>> _entosisCycles = new("resident.entosisCycles");
     private readonly ResidentSnapshot<(long Ship, long Catalog, long CycleRevision), EntosisLimit> _entosisLimits = new(
         "resident.entosisLimit",
@@ -27,6 +28,9 @@ internal sealed partial class LiveReadModels
     internal bool SovereigntyWork(int system, int constellation, Func<WorldAction, bool> load) =>
         ReadResidentVersion(_sovereigntyWork, (system, constellation), () => owner.SovereigntyWorkRevision, load);
 
+    internal bool HasSovereigntyUpgrades(int system, Func<WorldAction, bool> load) =>
+        ReadResidentVersion(_siteUpgrades, system, () => owner.SovereigntyUpgradeRevision, load);
+
     internal IReadOnlyList<EntosisCycle> EntosisCycles(long pilot, Func<WorldAction, IReadOnlyList<EntosisCycle>> load) =>
         ReadResidentVersion(_entosisCycles, pilot, () => owner.EntosisCycleRevision, load);
 
@@ -45,6 +49,7 @@ internal sealed partial class LiveReadModels
     private void ClearFlightEffects()
     {
         _sovereigntyWork.Clear();
+        _siteUpgrades.Clear();
         _entosisCycles.Clear();
         _entosisLimits.Clear();
         _interdictionContacts.Clear();

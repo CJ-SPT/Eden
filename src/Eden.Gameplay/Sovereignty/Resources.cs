@@ -136,6 +136,7 @@ public interface ISovereigntyResources
     bool OwnsPilot(long accountId, long pilotId);
     int CurrentSystem(long pilotId);
     int Corporation(long pilotId);
+    void AdvanceSites(int systemId);
     void AdvanceAll();
 }
 

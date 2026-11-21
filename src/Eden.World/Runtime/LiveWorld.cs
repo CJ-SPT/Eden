@@ -199,6 +199,14 @@ internal sealed partial class LiveWorld : IDisposable
         {
             Interlocked.Increment(ref _sovereigntyWorkRevision);
         }
+        if (changes.Any(change => change.Table is "WorldWormholeConnection" or "schema"))
+        {
+            Interlocked.Increment(ref _wormholeRevision);
+        }
+        if (changes.Any(change => change.Table is "WorldSovereigntyUpgrade" or "schema"))
+        {
+            Interlocked.Increment(ref _sovereigntyUpgradeRevision);
+        }
         if (changes.Any(change => change.Table is "WorldEntosisCycle" or "schema"))
         {
             Interlocked.Increment(ref _entosisCycleRevision);
@@ -374,6 +382,11 @@ internal sealed partial class LiveWorld : IDisposable
 
     private long _sovereigntyWorkRevision;
     private long _entosisCycleRevision;
+    private long _wormholeRevision;
+    private long _sovereigntyUpgradeRevision;
+
+    internal long WormholeRevision => Volatile.Read(ref _wormholeRevision);
+    internal long SovereigntyUpgradeRevision => Volatile.Read(ref _sovereigntyUpgradeRevision);
     internal long SovereigntyWorkRevision => Volatile.Read(ref _sovereigntyWorkRevision);
     internal long EntosisCycleRevision => Volatile.Read(ref _entosisCycleRevision);
 

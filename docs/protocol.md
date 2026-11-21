@@ -1276,6 +1276,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 - [Player bot allocation and queue delay](protocol/performance.md#player-bot-allocation-and-queue-delay)
 - [Offscreen bot scheduling at ten thousand pilots](protocol/performance.md#offscreen-bot-scheduling-at-ten-thousand-pilots)
+- [In-space frame stalls during bot traffic](protocol/performance.md#in-space-frame-stalls-during-bot-traffic)
 - [Sustained 5,000-pilot throughput follow-up](protocol/performance.md#sustained-5000-pilot-throughput-follow-up)
 - [Capsuleer shutdown and checkpoint projection](protocol/performance.md#capsuleer-shutdown-and-checkpoint-projection)
 - [Capsuleer system entry and NPC acquisition](protocol/performance.md#capsuleer-system-entry-and-npc-acquisition)

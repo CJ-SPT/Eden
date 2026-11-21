@@ -37,11 +37,16 @@ public static class WormholeRules
     public static double Regenerate(double remaining, double total, double daily, long previous, long now) =>
         remaining <= 0 ? 0 : Math.Min(total, remaining + daily * Math.Max(0, now - previous) / TimeSpan.TicksPerDay);
 
-    public static int Age(long expiresAt, long now) =>
-        expiresAt == 0 || expiresAt - now > TimeSpan.TicksPerDay ? 0
-        : expiresAt - now > 4 * TimeSpan.TicksPerHour ? 1
-        : expiresAt - now > TimeSpan.TicksPerHour ? 2
-        : 3;
+    public static int Age(long expiresAt, long now) => AgeBand(expiresAt, now).Age;
+
+    public static long NextAgeChange(long expiresAt, long now) => AgeBand(expiresAt, now).Until;
+
+    private static (int Age, long Until) AgeBand(long expiresAt, long now) =>
+        expiresAt == 0 ? (0, long.MaxValue)
+        : expiresAt - now > TimeSpan.TicksPerDay ? (0, expiresAt - TimeSpan.TicksPerDay)
+        : expiresAt - now > 4 * TimeSpan.TicksPerHour ? (1, expiresAt - 4 * TimeSpan.TicksPerHour)
+        : expiresAt - now > TimeSpan.TicksPerHour ? (2, expiresAt - TimeSpan.TicksPerHour)
+        : (3, expiresAt);
 
     // The native client uses visual size bands, not the exact remaining mass fraction.
     public static double Size(double remaining, double total) =>

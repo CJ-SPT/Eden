@@ -70,6 +70,21 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
             }
         });
 
+    public void AdvanceSites(int systemId)
+    {
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return;
+        }
+        bool HasUpgrades(WorldAction world) => world.Filter<SavedSovereigntyUpgrade>(row => row.SystemId == systemId).Any();
+        using var scope = live.CurrentSystem == systemId ? null : live.UseSystem(systemId);
+        // Offline upgrades can become powered by another hub. Settle the network before reading any upgraded system.
+        if (live.Reads?.HasSovereigntyUpgrades(systemId, HasUpgrades) ?? live.Economy.Inspect(HasUpgrades))
+        {
+            AdvanceAll();
+        }
+    }
+
     public void AdvanceAll()
     {
         entosis?.AdvanceAll();

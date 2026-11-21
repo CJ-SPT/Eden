@@ -148,7 +148,7 @@ internal sealed partial class CombatAnomalyStore(
 
     private IReadOnlyList<CombatAnomaly> ListCoreOwned(int systemId, long now, bool signature)
     {
-        sovereignty?.AdvanceAll();
+        sovereignty?.AdvanceSites(systemId);
         var key = (systemId, signature);
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.

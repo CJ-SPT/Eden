@@ -172,12 +172,17 @@ public static class TackleDefinitions
         );
         var result = graph.Attributes(NpcNode);
         double maximum = attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity);
-        if (maximum <= 0)
+        if (!double.IsFinite(maximum) || maximum < 0)
         {
             throw new InvalidDataException("Invalid NPC maximum speed.");
         }
+        // Stationary sentries can omit both movement attributes in the catalog.
         result[DogmaAttributeId.EntityCruiseSpeed] =
-            attributes.GetValueOrDefault(DogmaAttributeId.EntityCruiseSpeed, maximum) * result[DogmaAttributeId.MaxVelocity] / maximum;
+            maximum == 0
+                ? 0
+                : attributes.GetValueOrDefault(DogmaAttributeId.EntityCruiseSpeed, maximum)
+                    * result[DogmaAttributeId.MaxVelocity]
+                    / maximum;
         return result;
     }
 }

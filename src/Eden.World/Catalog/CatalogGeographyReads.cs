@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Flight;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
@@ -102,6 +103,22 @@ public sealed partial class CatalogDbContext
         writable
             ? CatalogProvider.CelestialRows(Set<Celestial>().Where(body => body.Id == id)).SingleOrDefault()
             : Definitions.FindCelestial(id);
+
+    internal IReadOnlyDictionary<int, SpacePosition> FirstCelestialPositions()
+    {
+        var celestials = Set<Celestial>();
+        var firstIds = celestials.GroupBy(body => body.SolarSystemId).Select(group => group.Min(body => body.Id));
+        return celestials
+            .Where(body => firstIds.Contains(body.Id))
+            .Select(body => new
+            {
+                body.SolarSystemId,
+                body.X,
+                body.Y,
+                body.Z,
+            })
+            .ToDictionary(body => body.SolarSystemId, body => new SpacePosition(body.X, body.Y, body.Z));
+    }
 
     internal ImmutableArray<CatalogCelestialDefinition> CelestialsInSystem(int id) =>
         writable

@@ -17,6 +17,7 @@ public enum SessionLatencyPhase
     Updates,
     Motion,
     Contacts,
+    Exploration,
     Output,
     OutputEncode,
     OutputCompress,
@@ -35,6 +36,7 @@ public sealed class SessionLatency : IDisposable
     private static readonly AsyncLocal<SessionLatency?> s_current = new();
     private readonly SessionLatency? _parent = s_current.Value;
     private readonly long[] _elapsed = new long[s_phases.Length];
+    private readonly TimeSpan _gcPauseAtStart = GC.GetTotalPauseDuration();
     private readonly long _started = Stopwatch.GetTimestamp();
     private readonly string _description;
     private readonly Action<string> _warning;
@@ -109,10 +111,12 @@ public sealed class SessionLatency : IDisposable
         string reply = _replyMilliseconds is { } elapsed
             ? $", reply={elapsed:F2} ms, arrivalToReply={elapsed + _queueMilliseconds:F2} ms"
             : string.Empty;
+        double gcPause = (GC.GetTotalPauseDuration() - _gcPauseAtStart).TotalMilliseconds;
         string blocker = _blockingOwner is null ? string.Empty : $", observedOwner={_blockingOwner}";
         string message = string.Create(
             CultureInfo.InvariantCulture,
-            $"Session latency {_description}: total={total:F2} ms, queue={_queueMilliseconds:F2} ms{reply}{blocker}, {phases}."
+            $"Session latency {_description}: total={total:F2} ms, queue={_queueMilliseconds:F2} ms{reply}{blocker}, "
+                + $"gcPause={gcPause:F2} ms, {phases}."
         );
         if (total + _queueMilliseconds >= SlowMilliseconds)
         {

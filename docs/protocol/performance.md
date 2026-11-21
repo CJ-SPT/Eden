@@ -6073,3 +6073,83 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare queue age and frame and market latency on the dedicated server during a similarly populated session.
+
+## In-space frame stalls during bot traffic
+
+A deployed frame took 545.63 ms with 20.66 ms of world wait and 525.00 ms of inclusive ownership.
+The 423.17 ms Arrival logged in the same second recorded zero SQL commands, connections and fitting rebuilds.
+The monitor showed 8,379 scheduled pilots, zero due jobs at capture and peak frame start delay below 4 ms.
+The existing timers leave much of the frame processing time unattributed.
+
+On baseline `be9e571f`, the existing warm in-space frame test exceeded its five-second timeout while
+another thread held shared world coordination. Combat, pirate and mining site reads advanced galaxy-wide
+sovereignty even when the local system had no installed upgrades. They now consult a resident, versioned local
+lookup. Systems with upgrades still settle the network at read time, including offline upgrades that can gain power.
+
+A second test with populated wormhole routes reproduced the same timeout on a warm signature read.
+The signature view now survives across reads until a connection commits, the catalog changes or the next
+age, exit visibility, expiry or replacement deadline arrives. Partially depleted holes with mass regeneration
+recompute their presentation on read. Slow session warnings include exploration time. Slow prepared
+traffic warnings include the elapsed time reacquiring the maintenance owner. Both warnings report
+process-wide GC pause time overlapping their measured interval.
+
+The new timing also identified a cold exploration tick that took 3.87 seconds inside the exploration phase.
+Building the wormhole catalog loaded every celestial in each eligible system to choose the lowest-ID anchor.
+A grouped catalog query now selects that one body's coordinates for every system. The population test checks
+the selected anchor and requires exactly one command reading the celestial table across all nine system classes.
+
+The separately reported `Invalid NPC maximum speed` exception reproduced when a stasis web was applied
+to a stationary target with zero or absent maximum velocity. The replay save contains eight Tower Sentry
+Drone IIIs and four Tower Sentry Drone IIs with no catalog maximum speed. Webs now leave those targets
+at zero cruise speed while simultaneous scramble effects still apply. Moving targets keep their cruise-to-maximum ratio.
+The deployed error omitted the NPC identity.
+
+### Automated validation
+
+The paired Release builds used baseline `be9e571f` with and without this change.
+They replayed the same frozen save for 90 seconds on server GC.
+Each used 1,040 visited communities, two observers, at least 10,156 scheduled pilots and seven checkpoints.
+Of four theory cases, `EDEN_BOT_REPLAY_CASE=900-False` ran the workload. Both runs recorded
+80 warmed frames and 40 warmed regional market calls after 30 seconds, with zero SQL commands,
+connections or fitting rebuilds across those requests.
+
+| Measure | Baseline | Final |
+| --- | ---: | ---: |
+| First frame, including setup on its path | 4,453 ms | 1,546 ms |
+| SQL commands in first frame | 12,710 | 5,053 |
+| Warm frame processing, median / p95 | 12.41 / 55.46 ms | 2.05 / 35.32 ms |
+| Slowest warm frame processing | 85.00 ms | 162.87 ms |
+| Warm frame including queue, p95 / maximum | 68.28 / 90.40 ms | 50.53 / 186.53 ms |
+| Committed actions / failures | 59,908 / 0 | 68,869 / 0 |
+| Due jobs / oldest due job at end | 4,281 / 8,889 ms | 62 / 28.83 ms |
+
+The slowest final warm frame recorded 140.34 ms of world wait, 1.71 ms of ownership and 0.10 ms
+in exploration. Both warmed samples stayed below 250 ms. The short replay demonstrates queue recovery
+in this workload and leaves the cause of the deployed 545.63 ms frame unconfirmed.
+Reports and progress logs are in `artifacts/traffic-spike-validation/{baseline,final}/`.
+
+Focused coverage includes both variants of
+`SystemRuntimeIsolationTests.PausedSystemCannotBlockAnotherSystemsCompleteWarmFrame`, all six cases of
+`CheckpointOwnershipTests.PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait`,
+wormhole travel and lifecycle, sovereignty upgrades, tackle, timing diagnostics, traffic preparation
+and maintenance. The checkpoint timing fixture now verifies the sum and maximum of the actual page-batch
+holds. Its previous single-owner assertion also failed on the baseline incremental checkpoint.
+
+After integrating the capsuleer supply changes from `19ab116c`, the same focused filter plus the catalog
+supply restart test passed all 107 cases in 58.24 seconds. The solution and Release test project built with
+zero warnings or errors. Both Python policy suites passed all 17 tests and repository formatting checks passed.
+A further 90-second replay on the integrated build completed 69,638 actions with zero failures and finished
+with 10,372 scheduled pilots and a 31.53 ms oldest delay. Its first frame took 1,944 ms. Across the 80
+warmed frames, processing p95 was 18.13 ms and the maximum was 65.32 ms. End-to-end p95 and maximum
+were 22.07 ms and 80.41 ms. All 120 warmed requests recorded zero SQL, connections and fitting rebuilds.
+The report is in `artifacts/traffic-spike-validation/integrated/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare frame processing and oldest due job age at similar pilot counts. On any further spike, capture
+the session's `Exploration`, `WorldWait`, `Ownership` and `gcPause` timings alongside any prepared
+traffic action's `ownerReacquire` time.

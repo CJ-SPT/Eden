@@ -106,7 +106,10 @@ internal sealed class PilotSessionTick(
             {
                 entosis.Advance(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
-            anomalies?.Advance(context);
+            using (SessionLatency.Measure(SessionLatencyPhase.Exploration))
+            {
+                anomalies?.Advance(context);
+            }
             warzoneUpdates?.Advance(context);
             abyss?.Advance(context);
             environments?.Advance(context);
