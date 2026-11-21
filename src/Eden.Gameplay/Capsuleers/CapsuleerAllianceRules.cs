@@ -13,6 +13,7 @@ public static class CapsuleerAllianceRules
     public const int FoundingCorporations = 2;
     public const int TargetCorporations = 3;
     public const int FirstClaimMaximumJumps = 3;
+    public const int FreshFirstClaimMaximumJumps = 6;
     public const int FirstHubOrderDays = 7;
 
     // Build 3662168 cargo and module profiles for the first claim's standard outfitting plan.

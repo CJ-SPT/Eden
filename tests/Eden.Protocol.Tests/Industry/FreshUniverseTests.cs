@@ -363,7 +363,7 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
                     Time = clock.Now,
                 }
             );
-            setup.Set<PilotWallet>().Find(factory)!.Cents = CorporationRules.CreationFeeCents;
+            setup.Set<PilotWallet>().Find(factory)!.Cents = 3 * CorporationRules.CreationFeeCents;
             foreach (var skill in recipe.Skills)
             {
                 var trained =
@@ -405,11 +405,10 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
         int corporation = host.GetRequiredService<IPlayerCorporations>()
             .Create(factory, PlayerCorporationTests.Details("Fresh Foundry", "FRFR"))
             .Corporation.Id;
-        const long capital = 10_000_000;
         using (var treasury = live.Economy.Begin(TransactionParticipants.None))
         {
             var charter = treasury.Set<SavedCorporation>().Find(corporation)!;
-            charter.BalanceCents = capital;
+            Assert.Equal(0, charter.BalanceCents);
             charter.CapsuleerFoundingSystemId = StarterSystem;
             treasury.Commit();
         }
@@ -448,7 +447,12 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             );
             Assert.Equal(IndustryJobStatus.Delivered, job.Status);
             Assert.True(job.CostCents > 0);
-            Assert.True(world.Set<SavedCorporation>().Find(corporation)!.BalanceCents > capital);
+            Assert.Contains(
+                world.Filter<SavedWalletLedger>(row => row.OwnerId == corporation).AsEnumerable(),
+                entry =>
+                    entry.EntryType == CorporationWalletRules.PlayerDonationEntry && entry.AmountCents == CorporationRules.CreationFeeCents
+            );
+            Assert.True(world.Set<SavedCorporation>().Find(corporation)!.BalanceCents > 0);
             return true;
         });
     }

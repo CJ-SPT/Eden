@@ -1,5 +1,45 @@
 # Sovereignty
 
+## Fresh-world alliance and first-claim progression
+
+Fresh bot-led corporations build initial working capital through an ordinary founder donation. The founder
+keeps personal cash equal to the charter fee and contributes surplus until the corporation holds that amount.
+Existing market sales and taxes then fund operations. The alliance review keeps the normal registration fee
+and member dues reserve. A funded founder with a willing partner must train Empire Control V through its own
+skillbooks, earned skill points, and passive queue before the corporation pays the registration shortfall.
+
+A fresh courier in a paid ship can take a first-claim assignment at headquarters. A Squall outfitter must
+qualify for the hull, the Entosis Link and the expedition's hauling skill level through ordinary training.
+The corporation can purchase locally available parts or place funded buy orders for missing stock while
+preserving dues. The first-claim search in a fresh world reaches up to six reciprocal jumps. The existing
+flight, neutral hub deployment, paid cycles, home defense and billing handle the expedition and the claim.
+
+Empire Control (3732) uses rank 5 and Memory/Charisma in the pinned build 3662168 catalog. The local
+EVE.js `server/src/space/modules/entosisLinkRuntime.js` snapshot SHA-256 is
+`AFE03A1E9E0FA1525AA56A4D3782EF4E91BA06E509A49CE15803E3D1732E1D1D`.
+[CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[CCP Sovereignty Hub](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub)
+
+### Automated validation
+
+The exact funded-neighbors, first-claim and fresh corporate-production filters passed eight cases in
+27.39 seconds. After adding the expedition bid, the first-claim filter passed four cases in 18.58 seconds.
+The fresh formation replay queued the last Empire Control level before paying registration. The fresh
+claim replay verified a funded Squall bid, fitting and fuel purchases, cargo and target across restart,
+capture outside the observer's system, and the first paid bill. The fixtures stage working capital,
+corporations, a qualified expedition pilot, and a seller's stock.
+
+The final alliance, sovereignty, corporation, training, fresh career and production filter passed 220
+cases in 131.69 seconds. The solution build, both Python policy suites and formatting checks passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Autonomous first claims
 
 After a Sovereignty Hub reaches the executor's headquarters, a free docked corporate hauler can use its existing

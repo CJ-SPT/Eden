@@ -25,6 +25,8 @@ namespace Eden.World.Capsuleers;
 
 internal readonly record struct CapsuleerTrainingTurn(CapsuleerCareerPlan? Plan, bool MarketChanged = false, bool LevelChanged = false);
 
+internal readonly record struct CapsuleerQualificationTurn(bool Progressed, bool MarketChanged);
+
 [Injectable]
 internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, PilotMarketStore market)
 {
@@ -160,7 +162,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
                 return new(plan, boughtBook, trained || allocatedLevel);
             }
         }
-        bool marketChanged = state.Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now);
+        bool marketChanged = state.Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now, out _);
         return new(plan, marketChanged, trained);
     }
 
@@ -178,7 +180,36 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         {
             return bought;
         }
-        return training.Advance(world, id, now).Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now);
+        return training.Advance(world, id, now).Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now, out _);
+    }
+
+    internal CapsuleerQualificationTurn AdvanceQualification(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        IReadOnlyList<int> equipment,
+        TrainingTarget qualification,
+        long now
+    )
+    {
+        if (
+            pilot.Position is not null
+            || pilot.InStructure
+            || Expand(catalog, equipment.SelectMany(type => RequiredSkills(catalog, type)).Append(qualification))
+                is not { Length: > 0 } targets
+        )
+        {
+            return default;
+        }
+        long id = pilot.PilotId;
+        var state = training.Advance(world, id, now);
+        if (PilotTrainingStore.ReadFreePoints(world, id) > 0 && Spend(world, catalog, pilot, targets, now, out bool bought, out _))
+        {
+            return new(true, bought);
+        }
+        bool queued = false;
+        bool marketChanged = state.Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now, out queued);
+        return new(queued || state.ChangedSkills.Count > 0, marketChanged);
     }
 
     private bool QueueNextLevel(
@@ -186,9 +217,11 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         CatalogDbContext catalog,
         DockedPilot pilot,
         IReadOnlyList<TrainingTarget> targets,
-        long now
+        long now,
+        out bool queued
     )
     {
+        queued = false;
         long id = pilot.PilotId;
         foreach (var target in targets)
         {
@@ -203,7 +236,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
                 || Learn(world, catalog, pilot, target.TypeId, now, out marketChanged)
             )
             {
-                training.QueueCareerLevel(world, id, new(target.TypeId, level + 1), now);
+                queued = training.QueueCareerLevel(world, id, new(target.TypeId, level + 1), now).Queue.Count > 0;
             }
             return marketChanged;
         }

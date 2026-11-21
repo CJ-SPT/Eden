@@ -46,7 +46,7 @@ internal sealed partial class ResidentEconomy
         _tackleTargets.Clear();
         _playerEwarTargets.Clear();
         _areaContactEnds.Clear();
-        _structureWebEnds.Clear();
+        _structureTackleEnds.Clear();
         _effectRevision = 0;
         _tackleRows = 0;
         _playerEwarRows = 0;
@@ -289,11 +289,11 @@ internal sealed partial class ResidentEconomy
         }
         if (before?.SourceStructureId is not null)
         {
-            _structureWebEnds.Remove((before.ExpiresAt, before.ModuleId, before.SystemId));
+            _structureTackleEnds.Remove((before.ExpiresAt, before.ModuleId, before.SystemId));
         }
         if (after?.SourceStructureId is not null)
         {
-            _structureWebEnds.Add((after.ExpiresAt, after.ModuleId, after.SystemId));
+            _structureTackleEnds.Add((after.ExpiresAt, after.ModuleId, after.SystemId));
         }
         if (before is null)
         {
@@ -325,12 +325,12 @@ internal sealed partial class ResidentEconomy
         }
     }
 
-    private readonly SortedSet<(long End, long Module, int System)> _structureWebEnds = [];
+    private readonly SortedSet<(long End, long Module, int System)> _structureTackleEnds = [];
 
-    internal long[] DueStructureWebs(int? system, long now) =>
-        _structureWebEnds.Count == 0 || _structureWebEnds.Min.End > now
+    internal long[] DueStructureTackles(int? system, long now) =>
+        _structureTackleEnds.Count == 0 || _structureTackleEnds.Min.End > now
             ? []
-            : _structureWebEnds
+            : _structureTackleEnds
                 .TakeWhile(row => row.End <= now)
                 .Where(row => system is null || row.System == system)
                 .Select(row => row.Module)

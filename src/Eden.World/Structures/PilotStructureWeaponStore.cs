@@ -10,6 +10,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -107,15 +108,9 @@ internal sealed partial class PilotStructureWeaponStore(
                     {
                         continue;
                     }
-                    if (cycle.ReactivationAt > 0 && !cycle.Waiting)
+                    if (TackleDefinitions.StructureTackle(cycle.Effect))
                     {
-                        EndWeb(cycle);
-                        stopped.Add(cycle);
-                    }
-                    if (!targetLost && !cycle.Stopping && cycle.Repeats > 0 && now < cycle.ReactivationAt)
-                    {
-                        lease.Weapons = lease.Weapons.SetItem(cycle.ModuleId, cycle with { Waiting = true });
-                        continue;
+                        EndTackle(cycle);
                     }
                     if (!targetLost && !cycle.Stopping && cycle.Repeats > 0)
                     {
@@ -130,10 +125,7 @@ internal sealed partial class PilotStructureWeaponStore(
                         catch (Exception error) when (error is InvalidDataException or OverflowException) { }
                     }
                     lease.Weapons = lease.Weapons.Remove(cycle.ModuleId);
-                    if (cycle.ReactivationAt == 0)
-                    {
-                        stopped.Add(cycle);
-                    }
+                    stopped.Add(cycle);
                 }
                 return new(started, stopped);
             }
@@ -189,7 +181,7 @@ internal sealed partial class PilotStructureWeaponStore(
             || module.OwnerId != source.CorporationId
             || !module.Online
             || !(
-                effect == DogmaEffect.StructureStasisWebifier
+                TackleDefinitions.StructureTackle(effect)
                     ? InventoryDefinitions.IsMediumSlot(module.FlagId)
                     : InventoryDefinitions.IsHighSlot(module.FlagId)
             )
@@ -217,9 +209,9 @@ internal sealed partial class PilotStructureWeaponStore(
         {
             result = Neutralize(world, catalog, token, source, module, target, victim, fit, repeats, now);
         }
-        else if (effect == DogmaEffect.StructureStasisWebifier && profile.GroupId == StructureWeaponRules.WebifierGroup)
+        else if (TackleDefinitions.StructureTackle(effect) && StructureWeaponRules.UsesElectronicSystems(profile.GroupId))
         {
-            result = Web(world, catalog, token, source, module, target, victim, fit, repeats, now);
+            result = ApplyTackle(world, catalog, token, source, module, target, victim, fit, effect, now);
         }
         else if (effect == DogmaEffect.UseMissiles && StructureWeaponRules.MissileLauncher(profile.GroupId))
         {

@@ -23,7 +23,18 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerAlliances
 {
-    private static readonly CatalogDefinition<int[]> s_firstClaimSystems = new("capsuleer-first-claim-systems", FirstClaimSystems);
+    private static readonly CatalogDefinition<int[]> s_firstClaimSystems = new(
+        "capsuleer-first-claim-systems",
+        (catalog, headquarters) => FirstClaimSystems(catalog, headquarters, CapsuleerAllianceRules.FirstClaimMaximumJumps)
+    );
+
+    private static readonly CatalogDefinition<int[]> s_freshFirstClaimSystems = new(
+        "fresh-capsuleer-first-claim-systems",
+        (catalog, headquarters) => FirstClaimSystems(catalog, headquarters, CapsuleerAllianceRules.FreshFirstClaimMaximumJumps)
+    );
+
+    internal static int FirstClaimJumpLimit(WorldAction world) =>
+        world.Settings.FreshUniverse ? CapsuleerAllianceRules.FreshFirstClaimMaximumJumps : CapsuleerAllianceRules.FirstClaimMaximumJumps;
 
     private bool TryProcureFirstHub(EconomyTransaction world, CatalogDbContext catalog, SavedCorporation corporation, long now)
     {
@@ -107,7 +118,7 @@ internal sealed partial class CapsuleerAlliances
 
     internal static IEnumerable<int> UnclaimedSites(WorldAction world, CatalogDbContext catalog, int headquarters) =>
         catalog
-            .Definition(s_firstClaimSystems, headquarters)
+            .Definition(world.Settings.FreshUniverse ? s_freshFirstClaimSystems : s_firstClaimSystems, headquarters)
             .Where(system => world.Settings.Capsuleers.CanWork(catalog.Definitions, system) && !PilotEntosisStore.HasHub(world, system));
 
     private static bool HasHubSupply(WorldAction world, SavedCorporation corporation, long now)
@@ -155,7 +166,7 @@ internal sealed partial class CapsuleerAlliances
             .FirstOrDefault();
     }
 
-    private static int[] FirstClaimSystems(CatalogDbContext catalog, int headquarters)
+    private static int[] FirstClaimSystems(CatalogDbContext catalog, int headquarters, int maximumJumps)
     {
         List<int> candidates = [];
         Queue<(int System, int Jumps)> pending = new();
@@ -171,7 +182,7 @@ internal sealed partial class CapsuleerAlliances
             {
                 candidates.Add(current.System);
             }
-            if (current.Jumps == CapsuleerAllianceRules.FirstClaimMaximumJumps)
+            if (current.Jumps == maximumJumps)
             {
                 continue;
             }

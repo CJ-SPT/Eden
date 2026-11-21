@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Structures;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
@@ -112,11 +113,11 @@ internal sealed class ResidentStructureControl(
             {
                 return;
             }
-            var webs = Weapons.Values.Where(cycle => cycle.Effect == Eden.Gameplay.Inventory.DogmaEffect.StructureStasisWebifier).ToArray();
-            if (webs.Length > 0)
+            var tackles = Weapons.Values.Where(cycle => TackleDefinitions.StructureTackle(cycle.Effect)).ToArray();
+            if (tackles.Length > 0)
             {
-                using var action = owner.Economy.Begin(new(ships: webs.Select(cycle => cycle.TargetId)));
-                foreach (var cycle in webs)
+                using var action = owner.Economy.Begin(new(ships: tackles.Select(cycle => cycle.TargetId)));
+                foreach (var cycle in tackles)
                 {
                     if (action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(cycle.ModuleId) is { } row)
                     {

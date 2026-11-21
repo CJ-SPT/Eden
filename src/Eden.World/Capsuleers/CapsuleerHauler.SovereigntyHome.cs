@@ -75,6 +75,7 @@ internal sealed partial class CapsuleerHauler
             home.SystemId,
             hull,
             avoided,
+            CapsuleerAlliances.FirstClaimJumpLimit(world),
             policy: world.Settings.Capsuleers
         );
         if (supplyRoute is null || ammunitionSupply.LoadSovereigntyReagent(world, catalog, Pilot, corporation, home, Now) is not { } load)
@@ -107,7 +108,25 @@ internal sealed partial class CapsuleerHauler
         long duration
     )
     {
-        if (!ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance, duration, Now))
+        if (world.Settings.FreshUniverse && !CapsuleerIndustry.ExpeditionQualified(world, catalog, pilotId))
+        {
+            if (Work.CareerPlan?.Profession == CapsuleerProfession.Hauling && CapsuleerIndustry.CanTrainExpedition(catalog))
+            {
+                var qualification = careerTraining.AdvanceQualification(
+                    world,
+                    catalog,
+                    Pilot,
+                    [CapsuleerAllianceRules.ExpeditionSquall, CapsuleerAllianceRules.ExpeditionLink],
+                    new(CapsuleerIndustry.ExpeditionHaulingSkill(catalog), CapsuleerAllianceRules.ExpeditionHaulingSkillLevel),
+                    Now
+                );
+                _operation.MarketChanged |= qualification.MarketChanged;
+            }
+            return false;
+        }
+        var outfit = ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance, duration, Now);
+        _operation.MarketChanged |= outfit.MarketChanged;
+        if (!outfit.Ready)
         {
             return false;
         }

@@ -1,7 +1,9 @@
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -44,7 +46,10 @@ public sealed partial class SqliteWorld
                     row.TargetId == shipId && row.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship && row.ExpiresAt > now
                 )
                 .AsEnumerable()
-                .Any(row => Eden.Gameplay.Propulsion.InterdictionRules.Focused(row.Effect))
+                .Any(row =>
+                    Eden.Gameplay.Propulsion.InterdictionRules.Focused(row.Effect) || row.Effect == DogmaEffect.StructureWarpDisruptor
+                )
+            && world.Attributes(pilotId).GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0
         )
         {
             throw new InvalidDataException("Focused warp disruption prevents docking at a player structure.");

@@ -6,7 +6,7 @@ namespace Eden.Protocol.Structures;
 
 internal sealed record StructureBeam(long SourceId, StructureWeaponCycle Cycle)
 {
-    // Both targeted Standup effects use the Laser GUID in build 3662168.
+    // Targeted Standup capacitor and tackle effects use the Laser GUID in build 3662168.
     internal DestinyCommand Command(bool active) =>
         new DestinyCommand.TimedSpecialEffect(
             SourceId,

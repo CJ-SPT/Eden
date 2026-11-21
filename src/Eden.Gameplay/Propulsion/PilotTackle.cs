@@ -76,7 +76,11 @@ public static class TackleDefinitions
 
     public static bool Web(DogmaEffect effect) => effect is DogmaEffect.StasisWebifier or DogmaEffect.StructureStasisWebifier;
 
-    public static bool Targeted(DogmaEffect effect) => Web(effect) || effect is DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler;
+    public static bool StructureTackle(DogmaEffect effect) =>
+        effect is DogmaEffect.StructureStasisWebifier or DogmaEffect.StructureWarpDisruptor;
+
+    public static bool Targeted(DogmaEffect effect) =>
+        Web(effect) || effect is DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler or DogmaEffect.StructureWarpDisruptor;
 
     public static TackleModule Define(long itemId, int typeId, DogmaEffect effect, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
@@ -95,10 +99,10 @@ public static class TackleDefinitions
             core ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MaxRange),
             web ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStrength),
             web ? attributes.GetValueOrDefault(DogmaAttributeId.SpeedFactor) : 0,
-            effect == DogmaEffect.WarpScrambler ? attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlockStrength) : 0,
-            core || effect == DogmaEffect.StructureStasisWebifier
-                ? attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay)
+            effect is DogmaEffect.WarpScrambler or DogmaEffect.StructureWarpDisruptor
+                ? attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlockStrength)
                 : 0,
+            core || StructureTackle(effect) ? attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay) : 0,
             web ? attributes.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness) : 0
         );
         if (

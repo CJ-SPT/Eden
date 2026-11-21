@@ -3,6 +3,7 @@ using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
@@ -82,6 +83,10 @@ internal static partial class CapsuleerCorporations
         organization = organization with { Profession = profession, DueTicks = nextReview };
         var former = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         organization = ObserveEmployer(organization, former, activeTicks);
+        if (world.Settings.FreshUniverse && former?.CeoId == pilotId && CorporationMembershipStore.BotLed(world, former))
+        {
+            FundFreshCharter(world, former, now);
+        }
         bool recruiting = world.Settings.Capsuleers.AutomaticRecruitment;
         if (recruiting && former?.CeoId == pilotId && CanRecruit(world, former))
         {
@@ -170,6 +175,23 @@ internal static partial class CapsuleerCorporations
         return independent && (!world.Settings.FreshUniverse || agent.Career == CapsuleerCareer.Mining)
             ? Found(world, catalog, database, pilot, homeArea, now)
             : false;
+    }
+
+    private static void FundFreshCharter(EconomyTransaction world, SavedCorporation corporation, long now)
+    {
+        const long workingCapital = CorporationRules.CreationFeeCents;
+        const int key = CorporationWalletRules.MasterKey;
+        long balance = world.Set<PilotWallet>().Find(corporation.CeoId)?.Cents ?? 0;
+        long contribution = Math.Min(balance - workingCapital, workingCapital - corporation.BalanceCents);
+        if (contribution > 0)
+        {
+            CorporationWalletStore.Transfer(
+                world,
+                corporation.CeoId,
+                new(false, key, corporation.Id, key, contribution, "Fresh charter operating capital"),
+                now
+            );
+        }
     }
 
     private static bool ReviewApplication(

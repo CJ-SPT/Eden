@@ -20,13 +20,17 @@ internal sealed class SubscriptionHandler : IPilotCallHandler
         Dictionary<string, object?>? keywords
     )
     {
-        if (service != "subscriptionMgr" || method != "GetSubscriptionTime")
+        if ((service, method) is not (("subscriptionMgr", "GetSubscriptionTime") or ("loginRewardFacilities", "get_my_clone_grade")))
         {
             return PilotCallResult.Unsupported;
         }
         if (arguments is not object?[] { Length: 0 } || keywords is { Count: > 0 })
         {
             return new PilotCallResult.Failure("Subscription information does not accept arguments.");
+        }
+        if (service == "loginRewardFacilities")
+        {
+            return (int)context.Account.CloneGrade;
         }
         return context.Account.CloneGrade == AccountCloneGrade.Omega ? s_permanentOmegaExpiry : 0L;
     }

@@ -28,6 +28,8 @@
   [Replacement markets](protocol/capsuleers.md#fresh-world-replacement-markets)
   Equipped bounty hunters with replacement reserves can move to reachable lower-security stations for belt patrols.
   [Frontier patrols](protocol/capsuleers.md#fresh-world-frontier-patrols)
+  Fresh bot corporations can fund operations from founder contributions and pursue trained, paid first claims.
+  [Fresh-world sovereignty](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
   Fresh worlds prepare eligible unvisited high-security station systems while someone is playing. The administrator
   can cap admitted bots, set region or solar-system access, and control fresh-universe careers and autonomous organizations.
   [Population settings](world-configuration.md#autonomous-population)
@@ -36,6 +38,10 @@
   [Regional conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026)
 
 Counts, schema versions, example pilots, fixture populations and native observations describe the recorded implementation. Read the linked follow-ups before treating an older example as current behavior. Automated support and historical client observations are distinct; native presentation remains unverified where stated.
+
+The client can read the account's current character count, creation date and login reward clone grade. Bug reports can read
+the server's advertised version and build. The NPC station clone bay can list the pilot's local jump clones and refresh their names.
+[EVE.js account and station clone comparison](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
 
 The star map can read NPC station counts, character customization can read the pilot's creation date, and Local can fill
 missing organization fields. Reconnecting pilots can recover their active Abyssal room or Ghost Site countdown.
@@ -162,7 +168,8 @@ Use **Orbit** or **Keep at Range** on a nearby ship, NPC, asteroid or wreck to c
 ## Player Upwell structures
 
 Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
-missiles, neutralize capacitor and web ships. Standup fighters can launch and recall, including after the gunner
+missiles, neutralize capacitor, slow ships and disrupt warp. Loading the Standup scrambling script also blocks
+microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner
 releases control. The structure audit tracks the remaining defensive effects, service-specific access and fees,
 player markets, clone bays, corporation offices, and specialized hull behavior.
 [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)

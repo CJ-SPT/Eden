@@ -13,7 +13,7 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers and targeted stasis webifiers implemented. Other EWAR, warp tackle and area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, targeted stasis webifiers and focused warp tackle implemented. Other EWAR and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
 ### Structures gap audit
@@ -26,7 +26,7 @@ schema 213 and also accepts the earlier structure-branch format.
 
 | Area | Existing coverage and remaining gaps |
 | --- | --- |
-| Defense | Launch and recall of Standup fighters, guided missiles, webs and neutralizers work. Scripted warp tackle, other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Defense | Launch and recall of Standup fighters, guided missiles, webs, neutralizers and scripted warp tackle work. Other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
 | Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
 | Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
 | Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
@@ -60,6 +60,62 @@ Not performed; agent client testing is disabled.
 Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
 the other ship retains its lock on the Astrahus.
 
+### Standup Focused Warp Disruptors
+
+A gunner can apply 100 points of warp disruption to a locked ship or NPC with a fitted, online Standup Focused Warp
+Disruptor. Both variants use structure capacitor and green safety. Structure Electronic Systems reduces the activation
+cost by 3% per level.
+
+| Variant (type) | Base cost | Unscripted surface range | Scripted surface range |
+| --- | ---: | ---: | ---: |
+| Standup Focused Warp Disruptor I (35949) | 4,000 GJ | 210 km | 63 km |
+| Standup Focused Warp Disruptor II (47334) | 4,800 GJ | 300 km | 90 km |
+
+The Standup Focused Warp Scrambling Script (type 47336) shortens range and also suppresses microwarpdrives and
+micro jump drives. Firing preserves the loaded script. Both modes contribute to the same warp strength used by ship navigation and prevent Upwell docking
+when the target's warp core strength is overcome. The effect expires after 30 seconds and can be fired again after
+a further 60 seconds. Release or loss of the control lease ends active tackle and preserves the paid reactivation
+deadline. The webifiers now also require a fresh activation after every cooldown.
+
+The build-3662168 module default is effect 6222 (`structureWarpScrambleBlockMWDWithNPCEffect`), which uses
+`effects.Laser`. Group 1442 receives the skill capacitor modifier from effect 6400. Script effect 7026 modifies
+range attribute 54 and propulsion block strength 1350. Both tackle groups set `disallowRepeatingActivation`
+(attribute 1014). Inert inspection of the signed archive recorded below found the structure group in
+`moduleButtonTooltip.pyj` and the `warpScramblerMWD` slot for this native effect in `dogma/effects/__init__.pyj`.
+EVE.js 261108.1 classifies the same effect as a scrambler in `space/modules/hostileModuleRuntime.js` (hash below).
+[CCP structure defense and cooldowns](https://www.eveonline.com/news/view/upwell-2.0-structures-changes-coming-on-february-13th) ·
+[CCP unscripted micro jump behavior](https://www.eveonline.com/news/view/patch-notes-for-july-2018-release) ·
+[CCP warp disruption rules](https://support.eveonline.com/hc/en-us/articles/115004925705-Warp-Scrambling-and-Warp-Disruption)
+
+**Automated validation**
+
+Exact filters for `DisruptorUsesCatalogRangeStrengthAndOnePaidCycle`,
+`NativeDisruptorBlocksWarpAndUpwellDockingAndScriptAddsPropulsionBlock` and
+`WebSlowsNpcForPaidCycleAndCooldownSurvivesRelease` passed 8 cases in 13.74 seconds. These exercise both disruption
+variants and script modes, inclusive range, source capacitor, script custody, green safety, native effect and victim
+notifications, warp and dock denial, exact expiry, and one paid cycle even when given a repeat count.
+
+The combined check caught a pre-selection beam monitor call. The monitor now waits for a selected pilot. A follow-up
+run on main reproduced both subscription packet failures caused by the test fixture's missing resident world. The
+fixture now starts that world and commits its account grade through the resident owner. Both exact Alpha and Omega
+cases passed in 7.49 seconds with the corrected setup.
+
+The final focused filter joined `Structures`, `Docking.StructureServiceTests`, `Propulsion.TackleTests`,
+`Propulsion.HicInterdictionTests`, `Propulsion.SpatialModuleTests`, `Propulsion.SpatialModuleOperationTests`,
+`Combat.LiveSimulationTests`, `Combat.ResidentFitTests`, `Persistence.WorldMigrationTests`,
+`Persistence.DetachedCheckpointTests`, `PilotSessions.JumpCloneServiceTests`, `PilotSessions.SubscriptionServiceTests`
+and `Hosting`. All 444 cases passed in 191.16 seconds. The solution built without warnings, both Python policy suites
+passed (8 and 9 cases), and CSharpier, line width and local documentation links passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Activate a Standup disruptor with and without the script. At the target, verify warp and Upwell docking are blocked
+in both modes and that only the scripted mode blocks propulsion modules.
+
 ### Standup stasis webifiers
 
 A gunner can slow a locked pilot ship or NPC with a fitted, online Standup Stasis Webifier. The module uses the structure's
@@ -71,9 +127,9 @@ Existing tackle rules apply the target's web resistance and combine incoming spe
 | Stasis Webifier I (35943) | 3,000 GJ | 200 km | 70% |
 | Stasis Webifier II (47351) | 3,600 GJ | 300 km | 75% |
 
-Both have a 30-second active cycle followed by 60 seconds of reactivation delay. A queued repeat checks the target,
-range, safety and capacitor again when it can fire. A late callback starts at most one new cycle.
-The target regains speed when the web expires, even if the gunner's connection has not advanced.
+Both variants have a 30-second active cycle followed by a 60-second reactivation delay. The focused warp disruption
+milestone above enforces a fresh activation at the end of that delay. The target regains speed when the web expires,
+even if the gunner's connection has not advanced.
 Releasing control ends the web. The next gunner inherits the cooldown. Restart clears active tackle and preserves
 the capacitor payment and reactivation deadline. Schema 190 allows a tackle row to reference its source ship or structure.
 

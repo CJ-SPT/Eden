@@ -84,6 +84,9 @@ internal sealed class CharacterSelectionHandler(
         }
         return (service, method) switch
         {
+            ("charUnboundMgr", "GetNumCharacters") => arguments is object?[] { Length: 0 } && keywords is not { Count: > 0 }
+                ? pilots.CountPilots(context.AccountId)
+                : new PilotCallResult.Failure("Character count does not accept arguments."),
             ("charUnboundMgr", "GetCharacterSelectionData") => CharacterSelection(context),
             // ccSvc._QAPickStarterSystem skips its optional QA override when the server offers no systems.
             ("charUnboundMgr", "GetQAStarterSystemIDs") when (context.Roles & (long)PilotRole.QualityAssurance) != 0 => BlueEmpty.List,

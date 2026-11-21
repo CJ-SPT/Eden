@@ -72,8 +72,9 @@ public sealed class StructureWebifierTests
             reset.Commit();
         }
         var first = weapons.Activate(lease.Token, module, Npc, 2, 1, Effect);
-        Assert.Equal(capacity - cost, first.Web!.Capacitor);
-        Assert.Null(weapons.Activate(lease.Token, module, Npc, 2, 1, Effect).Web);
+        Assert.Equal(0, first.Cycle.Repeats);
+        Assert.Equal(capacity - cost, first.Tackle!.Capacitor);
+        Assert.Null(weapons.Activate(lease.Token, module, Npc, 2, 1, Effect).Tackle);
         Assert.Equal(TimeSpan.FromSeconds(30).Ticks, first.Cycle.ReadyAt - first.Cycle.StartedAt);
         Assert.Equal(TimeSpan.FromSeconds(60).Ticks, first.Cycle.ReactivationAt - first.Cycle.ReadyAt);
         await LiveWorld.Find(f.Db.Path)!.FlushAsync();
@@ -116,17 +117,17 @@ public sealed class StructureWebifierTests
         }
         f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(59));
         Assert.Empty(weapons.Advance(lease.Token, 1).Started);
-        f.Clock.AdvanceWallTime(TimeSpan.FromMinutes(3));
-        var repeat = Assert.Single(weapons.Advance(lease.Token, 1).Started);
-        Assert.Equal(1, repeat.Cycle.Repeats);
+        Assert.Throws<InvalidDataException>(() => weapons.Activate(lease.Token, module, Npc, 0, 1, Effect));
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
         Assert.Empty(weapons.Advance(lease.Token, 1).Started);
+        var next = weapons.Activate(lease.Token, module, Npc, 0, 1, Effect);
         lease.Dispose();
         using var replacement = control.Acquire(structure.Id, f.PilotId, 102);
         Lock(f, replacement.Token, Npc);
         Assert.Throws<InvalidDataException>(() => weapons.Activate(replacement.Token, module, Npc, 0, 1, Effect));
         using var after = StructureAttackTests.Scope(f);
         Assert.Null(after.World.Set<WorldTackle>().Find(module));
-        Assert.Equal(repeat.Cycle.ReactivationAt, after.World.Set<ModuleCooldown>().Find(module)!.ReadyAt);
+        Assert.Equal(next.Cycle.ReactivationAt, after.World.Set<ModuleCooldown>().Find(module)!.ReadyAt);
     }
 
     [Fact]

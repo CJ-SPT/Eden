@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[EVE.js comparison for account and station clone reads](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
+covers character counts, account age, login reward clone grade, bug report metadata and station clone state.
+
 [Alliance membership age and EverMark donations](protocol/alliances.md#alliance-membership-age-and-evermark-donations) covers wallet lookups and transfers between an executor and its member corporations.
 
 [Corporation calendar events](protocol/social.md#corporation-calendar-events) covers role-gated event management, member RSVPs and checkpointed notifications.
@@ -28,6 +31,9 @@ probe resolution, native hacking and sale of recovered loot.
 
 [Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade) covers paid salvager fitting,
 wreck recovery, restart and sale into funded station demand.
+
+[Fresh-world alliance and first-claim progression](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
+covers founder contributions, native training, funded expedition stock, capture and the first dues payment.
 
 [Fresh-world frontier patrols](protocol/capsuleers.md#fresh-world-frontier-patrols) covers earned combat equipment,
 replacement reserves and station moves into lower-security space.
@@ -168,6 +174,8 @@ and the remaining defense, service, ownership and specialized hull work.
 
 [Resident defensive missiles](protocol/structures.md#resident-defensive-missile-firing) records paid structure launches,
 lease-owned repeat cycles, physical impacts, green safety and saved retaliation rights.
+[Standup Focused Warp Disruptors](protocol/structures.md#standup-focused-warp-disruptors) covers scripted range,
+warp and docking denial, propulsion suppression and the single paid cycle.
 [Standup stasis webifiers](protocol/structures.md#standup-stasis-webifiers) covers target speed, active duration and reactivation.
 [Standup energy neutralizers](protocol/structures.md#standup-energy-neutralizers-and-structure-capacitor) covers structure capacitor, target draining and gunner skill.
 [Defensive missiles against drones](protocol/structures.md#defensive-missiles-against-drones) covers controller rights,

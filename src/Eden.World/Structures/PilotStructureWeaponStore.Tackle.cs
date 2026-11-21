@@ -14,7 +14,7 @@ namespace Eden.World.Structures;
 
 internal sealed partial class PilotStructureWeaponStore
 {
-    private StructureWeaponActivation Web(
+    private StructureWeaponActivation ApplyTackle(
         WorldAction world,
         CatalogDbContext catalog,
         StructureControlToken token,
@@ -23,20 +23,20 @@ internal sealed partial class PilotStructureWeaponStore
         StructureTarget target,
         Pilot? victim,
         StructureFittingState fit,
-        int repeats,
+        DogmaEffect effect,
         long now
     )
     {
         if (target.Kind is not (StructureTargetKind.Npc or StructureTargetKind.Pilot))
         {
-            throw new InvalidDataException("Choose a ship or NPC for the structure webifier.");
+            throw new InvalidDataException("Choose a ship or NPC for the structure tackle module.");
         }
         _ = TargetAttributes(world, catalog, target, victim, now);
-        var module = TackleDefinitions.Define(item.Id, item.TypeId, DogmaEffect.StructureStasisWebifier, fit.Equipment[item.Id]);
+        var module = TackleDefinitions.Define(item.Id, item.TypeId, effect, fit.Equipment[item.Id]);
         double distance = SurfaceDistance(catalog, source, target);
         if (distance > module.Range && module.Falloff == 0)
         {
-            throw new InvalidDataException("The target is outside webifier range.");
+            throw new InvalidDataException("The target is outside the structure module's range.");
         }
         module = TackleDefinitions.AtDistance(module, distance);
         double cost =
@@ -46,7 +46,7 @@ internal sealed partial class PilotStructureWeaponStore
         double charge = StructureEnergy.Read(world, source.Id, fit.Attributes, now).Charge - cost;
         if (charge < 0)
         {
-            throw new InvalidDataException("The structure has insufficient capacitor for the webifier.");
+            throw new InvalidDataException("The structure has insufficient capacitor for the tackle module.");
         }
         long end = StructureWeaponRules.ReadyAt(module.DurationMilliseconds, now);
         long ready = StructureWeaponRules.ReadyAt(module.ReactivationMilliseconds, end);
@@ -62,9 +62,12 @@ internal sealed partial class PilotStructureWeaponStore
         row.DurationMilliseconds = module.DurationMilliseconds;
         row.CapacitorNeed = cost;
         row.Range = module.Range;
+        row.Strength = module.Strength;
         row.WebPercent = module.WebPercent;
+        row.MwdBlock = module.MwdBlock;
         row.StartedAt = now;
         row.ExpiresAt = end;
+        // Both pinned tackle families disable repeating activation (attribute 1014).
         return new(
             new(
                 item.Id,
@@ -73,16 +76,16 @@ internal sealed partial class PilotStructureWeaponStore
                 now,
                 end,
                 module.DurationMilliseconds,
-                repeats,
+                Repeats: 0,
                 Effect: module.Effect,
                 ReactivationAt: ready
             ),
             null,
-            Web: new(module, new(target.Id, row.TargetKind), charge, ready)
+            Tackle: new(module, new(target.Id, row.TargetKind), charge, ready)
         );
     }
 
-    private void EndWeb(StructureWeaponCycle cycle)
+    private void EndTackle(StructureWeaponCycle cycle)
     {
         using WorldActionScope transaction = new(database, new(ships: [cycle.TargetId]));
         if (transaction.World.Set<WorldTackle>().Find(cycle.ModuleId) is { } row && row.StartedAt == cycle.StartedAt)
