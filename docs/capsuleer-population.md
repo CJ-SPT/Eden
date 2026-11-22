@@ -293,7 +293,8 @@ An optional local `traffic.sqlite` beside the world database supplies real pilot
 
 In server administration, open **Optional data** and choose **Import zKillboard traffic**. The page shows the
 installed UTC range, counts, and import status. Use **Re-import zKillboard traffic** to download a new weekly snapshot,
-then restart Eden to adopt it. The import keeps running if you close the page.
+then wait for **Import complete** before restarting Eden to adopt it. The import keeps running if you close the page.
+If Eden stops during an import, it resumes on startup and reuses compatible cache entries for the latest published week.
 
 Create or refresh the snapshot from the repository root:
 
