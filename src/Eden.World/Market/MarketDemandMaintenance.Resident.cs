@@ -28,35 +28,65 @@ internal sealed partial class PilotMarketStore
             return 0;
         }
         long now = Now;
-        var bids = world
-            .Set<NpcMarketOrder>()
-            .Where(o =>
-                o.Kind == NpcMarketKind.Regional
-                && o.Bid
-                && o.StationId == stationId
-                && o.TypeId == typeId
-                && o.Remaining > 0
-                && o.Issued > 0
-            );
-        long highest = bids.Max(o => (long?)o.PriceCents) ?? 0;
-        long ceiling = Math.Min(maximumAsk, highest);
-        var listings = world
-            .Set<SavedPersonalOrder>()
-            .Where(o =>
-                o.StationId == stationId
-                && o.TypeId == typeId
-                && !o.Bid
-                && o.Status == PersonalOrderStatus.Open
-                && o.Expires > now
-                && o.Remaining > 0
-                && o.Id != excludedOrder
-                && o.PriceCents <= ceiling
-            )
-            .OrderBy(o => o.PriceCents)
-            .ThenBy(o => o.Modified)
-            .ThenBy(o => o.Id)
-            .Take(limit + 1)
-            .ToArray();
+        var resident = world as EconomyTransaction;
+        IQueryable<NpcMarketOrder>? sqlBids = null;
+        SavedPersonalOrder[] listings;
+        if (resident is not null)
+        {
+            long highest = RegionalBids(resident, stationId, typeId).Select(order => order.PriceCents).DefaultIfEmpty().Max();
+            long ceiling = Math.Min(maximumAsk, highest);
+            // Read the private transaction view before opening only the selected listings for writes.
+            var selected = resident
+                .StationPersonalOrders(stationId, typeId)
+                .Where(order =>
+                    !order.Bid
+                    && order.Status == PersonalOrderStatus.Open
+                    && order.Expires > now
+                    && order.Remaining > 0
+                    && order.Id != excludedOrder
+                    && order.PriceCents <= ceiling
+                )
+                .OrderBy(order => order.PriceCents)
+                .ThenBy(order => order.Modified)
+                .ThenBy(order => order.Id)
+                .Take(limit + 1)
+                .Select(order => order.Id)
+                .ToArray();
+            var writable = world.Set<SavedPersonalOrder>();
+            listings = Array.ConvertAll(selected, id => writable.Find(id)!);
+        }
+        else
+        {
+            sqlBids = world
+                .Set<NpcMarketOrder>()
+                .Where(order =>
+                    order.Kind == NpcMarketKind.Regional
+                    && order.Bid
+                    && order.StationId == stationId
+                    && order.TypeId == typeId
+                    && order.Remaining > 0
+                    && order.Issued > 0
+                );
+            long highest = sqlBids.Max(order => (long?)order.PriceCents) ?? 0;
+            long ceiling = Math.Min(maximumAsk, highest);
+            listings = world
+                .Set<SavedPersonalOrder>()
+                .Where(order =>
+                    order.StationId == stationId
+                    && order.TypeId == typeId
+                    && !order.Bid
+                    && order.Status == PersonalOrderStatus.Open
+                    && order.Expires > now
+                    && order.Remaining > 0
+                    && order.Id != excludedOrder
+                    && order.PriceCents <= ceiling
+                )
+                .OrderBy(order => order.PriceCents)
+                .ThenBy(order => order.Modified)
+                .ThenBy(order => order.Id)
+                .Take(limit + 1)
+                .ToArray();
+        }
         int settled = 0;
         foreach (var order in listings.Take(limit))
         {
@@ -75,10 +105,22 @@ internal sealed partial class PilotMarketStore
             settled++;
         }
         world.SaveChanges();
-        if (requireComplete && listings.Length > limit && bids.Any(o => o.PriceCents >= listings[limit].PriceCents))
+        if (requireComplete && listings.Length > limit)
         {
-            throw new InvalidDataException("Market demand is settling queued listings. Try again shortly.");
+            long nextPrice = listings[limit].PriceCents;
+            bool bidsRemain = resident is not null
+                ? RegionalBids(resident, stationId, typeId).Any(order => order.PriceCents >= nextPrice)
+                : sqlBids!.Any(order => order.PriceCents >= nextPrice);
+            if (bidsRemain)
+            {
+                throw new InvalidDataException("Market demand is settling queued listings. Try again shortly.");
+            }
         }
         return settled;
     }
+
+    private static IEnumerable<EconomyNpcMarketOrder> RegionalBids(EconomyTransaction world, int station, int type) =>
+        world
+            .StationMarketOrders(station, type)
+            .Where(order => order.Kind == NpcMarketKind.Regional && order.Bid && order.Remaining > 0 && order.Issued > 0);
 }
