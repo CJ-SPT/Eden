@@ -1,6 +1,7 @@
 using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Combat;
 using Eden.Server;
 using Eden.World.Combat;
 using Eden.World.Docking;
@@ -34,6 +35,7 @@ public sealed class WorldInitializationTests
                     """
                     DROP TABLE WorldDrone;
                     DROP TABLE WorldDroneSettings;
+                    DROP TABLE WorldKillRight;
                     ALTER TABLE WorldNpcAggression DROP COLUMN LastTargetId;
                     ALTER TABLE WorldNpcMiningOperation DROP COLUMN HaulGeneration;
                     """
@@ -52,6 +54,7 @@ public sealed class WorldInitializationTests
                 Assert.Empty(saved.Set<WorldDroneSettings>());
                 Assert.Empty(saved.Set<WorldNpcMiningOperation>());
                 Assert.Empty(saved.Set<NpcAggression>());
+                Assert.Empty(services.GetRequiredService<IPilotKillRights>().Mine(90000001));
                 Assert.Equal(new long[] { 90000001, 90000002 }, saved.Pilots.OrderBy(p => p.Id).Select(p => p.Id));
             }
             WorldInitialization.Initialize(database);

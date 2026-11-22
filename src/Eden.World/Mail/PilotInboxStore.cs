@@ -3,6 +3,7 @@ using Eden.Data.World.Mail;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -20,7 +21,7 @@ internal sealed class InboxChangeSignal
 [Injectable]
 internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal signal) : IPilotInbox
 {
-    public long Revision => signal.Revision;
+    public long Revision => signal.Revision + (LiveWorld.Find(database.Path)?.KillRightInboxRevision ?? 0);
 
     internal static void AddContact(WorldAction world, long sender, long receiver, bool added, double level, string message, long time)
     {
@@ -65,6 +66,9 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
                 n.Type == InboxNotificationType.ContactAdded || n.Type == InboxNotificationType.ContactEdited
             ),
             InboxGroup.Bills => rows.Where(n => n.Type == InboxNotificationType.AllianceMaintenanceBill),
+            InboxGroup.Miscellaneous => rows.Where(n =>
+                n.Type >= InboxNotificationType.KillRightAvailable && n.Type <= InboxNotificationType.KillRightUnavailableOpen
+            ),
             InboxGroup.FactionWarfare => rows.Where(n =>
                 n.Type >= InboxNotificationType.MilitiaMemberStandingWarning
                     && n.Type <= InboxNotificationType.MilitiaAllianceCeoStandingRemoval
@@ -78,6 +82,15 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
         };
     }
 
+    private static IQueryable<SavedInboxNotification> Deliverable(WorldAction world, long pilotId) =>
+        world is EconomyTransaction
+            ? world.Filter<SavedInboxNotification>(n =>
+                n.ReceiverId == pilotId
+                || n.SenderId == pilotId
+                    && (n.Type == InboxNotificationType.KillRightEarned || n.Type == InboxNotificationType.KillRightUsed)
+            )
+            : world.Filter<SavedInboxNotification>(n => n.ReceiverId == pilotId);
+
     public long Observe(long pilotId)
     {
         return WorldActionScope.Inspect<long>(
@@ -85,7 +98,7 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
             world =>
             {
                 CheckPilot(world, pilotId);
-                return world.Filter<SavedInboxNotification>(n => n.ReceiverId == pilotId).Select(n => (long?)n.Id).Max() ?? 0;
+                return Deliverable(world, pilotId).Select(n => (long?)n.Id).Max() ?? 0;
             }
         );
     }
@@ -103,8 +116,8 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
                 CheckPilot(world, pilotId);
                 // Include tombstones/read rows in the cursor stream so they cannot be
                 // reannounced as new unread notifications after a client mutation.
-                var rows = world
-                    .Filter<SavedInboxNotification>(n => n.ReceiverId == pilotId && n.Id > after)
+                var rows = Deliverable(world, pilotId)
+                    .Where(n => n.Id > after)
                     .OrderBy(n => n.Id)
                     .Take(InboxRules.DeliveryBatchSize + 1)
                     .AsEnumerable()

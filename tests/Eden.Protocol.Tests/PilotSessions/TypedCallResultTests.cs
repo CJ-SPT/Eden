@@ -1,4 +1,5 @@
 using Eden.Protocol.Characters;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -148,7 +149,7 @@ public sealed class TypedCallResultTests
                 new Eden.Protocol.Fighters.FighterDeckReply(new([], [])),
                 new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() }
             ),
-            (new BountiesAndKillRightsState(), new object?[] { new List<object?>(), new List<object?>() }),
+            (new BountiesAndKillRightsReply(new([]), new([])), new object?[] { new List<object?>(), new List<object?>() }),
             (new Eden.Protocol.Agents.MissionJournal([]), new object?[] { new List<object?>(), new List<object?>() }),
             (
                 new TaskProgressReply(new([], [], false)),

@@ -38,6 +38,9 @@ public sealed class SavedInboxNotification
                     or InboxNotificationType.MilitiaAllianceStandingWarning
                     or InboxNotificationType.MilitiaAllianceStandingRemoval
                 ? JsonSerializer.Deserialize<MilitiaStandingNotificationContent>(Message)
+                : null,
+            Type is >= InboxNotificationType.KillRightAvailable and <= InboxNotificationType.KillRightUnavailableOpen
+                ? JsonSerializer.Deserialize<KillRightNotificationContent>(Message)
                 : null
         );
 }

@@ -33,17 +33,6 @@ internal sealed class DockedCompatibilityHandler(
         return (service, method) switch
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
-            ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),
-            ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => new BlueList<BountyReply>(
-                owners.Order().Select(owner => new BountyReply(owner)).ToArray()
-            ),
-            ("bountyProxy", "GetMyKillRights") when args.Length == 0 => BlueEmpty.List,
-            ("bountyProxy", "GetMyKillRights") => BlueEmpty.List,
-            ("bountyProxy", "GetKillRightsOnCharacters") => args is [var ids]
-            && BlueRead.IsPositiveIdList(ids)
-            && keywords is null or { Count: 0 }
-                ? BlueEmpty.List
-                : new PilotCallResult.Failure("Supply a list of positive character IDs."),
             ("essMgr", "GetDataForClientSolarSystem") => PilotCallResult.None,
             ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new LocalSystemState(pilot.SystemId),
             ("beyonce", "GetFormations") => BlueEmpty.Tuple,

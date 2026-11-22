@@ -380,7 +380,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - <a id="npc-missile-combat"></a>[NPC missile combat](protocol/combat.md#npc-missile-combat)
 - <a id="npc-population-foundation"></a>[NPC population foundation](protocol/combat.md#npc-population-foundation)
 - <a id="persistent-security-status-from-pirate-kills"></a>[Persistent security status from pirate kills](protocol/combat.md#persistent-security-status-from-pirate-kills)
-- [Character kill-right lookup](protocol/combat.md#character-kill-right-lookup)
+- [Character kill rights](protocol/combat.md#character-kill-rights)
 - <a id="native-target-locking-november-2-2026"></a>[Native target locking, November 2, 2026](protocol/combat.md#native-target-locking-november-2-2026)
 - <a id="combat-calculation-groundwork-november-2-2026"></a>[Combat calculation groundwork, November 2, 2026](protocol/combat.md#combat-calculation-groundwork-november-2-2026)
 - <a id="saved-ship-health-november-2-2026"></a>[Saved ship health, November 2, 2026](protocol/combat.md#saved-ship-health-november-2-2026)

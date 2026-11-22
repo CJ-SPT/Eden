@@ -13,7 +13,9 @@ using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Notifications;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Ammunition;
 using Eden.Protocol.Tests.Propulsion;
 using Eden.World.Catalog;
@@ -319,6 +321,65 @@ public sealed class CrimewatchTests
         f.Clock.Milliseconds += 6000;
         Attack(f, source);
         Assert.True(Store(f).Read(f.PilotId, SystemId).Engagements[0].ExpiresAt > attacker.Engagements[0].ExpiresAt);
+    }
+
+    [Fact]
+    public void CriminalTackleGrantsVictimsNativeKillRightBeforeAnyLoss()
+    {
+        using Fixture f = TackleTests.Prepare(526);
+        long attackerShip = f.ShipId;
+        long module = f.Fit(526);
+        KillRightLifecycleTests.AddCapsule(f.CatalogPath);
+        Security(f, .1);
+        Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId, WingPilot])))
+        {
+            action.Ships.Find(WingShip)!.TypeId = FleetDefinitions.CapsuleType;
+            action.Commit();
+        }
+        var safety = f.Db.Services.GetRequiredService<IPilotSafety>();
+        safety.Set(f.PilotId, ShipSafetyLevel.Disabled);
+        using var scope = f.Db.Services.CreateScope();
+        using var attackerScope = f.Db.Services.CreateScope();
+        using var victim = Client(f, 1000002);
+        using var attacker = Client(f, 1000001);
+        var inbox = scope.ServiceProvider.GetRequiredService<InboxHandler>();
+        var attackerInbox = attackerScope.ServiceProvider.GetRequiredService<InboxHandler>();
+        inbox.Enter(victim);
+        attackerInbox.Enter(attacker);
+
+        f.Db.Services.GetRequiredService<IPilotTackle>()
+            .Activate(
+                f.PilotId,
+                module,
+                DogmaEffect.StasisWebifier,
+                new(WingShip, TackleTargetKind.Ship),
+                new HashSet<long> { WingShip },
+                f.Clock.Now
+            );
+        Assert.Equal(CrimewatchFlag.Criminal, Store(f).Read(f.PilotId, SystemId).Timers.Flag(f.Clock.Now));
+        Assert.Equal(attackerShip, f.Db.Store.FindPilot(1000001)!.ShipId);
+        Assert.Equal(WingShip, f.Db.Store.FindPilot(1000002)!.ShipId);
+
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var rows = Assert.IsType<List<object?>>(
+            router.CallWire(victim, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { })
+        );
+        var right = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(rows)).State);
+        Assert.Equal(WingPilot, right["fromID"]);
+        Assert.Equal(f.PilotId, right["toID"]);
+        Assert.Equal(f.Clock.Now + KillRightRules.Lifetime.Ticks, right["expiryTime"]);
+        Assert.Null(right["price"]);
+        Assert.Null(right["restrictedTo"]);
+        inbox.Advance(victim);
+        Assert.Single(victim.Notifications.OfType<KillRightCreated>());
+        attackerInbox.Advance(attacker);
+        Assert.Single(attacker.Notifications.OfType<KillRightCreated>());
+        Assert.Empty(attacker.Notifications.OfType<InboxNotificationReceived>());
+        Assert.Single(victim.Notifications.OfType<InboxNotificationReceived>());
+        inbox.Advance(victim);
+        Assert.Single(victim.Notifications.OfType<KillRightCreated>());
     }
 
     [Fact]

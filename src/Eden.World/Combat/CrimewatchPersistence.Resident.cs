@@ -68,6 +68,7 @@ internal static partial class CrimewatchPersistence
         attacker.SystemId = target.SystemId = system;
         attacker.Apply(CrimewatchRules.Player(attacker.Timers(), end, decision.Flag, true, now));
         target.Apply(CrimewatchRules.Player(target.Timers(), end, CrimewatchFlag.None, false, now));
+        PilotKillRightStore.Earn(world, victim, source, decision, now);
         ConcordPersistence.Schedule(world, catalog, world.Pilots.Find(source)!, now);
         long sourceShip = world.Pilots.Find(source)!.ActiveShipId;
         long victimShip = world.Pilots.Find(victim)!.ActiveShipId;

@@ -63,6 +63,8 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
                 break;
             case Eden.Data.World.Characters.Pilot removed:
+                RemoveRange(Filter<Eden.Data.World.Combat.SavedKillRight>(row => row.OwnerId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Combat.SavedKillRight>(row => row.TargetId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpTimers>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedCynosuralField>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.PilotId == removed.Id));

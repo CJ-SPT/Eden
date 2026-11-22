@@ -1,3 +1,5 @@
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -51,8 +53,25 @@ internal sealed class InboxHandler(IPilotInbox inbox) : ISelectedPilotCallHandle
         var batch = inbox.Changes(context.Pilot.PilotId, _cursor);
         foreach (var notification in batch.Items)
         {
+            if (notification.KillRight is { Right: var right })
+            {
+                switch (notification.Type)
+                {
+                    case InboxNotificationType.KillRightEarned:
+                        context.Notifications.Add(new KillRightCreated(right));
+                        break;
+                    case InboxNotificationType.KillRightUsed:
+                        context.Notifications.Add(new KillRightUsed(right));
+                        break;
+                    case InboxNotificationType.KillRightAvailable:
+                    case InboxNotificationType.KillRightAvailableOpen:
+                        context.Notifications.Add(new KillRightListed(right.Id));
+                        break;
+                }
+            }
             bool fetched = _fetched.Remove(notification.Id);
-            if (!fetched && !notification.Processed && !notification.Deleted)
+            // Earned and used events also invalidate the target's client cache. The inbox row belongs to the right owner.
+            if (notification.ReceiverId == _pilot && !fetched && !notification.Processed && !notification.Deleted)
             {
                 context.Notifications.Add(new InboxNotificationReceived(notification));
             }
@@ -176,6 +195,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
     internal static BlueModel Data(InboxNotification notification) =>
         notification.MilitiaStanding is { } militia ? new InboxMilitiaStandingData(notification.Type, militia)
         : notification.AllianceId is int alliance ? new InboxAllianceData(alliance)
+        : notification.KillRight is { } killRight ? new InboxKillRightData(notification.Type, notification.SenderId, killRight.Right)
         : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>
@@ -203,6 +223,41 @@ internal sealed record InboxNotificationReceived(InboxNotification Notification)
 internal sealed record InboxAllianceData(int AllianceId) : BlueModel
 {
     public override object ToBlue() => new Dictionary<string, object?> { ["allianceID"] = AllianceId };
+}
+
+internal sealed record InboxKillRightData(InboxNotificationType Type, long OtherPilotId, KillRight Right) : BlueModel
+{
+    public override object ToBlue()
+    {
+        var fields = new Dictionary<string, object?> { ["charID"] = OtherPilotId };
+        if (Type is InboxNotificationType.KillRightAvailable or InboxNotificationType.KillRightAvailableOpen)
+        {
+            fields["price"] = (double)(Right.PriceCents ?? 0) / MarketDefinitions.CentsPerIsk;
+        }
+        if (
+            Right.RestrictedTo is long target
+            && Type is InboxNotificationType.KillRightAvailable or InboxNotificationType.KillRightUnavailable
+        )
+        {
+            fields["toEntityID"] = target;
+        }
+        return fields;
+    }
+}
+
+internal sealed record KillRightCreated(KillRight Right) : PilotNotification("OnKillRightCreated")
+{
+    public override object?[] Arguments => [Right.Id, Right.OwnerId, Right.TargetId, Right.ExpiresAt];
+}
+
+internal sealed record KillRightUsed(KillRight Right) : PilotNotification("OnKillRightUsed")
+{
+    public override object?[] Arguments => [Right.Id, Right.TargetId];
+}
+
+internal sealed record KillRightListed(long Id) : PilotNotification("OnKillRightForYouSold")
+{
+    public override object?[] Arguments => [Id];
 }
 
 internal sealed record InboxMilitiaStandingData(InboxNotificationType Type, MilitiaStandingNotificationContent Content) : BlueModel

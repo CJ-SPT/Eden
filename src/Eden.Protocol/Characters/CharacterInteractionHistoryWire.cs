@@ -42,7 +42,7 @@ internal sealed record ShipCombatReportRow(ShipCombatReport Report) : BlueModel
                 ["iskDestroyed"] = null,
                 ["bountyClaimed"] = null,
                 ["loyaltyPoints"] = null,
-                ["killRightSupplied"] = null,
+                ["killRightSupplied"] = Report.KillRightSupplierId,
             }
         );
 

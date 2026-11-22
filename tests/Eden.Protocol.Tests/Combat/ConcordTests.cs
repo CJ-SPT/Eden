@@ -90,6 +90,12 @@ public sealed class ConcordTests
         Catalog(f);
         long now = f.Clock.Now;
         Attack(f);
+        if (live)
+        {
+            var right = Assert.Single(f.Db.Services.GetRequiredService<IPilotKillRights>().Mine(Victim));
+            Assert.Equal(Fixture.PilotId, right.TargetId);
+            Assert.Equal(now + KillRightRules.Lifetime.Ticks, right.ExpiresAt);
+        }
         using (WorldDbContext world = new(f.Db.Path))
         {
             var response = Assert.Single(world.Set<SavedConcordResponse>());

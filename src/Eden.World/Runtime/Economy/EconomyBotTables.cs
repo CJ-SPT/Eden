@@ -3463,6 +3463,10 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldMissile") : value.Id;
                 Reserve("WorldMissile", value.Id);
                 break;
+            case Eden.Data.World.Combat.SavedKillRight value:
+                value.Id = value.Id == 0 ? Next("WorldKillRight") : value.Id;
+                Reserve("WorldKillRight", value.Id);
+                break;
             case Eden.Data.World.Corporations.SavedWalletLedger value:
                 value.Id = value.Id == 0 ? Next("WorldWalletLedger") : value.Id;
                 Reserve("WorldWalletLedger", value.Id);

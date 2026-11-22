@@ -32,7 +32,8 @@ public sealed record ShipCombatReport(
     CombatParty FinalBlow,
     IReadOnlyList<CombatParty> OtherAttackers,
     IReadOnlyList<CombatLostItem> Items,
-    bool Historical = false
+    bool Historical = false,
+    long? KillRightSupplierId = null
 );
 
 public enum StandingEvent

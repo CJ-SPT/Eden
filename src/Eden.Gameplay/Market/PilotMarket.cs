@@ -127,6 +127,9 @@ public enum WalletEntryType
     BrokersFee = 46,
     GmCashTransfer = 3,
     PlayerDonation = 10,
+
+    // Build 3662168 appConst.refKillRightBuy.
+    KillRightPurchase = 116,
     CorporationAccountWithdrawal = 37,
     BountyPrizeCorporationTax = 92,
     CorporationRegistration = 39,

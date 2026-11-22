@@ -779,7 +779,9 @@ References: inert inspection of build **3662168** `code.ccp` (SHA-256 **37FB2AF4
 
 **Optional maintainer checks.** Kill a pirate, wait through the reward window and inspect the native character-sheet status/history. Reconnect across a pending deadline and confirm the native display refreshes once. Native presentation and gameplay feel remain unverified.
 
-## Character kill-right lookup
+<a id="character-kill-right-lookup"></a>
+
+## Character kill rights
 
 Build 3662168's `eve/client/script/ui/shared/bountySvc.pyj` calls `bountyProxy.GetKillRightsOnCharacters(toIDs)` from
 `FetchKillRightsFromServer`. The pinned `eve/common/lib/killRightTracker.pyj` builds a Python list of IDs whose cached entries are
@@ -787,15 +789,48 @@ stale or missing. `CacheKillRights` iterates the reply and caches the result for
 This was verified by inspecting the original `code.ccp` with SHA-256
 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
 
-The selected-pilot route accepts one list of positive character IDs and returns a native empty Python list. Eden has no player
-kill-right records to return. In EVE.js 261108.1, `server/src/services/bounty/bountyProxyService.js` returns a list of available
-rights for the targets and viewer. The reference file's SHA-256 is
-`10352991cfc32ad7dc67bbf546811c4f0c96190c90da901b1ba653f056283e1f`. In-game sale and activation behavior is described by the
-[EVE University Kill Rights guide](https://wiki.eveuniversity.org/Kill_Rights).
+The victim earns a right when a committed player attack is classified as criminal. This covers high-security attacks and
+criminal attacks against capsules in low security. Suspect-only attacks and attacks authorized by a limited engagement do not
+award rights. The victim can earn a right before any loss occurs. Each owner and target pair has one unexpired right with its
+original 30-day deadline. [CCP Kill Rights](https://support.eveonline.com/hc/en-us/articles/203208922-Kill-Rights) ·
+[EVE University Kill Rights](https://wiki.eveuniversity.org/Kill_Rights)
 
-**Automated validation.** `DockedServicesTests.SelectingAnotherPilotCachesZeroBountiesAndNoKillRights` covers routing after selection,
-empty and populated requests, invalid IDs, and the Python list reply. The focused `DockedServicesTests`, `TargetLockSessionTests`,
-`TypedCallResultTests`, and `BlueMarshalTests` filter passed 72 tests in 18 seconds.
+`bountyProxy.GetMyKillRights()` lists rights a character owns and rights against that character. The target lookup returns
+rights listed for the requesting pilot, corporation, alliance or everyone. `GetBountiesAndKillRights(set(ownerIDs), toIDs)`
+returns the tuple of zero-bounty cache pairs and available rights. Kill-right lists contain `utillib.KeyVal` rows with
+`killRightID`, `fromID`, `toID`, FILETIME `expiryTime`, nullable ISK `price` and nullable `restrictedTo`.
+`SellKillRight(id, price, restrictedTo)` returns the updated right in a list and `CancelSellKillRight(id, toID)` returns None.
+The client can advertise a right for free by sending a zero price. A None price means the right is private.
+
+`killRightMgr.ActivateKillRight(id)` lets the owner activate their right for free. `BuyKillRight(id, price)` rechecks sale
+access and the quoted price against the resident state. Both calls require the target on grid, return None on success, and
+apply a 15-minute suspect timer. Eden permits one active right per target to prevent duplicate activation charges.
+Any player final blow on the flagged target's ship or capsule during that activation consumes the right and records the
+owner in `killRightSupplied`. An activation that times out can be retried while the right remains unexpired.
+
+World schema 215 adds `WorldKillRight`. Awards, sale changes, activation, wallet journal entries, and consumption commit with
+their owning resident transactions and persist through checkpoints. The wallet uses pinned `refKillRightBuy` (116).
+Inbox types 115–120 cover earned, used and sale changes. The protocol emits the creation and consumption cache events to
+the owner and target, the listing event to the target, and `OnKillRightActivated()` to the activator. Pinned sources also include
+`eve/client/script/ui/shared/killRights.pyj`, `eve/common/lib/appConst.pyj` and
+`eve/common/script/util/notificationconst.pyj`. EVE.js 261108.1's reference paths are
+`server/src/services/bounty/bountyProxyService.js`, `killRightMgrService.js`, `killRightState.js` and
+`server/src/space/combat/killmailTracker.js`. Its bounty proxy file has SHA-256
+`10352991cfc32ad7dc67bbf546811c4f0c96190c90da901b1ba653f056283e1f`.
+
+**Automated validation.** The lifecycle checks cover high-security and low-security capsule aggression, native list and
+activation replies, restricted quotes, failed payments, concurrent activation, exact expiry, checkpoint reloads, and
+consumption on ship loss. The final focused filter passed 191 tests in 46 seconds.
+
+```text
+KillRightLifecycleTests, CrimewatchTests, ConcordTests, CharacterInteractionHistoryTests, InteractionHistoryPersistenceTests,
+InboxTests, InboxServiceTests, CorporationWalletTests, DockedServicesTests, TypedCallResultTests, WorldInitializationTests,
+BlueMarshalTests
+```
+
+The broader 349-case filter passed 347 cases and skipped one optional case.
+`CapsuleCombatTests.FailedCapsuleSettlementRollsBackBodyTrainingHealthPaymentAndNotifications` failed its resident
+training-queue assertion at the same line on both the worktree and baseline `7eb62ab9`.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
@@ -807,7 +842,9 @@ Lock duration in seconds is `40000 / (scanResolution * asinh(signatureRadius)^2)
 
 A scoped handler owns pending scans and completed targets. A shared lock graph carries only ship IDs across connections; each connection emits its own `OnTarget("otheradd"/"otherlost", shipID, reason)` notifications. Range loss or a missing target cancels the scan or drops the lock. Beginning warp or a gate jump, docking, and disposing the connection remove outgoing and incoming locks. No locks are saved in the world database. Flight visibility and transit status reuse the existing Destiny implementation checked against [Carbon Destiny revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp). The notification envelope and nested UserError encoding reuse the existing Carbon Blue codec.
 
-Selecting another pilot also calls `bountyProxy.GetBounties(set(ownerIDs))`. The pinned `bountySvc` expects a list of `(ownerID, bounty)` pairs; each bounty has `targetID` and `bounty` fields so it can populate its cache. Eden's local world has no bounties, so each requested owner receives zero. `GetMyKillRights` returns an empty list. The earlier unsupported lookup interrupted the Selected Item controls; these responses allow the native menu and target controls to finish loading.
+Selecting another pilot also calls `bountyProxy.GetBounties(set(ownerIDs))`. The pinned `bountySvc` caches a list of
+`(ownerID, bounty)` pairs with `targetID` and `bounty` fields on each bounty row. Eden uses zero for each requested player
+bounty. The [kill-right routes](#character-kill-rights) supply the rights shown in Selected Item and the character sheet.
 
 **Live Windows clients.** Used a separate copy of the cargo/fitting test save. Selected Eden Pilot and checked **Ibis (Ibis)** in Inventory. Undocked Pilot and Wing at Jita IV – Moon 4 – Caldari Navy Assembly Plant. On Pilot, right-clicked Wing at 1,406 m and chose **Lock Target**. The client showed the targeting countdown, then a target portrait labelled **Eden Wing [SAK]**, **Ibis**, **1,406 m**. Wing's Overview showed the yellow targeted indicator on Pilot. Pilot's menu changed to **Unlock Target**; choosing it removed the portrait and cleared Wing's indicator. Reacquired Wing, then docked Wing through its native station menu. Pilot remained in space while Wing's Overview entry, selection and target portrait disappeared. The host recorded AddTarget, RemoveTarget and the docking transition. The corrected build produced no target-manager or bounty-service exception in either client's captured log.
 

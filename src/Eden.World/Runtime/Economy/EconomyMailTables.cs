@@ -181,7 +181,7 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(10) ? null : reader.GetInt32(10)
                     ),
                 state => new(state.Id),
-                indexes: [new("ReceiverId", row => row.ReceiverId)],
+                indexes: [new("ReceiverId", row => row.ReceiverId), new("SenderId", row => row.SenderId)],
                 primaryColumn: "Id",
                 rowIdIsKey: true
             )

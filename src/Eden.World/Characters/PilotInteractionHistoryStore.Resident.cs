@@ -87,6 +87,7 @@ internal sealed partial class PilotInteractionHistoryStore
             )
             .ToArray();
         final = attackers.SingleOrDefault(a => a.EntityId == final.EntityId) ?? final;
+        long? killRightSupplier = shareWithAttackers ? PilotKillRightStore.Consume(world, pilotId, final.CharacterId, now) : null;
         Save(
             world,
             sourceKey,
@@ -101,7 +102,8 @@ internal sealed partial class PilotInteractionHistoryStore
                 },
                 final,
                 attackers.Where(a => a.EntityId != final.EntityId).ToArray(),
-                items
+                items,
+                KillRightSupplierId: killRightSupplier
             )
         );
         world.RemoveRange(rows);
@@ -125,7 +127,8 @@ internal sealed partial class PilotInteractionHistoryStore
                             },
                             final,
                             attackers.Where(a => a.EntityId != final.EntityId).ToArray(),
-                            items
+                            items,
+                            KillRightSupplierId: killRightSupplier
                         )
                     );
                 }

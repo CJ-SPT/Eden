@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.FactionWarfare;
 
 namespace Eden.Gameplay.Notifications;
@@ -11,6 +12,12 @@ public enum InboxNotificationType
     ContactEdited = 90,
     MilitiaAllianceStandingWarning = 96,
     MilitiaAllianceStandingRemoval = 97,
+    KillRightAvailable = 115,
+    KillRightAvailableOpen = 116,
+    KillRightEarned = 117,
+    KillRightUsed = 118,
+    KillRightUnavailable = 119,
+    KillRightUnavailableOpen = 120,
 
     // Build 3662168 notifications.common.notificationconst.
     MilitiaMemberStandingWarning = 298,
@@ -45,6 +52,8 @@ public enum InboxGroup
 
 public sealed record ContactNotificationContent(double Level, string Message);
 
+public sealed record KillRightNotificationContent(KillRight Right);
+
 public sealed record MilitiaStandingNotificationContent(
     long CharacterId,
     int CorporationId,
@@ -65,7 +74,8 @@ public sealed record InboxNotification(
     long Created,
     ContactNotificationContent Content,
     int? AllianceId = null,
-    MilitiaStandingNotificationContent? MilitiaStanding = null
+    MilitiaStandingNotificationContent? MilitiaStanding = null,
+    KillRightNotificationContent? KillRight = null
 );
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);
