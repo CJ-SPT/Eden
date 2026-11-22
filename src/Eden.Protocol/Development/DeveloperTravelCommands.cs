@@ -21,6 +21,8 @@ internal sealed class DeveloperTravelCommands(IPilotTranslocation travel, ISyste
         {
             case "/getpos" when command.Length == 1:
                 return new PositionReply(Position(context));
+            case "/reportdesync" when command.Length == 1:
+                return context.Flight.ReadDesyncReport();
             case "/stop" when command.Length == 1:
                 return context.Flight.Execute(new FlightCommand.Stop());
             case "/warptopoint" when command is [_, var x, var y, var z]:
@@ -29,7 +31,7 @@ internal sealed class DeveloperTravelCommands(IPilotTranslocation travel, ISyste
             case "/tr":
                 return Move(context, Resolve(context, command));
             default:
-                throw new InvalidDataException("Use /getpos, /stop, or /warptopoint x y z.");
+                throw new InvalidDataException("Use /getpos, /reportdesync, /stop, or /warptopoint x y z.");
         }
     }
 

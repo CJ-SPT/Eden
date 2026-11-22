@@ -56,9 +56,13 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
         }
     }
 
-    public void Notify(PilotCallContext context, long balance, long revision, TrainingState training)
+    public void Notify(PilotCallContext context, long balance, long revision, TrainingState training, IReadOnlyList<int>? deleted = null)
     {
         Enter(context);
+        if (deleted is { Count: > 0 })
+        {
+            skills.ReportDeleted(context, deleted);
+        }
         skills.Apply(context, training, true);
         Observe(context, balance, revision, true);
     }
@@ -67,7 +71,9 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
     {
         var state = points.Snapshot(context.Pilot.PilotId);
         var ids = reader.ReadSkills(context.Pilot.PilotId).Select(s => s.TypeId).ToArray();
-        skills.Apply(context, new(state.Training.Queue, ids), true);
+        var removed = context.ReportedSkillTypes.Except(ids).ToArray();
+        skills.ReportDeleted(context, removed);
+        skills.Apply(context, new(state.Training.Queue, ids.Concat(removed).ToArray()), true);
         Observe(context, state.Balance, state.Revision, true);
         return state;
     }

@@ -754,6 +754,31 @@ in 19.96 s. The solution build and formatting checks passed.
 
 **Optional maintainer checks:** Exercise the Type Browser's Fit and Unload actions, then select a Skyhook operating state.
 
+## Native GM skill and desync commands
+
+High GMs can use `/giveskill <pilot> <skill|all|super> <level>`, `/removeskill <pilot> <skill|all>`,
+`/givestarterskills <pilot>`, and `/skillscopy <source> <destination>`. Pilot and skill selectors accept exact names,
+numeric IDs, and `me` for the current pilot. The two bulk grant presets select published skills or include unpublished
+catalog skills with a valid training rank. Starting skills come from the recipient's race. Copy grants the source's
+completed levels without reducing the recipient's existing progress. The regular grant path settles active training first.
+
+Skill removal settles earned training, clears the recipient's queue and records the native `skillEventSkillRemoved`
+history event 177. Build 3662168 `skillsvc.OnServerSkillsRemoved` deletes cached skills when `trainedSkillPoints` is negative
+and the virtual level is absent. Eden publishes that entry for previously reported skills plus the updated queue and brain.
+Changes share the resident transaction and persist through the existing skill checkpoints.
+
+The stock console's `/reportdesync` returns a pair of the visible ball motion map and the current Destiny tick. Each map
+entry carries three position and three velocity components. The command uses the session's filtered scene. The pinned
+`svc_console.pyj` consumer and EVE.js 261108.1 `reportDesync.js` confirm the reply format.
+
+**Automated validation:** The exact skill lifecycle and position/desync checks passed in 9.81 s. The 65-case
+`DeveloperToolsTests`, `FreeSkillPointTests` and position/desync follow-up passed in 45.38 s. The solution build
+and formatting checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Remove a previously displayed skill through the developer console and verify it leaves the skill list.
+
 ## Runtime TR destinations, November 8, 2026
 
 `slash.SlashCmd('/tr me <destinationID>')` now accepts positive signed 64-bit IDs. Alongside the existing solar systems, NPC stations and normalized catalog celestials, the resolver supports saved pilots, assembled ships outside containers, living NPCs, unexpired wrecks, nondepleted asteroids and deployed drones. A pilot destination uses that pilot's active ship. Docked pilot/ship destinations dock the caller in the same NPC station; space destinations use the resolved position and collision radius with Eden's existing 10 km clearance. The destination pilot, ship and contents are never moved or transferred. Existing authenticated GM/world-mod role and selected-pilot requirements remain in force. Arbitrary coordinates, names, extra flags, stored hulls, inventory-only items and unsupported structures remain outside the command.

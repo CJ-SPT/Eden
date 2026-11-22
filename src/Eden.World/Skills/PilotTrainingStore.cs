@@ -20,7 +20,8 @@ namespace Eden.World.Skills;
 internal sealed partial class PilotTrainingStore(WorldDatabase database, TimeProvider clock)
     : IPilotTraining,
         IPilotFreeSkillPoints,
-        IPilotSkillGrants
+        IPilotSkillGrants,
+        IPilotDeveloperSkills
 {
     // Build 3662168 appConst skill event IDs.
     private const int Started = 36;

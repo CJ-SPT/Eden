@@ -38,7 +38,7 @@ internal sealed class SkillHandler(
             {
                 ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills", PilotBindingLifetime.Pilot),
                 ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
-                ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
+                ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => Current(context, pilotId),
                 ("expertSystemMgr", "GetMyExpertSystems") => BlueEmpty.IndexedDictionary,
                 ("@skills", "GetAttributes") when args.Length == 0 => new BlueMap<DogmaAttributeId, int>(
                     sheet.ReadEffectiveAttributes(pilotId).ToDogma()
@@ -103,6 +103,7 @@ internal sealed class SkillHandler(
             InventoryChangesWire.NotifyItemChange(context, change);
         }
         var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => result.TypeIds.Contains(s.TypeId)));
+        context.ReportedSkillTypes.UnionWith(updates.Entries.Keys);
         context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
         return PilotCallResult.None;
     }
@@ -138,7 +139,13 @@ internal sealed class SkillHandler(
             propulsion.RefreshNavigation(context);
             var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)));
             long changedAt = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-            context.Notifications.Add(removed ? new ServerSkillsRemoved(updates, changedAt) : new ServerSkillsChanged(updates, changedAt));
+            context.ReportedSkillTypes.UnionWith(updates.Entries.Keys);
+            if (updates.Entries.Count > 0)
+            {
+                context.Notifications.Add(
+                    removed ? new ServerSkillsRemoved(updates, changedAt) : new ServerSkillsChanged(updates, changedAt)
+                );
+            }
             context.Notifications.Add(new ServerBrainUpdated(brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)));
             if (state.ChangedSkills.Any(skill => Enum.IsDefined((InfomorphSkill)skill)))
             {
@@ -175,4 +182,22 @@ internal sealed class SkillHandler(
 
     private static BlueMap<int, TrainedSkillReply> SkillRows(IEnumerable<TrainedSkill> source) =>
         new(source.ToDictionary(skill => skill.TypeId, skill => new TrainedSkillReply(skill)));
+
+    private BlueMap<int, TrainedSkillReply> Current(PilotCallContext context, long pilot)
+    {
+        var rows = SkillRows(skills.ReadSkills(pilot));
+        context.ReportedSkillTypes.Clear();
+        context.ReportedSkillTypes.UnionWith(rows.Entries.Keys);
+        return rows;
+    }
+
+    internal void ReportDeleted(PilotCallContext context, IReadOnlyList<int> deleted)
+    {
+        // Build 3662168 skillsvc removes entries with negative trainedSkillPoints and no virtual level.
+        var missing = deleted.Where(context.ReportedSkillTypes.Remove).Select(type => new TrainedSkill(type, -1, 1)).ToArray();
+        if (missing.Length > 0)
+        {
+            context.Notifications.Add(new ServerSkillsRemoved(SkillRows(missing), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
+        }
+    }
 }

@@ -680,6 +680,12 @@ public sealed partial class TranslocationTests
         Assert.Equal(new object?[] { target.X, target.Y, target.Z }, Assert.IsType<object?[]>(result.Reply.ToBlue()));
         Assert.Equal(PilotCallResult.None, f.Call("/tr me me offset=0,1000,-42"));
         Assert.Equal(target + new SpacePosition(0, 1000, -42), f.Context.Pilot.Position);
+        f.Context.Flight.Snapshot();
+        var report = Assert.IsType<PilotCallResult.Success>(f.Call("/reportdesync"));
+        var wire = Assert.IsType<object?[]>(report.Reply.ToBlue());
+        var ball = Assert.IsType<Dictionary<long, object?>>(wire[0])[f.Context.Pilot.ShipId];
+        Assert.Equal(new object?[] { target.X, target.Y + 1000, target.Z - 42, 0d, 0d, 0d }, Assert.IsType<List<object?>>(ball));
+        Assert.IsType<int>(wire[1]);
     }
 
     [Theory]

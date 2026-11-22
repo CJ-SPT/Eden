@@ -62,14 +62,19 @@ internal sealed class DeveloperCommandHandler(
             {
                 throw new InvalidDataException("Wait for the current translocation to finish.");
             }
-            switch (command[0].ToLowerInvariant())
+            command[0] = command[0].ToLowerInvariant();
+            switch (command[0])
             {
                 case "/getpos":
+                case "/reportdesync":
                 case "/stop":
                 case "/tr":
                 case "/warptopoint":
                     return travel.Execute(context, command);
                 case "/giveskill":
+                case "/givestarterskills":
+                case "/removeskill":
+                case "/skillscopy":
                     return skills.Grant(context, command);
                 case "/fit":
                 case "/getshipsetup":

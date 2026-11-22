@@ -67,6 +67,7 @@ internal sealed class PilotCallContext(
     public void Select(DockedPilot pilot)
     {
         ReleaseStructureControl();
+        ReportedSkillTypes.Clear();
         DestroyedShip = null;
         ActiveFlight = startFlight(pilot);
     }
@@ -111,6 +112,7 @@ internal sealed class PilotCallContext(
         ActiveFlight = null;
         DestroyedShip = null;
         NextSkillCompletion = null;
+        ReportedSkillTypes.Clear();
         _bindings.ReleasePilotReferences();
         NotificationsBeforeFlight.Clear();
         Notifications.Clear();
@@ -123,6 +125,7 @@ internal sealed class PilotCallContext(
     public bool AssetHoldingItemFailureEnabled { get; set; }
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
+    internal HashSet<int> ReportedSkillTypes { get; } = [];
     public List<PilotNotification> Notifications { get; } = [];
 
     // Combat text resolves the target's slim item, including on a fatal hit.

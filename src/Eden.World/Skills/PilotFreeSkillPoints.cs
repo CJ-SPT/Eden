@@ -9,7 +9,12 @@ namespace Eden.World.Skills;
 
 internal sealed partial class PilotTrainingStore
 {
-    private sealed record PointOperation(FreePointRequest? Request, long Credit = 0, TrainingTarget? Grant = null);
+    private sealed record PointOperation(
+        FreePointRequest? Request,
+        long Credit = 0,
+        IReadOnlyList<TrainingTarget>? Grant = null,
+        bool IncludeUnpublished = false
+    );
 
     private sealed record TrainingUpdateResult(TrainingState Training, bool Remapped, FreePointPlan? Points, long PointRevision = 0);
 
@@ -140,7 +145,7 @@ internal sealed partial class PilotTrainingStore
         }
         else if (operation.Grant is { } grant)
         {
-            plan = GrantPoints(world, pilotId, grant, balance);
+            plan = GrantPoints(world, pilotId, grant, balance, operation.IncludeUnpublished);
         }
         else
         {

@@ -13,6 +13,7 @@ using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,21 +31,23 @@ public sealed class DeveloperToolsTests
     [InlineData(
         PilotRole.Developer,
         "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', 'giveskill', "
-            + "'load', 'online', 'skyhook', 'stop', 'structure', 'tr', 'unload', 'warptopoint']"
+            + "'givestarterskills', 'load', 'online', 'removeskill', 'reportdesync', 'skillscopy', 'skyhook', "
+            + "'stop', 'structure', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(
         PilotRole.WorldMod,
         "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', "
-            + "'online', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
+            + "'online', 'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(
         PilotRole.GameMasterHigh,
-        "Available commands: ['fit', 'getshipsetup', 'giveskill', 'load', 'online', 'structure', 'unload']"
+        "Available commands: ['fit', 'getshipsetup', 'giveskill', 'givestarterskills', 'load', 'online', "
+            + "'removeskill', 'skillscopy', 'structure', 'unload']"
     )]
     [InlineData(
         PilotRole.GameMasterLow,
         "Available commands: ['extraction', 'fit', 'getpos', 'getshipsetup', 'load', 'online', "
-            + "'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
+            + "'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(PilotRole.QualityAssurance, "Available commands: []")]
     [InlineData(PilotRole.Player, "Available commands: []")]
@@ -71,6 +74,31 @@ public sealed class DeveloperToolsTests
         Assert.IsType<PilotCallResult.Failure>(f.Client.Call("SlashCmd", [$"/create 12235 1 {station + 1}"], "slash"));
         Assert.Equal(PilotCallResult.None, f.Client.Call("SlashCmd", ["/giveskill \"me\" 3300 2"], "slash"));
         Assert.Equal(2, Assert.Single(f.Reader.ReadSkills(Pilot), skill => skill.TypeId == 3300).Level);
+    }
+
+    [Fact]
+    public void NativeSkillToolsGrantAndCopyExactNamesThenDeleteSkillsAndTraining()
+    {
+        using Fixture f = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE ItemType SET Name='GM Test Gunnery' WHERE Id=3300");
+        }
+        using LiveWorld live = new(new(f.Db.Path), f.Clock);
+        var source = f.Client.Context.Pilot;
+        var target = f.Db.Store.FindPilot(1000002)!;
+        Assert.Equal(PilotCallResult.None, f.Call($"/giveskill \"{source.Name}\" \"GM Test Gunnery\" 2"));
+        Assert.Equal(PilotCallResult.None, f.Call($"/skillscopy \"{source.Name}\" \"{target.Name}\""));
+        Assert.Equal(2, Assert.Single(f.Reader.ReadSkills(target.PilotId), item => item.TypeId == NewSkill).Level);
+        var scheduled = f.Training.Save(Pilot, [new(SpaceshipCommand, 1)], true);
+        Assert.Single(scheduled.Queue);
+        Assert.Equal(PilotCallResult.None, f.Call("/removeskill me \"GM Test Gunnery\""));
+        Assert.DoesNotContain(f.Reader.ReadSkills(Pilot), item => item.TypeId == NewSkill);
+        Assert.Empty(f.Training.Advance(Pilot).Queue);
+        Assert.Contains(f.Training.History(Pilot, 10), item => item.TypeId == NewSkill && item.EventId == 177);
+        var removed = Assert.Single(f.Client.Context.Notifications.OfType<Eden.Protocol.Skills.ServerSkillsRemoved>());
+        Assert.Equal(-1, removed.Skills.Entries[NewSkill].Skill.Points);
+        Assert.Equal(2, Assert.Single(f.Reader.ReadSkills(target.PilotId), item => item.TypeId == NewSkill).Level);
     }
 
     // Representative build-3662168 catalog rows, including every ordinary injector.

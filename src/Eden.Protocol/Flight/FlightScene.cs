@@ -77,6 +77,19 @@ internal sealed class FlightScene(
     internal IReadOnlyList<ShipContact> VisiblePeers => _peers;
     internal IReadOnlyList<DroneContact> VisibleDrones => Drones.Contacts;
 
+    internal IEnumerable<BallMotion> DiagnosticMotion(FlightSceneContext context) =>
+        VisibleObjects(context)
+            .Select(body => new BallMotion(body.Id, body.Position, SpacePosition.Zero))
+            .Concat(
+                _peers
+                    .Where(peer => peer.Pilot.Position is not null)
+                    .Select(peer => new BallMotion(peer.Pilot.ShipId, peer.Pilot.Position!, peer.Velocity))
+            )
+            .Concat(Npcs.Contacts.Select(npc => new BallMotion(npc.Id, npc.Position, npc.Navigation?.Velocity ?? SpacePosition.Zero)))
+            .Concat(Drones.Contacts.Select(drone => new BallMotion(drone.Id, drone.Position, drone.Velocity)))
+            .Concat(_wrecks.Select(wreck => new BallMotion(wreck.Id, wreck.Position, SpacePosition.Zero)))
+            .Concat(_missiles.Select(missile => new BallMotion(missile.Id, missile.Flight.Position, missile.Flight.Velocity)));
+
     internal void RefreshNpcs(FlightSceneContext context) => Npcs.RefreshNpcs(context);
 
     internal void RefreshDrones(FlightSceneContext context) => Drones.RefreshDrones(context);
