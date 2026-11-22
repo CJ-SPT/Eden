@@ -276,12 +276,13 @@ internal sealed partial class ResidentEconomy
                     $"""
                     INSERT INTO WorldItem(MaterialEfficiency,TimeEfficiency,BlueprintRuns,VolumeOverride,CrystalDamage,
                         Singleton,Online,Id,OwnerId,TypeId,LocationId,FlagId,Quantity)
+                    WITH payload(value) AS MATERIALIZED (SELECT jsonb(value) FROM json_each({values}))
                     SELECT json_extract(value,'$.MaterialEfficiency'),json_extract(value,'$.TimeEfficiency'),
                         json_extract(value,'$.BlueprintRuns'),json_extract(value,'$.VolumeOverride'),json_extract(value,
                         '$.CrystalDamage'),json_extract(value,'$.Singleton'),json_extract(value,'$.Online'),
                         json_extract(value,'$.Id'),json_extract(value,'$.OwnerId'),json_extract(value,'$.TypeId'),
                         json_extract(value,'$.LocationId'),json_extract(value,'$.FlagId'),json_extract(value,
-                        '$.Quantity') FROM json_each({values}) WHERE 1
+                        '$.Quantity') FROM payload WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET MaterialEfficiency=excluded.MaterialEfficiency,
                         TimeEfficiency=excluded.TimeEfficiency,BlueprintRuns=excluded.BlueprintRuns,
                         VolumeOverride=excluded.VolumeOverride,CrystalDamage=excluded.CrystalDamage,
