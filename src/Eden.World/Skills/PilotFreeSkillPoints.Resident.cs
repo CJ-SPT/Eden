@@ -28,7 +28,10 @@ internal sealed partial class PilotTrainingStore
 
     private static FreeSkillPointBalance ReadPointBalance(WorldAction world, long pilotId)
     {
-        if (!world.Filter<Pilot>(p => p.Id == pilotId).Any())
+        bool recipientExists = world is EconomyTransaction resident
+            ? resident.HasVisiblePilotSnapshot(pilotId)
+            : world.Filter<Pilot>(p => p.Id == pilotId).Any();
+        if (!recipientExists)
         {
             throw new InvalidDataException("Unknown skill point recipient.");
         }

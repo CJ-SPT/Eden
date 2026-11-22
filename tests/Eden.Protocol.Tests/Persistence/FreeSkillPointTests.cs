@@ -1,5 +1,6 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Redemption;
@@ -52,6 +53,41 @@ internal static class FreePointTestData
 
 public sealed class FreeSkillPointTests
 {
+    [Fact]
+    public void ResidentRecipientsUsePrivatePilotVisibilityWithoutMaterializingCommittedPilots()
+    {
+        var clock = CalendarTestData.Clock();
+        using var db = FreePointTestData.Create(clock);
+        using LiveWorld live = new(new(db.Path), clock, _ => { });
+        const long pendingPilot = 99_500_001;
+        using (var world = live.Economy.Begin())
+        {
+            Assert.Equal(0, PilotTrainingStore.ReadFreePoints(world, FreePointTestData.Pilot));
+            Assert.Empty(world.Pilots.Local);
+            Assert.Empty(world.Ships.Local);
+
+            var ship = world.Add(new Ship { OwnerId = pendingPilot }).Entity;
+            var pilot = world
+                .Add(
+                    new Pilot
+                    {
+                        Id = pendingPilot,
+                        AccountId = RedemptionTests.Account,
+                        ActiveShipId = ship.Id,
+                    }
+                )
+                .Entity;
+            PilotTrainingStore.CreditSilentFreePoints(world, pilot.Id, 100);
+            Assert.Equal(100, PilotTrainingStore.ReadFreePoints(world, pilot.Id));
+            world.Remove(pilot);
+            Assert.Throws<InvalidDataException>(() => PilotTrainingStore.ReadFreePoints(world, pendingPilot));
+        }
+
+        using var read = live.Economy.Begin();
+        Assert.Equal(0, PilotTrainingStore.ReadFreePoints(read, FreePointTestData.Pilot));
+        Assert.Throws<InvalidDataException>(() => PilotTrainingStore.ReadFreePoints(read, pendingPilot));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

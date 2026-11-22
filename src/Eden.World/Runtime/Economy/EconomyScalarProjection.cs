@@ -25,6 +25,10 @@ internal sealed partial class ResidentEconomy
 
 internal sealed partial class EconomySet<TRow, TState>
 {
+    internal bool HasVisibleSnapshot(EconomyKey key) =>
+        !_removed.Contains(key)
+        && (_local.TryGetValue(key, out var row) ? transaction.Visible(row) : table.Contains(key) && transaction.VisibleScalar<TRow>(key));
+
     internal override IEnumerable<TResult> Project<TResult>(
         Expression<Func<TRow, TResult>> selector,
         Expression<Func<TRow, bool>>? predicate
@@ -103,6 +107,8 @@ internal sealed partial class EconomySet<TRow, TState>
 
 internal sealed partial class EconomyTransaction
 {
+    internal bool HasVisiblePilotSnapshot(long id) => ((EconomySet<Pilot, EconomyPilot>)Pilots).HasVisibleSnapshot(new(id));
+
     internal bool VisibleScalar<TRow>(EconomyKey key)
         where TRow : class => store.VisibleScalar<TRow>(key);
 }
