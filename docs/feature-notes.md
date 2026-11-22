@@ -18,6 +18,8 @@
   ships, take corporate jobs, buy replacement fits, settle in frontier systems, and fund trained first sovereignty claims.
   Established corporate pilots can take paid production work or switch between fitted mining ships and funded nullsec hunts
   as orders and replacement stock change. [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)
+  Fresh pilots use local demand and reachable work when choosing jobs in their corvettes. Larger combat careers can fund
+  production of hulls and fit components through ordinary market orders. [Fresh-world job choice and advanced combat fits](protocol/capsuleers.md#fresh-world-job-choice-and-advanced-combat-fits)
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
   [Fresh-world first claims](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
 

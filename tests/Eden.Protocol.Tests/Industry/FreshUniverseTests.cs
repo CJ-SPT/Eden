@@ -140,9 +140,7 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             }
             var founders = live.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().ToArray());
             Assert.Equal(2, founders.Length);
-            producer = founders.Single(row => row.Slot == StarterIndustryRules.ProducerSlot).PilotId;
-            buyer = founders.Single(row => row.Slot == StarterIndustryRules.BuyerSlot).PilotId;
-            corvette = live.Economy.Inspect(world => world.Pilots.Find(buyer)!.ActiveShipId);
+            long newPilot = founders[0].PilotId;
             CompareWithNewCharacters(host, live, founders);
             using (CatalogDbContext catalog = new(database.CatalogPath))
             {
@@ -156,21 +154,26 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             }
             var market = host.GetRequiredService<IPilotMarket>();
             var points = host.GetRequiredService<IPilotFreeSkillPoints>();
-            Assert.Empty(market.Orders(buyer, Miner));
-            Assert.Empty(market.Orders(buyer, Venture));
-            Assert.Throws<InvalidDataException>(() =>
-                host.GetRequiredService<IPersonalMarket>().PlaceBuy(buyer, new(Factory, Miner, 1000, 1, 90))
+            Assert.Empty(market.Orders(newPilot, Miner));
+            Assert.Empty(market.Orders(newPilot, Venture));
+            var personal = host.GetRequiredService<IPersonalMarket>();
+            Assert.Throws<InvalidDataException>(() => personal.PlaceBuy(newPilot, new(Factory, Miner, 1000, 1, 90)));
+            Assert.All(
+                founders,
+                founder =>
+                {
+                    Assert.Empty(market.Transactions(founder.PilotId));
+                    Assert.Equal(0, market.Balance(founder.PilotId));
+                    Assert.Equal(0, points.Balance(founder.PilotId));
+                }
             );
-            Assert.Empty(market.Transactions(buyer));
-            Assert.Equal(0, market.Balance(buyer));
-            Assert.Equal(0, points.Balance(buyer));
 
-            Advance(
-                host,
-                clock,
-                () => host.GetRequiredService<IPersonalMarket>().PersonalOrders(buyer).Any(order => order.TypeId == Miner)
-            );
-            var order = host.GetRequiredService<IPersonalMarket>().PersonalOrders(buyer).Single(order => order.TypeId == Miner);
+            bool HasMinerBid(SavedCapsuleerAgent founder) => personal.PersonalOrders(founder.PilotId).Any(order => order.TypeId == Miner);
+            Advance(host, clock, () => founders.Any(HasMinerBid));
+            buyer = Assert.Single(founders, HasMinerBid).PilotId;
+            producer = Assert.Single(founders, founder => founder.PilotId != buyer).PilotId;
+            corvette = live.Economy.Inspect(world => world.Pilots.Find(buyer)!.ActiveShipId);
+            var order = Assert.Single(personal.PersonalOrders(buyer), order => order.TypeId == Miner);
             orderId = order.Id;
             price = order.PriceCents;
             Assert.Equal(price, order.EscrowCents);

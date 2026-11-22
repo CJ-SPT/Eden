@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
@@ -22,6 +23,10 @@ namespace Eden.World.Capsuleers;
 internal sealed record CapsuleerOrganization(long DueTicks = 0, long? ApplicationId = null, CapsuleerProfession? Profession = null)
 {
     public CapsuleerCareer? ActiveWorker { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? HuntReserveJobId { get; init; }
+    public long? StarterMarketJobId { get; init; }
     public int? OperatingStationId { get; init; }
     public CapsuleerRelocation? Relocation { get; init; }
     public CapsuleerEmployment? Employment { get; init; }
@@ -78,9 +83,14 @@ internal static partial class CapsuleerCorporations
         }
         var hull = (HullClass)(catalog.Definitions.Items.GetValueOrDefault(pilot.ActiveShip.TypeId)?.GroupId ?? 0);
         var profession =
-            agent.Career == CapsuleerCareer.Mining ? CapsuleerProfession.Mining
-            : world.Settings.FreshUniverse ? FreshCareerRules.Profession(agent.Slot)
-            : CapsuleerCareerTraining.Profession(catalog, pilot.ActiveShip.TypeId, hull) ?? CapsuleerProfession.Hauling;
+            CapsuleerCareerTraining.Profession(catalog, pilot.ActiveShip.TypeId, hull)
+            ?? (
+                (organization.ActiveWorker ?? agent.Career) == CapsuleerCareer.Mining ? CapsuleerProfession.Mining
+                : world.Settings.FreshUniverse
+                    ? LiveWorld.Find(database.Path)?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.CareerPlan?.Profession
+                        ?? FreshCareerRules.Profession(agent.Slot)
+                : CapsuleerProfession.Hauling
+            );
         long nextReview = checked(activeTicks + CapsuleerRecruitmentRules.ReviewDelay(pilotId).Ticks);
         organization = organization with { Profession = profession, DueTicks = nextReview };
         var former = world.Set<SavedCorporation>().Find(pilot.CorporationId);

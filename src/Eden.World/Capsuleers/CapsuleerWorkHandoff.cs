@@ -58,7 +58,14 @@ internal static class CapsuleerWorkHandoff
         );
     }
 
-    internal static void ToFlight(CapsuleerOperation operation, EconomyTransaction world, DockedPilot pilot, Ship ship, long ticks)
+    internal static void ToFlight(
+        CapsuleerOperation operation,
+        EconomyTransaction world,
+        DockedPilot pilot,
+        Ship ship,
+        long ticks,
+        CapsuleerProfession? profession = null
+    )
     {
         long id = pilot.PilotId;
         var rows = world.Set<SavedCapsuleerHauler>();
@@ -82,6 +89,7 @@ internal static class CapsuleerWorkHandoff
         }
         var organization = CapsuleerCorporations.Organization(world, id);
         CapsuleerCorporations.SaveOrganization(world, id, organization with { ActiveWorker = CapsuleerCareer.Hauling });
+        var previous = HaulerCheckpoint.Read(row.Progress)?.CareerPlan;
         operation.IncomingHauler = new(
             id,
             new HaulerProgress(
@@ -97,7 +105,8 @@ internal static class CapsuleerWorkHandoff
                 ClockOffsetTicks: ticks
             )
             {
-                CareerPlan = HaulerCheckpoint.Read(row.Progress)?.CareerPlan,
+                CareerPlan =
+                    profession is not { } work || previous?.Profession == work ? previous : new(work, 0, CapsuleerTrainingFocus.Work),
             }
         );
     }

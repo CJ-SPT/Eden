@@ -772,6 +772,10 @@ internal sealed partial class CapsuleerMiner(
 
     private void PrepareTrip()
     {
+        if (WaitForHuntReserve())
+        {
+            return;
+        }
         bool fresh = database.Settings.FreshUniverse;
         if (LeaveUnavailableFactory())
         {
@@ -824,10 +828,24 @@ internal sealed partial class CapsuleerMiner(
         }
         FactorySupplyRequest? supply = null;
         CapsuleerIndustry.MoonMiningTrip? moon = null;
+        bool starterFactoryWork = false;
         bool starterTradeSettled = fresh && CapsuleerIndustry.StarterTradeSettled(_operation.World, pilotId);
-        if (fresh && !starterTradeSettled && _operation.World is EconomyTransaction starterWorld)
+        bool starterWorkshop =
+            fresh && CapsuleerProvisioningCatalog.StarterIndustry(_operation.Catalog, Pilot.SystemId).HomeStationId == Pilot.StationId;
+        bool starterWorkDemand =
+            starterWorkshop
+            && _operation.World is EconomyTransaction starterWorld
+            && CapsuleerIndustry.HasStarterWorkDemand(starterWorld, _operation.Catalog, Pilot, Now);
+        if (starterWorkshop && (!starterTradeSettled || starterWorkDemand) && _operation.World is EconomyTransaction factoryWorld)
         {
-            _operation.MarketChanged |= industry.WorkStarterIndustry(starterWorld, _operation.Catalog, Pilot, Now, out var oreTypes);
+            _operation.MarketChanged |= industry.WorkStarterIndustry(
+                factoryWorld,
+                _operation.Catalog,
+                Pilot,
+                Now,
+                out var oreTypes,
+                out starterFactoryWork
+            );
             _work = Work with { StarterOreTypes = oreTypes };
         }
         if (
@@ -913,23 +931,34 @@ internal sealed partial class CapsuleerMiner(
         if (_operation.World is EconomyTransaction resident)
         {
             using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCareer");
-            var training = careerTraining.Advance(resident, _operation.Catalog, Pilot, CapsuleerProfession.Mining, Work.CareerPlan, Now);
+            var training = careerTraining.Advance(
+                resident,
+                _operation.Catalog,
+                Pilot,
+                CapsuleerProfession.Mining,
+                Work.CareerPlan,
+                Now,
+                starterFactoryWork || !starterTradeSettled && starterWorkDemand
+            );
             _work = Work with { CareerPlan = training.Plan };
             _operation.MarketChanged |= training.MarketChanged;
             if (training.LevelChanged)
             {
                 _pilot = ships.FindPilot(resident, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
             }
-            bool starterWorkshop =
-                fresh && CapsuleerProvisioningCatalog.StarterIndustry(_operation.Catalog, Pilot.SystemId).HomeStationId == Pilot.StationId;
-            if (!fresh || starterTradeSettled)
+            if (!fresh || starterTradeSettled || starterWorkshop && !starterFactoryWork)
             {
                 var fleetDemand =
-                    starterWorkshop && starterTradeSettled
+                    starterWorkDemand && !starterFactoryWork
                         ? industry.WorkStarterFleetOrders(resident, _operation.Catalog, Pilot, Now)
                         : null;
                 var acquisition =
-                    fleetDemand ?? industry.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now, starterWorkshop);
+                    fleetDemand
+                    ?? (
+                        !fresh || starterTradeSettled
+                            ? industry.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now, starterWorkshop)
+                            : new CareerShipTurn()
+                    );
                 _operation.MarketChanged |= acquisition.MarketChanged;
                 if (starterWorkshop)
                 {
@@ -941,6 +970,16 @@ internal sealed partial class CapsuleerMiner(
                     ResetMiningHull();
                     aboard = PilotInventoryStore.List(resident, _operation.Catalog, pilotId, Pilot.ShipId);
                 }
+            }
+            if (
+                fresh
+                && ore.Length > 0
+                && !starterWorkDemand
+                && !industry.HasStarterOreDemand(resident, _operation.Catalog, Pilot.StationId, ore.Select(item => item.TypeId))
+                && TryRookieFlight(resident, localBounty: true)
+            )
+            {
+                return;
             }
         }
         using var equipment = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerEquipment");
@@ -1005,6 +1044,10 @@ internal sealed partial class CapsuleerMiner(
                     : Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear."
                     : "Waiting to revisit stripped belts.",
             };
+            if (fresh && _operation.World is EconomyTransaction rookie)
+            {
+                TryRookieFlight(rookie);
+            }
             return;
         }
         LaunchMiningShip(field.Id);

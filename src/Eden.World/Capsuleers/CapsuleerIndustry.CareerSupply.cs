@@ -66,7 +66,7 @@ internal sealed partial class CapsuleerIndustry
             {
                 return type;
             }
-            if (affordable is null && asks is not null && Affordable(missing, asks, catalog, balance))
+            if (affordable is null && asks is not null && Affordable(missing, asks, catalog, balance, UsesPatrolSupport(catalog, type)))
             {
                 affordable = type;
             }
@@ -74,11 +74,17 @@ internal sealed partial class CapsuleerIndustry
         return affordable ?? choices[first];
     }
 
-    private static bool Affordable(ReplacementPart[] missing, ILookup<int, MarketOrder> asks, CatalogDbContext catalog, decimal budget)
+    private static bool Affordable(
+        ReplacementPart[] missing,
+        ILookup<int, MarketOrder> asks,
+        CatalogDbContext catalog,
+        decimal budget,
+        bool coverProduction
+    )
     {
         foreach (var part in missing)
         {
-            long cap = CapsuleerReplacementRules.LimitPrice(ReferencePrice(catalog, part.TypeId));
+            long cap = CareerQuoteLimit(catalog, part.TypeId, coverProduction);
             var purchase = QuoteInput(asks[part.TypeId].TakeWhile(order => order.PriceCents <= cap), part.TypeId, part.Quantity);
             if (purchase is null || purchase.Quantity != part.Quantity)
             {

@@ -141,6 +141,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Autonomous capsuleers
 
 - [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)
+- [Fresh-world job choice and advanced combat fits](protocol/capsuleers.md#fresh-world-job-choice-and-advanced-combat-fits)
 - [Autonomous pilot creation under load](protocol/capsuleers.md#autonomous-pilot-creation-under-load)
 - [Bot population limits and work regions](protocol/capsuleers.md#bot-population-limits-and-work-regions)
 - [Bot roster and activity controls](protocol/capsuleers.md#bot-roster-and-activity-controls)

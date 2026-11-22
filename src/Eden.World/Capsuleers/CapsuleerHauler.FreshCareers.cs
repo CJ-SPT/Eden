@@ -6,6 +6,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
 using Eden.World.Combat;
 using Eden.World.Fittings;
@@ -44,19 +45,35 @@ internal sealed partial class CapsuleerHauler
         }
 
         bool rookie = Pilot.ShipGroupId == (int)HullClass.Corvette;
-        var profession =
+        var policy = world.Settings.Capsuleers;
+        var routes = FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, policy);
+        if (
+            (Work.Journey is not null || Work.CareerPlan?.Profession == CapsuleerProfession.Hauling)
+            && TryFreshDelivery(world, routes, startNew: false)
+        )
+        {
+            return;
+        }
+        bool courier = policy.FreshCourierPilots && routes.Courier is not null;
+        bool bounty =
+            policy.FreshBountyPilots
+            && policy.BeltRatting
+            && world.Settings.NpcPopulation.Pirates
+            && catalog.BeltAnchors(Pilot.SystemId).Count > 0;
+        var preference =
             (rookie ? null : CapsuleerCareerTraining.Profession(catalog, Pilot.ShipTypeId, (HullClass)Pilot.ShipGroupId))
+            ?? Work.CareerPlan?.Profession
             ?? FreshCareerRules.Profession(agent.Slot);
-        var courier =
-            profession == CapsuleerProfession.Hauling
-                ? FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, world.Settings.Capsuleers)
-                : null;
+        if (rookie && TryRookieMining(world, requireDemand: courier || bounty))
+        {
+            return;
+        }
+        var profession =
+            courier && (!bounty || preference == CapsuleerProfession.Hauling) ? CapsuleerProfession.Hauling
+            : bounty ? CapsuleerProfession.Combat
+            : preference;
         if (!rookie)
         {
-            if (courier is not null && TryFreshDelivery(world, courier, startNew: false))
-            {
-                return;
-            }
             JoinCorporationAtDock();
             if (TryCorporationRelocation() || TrySovereigntyExpedition() || TryCorporationSupply())
             {
@@ -66,7 +83,7 @@ internal sealed partial class CapsuleerHauler
 
         var training = rookie
             ? careerTraining.AdvanceFreshCareer(world, catalog, Pilot, profession, Now)
-            : careerTraining.Advance(world, catalog, Pilot, profession, Work.CareerPlan, Now);
+            : careerTraining.Advance(world, catalog, Pilot, preference, Work.CareerPlan, Now);
         _work = Work with { CareerPlan = training.Plan };
         _operation.MarketChanged |= training.MarketChanged;
         if (training.LevelChanged)
@@ -109,30 +126,84 @@ internal sealed partial class CapsuleerHauler
         {
             return;
         }
-        if (courier is not null)
+        if (profession == CapsuleerProfession.Hauling && courier && TryFreshDelivery(world, routes, startNew: true))
         {
-            if (!TryFreshDelivery(world, courier, startNew: true))
-            {
-                Wait("Waiting for a reachable distribution delivery.");
-            }
             return;
         }
 
-        FitRookieWeapon(world);
-        _work = Work with { Journey = null };
-        var supplies = resupply.Dock(database, world, catalog, pilotId, Work.Resupply, Now, out var fit);
-        _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
-        _work = Work with { Resupply = supplies };
-        // The direct rookie launch still owns the fitted inputs read by resupply.
-        if (rookie ? TryLaunchSortie(supplies, null, fit) : TryFrontierPatrol(world, supplies) || TryLaunchActivity(scoutedAnomaly))
+        if (bounty && (rookie || profession == CapsuleerProfession.Combat) && TryFreshBounty(world, scoutedAnomaly, rookie, training.Plan))
         {
             return;
         }
-        if (supplies.Requirements.Length > 0)
+        if (profession != CapsuleerProfession.Hauling && courier && TryFreshDelivery(world, routes, startNew: true))
         {
-            _work = Work with { Resupply = supplies with { Checked = false } };
+            return;
         }
-        Wait("Waiting for a viable bounty patrol.");
+        if (!rookie || !TryRookieMining(world, requireDemand: false))
+        {
+            Wait("Waiting for reachable starter work.");
+        }
+    }
+
+    private bool TryRookieMining(EconomyTransaction world, bool requireDemand)
+    {
+        var catalog = _operation.Catalog;
+        if (
+            !world.Settings.Capsuleers.Miners
+            || CapsuleerProvisioningCatalog.StarterIndustry(catalog, Pilot.SystemId).HomeStationId != Pilot.StationId
+            || requireDemand && !CapsuleerIndustry.HasStarterWorkDemand(world, catalog, Pilot, Now)
+            || Work.Freight is { Stacks.Length: > 0 }
+            || Work.CorporationSupply is not null
+            || Work.SovereigntyExpedition is not null
+            || Work.Resupply?.DestinationStationId is not null
+            || !OwnsRookieEquipment(world, (int)MiningLaserType.Civilian)
+            || world
+                .Filter<OwnedItem>(item => item.LocationId == Pilot.ShipId)
+                .AsEnumerable()
+                .Any(item =>
+                    ShipHoldRules.IsHold(item.FlagId) && catalog.FittingType(item.TypeId)?.CategoryId != (int)InventoryCategory.Charge
+                )
+        )
+        {
+            return false;
+        }
+        var previous =
+            Live?.MinerCheckpoints.GetValueOrDefault(pilotId)?.Work
+            ?? MinerCheckpoint.Read(world.Filter<SavedCapsuleerCommunity>(row => row.PilotId == pilotId).SingleOrDefault()?.Progress);
+        if (previous is { Activity: MinerActivity.Waiting } && previous.DueTicks > Work.ActiveTicks)
+        {
+            return false;
+        }
+        CapsuleerWorkHandoff.ToMining(_operation, world, Pilot, world.Ships.Find(Pilot.ShipId)!, Work.ActiveTicks);
+        return true;
+    }
+
+    private bool TryFreshBounty(EconomyTransaction world, CombatAnomaly? scoutedAnomaly, bool rookie, CapsuleerCareerPlan? training)
+    {
+        if (rookie && !OwnsRookieEquipment(world, (int)CombatWeaponType.CivilianGatlingRailgun))
+        {
+            return false;
+        }
+        FitRookieWeapon(world);
+        var prior = Work.CareerPlan;
+        if (rookie && prior?.Profession != CapsuleerProfession.Combat)
+        {
+            _work = Work with { CareerPlan = new(CapsuleerProfession.Combat, 0, CapsuleerTrainingFocus.Work) };
+        }
+        _work = Work with { Journey = null };
+        var supplies = resupply.Dock(database, world, _operation.Catalog, pilotId, Work.Resupply, Now, out var fit);
+        _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
+        _work = Work with { Resupply = supplies };
+        if (rookie ? TryLaunchSortie(supplies, null, fit) : TryFrontierPatrol(world, supplies) || TryLaunchActivity(scoutedAnomaly))
+        {
+            return true;
+        }
+        _work = Work with
+        {
+            CareerPlan = training,
+            Resupply = supplies.Requirements.Length > 0 ? supplies with { Checked = false } : supplies,
+        };
+        return false;
     }
 
     private bool TryFrontierPatrol(EconomyTransaction world, ResupplyProgress supplies)
@@ -184,23 +255,21 @@ internal sealed partial class CapsuleerHauler
     private bool TryFreshDelivery(EconomyTransaction world, FreshCareerRoutes routes, bool startNew)
     {
         var catalog = _operation.Catalog;
-        if (
-            routes.Agent is not { } issuer
-            || routes.Courier is not { } delivery
-            || missions.RunStarterCourier(world, catalog, Pilot, issuer, delivery.DestinationStationId, Now, startNew) is not int station
-        )
+        if (routes.Agent is not { } issuer || routes.Courier is not { } delivery || issuer.StationId is not int source)
         {
             return false;
         }
-        var route = CapsuleerTrafficRoutes.ToStation(
-            catalog,
-            Pilot.StationId,
-            station,
-            (HullClass)Pilot.ShipGroupId,
-            AvoidedSupplierSystems(),
-            station == issuer.StationId ? CapsuleerRecruitmentRules.MaximumJumps : FreshCareerRules.DeliveryJumps,
-            policy: world.Settings.Capsuleers
-        );
+        int proposed = Pilot.StationId == source ? delivery.DestinationStationId : source;
+        var prepared = startNew ? Route(proposed) : null;
+        if (startNew && prepared is null)
+        {
+            return false;
+        }
+        if (missions.RunStarterCourier(world, catalog, Pilot, issuer, delivery.DestinationStationId, Now, startNew) is not int station)
+        {
+            return false;
+        }
+        var route = station == proposed ? prepared ?? Route(station) : Route(station);
         if (route is null)
         {
             Wait("Waiting for a reachable distribution delivery.");
@@ -210,6 +279,17 @@ internal sealed partial class CapsuleerHauler
             BeginSupplyJourney(route);
         }
         return true;
+
+        CapsuleerTrafficRoute? Route(int destination) =>
+            CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                Pilot.StationId,
+                destination,
+                (HullClass)Pilot.ShipGroupId,
+                AvoidedSupplierSystems(),
+                destination == source ? CapsuleerRecruitmentRules.MaximumJumps : FreshCareerRules.DeliveryJumps,
+                policy: world.Settings.Capsuleers
+            );
     }
 
     private void FitRookieWeapon(EconomyTransaction world)
@@ -237,4 +317,18 @@ internal sealed partial class CapsuleerHauler
         PilotFittingStore.SetOnline(world, catalog, pilotId, Pilot.ShipId, fitted.Item.Id, true, Now);
         _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
     }
+
+    private bool OwnsRookieEquipment(EconomyTransaction world, int type) =>
+        world
+            .Filter<OwnedItem>(item => item.OwnerId == pilotId)
+            .Any(item =>
+                item.TypeId == type
+                && item.Quantity > 0
+                && (
+                    item.LocationId == Pilot.ShipId
+                        && item.FlagId >= (int)InventoryFlag.HighSlot0
+                        && item.FlagId <= (int)InventoryFlag.HighSlot7
+                    || item.LocationId == Pilot.StationId && item.FlagId == (int)InventoryFlag.Hangar
+                )
+            );
 }

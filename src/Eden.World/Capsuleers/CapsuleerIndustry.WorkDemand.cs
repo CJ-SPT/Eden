@@ -66,6 +66,12 @@ internal sealed partial class CapsuleerIndustry
         {
             return false;
         }
+        var organization = CapsuleerCorporations.Organization(world, id);
+        if (organization.HuntReserveJobId.HasValue)
+        {
+            // An installed job occupies this spare's budget until its output can be delivered.
+            return false;
+        }
         var missing = MissingParts(parts.Select(part => part with { Quantity = checked(part.Quantity * (ready + 1)) }).ToArray(), stock);
         if (
             missing.Any(part => !IsMarketSupply(catalog, part.TypeId))
@@ -79,11 +85,16 @@ internal sealed partial class CapsuleerIndustry
         {
             return false;
         }
-        if (QuoteCareerKit(world, catalog, id, station, missing, budget) is not { } purchases)
+        bool coverProduction = UsesPatrolSupport(catalog, candidate?.TypeId ?? pilot.ShipTypeId);
+        if (QuoteCareerKit(world, catalog, id, station, missing, budget, coverProduction) is not { } purchases)
         {
+            if (TryManufactureHuntReserve(world, catalog, pilot, missing, budget, organization))
+            {
+                return false;
+            }
             foreach (var part in missing)
             {
-                if (PlaceCareerBid(world, catalog, pilot, [part], (long)budget, now))
+                if (PlaceCareerBid(world, catalog, pilot, [part], (long)budget, now, coverProduction))
                 {
                     return true;
                 }

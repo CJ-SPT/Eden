@@ -1053,6 +1053,10 @@ internal sealed partial class CapsuleerHauler(
     private void TradeAndLaunch(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
+        if (WaitForHuntReserve())
+        {
+            return;
+        }
         if (database.Settings.FreshUniverse && _operation.World is EconomyTransaction freshWorld)
         {
             WorkFreshCareer(freshWorld, scoutedAnomaly);

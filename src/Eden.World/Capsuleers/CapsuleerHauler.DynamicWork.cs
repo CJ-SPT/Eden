@@ -8,6 +8,20 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
+    private bool WaitForHuntReserve()
+    {
+        if (
+            _operation.World is not EconomyTransaction world
+            || ammunitionSupply.DeliverHuntReserveJob(world, _operation.Catalog, Pilot, Now) is not long deadline
+        )
+        {
+            return false;
+        }
+        Wait("Finishing production of a replacement part.");
+        _work = Work with { DueTicks = deadline, DueStamp = CapsuleerScheduleRules.Stamp(deadline, Work.ClockOffsetTicks) };
+        return true;
+    }
+
     private bool DynamicWorkPilot(EconomyTransaction world) =>
         world.Set<SavedTrafficIdentity>().Find(pilotId) is null && CapsuleerIndustry.Employer(world, pilotId, Pilot.CorpId) is not null;
 
@@ -88,6 +102,10 @@ internal sealed partial class CapsuleerHauler
                 {
                     work = CapsuleerWorkKind.Routine;
                     _operation.MarketChanged |= ammunitionSupply.TryReplenishHuntReserve(world, catalog, Pilot, now);
+                    if (WaitForHuntReserve())
+                    {
+                        return true;
+                    }
                 }
                 else if (TryGangDeparture(authorizedHunt: true) || TryLaunchSortie(supplies, scoutedAnomaly, fit, intentionalHunt: true))
                 {
@@ -97,6 +115,10 @@ internal sealed partial class CapsuleerHauler
             else
             {
                 _operation.MarketChanged |= ammunitionSupply.TryReplenishHuntReserve(world, catalog, Pilot, now, candidate);
+                if (WaitForHuntReserve())
+                {
+                    return true;
+                }
             }
         }
 

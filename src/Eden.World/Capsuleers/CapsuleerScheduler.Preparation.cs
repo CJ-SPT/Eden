@@ -202,6 +202,7 @@ internal sealed partial class CapsuleerScheduler
             dockedWork
             && world.Settings.FreshUniverse
             && job.Action == CapsuleerAction.Trade
+            && trainingPlan is null
             && world.Set<SavedCapsuleerAgent>().Find(job.PilotId) is { } freshAgent
         )
         {

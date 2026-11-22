@@ -3,6 +3,7 @@ using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
@@ -10,6 +11,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
@@ -74,7 +76,8 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         DockedPilot pilot,
         CapsuleerProfession profession,
         CapsuleerCareerPlan? saved,
-        long now
+        long now,
+        bool starterFactoryWork = false
     )
     {
         if (
@@ -102,7 +105,16 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         bool manager = world.Set<SavedCorporation>().Find(pilot.CorpId)?.CeoId == id || primaryRole;
         bool factory =
             profession == CapsuleerProfession.Mining
-            && (profile.CorporationId >= CorporationRules.FirstCorporationId || fresh && primaryRole);
+            && (
+                profile.CorporationId >= CorporationRules.FirstCorporationId
+                || fresh
+                    && (
+                        starterFactoryWork
+                        || world
+                            .Filter<IndustryJob>(job => job.PilotId == id)
+                            .Any(job => job.Status == IndustryJobStatus.Delivered && job.Activity == IndustryActivity.Manufacturing)
+                    )
+            );
         var focus = plan.NextFocus;
         for (int turn = 0; turn < 3; turn++, focus = CapsuleerCareerTrainingRules.Next(focus))
         {

@@ -212,8 +212,8 @@ internal sealed partial record CapsuleerDefenseProfile
         bool rookieCombat =
             world.Settings.FreshUniverse
             && catalog.FittingType(ship.TypeId)?.GroupId == (int)HullClass.Corvette
-            && world.Set<SavedCapsuleerAgent>().Find(pilotId) is { Career: CapsuleerCareer.Hauling } agent
-            && FreshCareerRules.IsCombatSlot(agent.Slot);
+            && world.Set<SavedCapsuleerAgent>().Find(pilotId) is not null
+            && modules.Any(module => module.Item.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun);
         bool miningFit = modules.Any(module => module.Effect == DogmaEffect.MiningLaser);
         bool combat = rookieCombat || (!miningFit && CapsuleerPatrolFit.CombatHull(catalog, ship.TypeId));
         return new CapsuleerDefenseProfile(combat, modules)

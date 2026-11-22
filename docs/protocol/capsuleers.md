@@ -26,8 +26,7 @@ Hunting uses existing null-security and observation rules, visible contacts, tar
 When choosing a new higher-stage training goal, an established corporate pilot favors a complete kit it already
 owns, then a kit it can afford from current local listings. Supply timing and nearby orders can lead neighboring
 pilots toward different ships. The existing training and manufacturing systems settle the related skills, fees,
-materials and orders. Initial corvette work still gives new pilots access to basic income and skills. The decision
-is station-local and today's flexible workers are established corporate pilots with qualified ships they can reach.
+materials and orders. This station-local path serves established corporate pilots with qualified ships they can reach.
 
 Reference checked against EVE.js 261108.1 (`miningNpcCatalog.js`, `npcBehaviorLoop.js`, and its market service
 README). Eden uses pinned build 3662168 and its own resident economic rules. [EVE University mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations) ·
@@ -40,6 +39,92 @@ spares, reopens into a patrol, and returns to active mining after a spare gun is
 also covers factory demand, regional freight, the two-batch moon chain, replacement, observation handoffs,
 roaming combat and two fresh-universe replays with the pinned catalog. All 96 targeted cases passed in
 102.61 seconds. Live acceptance and dedicated-server capacity were outside this validation.
+
+## Fresh-world job choice and advanced combat fits
+
+Fresh pilots can change work while docked in their corvette. Reachable distribution work, viable bounty sites,
+owned equipment and funded starter orders influence the decision. The hull, wallet, skills and earlier work survive
+a worker change. Paid freight and installed industry jobs retain their normal ownership and completion rules.
+An available blueprint, trained skills, materials and working capital let a starter pilot supply an outstanding
+order. Output already in production counts toward the order when another pilot reviews the same shortage.
+
+Combat pilots can build an unavailable spare component from owned inputs. The normal manufacturing job uses a
+licensed blueprint and charges the pilot’s wallet. The saved job deadline runs on the active-world clock. The
+reserve counts the output only after delivery to the pilot’s hangar.
+
+Larger combat careers request both the hull and the modules and ammunition for its fit. Prices for cruiser and
+larger kits use the pinned catalog’s manufacturing recipes and a bounded allowance for production costs and
+margin. Orders for charges cover the native output batch. Packaged components trade through the public market,
+and the buyer uses native assembly, fitting, loading and boarding. [CCP manufacturing](https://support.eveonline.com/hc/en-us/articles/203210292-Manufacturing) ·
+[CCP blueprints](https://support.eveonline.com/hc/en-us/articles/203269951-Blueprints) · [CCP market orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+EVE.js 261108.1 uses native market matching and inventory-owned fitting. Its authored NPC behavior and industry
+code target build 3396210. The reference paths include `industryRuntimeState.js`, `marketProxyService.js`, and
+`fittingRuntime.js`. Eden resolves recipes and ship requirements against build 3662168.
+
+### Replay procedure
+
+The populated scenario copies a frozen world and keeps its admitted roster. It prepares a qualified operator,
+an owned fitted combat ship, spare stock and blueprint inputs. It then funds actual buy orders and settles a
+ship destruction through the resident loss operation. Maintenance, market settlement and checkpoints drive
+the resulting work and replacement decisions. The replay writes a JSON Lines trace for each tested hull.
+
+```powershell
+$env:EDEN_DYNAMIC_REPLAY_SOURCE = 'F:\frozen-eden-save'
+$env:EDEN_DYNAMIC_REPLAY_OUTPUT = 'F:\dynamic-work-results'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplayPopulatedFactoryHuntShipLossAndFactoryReturn'
+```
+
+For native starter and larger-fit tests, set `EDEN_FRESH_UNIVERSE_CATALOG` to the pinned build's local
+`catalog.sqlite`. The larger-fit replay starts with capital, qualifications, licensed blueprints and raw materials.
+It buys inputs at listed prices, manufactures every fitted part, fills funded orders and boards the assembled ships.
+
+### Gameplay evidence
+
+| Manufactured and boarded | Class | Online modules | Loaded magazines |
+| --- | --- | ---: | ---: |
+| Caracal | Cruiser | 9 | 5 |
+| Moa | Cruiser | 9 | 5 |
+| Drake | Battlecruiser | 10 | 6 |
+| Raven | Battleship | 10 | 6 |
+
+Every boarded fit had usable weapons and tackle. Every fitted part came through a paid sale from the manufacturing
+corporation, and all four ships persisted across reopen. The factory's treasury grew after input purchases and fees.
+
+A separate zero-ISK founder admitted for bounty work took a funded Miner I order while still in its original
+corvette. It used the mining worker and delivered a paid manufacturing job to fill the order.
+
+The populated scenario starts from a frozen save with 10,000 admitted pilots and prepares one eligible operator
+at a nullsec factory. The operator manufactured and sold 100 Iron Charge S, then launched a patrol with two
+complete spare kits. The scenario settled destruction of the patrolling ship through the normal resident loss
+operation. The same pilot recovered and boarded a replacement, had one kit left, and stayed docked at its
+next decision before any new bid existed. A new funded order then paid for a second 100-round batch.
+
+| Populated behavior replay | Pilots that advanced | Completed actions | Scheduler failures |
+| --- | ---: | ---: | ---: |
+| Moa | 101 | 5,106 | 0 |
+| Drake | 100 | 5,101 | 0 |
+
+The targeted behavior tests admit other pilots as time advances. A separate Release replay ran the same frozen
+save with 10,000 scheduled pilots, one simulated player, market maintenance and server GC for 90 seconds.
+Other focused tests shared the workstation, so the elapsed comparisons are observations from these runs.
+
+| 90-second populated replay | Main `3c05dd9b` | Fresh-work follow-up |
+| --- | ---: | ---: |
+| Completed actions | 262,790 | 273,892 |
+| Paid mining collections | 10,290 | 9,914 |
+| Scheduler failures | 0 | 0 |
+| Oldest due job at the end | 0.405 s | 17.444 s |
+| Warm full-session frame p99 | 56.86 ms | 336.31 ms |
+| Maximum checkpoint capture | 28.08 ms | 37.78 ms |
+| Maximum checkpoint write | 5.384 s | 6.530 s |
+
+The scale run exposed a larger due queue for the follow-up. The focused behavior evidence and the scale results
+are retained under `artifacts/fresh-dynamic-bot-replay/`.
+
+The final `Test-Feature.ps1` selection ran 73 cases in 258.44 seconds. It included the populated behavior replay,
+the pinned fresh-universe gameplay replays, and the capsuleer production, handoff, resident economy, corporation,
+and work-selection fixtures. Debug and Release builds, 17 Python policy tests, and formatting verification passed.
 
 ## Miner approach stalls
 
