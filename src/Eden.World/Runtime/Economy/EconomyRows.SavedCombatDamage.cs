@@ -19,9 +19,8 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     DELETE FROM WorldCombatDamage
-                    WHERE EXISTS (SELECT 1 FROM json_each({deleted}) WHERE
-                        WorldCombatDamage.VictimId=json_extract(value,'$.Id') AND
-                        WorldCombatDamage.AttackerId=json_extract(value,'$.Part')
+                    WHERE (VictimId,AttackerId) IN (
+                        SELECT json_extract(value,'$.Id'),json_extract(value,'$.Part') FROM json_each({deleted})
                     )
                     """
                 );

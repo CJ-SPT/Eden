@@ -22,16 +22,13 @@ internal sealed partial class ResidentEconomy
     {
         foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            var removed = batch.Where(c => c.Value is null).Select(c => c.Key).ToArray();
+            var removed = batch.Where(c => c.Value is null).Select(c => c.Key.Id).ToArray();
             if (removed.Length != 0)
             {
                 string deleted = JsonSerializer.Serialize(removed);
                 world.Database.ExecuteSql(
                     $"""
-                    DELETE FROM WorldAsteroid
-                    WHERE EXISTS (SELECT 1 FROM json_each({deleted}) WHERE
-                        WorldAsteroid.Id=json_extract(value,'$.Id')
-                    )
+                    DELETE FROM WorldAsteroid WHERE Id IN (SELECT value FROM json_each({deleted}))
                     """
                 );
             }
