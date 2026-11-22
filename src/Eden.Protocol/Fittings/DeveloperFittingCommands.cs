@@ -26,6 +26,20 @@ internal sealed class DeveloperFittingCommands(IPilotDeveloperFittings fittings,
         {
             throw new InvalidDataException("Release structure control before changing your ship's fitting.");
         }
+        if (command[0] == "/copyship")
+        {
+            if (command is not [_, var source, "1"] || Id(source) != ship)
+            {
+                throw new InvalidDataException("Use /copyship <activeShipID> 1 while docked.");
+            }
+            var copy = fittings.CopyDocked(context.Pilot.PilotId, ship);
+            context.Notifications.Add(new ShipLabelChanged(copy.ShipId, copy.Name));
+            foreach (var change in copy.Changes)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change);
+            }
+            return copy.ShipId;
+        }
         if (context.Pilot.Position is not null)
         {
             InventoryTransfers.CheckRefitFlight(context);

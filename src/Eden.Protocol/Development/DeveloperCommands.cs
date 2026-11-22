@@ -11,6 +11,7 @@ internal static class DeveloperCommands
     internal static IReadOnlyDictionary<string, PilotRole> Roles { get; } =
         new Dictionary<string, PilotRole>(StringComparer.OrdinalIgnoreCase)
         {
+            ["/copyship"] = PilotRole.WorldMod,
             ["/create"] = PilotRole.WorldMod,
             ["/createitem"] = PilotRole.WorldMod,
             ["/extraction"] = WorldTools,

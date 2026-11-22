@@ -78,6 +78,7 @@ internal sealed class DeveloperCommandHandler(
                 case "/removeskill":
                 case "/skillscopy":
                     return skills.Grant(context, command);
+                case "/copyship":
                 case "/fit":
                 case "/getshipsetup":
                 case "/online":

@@ -687,6 +687,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Native GM fitting and Skyhook commands](protocol/navigation.md#native-gm-fitting-and-skyhook-commands)
 - [Native GM skill and desync commands](protocol/navigation.md#native-gm-skill-and-desync-commands)
 - [Native GM repair commands](protocol/navigation.md#native-gm-repair-commands)
+- [Native GM Copycat ship cloning](protocol/navigation.md#native-gm-copycat-ship-cloning)
 - [Sovereignty information tab, November 8, 2026](protocol/navigation.md#sovereignty-information-tab-november-8-2026)
 - [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)

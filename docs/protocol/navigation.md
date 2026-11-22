@@ -799,6 +799,23 @@ also failed at the same admission assertion on unchanged `main` at `9f1f6f51`. T
 
 **Optional maintainer checks:** Use Copycat's capacitor action and confirm armor and hull damage remain at their previous values.
 
+## Native GM Copycat ship cloning
+
+Build 3662168 `svc_copycat2.DoClonePerfect` checks `ROLE_WORLDMOD` while docked and sends `/copyship <activeShipID> 1`.
+Eden copies the owned docked hull into the same hangar with fresh IDs for the ship, fitted modules, ammunition and cargo.
+The resident action remaps inventory locations and weapon groups together. It copies item condition, mutations and the
+stored shield, armor, hull and capacitor values. Existing contract escrows, blueprints and foreign-owned contents reject the
+entire command. Current ship selection, pilot services and module cycles stay with their existing owners. The EVE.js
+261108.1 `copyShip.js` and `cloneDockedShipForCharacter` reference confirm the docked source and separate inventory tree.
+
+**Automated validation:** The exact Copycat lifecycle passed in 7.30 s and checked a checkpoint with independently owned
+IDs and matching fitted ammunition. The broader developer fitting, MultiFit and command discovery selection passed 29
+cases in 15.09 s.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Use Copycat's Clone Perfect and board the resulting ship to inspect the fitting.
+
 ## Runtime TR destinations, November 8, 2026
 
 `slash.SlashCmd('/tr me <destinationID>')` now accepts positive signed 64-bit IDs. Alongside the existing solar systems, NPC stations and normalized catalog celestials, the resolver supports saved pilots, assembled ships outside containers, living NPCs, unexpired wrecks, nondepleted asteroids and deployed drones. A pilot destination uses that pilot's active ship. Docked pilot/ship destinations dock the caller in the same NPC station; space destinations use the resolved position and collision radius with Eden's existing 10 km clearance. The destination pilot, ship and contents are never moved or transferred. Existing authenticated GM/world-mod role and selected-pilot requirements remain in force. Arbitrary coordinates, names, extra flags, stored hulls, inventory-only items and unsupported structures remain outside the command.

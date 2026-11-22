@@ -15,7 +15,7 @@ using Eden.World.Storage;
 namespace Eden.World.Fittings;
 
 [Injectable]
-internal sealed class PilotDeveloperFittingStore(WorldDatabase database, TimeProvider clock) : IPilotDeveloperFittings
+internal sealed partial class PilotDeveloperFittingStore(WorldDatabase database, TimeProvider clock) : IPilotDeveloperFittings
 {
     private LiveWorld Resident =>
         LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Developer fittings require a running world.");

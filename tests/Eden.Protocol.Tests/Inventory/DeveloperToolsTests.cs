@@ -30,13 +30,13 @@ public sealed class DeveloperToolsTests
     [Theory]
     [InlineData(
         PilotRole.Developer,
-        "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', 'giveskill', "
+        "Available commands: ['copyship', 'create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', 'giveskill', "
             + "'givestarterskills', 'heal', 'load', 'online', 'removeskill', 'repairmodules', 'reportdesync', 'skillscopy', 'skyhook', "
             + "'stop', 'structure', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(
         PilotRole.WorldMod,
-        "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', "
+        "Available commands: ['copyship', 'create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', "
             + "'heal', 'online', 'repairmodules', 'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(

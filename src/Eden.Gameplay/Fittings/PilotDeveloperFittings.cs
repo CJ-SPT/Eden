@@ -9,10 +9,13 @@ public sealed record DeveloperFitChange(IReadOnlyList<InventoryChange> Items, IR
 
 public sealed record DeveloperShipSetup(int ShipTypeId, IReadOnlyDictionary<int, int> SlotTypes);
 
+public sealed record DeveloperShipCopy(long ShipId, string Name, IReadOnlyList<InventoryChange> Changes);
+
 public interface IPilotDeveloperFittings
 {
     DeveloperFitChange Fit(long pilot, long ship, DeveloperFitRequest request);
     DeveloperFitChange Unload(long pilot, long ship, string selector);
     DeveloperFitChange Online(long pilot, long ship);
     DeveloperShipSetup Setup(long ship);
+    DeveloperShipCopy CopyDocked(long pilot, long ship);
 }

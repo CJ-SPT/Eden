@@ -1,12 +1,58 @@
+using Eden.Data.World.Inventory;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Tests.Ammunition;
+using Eden.World.Runtime;
+using Eden.World.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Client = Eden.Protocol.Tests.PilotSessions.CourierServiceTests.Client;
 
 namespace Eden.Protocol.Tests.Fittings;
 
 public sealed class DeveloperFittingTests
 {
+    [Fact]
+    public async Task CopycatClonesTheDockedHullWithAnIndependentFittingAndMagazine()
+    {
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
+        using Client gm = new(f.Db, f.Clock, 1000001, PilotRole.WorldMod);
+        gm.Refresh();
+        var pilot = f.Pilot;
+        f.Load(quantity: 35);
+        Assert.IsType<PilotCallResult.Failure>(Call(gm, $"/copyship {pilot.ShipId + 1} 1"));
+        Assert.IsType<PilotCallResult.Failure>(Call(gm, $"/copyship {pilot.ShipId} 2"));
+        var fleet = f.Db.Services.GetRequiredService<IPilotFleet>();
+        var stationBefore = fleet.Ships(pilot.PilotId, pilot.DockedLocationId);
+        using (Client player = new(f.Db, f.Clock, 1000001))
+        {
+            player.Refresh();
+            Assert.IsType<PilotCallResult.Failure>(Call(player, $"/copyship {pilot.ShipId} 1"));
+        }
+        Assert.Equal(stationBefore, fleet.Ships(pilot.PilotId, pilot.DockedLocationId));
+        var result = Assert.IsType<PilotCallResult.Success>(Call(gm, $"/copyship {pilot.ShipId} 1"));
+        long clone = Assert.IsType<long>(result.Reply.ToBlue());
+        Assert.NotEqual(pilot.ShipId, clone);
+        Assert.Equal(pilot.ShipId, f.Pilot.ShipId);
+        Assert.Contains(fleet.Ships(pilot.PilotId, pilot.DockedLocationId), row => row.Id == clone && row.Singleton);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        long clonedModule = live.Economy.Inspect(world =>
+        {
+            var copied = Assert.Single(world.FittedItems(pilot.PilotId, clone), row => row.TypeId == 561);
+            Assert.True(copied.Online);
+            Assert.Equal((int)InventoryFlag.HighSlot0, copied.FlagId);
+            Assert.Contains(world.LoadedFittingItems(pilot.PilotId, [copied.Id]), row => row.TypeId == 222 && row.Quantity == 35);
+            return copied.Id;
+        });
+        Assert.NotEqual(f.Gun, clonedModule);
+        Assert.Equal(35, Assert.Single(f.Ammo.Read(pilot.PilotId, pilot.ShipId)).Quantity);
+        await live.FlushAsync();
+        using WorldDbContext reopened = new(f.Db.Path);
+        Assert.Equal(pilot.DockedLocationId, reopened.Ships.Find(clone)!.DockedLocationId);
+        Assert.Equal(clone, reopened.Set<OwnedItem>().Find(clonedModule)!.LocationId);
+        Assert.Contains(reopened.Set<OwnedItem>(), row => row.LocationId == clonedModule && row.TypeId == 222 && row.Quantity == 35);
+    }
+
     [Fact]
     public void NativeFitChargeOnlineSetupAndUnloadUseTheResidentFittingAndCargoOwners()
     {
