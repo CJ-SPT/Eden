@@ -666,6 +666,8 @@ dotnet test --no-build --artifacts-path artifacts/feature-tests --filter $rigFil
 
 The maintainer reported **Invalid Packet Destination: Unsupported local call publicQaToolsServer.CanGiveItemForMultifit**. Build **3662168** `PublicQaToolsClient.CanGiveItemForMultifit` forwards a zero-argument call and returns its Boolean reply directly. `MultiFitWnd.AddButtons` and `SetInventoryStatus` use that capability only to construct and update the public-QA **Create Missing** button. Its `GiveAllPlayer` callback builds `/giveitem` commands through `publicQaToolsServer.SlashCmd`. Ordinary fitting controls do not depend on a positive capability reply.
 
+See [Native MultiFit Create Missing](#native-multifit-create-missing) for the subsequent behavior.
+
 Eden now owns this exact service/method in a selected-pilot handler and returns native Python **False**. The public-QA item-spawning path is unavailable for ordinary and developer accounts alike. Additional positional or keyword arguments fail explicitly; unrelated QA methods remain unsupported. The query changes no inventory, wallet or saved fitting and emits no notifications. This fixes capability discovery; it does not add batch fitting or public-QA commands.
 
 Gameplay reference: [EVE University fitting management](https://wiki.eveuniversity.org/NeoCom#Fitting_Management), which describes multifit as fitting multiple ships. Protocol evidence comes from inert inspection of the hash-verified original script archive, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Both relevant modules match the currently staged skill-overlay client byte-for-byte. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), specifically native Boolean read/write forms. The existing Blue codec is unchanged.
@@ -675,6 +677,25 @@ Gameplay reference: [EVE University fitting management](https://wiki.eveuniversi
 **Live acceptance.** Not performed; agent client testing is disabled. The screenshot records the original failure, not acceptance of the correction.
 
 **Optional maintainer checks.** After updating/restarting the server, reopen Multifit and confirm it opens without the unsupported-call dialog and without a Create Missing button.
+
+## Native MultiFit Create Missing
+
+Build 3662168 `MultiFitWnd.GiveAllPlayer` sends `/giveitem <typeID>|<quantity>[,<typeID>|<quantity>]` through
+`publicQaToolsServer.SlashCmd`. `CanGiveItemForMultifit` enables the button for selected, docked World Modifiers. The batch
+handler repeats the role and docking checks, confirms the active hull in the resident owner, and delivers the full request
+to the pilot's current hangar. A malformed, duplicate or invalid type rejects the batch before any item notifications.
+
+The route accepts the pinned MultiFit payload. Other public-QA aliases require their own authority and gameplay handlers.
+EVE.js 261108.1 `publicQaToolsServerService.js` confirms the authenticated staff boundary, while the pinned
+`GiveAllPlayer` bytecode supplies the batch grammar.
+
+**Automated validation:** The exact MultiFit Create Missing test passed in 9.18 s. It exercised player rejection, the batch
+rollback on an unknown second type, successful batch delivery and checkpoint storage. The 112-case affected fitting,
+item creation, developer command and Move Me selection passed in 52.44 s. The solution build and format checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Open MultiFit while docked as a World Modifier and use Create Missing on one hull and module.
 
 ## Personal saved fitting plans (November 6, 2026)
 

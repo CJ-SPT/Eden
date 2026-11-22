@@ -3,6 +3,7 @@ using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Redemption;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -11,6 +12,36 @@ namespace Eden.World.Inventory;
 [Injectable]
 internal sealed class PilotItemSpawningStore(WorldDatabase database, TimeProvider clock) : IPilotItemSpawning
 {
+    public IReadOnlyList<InventoryChange> CreateHangarBatch(long pilotId, long expectedShipId, IReadOnlyList<HangarSpawnStack> stacks)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Batch creation requires a running world.");
+        using var world = live.Economy.Begin(new(pilots: [pilotId], ships: [expectedShipId]));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var ship = world.Pilots.Find(pilotId)?.ActiveShip;
+        if (ship is null || ship.Id != expectedShipId || ship.Position is not null || ship.StoredInId.HasValue)
+        {
+            throw new InvalidDataException("Dock before creating missing fitting items.");
+        }
+        List<InventoryChange> changes = [];
+        foreach (var stack in stacks)
+        {
+            var type = catalog.FittingType(stack.TypeId) ?? throw new InvalidDataException("Unknown inventory type.");
+            ItemSpawnRules.Check(
+                new(type.Id, stack.Quantity, ItemSpawnDestination.StationHangar),
+                (InventoryCategory)type.CategoryId,
+                docked: true,
+                type.GroupId
+            );
+            if (ItemSpawnRules.AutomaticReward(type.Id))
+            {
+                throw new InvalidDataException("This type cannot be created by the fitting tool.");
+            }
+            changes.Add(Merge(world, catalog, pilotId, ship.DockedLocationId, (int)InventoryFlag.Hangar, type.Id, stack.Quantity));
+        }
+        world.Commit();
+        return changes;
+    }
+
     public ItemSpawnResult Create(long pilotId, long expectedShipId, ItemSpawnRequest request)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [expectedShipId]));
@@ -50,17 +81,29 @@ internal sealed class PilotItemSpawningStore(WorldDatabase database, TimeProvide
                 PilotInventoryStore.HoldCapacity(world, catalog, pilotId, location, flag)
             );
         }
-        InventoryChange change;
+        var change = Merge(world, catalog, pilotId, location, flag, request.TypeId, request.Quantity);
+        world.SaveChanges();
+        transaction.Commit();
+        return new ItemSpawnResult.Inventory(change);
+    }
+
+    private static InventoryChange Merge(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilot,
+        long location,
+        int flag,
+        int type,
+        int quantity
+    )
+    {
         try
         {
-            change = InventoryPersistence.MergeOutput(world, catalog, pilotId, location, flag, request.TypeId, request.Quantity);
+            return InventoryPersistence.MergeOutput(world, catalog, pilot, location, flag, type, quantity);
         }
         catch (OverflowException)
         {
             throw new InvalidDataException("The resulting item stack would exceed the supported quantity.");
         }
-        world.SaveChanges();
-        transaction.Commit();
-        return new ItemSpawnResult.Inventory(change);
     }
 }

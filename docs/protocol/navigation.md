@@ -582,10 +582,12 @@ FullyQualifiedName~Eden.Protocol.Tests.Inventory.ItemSpawningTests|FullyQualifie
 
 ## Native slash command audit
 
-This audit covers Eden at `f319f8ef`, the signed build 3662168 archive, and the older EVE.js 261108.1 reference.
-Eden accepts six command names for selected pilots through `slash.SlashCmd`. Sending `/` yields the role-filtered
+This baseline audit covers Eden at `f319f8ef`, the signed build 3662168 archive, and the older EVE.js 261108.1 reference.
+The baseline accepted six command names for selected pilots through `slash.SlashCmd`. Sending `/` yields the role-filtered
 `SlashError` discovery list, which the stock console parses. [Dispatcher](../../src/Eden.Protocol/Development/DeveloperCommandHandler.cs)
 · [Discovery](../../src/Eden.Protocol/Development/DeveloperCommandList.cs)
+
+See [current implementation and open gaps](#native-slash-implementation-status) for changes since the audit.
 
 | Implemented command | Accepted form | Authority |
 | --- | --- | --- |
@@ -815,6 +817,24 @@ cases in 15.09 s.
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Use Copycat's Clone Perfect and board the resulting ship to inspect the fitting.
+
+## Native slash implementation status
+
+The developer command registry is the source of truth for names and authenticated roles in discovery. The original
+structure command supports all four GM menu categories. Native follow-ups added moon extraction and Skyhook states,
+fitting, Copycat cloning and repairs, skill grant/removal/copy, self translocation, position/warp/stop, desync reporting,
+and the docked image picker's item destination. Public-QA has separate routes for the staff Move Me picker and the
+[staff MultiFit batch](fitting.md#native-multifit-create-missing).
+
+| Area | Open pinned-client commands or routes |
+| --- | --- |
+| Scene management | `/spawn`, `/spawnN`, `/entity deploy`, `/unspawn`, `/fetch`, `/chowner`, `/kill`, `/nuke` and destructive `/heal <target> 0` |
+| Dogma, skills and travel | `/dogma`, `/randomizeskills` and `/tr <pilotID> me noblock` or mass translocation |
+| World and moderation | Legacy `/pos` starbases, `/killright`, the direct bounty tools, `/baniskspammer` and `/gagiskspammer` |
+| QA aliases and feature tools | The remaining public-QA allowlist and feature-specific callers listed in the baseline audit |
+
+Scene commands need entity-family spawn, retirement and destruction owners. Legacy starbase commands target an older
+lifecycle. The stock client forwards the kill-right command and several QA presets without specifying their server grammar.
 
 ## Runtime TR destinations, November 8, 2026
 
