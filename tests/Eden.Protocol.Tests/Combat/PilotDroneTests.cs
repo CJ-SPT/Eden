@@ -5,6 +5,7 @@ using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -685,6 +686,7 @@ public sealed class PilotDroneTests
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility DROP COLUMN MilitiaPenaltyRecorded; PRAGMA user_version=218");
             if (hasSecurityPenaltyColumns)
             {
+                world.Database.ExecuteSqlRaw("DROP TABLE WorldStandardMarketType");
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldPilotHostility(SourceShipId,TargetShipId,ExpiresAt,LastAttackAt,SecurityPenaltyRecorded)
@@ -715,6 +717,7 @@ public sealed class PilotDroneTests
         Assert.Equal(hasSecurityPenaltyColumns, hostility.SecurityPenaltyRecorded);
         Assert.False(hostility.MilitiaPenaltyRecorded);
         Assert.Empty(live.Economy.Inspect(world => world.Set<SavedSecurityTransaction>().ToArray()));
+        Assert.Empty(live.Economy.Inspect(world => world.Set<SavedStandardMarketType>().ToArray()));
     }
 
     [Theory]

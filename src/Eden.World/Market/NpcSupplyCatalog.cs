@@ -36,8 +36,16 @@ internal sealed partial class PilotMarketStore
         ConcurrentDictionary<InstitutionalSupplier, Lazy<IReadOnlyList<InstitutionalOffer>>>
     > InstitutionalCatalogs = new();
 
-    internal void PrepareInstitutional(CatalogDbContext catalog, int stationId) =>
-        _ = InstitutionalOffers(catalog, catalog.RequireStation(stationId));
+    internal void PrepareMarketOffers(CatalogDbContext catalog, int stationId)
+    {
+        var station = catalog.RequireStation(stationId);
+        if (database.Settings.Economy.StandardMarket)
+        {
+            _ = database.MarketSnapshot.RegionOrdersByType(station.RegionId);
+            return;
+        }
+        _ = InstitutionalOffers(catalog, station);
+    }
 
     internal void WarmMarketCatalog()
     {

@@ -269,7 +269,7 @@ internal sealed partial class PilotMarketStore
         var kind = MarketKind(world);
         if (world.Settings.Economy.StandardMarket)
         {
-            SeedStandardRegion(world, catalog, region);
+            SeedStandardOrders(world, catalog, region, typeId is int type ? [type] : null);
         }
         bool progressive = RegionalMarketStore.Enabled(world);
         if (progressive)

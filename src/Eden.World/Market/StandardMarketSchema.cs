@@ -43,6 +43,9 @@ internal static class StandardMarketSchema
             DROP INDEX IF EXISTS IX_WorldMarketOrder_StationId_TypeId_Bid_Kind;
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldMarketOrder_StationId_TypeId_Bid_Kind_SourceOrderId
                 ON WorldMarketOrder(StationId,TypeId,Bid,Kind,SourceOrderId);
+            CREATE TABLE IF NOT EXISTS WorldStandardMarketType(
+                RegionId INTEGER NOT NULL, TypeId INTEGER NOT NULL, SnapshotTicks INTEGER NOT NULL,
+                PRIMARY KEY(RegionId,TypeId));
             """
         );
     }

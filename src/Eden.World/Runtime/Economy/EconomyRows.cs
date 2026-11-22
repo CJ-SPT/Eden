@@ -370,7 +370,10 @@ internal sealed partial class ResidentEconomy
 internal readonly record struct NpcMarketAssortment(int StationId, int TypeId, bool Bid, NpcMarketKind Kind, long SourceOrderId = 0)
 {
     internal static NpcMarketAssortment For(NpcMarketOrder order) =>
-        new(order.StationId, order.TypeId, order.Bid, order.Kind, order.SourceOrderId);
+        For(order.StationId, order.TypeId, order.Bid, order.Kind, order.SourceOrderId);
+
+    internal static NpcMarketAssortment For(int station, int type, bool bid, NpcMarketKind kind, long sourceOrder) =>
+        kind == NpcMarketKind.Standard ? new(station, 0, false, kind, sourceOrder) : new(station, type, bid, kind, sourceOrder);
 }
 
 internal sealed record EconomyNpcMarketOrder(
@@ -932,6 +935,7 @@ internal sealed partial class ResidentEconomy
     {
         RegisterBotTables();
         RegisterActivityRewardTicks();
+        RegisterStandardMarketTypes();
         RegisterKillRights();
         RegisterCapitalTravel();
         RegisterLauncherTables();
@@ -1367,7 +1371,7 @@ internal sealed partial class ResidentEconomy
                     new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
                     new(
                         nameof(NpcMarketAssortment),
-                        row => new NpcMarketAssortment(row.StationId, row.TypeId, row.Bid, row.Kind, row.SourceOrderId)
+                        row => NpcMarketAssortment.For(row.StationId, row.TypeId, row.Bid, row.Kind, row.SourceOrderId)
                     ),
                 ],
                 primaryColumn: "Id",

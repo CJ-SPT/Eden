@@ -27,6 +27,11 @@ return fire. The related five cases passed in 7 seconds. The broader filter pass
 The legacy fixture was corrected to recreate its real columns, and all three focused schema tests then passed in
 8.44 seconds, including both version 218 save layouts.
 
+The integration with main `2e88d56c` passed all 218 focused faction warfare, patrol, combat, wreck, Standard market,
+traffic preparation, and earned PvP fitting cases in 1 minute 22 seconds. Both version 218 save layouts also passed
+as an exact 7.46-second run. Schema 219 preserves resident hostility state and adds the market table and combat
+columns where missing. The solution built without warnings and both Python policy suites passed.
+
 ## Aldranette–Nennamaila militia patrols
 
 Enable **Aldranette–Nennamaila militia patrols** in Player bots and save the settings draft for restart. The established

@@ -580,6 +580,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<MarketStation>().ToTable("WorldMarketStation").HasKey(s => s.StationId);
         model.Entity<MarketStation>().Property(s => s.SeedVersion).HasDefaultValue(0);
         model.Entity<MarketStation>().Property(s => s.StandardSnapshotTicks).HasDefaultValue(0);
+        model.Entity<SavedStandardMarketType>().ToTable("WorldStandardMarketType");
         model
             .Entity<TestingWalletGrant>()
             .ToTable("WorldTestingGrant", t => t.HasCheckConstraint("CK_TestingGrant_Amounts", "AmountCents > 0 AND BalanceCents >= 0"))

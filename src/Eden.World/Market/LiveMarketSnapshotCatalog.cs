@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Eden.Data.Catalog.Market;
 using Eden.Gameplay.Market;
+using Eden.World.Catalog;
 using Eden.World.Storage;
 
 namespace Eden.World.Market;
@@ -55,7 +56,7 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
 
     internal LiveMarketSnapshotManifest Manifest => _manifest ??= ReadManifest();
 
-    internal IReadOnlyDictionary<int, LiveMarketOrder[]> Region(int regionId) =>
+    internal IReadOnlyDictionary<int, LiveMarketOrder[]> RegionOrdersByType(int regionId) =>
         _regions.GetOrAdd(regionId, id => new(() => LoadRegion(id))).Value;
 
     private static string RegionPath(string root, LiveMarketSnapshotManifest manifest, int regionId) =>
@@ -82,14 +83,14 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
         {
             throw new InvalidDataException("Live market region has an invalid order count or duplicate identity.");
         }
-        var types = orders
-            .Select(order => order.TypeId)
-            .Distinct()
-            .ToDictionary(type => type, type => database.Catalog.Find(Eden.World.Catalog.CatalogData.Client.Types, (long)type));
+        var catalog = database.Catalog;
+        var types = catalog.FindMany(CatalogData.Client.Types, orders.Select(order => (long)order.TypeId).Distinct());
+        var stations = catalog.Stations;
+        var items = catalog.Items;
         foreach (var order in orders)
         {
-            var station = database.Catalog.Stations.GetValueOrDefault(order.StationId);
-            var type = types[order.TypeId];
+            var station = stations.GetValueOrDefault(order.StationId);
+            var type = types.GetValueOrDefault(order.TypeId);
             if (
                 order.SourceOrderId <= 0
                 || station is null
@@ -97,7 +98,7 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
                 || station.RegionId != regionId
                 || order.RegionId != regionId
                 || type is not { Published: 1, MarketGroupID: > 0 }
-                || !database.Catalog.Items.ContainsKey(order.TypeId)
+                || !items.ContainsKey(order.TypeId)
                 || order.PriceCents <= 0
                 || order.PriceCents > MarketDefinitions.MaximumOrderPrice * MarketDefinitions.CentsPerIsk
                 || order.Remaining <= 0
@@ -113,6 +114,6 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
                 throw new InvalidDataException("Live market order is invalid or incompatible with the installed catalog.");
             }
         }
-        return orders.GroupBy(order => order.StationId).ToDictionary(group => group.Key, group => group.ToArray());
+        return orders.GroupBy(order => order.TypeId).ToDictionary(group => group.Key, group => group.ToArray());
     }
 }

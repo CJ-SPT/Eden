@@ -56,10 +56,20 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
             .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
 
+    internal IEnumerable<EconomyNpcMarketOrder> RegionalOrdersForTypes(int region, IReadOnlySet<int> types) =>
+        ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
+            .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, nameof(NpcMarketOrder.TypeId), types)
+            .Where(order => order.RegionId == region && types.Contains(order.TypeId));
+
     internal IEnumerable<EconomyNpcMarketOrder> StationMarketOrders(int station, int? typeId = null) =>
         ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
             .IndexedSnapshots(nameof(NpcMarketOrder.StationId), station, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
             .Where(order => order.StationId == station && (typeId is null || order.TypeId == typeId));
+
+    internal IEnumerable<EconomyNpcMarketOrder> StationMarketOrdersForTypes(int station, IReadOnlySet<int> types) =>
+        ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
+            .IndexedSnapshots(nameof(NpcMarketOrder.StationId), station, nameof(NpcMarketOrder.TypeId), types)
+            .Where(order => order.StationId == station && types.Contains(order.TypeId));
 
     internal IEnumerable<EconomyNpcMarketOrder> NpcMarketOrders(IReadOnlySet<NpcMarketAssortment> assortments) =>
         ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
