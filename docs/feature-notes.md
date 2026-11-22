@@ -151,6 +151,9 @@ releases control. The structure audit tracks the remaining defensive effects, se
 player markets, clone bays, corporation offices, and specialized hull behavior.
 [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
 
+High GMs can force all native Upwell operating states, set operating and deployment timers, start or cancel unanchoring,
+and change an eligible structure's abandonment deadline. [Structure GM commands](protocol/structures.md#structure-gm-commands)
+
 ## Inventory, ships and holds
 
 Pilots docked in a cored Upwell structure with repair access can use the native repair shop for free ship and module repairs.

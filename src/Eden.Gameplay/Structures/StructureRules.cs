@@ -31,10 +31,31 @@ public static class StructureRules
     public const long AbandonmentDuration = 7 * TimeSpan.TicksPerDay;
     public const double FuelBayCapacity = 30_000;
 
-    public static StructureUpkeepState Upkeep(long? lowPowerAt, bool fullPower, long now) =>
+    public static StructureUpkeepState Upkeep(long? lowPowerAt, bool fullPower, long now, int typeId = 0, long? abandonAt = null) =>
         fullPower ? StructureUpkeepState.FullPower
-        : lowPowerAt is long low && (decimal)now - low >= AbandonmentDuration ? StructureUpkeepState.Abandoned
+        : AbandonmentDeadline(typeId, lowPowerAt, abandonAt) <= now ? StructureUpkeepState.Abandoned
         : StructureUpkeepState.LowPower;
+
+    // Build 3662168 structures.const.TYPES_THAT_NEVER_GO_ABANDONED.
+    private const int MoreauFortizar = 47512;
+    private const int DraccousFortizar = 47513;
+    private const int HorizonFortizar = 47514;
+    private const int MarginisFortizar = 47515;
+    private const int PrometheusFortizar = 47516;
+
+    public static bool CanAbandon(int typeId) =>
+        typeId is not (MoreauFortizar or DraccousFortizar or HorizonFortizar or MarginisFortizar or PrometheusFortizar);
+
+    public static long? AbandonmentDeadline(int typeId, long? lowPowerAt, long? overrideAt) =>
+        CanAbandon(typeId) ? overrideAt ?? lowPowerAt + AbandonmentDuration : null;
+
+    // Build 3662168 structures.const.STATE_CANCELS_UNANCHOR, with the FOB state treated as operational.
+    public static bool AllowsGmUnanchoring(StructureState state) =>
+        state
+            is StructureState.OnlineDeprecated
+                or StructureState.Onlining
+                or StructureState.ShieldVulnerable
+                or StructureState.FobInvulnerable;
 
     public static bool CorporationIsOldEnough(long createdAt, long now, StructurePolicy policy) =>
         policy.MinimumCorporationAgeDays == 0
@@ -95,11 +116,25 @@ public static class StructureRules
     }
 
     public static bool Operational(StructureState state) =>
-        state is StructureState.ShieldVulnerable or StructureState.ArmorReinforced or StructureState.ArmorVulnerable;
+        state
+            is StructureState.ShieldVulnerable
+                or StructureState.ArmorReinforced
+                or StructureState.ArmorVulnerable
+                or StructureState.OnlineDeprecated
+                or StructureState.FobInvulnerable;
 
     public static bool CanDock(StructureProfile profile, StructureState state, int shipGroupId)
     {
-        if (!profile.Dockable || state is StructureState.Unanchored or StructureState.Anchoring or StructureState.Destroyed)
+        if (
+            !profile.Dockable
+            || state
+                is StructureState.Unknown
+                    or StructureState.Unanchored
+                    or StructureState.Anchoring
+                    or StructureState.AnchorVulnerable
+                    or StructureState.DeployVulnerable
+                    or StructureState.Destroyed
+        )
         {
             return false;
         }

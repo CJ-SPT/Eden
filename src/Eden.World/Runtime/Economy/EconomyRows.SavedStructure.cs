@@ -25,7 +25,10 @@ internal sealed record EconomySavedStructure(
     double X,
     double Y,
     double Yaw,
-    double Z
+    double Z,
+    long? DeployStartedAt,
+    long? DeployEndsAt,
+    long? AbandonAt
 );
 
 internal sealed partial class ResidentEconomy
@@ -55,7 +58,8 @@ internal sealed partial class ResidentEconomy
                     $"""
                     INSERT INTO WorldStructure(
                         Id,CorporationId,DeployedAt,Description,HasCore,LowPowerAt,MoonId,Name,PublicAccess,ReinforceHour,
-                        ReinforceWeekday,State,StateEndsAt,StateStartedAt,SystemId,TypeId,UnanchorAt,X,Y,Yaw,Z
+                        ReinforceWeekday,State,StateEndsAt,StateStartedAt,SystemId,TypeId,UnanchorAt,X,Y,Yaw,Z,
+                        DeployStartedAt,DeployEndsAt,AbandonAt
                     )
                     SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.CorporationId'),json_extract(value,'$.DeployedAt'),
@@ -66,7 +70,8 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.StateEndsAt'),json_extract(value,'$.StateStartedAt'),
                         json_extract(value,'$.SystemId'),json_extract(value,'$.TypeId'),json_extract(value,'$.UnanchorAt'),
                         json_extract(value,'$.X'),json_extract(value,'$.Y'),json_extract(value,'$.Yaw'),
-                        json_extract(value,'$.Z')
+                        json_extract(value,'$.Z'),json_extract(value,'$.DeployStartedAt'),json_extract(value,'$.DeployEndsAt'),
+                        json_extract(value,'$.AbandonAt')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         CorporationId=excluded.CorporationId,DeployedAt=excluded.DeployedAt,
@@ -75,7 +80,8 @@ internal sealed partial class ResidentEconomy
                         ReinforceHour=excluded.ReinforceHour,ReinforceWeekday=excluded.ReinforceWeekday,
                         State=excluded.State,StateEndsAt=excluded.StateEndsAt,StateStartedAt=excluded.StateStartedAt,
                         SystemId=excluded.SystemId,TypeId=excluded.TypeId,UnanchorAt=excluded.UnanchorAt,X=excluded.X,
-                        Y=excluded.Y,Yaw=excluded.Yaw,Z=excluded.Z
+                        Y=excluded.Y,Yaw=excluded.Yaw,Z=excluded.Z,DeployStartedAt=excluded.DeployStartedAt,
+                        DeployEndsAt=excluded.DeployEndsAt,AbandonAt=excluded.AbandonAt
                     """
                 );
             }

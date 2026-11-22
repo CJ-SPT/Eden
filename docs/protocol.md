@@ -742,6 +742,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Player Upwell structures
 
 - [Structures gap audit](protocol/structures.md#structures-gap-audit)
+- [Structure GM commands](protocol/structures.md#structure-gm-commands)
 - [Standup Focused Warp Disruptors](protocol/structures.md#standup-focused-warp-disruptors)
 - [Standup stasis webifiers](protocol/structures.md#standup-stasis-webifiers)
 - [Standup energy neutralizers and structure capacitor](protocol/structures.md#standup-energy-neutralizers-and-structure-capacitor)

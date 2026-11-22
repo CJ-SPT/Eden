@@ -141,6 +141,19 @@ internal static class StructureSchema
                 DestinationSystemId INTEGER NOT NULL, Capacitor REAL NOT NULL, ChargedAt INTEGER NOT NULL);
             """
         );
+        var structureColumns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldStructure')").ToList();
+        if (!structureColumns.Contains("DeployStartedAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructure ADD COLUMN DeployStartedAt INTEGER");
+        }
+        if (!structureColumns.Contains("DeployEndsAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructure ADD COLUMN DeployEndsAt INTEGER");
+        }
+        if (!structureColumns.Contains("AbandonAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructure ADD COLUMN AbandonAt INTEGER");
+        }
         if (
             !world
                 .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldStructureService')")

@@ -5,8 +5,10 @@ namespace Eden.Gameplay.Structures;
 // Build 3662168 structures.const, structures.services and inventory flags.
 public enum StructureState
 {
+    Unknown = 0,
     Unanchored = 1,
     Anchoring = 2,
+    OnlineDeprecated = 100,
     Fitting = 101,
     Onlining = 102,
     ShieldVulnerable = 110,
@@ -16,6 +18,7 @@ public enum StructureState
     HullVulnerable = 114,
     AnchorVulnerable = 115,
     DeployVulnerable = 116,
+    FobInvulnerable = 118,
     Destroyed = 119,
 }
 
@@ -140,6 +143,7 @@ public sealed record StructureContact(
     public double Yaw { get; init; }
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }
+    public StructureDeploymentTimer? DeploymentTimer { get; init; }
     public long? TimerEnd => Battle?.RepairAt ?? StateEndsAt;
     public long? TimerPausedAt => Battle is { PausedUntil: > 0 } b ? b.PausedUntil - StructureCombatRules.DamageWindow : null;
 }
@@ -196,6 +200,8 @@ public sealed record StructureDeployment(
 public sealed record StructureResult(StructureSnapshot Structure, IReadOnlyList<Inventory.InventoryChange> Changes);
 
 public sealed record StructureServiceFit(long ItemId, int? Slot = null);
+
+public sealed record StructureDeploymentTimer(long StartedAt, long EndsAt);
 
 public interface IPilotStructures
 {

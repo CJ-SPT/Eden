@@ -1532,6 +1532,46 @@ commands or fitting calculations; deployment, rename and saved lifecycle deadlin
 Native location/asset name lookups include deployed structures. Existing and absent structure
 names share resident caching and refresh when their owning structure row changes.
 
+## Structure GM commands
+
+The native in-space menus send a single command string to `slash.SlashCmd`. A selected pilot with
+`ROLE_GMH` may change any supported structure by its 64-bit item ID, regardless of corporation ownership.
+
+| Native menu | Command | Behavior |
+| --- | --- | --- |
+| GM: Set State | `/structure state <id> <state>` | Forces the operating state, resets the operating timer and sets the appropriate damage layers. |
+| GM: Set Timer | `/structure timer <id> <seconds>` | Replaces the current operating or repair countdown. |
+| GM: Set Deploy Timer | `/structure deploytimer <id> <seconds>` | Sets the separate construction countdown while `deploy_vulnerable`. |
+| GM: Set Unanchoring | `/structure unanchor <id> [cancel or seconds]` | Starts with Eden's normal duration, cancels, or replaces the deadline. Completion runs the existing custody settlement and evacuation. |
+| GM: Set Abandon Timer | `/structure abandontimer <id> <seconds>` | Replaces the abandonment deadline for an eligible low-power hull. Onlining a service resets the deadline. |
+
+The state command accepts each native name and ID. These are `unknown` (0), `unanchored` (1), `anchoring` (2),
+`online_deprecated` (100), `fitting_invulnerable` (101), `onlining_vulnerable` (102), `shield_vulnerable` (110),
+`armor_reinforce` (111), `armor_vulnerable` (112), `hull_reinforce` (113), `hull_vulnerable` (114),
+`anchor_vulnerable` (115), `deploy_vulnerable` (116), and `fob_invulnerable` (118).
+An explicit duration uses whole seconds. Zero makes the relevant deadline due immediately.
+Sovereignty-managed hubs and skyhooks use their separate decommissioning lifecycle. Faction Fortizars are exempt from abandonment.
+
+The pinned build 3662168 archive was inspected as data, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`structuremenu.pyj` supplies the command strings and presets, `menucheckers/sessionChecker.pyj` supplies the high-GM role gate,
+and `structures/const.pyj` supplies state IDs, damage layers and the abandonment exemptions. The space object and bracket
+both read the two-element `deployTimes` slim field independently of `timer`. EVE.js 261108.1 was inspected for comparison,
+including `structureChatCommands.js` SHA-256 `92edf338ddc578b385e17eec5bd0a90706f0ca4c7ad7fc2f4641e9f86e685a16` and
+`structureState.js` SHA-256 `e12d487e9e2e0e5486ce03a60b1178eaadc5a74c0be39813b026f16206376c1c`.
+The [CCP deployment guide](https://support.eveonline.com/hc/en-us/articles/208289335-Upwell-Structure-Deployment-and-Unanchoring)
+and [CCP abandonment guide](https://support.eveonline.com/hc/en-us/articles/360014282739-Upwell-Structures-Abandoned-State)
+describe the player-facing lifecycle.
+
+**Automated validation:** The exact native-state test passed on its own. The affected run passed 360 tests in 215.76 s
+with no skips. The filter selected `Eden.Protocol.Tests.Structures`, `DeveloperToolsTests`, `StructureServiceTests`
+and `TranslocationTests`. The build completed without warnings or errors. The tests cover role gating, all 14 state
+values, timer wire shapes, independent deadlines after checkpoint reopen, and decommissioning with a docked pilot.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Use the native GM menus on a low-power Upwell structure and watch its bracket countdown.
+
 ## Administration
 
 The Settings page has a **Structures** tab with independent **Anchoring speed**,

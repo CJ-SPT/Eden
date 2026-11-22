@@ -35,7 +35,7 @@ internal static class StructureDeparture
         }
         bool eject =
             !AssetSafetyStore.SafetyEnabled(catalog, structure.SystemId)
-            || destroyed && structure.LowPowerAt is long low && now - low >= StructureRules.AbandonmentDuration;
+            || destroyed && StructureRules.AbandonmentDeadline(structure.TypeId, structure.LowPowerAt, structure.AbandonAt) <= now;
         AssetSafetyStore.RelocateDelivered(world, catalog, structure, now, eject);
         foreach (var squadron in world.Filter<WorldDrone>(row => row.ControllerShipId == structure.Id && row.SystemId != null).ToArray())
         {

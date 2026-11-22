@@ -3148,7 +3148,10 @@ internal sealed partial class ResidentEconomy
                         row.X,
                         row.Y,
                         row.Yaw,
-                        row.Z
+                        row.Z,
+                        row.DeployStartedAt,
+                        row.DeployEndsAt,
+                        row.AbandonAt
                     ),
                 state => new Eden.Data.World.Structures.SavedStructure
                 {
@@ -3173,10 +3176,14 @@ internal sealed partial class ResidentEconomy
                     Y = state.Y,
                     Yaw = state.Yaw,
                     Z = state.Z,
+                    DeployStartedAt = state.DeployStartedAt,
+                    DeployEndsAt = state.DeployEndsAt,
+                    AbandonAt = state.AbandonAt,
                 },
                 ProjectSavedStructure,
                 "Id,CorporationId,DeployedAt,Description,HasCore,LowPowerAt,MoonId,Name,PublicAccess,ReinforceHour,"
-                    + "ReinforceWeekday,State,StateEndsAt,StateStartedAt,SystemId,TypeId,UnanchorAt,X,Y,Yaw,Z",
+                    + "ReinforceWeekday,State,StateEndsAt,StateStartedAt,SystemId,TypeId,UnanchorAt,X,Y,Yaw,Z,"
+                    + "DeployStartedAt,DeployEndsAt,AbandonAt",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -3199,7 +3206,10 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(18),
                         reader.GetDouble(19),
                         reader.GetDouble(20),
-                        reader.GetDouble(21)
+                        reader.GetDouble(21),
+                        reader.IsDBNull(22) ? null : reader.GetInt64(22),
+                        reader.IsDBNull(23) ? null : reader.GetInt64(23),
+                        reader.IsDBNull(24) ? null : reader.GetInt64(24)
                     ),
                 state => new(state.Id),
                 indexes:

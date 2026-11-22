@@ -58,6 +58,7 @@ public static class StructureTetherRules
                 or StructureState.ArmorVulnerable
                 or StructureState.HullReinforced
                 or StructureState.HullVulnerable
+                or StructureState.FobInvulnerable
         && StructureRules.CanDock(input.Structure, input.State, input.ShipGroupId)
         && !input.HasOutgoingLocks
         && !input.WeaponsTimer

@@ -135,6 +135,7 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
                 : null;
             fields["upkeepState"] = (int)structure.UpkeepState;
             fields["stateTimer"] = fields["timer"];
+            fields["deployTimes"] = structure.DeploymentTimer is { } deploy ? new List<object?> { deploy.StartedAt, deploy.EndsAt } : null;
             fields["repairing"] = structure.Battle?.RepairAt.HasValue == true;
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;

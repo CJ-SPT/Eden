@@ -7,6 +7,7 @@ using Eden.Protocol.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Structures;
 
 namespace Eden.Protocol.Development;
 
@@ -16,7 +17,8 @@ internal sealed class DeveloperCommandHandler(
     ISystemObjects objects,
     PilotUpdateCoordinator updates,
     DeveloperItemCommands items,
-    DeveloperSkillCommands skills
+    DeveloperSkillCommands skills,
+    DeveloperStructureCommands structures
 ) : ISelectedPilotCallHandler
 {
     // Match the stock GM menu's ROLE_GML | ROLE_WORLDMOD visibility gate.
@@ -41,7 +43,7 @@ internal sealed class DeveloperCommandHandler(
             {
                 throw new InvalidDataException("Supply one developer command without additional arguments.");
             }
-            string text = BlueMarshal.Text(args[0]);
+            string text = BlueRead.Text(args[0]);
             if (text.Length > MaximumCommandLength || text.Contains('\0'))
             {
                 throw new InvalidDataException("The developer command is too long or contains a null character.");
@@ -58,6 +60,10 @@ internal sealed class DeveloperCommandHandler(
             if (command.Length > 0 && command[0].Equals("/giveskill", StringComparison.OrdinalIgnoreCase))
             {
                 return skills.Grant(context, command);
+            }
+            if (command.Length > 0 && command[0].Equals("/structure", StringComparison.OrdinalIgnoreCase))
+            {
+                return structures.Execute(context, command);
             }
             if (
                 command.Length > 0

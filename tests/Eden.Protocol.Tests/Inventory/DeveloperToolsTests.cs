@@ -27,9 +27,9 @@ public sealed class DeveloperToolsTests
     private const int NewSkill = 3300;
 
     [Theory]
-    [InlineData(PilotRole.Developer, "Available commands: ['create', 'createitem', 'giveskill', 'load', 'tr']")]
+    [InlineData(PilotRole.Developer, "Available commands: ['create', 'createitem', 'giveskill', 'load', 'structure', 'tr']")]
     [InlineData(PilotRole.WorldMod, "Available commands: ['create', 'createitem', 'tr']")]
-    [InlineData(PilotRole.GameMasterHigh, "Available commands: ['giveskill', 'load']")]
+    [InlineData(PilotRole.GameMasterHigh, "Available commands: ['giveskill', 'load', 'structure']")]
     [InlineData(PilotRole.GameMasterLow, "Available commands: ['load', 'tr']")]
     [InlineData(PilotRole.QualityAssurance, "Available commands: []")]
     [InlineData(PilotRole.Player, "Available commands: []")]

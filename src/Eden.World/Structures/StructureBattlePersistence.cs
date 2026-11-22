@@ -104,7 +104,7 @@ internal static class StructureBattlePersistence
             profile,
             Profile(world, catalog, structure),
             world.Filter<SavedStructureService>(m => m.StructureId == structure.Id && m.Online).Any(),
-            structure.LowPowerAt is long low && now - low >= StructureRules.AbandonmentDuration,
+            StructureRules.AbandonmentDeadline(structure.TypeId, structure.LowPowerAt, structure.AbandonAt) <= now,
             WormholeRules.IsWormholeSystem(structure.SystemId),
             catalog.Definitions.SystemSecurity.GetValueOrDefault(structure.SystemId),
             structure.ReinforceHour,
@@ -186,7 +186,7 @@ internal static class StructureBattlePersistence
         }
     }
 
-    private static void Write(WorldAction world, CatalogDbContext catalog, SavedStructure structure, StructureBattle battle)
+    internal static void Write(WorldAction world, CatalogDbContext catalog, SavedStructure structure, StructureBattle battle)
     {
         var row = world.Set<SavedStructureBattle>().Find(structure.Id);
         if (row is null)
@@ -210,5 +210,10 @@ internal static class StructureBattlePersistence
         row.ArmorWindow = battle.WindowDamage.Armor;
         row.HullWindow = battle.WindowDamage.Structure;
         row.PausedUntil = battle.PausedUntil;
+        if (battle.State != StructureState.DeployVulnerable)
+        {
+            structure.DeployStartedAt = null;
+            structure.DeployEndsAt = null;
+        }
     }
 }

@@ -3,6 +3,9 @@ namespace Eden.Protocol.Serialization;
 // Validation at the boundary of the inert Python value graph.
 internal static class BlueRead
 {
+    internal static string Text(object? value) =>
+        value is string or byte[] ? BlueMarshal.Text(value) : throw new InvalidDataException("Expected text.");
+
     internal static byte[] Bytes(object? value) => value as byte[] ?? throw new InvalidDataException("Expected bytes.");
 
     internal static Dictionary<string, object?> Fields(object? value) =>

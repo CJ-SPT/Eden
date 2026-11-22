@@ -21,7 +21,7 @@ internal sealed partial class PilotStructureStore(
     WorldDatabase database,
     TimeProvider clock,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
-) : IPilotStructures, IStructureContacts, IMoonExtractions
+) : IPilotStructures, IStructureContacts, IMoonExtractions, IStructureGameMaster
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -301,7 +301,7 @@ internal sealed partial class PilotStructureStore(
                     : [],
             Battle = battle,
             DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, structure).Defense),
-            Upkeep = StructureRules.Upkeep(structure.LowPowerAt, modules.Any(m => m.Online), now),
+            Upkeep = StructureRules.Upkeep(structure.LowPowerAt, modules.Any(m => m.Online), now, structure.TypeId, structure.AbandonAt),
         };
     }
 
@@ -783,7 +783,7 @@ internal sealed partial class PilotStructureStore(
                                 s.StateEndsAt,
                                 s.UnanchorAt,
                                 s.HasCore,
-                                StructureRules.Upkeep(s.LowPowerAt, modules[s.Id].Any(module => module.Online), now)
+                                StructureRules.Upkeep(s.LowPowerAt, modules[s.Id].Any(module => module.Online), now, s.TypeId, s.AbandonAt)
                             )
                             {
                                 Equipment = world
@@ -795,6 +795,12 @@ internal sealed partial class PilotStructureStore(
                                     .ToArray(),
                                 Yaw = s.Yaw,
                                 Battle = battle,
+                                DeploymentTimer =
+                                    s.State == StructureState.DeployVulnerable
+                                    && s.DeployStartedAt is long start
+                                    && s.DeployEndsAt is long end
+                                        ? new(start, end)
+                                        : null,
                                 DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, s).Defense),
                             },
                             Skyhook =
@@ -813,7 +819,7 @@ internal sealed partial class PilotStructureStore(
                     })
                     .ToArray();
                 long deadline = structures
-                    .SelectMany(s => new[] { s.StateEndsAt, s.UnanchorAt })
+                    .SelectMany(s => new[] { s.StateEndsAt, s.UnanchorAt, s.DeployEndsAt })
                     .Concat(modules.Values.SelectMany(values => values).Where(module => module.Online).Select(module => module.NextFuelAt))
                     .Where(d => d.HasValue && d.Value > now)
                     .Select(d => d!.Value)
@@ -831,7 +837,7 @@ internal sealed partial class PilotStructureStore(
                                 {
                                     battle?.RepairAt,
                                     battle?.PausedUntil,
-                                    s.LowPowerAt is long low ? (long?)checked(low + StructureRules.AbandonmentDuration) : null,
+                                    StructureRules.AbandonmentDeadline(s.TypeId, s.LowPowerAt, s.AbandonAt),
                                 };
                             })
                             .Where(at => at > now)

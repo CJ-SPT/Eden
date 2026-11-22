@@ -185,6 +185,10 @@ internal sealed partial class PilotStructureStore
         structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online).Any()
             ? null
             : structure.LowPowerAt ?? now;
+        if (online)
+        {
+            structure.AbandonAt = null;
+        }
         StructureIndustry.Synchronize(world, catalog, structure, now);
         InterruptMoonExtraction(world, catalog, structure, now);
     }
@@ -313,8 +317,10 @@ internal sealed partial class PilotStructureStore
         }
         var due = (
             systemId is int system
-                ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
-                : world.Filter<SavedStructure>(s => s.StateEndsAt <= now || s.UnanchorAt <= now)
+                ? world.Filter<SavedStructure>(s =>
+                    s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now || s.DeployEndsAt <= now)
+                )
+                : world.Filter<SavedStructure>(s => s.StateEndsAt <= now || s.UnanchorAt <= now || s.DeployEndsAt <= now)
         ).ToArray();
         if (world is EconomyTransaction)
         {
@@ -331,12 +337,35 @@ internal sealed partial class PilotStructureStore
         }
         foreach (var structure in due)
         {
+            if (structure.State == StructureState.Destroyed)
+            {
+                continue;
+            }
+            var previous = structure.State;
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
-            if (structure.State == StructureState.Anchoring)
+            if (
+                world is EconomyTransaction
+                && structure.State == StructureState.AnchorVulnerable
+                && world.Set<SavedStructureBattle>().Find(structure.Id)?.RepairAt is long anchorAt
+                && anchorAt <= now
+            )
+            {
+                SetOperatingState(
+                    world,
+                    catalog,
+                    structure,
+                    StructureState.Anchoring,
+                    anchorAt,
+                    checked(
+                        anchorAt + StructureRules.Duration(StructureRules.AnchorDuration(profile), world.Settings.Structures.AnchoringSpeed)
+                    )
+                );
+            }
+            if (structure.State == StructureState.Anchoring && structure.StateEndsAt <= now)
             {
                 structure.State = StructureState.Onlining;
                 structure.StateStartedAt = structure.StateEndsAt!.Value;
-                structure.HasCore = profile.CoreTypeId is null;
+                structure.HasCore |= profile.CoreTypeId is null;
                 structure.StateEndsAt = structure.HasCore
                     ? checked(
                         structure.StateEndsAt!.Value
@@ -357,10 +386,34 @@ internal sealed partial class PilotStructureStore
             if (world is EconomyTransaction)
             {
                 StructureBattlePersistence.Advance(world, catalog, structure, now);
+                if (
+                    structure.State == StructureState.DeployVulnerable
+                    && structure.DeployEndsAt is long deployedAt
+                    && deployedAt <= now
+                    && world.Set<SavedStructureBattle>().Find(structure.Id)?.RepairAt is null
+                )
+                {
+                    SetOperatingState(
+                        world,
+                        catalog,
+                        structure,
+                        StructureState.ShieldVulnerable,
+                        Math.Max(deployedAt, structure.StateStartedAt)
+                    );
+                }
+            }
+            if (structure.StateEndsAt <= now)
+            {
+                structure.StateEndsAt = null;
+            }
+            if (previous != structure.State && world is EconomyTransaction && !(structure.UnanchorAt <= now))
+            {
+                StructureIndustry.Synchronize(world, catalog, structure, structure.StateStartedAt);
+                InterruptMoonExtraction(world, catalog, structure, structure.StateStartedAt);
             }
         }
         world.SaveChanges();
-        var stopping = due.Where(s => s.UnanchorAt <= now).ToDictionary(s => s.Id);
+        var stopping = due.Where(s => s.State != StructureState.Destroyed && s.UnanchorAt <= now).ToDictionary(s => s.Id);
         var services = systemId is int scopeSystem
             ? world
                 .Filter<SavedStructure>(s => s.SystemId == scopeSystem)
@@ -445,6 +498,10 @@ internal sealed partial class PilotStructureStore
                 structure.StateStartedAt = stoppedAt;
                 structure.UnanchorAt = null;
                 structure.StateEndsAt = null;
+                if (world is EconomyTransaction)
+                {
+                    StructureBattlePersistence.Restore(world, catalog, structure);
+                }
             }
             structure.LowPowerAt ??= stoppedAt;
             world.SaveChanges();

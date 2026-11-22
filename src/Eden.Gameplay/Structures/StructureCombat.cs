@@ -56,6 +56,21 @@ public static class StructureCombatRules
                 or StructureState.AnchorVulnerable
                 or StructureState.DeployVulnerable;
 
+    // Build 3662168 structures.const.STATE_SHIELD_ARMOR_HULL.
+    public static HullDamage StateHealth(StructureState state, HullDefense defense) =>
+        state switch
+        {
+            StructureState.ArmorReinforced or StructureState.ArmorVulnerable => new(0, defense.Armor, defense.Structure),
+            StructureState.Anchoring
+            or StructureState.Fitting
+            or StructureState.Onlining
+            or StructureState.HullReinforced
+            or StructureState.HullVulnerable
+            or StructureState.AnchorVulnerable
+            or StructureState.DeployVulnerable => new(0, 0, defense.Structure),
+            _ => defense.Undamaged,
+        };
+
     public static void CheckAttack(StructureProfile structure, double security, StructureBattle battle, bool retaliation = false)
     {
         if (structure.Family == StructureFamily.SovereigntyHub)
@@ -98,8 +113,25 @@ public static class StructureCombatRules
                 };
             }
         }
-        if (battle.RepairAt <= now && Vulnerable(battle.State) && (battle.State != StructureState.Onlining || context.HasCore))
+        if (
+            battle.RepairAt <= now
+            && Vulnerable(battle.State)
+            && battle.State != StructureState.AnchorVulnerable
+            && (battle.State != StructureState.Onlining || context.HasCore)
+        )
         {
+            if (battle.State == StructureState.DeployVulnerable)
+            {
+                return battle with
+                {
+                    StartedAt = battle.RepairAt!.Value,
+                    Health = StateHealth(battle.State, context.Combat.Defense),
+                    RepairAt = null,
+                    DamageWindowAt = 0,
+                    WindowDamage = new(0, 0, 0),
+                    PausedUntil = 0,
+                };
+            }
             return new(
                 StructureState.ShieldVulnerable,
                 battle.RepairAt!.Value,

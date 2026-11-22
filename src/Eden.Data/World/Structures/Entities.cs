@@ -20,10 +20,13 @@ public sealed class SavedStructure
     public StructureState State { get; set; }
     public long? StateEndsAt { get; set; }
     public long StateStartedAt { get; set; }
+    public long? DeployStartedAt { get; set; }
+    public long? DeployEndsAt { get; set; }
     public long? UnanchorAt { get; set; }
     public bool HasCore { get; set; }
     public bool PublicAccess { get; set; }
     public long? LowPowerAt { get; set; }
+    public long? AbandonAt { get; set; }
     public long DeployedAt { get; set; }
 }
 

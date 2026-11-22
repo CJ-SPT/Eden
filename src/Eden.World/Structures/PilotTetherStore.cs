@@ -247,7 +247,7 @@ internal sealed class PilotTetherStore(WorldDatabase database, TimeProvider cloc
             new(
                 profile,
                 structure.State,
-                StructureRules.Upkeep(structure.LowPowerAt, online, now),
+                StructureRules.Upkeep(structure.LowPowerAt, online, now, structure.TypeId, structure.AbandonAt),
                 structure.HasCore,
                 PilotStructureStore.Access(world, structure, pilot),
                 hull.GroupId,

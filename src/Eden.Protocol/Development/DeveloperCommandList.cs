@@ -20,6 +20,10 @@ internal sealed record DeveloperCommandList(IReadOnlyList<string> Commands) : Bl
         {
             commands.Add("load");
         }
+        if ((roles & (long)PilotRole.GameMasterHigh) != 0)
+        {
+            commands.Add("structure");
+        }
         if ((roles & (long)(PilotRole.GameMasterLow | PilotRole.WorldMod)) != 0)
         {
             commands.Add("tr");
