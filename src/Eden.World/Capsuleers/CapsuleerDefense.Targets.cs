@@ -52,10 +52,11 @@ internal sealed partial class CapsuleerDefense
         RoamingGang? gang,
         long now,
         int stamp,
-        bool retreating
+        bool retreating,
+        bool targetPrimaryOnly
     )
     {
-        if (primary.Npc || retreating || !profile.Modules.Any(module => PvpSupport.Independent(module.Effect)))
+        if (primary.Npc || retreating || targetPrimaryOnly || !profile.Modules.Any(module => PvpSupport.Independent(module.Effect)))
         {
             return FrozenDictionary<long, CapsuleerAttacker?>.Empty;
         }

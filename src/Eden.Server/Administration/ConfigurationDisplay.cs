@@ -85,6 +85,7 @@ internal static class ConfigurationDisplay
         ["capsuleers.automaticRecruitment"] = "Automatic corporation formation and recruitment",
         ["capsuleers.automaticAlliances"] = "Form and grow bot alliances",
         ["capsuleers.newSovereigntyClaims"] = "Start new sovereignty claims",
+        ["capsuleers.militiaPatrols"] = "Aldranette–Nennamaila militia patrols",
         ["capsuleers.roamingGangs"] = "Persistent roaming gangs",
         ["capsuleers.roamingGangSize"] = "Roaming gang size",
         ["capsuleers.regionalConflicts"] = "Regional conflicts",

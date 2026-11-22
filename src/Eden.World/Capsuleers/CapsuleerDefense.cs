@@ -156,8 +156,8 @@ internal sealed partial class CapsuleerDefense(
         return PilotAwareness.Assess(pilot, velocity, Observe(pilot, elapsed), group, gate);
     }
 
-    internal CapsuleerAttacker? PatrolTarget(DockedPilot pilot, long target, SpacePosition anchor, long now) =>
-        LiveCombatRuntime.Find(database.Path)?.PatrolTarget(pilot, target, anchor, presence, now);
+    internal CapsuleerAttacker? PatrolTarget(DockedPilot pilot, long target, SpacePosition anchor, long now, bool militiaOnly = false) =>
+        LiveCombatRuntime.Find(database.Path)?.PatrolTarget(pilot, target, anchor, presence, now, militiaOnly);
 
     internal CapsuleerDefenseResult Advance(
         DockedPilot pilot,
@@ -171,7 +171,8 @@ internal sealed partial class CapsuleerDefense(
         bool escapeFirst = false,
         CapsuleerAttacker? proactive = null,
         PvpRole? pvpRole = null,
-        RoamingGang? gang = null
+        RoamingGang? gang = null,
+        bool militiaPatrol = false
     )
     {
         return LiveWorld.Execute(
@@ -189,7 +190,8 @@ internal sealed partial class CapsuleerDefense(
                     escapeFirst,
                     proactive,
                     pvpRole,
-                    gang
+                    gang,
+                    militiaPatrol
                 ),
             nameof(Advance)
         );
@@ -207,7 +209,8 @@ internal sealed partial class CapsuleerDefense(
         bool escapeFirst = false,
         CapsuleerAttacker? proactive = null,
         PvpRole? pvpRole = null,
-        RoamingGang? gang = null
+        RoamingGang? gang = null,
+        bool militiaPatrol = false
     )
     {
         var world = LiveWorld.Find(database.Path);
@@ -368,7 +371,7 @@ internal sealed partial class CapsuleerDefense(
         long attackedAt = candidates.Select(attacker => attacker.AttackedAt).DefaultIfEmpty(0).Max();
         bool newThreat = attackedAt > state.LastAttackAt;
         state = state with { TargetId = target.ShipId, LastAttackAt = Math.Max(state.LastAttackAt, attackedAt), Retreating = retreat };
-        var moduleTargets = SupportTargets(pilot, profile, state, target, live, gang, now, stamp, retreat);
+        var moduleTargets = SupportTargets(pilot, profile, state, target, live, gang, now, stamp, retreat, militiaPatrol);
         bool CanLock(CapsuleerAttacker contact) =>
             pilot.Position.DistanceTo(contact.Position) - pilot.Flight.ShipRadius - contact.Radius
                 <= attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange)

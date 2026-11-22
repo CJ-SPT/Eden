@@ -1,4 +1,5 @@
 using Eden.Data.Catalog.FactionWarfare;
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -335,11 +336,13 @@ internal sealed partial class MilitiaComplexStore(
                 MilitiaHubStore.Recover(world, catalog, system.SystemId, system.Occupier, now);
             }
         }
-        long points =
-            site.Profile.Battlefield is null ? MilitiaComplexRules.PointsPerPilot(system, offense, policy, winners.Length)
-            : winners.Length == 0 ? 0
-            : (long)policy.BasePoints * Math.Min(policy.Capacity, winners.Length) / winners.Length;
         var ordered = winners.OrderBy(winner => winner.Pilot.Id).ToArray();
+        var agents = world.Set<SavedCapsuleerAgent>();
+        var recipients = ordered.Where(winner => agents.Find(winner.Pilot.Id) is null).ToArray();
+        long points =
+            site.Profile.Battlefield is null ? MilitiaComplexRules.PointsPerPilot(system, offense, policy, recipients.Length)
+            : recipients.Length == 0 ? 0
+            : (long)policy.BasePoints * Math.Min(policy.Capacity, recipients.Length) / recipients.Length;
         int gained = Math.Abs(score - system.VictoryPoints);
         for (int i = 0; i < ordered.Length; i++)
         {
@@ -361,10 +364,13 @@ internal sealed partial class MilitiaComplexStore(
             {
                 world.AfterCommit(() => fleets?.NotifyStandingChanged(pilot.Id, standing.SourceId, standing.After));
             }
+        }
+        foreach (var recipient in recipients)
+        {
             MilitiaLoyalty.Credit(
                 world,
                 faction,
-                pilot,
+                recipient.Pilot,
                 points,
                 site.Profile.Battlefield is null ? MilitiaLoyaltySource.Complex : MilitiaLoyaltySource.Battlefield,
                 site.Id,
@@ -678,8 +684,7 @@ internal sealed partial class MilitiaComplexStore(
             .AsEnumerable()
             .Any(item =>
             {
-                var fitted = catalog.RequireItem(item.TypeId);
-                return access.ForbiddenEquipment!.Contains(fitted.Id, fitted.GroupId, fitted.CategoryId);
+                return ProhibitsEquipment(catalog, access, item.TypeId);
             });
         if (prohibitedEquipment)
         {

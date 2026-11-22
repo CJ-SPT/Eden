@@ -39,17 +39,17 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot pilot,
         long now,
         int? stagingSystem = null,
-        bool visitsHighSecurity = false
+        bool visitsHighSecurity = false,
+        Func<int, IEnumerable<int>, bool>? allowedMilitiaFit = null
     )
     {
         long id = pilot.PilotId;
         int station = pilot.StationId;
         int staging = stagingSystem ?? pilot.SystemId;
         if (
-            !RequiresEarnedPvp(world)
+            allowedMilitiaFit is null && (!RequiresEarnedPvp(world) || !CanStagePvp(world, catalog, staging))
             || world.Set<SavedCapsuleerAgent>().Find(id) is not { } agent
             || !CapsuleerWorkHulls.CanLeaveShip(world, catalog, pilot)
-            || !CanStagePvp(world, catalog, staging)
             || !StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)
         )
         {
@@ -58,6 +58,14 @@ internal sealed partial class CapsuleerIndustry
 
         var organization = CapsuleerCorporations.Organization(world, id);
         var owned = OwnedPvpShip(world, id, organization);
+        if (
+            owned is not null
+            && allowedMilitiaFit is not null
+            && !allowedMilitiaFit(owned.TypeId, world.FittedItems(id, owned.Id).Select(item => item.TypeId))
+        )
+        {
+            owned = null;
+        }
         if (owned is not null && owned.Id != pilot.ShipId)
         {
             if (
@@ -76,13 +84,21 @@ internal sealed partial class CapsuleerIndustry
         }
 
         var goal = organization.PvpFitGoal;
+        if (
+            goal is not null
+            && allowedMilitiaFit is not null
+            && !allowedMilitiaFit(goal.HullTypeId, goal.Kit().Slots.Select(slot => slot.TypeId))
+        )
+        {
+            goal = null;
+        }
         if (goal is null)
         {
             if (stagingSystem is null && organization.PvpFitReviewAt > now)
             {
                 return default;
             }
-            goal = SelectSnapshotPvpGoal(world, catalog, snapshot, pilot, station, owned, staging, visitsHighSecurity);
+            goal = SelectSnapshotPvpGoal(world, catalog, snapshot, pilot, station, owned, staging, visitsHighSecurity, allowedMilitiaFit);
             if (goal is null)
             {
                 return default;
@@ -125,7 +141,17 @@ internal sealed partial class CapsuleerIndustry
             throw new InvalidDataException("PvP ship offers changed before purchase.");
         }
         long ship = BoardKit(world, catalog, pilot, kit, now, requireOnlineFit: true);
-        var nextGoal = SelectSnapshotPvpGoal(world, catalog, snapshot, pilot, station, world.Ships.Find(ship), staging, visitsHighSecurity);
+        var nextGoal = SelectSnapshotPvpGoal(
+            world,
+            catalog,
+            snapshot,
+            pilot,
+            station,
+            world.Ships.Find(ship),
+            staging,
+            visitsHighSecurity,
+            allowedMilitiaFit
+        );
         CapsuleerCorporations.SaveOrganization(
             world,
             id,

@@ -73,6 +73,29 @@ internal sealed class CapsuleerRatting(
             .OrderBy(n => n.Id)
             .ToArray();
 
+    internal CapsuleerAttacker? MilitiaDefender(DockedPilot pilot, long defender, long now)
+    {
+        var target = encounters
+            .ReadScene(pilot.SystemId, pilot.Position!, now)
+            .Visible.FirstOrDefault(npc =>
+                npc.Id == defender && npc.Role == NpcRole.MilitiaComplexDefender && !npc.Health.Remaining.Destroyed && npc.Warp is null
+            );
+        return target is null
+            ? null
+            : new(
+                0,
+                target.Id,
+                target.TypeId,
+                target.Position,
+                target.Navigation?.Velocity ?? SpacePosition.Zero,
+                target.Radius,
+                LiveCombatRuntime.Find(database.Path)?.RattingNpc(target.Id, now)?.SignatureRadius ?? 1,
+                0,
+                false,
+                true
+            );
+    }
+
     internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, StaticSpaceObject site, long now, bool includeEmpty) =>
         wrecks
             .List(pilot.SystemId, now)

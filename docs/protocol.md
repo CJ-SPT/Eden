@@ -479,6 +479,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Faction Warfare
 
+- [Aldranette–Nennamaila militia patrols](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
 - [Resident faction warfare capture and combat eligibility](protocol/faction-warfare.md#resident-capture-and-combat-eligibility)
 - [Theaters of War shipcaster reads, November 21, 2026](protocol/faction-warfare.md#theaters-of-war-shipcaster-reads--november-21-2026)
 - [Faction Warfare militia missions, ranks and combat statistics, November 20, 2026](protocol/faction-warfare.md#militia-missions-ranks-and-combat-statistics--november-20-2026)

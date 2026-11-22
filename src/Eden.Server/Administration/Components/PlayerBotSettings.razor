@@ -135,6 +135,10 @@
                       Help="Allows eligible armed pilots to hunt targets while traveling in nullsec.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RoamingPvp" aria-describedby="@field.Help" /></Control>
         </SettingField>
+        <SettingField Label="Aldranette–Nennamaila militia patrols"
+                      Help="Allows eligible Gallente and Caldari bots to enlist and contest Scout and Small complexes in this corridor.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.MilitiaPatrols" aria-describedby="@field.Help" /></Control>
+        </SettingField>
         <SettingField Label="Persistent roaming gangs"
                       Help="Allows eligible nullsec pilots to assemble coordinated gangs using their existing ships.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RoamingGangs" aria-describedby="@field.Help" /></Control>

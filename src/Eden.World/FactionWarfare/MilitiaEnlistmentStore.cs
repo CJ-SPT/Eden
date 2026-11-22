@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.FactionWarfare;
@@ -154,6 +155,33 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
         world.Commit();
     }
 
+    internal static bool CanJoinBotMilitia(WorldAction world, CatalogDbContext catalog, long pilotId, MilitiaFaction faction)
+    {
+        if (world.Set<SavedCapsuleerAgent>().Find(pilotId) is null || world.Pilots.Find(pilotId) is not { } pilot)
+        {
+            return false;
+        }
+        return Effective(world, pilot) is { } enrolled
+            ? enrolled == faction
+            : PlayerCorporation(world, pilot) is null
+                && JoinFailure(world, catalog, pilot, faction) is null
+                && catalog.NpcCorporationName(MilitiaRules.Corporation(faction)) is not null;
+    }
+
+    internal static bool TryJoinBotMilitia(WorldAction world, CatalogDbContext catalog, long pilotId, MilitiaFaction faction, long now)
+    {
+        if (!CanJoinBotMilitia(world, catalog, pilotId, faction))
+        {
+            return false;
+        }
+        var pilot = world.Pilots.Find(pilotId)!;
+        if (Effective(world, pilot) is null)
+        {
+            Move(world, pilot, MilitiaRules.Corporation(faction), now);
+        }
+        return true;
+    }
+
     internal static void LeaveNpcMilitia(WorldAction world, CatalogDbContext catalog, Pilot pilot, long now)
     {
         int destination = CorporationMembershipStore.OriginalCorporation(world, catalog, pilot.Id);
@@ -174,18 +202,26 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
 
     private static void CheckJoin(WorldAction world, CatalogDbContext catalog, Pilot pilot, MilitiaFaction faction)
     {
+        if (JoinFailure(world, catalog, pilot, faction) is { } failure)
+        {
+            throw new InvalidDataException(failure);
+        }
+    }
+
+    private static string? JoinFailure(WorldAction world, CatalogDbContext catalog, Pilot pilot, MilitiaFaction faction)
+    {
         if (!Enum.IsDefined(faction))
         {
-            throw new InvalidDataException("Choose one of the four empire militias.");
+            return "Choose one of the four empire militias.";
         }
         if (Effective(world, pilot) is not null)
         {
-            throw new InvalidDataException("Retire from your current militia before enlisting.");
+            return "Retire from your current militia before enlisting.";
         }
         var ship = pilot.ActiveShip;
         if (ship.Position is not null || ship.StructureId is not null)
         {
-            throw new InvalidDataException("Dock at an NPC station belonging to the requested empire.");
+            return "Dock at an NPC station belonging to the requested empire.";
         }
         var station = catalog.RequireStation(ship.StationId);
         long? stationFaction =
@@ -193,13 +229,10 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
             ?? catalog.Read(CatalogData.Sde.NpcCorporations, (long)station.OwnerId)?.FactionID;
         if (stationFaction != (int)faction)
         {
-            throw new InvalidDataException("Dock at an NPC station belonging to the requested empire.");
+            return "Dock at an NPC station belonging to the requested empire.";
         }
         double standing = world.Set<SavedNpcStanding>().Find(pilot.Id, (long)faction)?.Value ?? 0;
-        if (standing < 0)
-        {
-            throw new InvalidDataException("Your unmodified standing with this empire must be nonnegative.");
-        }
+        return standing < 0 ? "Your unmodified standing with this empire must be nonnegative." : null;
     }
 
     private static Pilot RequirePilot(WorldAction world, long pilotId) =>

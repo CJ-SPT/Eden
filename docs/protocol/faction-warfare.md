@@ -1,5 +1,31 @@
 # Faction warfare
 
+## Aldranette–Nennamaila militia patrols
+
+Enable **Aldranette–Nennamaila militia patrols** in Player bots and save the settings draft for restart. The established
+population can commit up to two Gallente and two Caldari pilots to the initial front. Aldranette's FedMart station
+(60011014) and Nennamaila's Wiyrkomi Peace Corps station (60015126) satisfy the ordinary faction enlistment rules in
+build 3662168. Eligible pilots keep an existing qualified combat fit or shop for one from their earned wallet budget.
+Standing, docking, fitted equipment and per-site hull restrictions apply.
+
+Patrols choose a current Scout or Small complex in Aldranette. Caldari pilots use the reciprocal stargates and both
+sides enter through the public acceleration gate. They engage visible opposing militia pilots and local complex
+defenders through ordinary targeting, ammunition and damage. A surviving patrol can leave when its site completes,
+its assignment expires, the front changes, or the setting is disabled. Home docking follows current occupation.
+The sortie, navigation and active-time deadline travel with the existing bot checkpoint.
+
+Eligible bots affect the capture timer, system VP and militia activity statistics. Playable characters receive LP based
+on the number of eligible human participants. Bot-involved final blows still record actual losses and militia kills.
+Kill LP requires a human final attacker and human victim, with human assistants eligible under ordinary rules.
+[Resident capture and combat eligibility](#resident-capture-and-combat-eligibility)
+
+**Automated validation.** The two `CapsuleerMilitiaPatrolTests` replays passed in 11.05 seconds. With the only human
+selected elsewhere, two fitted bots enlisted, passed the gates and contested the same Scout complex. The first
+opposing railgun damage occurred after 96 simulated seconds. The second replay disabled patrols while a ship was
+in warp, reopened from the checkpoint, and verified its return in the original hull. The broader faction warfare,
+traffic, gangs, administration and earned-fit filter passed all 95 cases in 33 seconds. Both Python policy suites
+passed. The replays used controlled resident fixtures and did not launch the client.
+
 ## Resident capture and combat eligibility
 
 Empire maintenance advances active complexes, battlefields and the related objectives. Protocol publishes and withdraws

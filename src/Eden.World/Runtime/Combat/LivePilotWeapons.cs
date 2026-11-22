@@ -1,6 +1,7 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -118,7 +119,8 @@ internal sealed partial class LiveCombatRuntime
         long target,
         SpacePosition anchor,
         IPilotCombatPresence presence,
-        long now
+        long now,
+        bool militiaOnly = false
     ) =>
         Execute(
             () =>
@@ -128,7 +130,7 @@ internal sealed partial class LiveCombatRuntime
                     target == pilot.ShipId
                     || pilot.Position is null
                     || DronePlayerFor(target) is not { Capsule: false } victim
-                    || IsCapsuleerCorporationAlly(pilot.PilotId, victim.PilotId)
+                    || !AllowsPatrolTarget(pilot.PilotId, victim.PilotId, militiaOnly)
                     || DronePresence(victim, presence, pilot.SystemId, now) is not { } contact
                     || contact.Position.DistanceTo(anchor) > PatrolRules.PursuitMeters
                     || contact.Position.DistanceTo(pilot.Position) > PatrolRules.PursuitMeters
@@ -156,6 +158,16 @@ internal sealed partial class LiveCombatRuntime
             },
             nameof(PatrolTarget)
         );
+
+    private bool AllowsPatrolTarget(long pilot, long other, bool militiaOnly)
+    {
+        if (!militiaOnly)
+        {
+            return !IsCapsuleerCorporationAlly(pilot, other);
+        }
+        var affiliations = owner.OwnerDirectory.Snapshot;
+        return MilitiaRules.AreEnemies(affiliations.PilotMilitia(pilot), affiliations.PilotMilitia(other));
+    }
 
     internal bool IsCapsuleerCorporationAlly(long pilot, long other)
     {

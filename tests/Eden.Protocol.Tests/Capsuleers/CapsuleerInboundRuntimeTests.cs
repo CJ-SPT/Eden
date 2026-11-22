@@ -12,6 +12,7 @@ using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Market;
 using Eden.World.Runtime;
@@ -265,7 +266,8 @@ public sealed class CapsuleerInboundRuntimeTests
             host.GetRequiredService<Eden.World.Sovereignty.PilotEntosisStore>(),
             host.GetRequiredService<CapsuleerCareerTraining>(),
             host.GetRequiredService<Eden.World.Agents.PilotMissionStore>(),
-            host.GetRequiredService<Eden.World.Corporations.PilotFleetStore>()
+            host.GetRequiredService<Eden.World.Corporations.PilotFleetStore>(),
+            host.GetRequiredService<MilitiaComplexStore>()
         );
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);
         _ = hauler.Read();

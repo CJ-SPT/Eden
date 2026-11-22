@@ -42,7 +42,8 @@ internal sealed partial class CapsuleerIndustry
         int station,
         Ship? current,
         int stagingSystem,
-        bool visitsHighSecurity
+        bool visitsHighSecurity,
+        Func<int, IEnumerable<int>, bool>? allowedMilitiaFit = null
     )
     {
         if (snapshot.Profiles.Count == 0)
@@ -73,6 +74,7 @@ internal sealed partial class CapsuleerIndustry
             .Where(type => PvpRouteAllows(catalog, type, visitsHighSecurity))
             .SelectMany(type => fits.ByHull[type])
             .Where(fit => (fit.DealsDamage || canFlySupport) && (current is null || fit.Progress.CompareTo(previous) > 0))
+            .Where(fit => allowedMilitiaFit is null || allowedMilitiaFit(fit.Kit.HullTypeId, fit.Kit.Slots.Select(slot => slot.TypeId)))
             .ToArray();
         if (candidates.Length == 0)
         {

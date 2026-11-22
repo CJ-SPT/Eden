@@ -191,6 +191,14 @@ Bubble use defaults on. With the full catalog, 12% of newly generated nullsec co
 Change the percentage or disable bubble launches in the simulated pilot settings. New camp Sabres have an autocannon,
 a scrambler and three real disruption probes. Simulated travelers obey bubble drag and catch geometry and can burn clear.
 
+## Aldranette–Nennamaila militia patrols
+
+The opt-in patrols give Gallente and Caldari bots shared Scout and Small objectives. Eligible pilots in the two
+staging stations enlist through the same rules as players. They deploy in qualified paid or already-owned fits,
+spend ammunition in fights, and can retreat to an accessible station. While any player is selected, patrols can
+travel and fight even in the absence of a human observer in the corridor.
+[Patrol operations and rewards](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
+
 ## PvP roams
 
 Nullsec PvP roams default on. The default roam chance is 30% per eligible departure and 35% of new generated nullsec

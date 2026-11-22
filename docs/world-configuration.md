@@ -625,6 +625,9 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   stops a pending cycle when the pilot next runs. Ordinary wreck looting can still occur.
 - **Exploration** (`settings.capsuleers.exploration`) lets eligible bots acquire exploration equipment and scan and hack
   high-security pirate data and relic sites. Disabling it sends active explorers back to their departure stations.
+- **Aldranette–Nennamaila militia patrols** (`settings.capsuleers.militiaPatrols`) enables up to two simultaneous
+  sorties per side in the established-world pilot corridor. Changes apply on restart. Disabled by default.
+  [Faction warfare bot patrols](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
 - **Buy PvP ships with activity income** (`settings.capsuleers.earnedPvpShips`) funds new PvP fits through existing bot earnings.
   Setup enables this for new saves. To enable it on an existing established save, select it under **PvP roams & regional conflicts**
   and save for restart. With the Progressive market and **Beginner market supply** enabled, eligible lowsec and nullsec NPC traffic

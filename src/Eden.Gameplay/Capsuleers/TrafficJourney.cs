@@ -9,6 +9,7 @@ public enum TrafficJourneyKind
     SovereigntyExpedition,
     CorporationRelocation,
     PvpShopping,
+    MilitiaPatrol,
 }
 
 public sealed record TrafficJourney(

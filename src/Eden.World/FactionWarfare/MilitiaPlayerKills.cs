@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
@@ -35,7 +36,7 @@ internal static class MilitiaPlayerKills
             world is not EconomyTransaction
             || final.CharacterId is not long killerId
             || world.Pilots.Find(killerId) is not { } killer
-            || killer.AccountId == victim.AccountId
+            || killer.Id == victim.Id
             || MilitiaEnlistmentStore.Effective(world, killer) is not { } faction
             || !MilitiaRules.AreEnemies(faction, MilitiaEnlistmentStore.Effective(world, victim))
             || catalog.RequireItem(hull.TypeId).GroupId is FleetDefinitions.CapsuleGroup or FleetDefinitions.CorvetteGroup
@@ -44,7 +45,19 @@ internal static class MilitiaPlayerKills
             return;
         }
 
+        var agents = world.Set<SavedCapsuleerAgent>();
+        bool killerIsBot = agents.Find(killer.Id) is not null;
+        bool victimIsBot = agents.Find(victim.Id) is not null;
+        // Distinct autonomous pilots share a storage account. The account check still excludes same-account human kills.
+        if (killer.AccountId == victim.AccountId && !(killerIsBot && victimIsBot))
+        {
+            return;
+        }
         MilitiaProgressionStore.Record(world, killer, faction, new(1, 0), now);
+        if (killerIsBot || victimIsBot)
+        {
+            return;
+        }
         long insuredValue = PilotInsuranceStore.Value(world, catalog, hull.TypeId);
         decimal insurance =
             insuredValue > 0 ? InsuranceRules.Payout(insuredValue, InsuranceLevel.Platinum) / (decimal)MarketDefinitions.CentsPerIsk : 0;
@@ -61,6 +74,7 @@ internal static class MilitiaPlayerKills
             .Where(pilot =>
                 pilot.AccountId != killer.AccountId
                 && pilot.AccountId != victim.AccountId
+                && agents.Find(pilot.Id) is null
                 && MilitiaEnlistmentStore.Effective(world, pilot) == faction
                 && pilot.ActiveShip.Position is { } at
                 && at.SystemId == system

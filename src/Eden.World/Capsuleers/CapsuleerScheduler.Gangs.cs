@@ -13,6 +13,7 @@ internal sealed partial class CapsuleerScheduler
                 && gang.Members.Any(member => member.PilotId == pilot && member.Status == RoamingGangMemberStatus.Active)
             || work?.CorporationSupply is not null
             || work?.SovereigntyExpedition is not null
+            || work?.MilitiaPatrol is not null
             || work?.RegionalEscort is { } escort && work.ShipId == escort.ShipId && work.ActiveTicks < escort.Operation.ExpiresAt;
     }
 
@@ -32,6 +33,7 @@ internal sealed partial class CapsuleerScheduler
                         row.Progress.Contains("\"Gang\":{")
                         || row.Progress.Contains("\"RegionalEscort\":{")
                         || row.Progress.Contains("\"CorporationSupply\":{")
+                        || row.Progress.Contains("\"MilitiaPatrol\":{")
                     )
                 )
         )
@@ -46,6 +48,7 @@ internal sealed partial class CapsuleerScheduler
                     work?.Gang is { Phase: not RoamingGangPhase.Complete }
                     || work?.RegionalEscort is not null
                     || work?.CorporationSupply is not null
+                    || work?.MilitiaPatrol is not null
                 )
                 && world.Set<SavedCapsuleerAgent>().Find(row.PilotId) is { } agent
                 && (CapsuleerCorporations.Organization(world, row.PilotId).ActiveWorker ?? agent.Career) == CapsuleerCareer.Hauling

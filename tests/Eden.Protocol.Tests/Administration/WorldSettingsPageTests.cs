@@ -235,6 +235,22 @@ public sealed class WorldSettingsPageTests
     }
 
     [Fact]
+    public void MilitiaPatrolsAreOptInAndRoundTripThroughAdministration()
+    {
+        var original = new WorldConfigurationDraft();
+        var form = SettingsForm.From(original.Settings);
+        Assert.False(form.MilitiaPatrols);
+        form.MilitiaPatrols = true;
+        var enabled = form.Build();
+        Assert.True(enabled.Capsuleers.MilitiaPatrols);
+        Assert.True(SettingsForm.From(enabled).MilitiaPatrols);
+        Assert.Contains(
+            ConfigurationDisplay.Compare(original, original with { Settings = enabled }),
+            change => change.Field == "Aldranette–Nennamaila militia patrols" && change.After == "On"
+        );
+    }
+
+    [Fact]
     public void PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges()
     {
         CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9) { Exploration = false, WreckSalvage = false };

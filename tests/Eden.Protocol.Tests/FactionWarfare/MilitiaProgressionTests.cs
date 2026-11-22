@@ -1,14 +1,18 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Docking;
 using Eden.Data.World.Economy;
 using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.FactionWarfare;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Server;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
@@ -34,19 +38,7 @@ public sealed class MilitiaProgressionTests
         TestClock clock = new(new DateTimeOffset(2026, 11, 20, 10, 0, 0, TimeSpan.Zero));
         using TestWorld fixture = new(clock: clock);
         var database = new WorldDatabase(fixture.Path);
-        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
-        {
-            catalog.Database.ExecuteSqlRaw(
-                """
-                INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (2,'Celestial'),(4,'Material');
-                INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES
-                    (25,'Frigate',6),(29,'Capsule',6),(18,'Mineral',4),(186,'Wreck',2);
-                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES
-                    (587,'Rifter',25),(670,'Capsule',29),(34,'Tritanium',18),(26973,'Wreck',186);
-                INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','587','{{"wreckTypeID":26973}}');
-                """
-            );
-        }
+        LoadCombatCatalog(database);
         using var host = ServerServices.Build(database, clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         fixture.Store.SetPosition(fixture.Store.FindPilot(1000002)!.ShipId, new(0, 0, 0), SystemId);
@@ -184,6 +176,163 @@ public sealed class MilitiaProgressionTests
     }
 
     [Fact]
+    public async Task AutonomousMilitiaKillsKeepReportsAndStatsWithoutPayingLoyaltyPoints()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock);
+        WorldDatabase database = new(fixture.Path);
+        LoadCombatCatalog(database);
+        using var host = ServerServices.Build(database, clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        var human = fixture.Store.FindPilot(1000001)!;
+        var opponent = fixture.Store.FindPilot(1000002)!;
+        fixture.Store.SetPosition(human.ShipId, SpacePosition.Zero, SystemId);
+        fixture.Store.SetPosition(opponent.ShipId, SpacePosition.Zero, SystemId);
+        long alliedBot;
+        long opposingBot;
+        using (var action = live.Economy.Begin(new(pilots: [human.PilotId, opponent.PilotId])))
+        {
+            if (action.Set<Account>().Find(CapsuleerCommunityStore.MinerAccountId) is null)
+            {
+                action.Add(
+                    new Account
+                    {
+                        Id = CapsuleerCommunityStore.MinerAccountId,
+                        UserName = "Capsuleer Community",
+                        CreatedAt = clock.Now,
+                        CloneGrade = AccountCloneGrade.Omega,
+                    }
+                );
+            }
+            SetEnlistment(action, human.PilotId, MilitiaFaction.Minmatar);
+            SetEnlistment(action, opponent.PilotId, MilitiaFaction.Amarr);
+            long first = action.Pilots.Select(pilot => pilot.Id).Max() + 1;
+            alliedBot = AddBot(action, first, MilitiaFaction.Minmatar, 20);
+            opposingBot = AddBot(action, first + 1, MilitiaFaction.Amarr, 21);
+            action.Add(new SavedAdjustedPrice { TypeId = CargoType, PriceIsk = 100_000 });
+            action.Commit();
+        }
+
+        long humanAgainstBot = Destroy(human.PilotId, opposingBot);
+        long botAgainstHuman = Destroy(alliedBot, opponent.PilotId);
+        long botAgainstBot = Destroy(opposingBot, alliedBot);
+        long humanAgainstHuman = Destroy(human.PilotId, opponent.PilotId, alliedBot);
+        AssertResults(host);
+        await live.FlushAsync();
+        host.Dispose();
+        using var reopened = ServerServices.Build(database, clock, liveWorld: true);
+        AssertResults(reopened);
+
+        void AssertResults(IServiceProvider services)
+        {
+            var progression = services.GetRequiredService<IMilitiaProgression>();
+            Assert.Equal(2, progression.Statistics(human.PilotId, MilitiaStatisticOwner.Pilot).Total.Kills);
+            Assert.Equal(1, progression.Statistics(alliedBot, MilitiaStatisticOwner.Pilot).Total.Kills);
+            Assert.Equal(1, progression.Statistics(opposingBot, MilitiaStatisticOwner.Pilot).Total.Kills);
+            Assert.Equal(3, progression.Statistics(human.PilotId, MilitiaStatisticOwner.Faction).Total.Kills);
+            var losses = services
+                .GetRequiredService<LiveWorld>()
+                .Economy.Inspect(world =>
+                {
+                    var award = Assert.Single(world.Set<SavedMilitiaLoyaltyAward>());
+                    Assert.Equal((human.PilotId, humanAgainstHuman, 100L), (award.PilotId, award.SourceId, award.Points));
+                    return world.Filter<SavedCombatReport>(report => report.IsLoss).ToArray().ToDictionary(report => report.SourceKey);
+                });
+            Assert.Equal(human.PilotId, losses[$"ship:{humanAgainstBot}"].Snapshot().FinalBlow.CharacterId);
+            Assert.Equal(alliedBot, losses[$"ship:{botAgainstHuman}"].Snapshot().FinalBlow.CharacterId);
+            Assert.Equal(opposingBot, losses[$"ship:{botAgainstBot}"].Snapshot().FinalBlow.CharacterId);
+            var shared = losses[$"ship:{humanAgainstHuman}"].Snapshot();
+            Assert.Equal(alliedBot, Assert.Single(shared.OtherAttackers).CharacterId);
+        }
+
+        long AddBot(WorldAction action, long id, MilitiaFaction faction, int slot)
+        {
+            var template = action.Pilots.Find(human.PilotId)!;
+            long ship = InventoryPersistence.NextId(action);
+            int station = (int)human.Home.Id;
+            string name = $"Test militia pilot {slot}";
+            action.Add(new InventoryOwner { Id = id });
+            action.Add(
+                new Ship
+                {
+                    Id = ship,
+                    OwnerId = id,
+                    StationId = station,
+                    TypeId = HullType,
+                    Name = name,
+                }
+            );
+            action.Add(new FlightPosition { ShipId = ship, SystemId = SystemId });
+            action.Add(
+                new Pilot
+                {
+                    Id = id,
+                    AccountId = CapsuleerCommunityStore.MinerAccountId,
+                    ActiveShipId = ship,
+                    CorporationId = template.CorporationId,
+                    CreatedAt = clock.Now,
+                    Name = name,
+                    RaceId = template.RaceId,
+                    BloodlineId = template.BloodlineId,
+                    GenderId = template.GenderId,
+                    SchoolId = template.SchoolId,
+                    AncestryId = template.AncestryId,
+                }
+            );
+            MilitiaComplexTests.RegisterCapsuleer(action, id, human.HomeSystemId, station, slot);
+            SetEnlistment(action, id, faction);
+            return id;
+        }
+
+        long Destroy(long finalId, long victimId, long? assist = null)
+        {
+            using var action = live.Economy.Begin(new(pilots: [finalId, victimId]));
+            var final = action.Pilots.Find(finalId)!;
+            var victim = action.Pilots.Find(victimId)!;
+            final.ActiveShip.TypeId = HullType;
+            var hull = victim.ActiveShip;
+            hull.TypeId = HullType;
+            action.Add(
+                new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(action),
+                    OwnerId = victimId,
+                    LocationId = hull.Id,
+                    FlagId = (int)InventoryFlag.RigSlot0,
+                    TypeId = CargoType,
+                    Quantity = 10,
+                }
+            );
+            if (assist is { } id)
+            {
+                var attacker = action.Pilots.Find(id)!;
+                attacker.ActiveShip.TypeId = HullType;
+                PilotInteractionHistoryStore.Damage(
+                    action,
+                    hull.Id,
+                    PilotInteractionHistoryStore.Player(action, attacker, attacker.ActiveShipId),
+                    1
+                );
+            }
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            ShipLossPersistence.Apply(
+                action,
+                catalog,
+                victim,
+                null,
+                hull.Id,
+                SystemId,
+                hull.Position!,
+                clock.Now,
+                new KeepCargo(),
+                PilotInteractionHistoryStore.Player(action, final, final.ActiveShipId)
+            );
+            action.Commit();
+            return hull.Id;
+        }
+    }
+
+    [Fact]
     public async Task PromotionsSurviveRetirementAndDoNotPayAgainAfterDemotion()
     {
         TestClock clock = new();
@@ -285,6 +434,21 @@ public sealed class MilitiaProgressionTests
         Assert.Equal(2, MilitiaProgressionRules.PvpLoyalty(18_000, 8_000, 19_999));
         Assert.Equal(50_000, MilitiaProgressionRules.PvpLoyalty(1_000_000_000, 0, 0));
         Assert.Equal(new long[] { 34, 33, 33 }, Enumerable.Range(0, 3).Select(i => MilitiaProgressionRules.Share(100, i, 3)));
+    }
+
+    private static void LoadCombatCatalog(WorldDatabase database)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath, writable: true);
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (2,'Celestial'),(4,'Material');
+            INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES
+                (25,'Frigate',6),(29,'Capsule',6),(18,'Mineral',4),(186,'Wreck',2);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES
+                (587,'Rifter',25),(670,'Capsule',29),(34,'Tritanium',18),(26973,'Wreck',186);
+            INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','587','{{"wreckTypeID":26973}}');
+            """
+        );
     }
 
     private static void SetEnlistment(WorldAction action, long pilot, MilitiaFaction? faction)

@@ -37,6 +37,10 @@ internal sealed partial class CapsuleerHauler
 
     private CapsuleerAttacker? ProactiveTarget()
     {
+        if (Work.MilitiaPatrol is { } militiaPatrol)
+        {
+            return MilitiaProactiveTarget(militiaPatrol);
+        }
         if (Work.Ratting is { Patrol: { } patrol } sortie)
         {
             return Pilot.Position is not null && !_background ? PatrolTarget(sortie, patrol) : null;
