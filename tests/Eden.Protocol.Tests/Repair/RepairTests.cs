@@ -6,13 +6,16 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Repair;
 using Eden.Data.World.Skills;
 using Eden.Data.World.Structures;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
@@ -25,6 +28,7 @@ using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Client = Eden.Protocol.Tests.PilotSessions.CourierServiceTests.Client;
 using StructureFixture = Eden.Protocol.Tests.Structures.StructureTests.Fixture;
 
 namespace Eden.Protocol.Tests.Repair;
@@ -71,6 +75,61 @@ public sealed class RepairTests
             Store.Repair(Pilot.PilotId, Pilot.StationId, ids.Length == 0 ? [Pilot.ShipId] : ids, payment, s_now);
 
         public void Dispose() => Db.Dispose();
+    }
+
+    [Fact]
+    public void NativeGmRepairSeparatesShipCapacitorAndFittedModuleDamage()
+    {
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("INSERT INTO TypeAttribute VALUES (561,9,40)");
+        }
+        var pilot = f.Pilot;
+        var live = LiveWorld.Find(f.Db.Path)!;
+        using (var edit = live.Economy.Begin(new(pilots: [pilot.PilotId], ships: [pilot.ShipId])))
+        {
+            var health = edit.Set<ShipHealthState>().Find(pilot.ShipId) ?? edit.Add(new ShipHealthState { ShipId = pilot.ShipId }).Entity;
+            health.ArmorDamage = 30;
+            health.StructureDamage = 20;
+            health.ShieldCharge = 10;
+            health.UpdatedAt = f.Clock.Now;
+            ShipResources.SetCapacitor(edit, pilot.ShipId, 10, f.Clock.Now);
+            edit.Add(new SavedModuleCondition { ModuleId = f.Gun, Damage = 15 });
+            edit.Commit();
+        }
+        using (Client player = new(f.Db, f.Clock, 1000001))
+        {
+            player.Refresh();
+            Assert.IsType<PilotCallResult.Failure>(player.Call("SlashCmd", ["/heal me"], "slash"));
+        }
+        using Client gm = new(f.Db, f.Clock, 1000001, PilotRole.GameMasterLow);
+        gm.Refresh();
+        Assert.Equal(PilotCallResult.None, gm.Call("SlashCmd", ["/heal me capac=1"], "slash"));
+        Verify(30, 20, 15, fullShield: false);
+        Assert.Equal(PilotCallResult.None, gm.Call("SlashCmd", ["/repairmodules"], "slash"));
+        Verify(30, 20, 0, fullShield: false);
+        using (var edit = live.Economy.Begin(new(pilots: [pilot.PilotId], ships: [pilot.ShipId])))
+        {
+            edit.Add(new SavedModuleCondition { ModuleId = f.Gun, Damage = 5 });
+            edit.Commit();
+        }
+        Assert.Equal(PilotCallResult.None, gm.Call("SlashCmd", [$"/heal {f.Gun}"], "slash"));
+        Verify(30, 20, 0, fullShield: false);
+        Assert.Equal(PilotCallResult.None, gm.Call("SlashCmd", [$"/heal {pilot.ShipId}"], "slash"));
+        Verify(0, 0, 0, fullShield: true);
+
+        void Verify(double armor, double hull, double moduleDamage, bool fullShield)
+        {
+            using var probe = live.Economy.Begin(new(pilots: [pilot.PilotId], ships: [pilot.ShipId]));
+            var health = probe.Set<ShipHealthState>().Find(pilot.ShipId)!;
+            var attributes = probe.Attributes(pilot.PilotId);
+            Assert.Equal(armor, health.ArmorDamage);
+            Assert.Equal(hull, health.StructureDamage);
+            Assert.Equal(moduleDamage, probe.Set<SavedModuleCondition>().Find(f.Gun)?.Damage ?? 0);
+            Assert.Equal(fullShield ? attributes[DogmaAttributeId.ShieldCapacity] : 10, health.ShieldCharge);
+            Assert.Equal(attributes[DogmaAttributeId.CapacitorCapacity], probe.Set<ShipEnergy>().Find(pilot.ShipId)!.Charge);
+        }
     }
 
     [Fact]

@@ -31,13 +31,13 @@ public sealed class DeveloperToolsTests
     [InlineData(
         PilotRole.Developer,
         "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', 'giveskill', "
-            + "'givestarterskills', 'load', 'online', 'removeskill', 'reportdesync', 'skillscopy', 'skyhook', "
+            + "'givestarterskills', 'heal', 'load', 'online', 'removeskill', 'repairmodules', 'reportdesync', 'skillscopy', 'skyhook', "
             + "'stop', 'structure', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(
         PilotRole.WorldMod,
         "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', "
-            + "'online', 'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
+            + "'heal', 'online', 'repairmodules', 'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(
         PilotRole.GameMasterHigh,
@@ -46,8 +46,8 @@ public sealed class DeveloperToolsTests
     )]
     [InlineData(
         PilotRole.GameMasterLow,
-        "Available commands: ['extraction', 'fit', 'getpos', 'getshipsetup', 'load', 'online', "
-            + "'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
+        "Available commands: ['extraction', 'fit', 'getpos', 'getshipsetup', 'heal', 'load', 'online', "
+            + "'repairmodules', 'reportdesync', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
     )]
     [InlineData(PilotRole.QualityAssurance, "Available commands: []")]
     [InlineData(PilotRole.Player, "Available commands: []")]

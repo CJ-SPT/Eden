@@ -4,6 +4,7 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Fittings;
 using Eden.Protocol.Inventory;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Structures;
@@ -17,7 +18,8 @@ internal sealed class DeveloperCommandHandler(
     DeveloperSkillCommands skills,
     DeveloperStructureCommands structures,
     DeveloperExtractionCommands extractions,
-    DeveloperFittingCommands fittings
+    DeveloperFittingCommands fittings,
+    DeveloperRepairCommands repairs
 ) : ISelectedPilotCallHandler
 {
     private const int MaximumCommandLength = 128;
@@ -81,6 +83,9 @@ internal sealed class DeveloperCommandHandler(
                 case "/online":
                 case "/unload":
                     return fittings.Execute(context, command);
+                case "/heal":
+                case "/repairmodules":
+                    return repairs.Execute(context, command);
                 case "/structure":
                     return structures.Execute(context, command);
                 case "/skyhook":

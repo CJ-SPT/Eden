@@ -779,6 +779,26 @@ and formatting checks passed.
 
 **Optional maintainer checks:** Remove a previously displayed skill through the developer console and verify it leaves the skill list.
 
+## Native GM repair commands
+
+Low GMs and World Modifiers can use `/heal me` or `/heal <activeShipID>` to restore their active hull's shield, armor,
+structure and capacitor, repair fitted modules and crystals, and clear pending local repair cycles. `/heal me capac=1`
+restores capacitor alone. `/repairmodules` repairs fitted modules, and `/heal <ownedModuleID>` repairs one assembled module
+aboard the active ship or in its current docked hangar. The resident repair action commits before sending live Dogma and
+ship damage updates. Burned-out modules retain their offline state. The destructive `/heal <target> 0` form remains open.
+
+The pinned GM menu uses `/heal <id>` and the pinned Copycat tool uses `/heal me capac=1` and `/repairmodules`.
+The EVE.js 261108.1 `shipHealth.js` reference confirms these separate repair paths. Eden also accepts capacitor repair while
+docked for administrative use.
+
+**Automated validation:** The exact native GM repair lifecycle passed in 7.15 s. The broader repair, nanite and slash-discovery
+selection passed 304 cases in 155.89 s. Its one failure, `AllFiveStaticProfilesHaveImplementedHeatAndRetainExplicitHullDependencies`,
+also failed at the same admission assertion on unchanged `main` at `9f1f6f51`. The solution build and formatting checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Use Copycat's capacitor action and confirm armor and hull damage remain at their previous values.
+
 ## Runtime TR destinations, November 8, 2026
 
 `slash.SlashCmd('/tr me <destinationID>')` now accepts positive signed 64-bit IDs. Alongside the existing solar systems, NPC stations and normalized catalog celestials, the resolver supports saved pilots, assembled ships outside containers, living NPCs, unexpired wrecks, nondepleted asteroids and deployed drones. A pilot destination uses that pilot's active ship. Docked pilot/ship destinations dock the caller in the same NPC station; space destinations use the resolved position and collision radius with Eden's existing 10 km clearance. The destination pilot, ship and contents are never moved or transferred. Existing authenticated GM/world-mod role and selected-pilot requirements remain in force. Arbitrary coordinates, names, extra flags, stored hulls, inventory-only items and unsupported structures remain outside the command.
