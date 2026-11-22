@@ -457,7 +457,9 @@ internal sealed partial class CapsuleerMiner(
             long steps = (exit - Work.ActiveTicks + TimeSpan.TicksPerSecond - 1) / TimeSpan.TicksPerSecond;
             schedule = schedule with { DueTicks = checked(Work.ActiveTicks + steps * TimeSpan.TicksPerSecond) };
         }
-        var next = job.Next(schedule.DueTicks, schedule.Action);
+        var next = _operation.IncomingHauler is { } incoming
+            ? job.Next(incoming.Work.DueTicks, CapsuleerAction.Trade)
+            : job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
         return next;
     }
@@ -904,6 +906,10 @@ internal sealed partial class CapsuleerMiner(
             moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now, moonSupply);
         }
         _work = Work with { FactorySupply = supply };
+        if (moon is null && TryTakeHuntingWork())
+        {
+            return;
+        }
         if (_operation.World is EconomyTransaction resident)
         {
             using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCareer");

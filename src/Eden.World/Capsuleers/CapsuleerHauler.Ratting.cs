@@ -135,7 +135,12 @@ internal sealed partial class CapsuleerHauler
         return false;
     }
 
-    private bool TryLaunchSortie(ResupplyProgress supplies, CombatAnomaly? site, FittingCalculation? fit = null)
+    private bool TryLaunchSortie(
+        ResupplyProgress supplies,
+        CombatAnomaly? site,
+        FittingCalculation? fit = null,
+        bool intentionalHunt = false
+    )
     {
         var policy = database.Settings.Capsuleers;
         if (!policy.BeltRatting && (_background || !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps))
@@ -167,7 +172,16 @@ internal sealed partial class CapsuleerHauler
         }
         long sequence = checked(Work.ActivitySequence + 1);
         _work = Work with { ActivitySequence = sequence };
-        if (!FreshCombat && !_background && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence)))
+        if (intentionalHunt)
+        {
+            return !_background && TryLaunchPatrol(sequence, intentional: true);
+        }
+        if (
+            !FreshCombat
+            && !_background
+            && (_operation.World is not Eden.World.Runtime.Economy.EconomyTransaction work || !DynamicWorkPilot(work))
+            && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))
+        )
         {
             return true;
         }

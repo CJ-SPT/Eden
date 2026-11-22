@@ -87,7 +87,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         }
         long id = pilot.PilotId;
         bool reset = world.Settings.FreshUniverse && pilot.ShipGroupId == (int)HullClass.Corvette && saved is { HighestHullStage: > 0 };
-        var plan = Choose(world, catalog, pilot, profession, !reset && saved?.Profession == profession ? saved : null);
+        var plan = Choose(world, catalog, pilot, profession, !reset && saved?.Profession == profession ? saved : null, now);
         if (PilotTrainingStore.ReadFreePoints(world, id) == 0)
         {
             return new(plan);
@@ -338,7 +338,8 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         CatalogDbContext catalog,
         DockedPilot pilot,
         CapsuleerProfession profession,
-        CapsuleerCareerPlan? saved
+        CapsuleerCareerPlan? saved,
+        long now
     )
     {
         var (stage, preferred) = PreferredShip(catalog, pilot.ShipTypeId, profession, saved);
@@ -354,7 +355,10 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         }
         long seed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
         ulong draw = CapsuleerProvisioningRules.Seed(seed ^ pilot.PilotId, pilot.SystemId, CapsuleerCareer.Mining);
-        return new(profession, available[(int)(draw % (ulong)available.Length)], focus) { HighestHullStage = stage };
+        int first = (int)(draw % (ulong)available.Length);
+        int target =
+            stage == 0 ? available[first] : CapsuleerIndustry.PreferredAvailableCareerKit(world, catalog, pilot, available, first, now);
+        return new(profession, target, focus) { HighestHullStage = stage };
     }
 
     private static (int Stage, int Preferred) PreferredShip(

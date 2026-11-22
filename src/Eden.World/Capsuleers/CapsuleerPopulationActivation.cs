@@ -57,7 +57,8 @@ internal static class CapsuleerPopulationActivation
             else if (eligible && suspended.TryGetValue(agent.PilotId, out var pause))
             {
                 long delay = Math.Max(0, elapsed - pause.StartedTicks);
-                if (agent.Career == CapsuleerCareer.Mining)
+                var organization = CapsuleerCorporations.ReadOrganization(world.Set<SavedCapsuleerOrganization>().Find(agent.PilotId));
+                if ((organization.ActiveWorker ?? agent.Career) == CapsuleerCareer.Mining)
                 {
                     var row = world.Set<SavedCapsuleerCommunity>().Single(c => c.PilotId == agent.PilotId);
                     if (MinerCheckpoint.Read(row.Progress) is { } work)

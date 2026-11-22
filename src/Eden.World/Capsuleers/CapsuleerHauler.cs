@@ -666,7 +666,9 @@ internal sealed partial class CapsuleerHauler(
         }
         _work = Work with { Navigation = _navigation.Capture() };
         var schedule = Schedule();
-        var next = job.Next(schedule.DueTicks, schedule.Action);
+        var next = _operation.IncomingMiner is { } incoming
+            ? job.Next(incoming.Work.DueTicks, CapsuleerAction.Prepare)
+            : job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
         if (Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp })
         {
@@ -1106,6 +1108,10 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         if (TryCorporationSupply())
+        {
+            return;
+        }
+        if (TryDynamicDockWork(scoutedAnomaly))
         {
             return;
         }

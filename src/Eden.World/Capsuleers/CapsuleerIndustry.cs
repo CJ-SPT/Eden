@@ -172,6 +172,9 @@ internal sealed partial class CapsuleerIndustry(
             .Filter<IndustryJob>(job => job.PilotId == pilot)
             .Where(job => job.Status == IndustryJobStatus.Installed && job.OutputCorporationId.HasValue);
 
+    internal static bool HasStationFactoryJob(EconomyTransaction world, long pilot, int station) =>
+        InstalledFactoryJobs(world, pilot).Any(job => job.StationId == station);
+
     internal bool Produce(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -253,6 +256,11 @@ internal sealed partial class CapsuleerIndustry(
         if (pilotBusy)
         {
             return false;
+        }
+
+        if (bids.Count > 0 && AssignedFactoryOrders(world, operatorPilot, now) is { Count: > 0 } assigned)
+        {
+            bids = bids.SelectMany(group => group).Where(order => !assigned.Contains(order.Id)).ToLookup(order => order.TypeId);
         }
 
         var hangar = Hangar(world, pilot, location);

@@ -46,7 +46,9 @@ internal sealed partial class CapsuleerScheduler
                     work?.Gang is { Phase: not RoamingGangPhase.Complete }
                     || work?.RegionalEscort is not null
                     || work?.CorporationSupply is not null
-                ) && world.Set<SavedCapsuleerAgent>().Find(row.PilotId) is { } agent
+                )
+                && world.Set<SavedCapsuleerAgent>().Find(row.PilotId) is { } agent
+                && (CapsuleerCorporations.Organization(world, row.PilotId).ActiveWorker ?? agent.Career) == CapsuleerCareer.Hauling
             )
             {
                 HaulerCheckpoint checkpoint = new(agent.PilotId, work);

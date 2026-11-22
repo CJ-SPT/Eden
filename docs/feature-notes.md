@@ -16,6 +16,8 @@
   battlefields, and contest infrastructure hubs in both warzones. [Faction Warfare](protocol/faction-warfare.md)
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. Fresh-world bots can earn career
   ships, take corporate jobs, buy replacement fits, settle in frontier systems, and fund trained first sovereignty claims.
+  Established corporate pilots can take paid production work or switch between fitted mining ships and funded nullsec hunts
+  as orders and replacement stock change. [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
   [Fresh-world first claims](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
 

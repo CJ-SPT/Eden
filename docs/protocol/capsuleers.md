@@ -2,6 +2,45 @@
 
 [Protocol index](../protocol.md)
 
+## Demand-driven bot work
+
+At an NPC station, pilots in bot-led corporations review funded local buy orders, corporate replacement needs,
+stock already for sale or in the depot, and paid production already underway. A courier or combat pilot can take
+factory work when it has access to the product blueprint and can satisfy the job requirements. An operator with
+a paid job or a factory request stays available to complete it. Other pilots can collect reachable inputs through
+the existing corporate freight planner. An order with an active factory request keeps its operator. Production
+lists hulls, modules and ammunition individually through the native market and settles against funded orders.
+
+Pilots can board their own fitted mining or combat ship at the same station. They keep the old ship and its fit.
+Paid work in space, freight, active expeditions and other cargo commitments keep their existing worker. A switch
+records the incoming worker and its deadline in the resident world alongside the boarding transaction. Reopen
+restores that worker from the checkpoint using the original character, skills, wallet, and corporate membership.
+
+Discretionary corporate hunts require a usable combat fit and **two complete spare kits** in the pilot’s own local
+hangar. The calculation uses the fitted hull, modules, drones and ammunition. Funded bids and installed jobs count
+toward production coverage. Hunt readiness comes from owned inventory. Pilots can buy one unfunded shortage at a
+time through normal paid transactions, keeping working capital, or place a funded bid for a missing part. A pilot
+whose reserve falls can return to support work. A positive roam percentage enables these corporate decisions.
+Hunting uses existing null-security and observation rules, visible contacts, target selection, and ship-loss handling.
+
+When choosing a new higher-stage training goal, an established corporate pilot favors a complete kit it already
+owns, then a kit it can afford from current local listings. Supply timing and nearby orders can lead neighboring
+pilots toward different ships. The existing training and manufacturing systems settle the related skills, fees,
+materials and orders. Initial corvette work still gives new pilots access to basic income and skills. The decision
+is station-local and today's flexible workers are established corporate pilots with qualified ships they can reach.
+
+Reference checked against EVE.js 261108.1 (`miningNpcCatalog.js`, `npcBehaviorLoop.js`, and its market service
+README). Eden uses pinned build 3662168 and its own resident economic rules. [EVE University mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations) ·
+[CCP fitting requirements](https://support.eveonline.com/hc/en-us/articles/213287845-Fitting-Window) ·
+[CCP market orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+The resident replays cover two decisions through the normal scheduler. A hauling pilot installs a paid batch,
+reopens with the same deadline, and fills a customer’s order. A miner boards its combat ship with two complete
+spares, reopens into a patrol, and returns to active mining after a spare gun is removed. The focused selection
+also covers factory demand, regional freight, the two-batch moon chain, replacement, observation handoffs,
+roaming combat and two fresh-universe replays with the pinned catalog. All 96 targeted cases passed in
+102.61 seconds. Live acceptance and dedicated-server capacity were outside this validation.
+
 ## Miner approach stalls
 
 In a November 22 dedicated-server checkpoint, 28 of 30 Ventures approaching ore were within 50 m outside the

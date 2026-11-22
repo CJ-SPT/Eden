@@ -24,6 +24,40 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
+    internal bool TryBoardOwnedReplacement(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        CapsuleerCareer career,
+        long now
+    )
+    {
+        if (
+            pilot.Position is not null
+            || pilot.InStructure
+            || pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
+            || world.Filter<ShipLoss>(loss => loss.CapsuleId == pilot.ShipId).FirstOrDefault(loss => loss.PilotId == pilot.PilotId)
+                is not { } loss
+            || LostKit(catalog, loss) is not { } kit
+        )
+        {
+            return false;
+        }
+        var parts = kit.Parts();
+        if (
+            !CanReplaceKit(world, catalog, pilot.PilotId, career, kit, parts)
+            || MissingParts(
+                parts,
+                Hangar(world, pilot.PilotId, pilot.StationId).Where(item => !item.Singleton).ToLookup(item => item.TypeId)
+            ).Length != 0
+        )
+        {
+            return false;
+        }
+        BoardKit(world, catalog, pilot, kit, now);
+        return true;
+    }
+
     internal ReplacementResult ReplaceShip(
         EconomyTransaction world,
         CatalogDbContext catalog,

@@ -416,6 +416,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal Dictionary<long, HaulerCheckpoint> ProjectedHaulers { get; } = [];
     internal Dictionary<long, MinerCheckpoint> MinerCheckpoints { get; } = [];
     internal Dictionary<long, HaulerCheckpoint> HaulerCheckpoints { get; } = [];
+    internal Dictionary<long, CapsuleerCareer> CapsuleerWorkerChanges { get; } = [];
     internal MinerCheckpoint? MinerCheckpoint => MinerCheckpoints.Values.FirstOrDefault();
     internal HaulerCheckpoint? HaulerCheckpoint => HaulerCheckpoints.Values.FirstOrDefault();
 

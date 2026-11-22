@@ -31,14 +31,22 @@ internal sealed partial class CapsuleerHauler
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };
+            if (DynamicWorkPilot(world) && ammunitionSupply.TryBoardOwnedReplacement(world, catalog, Pilot, CapsuleerCareer.Hauling, Now))
+            {
+                _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
+                ResetTradeHull();
+                return;
+            }
             _pilot = fleet.RecoverCorvette(world, catalog, pilotId, Pilot.ShipId, Pilot.DockedLocationId).Pilot;
             ResetTradeHull();
             Wait("Boarded the recovery corvette.");
             return;
         }
 
-        var profession = FreshCareerRules.Profession(agent.Slot);
         bool rookie = Pilot.ShipGroupId == (int)HullClass.Corvette;
+        var profession =
+            (rookie ? null : CapsuleerCareerTraining.Profession(catalog, Pilot.ShipTypeId, (HullClass)Pilot.ShipGroupId))
+            ?? FreshCareerRules.Profession(agent.Slot);
         var courier =
             profession == CapsuleerProfession.Hauling
                 ? FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, world.Settings.Capsuleers)
@@ -97,6 +105,10 @@ internal sealed partial class CapsuleerHauler
             }
         }
 
+        if (!rookie && TryDynamicDockWork(scoutedAnomaly))
+        {
+            return;
+        }
         if (courier is not null)
         {
             if (!TryFreshDelivery(world, courier, startNew: true))

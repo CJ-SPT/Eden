@@ -168,13 +168,20 @@ internal sealed partial record CapsuleerDefenseProfile
         return result.ToArray();
     }
 
-    internal static CapsuleerDefenseProfile Read(WorldAction world, CatalogDbContext catalog, long pilotId, FittingCalculation? fit = null)
+    internal static CapsuleerDefenseProfile Read(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        FittingCalculation? fit = null,
+        Ship? ship = null
+    )
     {
         var pilot = world.Pilots.Single(value => value.Id == pilotId);
-        fit ??= FittingCalculation.Read(world, catalog, pilot);
+        ship ??= pilot.ActiveShip;
+        fit ??= FittingCalculation.Read(world, catalog, pilot, ship);
         var active = world
             .Set<ActiveFittedModule>()
-            .Where(module => module.ShipId == pilot.ActiveShipId && module.ExpiresAt == 0)
+            .Where(module => module.ShipId == ship.Id && module.ExpiresAt == 0)
             .Select(module => module.ModuleId)
             .ToHashSet();
         bool Usable(InventoryItem item)
@@ -204,21 +211,16 @@ internal sealed partial record CapsuleerDefenseProfile
             .ToArray();
         bool rookieCombat =
             world.Settings.FreshUniverse
-            && catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId == (int)HullClass.Corvette
+            && catalog.FittingType(ship.TypeId)?.GroupId == (int)HullClass.Corvette
             && world.Set<SavedCapsuleerAgent>().Find(pilotId) is { Career: CapsuleerCareer.Hauling } agent
             && FreshCareerRules.IsCombatSlot(agent.Slot);
-        return new CapsuleerDefenseProfile(
-            rookieCombat
-                || (
-                    CapsuleerPatrolFit.CombatHull(catalog, pilot.ActiveShip.TypeId)
-                    && modules.All(module => module.Effect != DogmaEffect.MiningLaser)
-                ),
-            modules
-        )
+        bool miningFit = modules.Any(module => module.Effect == DogmaEffect.MiningLaser);
+        bool combat = rookieCombat || (!miningFit && CapsuleerPatrolFit.CombatHull(catalog, ship.TypeId));
+        return new CapsuleerDefenseProfile(combat, modules)
         {
-            RattingWeapons = ReadRatting(world, catalog, pilotId, pilot.ActiveShipId, fit, modules),
-            TargetRange = fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange),
-            ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit),
+            RattingWeapons = ReadRatting(world, catalog, pilotId, ship.Id, fit, modules),
+            TargetRange = fit.Graph.Read(ship.Id, DogmaAttributeId.MaxTargetRange),
+            ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, ship, calculation: fit),
         };
     }
 }

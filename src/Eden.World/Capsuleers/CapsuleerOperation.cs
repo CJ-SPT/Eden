@@ -28,6 +28,8 @@ internal sealed class CapsuleerOperation(
     internal bool TravelChanged { get; set; }
     internal bool HasWorld => _action is not null;
     internal List<HaulerCheckpoint> GangEnrollments { get; } = [];
+    internal MinerCheckpoint? IncomingMiner { get; set; }
+    internal HaulerCheckpoint? IncomingHauler { get; set; }
 
     internal WorldAction World
     {
@@ -119,6 +121,15 @@ internal sealed class CapsuleerOperation(
         }
         if (_resident is not null)
         {
+            // Keep the outgoing worker's training and memories without leaving a second live flight state.
+            if (IncomingMiner is not null)
+            {
+                hauler!.Apply(_resident);
+            }
+            if (IncomingHauler is not null)
+            {
+                miner!.Apply(_resident);
+            }
             _resident.Commit();
         }
         else if (_world is not null || live is null)
@@ -193,6 +204,20 @@ internal sealed class CapsuleerOperation(
             if (hauler is not null)
             {
                 live.HaulerCheckpoints[hauler.PilotId] = hauler;
+            }
+            if (IncomingMiner is { } mining)
+            {
+                live.HaulerCheckpoints.Remove(mining.PilotId);
+                live.ProjectedHaulers.Remove(mining.PilotId);
+                live.MinerCheckpoints[mining.PilotId] = mining;
+                live.CapsuleerWorkerChanges[mining.PilotId] = CapsuleerCareer.Mining;
+            }
+            if (IncomingHauler is { } hauling)
+            {
+                live.MinerCheckpoints.Remove(hauling.PilotId);
+                live.ProjectedMiners.Remove(hauling.PilotId);
+                live.HaulerCheckpoints[hauling.PilotId] = hauling;
+                live.CapsuleerWorkerChanges[hauling.PilotId] = CapsuleerCareer.Hauling;
             }
             live.CapsuleerJobs[next.PilotId] = next;
             live.ObjectsChanged();

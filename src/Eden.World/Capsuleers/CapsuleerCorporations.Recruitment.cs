@@ -21,6 +21,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed record CapsuleerOrganization(long DueTicks = 0, long? ApplicationId = null, CapsuleerProfession? Profession = null)
 {
+    public CapsuleerCareer? ActiveWorker { get; init; }
     public int? OperatingStationId { get; init; }
     public CapsuleerRelocation? Relocation { get; init; }
     public CapsuleerEmployment? Employment { get; init; }
@@ -37,9 +38,10 @@ internal static partial class CapsuleerCorporations
     private static readonly CatalogDefinition<int[]> s_recruitmentSystems = new("capsuleer-recruitment-systems", RecruitmentSystems);
 
     internal static CapsuleerOrganization Organization(WorldAction world, long pilot) =>
-        world.Set<SavedCapsuleerOrganization>().Find(pilot) is { } row
-            ? JsonSerializer.Deserialize<CapsuleerOrganization>(row.StateJson)!
-            : new();
+        ReadOrganization(world.Set<SavedCapsuleerOrganization>().Find(pilot));
+
+    internal static CapsuleerOrganization ReadOrganization(SavedCapsuleerOrganization? row) =>
+        row is null ? new() : JsonSerializer.Deserialize<CapsuleerOrganization>(row.StateJson)!;
 
     internal static void SaveOrganization(WorldAction world, long pilot, CapsuleerOrganization organization)
     {

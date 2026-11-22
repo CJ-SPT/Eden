@@ -245,10 +245,17 @@ internal sealed class CapsuleerMaintenance(
             }
             if (_retryPresentation is { } retry)
             {
+                var updated = batch
+                    .Miners.Select(observation => observation.Pilot.PilotId)
+                    .Concat(batch.Haulers.Select(observation => observation.Pilot.PilotId))
+                    .ToHashSet();
                 batch = batch with
                 {
-                    Miners = retry.Miners.Concat(batch.Miners).GroupBy(m => m.Pilot.PilotId).Select(g => g.Last()).ToArray(),
-                    Haulers = retry.Haulers.Concat(batch.Haulers).GroupBy(h => h.Pilot.PilotId).Select(g => g.Last()).ToArray(),
+                    Miners = retry.Miners.Where(observation => !updated.Contains(observation.Pilot.PilotId)).Concat(batch.Miners).ToArray(),
+                    Haulers = retry
+                        .Haulers.Where(observation => !updated.Contains(observation.Pilot.PilotId))
+                        .Concat(batch.Haulers)
+                        .ToArray(),
                 };
             }
             _retryPresentation = batch;

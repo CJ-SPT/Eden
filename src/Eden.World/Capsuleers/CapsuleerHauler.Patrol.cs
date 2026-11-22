@@ -6,11 +6,11 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
-    private bool TryLaunchPatrol(long sequence)
+    private bool TryLaunchPatrol(long sequence, bool intentional = false)
     {
         var policy = database.Settings.Capsuleers;
         var patrol = new PatrolProgress(PatrolKind.Roam, Pilot.SystemId);
-        if (!PatrolAllowed(patrol) || !PatrolRules.Choose(pilotId, sequence, policy.RoamPercent))
+        if (!PatrolAllowed(patrol) || !intentional && !PatrolRules.Choose(pilotId, sequence, policy.RoamPercent))
         {
             return false;
         }
@@ -44,6 +44,7 @@ internal sealed partial class CapsuleerHauler
             || Work.Resupply?.DestinationStationId is not null
             || Work.LastPatrolledGateId == gate.Id
             || GangContactBeyondGate(gate)
+            || !InActiveGang && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction world && DynamicWorkPilot(world)
             || !InActiveGang && !PatrolRules.Choose(pilotId, gate.Id ^ (Work.Journey?.Sequence ?? Work.DwellSequence), policy.RoamPercent)
         )
         {

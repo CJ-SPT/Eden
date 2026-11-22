@@ -372,42 +372,29 @@ internal sealed partial class CapsuleerScheduler(
                 continue;
             }
             PopulationRowsLoaded++;
-            bool firstRegistration = !_registrations.ContainsKey(pilot);
-            int crewSystem = firstRegistration ? agent.CommunitySystemId : _registrations[pilot].CrewSystem;
-            if (
-                firstRegistration
-                && agent.Career == CapsuleerCareer.Mining
-                && CapsuleerCorporations.Organization(world, pilot).OperatingStationId is int baseStation
-            )
+            if (!_registrations.TryGetValue(pilot, out var registration))
             {
-                crewSystem = database.Catalog.FindStation(baseStation)?.SolarSystemId ?? crewSystem;
-            }
-            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career, crewSystem);
-            if (firstRegistration && agent.Career == CapsuleerCareer.Mining)
-            {
-                if (!_miningCrews.TryGetValue(crewSystem, out var crew))
+                var organization =
+                    live is not null || agent.Career == CapsuleerCareer.Mining ? CapsuleerCorporations.Organization(world, pilot) : null;
+                var career = organization?.ActiveWorker ?? agent.Career;
+                int crewSystem = agent.CommunitySystemId;
+                if (career == CapsuleerCareer.Mining)
                 {
-                    crew = [];
-                    _miningCrews.Add(crewSystem, crew);
-                }
-                crew.Add(pilot);
-                if (live is not null && crew.Count > 1)
-                {
-                    foreach (long member in crew)
+                    if (organization?.OperatingStationId is int baseStation)
                     {
-                        if (!live.MinerCheckpoints.ContainsKey(member) && !live.ProjectedMiners.ContainsKey(member))
-                        {
-                            var row = world.Filter<SavedCapsuleerCommunity>(value => value.PilotId == member).SingleOrDefault();
-                            if (MinerCheckpoint.Read(row?.Progress) is { } progress)
-                            {
-                                live.ProjectedMiners.Add(member, new(member, progress));
-                            }
-                        }
+                        crewSystem = database.Catalog.FindStation(baseStation)?.SolarSystemId ?? crewSystem;
+                    }
+                    else if (career != agent.Career)
+                    {
+                        crewSystem = system;
+                    }
+                    var crew = JoinMiningCrew(pilot, crewSystem);
+                    if (live is not null && crew.Count > 1)
+                    {
+                        RestoreMiningCrew(world, live, crew);
                     }
                 }
-            }
-            if (firstRegistration)
-            {
+                _registrations[pilot] = new(agent.CommunitySystemId, career, crewSystem);
                 if (!Current.ContainsKey(pilot))
                 {
                     var job = ReadJob(world.Set<SavedCapsuleerJob>().Find(pilot)!);
@@ -428,6 +415,10 @@ internal sealed partial class CapsuleerScheduler(
                 {
                     _newPilots.Add(pilot);
                 }
+            }
+            else if (registration.Community != agent.CommunitySystemId)
+            {
+                _registrations[pilot] = registration with { Community = agent.CommunitySystemId };
             }
             IndexLocation(pilot, system);
             RegisterShip(pilot, ship);
@@ -498,7 +489,8 @@ internal sealed partial class CapsuleerScheduler(
                     {
                         throw new InvalidOperationException("The capsuleer job has no active system or travel assignment.");
                     }
-                    using var systemContext = Live?.UseSystem(system);
+                    var live = Live;
+                    using var systemContext = live?.UseSystem(system);
                     if (_resuming.TryGetValue(pilot, out long entry))
                     {
                         var saved = Current[pilot];
@@ -520,16 +512,19 @@ internal sealed partial class CapsuleerScheduler(
                         : null;
                     using var measurement = measured
                         ? null
-                        : Live?.TrafficActions.Measure(
+                        : live?.TrafficActions.Measure(
                             job,
                             [_locations[job.PilotId]],
-                            () => (Live!.CheckpointCopies, Live.CheckpointCopying)
+                            () => (live.CheckpointCopies, live.CheckpointCopying)
                         );
                     CapsuleerJob next;
-                    Live?.ObserveTrafficJob(job, _locations[job.PilotId]);
-                    if (MinerWorker(pilot) is { } miner)
+                    live?.ObserveTrafficJob(job, system);
+                    var miner = MinerWorker(pilot);
+                    CapsuleerHauler? hauler = null;
+                    int destination;
+                    using var phase = SessionPerformance.Phase(miner is not null ? "traffic.minerAction" : "traffic.haulerAction");
+                    if (miner is not null)
                     {
-                        using var phase = SessionPerformance.Phase("traffic.minerAction");
                         int cycles = miner.CompletedCycles;
                         next = miner.Execute(
                             job,
@@ -538,16 +533,46 @@ internal sealed partial class CapsuleerScheduler(
                             activity.Resumes,
                             background: !activity.ActiveSystems.Contains(system)
                         );
-                        Current[job.PilotId] = next;
+                        Current[pilot] = next;
                         _completed++;
                         _completedMining++;
                         if (job.Action == CapsuleerAction.Collect && miner.CompletedCycles > cycles)
                         {
                             PaidCollections++;
                         }
-                        IndexLocation(job.PilotId, miner.SystemId);
-                        _systems.Register(miner.SystemId);
-                        var observation = miner.Read(includeHealth: activity.ActiveSystems.Contains(miner.SystemId))!;
+                        destination = miner.SystemId;
+                    }
+                    else if ((hauler = HaulerWorker(pilot)) is not null)
+                    {
+                        bool wasGang = ActiveOperation(pilot);
+                        next = hauler.Execute(
+                            job,
+                            destinyStamp,
+                            background: !activity.ActiveSystems.Contains(system) && !wasGang,
+                            preparedJourney: preparedJourney
+                        );
+                        _membershipDirty |= wasGang != ActiveOperation(pilot);
+                        Current[pilot] = next;
+                        _completed++;
+                        _completedHauling++;
+                        destination = hauler.SystemId;
+                    }
+                    else
+                    {
+                        throw new InvalidDataException("The capsuleer job has no supported role.");
+                    }
+                    IndexLocation(pilot, destination);
+                    _systems.Register(destination);
+                    if (ApplyWorkerChange(live, pilot, destination, restoreCrew: true))
+                    {
+                        mining.Remove(pilot);
+                        hauling.Remove(pilot);
+                        miner = MinerWorker(pilot);
+                        hauler = HaulerWorker(pilot);
+                    }
+                    if (miner is not null)
+                    {
+                        var observation = miner.Read(includeHealth: activity.ActiveSystems.Contains(destination))!;
                         if (
                             observation.Work.OperatingStationId is int baseStation
                             && observation.Pilot.StationId == baseStation
@@ -556,43 +581,25 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             RebaseMiningCrew(pilot, miner, observation.Pilot.SystemId);
                         }
-                        mining[job.PilotId] = observation;
-                        Blocking(job.PilotId, observation.WaitingReason);
+                        mining[pilot] = observation;
+                        Blocking(pilot, observation.WaitingReason);
                         if (NeedsPresentation(observation.Pilot, system, activity.ActiveSystems))
                         {
-                            _pendingMiners[job.PilotId] = observation;
+                            _pendingMiners[pilot] = observation;
                         }
-                        RegisterShip(job.PilotId, observation.Pilot.ShipId);
+                        RegisterShip(pilot, observation.Pilot.ShipId);
                     }
-                    else if (HaulerWorker(pilot) is { } hauler)
+                    else if (hauler is not null)
                     {
-                        using var phase = SessionPerformance.Phase("traffic.haulerAction");
-                        bool wasGang = ActiveOperation(job.PilotId);
-                        next = hauler.Execute(
-                            job,
-                            destinyStamp,
-                            background: !activity.ActiveSystems.Contains(system) && !wasGang,
-                            preparedJourney: preparedJourney
-                        );
-                        _membershipDirty |= wasGang != ActiveOperation(job.PilotId);
-                        Current[job.PilotId] = next;
-                        _completed++;
-                        _completedHauling++;
-                        IndexLocation(job.PilotId, hauler.SystemId);
-                        _systems.Register(hauler.SystemId);
-                        using var observationContext = Live?.UseSystem(hauler.SystemId);
-                        var observation = hauler.Read(includeHealth: activity.ActiveSystems.Contains(hauler.SystemId))!;
-                        hauling[job.PilotId] = observation;
-                        Blocking(job.PilotId, observation.Work.WaitingReason);
+                        using var observationContext = live?.UseSystem(destination);
+                        var observation = hauler.Read(includeHealth: activity.ActiveSystems.Contains(destination))!;
+                        hauling[pilot] = observation;
+                        Blocking(pilot, observation.Work.WaitingReason);
                         if (NeedsPresentation(observation.Pilot, system, activity.ActiveSystems))
                         {
-                            _pendingHaulers[job.PilotId] = observation;
+                            _pendingHaulers[pilot] = observation;
                         }
-                        RegisterShip(job.PilotId, observation.Pilot.ShipId);
-                    }
-                    else
-                    {
-                        throw new InvalidDataException("The capsuleer job has no supported role.");
+                        RegisterShip(pilot, observation.Pilot.ShipId);
                     }
                     if (!activity.ActiveSystems.Contains(_locations[pilot]) && !CanRunUnobserved(pilot))
                     {
@@ -686,6 +693,10 @@ internal sealed partial class CapsuleerScheduler(
     {
         _failures++;
         _lastFailure = job is null ? error.Message : $"Pilot {job.PilotId}, {job.Action}: {error.GetType().Name}: {error.Message}";
+        if (job is not null && _locations.TryGetValue(job.PilotId, out int system))
+        {
+            ApplyWorkerChange(Live, job.PilotId, system, restoreCrew: false);
+        }
         // Observation can fail after settlement. Restore canonical revisions before
         // delaying this pilot so committed inventory, payments and travel cannot replay.
         _queue.Restore(_running.Select(ScheduledJob));
