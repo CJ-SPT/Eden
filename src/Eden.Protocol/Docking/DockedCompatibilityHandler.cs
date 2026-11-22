@@ -39,6 +39,11 @@ internal sealed class DockedCompatibilityHandler(
             ),
             ("bountyProxy", "GetMyKillRights") when args.Length == 0 => BlueEmpty.List,
             ("bountyProxy", "GetMyKillRights") => BlueEmpty.List,
+            ("bountyProxy", "GetKillRightsOnCharacters") => args is [var ids]
+            && BlueRead.IsPositiveIdList(ids)
+            && keywords is null or { Count: 0 }
+                ? BlueEmpty.List
+                : new PilotCallResult.Failure("Supply a list of positive character IDs."),
             ("essMgr", "GetDataForClientSolarSystem") => PilotCallResult.None,
             ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new LocalSystemState(pilot.SystemId),
             ("beyonce", "GetFormations") => BlueEmpty.Tuple,

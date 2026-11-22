@@ -14,7 +14,7 @@ public sealed class DockedServicesTests
     [Fact]
     public void SelectingAnotherPilotCachesZeroBountiesAndNoKillRights()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         var pilot = db.Store.FindPilot(1000001)!;
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
@@ -26,6 +26,8 @@ public sealed class DockedServicesTests
             10,
             SignedSettings.Empty
         );
+        object?[] killRightArgs = [new List<object?> { 90000002L, 90000003L }];
+        Assert.Same(PilotCallResult.Unsupported, router.Call(context, "bountyProxy", "GetKillRightsOnCharacters", killRightArgs, _ => { }));
         context.Select(pilot);
         HashSet<long> owners = [90000002, 1000044];
         var response = Assert.IsType<List<object?>>(
@@ -42,6 +44,15 @@ public sealed class DockedServicesTests
         }
         Assert.Empty(
             Assert.IsType<List<object?>>(router.CallWire(context, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { }))
+        );
+        foreach (var arguments in new[] { killRightArgs, new object?[] { new List<object?>() } })
+        {
+            Assert.Empty(
+                Assert.IsType<List<object?>>(router.CallWire(context, "bountyProxy", "GetKillRightsOnCharacters", arguments, _ => { }))
+            );
+        }
+        Assert.IsType<PilotCallResult.Failure>(
+            router.Call(context, "bountyProxy", "GetKillRightsOnCharacters", new object?[] { new List<object?> { 0L } }, _ => { })
         );
     }
 

@@ -8,6 +8,8 @@ internal static class BlueRead
     internal static Dictionary<string, object?> Fields(object? value) =>
         value as Dictionary<string, object?> ?? throw new InvalidDataException("Expected fields.");
 
+    internal static bool IsPositiveIdList(object? value) => value is List<object?> ids && ids.All(id => id is long and > 0);
+
     internal static object?[] Tuple(object? value, int length) =>
         value is object?[] tuple && tuple.Length == length
             ? tuple

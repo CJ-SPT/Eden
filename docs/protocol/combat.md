@@ -779,6 +779,26 @@ References: inert inspection of build **3662168** `code.ccp` (SHA-256 **37FB2AF4
 
 **Optional maintainer checks.** Kill a pirate, wait through the reward window and inspect the native character-sheet status/history. Reconnect across a pending deadline and confirm the native display refreshes once. Native presentation and gameplay feel remain unverified.
 
+## Character kill-right lookup
+
+Build 3662168's `eve/client/script/ui/shared/bountySvc.pyj` calls `bountyProxy.GetKillRightsOnCharacters(toIDs)` from
+`FetchKillRightsFromServer`. The pinned `eve/common/lib/killRightTracker.pyj` builds a Python list of IDs whose cached entries are
+stale or missing. `CacheKillRights` iterates the reply and caches the result for every requested ID, including IDs with no rows.
+This was verified by inspecting the original `code.ccp` with SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+
+The selected-pilot route accepts one list of positive character IDs and returns a native empty Python list. Eden has no player
+kill-right records to return. In EVE.js 261108.1, `server/src/services/bounty/bountyProxyService.js` returns a list of available
+rights for the targets and viewer. The reference file's SHA-256 is
+`10352991cfc32ad7dc67bbf546811c4f0c96190c90da901b1ba653f056283e1f`. In-game sale and activation behavior is described by the
+[EVE University Kill Rights guide](https://wiki.eveuniversity.org/Kill_Rights).
+
+**Automated validation.** `DockedServicesTests.SelectingAnotherPilotCachesZeroBountiesAndNoKillRights` covers routing after selection,
+empty and populated requests, invalid IDs, and the Python list reply. The focused `DockedServicesTests`, `TargetLockSessionTests`,
+`TypedCallResultTests`, and `BlueMarshalTests` filter passed 72 tests in 18 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Native target locking, November 2, 2026
 
 The pinned `eve/client/script/parklife/targetMgr.pyj` calls `dogmaIM.AddTarget(itemID)` and unpacks `(pending, targetList)`. True means that the client should wait for `OnTarget("add", itemID, reason)`; a false pending flag restores an existing lock immediately. `RemoveTarget`, `CancelAddTarget`, `GetTargets` and `GetTargeters` use the same selected pilot's connection. The target service accepts visible ships and asteroid-category objects, validates surface range and available target slots including pending scans, and rejects self, unavailable objects and attempts outside a live non-warping ballpark. Asteroid spawning and mining activation remain separate work.
