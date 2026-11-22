@@ -65,12 +65,17 @@ internal sealed partial class RegionalMarketStore
         }
         var marketOrders = world.Set<NpcMarketOrder>();
         IEnumerable<NpcMarketOrder> stationOrders;
-        if (types is { Count: 1 } && world is EconomyTransaction resident)
+        if (world is EconomyTransaction resident)
         {
+            int? singleType = types is { Count: 1 } ? types[0] : null;
             // Capture the IDs before materializing editable rows into the current transaction.
             var orderIds = resident
-                .StationMarketOrders(stationId, types[0])
-                .Where(order => order.Kind == NpcMarketKind.Regional && (includeDemand || !order.Bid))
+                .StationMarketOrders(stationId, singleType)
+                .Where(order =>
+                    order.Kind == NpcMarketKind.Regional
+                    && (includeDemand || !order.Bid)
+                    && (singleType is not null || types is null || types.Contains(order.TypeId))
+                )
                 .Select(order => order.Id)
                 .ToArray();
             stationOrders = orderIds.Select(id => marketOrders.Find(id)).OfType<NpcMarketOrder>();

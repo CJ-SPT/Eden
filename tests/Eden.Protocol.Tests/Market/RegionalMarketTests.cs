@@ -355,6 +355,46 @@ public sealed class RegionalMarketTests
     }
 
     [Fact]
+    public void MultiTypeRegionalRefreshUsesPrivateOrderStateAndPreservesUnchangedStock()
+    {
+        using var fixture = UnlockedFixture();
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        int region = catalog.RequireStation(HubStation).RegionId;
+        RegionalMarketStore market = new(null);
+        int[] types = [Ammunition, Merlin, Ammunition];
+        long now = fixture.Clock.Now;
+        long ammoId;
+        long shipId;
+        int stock;
+        using (var world = live.Economy.Begin())
+        {
+            market.AdvanceTypes(world, catalog, region, HubStation, now, types, includeDemand: false);
+            var seeded = world.StationMarketOrders(HubStation).Where(o => o.Kind == NpcMarketKind.Regional).ToArray();
+            var ammo = Assert.Single(seeded, o => o.TypeId == Ammunition);
+            ammoId = ammo.Id;
+            stock = ammo.Remaining;
+            shipId = Assert.Single(seeded, o => o.TypeId == Merlin).Id;
+            world.Commit();
+        }
+
+        using (var pending = live.Economy.Begin())
+        {
+            var ammo = pending.Set<NpcMarketOrder>().Find(ammoId)!;
+            ammo.Remaining--;
+            market.AdvanceTypes(pending, catalog, region, HubStation, now, types, includeDemand: false);
+            Assert.Equal(stock - 1, ammo.Remaining);
+            var privateStock = pending.Set<SavedRegionalMarketStock>().Find(ammoId)!;
+            Assert.Equal(RegionalMarketRules.Quote(privateStock.AnchorCents, false, ammo.Remaining, ammo.Entered), ammo.PriceCents);
+            Assert.Equal(shipId, Assert.Single(pending.StationMarketOrders(HubStation, Merlin), o => o.Kind == NpcMarketKind.Regional).Id);
+        }
+
+        using var read = live.Economy.Begin();
+        Assert.Equal(stock, read.Set<NpcMarketOrder>().Find(ammoId)!.Remaining);
+    }
+
+    [Fact]
     public void BestAsksRequoteAtTheExactActiveRecoveryBoundary()
     {
         using CapsuleerHaulerTests.Fixture f = UnlockedFixture();
