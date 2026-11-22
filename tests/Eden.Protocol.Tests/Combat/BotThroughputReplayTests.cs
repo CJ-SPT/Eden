@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Threading.Channels;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
@@ -135,6 +136,7 @@ public sealed partial class ServerPerformanceReplayTests
             File.AppendAllText(progress, "Initializing copied world.\n");
             WorldInitialization.Initialize(database, clock);
             int[] communities;
+            int[] explorationSystems;
             using (WorldDbContext world = new(database.Path))
             {
                 var reportedCommunities = world
@@ -154,6 +156,13 @@ public sealed partial class ServerPerformanceReplayTests
                     .Take(systems)
                     .Select(group => group.System)
                     .ToArray();
+                explorationSystems = communities;
+                if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_RESUME_OCCUPIED") == "1")
+                {
+                    var outsideCommunities = SavedCapsuleerSystems(database, world, communities).Except(communities).Order().ToArray();
+                    explorationSystems = [.. communities, .. outsideCommunities];
+                    File.AppendAllText(progress, $"Additional saved ship systems to visit: {string.Join(", ", outsideCommunities)}.\n");
+                }
             }
             using var host = ServerServices.Build(database, clock, liveWorld: true);
             using var player = new ReplayPlayer(host, clock, observerPilot, observerAccount, Report);
@@ -190,7 +199,7 @@ public sealed partial class ServerPerformanceReplayTests
             long beforeExploration = GC.GetAllocatedBytesForCurrentThread();
             using (var explorer = host.GetRequiredService<IHumanPresence>().Select(90000001, communities[0]))
             {
-                foreach (int system in communities)
+                foreach (int system in explorationSystems)
                 {
                     PriorityQueue<PerformanceSample, long> phases = new();
                     using var visit =
@@ -553,6 +562,29 @@ public sealed partial class ServerPerformanceReplayTests
                 Directory.Delete(directory, recursive: true);
             }
         }
+    }
+
+    private static IEnumerable<int> SavedCapsuleerSystems(WorldDatabase database, WorldDbContext world, int[] communities)
+    {
+        var locations = (
+            from agent in world.Set<SavedCapsuleerAgent>()
+            where communities.Contains(agent.CommunitySystemId)
+            join pilot in world.Pilots on agent.PilotId equals pilot.Id
+            select new
+            {
+                pilot.ActiveShip.Position!.SystemId,
+                pilot.ActiveShip.StructureId,
+                pilot.ActiveShip.StationId,
+            }
+        )
+            .Distinct()
+            .ToArray();
+        var structures = world.Set<SavedStructure>().ToDictionary(structure => structure.Id, structure => structure.SystemId);
+        var catalog = database.Catalog;
+        return locations.Select(location =>
+            location.SystemId
+            ?? (location.StructureId is long structure ? structures[structure] : catalog.FindStation(location.StationId)!.SolarSystemId)
+        );
     }
 
     private static void CopyThroughputSidecars(string source, string destination, FrozenReplayCatalogs? immutableCatalogs)
