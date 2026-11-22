@@ -95,7 +95,7 @@ internal sealed record CorporationSkyhookRow(SovereigntySkyhook Skyhook) : BlueM
                 ["solarSystemID"] = Skyhook.SystemId,
                 ["planetID"] = Skyhook.PlanetId,
                 ["typeID"] = SovereigntyResourceRules.SkyhookTypeId,
-                ["state"] = SovereigntyResourceRules.SkyhookShieldVulnerableState,
+                ["state"] = (int)Skyhook.State,
                 ["corporationID"] = Skyhook.CorporationId,
                 ["ownerCorpID"] = Skyhook.CorporationId,
                 ["allianceID"] = Skyhook.AllianceId == 0 ? null : Skyhook.AllianceId,

@@ -729,6 +729,31 @@ passed in 18.74 s. The affected `TranslocationTests`, `DeveloperToolsTests`, `It
 
 **Optional maintainer checks:** Use the four GM buttons on a running refinery extraction and verify the planner countdown.
 
+## Native GM fitting and Skyhook commands
+
+`/fit me <type> [quantity] [flag=N]`, `/unload me <item|type|all>`, `/online me|activeShipID`, and
+`/getshipsetup me|shipID` use Eden's resident fitting and inventory owners. Fit takes matching cargo equipment if present
+and creates any missing modules. Ammunition uses a fitted slot and the ordinary magazine rules. The drone and fighter variants
+place stock in the matching bay within its capacity. Onlining follows skill, CPU and power checks. Unload returns equipment and
+loaded charges together to the docked hangar or ship cargo. The GM unload path preserves removed rigs. The reply from
+`getshipsetup` is the legacy `DNA:` string expected by the pinned DNA and Copycat tools.
+
+`/skyhook state <itemID> <state>` accepts the pinned six orbital states, 0 and 210–214, through the GM menu's Low GM or
+World Modifier gate. It edits the existing resident structure battle and publishes `skyhook_state`, `skyhook_timer` and
+`skyhook_damage` to in-space observers. The corporation directory uses the same state mapping.
+
+The [slash audit](#native-slash-command-audit) identifies the client menu and DNA call sites in build 3662168. The EVE.js
+261108.1 `fitModule.js`, `unfitModule.js`, `onlineModules.js`, `shipSetup.js`, and `planetOrbitalReinforcement.js`
+files supply the comparison behavior. [Fitting context](https://wiki.eveuniversity.org/Fitting_ships)
+
+**Automated validation:** The two exact stock fitting and Skyhook command checks passed in 20.36 s. The 26-case follow-up
+covered fitting application, ammunition restart, sovereignty boundaries, structure GM handlers, and exact slash discovery
+in 19.96 s. The solution build and formatting checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Exercise the Type Browser's Fit and Unload actions, then select a Skyhook operating state.
+
 ## Runtime TR destinations, November 8, 2026
 
 `slash.SlashCmd('/tr me <destinationID>')` now accepts positive signed 64-bit IDs. Alongside the existing solar systems, NPC stations and normalized catalog celestials, the resolver supports saved pilots, assembled ships outside containers, living NPCs, unexpired wrecks, nondepleted asteroids and deployed drones. A pilot destination uses that pilot's active ship. Docked pilot/ship destinations dock the caller in the same NPC station; space destinations use the resolved position and collision radius with Eden's existing 10 km clearance. The destination pilot, ship and contents are never moved or transferred. Existing authenticated GM/world-mod role and selected-pilot requirements remain in force. Arbitrary coordinates, names, extra flags, stored hulls, inventory-only items and unsupported structures remain outside the command.

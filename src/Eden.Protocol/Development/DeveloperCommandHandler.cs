@@ -1,4 +1,7 @@
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Docking;
+using Eden.Protocol.Fittings;
 using Eden.Protocol.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -13,7 +16,8 @@ internal sealed class DeveloperCommandHandler(
     DeveloperItemCommands items,
     DeveloperSkillCommands skills,
     DeveloperStructureCommands structures,
-    DeveloperExtractionCommands extractions
+    DeveloperExtractionCommands extractions,
+    DeveloperFittingCommands fittings
 ) : ISelectedPilotCallHandler
 {
     private const int MaximumCommandLength = 128;
@@ -67,8 +71,15 @@ internal sealed class DeveloperCommandHandler(
                     return travel.Execute(context, command);
                 case "/giveskill":
                     return skills.Grant(context, command);
+                case "/fit":
+                case "/getshipsetup":
+                case "/online":
+                case "/unload":
+                    return fittings.Execute(context, command);
                 case "/structure":
                     return structures.Execute(context, command);
+                case "/skyhook":
+                    return structures.ExecuteSkyhook(context, command);
                 case "/extraction":
                     return extractions.Execute(context, command);
                 case "/create":
@@ -81,6 +92,10 @@ internal sealed class DeveloperCommandHandler(
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+        catch (CargoCapacityException error)
+        {
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
         catch (Eden.Gameplay.Skills.InvalidTrainingQueue error)
         {

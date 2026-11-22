@@ -107,6 +107,18 @@ public sealed record SovereigntySkyhook(
 )
 {
     public PlanetResourceDefinition? Resources { get; init; }
+    public SkyhookState State { get; init; } = SkyhookState.ShieldVulnerable;
+}
+
+// Build 3662168 orbitalSkyhook.const.
+public enum SkyhookState
+{
+    Unknown = 0,
+    ShieldVulnerable = 210,
+    ArmorReinforced = 211,
+    ArmorVulnerable = 212,
+    HullReinforced = 213,
+    HullVulnerable = 214,
 }
 
 public sealed record SovereigntySkyhookResult(SovereigntySkyhook Skyhook, IReadOnlyList<InventoryChange> Changes);
@@ -145,10 +157,32 @@ public static class SovereigntyResourceRules
     public const int MaximumWorkforceImports = 3;
     public const int MaximumDetectionTier = 3;
     public const int SkyhookTypeId = 81080;
-    public const int SkyhookShieldVulnerableState = 210;
     public const int ReagentSecuredPercent = 50;
     public const double InteractionRange = 10000;
     public static readonly long FuelPeriod = TimeSpan.TicksPerHour;
+
+    public static SkyhookState SkyhookStateFor(Structures.StructureState state) =>
+        state switch
+        {
+            Structures.StructureState.ShieldVulnerable => SkyhookState.ShieldVulnerable,
+            Structures.StructureState.ArmorReinforced => SkyhookState.ArmorReinforced,
+            Structures.StructureState.ArmorVulnerable => SkyhookState.ArmorVulnerable,
+            Structures.StructureState.HullReinforced => SkyhookState.HullReinforced,
+            Structures.StructureState.HullVulnerable => SkyhookState.HullVulnerable,
+            _ => SkyhookState.Unknown,
+        };
+
+    public static Structures.StructureState StructureStateFor(SkyhookState state) =>
+        state switch
+        {
+            SkyhookState.Unknown => Structures.StructureState.Unknown,
+            SkyhookState.ShieldVulnerable => Structures.StructureState.ShieldVulnerable,
+            SkyhookState.ArmorReinforced => Structures.StructureState.ArmorReinforced,
+            SkyhookState.ArmorVulnerable => Structures.StructureState.ArmorVulnerable,
+            SkyhookState.HullReinforced => Structures.StructureState.HullReinforced,
+            SkyhookState.HullVulnerable => Structures.StructureState.HullVulnerable,
+            _ => throw new InvalidDataException("Unknown Skyhook state."),
+        };
 
     public static IReadOnlyList<SovereigntyReagentDelivery> ReagentShortfalls(
         IReadOnlyList<SovereigntyUpgradeDefinition> definitions,

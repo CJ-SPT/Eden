@@ -147,8 +147,19 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["planetID"] = skyhook.PlanetId;
             fields["allianceID"] = skyhook.AllianceId == 0 ? null : skyhook.AllianceId;
             // Pinned orbitalSkyhook.OnSlimItemUpdated reads an orbital state, not the Upwell enum.
-            fields["skyhook_state"] = Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookShieldVulnerableState;
             fields["component_activate"] = new object?[] { skyhook.Active, skyhook.Active ? null : skyhook.OnlineAt };
+        }
+        if (Body.TypeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId && Body.Structure is { } orbital)
+        {
+            // Pinned orbitalSkyhook.OnSlimItemUpdated reads the orbital state, timer, and health fractions.
+            fields["skyhook_state"] = (int)Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookStateFor(orbital.State);
+            fields["skyhook_timer"] = orbital.TimerEnd is long end
+                ? new object?[] { orbital.StateStartedAt, end, orbital.TimerPausedAt }
+                : null;
+            fields["skyhook_damage"] =
+                orbital.DamageFractions is { } damage && (damage.Shield < 1 || damage.Armor < 1 || damage.Structure < 1)
+                    ? new List<object?> { damage.Shield, damage.Armor, damage.Structure }
+                    : null;
         }
         if (Body.Sovereignty is { } hub)
         {

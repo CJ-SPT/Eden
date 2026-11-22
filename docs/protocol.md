@@ -684,6 +684,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Native Type Browser item creation, November 8, 2026](protocol/navigation.md#native-type-browser-item-creation-november-8-2026)
 - [Native slash command audit](protocol/navigation.md#native-slash-command-audit)
 - [Native GM extraction and travel commands](protocol/navigation.md#native-gm-extraction-and-travel-commands)
+- [Native GM fitting and Skyhook commands](protocol/navigation.md#native-gm-fitting-and-skyhook-commands)
 - [Sovereignty information tab, November 8, 2026](protocol/navigation.md#sovereignty-information-tab-november-8-2026)
 - [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)

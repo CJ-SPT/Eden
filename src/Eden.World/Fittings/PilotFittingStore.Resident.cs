@@ -403,7 +403,8 @@ internal sealed partial class PilotFittingStore
         long itemId,
         bool online,
         long now,
-        bool mobileRefit = false
+        bool mobileRefit = false,
+        bool allowOfflineIfInsufficient = false
     )
     {
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
@@ -446,15 +447,23 @@ internal sealed partial class PilotFittingStore
         if (online)
         {
             var calculation = FittingCalculation.Read(world, catalog, pilot);
-            ModuleFittingConstraints.CheckOnline(FittingChanges.ReadConstraints(catalog, calculation));
-            var attributes = ShipAttributes(world, catalog, pilot, calculation: calculation);
-            if (
-                attributes[DogmaAttributeId.CpuLoad] > attributes[DogmaAttributeId.CpuOutput] + InventoryDefinitions.ResourceTolerance
-                || attributes[DogmaAttributeId.PowerLoad]
-                    > attributes[DogmaAttributeId.PowerOutput] + InventoryDefinitions.ResourceTolerance
-            )
+            try
             {
-                throw new InvalidDataException("Insufficient CPU or power grid to bring this module online.");
+                ModuleFittingConstraints.CheckOnline(FittingChanges.ReadConstraints(catalog, calculation));
+                var attributes = ShipAttributes(world, catalog, pilot, calculation: calculation);
+                if (
+                    attributes[DogmaAttributeId.CpuLoad] > attributes[DogmaAttributeId.CpuOutput] + InventoryDefinitions.ResourceTolerance
+                    || attributes[DogmaAttributeId.PowerLoad]
+                        > attributes[DogmaAttributeId.PowerOutput] + InventoryDefinitions.ResourceTolerance
+                )
+                {
+                    throw new InvalidDataException("Insufficient CPU or power grid to bring this module online.");
+                }
+            }
+            catch (InvalidDataException) when (allowOfflineIfInsufficient)
+            {
+                item.Online = false;
+                return [];
             }
         }
         world.SaveChanges();

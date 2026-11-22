@@ -23,6 +23,19 @@ internal sealed partial class PilotStructureStore
         var structure = Require(world, structureId);
         switch (command)
         {
+            case StructureGameMasterCommand.SetSkyhookState skyhook:
+                if (structure.TypeId != Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId)
+                {
+                    throw new InvalidDataException("Choose an Orbital Skyhook.");
+                }
+                SetOperatingState(
+                    world,
+                    catalog,
+                    structure,
+                    Eden.Gameplay.Sovereignty.SovereigntyResourceRules.StructureStateFor(skyhook.State),
+                    now
+                );
+                break;
             case StructureGameMasterCommand.SetState { State: StructureState.Unanchored } when structure.State != StructureState.Unanchored:
                 CheckGmDecommission(world, structure);
                 structure.UnanchorAt = now;

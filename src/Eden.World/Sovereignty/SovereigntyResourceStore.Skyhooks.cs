@@ -162,6 +162,7 @@ internal sealed partial class SovereigntyResourceStore
         )
         {
             Resources = SovereigntyResourceCatalog.System(catalog, row.SystemId).Planets.Single(p => p.PlanetId == row.PlanetId),
+            State = SovereigntyResourceRules.SkyhookStateFor(world.Set<SavedStructure>().Find(row.Id)!.State),
         };
 
     private static SavedSovereigntySkyhook RequireSkyhook(WorldAction world, long pilotId, long id, bool manage = false)

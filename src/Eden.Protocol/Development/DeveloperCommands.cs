@@ -6,6 +6,7 @@ internal static class DeveloperCommands
 {
     internal const PilotRole WorldTools = PilotRole.GameMasterLow | PilotRole.WorldMod;
     private const PilotRole CargoTools = PilotRole.GameMasterLow | PilotRole.GameMasterHigh;
+    private const PilotRole FittingTools = CargoTools | PilotRole.WorldMod;
 
     internal static IReadOnlyDictionary<string, PilotRole> Roles { get; } =
         new Dictionary<string, PilotRole>(StringComparer.OrdinalIgnoreCase)
@@ -13,12 +14,17 @@ internal static class DeveloperCommands
             ["/create"] = PilotRole.WorldMod,
             ["/createitem"] = PilotRole.WorldMod,
             ["/extraction"] = WorldTools,
+            ["/fit"] = FittingTools,
             ["/getpos"] = WorldTools,
+            ["/getshipsetup"] = FittingTools,
             ["/giveskill"] = PilotRole.GameMasterHigh,
             ["/load"] = CargoTools,
+            ["/online"] = FittingTools,
+            ["/skyhook"] = WorldTools,
             ["/stop"] = WorldTools,
             ["/structure"] = PilotRole.GameMasterHigh,
             ["/tr"] = WorldTools,
+            ["/unload"] = FittingTools,
             ["/warptopoint"] = WorldTools,
         };
 

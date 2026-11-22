@@ -29,12 +29,23 @@ public sealed class DeveloperToolsTests
     [Theory]
     [InlineData(
         PilotRole.Developer,
-        "Available commands: ['create', 'createitem', 'extraction', 'getpos', 'giveskill', "
-            + "'load', 'stop', 'structure', 'tr', 'warptopoint']"
+        "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', 'giveskill', "
+            + "'load', 'online', 'skyhook', 'stop', 'structure', 'tr', 'unload', 'warptopoint']"
     )]
-    [InlineData(PilotRole.WorldMod, "Available commands: ['create', 'createitem', 'extraction', 'getpos', 'stop', 'tr', 'warptopoint']")]
-    [InlineData(PilotRole.GameMasterHigh, "Available commands: ['giveskill', 'load', 'structure']")]
-    [InlineData(PilotRole.GameMasterLow, "Available commands: ['extraction', 'getpos', 'load', 'stop', 'tr', 'warptopoint']")]
+    [InlineData(
+        PilotRole.WorldMod,
+        "Available commands: ['create', 'createitem', 'extraction', 'fit', 'getpos', 'getshipsetup', "
+            + "'online', 'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
+    )]
+    [InlineData(
+        PilotRole.GameMasterHigh,
+        "Available commands: ['fit', 'getshipsetup', 'giveskill', 'load', 'online', 'structure', 'unload']"
+    )]
+    [InlineData(
+        PilotRole.GameMasterLow,
+        "Available commands: ['extraction', 'fit', 'getpos', 'getshipsetup', 'load', 'online', "
+            + "'skyhook', 'stop', 'tr', 'unload', 'warptopoint']"
+    )]
     [InlineData(PilotRole.QualityAssurance, "Available commands: []")]
     [InlineData(PilotRole.Player, "Available commands: []")]
     public void SlashDiscoveryReturnsNativeRoleFilteredCommandList(PilotRole roles, string reason)

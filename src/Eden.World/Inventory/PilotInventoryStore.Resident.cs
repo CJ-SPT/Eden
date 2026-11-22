@@ -49,7 +49,8 @@ internal sealed partial class PilotInventoryStore
         IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null,
         bool deferFittingChanges = false,
         Ship? fittingShip = null,
-        bool mobileRefit = false
+        bool mobileRefit = false,
+        bool preserveRigs = false
     )
     {
         var (itemIds, sourceId, flagId, quantity) = request;
@@ -188,7 +189,9 @@ internal sealed partial class PilotInventoryStore
             }
             double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, destinationId, flagId);
             double added = items
-                .Where(i => !InventoryDefinitions.IsRigSlot(i.FlagId) && (i.LocationId != destinationId || i.FlagId != flagId))
+                .Where(i =>
+                    (preserveRigs || !InventoryDefinitions.IsRigSlot(i.FlagId)) && (i.LocationId != destinationId || i.FlagId != flagId)
+                )
                 .Sum(i => hold.RequiredCapacity(Read(catalog, i), quantity ?? i.Quantity));
             added += magazines.Sum(i => hold.RequiredCapacity(Read(catalog, i), i.Quantity));
             added += storedShips
@@ -223,7 +226,7 @@ internal sealed partial class PilotInventoryStore
         foreach (var item in items)
         {
             var previous = Read(catalog, item);
-            if (InventoryDefinitions.IsRigSlot(item.FlagId))
+            if (!preserveRigs && InventoryDefinitions.IsRigSlot(item.FlagId))
             {
                 world.Remove(item);
                 changes.Add(new(previous with { Quantity = 0, Online = false }, previous));

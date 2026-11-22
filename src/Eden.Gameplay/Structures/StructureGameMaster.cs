@@ -6,6 +6,8 @@ public abstract record StructureGameMasterCommand
 
     public sealed record SetState(StructureState State) : StructureGameMasterCommand;
 
+    public sealed record SetSkyhookState(Sovereignty.SkyhookState State) : StructureGameMasterCommand;
+
     public sealed record SetTimer(TimeSpan Remaining) : StructureGameMasterCommand;
 
     public sealed record SetDeployTimer(TimeSpan Remaining) : StructureGameMasterCommand;

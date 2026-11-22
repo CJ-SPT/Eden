@@ -3,6 +3,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Sovereignty;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Gateway;
+using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
@@ -10,12 +11,39 @@ using Eden.World.Storage;
 using Google.Protobuf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Client = Eden.Protocol.Tests.PilotSessions.CourierServiceTests.Client;
 using Stars = Eden.Protocol.Gateway.CelestialResources.Stars;
 
 namespace Eden.Protocol.Tests.Sovereignty;
 
 public sealed class SovereigntyResourceBoundaryTests
 {
+    [Fact]
+    public void NativeSkyhookMenuPersistsOrbitalStatesAndPublishesTheDamageLayers()
+    {
+        using SovereigntyCaptureFixture f = new();
+        var hook = SovereigntyUpgradeTests.Deploy(f, workforce: true);
+        var resources = f.World.Services.GetRequiredService<ISovereigntyResources>();
+        var contacts = f.World.Services.GetRequiredService<Eden.Gameplay.Structures.IStructureContacts>();
+        using Client gm = new(f.World, f.Clock, 1000001, PilotRole.WorldMod);
+        gm.Refresh();
+        foreach (int state in new[] { 0, 210, 211, 212, 213, 214 })
+        {
+            Assert.Equal(PilotCallResult.None, gm.Call("SlashCmd", [$"/skyhook state {hook.Id} {state}"], "slash"));
+            Assert.Equal((SkyhookState)state, resources.Skyhook(SovereigntyCaptureFixture.PilotId, hook.Id).State);
+            var contact = Assert.Single(contacts.Contacts(SovereigntyCaptureFixture.SystemId), item => item.Id == hook.Id);
+            var slim = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(new StaticSlimItem(contact))));
+            var fields = BlueRead.Fields(slim.State);
+            Assert.Equal((long)state, fields["skyhook_state"]);
+            if (state >= 211)
+            {
+                var damage = Assert.IsType<List<object?>>(fields["skyhook_damage"]);
+                Assert.Equal(new object?[] { 0d, state >= 213 ? 0d : 1d, 1d }, damage);
+            }
+        }
+        Assert.IsType<PilotCallResult.Failure>(gm.Call("SlashCmd", [$"/skyhook state {hook.Id} 110"], "slash"));
+    }
+
     [Fact]
     public async Task CompletedSkyhookCyclesHarvestOncePauseAndCheckpointWithoutDuplicatingWithdrawals()
     {
