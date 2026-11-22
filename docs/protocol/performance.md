@@ -6879,3 +6879,33 @@ primary-key lookups for combat damage and asteroid deletions. It also folds unch
 market executions into the compatibility database only after a durable save. The owner applies bounded batches and retains
 pending changes when the parent is unavailable or the captured row has changed. The retry fixture saved 8,192 skill history
 inserts and projected only three changed rows on the following checkpoint.
+
+The three-minute comparison used a private copy of the live revision 15 save with the same catalog hashes, a four-processor
+.NET configuration, and a timed observer on Windows. Both runs scheduled 9,996 pilots out of 10,000 saved. The existing
+explorer route visited home communities and left four haulers outside the route. The patched run completed 492,716
+actions without failures, compared with 485,377 on the control. Allocation fell from 209 KB to 151 KB per completed action.
+The final checkpoint projected 197 skill history rows and 85 market executions, down from 9,259 and 3,885. The queue ended
+12.1 seconds late, compared with 14.8 seconds on the control, and the patched run had higher median and p95 job age
+after warmup. This short comparison verifies the allocation and projection changes. Sustained throughput requires
+the exact-population run and live time series.
+
+Set `EDEN_BOT_REPLAY_RESUME_OCCUPIED=1` for a saved roster whose pilots have traveled beyond their communities. The
+untimed explorer adds the saved current systems of pilots in the selected communities. The timed observer count and
+selected community count stay the same.
+
+The 15-minute Windows replay of `48d5f913` scheduled every pilot with the saved-ship route and completed 2,631,922
+actions without failures. Its oldest job first fell below one second after 55.7 seconds. The final five-minute
+p95 was 15.9 seconds, and 257 of 297 samples reached at least one second, which failed the queue-age assertion.
+The final queue age was 2.24 seconds. Frame and market request p99 were 72.6 and 110.6 ms.
+
+The follow-up checkpoint changes parse item payload rows once as SQLite JSONB and bind UTF-8 progress payloads
+for UTF-8 saves. UTF-16 databases keep text binding. Across seven warmed pairs with 5,503 haulers and
+4,497 miners, the two progress writers allocated 17.4 MiB per pass, down from 51.4 MiB, with identical saved
+progress. The free-skill-point path uses an indexed scalar read for the recipient and keeps same-action pilot
+inserts and deletes visible.
+
+Resident fitting selects fitted items and loaded charges through the existing inventory indexes. It preserves
+transaction-private changes, candidate ordering, escrow visibility, and combat-adjusted charge quantities.
+In five warmed comparisons with the same 2,300-item inventory, 200 fitted and loaded item selections allocated
+2.84 MB, down from 19.75 MB, and median time fell from 40.04 to 10.82 ms, with zero SQL commands. The measurement
+covers resident transaction setup and item selection. Full dogma graph evaluation was outside that measurement.
