@@ -417,6 +417,7 @@ public sealed partial class FreshUniverseTests
             presence.Update(Guid.NewGuid(), system);
         }
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var rewards = host.GetRequiredService<IActivityRewardTicks>();
         scheduler.PopulationPrepared(system);
         long turns = 0;
         while (turns++ < 160_000)
@@ -428,6 +429,7 @@ public sealed partial class FreshUniverseTests
             long due = scheduler.Jobs().Min(job => job.DueTicks);
             long delay = Math.Max(TimeSpan.TicksPerMillisecond, due - presence.Read().ElapsedTicks);
             clock.Milliseconds += (delay + TimeSpan.TicksPerMillisecond - 1) / TimeSpan.TicksPerMillisecond;
+            rewards.Advance();
             scheduler.Run((int)clock.Seconds);
         }
         var live = host.GetRequiredService<LiveWorld>();

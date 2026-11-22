@@ -264,7 +264,16 @@ public sealed class MissileCombatTests
         Assert.Equal(601, report.FinalBlow.ShipTypeId);
         Assert.Equal(npc.Id, report.Victim.EntityId);
         Assert.Equal(impact.Applied, report.FinalBlow.Damage, 8);
-        Assert.Equal(300000, impact.Reward!.AmountCents);
+        if (resident)
+        {
+            Assert.Null(impact.Reward);
+            f.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            f.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
+        }
+        else
+        {
+            Assert.Equal(300000, impact.Reward!.AmountCents);
+        }
         Assert.Empty(Missiles(f).TakeImpacts(f.PilotId));
         using WorldDbContext world = new(f.Db.Path);
         Assert.Single(world.Set<NpcBounty>());

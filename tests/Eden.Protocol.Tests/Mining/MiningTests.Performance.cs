@@ -1,5 +1,6 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Diagnostics;
@@ -116,7 +117,7 @@ public sealed partial class MiningTests
         long remaining = live.Economy.Inspect(world => world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!.Quantity);
         Assert.Equal(9937, remaining);
         long earned = MiningSkillPointRewardTests.Expected(1230, 63);
-        Assert.Equal(earned, points.Balance(context.Pilot.PilotId));
+        Assert.Equal(0, points.Balance(context.Pilot.PilotId));
         using (var metrics = SessionPerformance.Begin("same tick mining rejection and cancellation", _ => { }, force: true)!)
         {
             mining.Advance(context);
@@ -131,6 +132,9 @@ public sealed partial class MiningTests
             Assert.Equal(0, metrics.FittingCalculations);
         }
         Assert.Equal(remaining, live.Economy.Inspect(world => world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!.Quantity));
+        f.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+        f.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
+        Assert.Equal(earned, points.Balance(context.Pilot.PilotId));
         await live.FlushAsync();
         f.Disconnect(context);
         f.Reopen();

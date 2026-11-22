@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 216;
+    internal const int CurrentVersion = 217;
 
     public static void Open(
         WorldDbContext world,
@@ -242,6 +242,14 @@ internal static class WorldMigration
         }
         world.Database.ExecuteSqlRaw(
             "CREATE TABLE IF NOT EXISTS WorldMapStatistics(Id INTEGER PRIMARY KEY CHECK (Id=1), Payload TEXT NOT NULL)"
+        );
+        world.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS WorldActivityRewardTick(
+                PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                DueAt INTEGER NOT NULL, SkillPoints INTEGER NOT NULL CHECK (SkillPoints >= 0),
+                Bounties TEXT NOT NULL, PRIMARY KEY (PilotId,DueAt));
+            """
         );
         if (version < DevelopmentMarketOrderMigration.Version)
         {

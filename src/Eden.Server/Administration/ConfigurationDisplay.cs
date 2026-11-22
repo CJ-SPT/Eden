@@ -23,6 +23,7 @@ internal static class ConfigurationDisplay
         ["shipFitting.calibrationMultiplier"] = "Rig calibration",
         ["shipFitting.droneBandwidthMultiplier"] = "Drone bandwidth",
         ["rewards.bountyMultiplier"] = "NPC bounty ISK",
+        ["rewards.bountyTickSeconds"] = "Bounty tick interval (seconds)",
         ["rewards.missionIskMultiplier"] = "Mission ISK",
         ["rewards.missionLpMultiplier"] = "Mission loyalty points",
         ["rewards.missionStandingMultiplier"] = "Positive mission standings",

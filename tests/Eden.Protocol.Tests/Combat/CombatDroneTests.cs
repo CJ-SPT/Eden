@@ -407,6 +407,11 @@ public sealed class CombatDroneTests
         Assert.Contains(hits, hit => hit.Applied > 0);
         Assert.Contains(hits, hit => hit.Health.Remaining.Destroyed);
         Assert.Empty(f.Drones.Advance(f.Pilot, f.Now, 40).Hits);
+        if (resident)
+        {
+            f.Base.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            f.Base.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
+        }
         using WorldDbContext world = new(f.Base.Db.Path);
         Assert.Single(world.Set<NpcBounty>().Where(b => b.NpcId == f.Npc.Id));
         var points = Assert.Single(world.Set<SavedFreeSkillPoints>());

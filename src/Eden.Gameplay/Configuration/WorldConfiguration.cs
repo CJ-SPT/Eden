@@ -48,7 +48,8 @@ public sealed record RewardPolicy(
     decimal BountyMultiplier = 1,
     decimal MissionIskMultiplier = 1,
     decimal MissionLpMultiplier = 1,
-    decimal MissionStandingMultiplier = 1
+    decimal MissionStandingMultiplier = 1,
+    int BountyTickSeconds = ActivityRewardTickRules.DefaultIntervalSeconds
 );
 
 public sealed record IndustryPolicy(

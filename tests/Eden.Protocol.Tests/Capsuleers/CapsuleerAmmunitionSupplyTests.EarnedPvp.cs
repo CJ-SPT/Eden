@@ -284,11 +284,19 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     fixture.Clock.Now
                 );
                 Assert.True(kill.Destroyed);
-                var bounty = Assert.IsType<NpcBounty>(kill.Reward);
+                Assert.Null(kill.Reward);
+                Assert.Equal(openingCents, work.Set<PilotWallet>().Find(pilotId)!.Cents);
+                ships.Dock(work, catalog, pilotId, workShipId, Depot);
+                work.Commit();
+            }
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(fixture.Database.Settings.Rewards.BountyTickSeconds));
+            host.GetRequiredService<IActivityRewardTicks>().Advance();
+            using (var work = live.Economy.Begin())
+            {
+                var bounty = Assert.Single(work.Filter<NpcBounty>(row => row.PilotId == pilotId));
                 Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk, bounty.AmountCents);
                 fundedBalance = openingCents + bounty.AmountCents - bounty.TaxCents;
                 Assert.Equal(fundedBalance, work.Set<PilotWallet>().Find(pilotId)!.Cents);
-                ships.Dock(work, catalog, pilotId, workShipId, Depot);
                 var docked = ships.FindPilot(work, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
 
                 var usableHulls = PilotSkillReader.UsableTypes(work, catalog, pilotId, [incursus, nextHull]);

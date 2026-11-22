@@ -15,7 +15,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | --- | --- |
 | Economy & market | Standard, Progressive, Testing, NPC-only and Custom market presets; relevant supply quantities/prices, LP-store datacores, reference history and service costs. |
 | Gathering | Separate ore, ice and gas yield multipliers, mining hold capacity multipliers, and belt renewal settings. |
-| Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
+| Rewards | NPC bounty ISK, bounty and activity SP payout timing, mission ISK, loyalty points and positive standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Exploration | Always resolve cosmic signatures for every pilot, without scanner probes. Off by default. |
 | Progression | Skill training speed, NPC kill-SP and mining-SP multipliers, and starting grants for new pilots. |
@@ -163,6 +163,10 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 - Ore, ice and gas controls scale extraction volume after ordinary equipment and skill bonuses. Cargo space and remaining deposits
   still limit extraction, and existing critical/residue rules remain. Ice requires a completed cycle; its control changes blocks
   per completed cycle rather than cycle duration. Ore and gas retain proportional partial-cycle collection.
+- **Rewards → Bounty tick interval (seconds)** sets how long a pilot's first bounty share or whole activity SP award waits
+  before payout. The default is 1,200 seconds (20 minutes), and the maximum is 86,400 seconds. Enter 0 to pay new awards
+  immediately. Mining can start a tick without an NPC kill. **Save for restart** applies the new interval to newly opened
+  windows, and windows already saved keep their deadlines. [Bounty and activity SP ticks](protocol/combat.md#bounty-and-activity-sp-ticks)
 - Bounty ISK scales the gross amount before corporation tax. Selecting an NPC in space shows that gross amount.
   Kill SP uses that multiplied gross bounty before corporation tax or fleet sharing. The configurable base rate defaults to
   0.25% of gross bounty ISK, multiplied by the kill-SP setting, then rounded down to whole points. For example, a 3,000 ISK NPC
@@ -171,7 +175,7 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
   setting, divide by the configurable reference ISK per SP (default 400) and round down once per collection. Yield multipliers also scale SP
   when they increase delivered resources. One ice unit is a whole block: a single block can award SP based on its value,
   and 3 blocks award three blocks' value before rounding. Critical cargo counts; residue, full holds and empty interrupted
-  ice cycles do not. Credits are silent and saved atomically with the harvest. The Progression control accepts 0–100×,
+  ice cycles do not. The pending award is saved with the harvest and settles silently at payout. The Progression control accepts 0–100×,
   defaults to 1× for existing worlds, and activates after **Save for restart** and a restart. Zero disables mining SP.
   The Progression panel exposes both base conversions: `progression.killSkillPointPercent` accepts 0–100%, and
   `progression.miningIskPerSkillPoint` accepts 0.01–1,000,000,000 ISK per SP. Lower mining costs grant more SP.

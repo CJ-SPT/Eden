@@ -5,11 +5,16 @@ using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
+using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -54,13 +59,18 @@ public sealed class NpcSkillPointRewardTests
         Assert.Throws<InvalidDataException>(() => NpcSkillPointRewards.FromBounty(100_000_000, 20, (decimal)percent));
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task KillAddsToTheSavedPoolWithoutSkillPointNotifications(bool resident)
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    [InlineData(true, 0)]
+    public async Task KillAddsToTheSavedPoolWithoutSkillPointNotifications(bool resident, int? interval)
     {
-        using PilotCombatTests.Fixture f = new();
+        using PilotCombatTests.Fixture f = new(new TestClock());
         SetBounty(f, 150000);
         f.AlmostDefeated();
+        if (interval is int seconds)
+        {
+            WorldTuningTests.Activate(f.Db, settings => settings with { Rewards = settings.Rewards with { BountyTickSeconds = seconds } });
+        }
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Add(
@@ -79,14 +89,36 @@ public sealed class NpcSkillPointRewardTests
         using var locks = targeting;
         using var scope = f.Db.Services.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<FreeSkillPointHandler>();
+        var walletMonitor = scope.ServiceProvider.GetRequiredService<WalletBalanceMonitor>();
         handler.Enter(context);
+        walletMonitor.Enter(context);
         var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
         Assert.Equal(new(123, 4), points.Observe(Pilot));
 
         var shot = f.Fire();
         Assert.True(shot.Destroyed);
-        Assert.Equal(15000000, shot.Reward!.AmountCents);
-        Assert.Equal(15000000, shot.Reward.BalanceCents);
+        var wallet = f.Db.Services.GetRequiredService<IPilotWalletReader>();
+        if (resident && interval != 0)
+        {
+            Assert.Null(shot.Reward);
+            Assert.Empty(wallet.Journal(Pilot).Rewards);
+            Assert.Equal(new(123, 4), points.Observe(Pilot));
+            var ticks = f.Db.Services.GetRequiredService<IActivityRewardTicks>();
+            f.Clock.Milliseconds += ActivityRewardTickRules.DefaultIntervalSeconds * 1000 - 1;
+            ticks.Advance();
+            Assert.Empty(wallet.Journal(Pilot).Rewards);
+            Assert.Equal(new(123, 4), points.Observe(Pilot));
+            f.Clock.Milliseconds++;
+            ticks.Advance();
+            ticks.Advance();
+        }
+        else
+        {
+            Assert.NotNull(shot.Reward);
+        }
+        var reward = Assert.Single(wallet.Journal(Pilot).Rewards);
+        Assert.Equal(15000000, reward.AmountCents);
+        Assert.Equal(15000000, reward.BalanceCents);
         Assert.Equal(new(498, 4), points.Observe(Pilot));
         Assert.Equal(0, points.Balance(90000002));
         handler.Advance(context);
@@ -101,6 +133,11 @@ public sealed class NpcSkillPointRewardTests
         Assert.Empty(context.Notifications);
         Assert.Throws<InvalidDataException>(() => f.Fire());
         Assert.Equal(new(498, 4), points.Observe(Pilot));
+        if (resident && interval != 0)
+        {
+            walletMonitor.Advance(context);
+            Assert.Equal(new AccountBalanceChanged(Pilot, 150000), Assert.Single(context.Notifications));
+        }
 
         if (live is not null)
         {
@@ -127,6 +164,60 @@ public sealed class NpcSkillPointRewardTests
         Assert.True(f.Fire().Destroyed);
         using WorldDbContext world = new(f.Db.Path);
         Assert.Empty(world.Set<SavedFreeSkillPoints>());
+    }
+
+    [Fact]
+    public async Task MiningOpensTheSharedTickAndLateSettlementKeepsPilotDeadlinesSeparate()
+    {
+        using PilotCombatTests.Fixture f = new(new TestClock());
+        const long fleetmate = 90000002;
+        const int interval = 5;
+        WorldTuningTests.Activate(f.Db, settings => settings with { Rewards = settings.Rewards with { BountyTickSeconds = interval } });
+        var ticks = f.Db.Services.GetRequiredService<IActivityRewardTicks>();
+        var wallet = f.Db.Services.GetRequiredService<IPilotWalletReader>();
+        var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
+
+        using (var live = new LiveWorld(new(f.Db.Path), f.Clock))
+        {
+            using (var world = live.Economy.Begin(new(pilots: [Pilot])))
+            {
+                ActivityRewardTickStore.RecordMining(world, Pilot, 9, f.Clock.Now);
+                world.Commit();
+            }
+            f.Clock.Seconds += interval - 1;
+            using (var world = live.Economy.Begin(new(pilots: [Pilot, fleetmate])))
+            {
+                var npc = world.Set<WorldNpc>().Find(f.Npc.Id)!;
+                ActivityRewardTickStore.RecordBounty(world, world.Pilots.Find(Pilot)!, npc, 150000, 7, f.Clock.Now);
+                ActivityRewardTickStore.RecordBounty(world, world.Pilots.Find(Pilot)!, npc, 360000, 18, f.Clock.Now);
+                ActivityRewardTickStore.RecordBounty(world, world.Pilots.Find(fleetmate)!, npc, 150000, 0, f.Clock.Now);
+                world.Commit();
+            }
+            ticks.Advance();
+            Assert.Empty(wallet.Journal(Pilot).Rewards);
+            Assert.Equal(0, points.Balance(Pilot));
+
+            f.Clock.Seconds++;
+            using (var world = live.Economy.Begin(new(pilots: [Pilot])))
+            {
+                ActivityRewardTickStore.RecordMining(world, Pilot, 3, f.Clock.Now);
+                world.Commit();
+            }
+            ticks.Advance();
+            Assert.Equal(510000, Assert.Single(wallet.Journal(Pilot).Rewards).AmountCents);
+            Assert.Equal(34, points.Balance(Pilot));
+            Assert.Empty(wallet.Journal(fleetmate).Rewards);
+            await live.FlushAsync();
+        }
+
+        using var reopened = new LiveWorld(new(f.Db.Path), f.Clock);
+        f.Clock.Seconds += interval;
+        ticks.Advance();
+        ticks.Advance();
+        Assert.Single(wallet.Journal(Pilot).Rewards);
+        Assert.Equal(37, points.Balance(Pilot));
+        Assert.Equal(150000, Assert.Single(wallet.Journal(fleetmate).Rewards).AmountCents);
+        Assert.Equal(0, points.Balance(fleetmate));
     }
 
     [Theory]

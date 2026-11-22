@@ -440,6 +440,11 @@ public sealed class WeaponBankTests
         var volley = f.Combat.FireBank(f.Pilot.PilotId, f.Gun, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0, WeaponActivation.AmmoFed);
         Assert.True(volley.Shot.Destroyed);
         Assert.Equal(398, f.Total(222));
+        if (resident)
+        {
+            f.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            f.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
+        }
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<NpcBounty>());
         Assert.Single(saved.Set<WorldWreck>());

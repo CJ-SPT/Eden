@@ -535,6 +535,10 @@ public sealed partial class CooperativeFleetTests
             action.Commit();
         }
         Assert.Empty(commands);
+        Assert.Empty(fixture.Combat.Rewards(source.PilotId));
+        Assert.Empty(fixture.Combat.Rewards(target.PilotId));
+        fixture.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+        fixture.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
         var leadReward = Assert.Single(fixture.Combat.Rewards(source.PilotId));
         var memberReward = Assert.Single(fixture.Combat.Rewards(target.PilotId));
         Assert.InRange(leadReward.AmountCents - memberReward.AmountCents, 0, 1);

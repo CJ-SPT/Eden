@@ -361,6 +361,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Smartbombs, November 12, 2026](protocol/combat.md#smartbombs-november-12-2026)
 - [CONCORD overview color during attacks, November 9, 2026](protocol/combat.md#concord-overview-color-during-attacks--november-9-2026)
 - [CONCORD criminal response, November 9, 2026](protocol/combat.md#concord-criminal-response--november-9-2026)
+- [Bounty and activity SP ticks](protocol/combat.md#bounty-and-activity-sp-ticks)
 - [Silent bounty SP rewards, November 9, 2026](protocol/combat.md#silent-bounty-sp-rewards-november-9-2026)
 - [NPC bounty skill point rewards, November 9, 2026](protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026)
 - [NPC population template exclusion and resident spawn pools, November 8, 2026](protocol/combat.md#npc-population-template-exclusion-and-resident-spawn-pools-november-8-2026)

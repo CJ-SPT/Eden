@@ -114,6 +114,7 @@ public sealed class WorldTuningTests
         var legacy = ConfigurationValidation.Decode("""{"settings":{"resources":{"renewBelts":false},"progression":{}}}""");
         Assert.Equal(new ResourcePolicy(false), legacy.Settings.Resources);
         Assert.Equal(new RewardPolicy(), legacy.Settings.Rewards);
+        Assert.Equal(1200, legacy.Settings.Rewards.BountyTickSeconds);
         Assert.Equal(new IndustryPolicy(), legacy.Settings.Industry);
         Assert.Equal(new StructurePolicy(), legacy.Settings.Structures);
         Assert.Equal(1, legacy.Settings.Progression.KillSkillPointMultiplier);
@@ -133,6 +134,10 @@ public sealed class WorldTuningTests
         }
         Assert.Throws<InvalidDataException>(() => WorldTuningRules.ValidateRate(-0.001m, true));
         Assert.Throws<InvalidDataException>(() => WorldTuningRules.ValidateRate(100.001m, true));
+        Assert.Throws<InvalidDataException>(() => ActivityRewardTickRules.ValidateInterval(-1));
+        Assert.Throws<InvalidDataException>(() =>
+            ActivityRewardTickRules.ValidateInterval(ActivityRewardTickRules.MaximumIntervalSeconds + 1)
+        );
     }
 
     [Theory]
@@ -242,8 +247,10 @@ public sealed class WorldTuningTests
         using var live = new LiveWorld(new(f.Db.Path), f.Clock);
         var shot = f.Fire();
         Assert.True(shot.Destroyed);
-        Assert.Equal(cents, shot.Reward?.AmountCents ?? 0);
+        Assert.Null(shot.Reward);
         Assert.Throws<InvalidDataException>(() => f.Fire());
+        f.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+        new Eden.World.Combat.Npcs.ActivityRewardTickStore(new(f.Db.Path), f.Clock).Advance();
         await live.FlushAsync();
         live.Dispose();
         _ = WorldInitialization.Open(f.Db.Path);
@@ -292,8 +299,13 @@ public sealed class WorldTuningTests
             Assert.Equal(expectedBountyCents / (double)MarketDefinitions.CentsPerIsk, BountyFromScene());
             var shot = f.Fire();
             Assert.True(shot.Destroyed);
-            Assert.Equal(expectedBountyCents, shot.Reward?.AmountCents ?? 0);
+            Assert.Equal(resident ? 0 : expectedBountyCents, shot.Reward?.AmountCents ?? 0);
             Assert.Throws<InvalidDataException>(() => f.Fire());
+            if (resident)
+            {
+                f.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+                new Eden.World.Combat.Npcs.ActivityRewardTickStore(database, f.Clock).Advance();
+            }
         }
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(expectedSkillPoints, saved.Set<SavedFreeSkillPoints>().Sum(points => points.Points));
@@ -331,7 +343,10 @@ public sealed class WorldTuningTests
         }
         f.AlmostDefeated();
         using var live = new LiveWorld(new(f.Db.Path), f.Clock);
-        var reward = f.Fire().Reward!;
+        Assert.Null(f.Fire().Reward);
+        f.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+        new Eden.World.Combat.Npcs.ActivityRewardTickStore(new(f.Db.Path), f.Clock).Advance();
+        var reward = Assert.Single(f.Combat.Rewards(pilot.PilotId));
         Assert.Equal(30_000_000, reward.AmountCents);
         Assert.Equal(3_000_000, reward.TaxCents);
         Assert.Equal(before + 27_000_000, reward.BalanceCents);

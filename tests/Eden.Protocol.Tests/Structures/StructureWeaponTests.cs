@@ -614,8 +614,7 @@ public sealed class StructureWeaponTests
         }
         var hit = Assert.Single(impacts);
         Assert.True(hit.Destroyed);
-        Assert.NotNull(hit.Reward);
-        Assert.True(hit.Reward.AmountCents > 0);
+        Assert.Null(hit.Reward);
         var report = Assert.Single(f.Db.Services.GetRequiredService<IPilotInteractionHistory>().Combat(f.PilotId, 10, null));
         Assert.Equal(structure.Id, report.FinalBlow.EntityId);
         Assert.Equal(structure.Profile.TypeId, report.FinalBlow.ShipTypeId);
@@ -624,8 +623,10 @@ public sealed class StructureWeaponTests
         Assert.Equal(launcher, launch.Cycle.ModuleId);
         missiles.Advance(Fixture.SystemId, f.Clock.Now);
         Assert.Empty(missiles.TakeImpacts(f.PilotId));
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(ActivityRewardTickRules.DefaultIntervalSeconds));
+        f.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
         using var read = StructureAttackTests.Scope(f);
-        Assert.Single(read.World.Set<NpcBounty>());
+        Assert.True(Assert.Single(read.World.Set<NpcBounty>()).AmountCents > 0);
     }
 
     [Theory]

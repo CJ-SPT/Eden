@@ -1,4 +1,5 @@
 @page "/"
+@using Eden.Gameplay.Combat
 @attribute [Authorize(Policy = AdministratorAccounts.Policy)]
 @inject AdministrationOperations Operations
 @inject AuthenticationStateProvider Authentication
@@ -113,6 +114,15 @@ else
                                     ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
                                     Speed="false" Efficiency="false" />
                             </div>
+                            <div class="settings-fields">
+                                <SettingField Label="Bounty tick interval (seconds)"
+                                              Help="Bounties and mining or ratting SP share a per-pilot payout window. The default is 1200 seconds (20 minutes). Enter 0 for immediate rewards. Existing windows keep their deadlines after restart.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.BountyTickSeconds" min="0"
+                                                     max="@ActivityRewardTickRules.MaximumIntervalSeconds" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
                         </section>
                         <section class="card settings-group">
                             <h3>Mission rewards</h3>
@@ -148,6 +158,7 @@ else
                         </section>
                         <section class="settings-group">
                             <h3>Activity skill points</h3>
+                            <p class="muted">Mining and ratting SP are paid on the bounty tick set in Rewards.</p>
                             <ProgressionControls Form="Form" ActiveSettings="State.Active.Draft.Settings" Changed="StateHasChanged"
                                 EditRewards="() => Workspace.Activity = SettingsActivity.Rewards"
                                 EditGathering="() => Workspace.Activity = SettingsActivity.Gathering" />

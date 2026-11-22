@@ -3,25 +3,21 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
-using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
-using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Characters;
-using Eden.World.Corporations;
 using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
-using Eden.World.Skills;
 using Eden.World.Storage;
 
 namespace Eden.World.Combat.Npcs;
@@ -170,10 +166,6 @@ internal static partial class NpcDamagePersistence
                 world.Settings.Progression.KillSkillPointMultiplier,
                 world.Settings.Progression.KillSkillPointPercent
             );
-            if (skillPoints > 0)
-            {
-                PilotTrainingStore.CreditSilentFreePoints(world, pilot.Id, skillPoints);
-            }
             if (cents > 0)
             {
                 var live = LiveWorld.Find(world.WorldPath);
@@ -185,12 +177,12 @@ internal static partial class NpcDamagePersistence
                         .ToArray()
                     ?? [];
                 long share = cents / (others.Length + 1);
-                reward = PayBounty(world, npc, pilot, cents - share * others.Length, now);
+                reward = ActivityRewardTickStore.RecordBounty(world, pilot, npc, cents - share * others.Length, skillPoints, now);
                 if (share > 0)
                 {
                     foreach (long recipient in others)
                     {
-                        PayBounty(world, npc, world.Pilots.Find(recipient)!, share, now);
+                        ActivityRewardTickStore.RecordBounty(world, world.Pilots.Find(recipient)!, npc, share, 0, now);
                     }
                 }
             }
@@ -206,44 +198,5 @@ internal static partial class NpcDamagePersistence
         }
         var position = LiveWorld.Find(world.WorldPath)?.CombatForSystem(system)?.InformationPosition(member.ShipId) ?? member.Position;
         return position.DistanceTo(kill) <= FleetRules.CommandRange;
-    }
-
-    private static NpcBounty PayBounty(WorldAction world, WorldNpc npc, Pilot pilot, long cents, long now)
-    {
-        var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
-        wallet.Cents = checked(wallet.Cents + cents);
-        long tax = CorporationWalletStore.TaxBounty(world, pilot, cents, now);
-        wallet.Cents -= tax;
-        if (tax > 0)
-        {
-            CorporationWalletStore.AddEntry(
-                world,
-                pilot.Id,
-                CorporationWalletRules.MasterKey,
-                now,
-                pilot.CorporationId,
-                -tax,
-                wallet.Cents,
-                CorporationWalletRules.BountyTaxEntry,
-                npc.Id,
-                ""
-            );
-        }
-        return world
-            .Set<NpcBounty>()
-            .Add(
-                new()
-                {
-                    PilotId = pilot.Id,
-                    NpcId = npc.Id,
-                    TypeId = npc.TypeId,
-                    SystemId = npc.SystemId,
-                    Time = now,
-                    AmountCents = cents,
-                    BalanceCents = wallet.Cents,
-                    TaxCents = tax,
-                }
-            )
-            .Entity;
     }
 }

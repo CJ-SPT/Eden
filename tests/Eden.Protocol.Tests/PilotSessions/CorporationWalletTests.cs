@@ -3,11 +3,11 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Corporations;
-using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -193,7 +193,7 @@ public sealed class CorporationWalletTests
     [InlineData(true)]
     public void FatalNpcSettlementCreditsNetRewardAndCorporateTaxExactlyOnce(bool liveWorld)
     {
-        using NpcCombatTests.Fixture fixture = new(liveWorld);
+        using NpcCombatTests.Fixture fixture = new(liveWorld, useTestClock: true);
         var world = fixture.Db;
         world.Store.SetPosition(NpcCombatTests.Fixture.ShipId, null);
         PlayerCorporationTests.Prepare(world);
@@ -222,16 +222,21 @@ public sealed class CorporationWalletTests
                 now
             );
             Assert.True(killed.Destroyed);
-            Assert.Equal(25000000, killed.Reward!.AmountCents);
-            Assert.Equal(2500000, killed.Reward.TaxCents);
-            Assert.Equal(862520000, killed.Reward.BalanceCents);
-            Assert.Equal(625, Assert.Single(saved.Set<SavedFreeSkillPoints>().Local).Points);
+            Assert.Equal(!liveWorld, killed.Reward is not null);
             saved.SaveChanges();
             transaction.Commit();
             Assert.Throws<InvalidDataException>(() =>
                 NpcDamagePersistence.Apply(saved, catalog, npc, pilot, pilot.ActiveShipId, attributes, new DamageVector(1, 1, 1, 1), now)
             );
         }
+        if (liveWorld)
+        {
+            Assert.Equal(0, world.Services.GetRequiredService<ICorporationWallet>().Balance(90000001, 1000));
+            Assert.Equal(0, world.Services.GetRequiredService<IPilotFreeSkillPoints>().Balance(90000001));
+            fixture.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            world.Services.GetRequiredService<IActivityRewardTicks>().Advance();
+        }
+        Assert.Equal(625, world.Services.GetRequiredService<IPilotFreeSkillPoints>().Balance(90000001));
         Assert.Equal(2500000, world.Services.GetRequiredService<ICorporationWallet>().Balance(90000001, 1000));
         Assert.Equal(862520000, world.Services.GetRequiredService<IPilotWalletReader>().Balance(90000001));
         // Read the journal at the fixture's fully catalogued home station.

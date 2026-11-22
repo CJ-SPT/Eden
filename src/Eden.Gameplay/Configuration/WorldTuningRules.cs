@@ -49,6 +49,7 @@ public static class WorldTuningRules
         ValidateRate(settings.ShipFitting.CalibrationMultiplier);
         ValidateRate(settings.ShipFitting.DroneBandwidthMultiplier);
         ValidateRate(settings.Rewards.BountyMultiplier, true);
+        ActivityRewardTickRules.ValidateInterval(settings.Rewards.BountyTickSeconds);
         ValidateRate(settings.Rewards.MissionIskMultiplier, true);
         ValidateRate(settings.Rewards.MissionLpMultiplier, true);
         ValidateRate(settings.Rewards.MissionStandingMultiplier, true);

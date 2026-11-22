@@ -200,6 +200,10 @@ public sealed class SettingsForm
     [Display(Name = "NPC bounty ISK")]
     public decimal BountyMultiplier { get; set; } = 1;
 
+    [Range(0, ActivityRewardTickRules.MaximumIntervalSeconds)]
+    [Display(Name = "Bounty tick interval (seconds)")]
+    public int BountyTickSeconds { get; set; } = ActivityRewardTickRules.DefaultIntervalSeconds;
+
     [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mission ISK")]
     public decimal MissionIskMultiplier { get; set; } = 1;
@@ -311,6 +315,7 @@ public sealed class SettingsForm
             ShipCalibrationMultiplier = settings.ShipFitting.CalibrationMultiplier,
             ShipDroneBandwidthMultiplier = settings.ShipFitting.DroneBandwidthMultiplier,
             BountyMultiplier = settings.Rewards.BountyMultiplier,
+            BountyTickSeconds = settings.Rewards.BountyTickSeconds,
             MissionIskMultiplier = settings.Rewards.MissionIskMultiplier,
             MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
             MissionStandingMultiplier = settings.Rewards.MissionStandingMultiplier,
@@ -440,7 +445,7 @@ public sealed class SettingsForm
             Resources = new(RenewBelts, RenewalHourUtc, OreYieldMultiplier, IceYieldMultiplier, GasYieldMultiplier),
             MiningHolds = new(GeneralMiningHoldMultiplier, IceHoldMultiplier, GasHoldMultiplier),
             ShipFitting = new(ShipCpuMultiplier, ShipPowerGridMultiplier, ShipCalibrationMultiplier, ShipDroneBandwidthMultiplier),
-            Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
+            Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier, BountyTickSeconds),
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             PlanetaryIndustry = new(
                 PlanetaryExtractionYieldMultiplier,

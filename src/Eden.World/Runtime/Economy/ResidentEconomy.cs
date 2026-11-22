@@ -327,6 +327,7 @@ internal sealed partial class ResidentEconomy
         _prepared.Clear();
         _openOrders.Clear();
         _openSellOrders.Clear();
+        _activityRewardDeadlines.Clear();
         FullyReservedTrafficPools.Clear();
         ClearTimedModules();
         ClearCommandBursts();

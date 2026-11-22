@@ -4,6 +4,52 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## Bounty and activity SP ticks
+
+The first bounty share or whole activity SP award opens a pilot's payout window. The default is
+20 minutes. Later awards before the deadline join that window. The first award at or after
+that deadline opens a new window even if the previous payout is still due. Mining can open
+and settle a window by itself. Ore, ice and gas collection still deliver cargo as the cycle settles.
+The existing per-kill and per-harvest SP calculations determine how many whole points enter the window.
+
+Fleet bounty shares are fixed at kill time. Settlement combines ISK by pilot and solar system, then
+applies the recipient's current corporation tax rules to each system's total. The wallet journal
+uses CONCORD as payer and the solar system as the reference for entry type 85. The pinned 3662168
+accounting catalog confirms entry types 85 (Bounty Prizes) and 92 (Bounty Prize Corporation Tax),
+and the native wallet formatter resolves the system reference. The existing wallet monitor publishes
+changes after settlement, and activity SP remains a silent credit to the unallocated pool.
+[Wallet formatter evidence](#civilian-weapon-firing-npc-destruction-and-bounties-november-2-2026)
+
+EVE University describes the 20-minute bounty window and on-grid fleet sharing. The local EVE.js 261108.1 reference
+in `server/src/services/bounty/bountyRuntime.js` groups per-system awards on a shared character deadline
+and starts a new deadline when the character has no open window. Eden extends this window to activity SP.
+[Ratting guide, revision 230418](https://wiki.eveuniversity.org/index.php?title=Ratting&oldid=230418#Bounties)
+
+The resident economy records the pending tick atomically with the kill or harvest. Server maintenance
+checks for due ticks on startup and once per second, including for offline pilots. Wallet balances,
+journal records, taxes, SP and removal of the pending tick commit together and are saved by normal
+world checkpoints. A restored outstanding tick keeps its saved deadline and amounts. The administration
+page configures the interval under **Rewards**. Changes take effect after restart, and 0 pays new
+awards immediately. See [world settings](../world-configuration.md#world-tuning).
+
+### Automated validation
+
+The affected filter passed 174 cases in 75.22 seconds. It covered `NpcSkillPointRewardTests`,
+`MiningSkillPointRewardTests`, `WorldTuningTests`, `WorldMigrationTests`, and the focused wallet,
+weapons, mining and administration cases listed in the TRX report. A second filter ran
+`FreshCouriersAndRatsEarnTheirShipsAndPayToReplaceBothAfterLoss` and
+`FreshPaidMinerRunsCorporateProduction` against the installed build 3662168 catalog.
+Both passed in 45.73 seconds. The solution build, catalog and formatting policy tests and
+`Format.ps1 -Check` passed. The full .NET suite was outside the requested scope.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Aggression box indicators — November 15, 2026
 
 The maintainer reported intermittent aggression boxes while mission NPCs were firing. Two outbound paths omitted the offensive

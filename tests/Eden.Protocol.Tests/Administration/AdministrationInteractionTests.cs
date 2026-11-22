@@ -198,6 +198,7 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.MiningSkillPointMultiplier), "20");
             await renderer.Click("Edit bounty in Rewards");
             await renderer.Change(nameof(SettingsForm.BountyMultiplier), "10");
+            await renderer.Change(nameof(SettingsForm.BountyTickSeconds), "45");
             await renderer.Click("Progression");
             await renderer.Click("Edit yields in Gathering");
             await renderer.Change(nameof(SettingsForm.OreYieldMultiplier), "10");
@@ -225,6 +226,8 @@ public sealed partial class AdministrationTests
             var state = fixture.World.Services.GetRequiredService<IWorldConfiguration>().Read();
             Assert.Equal(0.25m, state.Active.Draft.Settings.Progression.KillSkillPointPercent);
             Assert.Equal(400, state.Active.Draft.Settings.Progression.MiningIskPerSkillPoint);
+            Assert.Equal(1200, state.Active.Draft.Settings.Rewards.BountyTickSeconds);
+            Assert.Equal(45, state.Pending!.Draft.Settings.Rewards.BountyTickSeconds);
             Assert.Equal(1, state.Pending!.Draft.Settings.Progression.KillSkillPointPercent);
             Assert.Equal(100, state.Pending.Draft.Settings.Progression.MiningIskPerSkillPoint);
             Assert.True(renderer.Button("Save for restart").Disabled);

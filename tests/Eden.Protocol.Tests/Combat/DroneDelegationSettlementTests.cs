@@ -57,6 +57,11 @@ public sealed partial class DroneDelegationTests
         var hits = fixture.Base.Tick().Hits;
         Assert.Single(hits, hit => hit.Health.Remaining.Destroyed);
         Assert.Empty(fixture.Base.Tick(10).Hits);
+        if (resident)
+        {
+            fixture.Base.Base.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            fixture.Base.Base.Db.Services.GetRequiredService<IActivityRewardTicks>().Advance();
+        }
         using WorldDbContext saved = new(fixture.Base.Base.Db.Path);
         Assert.Single(saved.Set<NpcBounty>());
         Assert.All(

@@ -20,6 +20,7 @@ using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -379,10 +380,7 @@ internal sealed partial class PilotMiningStore
                 world.Settings.Progression.MiningSkillPointMultiplier,
                 world.Settings.Progression.MiningIskPerSkillPoint
             );
-            if (points > 0)
-            {
-                PilotTrainingStore.CreditSilentFreePoints(world, pilotId, points);
-            }
+            ActivityRewardTickStore.RecordMining(world, pilotId, points, now);
             PilotTaskTrackingStore.RecordMining(world, catalog, pilotId, now, extracted + bonus);
         }
         if (laser.Family != MiningFamily.Gas && !MissionMiningRules.IsDeposit(asteroid.Id))

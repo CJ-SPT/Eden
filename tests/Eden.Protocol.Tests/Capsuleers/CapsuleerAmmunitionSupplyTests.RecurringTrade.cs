@@ -259,12 +259,18 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     fixture.Clock.Now
                 );
                 Assert.True(killed.Destroyed);
-                Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk, killed.Reward!.AmountCents);
-                Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk / 10, killed.Reward.TaxCents);
+                Assert.Null(killed.Reward);
                 capsule = DestroyBotShip(loss, catalog, patrol, fixture.Clock.Now);
                 ships.Dock(loss, catalog, patrol, capsule, Depot);
                 loss.Commit();
             }
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(fixture.Database.Settings.Rewards.BountyTickSeconds));
+            host.GetRequiredService<IActivityRewardTicks>().Advance();
+            var reward = live.Economy.Inspect(world =>
+                world.Filter<NpcBounty>(row => row.PilotId == patrol).OrderByDescending(row => row.Id).First()
+            );
+            Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk, reward.AmountCents);
+            Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk / 10, reward.TaxCents);
 
             using var occupied = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
             RegionalStockTrip? trip = null;

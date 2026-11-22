@@ -107,13 +107,16 @@ public sealed class LiveCombatObjectTests
                 fatal = Fire();
                 Assert.True(fatal.Destroyed);
                 Assert.Equal(198, fatal.Magazine!.Quantity);
-                Assert.Equal(300000, fatal.Reward!.AmountCents);
+                Assert.Null(fatal.Reward);
             }
             Assert.True(measure.Commands == 0, string.Join(Environment.NewLine, commands));
             Assert.Equal(0, measure.Connections);
         }
+        var ticks = fixture.Db.Services.GetRequiredService<IActivityRewardTicks>();
         if (!reject)
         {
+            fixture.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            ticks.Advance();
             using var failed = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
             using var unchanged = new WorldDbContext(failed.Database);
             long originalBalance = unchanged.Set<Eden.Data.World.Market.PilotWallet>().AsNoTracking().Single(w => w.PilotId == pilot).Cents;
@@ -158,6 +161,8 @@ public sealed class LiveCombatObjectTests
                 );
             }
             Assert.True(Fire().Destroyed);
+            fixture.Clock.Seconds += ActivityRewardTickRules.DefaultIntervalSeconds;
+            ticks.Advance();
             using var retry = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
             retry.Project();
             using var recovered = new WorldDbContext(retry.Database);

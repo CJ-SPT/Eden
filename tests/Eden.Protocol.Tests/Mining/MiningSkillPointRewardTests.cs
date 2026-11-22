@@ -2,6 +2,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -93,12 +94,22 @@ public sealed class MiningSkillPointRewardTests
         decimal price = MarketValuationRules.EstimateIsk(quote.BuyCents, quote.SellCents)!.Value;
         long expected = InitialPoints + (long)decimal.Floor(price * delivered * 20 / cost);
         var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
-        Assert.Equal(new(expected, InitialRevision), points.Observe(f.PilotId));
+        Assert.Equal(new(InitialPoints, InitialRevision), points.Observe(f.PilotId));
         Assert.Throws<InvalidDataException>(() => mining.Collect(f.PilotId, module, Rock, new(1, true, Rolls)));
-        Assert.Equal(expected, points.Balance(f.PilotId));
+        Assert.Equal(InitialPoints, points.Balance(f.PilotId));
         await live.FlushAsync();
         live.Dispose();
         WorldInitialization.Open(f.Db.Path);
+        using (var restarted = new LiveWorld(new(f.Db.Path), f.Clock))
+        {
+            var ticks = f.Db.Services.GetRequiredService<IActivityRewardTicks>();
+            f.Clock.Milliseconds += ActivityRewardTickRules.DefaultIntervalSeconds * 1000;
+            ticks.Advance();
+            ticks.Advance();
+            Assert.Equal(new(expected, InitialRevision), points.Observe(f.PilotId));
+            Assert.Empty(f.Db.Services.GetRequiredService<IPilotWalletReader>().Journal(f.PilotId).Rewards);
+            await restarted.FlushAsync();
+        }
         using WorldDbContext reopened = new(f.Db.Path);
         Assert.Equal(expected, reopened.Set<SavedFreeSkillPoints>().Find(f.PilotId)!.Points);
         Assert.Equal(cost, new WorldDatabase(f.Db.Path).Settings.Progression.MiningIskPerSkillPoint);

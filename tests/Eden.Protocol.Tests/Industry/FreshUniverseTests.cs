@@ -483,6 +483,9 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             earned = SettlePirateKill(action, catalog, id, secondSystem, NpcEncounterDefinitions.GuristasRookieType, clock.Now);
             action.Commit();
         }
+        Assert.Equal(0, points.Balance(id));
+        clock.Seconds += database.Settings.Rewards.BountyTickSeconds;
+        host.GetRequiredService<IActivityRewardTicks>().Advance();
         Assert.Equal(earned, points.Balance(id));
         using (var action = live.Economy.Begin(new(pilots: [id])))
         {
@@ -514,6 +517,12 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             Assert.Null(action.Set<PilotSkill>().Find(id, refining));
             SettlePirateKill(action, catalog, id, StarterSystem, pithEliminator, clock.Now);
             SqliteWorld.SetPosition(action, catalog, action.Pilots.Find(id)!.ActiveShipId, null, null, clock.Now);
+            action.Commit();
+        }
+        clock.Seconds += database.Settings.Rewards.BountyTickSeconds;
+        host.GetRequiredService<IActivityRewardTicks>().Advance();
+        using (var action = live.Economy.Begin(new(pilots: [id], systems: [StarterSystem])))
+        {
             var producer = host.GetRequiredService<SqliteWorld>().FindPilot(action, CapsuleerCommunityStore.MinerAccountId, id)!;
             var plan = new CapsuleerCareerPlan(CapsuleerProfession.Mining, (int)TechOneHullType.Venture, CapsuleerTrainingFocus.Work);
             var turn = host.GetRequiredService<CapsuleerCareerTraining>()
@@ -557,7 +566,7 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             (int)CombatWeaponType.CivilianGatlingRailgun
         );
         Assert.True(settlement.Destroyed);
-        Assert.NotNull(settlement.Reward);
+        Assert.Null(settlement.Reward);
         long earned = NpcSkillPointRewards.FromBounty(NpcBountyRules.BaseCents(npc.Role, attributes));
         Assert.True(earned > 0);
         return earned;
@@ -628,6 +637,7 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             presence.Update(Guid.NewGuid(), StarterSystem);
         }
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var rewards = host.GetRequiredService<IActivityRewardTicks>();
         scheduler.PopulationPrepared(StarterSystem);
         for (int turn = 0; turn < maximumTurns; turn++)
         {
@@ -638,6 +648,7 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             long due = scheduler.Jobs().Min(job => job.DueTicks);
             long delay = Math.Max(TimeSpan.TicksPerMillisecond, due - presence.Read().ElapsedTicks);
             clock.Milliseconds += (delay + TimeSpan.TicksPerMillisecond - 1) / TimeSpan.TicksPerMillisecond;
+            rewards.Advance();
             scheduler.Run((int)clock.Seconds);
         }
         foreach (var job in scheduler.Jobs())

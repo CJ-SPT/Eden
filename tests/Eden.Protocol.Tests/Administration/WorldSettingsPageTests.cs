@@ -294,7 +294,7 @@ public sealed class WorldSettingsPageTests
         {
             Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4),
             MiningHolds = new(1.5m, .5m, 2),
-            Rewards = new(5, 6, 7, 8),
+            Rewards = new(5, 6, 7, 8, BountyTickSeconds: 300),
             Progression = new(
                 KillSkillPointMultiplier: 9,
                 MiningSkillPointMultiplier: 2.5m,
@@ -316,6 +316,7 @@ public sealed class WorldSettingsPageTests
         form.OreYieldMultiplier = 0;
         form.IceHoldMultiplier = 0;
         form.BountyMultiplier = -1;
+        form.BountyTickSeconds = -1;
         form.MiningSkillPointMultiplier = 101;
         form.KillSkillPointPercent = 100.01m;
         form.MiningIskPerSkillPoint = 0;
@@ -330,6 +331,7 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.OreYieldMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.IceHoldMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.BountyMultiplier)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.BountyTickSeconds)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningSkillPointMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.KillSkillPointPercent)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningIskPerSkillPoint)));
@@ -342,6 +344,7 @@ public sealed class WorldSettingsPageTests
         form.OreYieldMultiplier = 0.1m;
         form.IceHoldMultiplier = .1m;
         form.BountyMultiplier = 0;
+        form.BountyTickSeconds = 0;
         form.MiningSkillPointMultiplier = 0;
         form.KillSkillPointPercent = 0;
         form.MiningIskPerSkillPoint = 0.01m;
