@@ -60,6 +60,7 @@ public sealed partial class AdministrationTests
             await Task.Delay(20, timeout.Token);
         }
         Assert.True(jobs.Status().Traffic?.Failed);
+        Assert.False(File.Exists(database.TrafficSnapshotPath + ".import.pending"));
         html = await fixture.Client.GetStringAsync(page, timeout.Token);
         Assert.Contains("The previous snapshot, if present, is still installed.", html);
         Assert.Contains("Re-import zKillboard traffic", html);

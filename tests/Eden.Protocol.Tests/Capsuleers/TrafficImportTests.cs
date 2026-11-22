@@ -4,16 +4,82 @@ using System.Text.Json;
 using Eden.Data.Catalog.Capsuleers;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Inventory;
+using Eden.Server.Administration;
 using Eden.Server.Capsuleers;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class TrafficImportTests
 {
+    [Fact]
+    public async Task AdministrationResumesInterruptedTrafficImportFromDiskAndInstallsSnapshot()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+        string output = fixture.Database.TrafficSnapshotPath;
+        TaskCompletionSource namesRequested = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using ArchiveHandler interrupted = new() { NamesRequested = namesRequested };
+        using (var firstHost = CreateHost(interrupted))
+        {
+            await firstHost.StartAsync(timeout.Token);
+            firstHost.Services.GetRequiredService<OptionalDataImports>().Start(OptionalDataset.Traffic);
+            await namesRequested.Task.WaitAsync(timeout.Token);
+            await firstHost.StopAsync(timeout.Token);
+        }
+        Assert.Equal(2, interrupted.Calls);
+        Assert.False(File.Exists(output));
+
+        using ArchiveHandler resumed = new();
+        using (var secondHost = CreateHost(resumed))
+        {
+            await secondHost.StartAsync(timeout.Token);
+            var jobs = secondHost.Services.GetRequiredService<OptionalDataImports>();
+            while (jobs.Status().Traffic?.Running == true)
+            {
+                await Task.Delay(20, timeout.Token);
+            }
+            Assert.Equal(new(false, "Import complete. Restart Eden to use the installed snapshot."), jobs.Status().Traffic);
+            await secondHost.StopAsync(timeout.Token);
+        }
+        Assert.Equal(1, resumed.Calls);
+        Assert.Equal("Real Traffic Pilot", Assert.Single(new WorldDatabase(fixture.Database.Path).Traffic.Profiles).Name);
+
+        using ArchiveHandler completed = new() { Fail = true };
+        using var thirdHost = CreateHost(completed);
+        await thirdHost.StartAsync(timeout.Token);
+        Assert.Null(thirdHost.Services.GetRequiredService<OptionalDataImports>().Status().Traffic);
+        await thirdHost.StopAsync(timeout.Token);
+        Assert.Equal(0, completed.Calls);
+
+        IHost CreateHost(ArchiveHandler handler)
+        {
+            var builder = Host.CreateApplicationBuilder();
+            builder.Services.AddSingleton(_ => new HttpClient(handler, disposeHandler: false));
+            builder.Services.AddSingleton(provider => new OptionalDataImports(
+                (_, log, cancellationToken) =>
+                    TrafficImportCommand.Import(
+                        provider.GetRequiredService<HttpClient>(),
+                        fixture.Database.CatalogPath,
+                        output,
+                        new(2026, 11, 1),
+                        new(2026, 11, 1),
+                        log,
+                        cancellationToken
+                    ),
+                output,
+                provider.GetRequiredService<IHostApplicationLifetime>()
+            ));
+            builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
+            return builder.Build();
+        }
+    }
+
     [Fact]
     public async Task ImportDeduplicatesArchivesResolvesNamesAndPublishesVerifiedOfflineSnapshot()
     {
@@ -169,6 +235,7 @@ public sealed class TrafficImportTests
         internal int Calls { get; private set; }
         internal bool Fail { get; set; }
         internal string? Failure { get; init; }
+        internal TaskCompletionSource? NamesRequested { get; init; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -179,6 +246,11 @@ public sealed class TrafficImportTests
             }
             if (request.Method == HttpMethod.Post)
             {
+                if (NamesRequested is { } started)
+                {
+                    started.SetResult();
+                    return new TaskCompletionSource<HttpResponseMessage>().Task.WaitAsync(cancellationToken);
+                }
                 return Task.FromResult(
                     Failure == "unavailable name"
                         ? new HttpResponseMessage(HttpStatusCode.NotFound)

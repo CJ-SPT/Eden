@@ -12,9 +12,14 @@ internal enum OptionalDataset
 
 internal sealed record OptionalDataImportStatus(bool Running, string Message, bool Failed = false);
 
-internal sealed class OptionalDataImports(OptionalDataImporter importer, IHostApplicationLifetime lifetime) : BackgroundService
+internal sealed class OptionalDataImports(
+    Func<OptionalDataset, Action<string>, CancellationToken, Task> import,
+    string trafficSnapshotPath,
+    IHostApplicationLifetime lifetime
+) : BackgroundService
 {
     private readonly Channel<OptionalDataset> _queue = Channel.CreateBounded<OptionalDataset>(1);
+    private readonly string _trafficRequest = trafficSnapshotPath + ".import.pending";
     private readonly Lock _gate = new();
     private OptionalDataset? _running;
     private OptionalDataImportStatus? _market;
@@ -28,6 +33,18 @@ internal sealed class OptionalDataImports(OptionalDataImporter importer, IHostAp
         }
     }
 
+    public override Task StartAsync(CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            if (File.Exists(_trafficRequest))
+            {
+                Enqueue(OptionalDataset.Traffic, "Resuming the unfinished traffic import…");
+            }
+        }
+        return base.StartAsync(cancellationToken);
+    }
+
     internal void Start(OptionalDataset dataset)
     {
         lock (_gate)
@@ -36,13 +53,27 @@ internal sealed class OptionalDataImports(OptionalDataImporter importer, IHostAp
             {
                 throw new InvalidOperationException("The server is shutting down.");
             }
-            if (_running is not null || !_queue.Writer.TryWrite(dataset))
+            if (_running is not null)
             {
                 throw new InvalidOperationException("An optional data import is already running.");
             }
-            _running = dataset;
-            SetStatus(dataset, new(true, "Starting import…"));
+            if (dataset == OptionalDataset.Traffic)
+            {
+                using var request = File.Open(_trafficRequest, FileMode.OpenOrCreate, FileAccess.Write);
+                request.Flush(flushToDisk: true);
+            }
+            Enqueue(dataset, "Starting import…");
         }
+    }
+
+    private void Enqueue(OptionalDataset dataset, string message)
+    {
+        if (!_queue.Writer.TryWrite(dataset))
+        {
+            throw new InvalidOperationException("An optional data import is already queued.");
+        }
+        _running = dataset;
+        SetStatus(dataset, new(true, message));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -52,11 +83,12 @@ internal sealed class OptionalDataImports(OptionalDataImporter importer, IHostAp
             OptionalDataImportStatus result;
             try
             {
-                await importer.Import(dataset, ReportProgress, stoppingToken);
+                await import(dataset, ReportProgress, stoppingToken);
                 result = new(false, "Import complete. Restart Eden to use the installed snapshot.");
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
+                // Startup reads the saved request and the importer reuses its completed cache entries.
                 return;
             }
             catch (Exception error)
@@ -64,6 +96,18 @@ internal sealed class OptionalDataImports(OptionalDataImporter importer, IHostAp
                 ServerLog.Console.Error($"Optional data import ({dataset}) failed: {error}");
                 string detail = error is InvalidDataException ? error.Message : "Check the server log for details and try again.";
                 result = new(false, $"Import failed. The previous snapshot, if present, is still installed. {detail}", Failed: true);
+            }
+            if (dataset == OptionalDataset.Traffic)
+            {
+                try
+                {
+                    File.Delete(_trafficRequest);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    ServerLog.Console.Error($"Could not clear the saved traffic import request at {_trafficRequest}: {error.Message}");
+                    result = result with { Message = result.Message + " Eden could not clear the saved import request." };
+                }
             }
             lock (_gate)
             {

@@ -946,6 +946,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [First-start world setup](protocol/world-configuration.md#first-start-world-setup)
 - [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 - [Optional data imports in server administration](protocol/world-configuration.md#optional-data-imports-in-server-administration)
+- [Resuming interrupted zKillboard imports](protocol/world-configuration.md#resuming-interrupted-zkillboard-imports)
 - [Custom gameplay switches](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026)
 - [Published administration assets](protocol/world-configuration.md#published-administration-framework-assets-november-15-2026)
 - [Minimum corporation age for anchoring](protocol/world-configuration.md#minimum-corporation-age-for-anchoring-november-16-2026)

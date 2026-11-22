@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
@@ -106,7 +107,11 @@ internal static class AdministrationHost
             builder.Services.AddSingleton(worldServices.GetRequiredService<IWorldConfiguration>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<WorldDatabase>());
             builder.Services.AddSingleton<OptionalDataImporter>();
-            builder.Services.AddSingleton<OptionalDataImports>();
+            builder.Services.AddSingleton(provider => new OptionalDataImports(
+                provider.GetRequiredService<OptionalDataImporter>().Import,
+                provider.GetRequiredService<WorldDatabase>().TrafficSnapshotPath,
+                provider.GetRequiredService<IHostApplicationLifetime>()
+            ));
             builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
             builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));

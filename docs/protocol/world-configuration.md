@@ -487,3 +487,32 @@ passing tests and one opt-in skip. All three Python checks passed again.
 **Live acceptance.** Not performed. Agent client testing is disabled. Provider downloads were not exercised.
 
 **Optional maintainer checks.** Import a snapshot on the server and verify that Eden adopts it on restart.
+
+### Resuming interrupted zKillboard imports
+
+The persistent data directory on HostCram held downloaded archives and saved fitting decisions without a published traffic
+snapshot. Docker stopped Eden one second after the latest fitting-cache write. The administration worker had kept the import
+request in memory, so startup had no request to resume.
+
+Administration now saves the traffic import request beside the snapshot before queuing it. On startup, the worker resumes
+an unfinished request with the latest published archive window and reuses compatible cache entries. The request clears after
+success or a reported failure. Snapshot publication still replaces the installed file atomically after validation, and the
+runtime loads it on the next startup. The provider endpoints and build 3662168 fitting checks are the same ones referenced
+above. Local EVE.js `killmailTracker.js` covers creating and publishing game killmails. The checkout has no corresponding
+weekly archive importer or Git revision metadata.
+
+**Automated validation.** `AdministrationResumesInterruptedTrafficImportFromDiskAndInstallsSnapshot` passed in 11.42 seconds
+including runner startup. It interrupts name resolution, restarts the hosted worker, verifies archive cache reuse, and loads
+the published snapshot in a fresh world database instance. The focused filter below passed all 77 cases in 30.97 seconds.
+The solution build, catalog and formatting policy tests, formatter, documentation anchor and whitespace checks passed.
+An isolated provider check with the baseline CLI imported November 15–21, 2026 in 8 minutes 11 seconds. The persisted
+snapshot reopened with 45,191 profiles for 27,195 pilots, and the profile count matched its manifest.
+After merging with `7421c90f`, the solution built in 14.12 seconds and all 77 focused cases passed again in 28.89 seconds.
+
+```text
+FullyQualifiedName~TrafficImportTests|FullyQualifiedName~TrafficSnapshotTests|FullyQualifiedName~StandardMarketTests|FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.OptionalDataPageExplainsFallbacksAndProtectsReimport
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Start a new traffic import after deployment and verify the installed archive range when it completes.

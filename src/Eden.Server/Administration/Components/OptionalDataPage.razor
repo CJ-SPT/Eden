@@ -45,7 +45,7 @@ else if (Installed is not null)
         <section class="card" aria-labelledby="traffic-import-heading">
             <h2 id="traffic-import-heading">zKillboard traffic</h2>
             <p>Imports the latest seven published complete UTC days of zKillboard reports. Eden uses public pilot names
-                and compatible ship fittings to add variety to simulated traffic.</p>
+                and compatible ship fittings to add variety to simulated traffic. Unfinished imports resume after a server restart.</p>
             <p>Without a compatible snapshot, enabled simulated traffic uses generated Tech I freighters. Saved imported
                 pilots keep their identities, ships, fittings and losses.</p>
             @if (Installed.Traffic is { } snapshot)
