@@ -41,14 +41,16 @@ internal sealed partial class RegionalMarketStore
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.advanceStation");
         long elapsed = world.ActiveTicks;
         var profiles = RegionalMarketCatalog.Read(catalog);
-        if (!profiles.StationsById.TryGetValue(stationId, out var profile))
+        bool pvpMarket = !profiles.StationsById.TryGetValue(stationId, out var profile);
+        profile ??= profiles.PvpMarkets.GetValueOrDefault(stationId);
+        if (profile is null)
         {
             return;
         }
         bool freshUniverse = world.Settings.UsesFreshUniverseMarket();
         var unlocks = world.Set<SavedMarketUnlock>();
         HashSet<int> unlocked =
-            freshUniverse ? []
+            freshUniverse || pvpMarket ? []
             : types is null ? unlocks.Select(u => u.TypeId).ToHashSet()
             : types.Where(type => unlocks.Find(type) is not null).ToHashSet();
         var products = unlocked
@@ -56,11 +58,26 @@ internal sealed partial class RegionalMarketStore
             .OfType<RegionalProduct>()
             .Where(p => RegionalMarketRules.Stocks(p.TypeId, p.Category, profile.Role))
             .ToDictionary(p => p.TypeId);
-        if (profile.StarterSupply && world.Settings.Economy.BeginnerMarketSupply)
+        if (world.Settings.Economy.BeginnerMarketSupply)
         {
-            foreach (var starter in profiles.StarterProducts.Values.Where(p => types == null || Enumerable.Contains(types, p.TypeId)))
+            bool stagesPvp =
+                pvpMarket
+                && !world.Settings.FreshUniverse
+                && world.Settings.Capsuleers.EarnedPvpShips
+                && (types is null || types.Any(StarterMarketRules.PvpKitTypes.Contains))
+                && RegionalMarketCatalog.IsTrafficEndpoint(catalog, profile.Station);
+            if (profile.StarterSupply || stagesPvp)
             {
-                products.TryAdd(starter.TypeId, starter);
+                foreach (var starter in profiles.StarterProducts.Values)
+                {
+                    if (
+                        (!pvpMarket || StarterMarketRules.PvpKitTypes.Contains(starter.TypeId))
+                        && (types is null || Enumerable.Contains(types, starter.TypeId))
+                    )
+                    {
+                        products.TryAdd(starter.TypeId, starter);
+                    }
+                }
             }
         }
         var marketOrders = world.Set<NpcMarketOrder>();
@@ -92,7 +109,7 @@ internal sealed partial class RegionalMarketStore
         var orders = stationOrders.ToDictionary(o => (o.TypeId, o.Bid));
         var states = world.Set<SavedRegionalMarketStock>();
         IEnumerable<RegionalDemand> candidates =
-            !includeDemand ? []
+            !includeDemand || pvpMarket ? []
             : types is not null ? types.Select(type => profiles.DemandFor(catalog, type)).OfType<RegionalDemand>()
             : profiles.Demand.Values;
         var demand = candidates
@@ -123,7 +140,7 @@ internal sealed partial class RegionalMarketStore
             {
                 continue;
             }
-            long anchor = RegionalMarketRules.SnapshotAnchor(reference.Value, profile.Role, bid);
+            long anchor = pvpMarket ? reference.Value : RegionalMarketRules.SnapshotAnchor(reference.Value, profile.Role, bid);
             int capacity;
             if (bid)
             {

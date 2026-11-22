@@ -4,11 +4,10 @@
 
 ## Population controls
 
-Open **Player bots** in the server web editor. **Bot population** sets the world-wide cap and fresh-universe
-background preparation. **Where bots work** sets work or transit access by region or solar system. Dedicated
-miners, fresh-universe couriers and fresh-universe bounty hunters have controls in their activity sections.
-Expand **Ambient traffic** for station travelers and watched-gate visitors. Save for restart and restart the server
-to apply the revision.
+Open **Player bots** in the server web editor. **Bot population** sets the world-wide cap. **Where bots work** sets
+work or transit access by region or solar system. Expand **Ambient traffic** for station travelers and watched-gate
+visitors. Saves created with the earlier Fresh Universe profile also have controls for background preparation and
+its dedicated mining, courier and bounty careers. Save for restart and restart the server to apply the revision.
 
 Reducing a limit pauses excess pilots and preserves their identities, ships, possessions, losses and activity. When
 slots reopen, Eden reuses eligible saved pilots before preparing new ones.
@@ -18,9 +17,9 @@ Suspended jobs retain their remaining timing and cannot produce offline rewards 
 See [configuration details](world-configuration.md#autonomous-population).
 
 The station-traffic multiplier scales each established system's geography-based traveler roster. Established worlds prepare
-new rosters as players enter systems. Fresh worlds can prepare eligible unvisited high-security station systems while
-someone has a selected character. Occupied systems get priority. Existing travelers can continue through empty
-systems and dedicated miners can work the belts in their home systems.
+new rosters as players enter systems. Existing travelers can continue through empty systems and dedicated miners
+can work the belts in their home systems. In legacy Fresh Universe saves, active players also enable background
+preparation of eligible unvisited high-security station systems. Occupied systems get priority.
 
 Watching either end of a stargate can bring additional visitors through it. Those pilots use the same ships, station
 waits and gate transfers throughout their trips. An established visitor can continue while either system is occupied,
@@ -47,6 +46,19 @@ The **Population** page shows active cap usage, region and system access, and co
 watched-system pilots. Prepared totals include saved communities in empty systems. Deferred systems keep a
 pending-preparation label. Use **Refresh population** while pilots travel. Local shows pilots currently in your
 system. Delayed Local keeps its normal privacy rules.
+
+## Activity-funded PvP ships
+
+An established world starts with seeded markets and **Buy PvP ships with activity income** enabled. To enable this
+on an existing established save, open **Player bots → PvP roams & regional conflicts**, select that option, save for
+restart and restart the server.
+
+An eligible pilot docked at a market station in an active system can use personal ISK above its starting cash to buy
+and fit a Merlin for PvP. Ratters earn bounties, and miners can sell surplus supported ore after unloading and checking
+production and moon-supply needs. Ambient station and gate travel provides no personal payout by itself. New generated
+ratters use a basic Merlin work fit without a warp scrambler. A pilot keeps its work ship at the dock when boarding the
+paid PvP fit, which can be used for roams, camps and gangs. Resupply, losses and the return to an owned work ship follow
+the existing world operations. [Implementation and validation](protocol/capsuleers.md#activity-funded-pvp-ships)
 
 ## Mining fleets
 
@@ -466,7 +478,7 @@ See the [implementation and validation record](protocol/capsuleers.md#observed-c
 
 The following sections record the schema 116–118 rollout and its historical measurements. Use
 [population controls](#population-controls) for current admission and [bot development milestones](bot-development-plan.md)
-for later fresh-universe work.
+for the current established-world direction.
 
 ## Agreed outcome
 

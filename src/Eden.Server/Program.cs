@@ -324,7 +324,9 @@ internal static class Program
             ServerLog.Console.Information($"Backing up and wiping world. Backup directory: {wipe.BackupDirectory}");
             bool reconfigure = wipe.Recreation == WorldRecreation.Configure;
             WorldWipe.Execute(worldPath, wipe.BackupDirectory, reconfigure, wipe.ConfigurationGeneration);
-            string next = reconfigure ? "configure the replacement in administration" : "recreate it with the saved settings";
+            string next = WorldSetupStore.Read(worldPath) is not null
+                ? "configure the replacement in administration"
+                : "recreate it with the saved settings";
             ServerLog.Console.Information($"World wipe complete. Accounts retained. Restart Eden to {next}.");
         }
     }

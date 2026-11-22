@@ -120,12 +120,24 @@ public sealed class WorldWipeTests
         Assert.Equal(rates, database.Settings.Progression);
     }
 
-    [Fact]
-    public void ReconfigurationSurvivesWipeAndUsesNewProfileWithExistingAccounts()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReconfigurationSurvivesWipeAndUsesEstablishedSettingsWithExistingAccounts(bool legacyFresh)
     {
-        using TestWorld fixture = new(liveWorld: true);
-        WorldDatabase database = new(fixture.Path);
-        var launcher = fixture.Services.GetRequiredService<LauncherStore>();
+        using TestWorld fixture = new();
+        string path = legacyFresh ? Path.Combine(Path.GetDirectoryName(fixture.Path)!, "legacy-world.sqlite") : fixture.Path;
+        WorldDatabase database = new(path);
+        if (legacyFresh)
+        {
+            WorldInitialization.Initialize(database, economy: new(FreshUniverse: true));
+            Assert.True(database.Settings.UsesFreshUniverseMarket());
+            WorldInitialization.Initialize(database);
+            Assert.True(database.Settings.UsesFreshUniverseMarket());
+            Assert.Null(WorldSetupStore.Read(path));
+        }
+        using var host = ServerServices.Build(database, liveWorld: true);
+        var launcher = host.GetRequiredService<LauncherStore>();
         long accountId = launcher.Register(new("Retained Pilot", AccountPassword)).AccountId;
         var oldSession = launcher.SignIn(new("Retained Pilot", AccountPassword, true));
         WorldConfigurationStore configuration = new(database, TimeProvider.System);
@@ -139,25 +151,31 @@ public sealed class WorldWipeTests
             },
             "Operator"
         );
-        fixture.Services.GetRequiredService<LiveWorld>().Dispose();
+        host.GetRequiredService<LiveWorld>().Dispose();
 
-        string backup = fixture.Path + ".backups/reconfigure";
+        string backup = path + ".backups/reconfigure";
         Assert.Throws<InvalidOperationException>(() =>
-            WorldWipe.Execute(fixture.Path, backup, reconfigure: true, configurationGeneration: active.Generation)
+            WorldWipe.Execute(path, backup, reconfigure: !legacyFresh, configurationGeneration: active.Generation)
         );
-        Assert.Null(WorldSetupStore.Read(fixture.Path));
-        WorldWipe.Execute(fixture.Path, backup, reconfigure: true, configurationGeneration: pending.Generation);
+        Assert.Null(WorldSetupStore.Read(path));
+        WorldWipe.Execute(path, backup, reconfigure: !legacyFresh, configurationGeneration: pending.Generation);
         Assert.Null(WorldSetupStore.Read(Path.Combine(backup, "world.sqlite")));
-        var state = WorldSetupStore.Read(fixture.Path)!;
+        var state = WorldSetupStore.Read(path)!;
         Assert.False(state.NewWorld);
         Assert.Null(state.Approval);
 
         WorldSetupRequest request = new(database, state);
-        request.Prepare(WorldProfile.Fresh, "", "Operator");
-        var approval = WorldSetupStore.Read(fixture.Path)!.Approval!;
+        request.Prepare("", "Operator");
+        var approval = WorldSetupStore.Read(path)!.Approval!;
         WorldInitialization.Initialize(database, setup: approval);
-        Assert.Null(WorldSetupStore.Read(fixture.Path));
-        Assert.True(database.Settings.UsesFreshUniverseMarket());
+        Assert.Null(WorldSetupStore.Read(path));
+        Assert.False(database.Settings.FreshUniverse);
+        Assert.Equal(legacyFresh, database.Settings.Capsuleers.EarnedPvpShips);
+        if (legacyFresh)
+        {
+            Assert.True(database.Settings.Economy is { BeginnerMarketSupply: true, ProgressiveMarkets: true });
+            Assert.False(database.Settings.DevelopmentSupply.TestingGrants);
+        }
         Assert.Equal(draft.Settings.Progression.TrainingSpeedMultiplier, database.Settings.Progression.TrainingSpeedMultiplier);
         Assert.Null(configuration.Read().Pending);
         Assert.Equal(pending.Pending!.Id, configuration.Get(pending.Pending.Id).Id);
@@ -165,7 +183,8 @@ public sealed class WorldWipeTests
         var reopenedLauncher = new LauncherStore(database, TimeProvider.System);
         Assert.Equal(accountId, reopenedLauncher.SignIn(new("Retained Pilot", AccountPassword, false)).AccountId);
         Assert.Throws<LauncherException>(() => reopenedLauncher.Refresh(oldSession.RefreshToken!));
-        Assert.Empty(fixture.Store.ListPilots(1000001));
+        using var world = reopened.Economy.Begin();
+        Assert.False(world.Pilots.Any(pilot => pilot.AccountId == accountId));
     }
 
     [Fact]

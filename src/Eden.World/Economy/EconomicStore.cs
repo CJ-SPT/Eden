@@ -135,7 +135,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
         }
     }
 
-    private static Dictionary<int, decimal> IndustryReferencePrices(CatalogDbContext catalog)
+    internal static Dictionary<int, decimal> IndustryReferencePrices(CatalogDbContext catalog)
     {
         var types = catalog
             .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Material)

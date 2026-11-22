@@ -18,15 +18,22 @@
 <form method="post" action="/api/admin/world/wipe">
     <AntiforgeryToken />
     <input type="hidden" name="generation" value="@state.Generation" />
-    <label>On the next start
-        <select name="recreation" required>
-            <option value="">Choose how to recreate the world</option>
-            <option value="reuse">Recreate with existing settings</option>
-            <option value="configure">Configure new settings</option>
-        </select>
-    </label>
-    <p>Reusing settings applies revision @next.Id (@(next.Draft.Settings.FreshUniverse ? "Fresh Universe" : "Established Universe")@(
-        state.Pending is null ? "" : ", pending restart")).</p>
+    @if (state.Active.Draft.Settings.FreshUniverse)
+    {
+        <input type="hidden" name="recreation" value="configure" />
+        <p>The next start opens setup for an Established Universe.</p>
+    }
+    else
+    {
+        <label>On the next start
+            <select name="recreation" required>
+                <option value="">Choose how to recreate the world</option>
+                <option value="reuse">Recreate with existing settings</option>
+                <option value="configure">Configure new settings</option>
+            </select>
+        </label>
+        <p>Reusing settings applies revision @next.Id@(state.Pending is null ? "" : " (pending restart)").</p>
+    }
     <label>Type WIPE WORLD to confirm <input name="confirmation" autocomplete="off" required pattern="WIPE WORLD" /></label>
     <button type="submit">Back up, wipe world and stop server</button>
 </form>

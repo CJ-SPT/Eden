@@ -25,11 +25,16 @@ internal sealed partial class CapsuleerHauler
     private bool DynamicWorkPilot(EconomyTransaction world) =>
         world.Set<SavedTrafficIdentity>().Find(pilotId) is null && CapsuleerIndustry.Employer(world, pilotId, Pilot.CorpId) is not null;
 
+    private bool HasPvpShip => CapsuleerIndustry.HasPvpShip(_operation.World, pilotId, Pilot.ShipId);
+    private bool HasCommittedPvpShip =>
+        !database.Settings.Capsuleers.EarnedPvpShips
+        || database.Settings.FreshUniverse
+        || CapsuleerCorporations.ReadOrganization(Live?.Economy.Peek<SavedCapsuleerOrganization>(pilotId)).EarnedPvpShipId == Pilot.ShipId;
+
     private bool TryDynamicDockWork(CombatAnomaly? scoutedAnomaly)
     {
         if (
             _operation.World is not EconomyTransaction world
-            || !DynamicWorkPilot(world)
             || Pilot.Position is not null
             || Pilot.InStructure
             || InActiveGang
@@ -49,11 +54,18 @@ internal sealed partial class CapsuleerHauler
 
         var catalog = _operation.Catalog;
         long now = Now;
+        bool earnedPvp = CapsuleerIndustry.RequiresEarnedPvp(world);
+        bool eligibleHuntSystem = earnedPvp
+            ? CapsuleerIndustry.CanStagePvp(world, catalog, Pilot.SystemId)
+            : database.Settings.Capsuleers.RoamPercent > 0 && PatrolAllowed(new(PatrolKind.Roam, Pilot.SystemId));
+        bool canHunt = eligibleHuntSystem && !_background;
+        if (!(earnedPvp && canHunt) && !DynamicWorkPilot(world))
+        {
+            return false;
+        }
         bool industryDemand = CapsuleerIndustry.HasWorkDemand(world, catalog, Pilot, now, requireProductBlueprint: true);
         bool factoryJob = CapsuleerIndustry.HasStationFactoryJob(world, pilotId, Pilot.StationId);
-        bool eligibleHuntSystem = database.Settings.Capsuleers.RoamPercent > 0 && PatrolAllowed(new(PatrolKind.Roam, Pilot.SystemId));
-        bool canHunt = eligibleHuntSystem && !_background;
-        int replacements = canHunt ? CapsuleerIndustry.ReadyHuntReplacements(world, catalog, Pilot) : 0;
+        int replacements = canHunt && !earnedPvp ? CapsuleerIndustry.ReadyHuntReplacements(world, catalog, Pilot) : 0;
         var work = CapsuleerWorkRules.Choose(industryDemand || factoryJob, canHunt, replacements);
         if (work == CapsuleerWorkKind.Industry)
         {
@@ -70,7 +82,14 @@ internal sealed partial class CapsuleerHauler
             _work = Work with { FactorySupply = null };
         }
 
-        if (eligibleHuntSystem && work != CapsuleerWorkKind.Industry)
+        if (earnedPvp && canHunt && work != CapsuleerWorkKind.Industry)
+        {
+            if (TryEarnedPvpDeparture(world, scoutedAnomaly))
+            {
+                return true;
+            }
+        }
+        else if (!earnedPvp && eligibleHuntSystem && work != CapsuleerWorkKind.Industry)
         {
             var candidate = CapsuleerWorkHulls.Find(
                 world,
@@ -136,5 +155,25 @@ internal sealed partial class CapsuleerHauler
             return true;
         }
         return false;
+    }
+
+    private bool TryEarnedPvpDeparture(EconomyTransaction world, CombatAnomaly? scoutedAnomaly)
+    {
+        UnloadRattingLoot();
+        if (!HasPvpShip)
+        {
+            var acquisition = ammunitionSupply.TryBuyEarnedPvpShip(world, _operation.Catalog, Pilot, Now, careerTraining);
+            _operation.MarketChanged |= acquisition.MarketChanged;
+            if (!acquisition.Boarded)
+            {
+                return false;
+            }
+            _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
+            ResetTradeHull();
+        }
+        var supplies = resupply.Dock(database, world, _operation.Catalog, pilotId, Work.Resupply, Now, out var fit);
+        _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
+        _work = Work with { Resupply = supplies };
+        return TryGangDeparture(authorizedHunt: true) || TryLaunchSortie(supplies, scoutedAnomaly, fit, intentionalHunt: true);
     }
 }

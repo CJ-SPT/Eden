@@ -54,6 +54,10 @@ internal static class WorldSetupStore
         {
             throw new InvalidDataException("Install the Eden catalog in the server data directory before creating a world.");
         }
+        if (draft.Settings is { FreshUniverse: true })
+        {
+            throw new InvalidDataException("World setup creates an Established Universe. Set settings.freshUniverse to false.");
+        }
         new WorldConfigurationStore(database, TimeProvider.System).Validate(draft);
         if (string.IsNullOrWhiteSpace(author) || author.Length > 128)
         {

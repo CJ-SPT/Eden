@@ -66,6 +66,7 @@ internal sealed partial class CapsuleerHauler
         if (
             !database.Settings.Capsuleers.RoamingGangs
             || !database.Settings.Capsuleers.RoamingPvp
+            || !HasCommittedPvpShip
             || Work.Retreating
             || Work.Defense?.Retreating == true
         )
@@ -205,6 +206,7 @@ internal sealed partial class CapsuleerHauler
             || !policy.RoamingGangs
             || !policy.RoamingPvp
             || _background
+            || !HasPvpShip
             || !authorizedHunt && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident && DynamicWorkPilot(resident)
             || Work.Retreating
             || Work.Freight?.Stacks.Length > 0
@@ -243,6 +245,7 @@ internal sealed partial class CapsuleerHauler
                     != CapsuleerCareer.Hauling
                 || saved.ActiveShip.Position is not null
                 || saved.ActiveShip.StationId != Pilot.StationId
+                || !CapsuleerIndustry.HasPvpShip(world, saved.Id, saved.ActiveShipId)
                 || world.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is not null
                 || regionalGroup is not null
                     && PatrolRules.Unaffiliated(Pilot.CorpId, saved.CorporationId)
@@ -282,8 +285,9 @@ internal sealed partial class CapsuleerHauler
                 world is Eden.World.Runtime.Economy.EconomyTransaction economy
                 && CapsuleerIndustry.Employer(economy, saved.Id, saved.CorporationId) is not null
                 && (
-                    CapsuleerIndustry.ReadyHuntReplacements(economy, _operation.Catalog, other)
-                        < CapsuleerWorkRules.MinimumHuntingReplacements
+                    !CapsuleerIndustry.RequiresEarnedPvp(economy)
+                        && CapsuleerIndustry.ReadyHuntReplacements(economy, _operation.Catalog, other)
+                            < CapsuleerWorkRules.MinimumHuntingReplacements
                     || CapsuleerIndustry.HasStationFactoryJob(economy, other.PilotId, other.StationId)
                     || CapsuleerIndustry.HasWorkDemand(economy, _operation.Catalog, other, Now)
                 )

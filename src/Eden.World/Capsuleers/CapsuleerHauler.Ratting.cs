@@ -174,11 +174,17 @@ internal sealed partial class CapsuleerHauler
         _work = Work with { ActivitySequence = sequence };
         if (intentionalHunt)
         {
-            return !_background && TryLaunchPatrol(sequence, intentional: true);
+            return !_background
+                && HasPvpShip
+                && (
+                    CapsuleerIndustry.RequiresEarnedPvp(_operation.World) && TryLaunchCamp(sequence, profile)
+                    || policy.RoamPercent > 0 && TryLaunchPatrol(sequence, intentional: true)
+                );
         }
         if (
             !FreshCombat
             && !_background
+            && HasPvpShip
             && (_operation.World is not Eden.World.Runtime.Economy.EconomyTransaction work || !DynamicWorkPilot(work))
             && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))
         )

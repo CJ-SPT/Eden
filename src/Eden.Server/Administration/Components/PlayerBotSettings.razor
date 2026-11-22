@@ -123,6 +123,10 @@
 <section class="card settings-group">
     <h3>PvP roams &amp; regional conflicts</h3>
     <div class="settings-fields">
+        <SettingField Label="Buy PvP ships with activity income"
+                      Help="New combat pilots earn ISK through ordinary activities and buy their PvP ships and fittings from the market.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.EarnedPvpShips" aria-describedby="@field.Help" /></Control>
+        </SettingField>
         <SettingField Label="Nullsec PvP roams"
                       Help="Allows eligible armed pilots to hunt targets while traveling in nullsec.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RoamingPvp" aria-describedby="@field.Help" /></Control>

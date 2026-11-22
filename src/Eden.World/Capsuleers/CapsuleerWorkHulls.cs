@@ -55,7 +55,7 @@ internal static class CapsuleerWorkHulls
     internal static void Board(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, Ship candidate, long now) =>
         PilotFleetStore.Board(world, catalog, pilot.PilotId, candidate.Id, pilot.ShipId, now);
 
-    private static bool CanLeaveShip(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot)
+    internal static bool CanLeaveShip(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot)
     {
         if (
             pilot.Position is not null

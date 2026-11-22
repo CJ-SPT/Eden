@@ -1,14 +1,11 @@
+using System.Collections.Immutable;
 using Eden.Gameplay.Configuration;
+using Eden.World.Catalog;
 using Eden.World.Configuration;
+using Eden.World.Economy;
 using Eden.World.Storage;
 
 namespace Eden.Server.Administration;
-
-internal enum WorldProfile
-{
-    Established,
-    Fresh,
-}
 
 internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState state)
 {
@@ -20,56 +17,58 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
     public WorldConfigurationDraft? Previous { get; } =
         state.NewWorld ? null : new WorldConfigurationStore(database, TimeProvider.System).Read().Active.Draft;
 
-    internal static WorldProfile ParseProfile(string value) =>
-        value switch
+    internal static void RequireEstablished(string? profile)
+    {
+        if (profile is not (null or "" or "established"))
         {
-            "established" => WorldProfile.Established,
-            "fresh" => WorldProfile.Fresh,
-            _ => throw new InvalidDataException("Choose Established Universe or Fresh Universe."),
-        };
+            throw new InvalidDataException("World setup creates an Established Universe.");
+        }
+    }
 
-    public WorldConfigurationDraft Draft(WorldProfile profile)
+    public WorldConfigurationDraft Draft()
     {
         if (!File.Exists(database.CatalogPath))
         {
             throw new InvalidDataException("Install the Eden catalog in the server data directory before creating a world.");
         }
-        bool fresh = profile == WorldProfile.Fresh;
-        var previous = Previous;
-        var draft = (previous ?? new()) with { CatalogFingerprint = database.Catalog.Identity.SourceFingerprint };
-        if (previous is not null && draft.Settings.FreshUniverse == fresh)
+        var draft = (Previous ?? new()) with { CatalogFingerprint = database.Catalog.Identity.SourceFingerprint };
+        if (Previous is not null && !draft.Settings.FreshUniverse)
         {
             return draft;
         }
 
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var prices = EconomicStore.IndustryReferencePrices(catalog);
+        foreach (var price in draft.AdjustedPrices)
+        {
+            prices[price.TypeId] = price.PriceIsk;
+        }
         var settings = draft.Settings;
         return draft with
         {
             Settings = settings with
             {
-                FreshUniverse = fresh,
+                FreshUniverse = false,
                 Economy = settings.Economy with
                 {
                     ChargeServiceCosts = true,
-                    ProgressiveMarkets = fresh ? true : null,
-                    RegionalHubSupply = !fresh,
-                    BeginnerMarketSupply = !fresh,
-                    SimulatedMarketHistory = !fresh,
+                    ProgressiveMarkets = true,
+                    RegionalHubSupply = true,
+                    BeginnerMarketSupply = true,
+                    SimulatedMarketHistory = true,
                     StandardMarket = false,
                 },
-                DevelopmentSupply = settings.DevelopmentSupply with { TestingMarket = false, TestingGrants = !fresh },
-                Progression = fresh
-                    ? settings.Progression with
-                    {
-                        GrantStartingEquipment = true,
-                        GrantStartingSkills = true,
-                    }
-                    : settings.Progression,
+                DevelopmentSupply = settings.DevelopmentSupply with { TestingMarket = false, TestingGrants = Previous is null },
+                Capsuleers = settings.Capsuleers with { EarnedPvpShips = true },
             },
+            AdjustedPrices = prices
+                .OrderBy(price => price.Key)
+                .Select(price => new AdjustedPriceOverride(price.Key, price.Value))
+                .ToImmutableArray(),
         };
     }
 
-    public void Prepare(WorldProfile profile, string document, string author)
+    public void Prepare(string document, string author)
     {
         lock (_gate)
         {
@@ -77,11 +76,7 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
             {
                 throw new InvalidOperationException("World setup has already been approved.");
             }
-            var draft = string.IsNullOrWhiteSpace(document) ? Draft(profile) : WorldSetupStore.Parse(document);
-            if (draft.Settings is null || draft.Settings.FreshUniverse != (profile == WorldProfile.Fresh))
-            {
-                throw new InvalidDataException("The configuration document must match the selected world profile.");
-            }
+            var draft = string.IsNullOrWhiteSpace(document) ? Draft() : WorldSetupStore.Parse(document);
             _pending = WorldSetupStore.Approve(database, state, draft, author);
         }
     }

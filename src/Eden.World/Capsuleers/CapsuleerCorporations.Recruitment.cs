@@ -26,6 +26,12 @@ internal sealed record CapsuleerOrganization(long DueTicks = 0, long? Applicatio
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? HuntReserveJobId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? EarnedPvpShipId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? PvpWorkShipId { get; init; }
     public long? StarterMarketJobId { get; init; }
     public int? OperatingStationId { get; init; }
     public CapsuleerRelocation? Relocation { get; init; }

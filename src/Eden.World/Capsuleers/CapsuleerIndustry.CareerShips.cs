@@ -31,7 +31,10 @@ internal sealed partial class CapsuleerIndustry
     private sealed record CareerProductionBid(long PriceCents, int BatchSize);
 
     private const decimal CareerProductionMargin = 1.25m;
-    private static readonly CatalogDefinition<ReplacementKit?> s_careerKits = new("career-ship-kits", LoadCareerKit);
+    private static readonly CatalogDefinition<ReplacementKit?> s_careerKits = new(
+        "career-ship-kits",
+        (catalog, type) => LoadCareerKit(catalog, type)
+    );
     private static readonly CatalogDefinition<CareerProductionBid?> s_careerProductionBids = new(
         "career-production-bids",
         LoadCareerProductionBid
@@ -81,7 +84,7 @@ internal sealed partial class CapsuleerIndustry
             coverProduction ? catalog.Definition(s_careerProductionBids, type)?.PriceCents ?? 0 : 0
         );
 
-    private static ReplacementKit? LoadCareerKit(CatalogDbContext catalog, int type)
+    private static ReplacementKit? LoadCareerKit(CatalogDbContext catalog, int type, bool includePatrolSupport = false)
     {
         var hull = (HullClass)(catalog.FittingType(type)?.GroupId ?? 0);
         const int high = (int)InventoryFlag.HighSlot0;
@@ -137,19 +140,20 @@ internal sealed partial class CapsuleerIndustry
             {
                 // The published starter Merlin keeps its civilian-to-railgun purchasing plan. Larger ships
                 // acquire the propulsion, tackle and tank from their catalog-validated patrol fit as well.
-                var fitting = !UsesPatrolSupport(catalog, type)
-                    ? highSlots
-                    :
-                    [
-                        .. highSlots,
-                        .. fit
-                            .Equipment.Where(item =>
-                                InventoryDefinitions.IsFittedSlot(item.Flag)
-                                && !InventoryDefinitions.IsHighSlot(item.Flag)
-                                && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Module
-                            )
-                            .Select(item => new FittingSlot(item.Flag, item.TypeId)),
-                    ];
+                var fitting =
+                    !includePatrolSupport && !UsesPatrolSupport(catalog, type)
+                        ? highSlots
+                        :
+                        [
+                            .. highSlots,
+                            .. fit
+                                .Equipment.Where(item =>
+                                    InventoryDefinitions.IsFittedSlot(item.Flag)
+                                    && !InventoryDefinitions.IsHighSlot(item.Flag)
+                                    && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Module
+                                )
+                                .Select(item => new FittingSlot(item.Flag, item.TypeId)),
+                        ];
                 if (WithinBaseFittingResources(catalog, type, fitting))
                 {
                     kit = new(type, fitting, fitting.Select(slot => slot.FlagId).ToHashSet(), [], magazines);
@@ -177,7 +181,7 @@ internal sealed partial class CapsuleerIndustry
         }
         if (plan is not { ShipTypeId: > 0 } || plan.ShipTypeId == pilot.ShipTypeId || CareerKit(catalog, plan.ShipTypeId) is not { } kit)
         {
-            return new(MarketChanged: starterWorkshop && SellStarterOre(world, catalog, pilot, Hangar(world, id, station)));
+            return new(MarketChanged: starterWorkshop && SellOre(world, catalog, pilot, Hangar(world, id, station)));
         }
         var parts = kit.Parts();
         bool coverProduction = plan.Profession == CapsuleerProfession.Combat && UsesPatrolSupport(catalog, kit.HullTypeId);
@@ -192,7 +196,7 @@ internal sealed partial class CapsuleerIndustry
             )
         )
         {
-            return new(MarketChanged: starterWorkshop && SellStarterOre(world, catalog, pilot, Hangar(world, id, station)));
+            return new(MarketChanged: starterWorkshop && SellOre(world, catalog, pilot, Hangar(world, id, station)));
         }
 
         var hangar = Hangar(world, id, station);
@@ -229,7 +233,7 @@ internal sealed partial class CapsuleerIndustry
         }
         if (starterWorkshop && FinishCareerManufacturing(world, catalog, pilot, missing, now))
         {
-            return new(MarketChanged: SellStarterOre(world, catalog, pilot, hangar));
+            return new(MarketChanged: SellOre(world, catalog, pilot, hangar));
         }
         if (!StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market))
         {
@@ -267,7 +271,7 @@ internal sealed partial class CapsuleerIndustry
                     return new(MarketChanged: changed, OreTypes: oreTypes);
                 }
             }
-            if (SellStarterOre(world, catalog, pilot, hangar))
+            if (SellOre(world, catalog, pilot, hangar))
             {
                 return new(MarketChanged: true);
             }

@@ -86,7 +86,7 @@ If startup reports a missing `catalog.sqlite`, copy your matching catalog to the
 with `-Output` set to that path. If you double-click `Eden.Server.exe` on Windows, its console displays the error until you
 press a key. Set `EDEN_NO_PAUSE_ON_ERROR=1` for automation that starts Eden in a dedicated Windows console.
 
-The default world seeds Eden Pilot and Eden Wing. Fresh-universe worlds start without these development pilots.
+New worlds seed Eden Pilot and Eden Wing.
 Existing saves migrate on startup. Eden loads the world into memory and checkpoints committed changes every 15 seconds
 by default. Graceful shutdown flushes remaining changes. Account credential and session changes can request a durable save.
 Set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.
@@ -245,14 +245,10 @@ Put the verified build-3662168 `catalog.sqlite` beside the new world path and st
 dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Economy\world.sqlite'
 ```
 
-Follow the console to [World setup](world-configuration.md#first-start). Select **Fresh Universe** for the zero-ISK
-opening, or select **Established Universe** and turn off `settings.developmentSupply.testingGrants` in its advanced
-draft to use established bot rules without the testing grant. You can adjust `settings.developmentSupply.institutionalStock`
+Follow the console to [World setup](world-configuration.md#first-start). The default Progressive market seeds regional NPC
+and starter stock. Turn off `settings.developmentSupply.testingGrants` in the advanced draft to disable the testing wallet grant.
+You can adjust `settings.developmentSupply.institutionalStock`
 (default 1,000 replenishing units per order), service costs, prices, manufacturing indices and belt renewal in the same draft.
-
-Fresh humans and bots start at zero ISK with a racial corvette and civilian equipment. NPC ore buyers provide first
-earnings. NPC blueprint and skillbook offers provide access to training and jobs. The first autonomous cohort develops
-a local Miner I supply chain at eligible high-security stations. [Fresh-universe implementation](protocol/capsuleers.md#fresh-universe-starter-industry)
 
 Institutional NPC offers stock catalog blueprints and skillbooks at pinned base prices. Ships, modules and minerals
 also depend on the market policy selected in the draft. See [market presets](world-configuration.md#market-presets)

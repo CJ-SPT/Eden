@@ -1,3 +1,4 @@
+using Eden.World.Configuration;
 using Eden.World.Modding;
 using Eden.World.Runtime;
 using Microsoft.Data.Sqlite;
@@ -76,10 +77,12 @@ public static class WorldWipe
         );
 
         ClearWorld(world);
-        if (reconfigure)
+        using (WorldDbContext replacement = new(world))
         {
-            using WorldDbContext replacement = new(world);
-            WorldSetupStore.RequireReconfiguration(replacement);
+            if (reconfigure || WorldConfigurationStore.IsFreshUniverse(replacement))
+            {
+                WorldSetupStore.RequireReconfiguration(replacement);
+            }
         }
         if (mods is not null)
         {

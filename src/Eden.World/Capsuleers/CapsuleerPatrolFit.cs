@@ -13,7 +13,7 @@ internal static partial class CapsuleerPatrolFit
     private const int Merlin = 603;
     private const int GatlingRail = 561;
     private const int IronCharge = 215;
-    private const int Scrambler = 447;
+    private const int Scrambler = (int)StarterMarketType.WarpScrambler;
     private static readonly CatalogDefinition<TrafficProfile?> s_fit = new(
         "patrol-merlin",
         (catalog, _) =>
@@ -211,6 +211,12 @@ internal static partial class CapsuleerPatrolFit
 
     internal static TrafficProfile? Starter(CatalogDbContext catalog) => catalog.Definition(s_fit, 0);
 
+    private static readonly CatalogDefinition<TrafficProfile?> s_rattingFit = new(
+        "earned-pvp-ratting-merlin",
+        (catalog, _) =>
+            Starter(catalog) is { } fit ? fit with { Equipment = fit.Equipment.Where(item => item.TypeId != Scrambler).ToArray() } : null
+    );
+
     internal static TrafficProfile? Select(
         CatalogDbContext catalog,
         CapsuleerPopulationPolicy policy,
@@ -228,6 +234,10 @@ internal static partial class CapsuleerPatrolFit
         if (security > 0 && !(policy.GateCamps && policy.LowsecGateCamps && TrafficRules.SecurityBand(security) == TrafficSecurityBand.Low))
         {
             return imported?.Invoke();
+        }
+        if (policy.EarnedPvpShips)
+        {
+            return catalog.Definition(s_rattingFit, 0) ?? imported?.Invoke();
         }
         var interdictor =
             policy.GateCamps && policy.CampBubbles && security <= 0 && PatrolRules.Choose(seed ^ system, ~slot, policy.InterdictorPercent)

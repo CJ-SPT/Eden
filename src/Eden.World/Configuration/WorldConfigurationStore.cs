@@ -32,6 +32,11 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         return Snapshot(world, world.Set<SavedConfigurationState>().Single());
     }
 
+    private static ConfigurationRevision ReadActive(WorldDbContext world) =>
+        Revision(world.Set<SavedConfigurationRevision>().Find(world.Set<SavedConfigurationState>().Single().ActiveRevisionId)!);
+
+    internal static bool IsFreshUniverse(WorldDbContext world) => ReadActive(world).Draft.Settings.FreshUniverse;
+
     public IReadOnlyList<ConfigurationRevisionInfo> History(int skip = 0, int limit = 50)
     {
         if (skip < 0 || limit is < 1 or > 100)
@@ -84,7 +89,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         var active = Revision(world.Set<SavedConfigurationRevision>().Find(state.ActiveRevisionId)!);
         if (active.Draft.Settings.FreshUniverse != draft.Settings.FreshUniverse)
         {
-            throw new InvalidDataException("Fresh-universe progression is selected when creating a world.");
+            throw new InvalidDataException("A saved world's creation rules remain fixed until the world is wiped.");
         }
         if (state.Generation != expectedGeneration)
         {
@@ -197,8 +202,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         {
             return;
         }
-        var state = world.Set<SavedConfigurationState>().Single();
-        database.Configuration.Install(Revision(world.Set<SavedConfigurationRevision>().Find(state.ActiveRevisionId)!));
+        database.Configuration.Install(ReadActive(world));
     }
 
     internal static void Activate(WorldDatabase database, TimeProvider? clock = null, WorldSetupApproval? setup = null)

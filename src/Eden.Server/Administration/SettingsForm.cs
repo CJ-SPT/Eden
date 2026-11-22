@@ -105,6 +105,7 @@ public sealed class SettingsForm
     public bool AutomaticAlliances { get; set; }
     public bool NewSovereigntyClaims { get; set; }
 
+    public bool EarnedPvpShips { get; set; }
     public bool RoamingPvp { get; set; }
     public bool RoamingGangs { get; set; }
     public int RoamingGangSize { get; set; }
@@ -389,6 +390,7 @@ public sealed class SettingsForm
             AutomaticRecruitment = settings.Capsuleers.AutomaticRecruitment,
             AutomaticAlliances = settings.Capsuleers.AutomaticAlliances,
             NewSovereigntyClaims = settings.Capsuleers.NewSovereigntyClaims,
+            EarnedPvpShips = settings.Capsuleers.EarnedPvpShips,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
             RoamingGangs = settings.Capsuleers.RoamingGangs,
             RoamingGangSize = settings.Capsuleers.RoamingGangSize,
@@ -483,6 +485,7 @@ public sealed class SettingsForm
                 AutomaticRecruitment = AutomaticRecruitment,
                 AutomaticAlliances = AutomaticAlliances,
                 NewSovereigntyClaims = NewSovereigntyClaims,
+                EarnedPvpShips = EarnedPvpShips,
                 RoamingPvp = RoamingPvp,
                 RoamingGangs = RoamingGangs,
                 RoamingGangSize = RoamingGangSize,

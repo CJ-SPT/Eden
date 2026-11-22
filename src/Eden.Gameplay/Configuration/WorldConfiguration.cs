@@ -110,6 +110,7 @@ public sealed record CapsuleerPopulationPolicy(
     public int CampPercent { get; init; } = 20;
     public int CampSeconds { get; init; } = 240;
     public bool RoamingPvp { get; init; } = true;
+    public bool EarnedPvpShips { get; init; }
     public bool RoamingGangs { get; init; } = true;
     public int RoamingGangSize { get; init; } = 4;
     public bool RegionalConflicts { get; init; } = true;

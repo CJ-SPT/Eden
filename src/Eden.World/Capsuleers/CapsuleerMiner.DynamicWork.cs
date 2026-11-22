@@ -132,19 +132,28 @@ internal sealed partial class CapsuleerMiner
         var policy = database.Settings.Capsuleers;
         var catalog = _operation.Catalog;
         if (
-            policy.RoamPercent <= 0
-            || !PatrolRules.Allowed(
-                new(PatrolKind.Roam, Pilot.SystemId),
-                catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId),
-                policy
-            )
-            || Work.FactoryStage is not null
+            Work.FactoryStage is not null
             || Work.FactorySupply is not null
             || Work.RefineryIceType is not null
             || Work.Mercoxit is not null
             || _operation.World is not EconomyTransaction world
-            || CapsuleerIndustry.Employer(world, pilotId, Pilot.CorpId) is null
         )
+        {
+            return false;
+        }
+
+        bool earnedPvp = CapsuleerIndustry.RequiresEarnedPvp(world);
+        bool canHunt = earnedPvp
+            ? CapsuleerIndustry.CanStagePvp(world, catalog, Pilot.SystemId)
+                && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) == true
+            : policy.RoamPercent > 0
+                && PatrolRules.Allowed(
+                    new(PatrolKind.Roam, Pilot.SystemId),
+                    catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId),
+                    policy
+                )
+                && CapsuleerIndustry.Employer(world, pilotId, Pilot.CorpId) is not null;
+        if (!canHunt)
         {
             return false;
         }
@@ -156,6 +165,20 @@ internal sealed partial class CapsuleerMiner
         )
         {
             return false;
+        }
+        if (earnedPvp)
+        {
+            var acquisition = industry.TryBuyEarnedPvpShip(world, catalog, Pilot, now, careerTraining);
+            _operation.MarketChanged |= acquisition.MarketChanged;
+            if (!acquisition.Boarded)
+            {
+                return false;
+            }
+            var previous = Pilot;
+            _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            CapsuleerWorkHandoff.ToFlight(_operation, world, previous, world.Ships.Find(Pilot.ShipId)!, Work.ActiveTicks);
+            _operation.TravelChanged = true;
+            return true;
         }
         var combat = CapsuleerWorkHulls.Find(world, catalog, Pilot, CapsuleerProfession.Combat, now);
         if (combat is null)

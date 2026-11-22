@@ -457,7 +457,7 @@ internal sealed partial class CapsuleerHauler(
         if (
             Work.Ratting is { } sortie
             && !(
-                sortie.Patrol is { } patrol ? PatrolAllowed(patrol)
+                sortie.Patrol is { } patrol ? HasCommittedPvpShip && PatrolAllowed(patrol)
                 : sortie.AnomalyPosition is null ? database.Settings.Capsuleers.BeltRatting
                 : database.Settings.Capsuleers.AnomalyRatting
             )
@@ -991,7 +991,8 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _route =
-            CapsuleerTrafficRoutes.EscapeRoute(_operation.Catalog, Pilot.SystemId, database.Settings.Capsuleers)
+            PvpLossRefuge()
+            ?? CapsuleerTrafficRoutes.EscapeRoute(_operation.Catalog, Pilot.SystemId, database.Settings.Capsuleers)
             ?? throw new InvalidDataException("The capsule has no reachable NPC station.");
         _work = Work with
         {
@@ -1087,6 +1088,7 @@ internal sealed partial class CapsuleerHauler(
             }
             if (
                 Work.Freight is null
+                && !(CapsuleerIndustry.RequiresEarnedPvp(resident) && HasPvpShip)
                 && resident.Set<SavedTrafficIdentity>().Find(pilotId) is null
                 && !PilotInventoryStore
                     .List(resident, _operation.Catalog, pilotId, Pilot.ShipId)

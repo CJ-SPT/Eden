@@ -6,10 +6,12 @@ using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Industry;
 using Eden.World.Market;
@@ -112,7 +114,7 @@ internal sealed partial class CapsuleerIndustry
         var hangar = Hangar(world, id, station);
         if (bid is null)
         {
-            bool sold = SellStarterOre(world, catalog, pilot, hangar);
+            bool sold = SellOre(world, catalog, pilot, hangar);
             // Keep the existing blueprint working and let a funded buyer establish demand.
             return !hangar.Any(item => item.TypeId == StarterIndustryRules.MinerBlueprint || item.TypeId == product)
                     && PlaceStarterBid(world, catalog, pilot, now, product)
@@ -120,16 +122,16 @@ internal sealed partial class CapsuleerIndustry
         }
         if (!ManufacturingCatalog.Recipes(catalog).TryGetValue(StarterIndustryRules.MinerBlueprint, out var recipe))
         {
-            return SellStarterOre(world, catalog, pilot, hangar);
+            return SellOre(world, catalog, pilot, hangar);
         }
         factoryWork = true;
         if (recipe.Skills.Any(skill => PilotSkillReader.Level(world, catalog, id, skill.TypeId) < skill.Level))
         {
-            return SellStarterOre(world, catalog, pilot, hangar);
+            return SellOre(world, catalog, pilot, hangar);
         }
         if (StarterOutputInProgress(world, station, product) >= bid.Remaining)
         {
-            return SellStarterOre(world, catalog, pilot, hangar);
+            return SellOre(world, catalog, pilot, hangar);
         }
         return PrepareStarterJob(world, catalog, pilot, hangar, recipe, out oreTypes, bid);
     }
@@ -309,19 +311,19 @@ internal sealed partial class CapsuleerIndustry
             ) <= jobCost
         )
         {
-            return SellStarterOre(world, catalog, pilot, hangar);
+            return SellOre(world, catalog, pilot, hangar);
         }
         if (blueprint is null)
         {
             long balance = StarterBalance(world, id);
             if (balance <= jobCost)
             {
-                return SellStarterOre(world, catalog, pilot, hangar);
+                return SellOre(world, catalog, pilot, hangar);
             }
             var ask = market.SupplyOrders(world, catalog, station, [recipe.BlueprintTypeId], id).MinBy(order => order.PriceCents);
             if (ask is null || balance < ask.PriceCents + jobCost)
             {
-                return SellStarterOre(world, catalog, pilot, hangar);
+                return SellOre(world, catalog, pilot, hangar);
             }
             market.ExecuteBuy(world, catalog, id, station, [new(recipe.BlueprintTypeId, ask.PriceCents, 1)], 0);
             return true;
@@ -351,13 +353,13 @@ internal sealed partial class CapsuleerIndustry
                 )
             )
             {
-                return SellStarterOre(world, catalog, pilot, hangar);
+                return SellOre(world, catalog, pilot, hangar);
             }
             return false;
         }
         if (StarterBalance(world, id) < jobCost)
         {
-            return SellStarterOre(world, catalog, pilot, hangar);
+            return SellOre(world, catalog, pilot, hangar);
         }
         var installed = industry.InstallManufacturing(
             world,
@@ -385,7 +387,13 @@ internal sealed partial class CapsuleerIndustry
             .Where(material => material.Quantity > 0)
             .ToDictionary(material => material.Key, material => checked((int)material.Quantity));
 
-    private bool SellStarterOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, OwnedItem[] hangar)
+    internal bool SellMiningSurplus(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, long now) =>
+        StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)
+        && !HasStationFactoryJob(world, pilot.PilotId, pilot.StationId)
+        && !HasWorkDemand(world, catalog, pilot, now)
+        && SellOre(world, catalog, pilot, Hangar(world, pilot.PilotId, pilot.StationId));
+
+    private bool SellOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, OwnedItem[] hangar)
     {
         int station = pilot.StationId;
         bool starterMarket = world.Settings.UsesFreshUniverseMarket();

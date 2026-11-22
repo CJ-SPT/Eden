@@ -323,19 +323,19 @@ internal static class AdministrationHost
         {
             api.MapGet(
                 "/world/setup-draft",
-                (string profile) =>
-                    Results.Text(WorldSetupStore.Export(worldSetup.Draft(WorldSetupRequest.ParseProfile(profile))), "application/json")
+                (string? profile) =>
+                {
+                    WorldSetupRequest.RequireEstablished(profile);
+                    return Results.Text(WorldSetupStore.Export(worldSetup.Draft()), "application/json");
+                }
             );
             api.MapPost(
                 "/world/setup",
                 async (HttpContext context) =>
                 {
                     var form = await context.Request.ReadFormAsync();
-                    worldSetup.Prepare(
-                        WorldSetupRequest.ParseProfile(form["profile"].ToString()),
-                        form["document"].ToString(),
-                        context.User.Identity!.Name!
-                    );
+                    WorldSetupRequest.RequireEstablished(form["profile"].ToString());
+                    worldSetup.Prepare(form["document"].ToString(), context.User.Identity!.Name!);
                     context.Response.OnCompleted(worldSetup.BeginStartup);
                     return Results.Content(
                         "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Starting world</title>"

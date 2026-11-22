@@ -924,6 +924,17 @@ internal sealed partial class CapsuleerMiner(
             moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now, moonSupply);
         }
         _work = Work with { FactorySupply = supply };
+        if (
+            ore.Length > 0
+            && moon is null
+            && supply is null
+            && !Pilot.InStructure
+            && _operation.World is EconomyTransaction oreMarket
+            && CapsuleerIndustry.RequiresEarnedPvp(oreMarket)
+        )
+        {
+            _operation.MarketChanged |= industry.SellMiningSurplus(oreMarket, _operation.Catalog, Pilot, Now);
+        }
         bool reconsideredRookie = false;
         if (moon is null && TryTakeHuntingWork())
         {

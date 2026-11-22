@@ -13,6 +13,7 @@ public enum StarterMarketType
     StandardSmall = 242,
     SmallShieldBooster = 399,
     Afterburner = 439,
+    WarpScrambler = 447,
     GatlingPulseLaser = 450,
     Miner = 483,
     GatlingAutocannon = 484,
@@ -29,6 +30,20 @@ public enum StarterMarketType
 public static class StarterMarketRules
 {
     public static IReadOnlySet<int> Types { get; } = Enum.GetValues<StarterMarketType>().Select(type => (int)type).ToFrozenSet();
+
+    public static IReadOnlySet<int> PvpKitTypes { get; } =
+        new[]
+        {
+            StarterMarketType.Merlin,
+            StarterMarketType.GatlingRailgun,
+            StarterMarketType.IronSmall,
+            StarterMarketType.WarpScrambler,
+            StarterMarketType.Afterburner,
+            StarterMarketType.SmallShieldBooster,
+            StarterMarketType.DamageControl,
+        }
+            .Select(type => (int)type)
+            .ToFrozenSet();
 
     public static bool CanSupply(InventoryCategory category, bool published, bool onMarket, int techLevel, bool faction) =>
         published

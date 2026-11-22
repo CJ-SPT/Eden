@@ -104,6 +104,7 @@ internal static class ConfigurationDisplay
         ["capsuleers.anomalyRatting"] = "Run ordinary combat anomalies",
         ["capsuleers.exploration"] = "Explore data and relic sites",
         ["capsuleers.wreckSalvage"] = "Salvage NPC wrecks",
+        ["capsuleers.earnedPvpShips"] = "Buy PvP ships with activity income",
         ["capsuleers.roamingPvp"] = "Nullsec PvP roams",
         ["capsuleers.roamPercent"] = "Roam chance per departure (%)",
         ["capsuleers.generatedCombatPercent"] = "Combat fits among generated nullsec pilots (%)",

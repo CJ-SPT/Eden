@@ -44,16 +44,13 @@ selected one on startup. Enter the administrator password when prompted. The run
 dotnet run --no-build --project src/Eden.Server -- --set-admin-password Corey
 ```
 
-Sign in at the printed URL (by default `http://127.0.0.1:26003/world/setup`) and select a profile.
+Sign in at the printed URL (by default `http://127.0.0.1:26003/world/setup`). New saves use Established Universe careers and
+traffic. The default Progressive market seeds regional NPC buy orders, institutional offers and starter ship and fitting stock.
+Bots can use activity income to buy PvP ships. The existing testing wallet grant for human pilots is enabled on first start.
 
-| Profile | Starting rules |
-| --- | --- |
-| **Established Universe** | Established bot careers and traffic, progressive markets, regional NPC and starter supply, and the existing testing wallet grant. |
-| **Fresh Universe** | Humans and bots start at zero ISK with racial corvettes and starter skills and equipment. NPC starter ore buyers, blueprints and skillbooks support the early economy. Bots earn their upgrades. |
-
-For custom starting settings, open **Advanced settings**, copy the selected profile's draft, edit it, and paste the complete JSON
-into the form. For example, set `settings.developmentSupply.testingGrants` to false to create an Established world without testing
-wallet grants. The draft also supports bot limits, market supply, institutional stock and economic overrides.
+For custom starting settings, open **Advanced settings**, download the configuration draft, edit it, and paste the complete JSON
+into the form. Set `settings.developmentSupply.testingGrants` to false to disable testing wallet grants. The draft also supports
+bot limits, market supply, institutional stock and economic overrides.
 
 Select **Create world and start**. Eden validates and saves the choice, then prepares the world. If startup is interrupted after
 approval, restart Eden with the same data directory to resume with the saved choice. When the server is ready, choose **Check again**
@@ -70,7 +67,7 @@ Existing settings are preserved; combinations that do not match a preset appear 
 changes market supply switches only. Wallet grants, balances, owned goods, player orders, service costs and
 reference-history choices retain their settings.
 
-The presets also apply to existing **Fresh-universe** worlds. The profile starts pilots at zero ISK with the
+The presets also apply to legacy **Fresh-universe** saves. That profile starts pilots at zero ISK with the
 starter package. Its default market uses starter ore buyers and blueprint and skillbook offers. To select that
 market again under **Custom**, enable progressive regional markets and turn off live orders, testing, regional
 hub supply and beginner supply. Other presets use their own available buyers and sellers.
@@ -604,8 +601,8 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   (`settings.capsuleers.activePilotCap`) and the switch for preparing unvisited systems in fresh universes
   (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
   **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
-- **Fresh founder cohorts per system** (`settings.capsuleers.freshFounderCohortsPerSystem`) sets one to five sets of eligible
-  starter miners, couriers, and bounty pilots per system in Fresh Universe. The default is one. The active cap and each role's
+- In legacy Fresh Universe saves, **Fresh founder cohorts per system** (`settings.capsuleers.freshFounderCohortsPerSystem`) sets one
+  to five cohorts of eligible starter miners, couriers, and bounty pilots per system. The default is one. The active cap and each role's
   eligibility still apply. Reducing the setting pauses additional cohorts after restart and preserves their pilots and jobs.
 - **Where bots work** applies the default, then the region override, then the solar-system override
   (`settings.capsuleers.systemAccess`). To keep work out of a starter system, choose its region and solar system and
@@ -623,6 +620,10 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   stops a pending cycle when the pilot next runs. Ordinary wreck looting can still occur.
 - **Exploration** (`settings.capsuleers.exploration`) lets eligible bots acquire exploration equipment and scan and hack
   high-security pirate data and relic sites. Disabling it sends active explorers back to their departure stations.
+- **Buy PvP ships with activity income** (`settings.capsuleers.earnedPvpShips`) funds new PvP fits through existing bot earnings.
+  Setup enables this for new saves. To enable it on an existing established save, select it under **PvP roams & regional conflicts**
+  and save for restart. With the Progressive market and **Beginner market supply** enabled, eligible lowsec and nullsec NPC traffic
+  stations seed a small supply of the entry PvP hull, fittings and ammunition.
 - **Persistent roaming gangs** (`settings.capsuleers.roamingGangs`, default on) permits coordinated nullsec hunting with
   existing ships. **Roaming gang size** (`settings.capsuleers.roamingGangSize`) accepts 3–6, default 4. The existing roam
   chance controls formation. [Gang behavior and requirements](capsuleer-population.md#persistent-roaming-gangs).

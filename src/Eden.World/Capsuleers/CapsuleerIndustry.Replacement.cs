@@ -277,7 +277,7 @@ internal sealed partial class CapsuleerIndustry
         return new(false, false, Math.Min(now, orderDeadline), []);
     }
 
-    private void BoardKit(EconomyTransaction world, CatalogDbContext catalog, DockedPilot docked, ReplacementKit kit, long now)
+    private long BoardKit(EconomyTransaction world, CatalogDbContext catalog, DockedPilot docked, ReplacementKit kit, long now)
     {
         long pilotId = docked.PilotId;
         int station = docked.StationId;
@@ -304,6 +304,7 @@ internal sealed partial class CapsuleerIndustry
                 PilotAmmunitionStore.Load(world, catalog, pilotId, shipId, modules, sources[charge.Key], station, now);
             }
         }
+        return shipId;
     }
 
     private bool ProcureReplacementPart(

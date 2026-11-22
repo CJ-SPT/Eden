@@ -6,7 +6,9 @@ Sign in to administration and open **World**. Choose how to recreate the world.
 
 - **Recreate with existing settings** uses the revision shown in the form, including saved settings pending restart.
 - **Configure new settings** opens [World setup](world-configuration.md#first-start) on the next start. The previous active
-  settings are available as a starting point. You can change the world profile or paste a new configuration draft.
+  settings are available as a starting point, and you can paste a custom configuration draft.
+
+Wiping a legacy Fresh Universe save opens setup for an Established Universe with the seeded market.
 
 Type `WIPE WORLD` and select **Back up, wipe world and stop server**. The request page reports the backup directory.
 Wait for **World wipe complete** in the server console before restarting. Account creation and sign-in reopen when the
@@ -31,8 +33,8 @@ checkpoint. Only a successful shutdown reaches the wipe. The operation acquires 
 exclusive `.owner` file used by the running server and refuses a world that is still owned.
 It copies the final checkpoint into a detached image and writes, flushes and checks the full
 backup before clearing any rows. It also backs up the mod state database when present.
-Deletion runs only in detached images. Account and configuration tables are retained. For **Configure new settings**, the
-replacement checkpoint records that setup is required. The backup retains its original startup state.
+Deletion runs only in detached images. Account and configuration tables are retained. For **Configure new settings** and legacy
+Fresh Universe wipes, the replacement checkpoint records that setup is required. The backup retains its original startup state.
 The replacement world is checked for integrity and foreign key violations before the existing
 atomic checkpoint writer installs it. A backup failure leaves the original saves intact.
 If installing the world fails after installing cleared mod state, the original mod state is restored.
