@@ -159,7 +159,7 @@ public sealed class TrafficPreparationTests(ITestOutputHelper output)
         fixture.Clock.Seconds += 1;
         var input = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
         Assert.NotEqual(0, input.StationId);
-        Assert.Equal(!testingMarket, input.PrepareInstitutionalOffers);
+        Assert.Equal(!testingMarket, input.PrepareMarketOffers);
         using (live.EnterShared())
         {
             Assert.True(scheduler.PreparationCurrent(input));

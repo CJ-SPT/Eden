@@ -43,7 +43,7 @@ internal sealed partial class CapsuleerScheduler
         CapsuleerProfession DefaultProfession,
         CapsuleerCareerPlan? TrainingPlan,
         bool PrepareMercoxit,
-        bool PrepareInstitutionalOffers,
+        bool PrepareMarketOffers,
         bool FreshCareerTrade
     );
 
@@ -236,7 +236,7 @@ internal sealed partial class CapsuleerScheduler
             profession,
             trainingPlan,
             mercoxit,
-            dockedWork && PilotMarketStore.UsesInstitutionalOffers(world),
+            dockedWork && (world.Settings.Economy.StandardMarket || PilotMarketStore.UsesInstitutionalOffers(world)),
             freshCareerTrade
         );
     }
@@ -415,11 +415,11 @@ internal sealed partial class CapsuleerScheduler
                 cancellationToken.ThrowIfCancellationRequested();
                 belts[belt] = AsteroidFieldStore.Prepare(catalog, belt);
             }
-            if (!preparedTrade && input.PrepareInstitutionalOffers)
+            if (!preparedTrade && input.PrepareMarketOffers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using var institutional = SessionPerformance.Phase("traffic.institutionalOffers");
-                market.PrepareInstitutional(catalog, input.StationId);
+                using var offers = SessionPerformance.Phase("traffic.marketOffers");
+                market.PrepareMarketOffers(catalog, input.StationId);
             }
         }
         catch (InvalidDataException)

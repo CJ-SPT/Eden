@@ -628,6 +628,13 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
     internal IEnumerable<TState> IndexedSnapshots<TValue>(string column, IReadOnlySet<TValue> values)
         where TValue : notnull => ReadSnapshots(values.SelectMany(value => table.Indexed(column, value)));
 
+    internal IEnumerable<TState> IndexedSnapshots(string column, object value, string alternateColumn, IReadOnlySet<int> alternateValues)
+    {
+        var keys = table.Indexed(column, value);
+        var alternate = alternateValues.Select(type => table.Indexed(alternateColumn, type)).ToArray();
+        return ReadSnapshots(alternate.Sum(group => (long)group.Count) < keys.Count ? alternate.SelectMany(group => group) : keys);
+    }
+
     internal IEnumerable<TState> VisibleCommittedSnapshots(string column, object value)
     {
         foreach (var key in table.Indexed(column, value))

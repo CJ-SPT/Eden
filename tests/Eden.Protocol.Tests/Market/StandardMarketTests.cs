@@ -14,6 +14,7 @@ using Eden.Server.Administration;
 using Eden.Server.Launcher;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,43 @@ public sealed class StandardMarketTests
     private const int SystemId = 30000142;
     private const int Region = 10000002;
     private const int Tritanium = 34;
+    private const int Pyerite = 35;
     private const long StartingBalance = 10_000_000;
+
+    [Fact]
+    public async Task ColdBotQuoteSeedsOnlyRequestedTypeAndPreservesDepletedStockAcrossReopen()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = Create(clock);
+        WorldDatabase database = new(fixture.Path);
+        string snapshot = database.MarketSnapshot.Root;
+        WriteSnapshot(new(fixture.Path), clock, [Order(clock, 1, 100, 3), Order(clock, 2, 200, 5) with { TypeId = Pyerite }], snapshot);
+
+        using (var host = ServerServices.Build(new(fixture.Path), clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var market = Assert.IsType<PilotMarketStore>(host.GetRequiredService<IPilotMarket>());
+            Assert.Throws<InvalidDataException>(() => market.Buy(Pilot, Hub, [new(Tritanium, 99, 1)]));
+            Assert.Null(live.Economy.Inspect(world => world.Set<SavedStandardMarketType>().Find(Region, Tritanium)));
+            using (var action = live.Economy.Begin())
+            using (CatalogDbContext catalog = new(database.CatalogPath))
+            {
+                var quote = Assert.Single(market.SupplyOrders(action, catalog, Hub, [Tritanium], Pilot));
+                Assert.Equal((Tritanium, 3), (quote.TypeId, quote.Remaining));
+                Assert.Empty(action.RegionalOrders(Region, Pyerite));
+                action.Commit();
+            }
+            Assert.Equal(3, Assert.Single(market.Buy(Pilot, Hub, [new(Tritanium, 100, 3)]).Trades).Quantity);
+            await live.FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(new(fixture.Path), clock, liveWorld: true);
+        var shop = reopened.GetRequiredService<IPilotMarket>();
+        Assert.Empty(shop.Orders(Pilot, Tritanium));
+        var ask = Assert.Single(shop.BestAsks(Pilot, MarketScope.Region));
+        Assert.Equal((Pyerite, 5), (ask.TypeId, ask.Remaining));
+        Assert.Empty(shop.Orders(Pilot, Tritanium));
+    }
 
     [Fact]
     public async Task LivePriceLevelsDepleteAndSurviveCheckpointWithoutRefilling()
@@ -42,6 +79,7 @@ public sealed class StandardMarketTests
         using (var host = ServerServices.Build(database, clock, liveWorld: true))
         {
             var market = host.GetRequiredService<IPilotMarket>();
+            _ = market.BestAsks(Pilot, MarketScope.Region);
             var book = market.Orders(Pilot, Tritanium);
             Assert.Equal(2, book.Count(order => !order.Bid && order.StationId == Hub));
             Assert.Equal(8, book.Where(order => !order.Bid).Sum(order => order.Remaining));
@@ -341,7 +379,9 @@ public sealed class StandardMarketTests
                 INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (4,'Material');
                 INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (18,'Mineral',4);
                 INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (34,'Tritanium',18);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (35,'Pyerite',18);
                 INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','34','{{"published":1,"marketGroupID":1,"volume":0.01}}');
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','35','{{"published":1,"marketGroupID":1,"volume":0.01}}');
                 INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
                     SELECT 60015157,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z FROM Station WHERE Id=60003760;
                 """

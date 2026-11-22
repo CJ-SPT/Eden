@@ -612,6 +612,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Market presets on fresh worlds and demand batching](protocol/industry.md#market-presets-on-fresh-worlds-and-demand-batching)
 - [Development market supply for bots](protocol/industry.md#development-market-supply-for-bots)
 - [Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
+- [Standard market preparation during bot jobs](protocol/industry.md#standard-market-preparation-during-bot-jobs)
 - [container industry workflows](protocol/industry.md#container-industry-workflows-november-15-2026)
 - [job facility lookups](protocol/industry.md#job-facility-batch-lookups-november-15-2026)
 - [Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026)

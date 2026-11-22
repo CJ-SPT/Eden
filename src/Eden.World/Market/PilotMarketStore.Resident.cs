@@ -54,7 +54,7 @@ internal sealed partial class PilotMarketStore
     {
         if (world.Settings.Economy.StandardMarket)
         {
-            SeedStandardRegion(world, catalog, station.RegionId);
+            SeedStandardOrders(ResidentStandardMarket(world), catalog, station.RegionId, typeId is int type ? [type] : null);
             return;
         }
         if (RegionalMarketStore.Enabled(world))
@@ -357,6 +357,10 @@ internal sealed partial class PilotMarketStore
                 includeDemand: false
             );
         }
+        else if (world.Settings.Economy.StandardMarket)
+        {
+            SeedStandardOrders(ResidentStandardMarket(world), catalog, station.RegionId, requested);
+        }
         else if (MarketKind(world) == NpcMarketKind.Development)
         {
             foreach (int type in requested)
@@ -433,8 +437,11 @@ internal sealed partial class PilotMarketStore
     )
     {
         long cutoff = now - TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks;
-        var npc = types
-            .SelectMany(type => world.StationMarketOrders(stationId, type))
+        var stock =
+            types.Count == 1
+                ? world.StationMarketOrders(stationId, types[0])
+                : world.StationMarketOrdersForTypes(stationId, types.ToHashSet());
+        var npc = stock
             .Where(o =>
                 !o.Bid
                 && o.Remaining > 0

@@ -29,6 +29,14 @@ public sealed class MarketStation
     public long StandardSnapshotTicks { get; set; }
 }
 
+[PrimaryKey(nameof(RegionId), nameof(TypeId))]
+public sealed class SavedStandardMarketType
+{
+    public int RegionId { get; set; }
+    public int TypeId { get; set; }
+    public long SnapshotTicks { get; set; }
+}
+
 public sealed class NpcMarketOrder
 {
     public long Id { get; set; }

@@ -83,6 +83,46 @@ Not performed. Agent client testing is disabled.
 Start a job on the updated host and check its system in the all-jobs and matching activity overlays.
 Open a cost overlay and compare the tooltip with that system's configured index.
 
+## Standard market preparation during bot jobs
+
+On build 3662168 at revision `2628decf`, a mining `Prepare` job in The Forge held the world owner for 23.87 seconds
+and allocated 32.49 GiB. The next measured player tick spent 23.72 seconds waiting for that owner. A private replay
+used the incident checkpoint and the same market snapshot, with The Forge's Standard orders and station markers reset.
+A single skillbook quote returned six offers after attempting to seed all 374,083 regional orders. Allocation samples
+attributed virtually all managed allocation to `SeedStandardRegion`. Its per-station LINQ queries repeatedly enumerated
+the growing set of private market rows and allocated expression interpreter frames, boxed keys and temporary arrays.
+
+Standard quotes and matching now load only the requested types across the region. Region coverage keeps ranged bids
+eligible. Docked bot preparation validates and indexes the immutable snapshot before entering the world owner. A bot
+trade commits its type markers with the stock and uses world schema 218 to checkpoint them. Full regional summaries
+use one indexed pass over saved stock and skip types already imported for the snapshot. They also honor complete
+station markers written by earlier builds. Failed orders leave the stock and type marker private to the attempted
+transaction. Checkpoint reopen and a later full summary preserve local depletion.
+
+The market behavior reference was EVE.js `doc/MARKET_SETUP.md` and UniWiki's station sale flow. Eden uses its own
+captured regional orders and pinned catalog. [UniWiki mining and ore sales](https://wiki.eveuniversity.org/Mining)
+
+### Automated validation
+
+The matched Forge quote returned the same six offers. Quote and commit under the owner fell from 82.44 seconds
+and 32.89 GiB allocated to 111 ms and 193 KiB allocated with the snapshot prepared outside the owner. A separate
+75-second scheduler replay used the incident save with a cold Standard market. It reached 797 scheduled bots,
+completed 14,675 actions with zero failures and ended with zero jobs due. Peak sampled queue age was 2.36 seconds
+during cold startup. The save had 6,000 enabled bots, with admission still underway at the end of this short run.
+Replay evidence is under `artifacts/bot-prepare-20261122/`.
+
+The focused filter for `StandardMarketTests`, `TrafficPreparationTests`, `CapsuleerAmmunitionSupplyTests` and
+`WorldMigrationTests` passed all 91 tests in 145.05 seconds. The solution built with zero warnings or errors
+in 32.42 seconds. Catalog setup and formatting policy tests passed 17 cases.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Standard live order market and unified economy settings (November 16, 2026)
 
 The administration **Economy & market** section replaces the separate Economy and Development supply cards.
