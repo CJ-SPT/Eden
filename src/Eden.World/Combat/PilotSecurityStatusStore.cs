@@ -30,7 +30,7 @@ internal sealed class SecurityStatusSignal
 internal sealed partial class PilotSecurityStatusStore(WorldDatabase database, TimeProvider clock, SecurityStatusSignal signal)
     : IPilotSecurityStatus
 {
-    public long Revision => signal.Revision;
+    public long Revision => signal.Revision + (Runtime.LiveWorld.Find(database.Path)?.SecurityPenaltyRevision ?? 0);
 
     public SecurityStatusView Read(long pilotId)
     {

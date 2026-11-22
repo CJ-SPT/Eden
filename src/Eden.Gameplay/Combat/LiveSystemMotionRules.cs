@@ -95,7 +95,7 @@ public static class LiveSystemMotionRules
                     next.Position,
                     next.Velocity,
                     npc.Navigation != NpcNavigationState.Warping,
-                    Fixed: npc.Role == NpcRole.MissionStructure
+                    Fixed: npc.Role is NpcRole.MissionStructure or NpcRole.Sentry
                 )
             );
             moved.Add(next);

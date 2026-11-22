@@ -309,7 +309,10 @@ internal sealed partial class NpcCombatStore(
             return null;
         }
         var home = NpcMotion.Home(npc, catalog);
-        double leash = NpcPopulationRules.Leash(attributes, MissileRange(catalog, npc, attributes), npc.AcquisitionRange);
+        double leash =
+            npc.Role == NpcRole.Sentry
+                ? NpcSentryRules.GridRange(attributes)
+                : NpcPopulationRules.Leash(attributes, MissileRange(catalog, npc, attributes), npc.AcquisitionRange);
         var targetPosition = new SpacePosition(position.X, position.Y, position.Z);
         if (targetPosition.DistanceTo(home) > leash || NpcMotion.Position(npc).DistanceTo(home) > leash)
         {
@@ -341,20 +344,11 @@ internal sealed partial class NpcCombatStore(
             return null;
         }
         NpcMissileStore.Launch(world, catalog, npc, aggression, attributes, pilot, velocity, now, destinyStamp);
+        bool droneTargetAvailable = false;
         if (
-            DroneNpcCombat.TryFire(
-                world,
-                catalog,
-                npc,
-                aggression,
-                attributes,
-                shipId,
-                now,
-                roll,
-                out bool droneTargetAvailable,
-                playerEwar
-            ) is
-            { } droneShot
+            npc.Role != NpcRole.Sentry
+            && DroneNpcCombat.TryFire(world, catalog, npc, aggression, attributes, shipId, now, roll, out droneTargetAvailable, playerEwar)
+                is { } droneShot
         )
         {
             world.SaveChanges();

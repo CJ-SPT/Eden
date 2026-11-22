@@ -317,7 +317,7 @@ internal sealed partial class LiveCombatRuntime
         {
             throw new InvalidDataException("Your ship safety setting prevents this hostile action.");
         }
-        if (decision.Flag == CrimewatchFlag.Criminal)
+        if (decision.Flag != CrimewatchFlag.None)
         {
             return null;
         }

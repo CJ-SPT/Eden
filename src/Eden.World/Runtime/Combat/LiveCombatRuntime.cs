@@ -151,6 +151,10 @@ internal sealed partial class LiveCombatRuntime(
         {
             return null;
         }
+        if (target.Role == NpcRole.Sentry)
+        {
+            throw new InvalidDataException("Sentry guns cannot be targeted.");
+        }
         // Mining alerts and cargo state share the paid shot's world action.
         if (NpcPopulationRules.IsMining(target.Role) || target.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
         {
@@ -302,7 +306,7 @@ internal sealed partial class LiveCombatRuntime(
 
     private void Hostility(LiveCombatNpc attacked, long shipId, long now)
     {
-        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure)
+        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure or NpcRole.Sentry)
         {
             return;
         }
@@ -322,6 +326,7 @@ internal sealed partial class LiveCombatRuntime(
                             n.SystemId == attacked.SystemId
                             && n.EncounterId == attacked.EncounterId
                             && n.Role != NpcRole.Pirate
+                            && n.Role != NpcRole.Sentry
                             && n.DestroyedAt == null
                             && n.RetiredAt == null
                         )

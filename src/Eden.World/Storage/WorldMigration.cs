@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 217;
+    internal const int CurrentVersion = 218;
 
     public static void Open(
         WorldDbContext world,
@@ -115,6 +115,10 @@ internal static class WorldMigration
         {
             // Existing hostility retains its expiry without inventing a recent attack.
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility ADD COLUMN LastAttackAt INTEGER NOT NULL DEFAULT 0");
+        }
+        if (version < 218)
+        {
+            CrimewatchSchema.UpgradeSecurityPenalties(world);
         }
         DroneCombatPersistence.Upgrade(world);
         DroneDelegationPersistence.Upgrade(world);

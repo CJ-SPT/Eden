@@ -2,6 +2,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
+using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
@@ -9,6 +10,7 @@ using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
@@ -116,6 +118,53 @@ public sealed class PilotTurretTests
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);
         Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Theory]
+    [InlineData(.2)]
+    [InlineData(.8)]
+    public void WarmTurretsUseCommittedMilitiaChangesAtFullSafety(double security)
+    {
+        using var f = Prepare(security, live: true);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        var militia = f.Db.Services.GetRequiredService<IMilitiaEnlistment>();
+        var crimewatch = f.Db.Services.GetRequiredService<IPilotCrimewatch>();
+        using (var world = live.Economy.Begin())
+        {
+            world.Add(new SavedMilitiaEnlistment { PilotId = Attacker, DirectFaction = MilitiaFaction.Caldari });
+            world.Add(new SavedMilitiaEnlistment { PilotId = Victim, DirectFaction = MilitiaFaction.Caldari });
+            world.Commit();
+        }
+        Assert.Throws<InvalidDataException>(() => Fire(f));
+
+        using (var world = live.Economy.Begin())
+        {
+            world.Set<SavedMilitiaEnlistment>().Find(Victim)!.DirectFaction = MilitiaFaction.Gallente;
+            world.Commit();
+        }
+        Assert.True(Fire(f).Applied > 0);
+
+        f.Clock.Seconds += 10;
+        using (var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin("warm militia turret", _ => { }, force: true)!)
+        {
+            Assert.True(Fire(f).Applied > 0);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        var attacker = crimewatch.Read(Attacker, SystemId);
+        Assert.Equal(ShipSafetyLevel.Full, attacker.Safety);
+        Assert.Equal(CrimewatchFlag.None, attacker.Timers.Flag(f.Clock.Now));
+        Assert.True(attacker.Timers.Weapons.Running(f.Clock.Now));
+        Assert.Empty(attacker.Engagements);
+        Assert.True(crimewatch.Read(Victim, SystemId).Timers.Pvp.Running(f.Clock.Now));
+
+        f.Clock.Seconds += 10;
+        militia.RetireDirectly(Victim);
+        var health = f.Health.Read(Victim, f.Clock.Now);
+        Assert.Throws<InvalidDataException>(() => Fire(f));
+        Assert.Equal(health, f.Health.Read(Victim, f.Clock.Now));
+        Assert.Equal(attacker.Timers, crimewatch.Read(Attacker, SystemId).Timers);
     }
 
     [Theory]

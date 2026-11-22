@@ -27,10 +27,11 @@ namespace Eden.World.FactionWarfare;
 internal sealed partial class MilitiaComplexStore(
     WorldDatabase database,
     NpcProfileCatalog profiles,
+    MilitiaFlightPresence presence,
     IMilitiaHubs? hubs = null,
     MilitiaObjectiveStore? objectives = null,
     ICooperativeFleets? fleets = null
-) : IMilitiaComplexes
+) : IMilitiaComplexes, IMilitiaComplexSimulation
 {
     private static readonly IGrouping<MilitiaComplexFamily, MilitiaComplexVariant>[] Variants = MilitiaComplexVariants
         .All.Where(variant => !variant.Retired)
@@ -126,12 +127,21 @@ internal sealed partial class MilitiaComplexStore(
         }
         hubs?.Sweep(now);
         using var owner = live.EnterPersistence("militia complex", TransactionParticipants.None);
+        AdvanceOwned(live, systemId, pilots, now);
+    }
+
+    private void AdvanceOwned(LiveWorld live, int systemId, IReadOnlyList<MilitiaComplexPilot> pilots, long now)
+    {
         pilots = pilots.Where(pilot => !live.Economy.Cloaked(pilot.ShipId)).ToArray();
         objectives?.Advance(systemId, pilots, now);
         var nearby = live.Economy.Inspect(world =>
             Read(world, systemId, now)
                 .Where(site =>
                     _samples.ContainsKey(site.Slot)
+                    || site.Profile.Battlefield is { } layout
+                        && Enumerable
+                            .Range(0, layout.Points.Count)
+                            .Any(index => _samples.ContainsKey(MilitiaComplexRules.PointId(site.Id, index)))
                     || site.Saved is { DefenderId: not null }
                     || pilots.Any(pilot =>
                         site.Profile.Battlefield is null

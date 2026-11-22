@@ -105,6 +105,10 @@ internal sealed partial class LiveCombatRuntime
             return true;
         }
         var attributes = npc.Attributes;
+        if (npc.Role == NpcRole.Sentry && ship.Position.DistanceTo(npc.Position) > NpcSentryRules.GridRange(attributes))
+        {
+            return false;
+        }
         if (
             attributes.TryGetValue(DogmaAttributeId.MaxTargetRange, out double targetingRange)
             && targetingRange > 0
@@ -122,7 +126,12 @@ internal sealed partial class LiveCombatRuntime
         {
             return false;
         }
-        if (now >= aggression.ReadyAt && NpcPopulationRules.HasDirectWeapon(attributes) && DroneControllers().ContainsKey(shipId))
+        if (
+            npc.Role != NpcRole.Sentry
+            && now >= aggression.ReadyAt
+            && NpcPopulationRules.HasDirectWeapon(attributes)
+            && DroneControllers().ContainsKey(shipId)
+        )
         {
             if (!FireAtDrone(ship, npc, aggression, now, ref roll, out shot))
             {

@@ -361,6 +361,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Smartbombs, November 12, 2026](protocol/combat.md#smartbombs-november-12-2026)
 - [CONCORD overview color during attacks, November 9, 2026](protocol/combat.md#concord-overview-color-during-attacks--november-9-2026)
 - [CONCORD criminal response, November 9, 2026](protocol/combat.md#concord-criminal-response--november-9-2026)
+- [Lowsec unlawful aggression penalties](protocol/combat.md#lowsec-unlawful-aggression-penalties)
 - [Bounty and activity SP ticks](protocol/combat.md#bounty-and-activity-sp-ticks)
 - [Silent bounty SP rewards, November 9, 2026](protocol/combat.md#silent-bounty-sp-rewards-november-9-2026)
 - [NPC bounty skill point rewards, November 9, 2026](protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026)
@@ -478,6 +479,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Faction Warfare
 
+- [Resident faction warfare capture and combat eligibility](protocol/faction-warfare.md#resident-capture-and-combat-eligibility)
 - [Theaters of War shipcaster reads, November 21, 2026](protocol/faction-warfare.md#theaters-of-war-shipcaster-reads--november-21-2026)
 - [Faction Warfare militia missions, ranks and combat statistics, November 20, 2026](protocol/faction-warfare.md#militia-missions-ranks-and-combat-statistics--november-20-2026)
 - [Faction Warfare Advantage and battlefields, November 20, 2026](protocol/faction-warfare.md#advantage-and-battlefields--november-20-2026)

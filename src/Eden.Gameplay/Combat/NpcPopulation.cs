@@ -18,6 +18,7 @@ public enum NpcRole
     MilitiaComplexDefender = 11,
     MilitiaHub = 12,
     MilitiaObjective = 13,
+    Sentry = 14,
 }
 
 public enum NpcAnchorKind

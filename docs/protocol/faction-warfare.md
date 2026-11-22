@@ -1,5 +1,24 @@
 # Faction warfare
 
+## Resident capture and combat eligibility
+
+Empire maintenance advances active complexes, battlefields and the related objectives. Protocol publishes and withdraws
+human flight presence as ships move, warp, dock or disconnect. The resident world adds eligible autonomous ships from
+its system index and rechecks the active ship, faction, cloak, hull and capture range. Each system takes a single progress
+sample per deadline, and a change of participants breaks the prior sample's continuity. Autonomous capture runs while
+at least one human has a selected pilot anywhere in the world. Pausing or reopening breaks continuity. Scanner and
+Destiny output read the committed results.
+
+Warmed player weapons use the committed militia affiliation directory for the same Crimewatch rights as transactional
+weapons. Enlistment and retirement take effect on the next legality check. Upwell tether eligibility reuses militia docking
+policy with live occupation and adjacency. Frontline, capsule and structure access rules apply to both tether acquisition
+and an existing tether's protection. [CCP militia combat](https://support.eveonline.com/hc/en-us/articles/203209072-Factional-Warfare)
+· [CCP Upwell rules](https://www.eveonline.com/news/view/patch-notes-version-20-10)
+
+**Automated validation.** The focused `MilitiaComplexTests|MilitiaObjectiveTests|ConcordTests` filter passed all
+37 cases in 22 seconds. New coverage exercises unattended bot capture, the global activity pause, a mixed player
+and bot contest, and an interrupted capture that reopens through a checkpoint. Native presentation was not exercised.
+
 ## Theaters of War shipcaster reads — November 21, 2026
 
 The empire warzone panel calls `shipCasterLandingPadMgr.GetFactionLandingPads(factionID)` and sorts the result before

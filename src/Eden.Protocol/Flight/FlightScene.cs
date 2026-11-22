@@ -159,7 +159,7 @@ internal sealed class FlightScene(
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
-        if (Npcs.Contacts.FirstOrDefault(n => n.Id == id && n.Warp is null) is { } npc)
+        if (Npcs.Contacts.FirstOrDefault(n => n.Id == id && n.Warp is null && n.Role != NpcRole.Sentry) is { } npc)
         {
             return new(id, npc.TypeId, npc.Position, npc.Radius);
         }

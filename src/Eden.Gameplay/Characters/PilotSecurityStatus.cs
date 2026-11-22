@@ -9,6 +9,7 @@ public enum SecurityEvent
 {
     // Build 3662168 appLogConst.eventSecStatusKillPirateNpc, read by the native history panel.
     PirateNpcKilled = 378,
+    IllegalAggression = 379,
 }
 
 public sealed record SecurityStatusView(double Value, long? PendingAt);
@@ -68,6 +69,22 @@ public static class SecurityStatusRules
             throw new InvalidDataException("Invalid NPC security reward or Fast Talk bonus.");
         }
         return new(bonusPercent / Percent * (1 + level * skillPercent / Percent), maximum);
+    }
+
+    // Eden uses the documented relative-security coefficients and clamps to the character bounds.
+    private const double UnlawfulShipFraction = 0.025;
+    private const double UnlawfulCapsuleFraction = 0.25;
+
+    public static SecurityChange IllegalAggression(double current, double target, double systemSecurity, bool capsule)
+    {
+        Check(current);
+        Check(target);
+        double fraction =
+            -(capsule ? UnlawfulCapsuleFraction : UnlawfulShipFraction)
+            * Math.Clamp(systemSecurity, 0, 1)
+            * (1 + (target - current) / Percent);
+        double next = Math.Max(Minimum, current + (Maximum - current) * fraction);
+        return new(current, next, next == current ? 0 : (next - current) / (Maximum - current));
     }
 
     public static SecurityChange Apply(double current, SecurityReward reward)

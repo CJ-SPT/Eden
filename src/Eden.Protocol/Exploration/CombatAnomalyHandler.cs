@@ -5,7 +5,6 @@ using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
-using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Exploration;
@@ -18,8 +17,7 @@ internal sealed class CombatAnomalyHandler(
     ProbeScanningHandler? probes = null,
     IDedEscalations? escalations = null,
     IWorldTuning? tuning = null,
-    IMilitiaComplexes? complexes = null,
-    SharedSpace? space = null
+    IMilitiaComplexes? complexes = null
 ) : ISelectedPilotCallHandler
 {
     private int? _system;
@@ -120,10 +118,6 @@ internal sealed class CombatAnomalyHandler(
             TrackGhostSite(context, null, []);
             context.Flight.RefreshAnomalies([]);
             return;
-        }
-        if (complexes is not null && space is not null && complexes.IsWarzone(system))
-        {
-            complexes.Advance(system, space.MilitiaComplexPilots(system), now);
         }
         var current = PublicSites(system, now);
         var signatures = sites.Signatures(system, now);

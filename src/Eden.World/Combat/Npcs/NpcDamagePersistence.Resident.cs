@@ -58,7 +58,10 @@ internal static partial class NpcDamagePersistence
         {
             NpcHostility.Record(world, catalog, npc, attackingShip, now);
         }
-        CrimewatchPersistence.Npc(world, pilot.Id, npc.SystemId, now);
+        if (npc.Role != NpcRole.Sentry)
+        {
+            CrimewatchPersistence.Npc(world, pilot.Id, npc.SystemId, now);
+        }
         var defense = ShipHealth.DefenseFrom(attributes);
         NpcRepairPersistence.Advance(npc, attributes, now);
         HullDamage health = new(
@@ -71,7 +74,7 @@ internal static partial class NpcDamagePersistence
             Math.Max(0, defense.Armor - npc.ArmorDamage),
             Math.Max(0, defense.Structure - npc.StructureDamage)
         );
-        if (npc.Role == NpcRole.Concord)
+        if (npc.Role is NpcRole.Concord or NpcRole.Sentry)
         {
             return new(new(npc.Id, defense, health), 0, false, null);
         }

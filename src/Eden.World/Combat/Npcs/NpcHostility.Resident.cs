@@ -15,7 +15,7 @@ internal static partial class NpcHostility
     internal static IEnumerable<long> Participants(WorldAction world, long target)
     {
         yield return target;
-        if (world.Set<WorldNpc>().Find(target) is { EncounterId: not 0, Role: not NpcRole.Pirate } npc)
+        if (world.Set<WorldNpc>().Find(target) is { EncounterId: not 0, Role: not (NpcRole.Pirate or NpcRole.Sentry) } npc)
         {
             foreach (
                 long id in world
@@ -24,6 +24,7 @@ internal static partial class NpcHostility
                         member.EncounterId == npc.EncounterId
                         && member.SystemId == npc.SystemId
                         && member.Id != target
+                        && member.Role != NpcRole.Sentry
                         && member.DestroyedAt == null
                         && member.RetiredAt == null
                     )
@@ -52,7 +53,7 @@ internal static partial class NpcHostility
             NpcMiningSeeder.Alert(world, attacked, shipId, now);
             return;
         }
-        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure)
+        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure or NpcRole.Sentry)
         {
             return;
         }
@@ -67,6 +68,7 @@ internal static partial class NpcHostility
                         n.EncounterId == attacked.EncounterId
                         && n.SystemId == attacked.SystemId
                         && n.Role != NpcRole.Pirate
+                        && n.Role != NpcRole.Sentry
                         && n.DestroyedAt == null
                         && n.RetiredAt == null
                     )

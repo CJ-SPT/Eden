@@ -19,6 +19,49 @@ namespace Eden.World.Combat;
 
 internal sealed partial class PilotSecurityStatusStore
 {
+    internal static void RecordIllegalAggression(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long source,
+        long victim,
+        int system,
+        double security,
+        long now
+    )
+    {
+        Settle(world, source, now);
+        var state = world.Set<SavedSecurityStatus>().Find(source) ?? world.Add(new SavedSecurityStatus { PilotId = source }).Entity;
+        var target = world.Pilots.Find(victim)!;
+        var type = catalog.RequireItem(target.ActiveShip.TypeId);
+        var change = SecurityStatusRules.IllegalAggression(
+            state.Value,
+            world.Set<SavedSecurityStatus>().Find(victim)?.Value ?? 0,
+            security,
+            type.GroupId == FleetDefinitions.CapsuleGroup
+        );
+        state.Value = change.After;
+        if (change.Modification != 0)
+        {
+            world.Add(
+                new SavedSecurityTransaction
+                {
+                    PilotId = source,
+                    Time = now,
+                    AggressedPilotId = victim,
+                    TypeId = target.ActiveShip.TypeId,
+                    SystemId = system,
+                    CorporationId = target.CorporationId,
+                    Modification = change.Modification,
+                    NewValue = change.After,
+                }
+            );
+            if (Runtime.LiveWorld.Find(world.WorldPath) is { } live)
+            {
+                world.AfterCommit(live.PublishSecurityPenalty);
+            }
+        }
+    }
+
     internal static void RecordKill(
         WorldAction world,
         CatalogDbContext catalog,

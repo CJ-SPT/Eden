@@ -8,6 +8,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.FactionWarfare;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Combat.Npcs;
 using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
@@ -71,11 +72,25 @@ internal static partial class CrimewatchPersistence
         PilotKillRightStore.Earn(world, victim, source, decision, now);
         ConcordPersistence.Schedule(world, catalog, world.Pilots.Find(source)!, now);
         long sourceShip = world.Pilots.Find(source)!.ActiveShipId;
+        if (world is EconomyTransaction && decision.Flag != CrimewatchFlag.None)
+        {
+            NpcSentryOffenses.Record(world, catalog, sourceShip, system, now);
+        }
         long victimShip = world.Pilots.Find(victim)!.ActiveShipId;
-        world.RemoveRange(world.Set<SavedPilotHostility>().Where(h => h.ExpiresAt <= now));
+        world.RemoveRange(world.Filter<SavedPilotHostility>(h => h.SourceShipId == sourceShip && h.ExpiresAt <= now));
         var hostility =
             world.Set<SavedPilotHostility>().Find(sourceShip, victimShip)
             ?? world.Add(new SavedPilotHostility { SourceShipId = sourceShip, TargetShipId = victimShip }).Entity;
+        if (
+            world is EconomyTransaction
+            && decision.Flag != CrimewatchFlag.None
+            && !hostility.SecurityPenaltyRecorded
+            && Security(catalog, system) is > 0 and < CrimewatchRules.HighSecurity and var lowsec
+        )
+        {
+            PilotSecurityStatusStore.RecordIllegalAggression(world, catalog, source, victim, system, lowsec, now);
+            hostility.SecurityPenaltyRecorded = true;
+        }
         hostility.ExpiresAt = Math.Max(hostility.ExpiresAt, checked(end + CrimewatchRules.PvpDuration.Ticks));
         hostility.LastAttackAt = Math.Max(hostility.LastAttackAt, now);
         if (decision.Engagement)

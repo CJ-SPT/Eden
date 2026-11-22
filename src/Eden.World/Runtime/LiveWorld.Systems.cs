@@ -263,6 +263,9 @@ internal sealed partial class LiveWorld
 
     private readonly Dictionary<int, HashSet<long>> _capsuleersBySystem = [];
 
+    internal IEnumerable<int> CapsuleerSystems(Func<int, bool> systemMatches, Func<long, bool> pilotMatches) =>
+        _capsuleersBySystem.Where(entry => systemMatches(entry.Key) && entry.Value.Any(pilotMatches)).Select(entry => entry.Key);
+
     internal void TrackCapsuleer(long pilot, int? previous, int system)
     {
         if (!_ownershipMonitor.IsEntered)

@@ -273,7 +273,10 @@ internal sealed partial class LiveCombatRuntime
             // Mining alerts and inventory return retain the existing transaction boundary.
             if (
                 npc is not null
-                && (NpcPopulationRules.IsMining(npc.Role) || npc.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
+                && (
+                    NpcPopulationRules.IsMining(npc.Role)
+                    || npc.Role is NpcRole.Concord or NpcRole.Sentry or NpcRole.MilitiaHub or NpcRole.MilitiaObjective
+                )
             )
             {
                 return Settle();
@@ -284,10 +287,9 @@ internal sealed partial class LiveCombatRuntime
             var playerContact = player is null ? null : DronePresence(player, presence, ship.SystemId, now);
             var decision =
                 source is null || player is null || player.PilotId == pilotId ? null : DroneLegality(source, player, ship.SystemId, now);
-            if (decision?.Flag == CrimewatchFlag.Criminal)
+            if (decision is { Flag: not CrimewatchFlag.None })
             {
-                // The paid criminal shot and its CONCORD deadline share one resident
-                // transaction, including when earlier legal rights have expired.
+                // Settle the illegal shot and its security consequences in one resident action.
                 return Settle();
             }
             var playerShip =

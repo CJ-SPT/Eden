@@ -14,6 +14,7 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -199,7 +200,8 @@ internal sealed class PilotTetherStore(WorldDatabase database, TimeProvider cloc
             || flight.Disrupted
             || flight.DisallowedModule
             || !structure.HasCore
-            || world.Pilots.Find(pilot)?.ActiveShipId != shipId
+            || world.Pilots.Find(pilot) is not { } character
+            || character.ActiveShipId != shipId
             || world.Ships.Find(shipId) is not { } ship
             || world.Positions.Find(shipId) is not { } position
             || CrimewatchPersistence.System(catalog, ship) != structure.SystemId
@@ -214,6 +216,7 @@ internal sealed class PilotTetherStore(WorldDatabase database, TimeProvider cloc
         if (
             LanceDisruption.Active(world, shipId, now)
             || !StructureRules.CanDock(profile, structure.State, group)
+            || !MilitiaEnlistmentStore.CanUseDocking(world, character, structure.SystemId, group)
             || group is (int)Eden.Gameplay.Ships.HullClass.Titan or (int)Eden.Gameplay.Ships.HullClass.LancerDreadnought
                 && AreaWeaponStore.DoomsdayLocked(world, shipId, now, movement: false)
         )

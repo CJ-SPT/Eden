@@ -25,7 +25,7 @@ internal static partial class NpcHostility
             NpcMiningSeeder.Alert(world, attacked, shipId, now);
             return;
         }
-        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure)
+        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure or NpcRole.Sentry)
         {
             return;
         }
@@ -38,6 +38,7 @@ internal static partial class NpcHostility
                         n.EncounterId == attacked.EncounterId
                         && n.SystemId == attacked.SystemId
                         && n.Role != NpcRole.Pirate
+                        && n.Role != NpcRole.Sentry
                         && n.DestroyedAt == null
                         && n.RetiredAt == null
                     )

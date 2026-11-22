@@ -4,6 +4,33 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## Lowsec unlawful aggression penalties
+
+A paid unlawful offensive action against a ship or capsule applies a security-status loss in the resident Crimewatch
+action. Repeating attacks from the same ship against the same target within the active hostility window continue the
+engagement with one security loss. A different target ship or a new engagement can incur another loss. The saved
+hostility marker and security history survive checkpoints. The history exposes pinned build 3662168
+`appLogConst.eventSecStatusIllegalAggression` (379) and identifies the victim, solar system, and signed modification.
+The pinned archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+
+Eden applies 2.5% for ships and 25% for pods, scaled by system security and the difference in pilot security status,
+with security status clamped to the character range. CCP documents the first-action settlement and scaling. The
+coefficients follow EVE University. The older EVE.js `crimewatchState.js` also settles at aggression, with a different
+formula for computing the resulting security value. [CCP Crimewatch](https://www.eveonline.com/news/view/introducing-the-new-and-improved-crimewatch)
+· [EVE University security status](https://wiki.eveuniversity.org/Security_status#Losing_security_status)
+
+Lowsec NPC gates and stations with empire guard perimeters receive two stationary sentries, using build 3662168
+Sentry Gun group 99 types 1194, 3740, 3742 and 3743. Eden uses its local NPC grid range and places the guns clear
+of the anchor and exit lanes. A committed illegal attack can draw local guns immediately. War targets and prior
+suspect flags on arriving ships do not trigger them. A sentry relinquishes the attack when the ship warps away or
+leaves range. CONCORD remains a high-security response. [CCP sentry rules](https://www.eveonline.com/news/view/patch-notes-for-retribution-1)
+
+**Automated validation.** The focused faction warfare, Crimewatch, CONCORD, turret, drone, security status, tether,
+guard and NPC motion filter passed 228 of 229 cases in 2 minutes 52 seconds. The legacy hostility fixture needed to
+remove the new column to represent schema 99 accurately. After correction, the exact legacy migration, security
+penalty checkpoint and lowsec sentry regressions passed 3 of 3 in 16.09 seconds. The integrated solution built
+without warnings in 17.96 seconds. Both Python policy suites and formatting and line-width checks passed.
+
 ## Bounty and activity SP ticks
 
 The first bounty share or whole activity SP award opens a pilot's payout window. The default is

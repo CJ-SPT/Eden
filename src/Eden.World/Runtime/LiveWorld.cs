@@ -101,6 +101,11 @@ internal sealed partial class LiveWorld : IDisposable
 
     internal void PublishKillRightInbox() => Interlocked.Increment(ref _killRightInboxRevision);
 
+    private long _securityPenaltyRevision;
+    internal long SecurityPenaltyRevision => Interlocked.Read(ref _securityPenaltyRevision);
+
+    internal void PublishSecurityPenalty() => Interlocked.Increment(ref _securityPenaltyRevision);
+
     internal LiveTrafficGeometry TrafficGeometry { get; } = new();
     internal long PreparationRevision { get; private set; }
     internal long TrafficTemplateRevision { get; private set; }

@@ -19,6 +19,28 @@ internal static class CrimewatchSchema
         model.Entity<SavedPilotHostility>().HasIndex(h => new { h.TargetShipId, h.ExpiresAt });
     }
 
+    internal static void UpgradeSecurityPenalties(WorldDbContext world)
+    {
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPilotHostility')")
+                .AsEnumerable()
+                .Contains("SecurityPenaltyRecorded")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility ADD COLUMN SecurityPenaltyRecorded INTEGER NOT NULL DEFAULT 0");
+        }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldSecurityTransaction')")
+                .AsEnumerable()
+                .Contains("AggressedPilotId")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldSecurityTransaction ADD COLUMN AggressedPilotId INTEGER");
+        }
+    }
+
     internal static void Upgrade(WorldDbContext world)
     {
         world.Database.ExecuteSqlRaw(

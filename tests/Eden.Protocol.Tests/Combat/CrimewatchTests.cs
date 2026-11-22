@@ -5,12 +5,14 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Notifications;
@@ -321,6 +323,45 @@ public sealed class CrimewatchTests
         f.Clock.Milliseconds += 6000;
         Attack(f, source);
         Assert.True(Store(f).Read(f.PilotId, SystemId).Engagements[0].ExpiresAt > attacker.Engagements[0].ExpiresAt);
+    }
+
+    [Fact]
+    public async Task RepeatedLowsecAggressionRecordsOnePenaltyAndPublishesItAcrossCheckpoint()
+    {
+        using Fixture f = TackleTests.Prepare(526);
+        long source = f.Fit(526);
+        long wing = WingFit(f);
+        Security(f, .1);
+        f.Db.Services.GetRequiredService<IPilotSafety>().Set(f.PilotId, ShipSafetyLevel.Partial);
+        Space(f);
+        var database = new WorldDatabase(f.Db.Path);
+        var security = f.Db.Services.GetRequiredService<IPilotSecurityStatus>();
+        using var scope = f.Db.Services.CreateScope();
+        using var attacker = Client(f, 1000001);
+        var handler = scope.ServiceProvider.GetRequiredService<SecurityStatusHandler>();
+        using (LiveWorld live = new(database, f.Clock, _ => { }))
+        {
+            handler.Enter(attacker);
+            Attack(f, source);
+            var penalty = Assert.Single(security.History(f.PilotId));
+            Assert.Equal(SecurityEvent.IllegalAggression, penalty.Event);
+            Assert.Equal(WingPilot, penalty.OtherOwnerId);
+            Assert.Equal(SystemId, penalty.LocationId);
+            Assert.Equal(-.025, penalty.NewValue, precision: 8);
+            handler.Advance(attacker);
+            Assert.Equal(penalty.NewValue, Assert.Single(attacker.Notifications.OfType<SecurityStatusUpdated>()).Value);
+
+            f.Clock.Milliseconds += 6000;
+            Attack(f, source);
+            Attack(f, wing, wing: true);
+            Assert.Equal(penalty, Assert.Single(security.History(f.PilotId)));
+            Assert.Empty(security.History(WingPilot));
+            await live.FlushAsync();
+        }
+        using LiveWorld reopened = new(database, f.Clock, _ => { });
+        var restored = Assert.Single(security.History(f.PilotId));
+        Assert.Equal(WingPilot, restored.OtherOwnerId);
+        Assert.Equal(restored.NewValue, security.Read(f.PilotId).Value);
     }
 
     [Fact]

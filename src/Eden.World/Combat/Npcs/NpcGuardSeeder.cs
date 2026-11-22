@@ -30,7 +30,7 @@ internal sealed record NpcGuardProfile(
 );
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class NpcGuardSeeder
+internal sealed partial class NpcGuardSeeder
 {
     private static readonly FrozenDictionary<NpcEmpireFaction, CatalogDefinition<NpcGuardProfile?>> s_profiles =
         Enum.GetValues<NpcEmpireFaction>()
@@ -104,7 +104,10 @@ internal sealed class NpcGuardSeeder
         }
         try
         {
-            _ = NpcMotionRules.SpeedFraction(attributes);
+            if (type.GroupId != NpcSentryRules.Group)
+            {
+                _ = NpcMotionRules.SpeedFraction(attributes);
+            }
             if (attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType) is > 0 and var chargeValue)
             {
                 int chargeId = checked((int)chargeValue);
@@ -254,6 +257,10 @@ internal sealed class NpcGuardSeeder
         foreach (var anchor in anchors.Sites)
         {
             SeedAnchor(world, catalog, systemId, anchor, now);
+            if (band == NpcSecurityBand.Low && world is EconomyTransaction)
+            {
+                SeedSentries(world, catalog, systemId, anchor, now);
+            }
         }
     }
 

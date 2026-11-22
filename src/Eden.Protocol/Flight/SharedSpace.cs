@@ -163,7 +163,8 @@ internal sealed class SharedSpace(
     IPilotSpatialModules? spatial = null,
     IAutonomousPilotPresence? autonomous = null,
     IPilotGateCloak? gateCloaks = null,
-    Eden.Gameplay.Structures.IPilotTethering? tethering = null
+    Eden.Gameplay.Structures.IPilotTethering? tethering = null,
+    IMilitiaFlightPresence? militiaPresence = null
 ) : IPilotCombatPresence, IConduitArrivalEvents
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
@@ -387,7 +388,7 @@ internal sealed class SharedSpace(
                         Warp = null,
                         Bumped = false,
                     };
-                    _ships[shipId] = preserveMotion
+                    var displaced = preserveMotion
                         ? moved
                         : moved with
                         {
@@ -397,6 +398,8 @@ internal sealed class SharedSpace(
                             FollowRange = null,
                             FollowTargetId = 0,
                         };
+                    _ships[shipId] = displaced;
+                    PublishMilitiaPresence(displaced);
                     _displacements[shipId] = new(position, navigation);
                 }
             },
@@ -488,7 +491,7 @@ internal sealed class SharedSpace(
                     if (_ships.TryGetValue(ship.Id, out var contact))
                     {
                         _sightGrid.Move(ship.Id, contact.Pilot.SystemId, contact.Pilot.Position, ship.SystemId, ship.Position);
-                        _ships[ship.Id] = contact with
+                        var moved = contact with
                         {
                             Pilot = contact.Pilot with { Position = ship.Position },
                             Velocity = ship.Navigation.Velocity,
@@ -502,6 +505,8 @@ internal sealed class SharedSpace(
                             Stamp = stamp,
                             Bumped = result.Bumped,
                         };
+                        _ships[ship.Id] = moved;
+                        PublishMilitiaPresence(moved);
                     }
                 }
             }
@@ -542,6 +547,11 @@ internal sealed class SharedSpace(
                 }
             }
             _ships[ship.Pilot.ShipId] = ship;
+            if (current is not null && current.Pilot.SystemId != ship.Pilot.SystemId)
+            {
+                militiaPresence?.Withdraw(current.Pilot.SystemId, ship.Pilot.ShipId);
+            }
+            PublishMilitiaPresence(ship);
             _sightGrid.Move(
                 ship.Pilot.ShipId,
                 current?.Pilot.SystemId ?? 0,
@@ -563,6 +573,7 @@ internal sealed class SharedSpace(
         {
             if (_ships.TryRemove(shipId, out var previous))
             {
+                militiaPresence?.Withdraw(previous.Pilot.SystemId, shipId);
                 _sightGrid.Move(shipId, previous.Pilot.SystemId, previous.Pilot.Position, 0, null);
             }
             _motion.TryRemove(shipId, out _);
@@ -599,24 +610,41 @@ internal sealed class SharedSpace(
             .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
             .ToArray();
 
-    internal MilitiaComplexPilot[] MilitiaComplexPilots(int systemId) =>
-        TargetableShips(systemId)
-            .Where(ship => ship.Pilot.WarFaction.HasValue && ship.ConnectionId != 0)
-            .Select(ship => new MilitiaComplexPilot(ship.Pilot.PilotId, ship.Pilot.ShipId, ship.Pilot.Position!, ship.ConnectionId))
-            .ToArray();
+    private void PublishMilitiaPresence(ShipContact ship)
+    {
+        if (militiaPresence is null || ship.ConnectionId == 0)
+        {
+            return;
+        }
+        var pilot = ship.Pilot;
+        if (
+            pilot.WarFaction.HasValue
+            && pilot.Position is { } position
+            && InTargetableFlight(ship)
+            && !ship.Cloaked
+            && !(ship.Arriving && (ship.GateCloakUntil == 0 || ship.GateCloakUntil > Now))
+        )
+        {
+            militiaPresence.Publish(pilot.SystemId, new(pilot.PilotId, pilot.ShipId, position, ship.ConnectionId));
+        }
+        else
+        {
+            militiaPresence.Withdraw(pilot.SystemId, pilot.ShipId);
+        }
+    }
 
     private IEnumerable<ShipContact> TargetableShips(int systemId) =>
-        _ships.Values.Where(ship =>
-            ship.Pilot.SystemId == systemId
-            && ship.Pilot.Position is not null
-            && ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
-            && ship.Warp is null
-            && ship.AlignTo is null
-            && ship.DepartureGate is null
-            && !ArrivalProtected(ship)
-            && !IsCloaked(ship.Pilot.ShipId)
-            && ship.Health?.Remaining.Destroyed != true
-        );
+        _ships.Values.Where(ship => ship.Pilot.SystemId == systemId && Targetable(ship));
+
+    private bool Targetable(ShipContact ship) => InTargetableFlight(ship) && !ArrivalProtected(ship) && !IsCloaked(ship.Pilot.ShipId);
+
+    private static bool InTargetableFlight(ShipContact ship) =>
+        ship.Pilot.Position is not null
+        && ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
+        && ship.Warp is null
+        && ship.AlignTo is null
+        && ship.DepartureGate is null
+        && ship.Health?.Remaining.Destroyed != true;
 
     public ShipContact[] Peers(DockedPilot pilot) => Peers(pilot.SystemId, pilot.ShipId, pilot.Position);
 

@@ -12,7 +12,8 @@ internal sealed class ConcordMaintenance(
     TimeProvider clock,
     IWorldSynchronization synchronization,
     IMilitiaNavy? militiaNavy = null,
-    IMilitiaHubs? militiaHubs = null
+    IMilitiaHubs? militiaHubs = null,
+    IMilitiaComplexSimulation? militiaComplexes = null
 ) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
@@ -30,11 +31,14 @@ internal sealed class ConcordMaintenance(
 
     internal void Tick()
     {
-        using var ownership = synchronization.Enter("Empire enforcement");
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        concord.Sweep(now);
-        militiaNavy?.Sweep(now);
-        militiaHubs?.Sweep(now);
+        using (synchronization.Enter("Empire enforcement"))
+        {
+            concord.Sweep(now);
+            militiaNavy?.Sweep(now);
+            militiaHubs?.Sweep(now);
+        }
+        militiaComplexes?.Tick(now);
     }
 
     private async Task Run(PeriodicTimer timer)

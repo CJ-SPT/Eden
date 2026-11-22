@@ -13,7 +13,8 @@ internal sealed record EconomySavedSecurityTransaction(
     long PilotId,
     int SystemId,
     long Time,
-    int TypeId
+    int TypeId,
+    long? AggressedPilotId
 );
 
 internal sealed partial class ResidentEconomy
@@ -45,18 +46,18 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldSecurityTransaction(
-                        Id,CorporationId,Modification,NewValue,NpcId,PilotId,SystemId,Time,TypeId
+                        Id,CorporationId,Modification,NewValue,NpcId,PilotId,SystemId,Time,TypeId,AggressedPilotId
                     )
                     SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.CorporationId'),
                         json_extract(value,'$.Modification'),json_extract(value,'$.NewValue'),json_extract(value,'$.NpcId'),
                         json_extract(value,'$.PilotId'),json_extract(value,'$.SystemId'),json_extract(value,'$.Time'),
-                        json_extract(value,'$.TypeId')
+                        json_extract(value,'$.TypeId'),json_extract(value,'$.AggressedPilotId')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         CorporationId=excluded.CorporationId,Modification=excluded.Modification,NewValue=excluded.NewValue,
                         NpcId=excluded.NpcId,PilotId=excluded.PilotId,SystemId=excluded.SystemId,Time=excluded.Time,
-                        TypeId=excluded.TypeId
+                        TypeId=excluded.TypeId,AggressedPilotId=excluded.AggressedPilotId
                     """
                 );
             }

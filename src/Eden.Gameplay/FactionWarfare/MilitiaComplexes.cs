@@ -37,6 +37,17 @@ public interface IMilitiaComplexes
 
 public sealed record MilitiaComplexPilot(long PilotId, long ShipId, SpacePosition Position, long ConnectionId = 0);
 
+public interface IMilitiaFlightPresence
+{
+    void Publish(int systemId, MilitiaComplexPilot pilot);
+    void Withdraw(int systemId, long shipId);
+}
+
+public interface IMilitiaComplexSimulation
+{
+    void Tick(long now);
+}
+
 public sealed record MilitiaComplexRewardPolicy(int Minutes, int BasePoints, int Capacity, int VictoryPoints)
 {
     public long Duration => TimeSpan.FromMinutes(Minutes).Ticks;

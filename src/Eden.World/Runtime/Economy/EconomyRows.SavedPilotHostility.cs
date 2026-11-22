@@ -4,7 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Economy;
 
-internal sealed record EconomySavedPilotHostility(long SourceShipId, long TargetShipId, long ExpiresAt, long LastAttackAt);
+internal sealed record EconomySavedPilotHostility(
+    long SourceShipId,
+    long TargetShipId,
+    long ExpiresAt,
+    long LastAttackAt,
+    bool SecurityPenaltyRecorded
+);
 
 internal sealed partial class ResidentEconomy
 {
@@ -33,14 +39,16 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldPilotHostility(
-                        SourceShipId,TargetShipId,ExpiresAt,LastAttackAt
+                        SourceShipId,TargetShipId,ExpiresAt,LastAttackAt,SecurityPenaltyRecorded
                     )
                     SELECT
                         json_extract(value,'$.SourceShipId'),json_extract(value,'$.TargetShipId'),
-                        json_extract(value,'$.ExpiresAt'),json_extract(value,'$.LastAttackAt')
+                        json_extract(value,'$.ExpiresAt'),json_extract(value,'$.LastAttackAt'),
+                        json_extract(value,'$.SecurityPenaltyRecorded')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(SourceShipId,TargetShipId) DO UPDATE SET
-                        ExpiresAt=excluded.ExpiresAt,LastAttackAt=excluded.LastAttackAt
+                        ExpiresAt=excluded.ExpiresAt,LastAttackAt=excluded.LastAttackAt,
+                        SecurityPenaltyRecorded=excluded.SecurityPenaltyRecorded
                     """
                 );
             }

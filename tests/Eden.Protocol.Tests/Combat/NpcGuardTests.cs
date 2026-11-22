@@ -6,6 +6,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -20,6 +21,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Propulsion;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -165,6 +167,83 @@ public sealed class NpcGuardTests
         Prepare(db, security: security);
         var contacts = db.Services.GetRequiredService<INpcEncounters>().List(SystemId, Now);
         Assert.Equal(guarded ? 5 : 0, contacts.Count(n => n.Role != NpcRole.Pirate));
+    }
+
+    [Fact]
+    public void LowsecSentriesRespondToFreshLocalOffensesAndReleaseDepartedShips()
+    {
+        const long victimShip = 1000000000002;
+        using CombatFixture f = new(liveWorld: true, useTestClock: true);
+        Prepare(f.Db, security: .3);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemCategory VALUES (11,'Entity');
+                INSERT OR IGNORE INTO ItemGroup VALUES (99,'Sentry Gun',11);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Mass,Radius) VALUES (3740,'Caldari Sentry Gun I',99,1000,45);
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','3740','{{"published":1}}');
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/typedogma','3740','{{"dogmaEffects":[{{"effectID":10}}]}}');
+                INSERT OR IGNORE INTO TypeAttribute VALUES (3740,9,7200),(3740,51,2500),(3740,54,500000),(3740,64,5),
+                    (3740,117,10),(3740,158,50000),(3740,160,0.4),(3740,247,1000000),(3740,263,4800),(3740,265,7200),(3740,620,100);
+                """
+            );
+        }
+        var live = LiveWorld.Find(f.Db.Path)!;
+        using (var world = live.Economy.Begin(new(systems: [SystemId])))
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath))
+        {
+            f.Db.Services.GetRequiredService<NpcPopulationSeeder>().Seed(world, catalog, SystemId, f.Clock.Now);
+            world.Commit();
+        }
+        var sentries = live.Economy.Inspect(world => world.Filter<WorldNpc>(n => n.Role == NpcRole.Sentry).ToArray());
+        using CatalogDbContext navigation = new(new WorldDatabase(f.Db.Path).CatalogPath);
+        var gate = SystemObjects.Geometry(navigation, SystemId).Single(body => body.DestinationGateId is not null);
+        var atGate = gate.Position + new SpacePosition(gate.Radius + 500, 0, 0);
+        var offGrid = atGate + new SpacePosition(4 * NpcEncounterDefinitions.VisibilityRange, 0, 0);
+        var gateSentries = sentries.Where(n => n.EncounterId == gate.Id).OrderBy(n => n.Id).ToArray();
+        Assert.Equal(2, gateSentries.Length);
+        Assert.Equal(2, sentries.Count(n => n.AnchorKind == NpcAnchorKind.Station));
+        var combat = f.Db.Services.GetRequiredService<INpcCombat>();
+        var crimewatch = f.Db.Services.GetRequiredService<IPilotCrimewatch>();
+        f.Db.Services.GetRequiredService<IPilotSafety>().Set(PilotId, ShipSafetyLevel.Partial);
+
+        MovePair(offGrid);
+        FireAtVictim();
+        Assert.Equal(CrimewatchFlag.Suspect, crimewatch.Read(PilotId, SystemId).Timers.Flag(f.Clock.Now));
+        Assert.Empty(combat.Aggressors(ShipId));
+
+        MovePair(atGate);
+        combat.Acquire([new(PilotId, ShipId)], f.Clock.Now);
+        Assert.Empty(combat.Aggressors(ShipId));
+        f.Clock.Seconds += 2;
+        FireAtVictim();
+        Assert.Equal(gateSentries.Select(n => n.Id), combat.Aggressors(ShipId));
+        Assert.Empty(combat.Aggressors(victimShip));
+        Assert.Empty(live.Economy.Inspect(world => world.Set<SavedConcordResponse>().ToArray()));
+
+        long gun = gateSentries[0].Id;
+        Assert.Null(combat.Fire(PilotId, ShipId, gun, SpacePosition.Zero, f.Clock.Now, .5, 1));
+        f.Clock.Seconds += 3;
+        Assert.True(combat.Fire(PilotId, ShipId, gun, SpacePosition.Zero, f.Clock.Now, .5, 2)!.Applied > 0);
+        MovePair(offGrid);
+        foreach (var sentry in gateSentries)
+        {
+            Assert.Null(combat.Fire(PilotId, ShipId, sentry.Id, SpacePosition.Zero, f.Clock.Now, .5, 3));
+        }
+        MovePair(atGate);
+        combat.Acquire([new(PilotId, ShipId)], f.Clock.Now);
+        Assert.Empty(combat.Aggressors(ShipId));
+        Assert.Equal(CrimewatchFlag.Suspect, crimewatch.Read(PilotId, SystemId).Timers.Flag(f.Clock.Now));
+
+        void MovePair(SpacePosition position)
+        {
+            f.Db.Store.SetPosition(ShipId, position, SystemId);
+            f.Db.Store.SetPosition(victimShip, position + new SpacePosition(500, 0, 0), SystemId);
+        }
+
+        void FireAtVictim() =>
+            f.Weapons.FirePlayerBank(PilotId, f.Module, new(victimShip, SpacePosition.Zero), SpacePosition.Zero, f.Clock.Now, .5);
     }
 
     [Fact]
