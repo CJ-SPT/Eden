@@ -4,7 +4,7 @@
 
 ## Activity-funded PvP ships
 
-New worlds use the Established Universe profile with Progressive market seeding and **Buy PvP ships with activity
+New worlds use the Established Universe profile with the Standard market and **Buy PvP ships with activity
 income** enabled. Existing worlds load their saved profile and policy. Administrators can enable the setting for an
 existing established world. The Fresh Universe sections below document the earlier creation profile and its saved-world
 behavior. [Population settings](../capsuleer-population.md#activity-funded-pvp-ships)
@@ -12,37 +12,39 @@ behavior. [Population settings](../capsuleer-population.md#activity-funded-pvp-s
 A pilot at an eligible NPC market in an active system can spend the liquid personal ISK above its saved starting cash.
 Ratting pays ordinary personal NPC bounties. Miners can sell surplus supported ore into existing orders after unloading
 and checking station production and assigned moon supply. Production contributes when the pilot's sales settle. Ambient
-gate and station travel has no payout of its own. New generated ratters start in a basic Merlin work fit without a warp
-scrambler. Existing local work and cargo commitments take precedence. Skill requirements go through normal training,
-and purchase requires a quote for the complete fit. A pilot with insufficient ISK or missing stock can continue its
-usual work. Where Progressive beginner supply is enabled, its finite starter offers
-include this kit at eligible low- and null-security NPC traffic stations. Normal matching also accepts player listings.
+gate and station travel has no payout of its own. Existing local work and cargo commitments take precedence. Purchase
+requires sufficient ISK and a quote for the complete fit from ordinary captured or player-listed orders. A hauler may
+visit a stocked NPC market on a nearby traffic route or at a reachable trade hub and return to its staging system.
+It rechecks price, stock and fittings on arrival. If the full fit is unavailable it can return in its work ship.
 
-The initial PvP fit is a Merlin with compatible railguns and loaded Iron Charge S. Its support options include a warp
-scrambler, afterburner, shield booster and damage control in the pinned catalog. The resident transaction matches the market
-orders, debits the wallet, assembles and fits the hull, loads charges, and saves the identity of the paid ship alongside the
-parked work ship. On restart the bot uses the existing paid hull when available at its current dock. With the policy enabled,
-a funded fit qualifies for intentional roams, camps and gang activity under the usual security and contact rules. Existing
-resupply and loss settlement apply. After a loss, the capsule can board its parked work ship when both are at the same station.
+The installed zKillboard traffic snapshot supplies supported combat hulls, full recorded module and rig slots, and loaded
+charge types. The fitting owner checks each pilot's current skills and the online fitting limits before purchase. Charging
+fills the native magazines. The source capture describes fitted slots and charges. Cargo, drones and unsupported slots
+are outside the snapshot fit. Among affordable fits available at a dock, a stable per-pilot choice favors fits that
+can deal damage. Support fits qualify where gangs can use them. The resident transaction buys, assembles, fits and
+loads the ship, then saves its identity alongside the parked work ship. Paid fits qualify for roams, camps and gangs
+under ordinary security and contact rules. Capsule recovery can reboard the parked work ship at the same station.
 
 EVE University documents earning ISK through mining, trade and ratting, and the regional market's station-based orders.
 The local EVE.js 261108.1 reference targets build 3396210. `doc/MARKET_SETUP.md` describes synthetic market seeding over
-ordinary NPC stock and `externalservices/market-server/README.md` describes order precedence. Eden uses its own Progressive
-supply rules and verified the Merlin and kit type definitions against catalog build 3662168. [Making Money](https://wiki.eveuniversity.org/Making_Money) ·
+ordinary market orders and `externalservices/market-server/README.md` describes order precedence. Eden's Standard market
+uses compatible captured orders and validated traffic fits from catalog build 3662168. [Making Money](https://wiki.eveuniversity.org/Making_Money) ·
 [Trading](https://wiki.eveuniversity.org/Market) · [Development catalog](../development-client.md#creating-and-recreating-the-databases)
 
 ### Automated validation
 
-`CapsuleerAmmunitionSupplyTests.EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen` passed in 9.39 seconds
-of test-run time. The replay rejects a purchase with only the opening grant, pays a scripted pirate kill through the
-ordinary bounty owner, matches every part of the fit against personal sell orders, and verifies the exact wallet debit
-and loaded ship. Reopening preserves the paid fit without another purchase. The scheduler flies a roam with that fit.
-An ordinary ship loss sends the capsule to the parked work ship in the same system, where it reboards without a
-replacement order. The scripted kill verifies settlement and leaves autonomous earning rates unmeasured.
+The two cases of `EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen` passed in 11.08 seconds.
+A scripted kill funds an Incursus from exact zKillboard fit slots and Standard market stock. A cheaper Rifter stays
+listed because the pilot lacks the skill. The local replay covers a scheduled roam, ship loss and reboarding the
+parked work ship. The remote replay shops in highsec, checkpoints on the return trip, then resumes and roams from
+nullsec. The scripted bounty verifies settlement. Autonomous earning rates remain unmeasured.
 
-The combined capsuleer, traffic navigation, patrol, roaming gang, starter market, administration, wipe and world
-configuration filter passed all 119 cases in 87.04 seconds of test-run time. The solution built with zero warnings
-and errors in 10.70 seconds. The catalog and formatting policy suites and the format check passed.
+The combined filter covered capsuleer supply, traffic navigation, patrols, roaming gangs, traffic snapshots, Standard
+and starter markets, fitting apply and constraints, administration, world wipe and configuration. All 192 cases passed
+in 131.80 seconds of test-run time. After the shopping journey and import command refinements, the solution built in
+15.29 seconds with zero warnings and errors. The final 40-case run covered the bounty-funded replays, traffic navigation,
+first-start setup, optional data and world wipe in 29.53 seconds. The catalog and formatting policy suites and format
+check passed.
 
 ### Live acceptance
 

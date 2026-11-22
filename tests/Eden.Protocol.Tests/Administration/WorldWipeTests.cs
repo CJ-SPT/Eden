@@ -5,6 +5,7 @@ using Eden.Data.World.Launcher;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Protocol.Tests.Market;
 using Eden.Server;
 using Eden.Server.Administration;
 using Eden.Server.Launcher;
@@ -165,6 +166,12 @@ public sealed class WorldWipeTests
         Assert.Null(state.Approval);
 
         WorldSetupRequest request = new(database, state);
+        if (legacyFresh)
+        {
+            PassiveCatalogFixture.LoadUtilityHulls(database.CatalogPath, new HashSet<int> { 34 });
+            Assert.Throws<InvalidDataException>(() => request.Prepare("", "Operator"));
+            StandardMarketTests.InstallSetupSnapshot(database);
+        }
         request.Prepare("", "Operator");
         var approval = WorldSetupStore.Read(path)!.Approval!;
         WorldInitialization.Initialize(database, setup: approval);
@@ -173,8 +180,13 @@ public sealed class WorldWipeTests
         Assert.Equal(legacyFresh, database.Settings.Capsuleers.EarnedPvpShips);
         if (legacyFresh)
         {
-            Assert.True(database.Settings.Economy is { BeginnerMarketSupply: true, ProgressiveMarkets: true });
+            Assert.True(database.Settings.Economy is { BeginnerMarketSupply: false, ProgressiveMarkets: false, StandardMarket: true });
             Assert.False(database.Settings.DevelopmentSupply.TestingGrants);
+        }
+        else
+        {
+            Assert.Equal(draft.Settings.Economy, database.Settings.Economy);
+            Assert.Equal(draft.Settings.DevelopmentSupply, database.Settings.DevelopmentSupply);
         }
         Assert.Equal(draft.Settings.Progression.TrainingSpeedMultiplier, database.Settings.Progression.TrainingSpeedMultiplier);
         Assert.Null(configuration.Read().Pending);

@@ -1,6 +1,6 @@
 # Bot development milestones
 
-Eden's supported world setup starts with an established economy and seeded markets. Bots use the same wallets, orders,
+Eden's world setup starts with an established economy seeded from Standard market orders. Bots use the same wallets, orders,
 ships and inventories as other capsuleers. Ordinary work earns the ISK they need for a fitted PvP ship. Existing firms
 can still earn income through production, trade and deliveries, and alliances can fund claims and defense.
 [Population guide](capsuleer-population.md) · [World settings](world-configuration.md)
@@ -10,13 +10,13 @@ can still earn income through production, trade and deliveries, and alliances ca
 1. **Earn ISK doing ordinary work.** Ratting pays NPC bounties. Miners and producers earn ISK when their goods sell.
    A bot can put spendable earnings toward a separate combat fit while retaining its work ship. Track net wallet gains
    after fees, ammunition and other costs when measuring how long the first fit takes.
-2. **Buy, fit and fly a ship.** The initial target is an affordable Merlin with weapons, charges and PvP support modules.
-   Seed eligible staging stations so a bot can buy a complete fit through ordinary market matching. Check that an
-   insufficient balance or missing component lets the bot keep working, and that the purchase consumes the actual stock.
-   Use the existing roam, camp and gang behavior after the pilot has boarded its paid fit.
+2. **Buy, fit and fly a ship.** Choose from affordable zKillboard fits the pilot can fly and bring online. Buy the hull,
+   modules, rigs and charges through ordinary market matching. Check that an insufficient balance or missing component
+   lets the bot keep working, and that the purchase consumes the actual stock. Use the existing roam, camp and gang
+   behavior after the pilot has boarded its paid fit.
 3. **Recover after loss.** A pilot can reboard its parked work ship when it returns to the same station. Verify that
    another fit costs ISK, the new purchase uses real stock, and the pilot can return to combat after a checkpoint reopen.
-   Measure fleet losses and recovery before increasing starting PvP ship variety or fleet size.
+   Measure fleet losses and recovery before increasing fleet size.
 
 [Earned PvP ships](protocol/capsuleers.md#activity-funded-pvp-ships) ·
 [Paid replacement and loss settlement](protocol/capsuleers.md#dynamic-paid-ship-replacement)

@@ -390,12 +390,19 @@ public sealed class StandardMarketTests
     private static LiveMarketOrder Order(TestClock clock, long id, long price, int quantity) =>
         new(id, Hub, SystemId, Region, Tritanium, false, price, quantity, quantity, clock.Now, 90, -1, 1);
 
-    private static void WriteSnapshot(WorldDatabase database, TestClock clock, LiveMarketOrder[] orders, string? output = null)
+    internal static void InstallSetupSnapshot(WorldDatabase database)
+    {
+        TestClock clock = new();
+        WriteSnapshot(database, clock, [Order(clock, 1, 200, 5)]);
+    }
+
+    internal static void WriteSnapshot(WorldDatabase database, TestClock clock, LiveMarketOrder[] orders, string? output = null)
     {
         string generation = Guid.NewGuid().ToString("N");
         string root = output ?? database.MarketSnapshot.Root;
         Directory.CreateDirectory(Path.Combine(root, generation));
-        string regionPath = Path.Combine(root, generation, $"{Region}.json.gz");
+        int region = orders.Select(order => order.RegionId).Distinct().Single();
+        string regionPath = Path.Combine(root, generation, $"{region}.json.gz");
         using (var file = File.Create(regionPath))
         using (GZipStream compressed = new(file, CompressionLevel.Fastest))
         {
@@ -410,7 +417,7 @@ public sealed class StandardMarketTests
             database.Catalog.Identity.SourceFingerprint,
             orders.Length,
             new Dictionary<string, int>(),
-            [new(Region, orders.Length, Convert.ToHexString(SHA256.HashData(stream)))]
+            [new(region, orders.Length, Convert.ToHexString(SHA256.HashData(stream)))]
         );
         File.WriteAllText(Path.Combine(root, "manifest.json"), JsonSerializer.Serialize(manifest, JsonSerializerOptions.Web));
     }

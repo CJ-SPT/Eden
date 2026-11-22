@@ -45,8 +45,9 @@ dotnet run --no-build --project src/Eden.Server -- --set-admin-password Corey
 ```
 
 Sign in at the printed URL (by default `http://127.0.0.1:26003/world/setup`). New saves use Established Universe careers and
-traffic. The default Progressive market seeds regional NPC buy orders, institutional offers and starter ship and fitting stock.
-Bots can use activity income to buy PvP ships. The existing testing wallet grant for human pilots is enabled on first start.
+traffic with the Standard market. Install a compatible snapshot beside the saved world before approving setup. Its captured
+orders are available from first market access without production unlocks. Bots can use activity income to buy PvP ships.
+The existing testing wallet grant for human pilots is enabled on first start. [Market import](#market-presets)
 
 For custom starting settings, open **Advanced settings**, download the configuration draft, edit it, and paste the complete JSON
 into the form. Set `settings.developmentSupply.testingGrants` to false to disable testing wallet grants. The draft also supports
@@ -86,10 +87,10 @@ The existing hub and starter supply supplements do not alter imported orders. Th
 are hidden for Standard because the imported quantities and prices are authoritative. Initial wallet grants
 remain under Progression.
 
-Before selecting Standard, open **Optional data** and choose **Import market orders**. Use **Re-import market
-orders** to refresh the snapshot. The server downloads and validates the data in the background, and the page shows
-the installed capture and the import result. Standard requires a compatible snapshot. Testing, Progressive and
-NPC-only markets work without one.
+When setting up a new world, use the command below to import the snapshot. For a running world, open **Optional data**
+and choose **Import market orders** or **Re-import market orders**. The server downloads and validates the data in the background,
+and the page shows the installed capture and the import result. Standard requires a compatible snapshot. Testing, Progressive
+and NPC-only markets work without one.
 
 Market imports require Python 3.8 or newer on the server. The Docker image includes it. On other installations,
 use Python on the server's PATH or set `EDEN_PYTHON` to the executable. To import manually from the repository

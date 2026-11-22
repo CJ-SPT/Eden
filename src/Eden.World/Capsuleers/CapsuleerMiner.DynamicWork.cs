@@ -168,7 +168,7 @@ internal sealed partial class CapsuleerMiner
         }
         if (earnedPvp)
         {
-            var acquisition = industry.TryBuyEarnedPvpShip(world, catalog, Pilot, now, careerTraining);
+            var acquisition = industry.TryBuyEarnedPvpShip(world, catalog, database.Traffic, Pilot, now);
             _operation.MarketChanged |= acquisition.MarketChanged;
             if (!acquisition.Boarded)
             {

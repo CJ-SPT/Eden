@@ -17,6 +17,15 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
     public WorldConfigurationDraft? Previous { get; } =
         state.NewWorld ? null : new WorldConfigurationStore(database, TimeProvider.System).Read().Active.Draft;
 
+    internal string MarketImportCommand =>
+        (OperatingSystem.IsWindows() ? "& " : "")
+        + $"{QuoteShellArgument(OptionalDataImporter.MarketPython)} -I {QuoteShellArgument(OptionalDataImporter.MarketScript)}"
+        + $" --catalog {QuoteShellArgument(Path.GetFullPath(database.CatalogPath))}"
+        + $" --output {QuoteShellArgument(database.MarketSnapshot.Root)}";
+
+    private static string QuoteShellArgument(string argument) =>
+        "'" + argument.Replace("'", OperatingSystem.IsWindows() ? "''" : "'\"'\"'", StringComparison.Ordinal) + "'";
+
     internal static void RequireEstablished(string? profile)
     {
         if (profile is not (null or "" or "established"))
@@ -52,11 +61,11 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
                 Economy = settings.Economy with
                 {
                     ChargeServiceCosts = true,
-                    ProgressiveMarkets = true,
-                    RegionalHubSupply = true,
-                    BeginnerMarketSupply = true,
+                    ProgressiveMarkets = false,
+                    RegionalHubSupply = false,
+                    BeginnerMarketSupply = false,
                     SimulatedMarketHistory = true,
-                    StandardMarket = false,
+                    StandardMarket = true,
                 },
                 DevelopmentSupply = settings.DevelopmentSupply with { TestingMarket = false, TestingGrants = Previous is null },
                 Capsuleers = settings.Capsuleers with { EarnedPvpShips = true },

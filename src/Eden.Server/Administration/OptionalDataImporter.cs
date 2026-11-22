@@ -9,6 +9,11 @@ namespace Eden.Server.Administration;
 
 internal sealed class OptionalDataImporter(WorldDatabase database)
 {
+    internal static string MarketPython =>
+        Environment.GetEnvironmentVariable("EDEN_PYTHON") ?? (OperatingSystem.IsWindows() ? "python" : "python3");
+
+    internal static string MarketScript => Path.Combine(AppContext.BaseDirectory, "data-tools", "Import-LiveMarket.py");
+
     internal Task Import(OptionalDataset dataset, Action<string> progress, CancellationToken cancellationToken) =>
         dataset switch
         {
@@ -60,8 +65,7 @@ internal sealed class OptionalDataImporter(WorldDatabase database)
 
     private static async Task RunMarketImporter(string catalog, string staging, CancellationToken cancellationToken)
     {
-        string python = Environment.GetEnvironmentVariable("EDEN_PYTHON") ?? (OperatingSystem.IsWindows() ? "python" : "python3");
-        ProcessStartInfo start = new(python)
+        ProcessStartInfo start = new(MarketPython)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -72,7 +76,7 @@ internal sealed class OptionalDataImporter(WorldDatabase database)
         start.Environment["TEMP"] = staging;
         start.Environment["TMP"] = staging;
         start.ArgumentList.Add("-I");
-        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "data-tools", "Import-LiveMarket.py"));
+        start.ArgumentList.Add(MarketScript);
         start.ArgumentList.Add("--catalog");
         start.ArgumentList.Add(catalog);
         start.ArgumentList.Add("--output");

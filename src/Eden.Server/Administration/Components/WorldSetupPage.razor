@@ -5,15 +5,20 @@
 @if (Site.Setup is { } setup)
 {
     <h1>Set up your world</h1>
-    <p>New saves use Established Universe bot careers and traffic. The default market seeds regional NPC and starter orders.
-        Account access opens when the world is ready.</p>
+    <p>New saves use Established Universe bot careers and traffic. Account access opens when the world is ready.</p>
     @if (setup.Previous is { Settings.FreshUniverse: true })
     {
-        <p>The replacement uses the seeded market and carries forward your other saved settings.</p>
+        <p>The replacement uses the Standard market and carries forward your other saved settings.</p>
     }
     else if (setup.Previous is not null)
     {
         <p>The configuration draft starts with your previous world's active settings.</p>
+    }
+    @if (setup.Previous?.Settings is null or { FreshUniverse: true } or { Economy.StandardMarket: true })
+    {
+        <p>The Standard market uses captured public market orders. If you haven't installed a compatible snapshot,
+            run this command on the server before creating the world.</p>
+        <pre><code>@setup.MarketImportCommand</code></pre>
     }
     <form method="post" action="/api/admin/world/setup" class="card">
         <AntiforgeryToken />

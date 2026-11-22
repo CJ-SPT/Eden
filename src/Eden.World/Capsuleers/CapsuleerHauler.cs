@@ -1069,7 +1069,7 @@ internal sealed partial class CapsuleerHauler(
             AttemptShipReplacement();
             return;
         }
-        if (_operation.World is EconomyTransaction explorationWorld && TryLaunchExploration(explorationWorld))
+        if (_operation.World is EconomyTransaction stop && (FinishPvpShopping(stop) || TryLaunchExploration(stop)))
         {
             return;
         }
@@ -1504,6 +1504,7 @@ internal sealed partial class CapsuleerHauler(
                 Work.Gang is { Phase: not RoamingGangPhase.Complete }
                 || Work.RegionalEscort is not null
                 || Work.SovereigntyExpedition is not null
+                || Work.Journey?.Kind == TrafficJourneyKind.PvpShopping
                 || Work.CorporationSupply?.FactorySupply is { Mercoxit: true } or { Planetary: not null } or { Refinery: not null }
             )
             {
@@ -1589,6 +1590,7 @@ internal sealed partial class CapsuleerHauler(
                 is TrafficJourneyKind.CapsuleEscape
                     or TrafficJourneyKind.SovereigntyExpedition
                     or TrafficJourneyKind.CorporationRelocation
+                    or TrafficJourneyKind.PvpShopping
             || !TryRegionalGrid()
         )
         {

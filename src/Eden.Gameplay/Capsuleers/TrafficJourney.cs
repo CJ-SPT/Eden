@@ -8,6 +8,7 @@ public enum TrafficJourneyKind
     CapsuleEscape,
     SovereigntyExpedition,
     CorporationRelocation,
+    PvpShopping,
 }
 
 public sealed record TrafficJourney(

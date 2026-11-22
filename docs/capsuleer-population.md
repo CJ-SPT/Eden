@@ -49,16 +49,16 @@ system. Delayed Local keeps its normal privacy rules.
 
 ## Activity-funded PvP ships
 
-An established world starts with seeded markets and **Buy PvP ships with activity income** enabled. To enable this
+A new established world starts with the Standard market and **Buy PvP ships with activity income** enabled. To enable this
 on an existing established save, open **Player bots → PvP roams & regional conflicts**, select that option, save for
 restart and restart the server.
 
-An eligible pilot docked at a market station in an active system can use personal ISK above its starting cash to buy
-and fit a Merlin for PvP. Ratters earn bounties, and miners can sell surplus supported ore after unloading and checking
-production and moon-supply needs. Ambient station and gate travel provides no personal payout by itself. New generated
-ratters use a basic Merlin work fit without a warp scrambler. A pilot keeps its work ship at the dock when boarding the
-paid PvP fit, which can be used for roams, camps and gangs. Resupply, losses and the return to an owned work ship follow
-the existing world operations. [Implementation and validation](protocol/capsuleers.md#activity-funded-pvp-ships)
+An eligible pilot can spend personal ISK above its starting cash on a PvP fit from the installed zKillboard traffic
+snapshot. It selects among hulls and fits its skills can operate and buys the full fit through ordinary orders. Ratters
+earn bounties, and miners can sell surplus ore after checking production and moon-supply needs. Haulers can make a
+shopping trip to a reachable market when their staging station lacks stock. The work ship stays docked where the
+pilot boards the paid ship. The paid fit can be used for roams, camps and gangs. [Import zKillboard traffic](#zkill-backed-travelers) ·
+[Implementation and validation](protocol/capsuleers.md#activity-funded-pvp-ships)
 
 ## Mining fleets
 

@@ -74,7 +74,10 @@ internal sealed partial class CapsuleerHauler
         int homeSystem = input.OperatingStation.HasValue ? catalog.RequireStation(home).SolarSystemId : input.CommunityId;
         var plan = CapsuleerTrafficRoutes.Geography(catalog, homeRoster ? homeSystem : input.SystemId);
         bool busy = plan.GateCount >= 4 || plan.StationCount >= 4;
-        var kind = homeRoster ? TrafficJourneyRules.Kind(input.Slot, busy) : previous?.Kind ?? TrafficJourneyKind.Regional;
+        var kind =
+            homeRoster ? TrafficJourneyRules.Kind(input.Slot, busy)
+            : previous is { Kind: not TrafficJourneyKind.PvpShopping } ? previous.Kind
+            : TrafficJourneyKind.Regional;
         if (kind == TrafficJourneyKind.Local && plan.StationCount == 0)
         {
             kind = TrafficJourneyKind.Regional;

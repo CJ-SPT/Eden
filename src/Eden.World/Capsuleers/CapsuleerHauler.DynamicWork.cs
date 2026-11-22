@@ -162,11 +162,11 @@ internal sealed partial class CapsuleerHauler
         UnloadRattingLoot();
         if (!HasPvpShip)
         {
-            var acquisition = ammunitionSupply.TryBuyEarnedPvpShip(world, _operation.Catalog, Pilot, Now, careerTraining);
+            var acquisition = ammunitionSupply.TryBuyEarnedPvpShip(world, _operation.Catalog, database.Traffic, Pilot, Now);
             _operation.MarketChanged |= acquisition.MarketChanged;
             if (!acquisition.Boarded)
             {
-                return false;
+                return TryShopForPvpShip(world);
             }
             _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
             ResetTradeHull();

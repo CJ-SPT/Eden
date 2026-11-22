@@ -5,7 +5,6 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
-using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Docking;
 using Eden.World.Industry;
@@ -36,7 +35,6 @@ internal sealed class RegionalMarketCatalog
     internal IReadOnlyList<RegionalStation> Stations { get; }
     internal IReadOnlyDictionary<int, RegionalStation> StationsById { get; }
     internal IReadOnlyDictionary<int, RegionalStation> Hubs { get; }
-    internal IReadOnlyDictionary<int, RegionalStation> PvpMarkets { get; }
     private readonly Lazy<IReadOnlyDictionary<int, RegionalDemand>> _demand;
     internal IReadOnlyDictionary<int, RegionalDemand> Demand => _demand.Value;
     internal bool DemandLoaded => _demand.IsValueCreated;
@@ -47,9 +45,6 @@ internal sealed class RegionalMarketCatalog
 
     internal RegionalDemand? DemandFor(CatalogDbContext catalog, int typeId) =>
         DemandLoaded ? Demand.GetValueOrDefault(typeId) : catalog.Definitions.Definition(_typeDemand, typeId);
-
-    internal static bool IsTrafficEndpoint(CatalogDbContext catalog, CatalogStationDefinition station) =>
-        CapsuleerTrafficRoutes.Read(catalog, station.SolarSystemId).Routes.Any(route => route.SourceStationId == station.Id);
 
     private static IReadOnlyDictionary<int, RegionalProduct> LoadStarterProducts(CatalogDbContext catalog)
     {
@@ -239,13 +234,14 @@ internal sealed class RegionalMarketCatalog
             allStations.Where(s => systems.GetValueOrDefault(s.SolarSystemId)?.SecurityStatus is null).Select(s => (long)s.SolarSystemId)
         );
         var operations = catalog.ReadMany(CatalogData.Client.Stationoperations, allStations.Select(s => (long)s.OperationId));
-        var markets = allStations
-            .Where(s => operations.GetValueOrDefault(s.OperationId)?.Services?.Contains((long)StationService.Market) == true)
+        var stations = catalog
+            .Stations()
+            .Where(s =>
+                (systems.GetValueOrDefault(s.SolarSystemId)?.SecurityStatus ?? fallback.GetValueOrDefault(s.SolarSystemId)?.Security)
+                    >= CrimewatchRules.HighSecurity
+                && operations.GetValueOrDefault(s.OperationId)?.Services?.Contains((long)StationService.Market) == true
+            )
             .ToArray();
-        var stations = markets.Where(s => Security(s) >= CrimewatchRules.HighSecurity).ToArray();
-        PvpMarkets = markets
-            .Where(s => Security(s) < CrimewatchRules.HighSecurity)
-            .ToDictionary(station => station.Id, station => new RegionalStation(station, RegionalMarketRole.Mining));
         var hubs = stations
             .GroupBy(s => s.RegionId)
             .Select(g =>
@@ -268,8 +264,5 @@ internal sealed class RegionalMarketCatalog
             .ToArray();
         StationsById = Stations.ToDictionary(station => station.Station.Id);
         Hubs = Stations.Where(station => station.Role == RegionalMarketRole.Hub).ToDictionary(station => station.Station.RegionId);
-
-        double? Security(CatalogStationDefinition station) =>
-            systems.GetValueOrDefault(station.SolarSystemId)?.SecurityStatus ?? fallback.GetValueOrDefault(station.SolarSystemId)?.Security;
     }
 }

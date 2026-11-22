@@ -4,16 +4,18 @@
 
 ## First-start world setup
 
-New setup approvals use Established Universe. The default draft enables Progressive supply with catalog-derived
-industry reference prices and activity-funded PvP ships. Existing active settings remain available when reconfiguring
+New setup approvals use Established Universe. The default draft uses the Standard market, catalog-derived
+industry reference prices and activity-funded PvP ships. Setup validates an installed compatible capture before
+approving the Standard draft. Existing active settings remain available when reconfiguring
 an established save. The setup endpoint rejects a Fresh Universe profile or draft. Existing approved setup operations
 can still resume, and active legacy saves keep their rules until wiped. A wiped legacy save records that setup is
 required and the replacement starts with the established market defaults.
 [Operator flow](../world-configuration.md#first-start) · [Wipe choices](../world-wipe.md)
 
-The focused administration and economy checks ran as part of a 119-case passing filter. They covered the default
-draft, rejection of Fresh Universe creation, reuse and reconfiguration after wipe, saved settings, and a paid purchase
-from seeded lowsec stock. [Validation](capsuleers.md#activity-funded-pvp-ships)
+The Standard default setup case passed in 7.70 seconds of test-run time. It detects a missing snapshot, then approves the
+draft and reads a finite captured order through the resident market. The combined filter covered the default draft,
+rejection of Fresh Universe creation, reuse and reconfiguration after wipe, and saved settings.
+[Validation](capsuleers.md#activity-funded-pvp-ships)
 
 ### Original setup rollout
 

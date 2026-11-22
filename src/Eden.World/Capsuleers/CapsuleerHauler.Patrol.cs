@@ -40,6 +40,7 @@ internal sealed partial class CapsuleerHauler
             _background
             || !policy.RoamingPvp
             || !HasPvpShip
+            || Work.Journey?.Kind == TrafficJourneyKind.PvpShopping
             || Work.Retreating
             || Work.Freight?.Stacks.Length > 0
             || Work.Resupply?.DestinationStationId is not null

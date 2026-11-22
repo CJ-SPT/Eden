@@ -31,10 +31,7 @@ internal sealed partial class CapsuleerIndustry
     private sealed record CareerProductionBid(long PriceCents, int BatchSize);
 
     private const decimal CareerProductionMargin = 1.25m;
-    private static readonly CatalogDefinition<ReplacementKit?> s_careerKits = new(
-        "career-ship-kits",
-        (catalog, type) => LoadCareerKit(catalog, type)
-    );
+    private static readonly CatalogDefinition<ReplacementKit?> s_careerKits = new("career-ship-kits", LoadCareerKit);
     private static readonly CatalogDefinition<CareerProductionBid?> s_careerProductionBids = new(
         "career-production-bids",
         LoadCareerProductionBid
@@ -84,7 +81,7 @@ internal sealed partial class CapsuleerIndustry
             coverProduction ? catalog.Definition(s_careerProductionBids, type)?.PriceCents ?? 0 : 0
         );
 
-    private static ReplacementKit? LoadCareerKit(CatalogDbContext catalog, int type, bool includePatrolSupport = false)
+    private static ReplacementKit? LoadCareerKit(CatalogDbContext catalog, int type)
     {
         var hull = (HullClass)(catalog.FittingType(type)?.GroupId ?? 0);
         const int high = (int)InventoryFlag.HighSlot0;
@@ -140,20 +137,19 @@ internal sealed partial class CapsuleerIndustry
             {
                 // The published starter Merlin keeps its civilian-to-railgun purchasing plan. Larger ships
                 // acquire the propulsion, tackle and tank from their catalog-validated patrol fit as well.
-                var fitting =
-                    !includePatrolSupport && !UsesPatrolSupport(catalog, type)
-                        ? highSlots
-                        :
-                        [
-                            .. highSlots,
-                            .. fit
-                                .Equipment.Where(item =>
-                                    InventoryDefinitions.IsFittedSlot(item.Flag)
-                                    && !InventoryDefinitions.IsHighSlot(item.Flag)
-                                    && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Module
-                                )
-                                .Select(item => new FittingSlot(item.Flag, item.TypeId)),
-                        ];
+                var fitting = !UsesPatrolSupport(catalog, type)
+                    ? highSlots
+                    :
+                    [
+                        .. highSlots,
+                        .. fit
+                            .Equipment.Where(item =>
+                                InventoryDefinitions.IsFittedSlot(item.Flag)
+                                && !InventoryDefinitions.IsHighSlot(item.Flag)
+                                && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Module
+                            )
+                            .Select(item => new FittingSlot(item.Flag, item.TypeId)),
+                    ];
                 if (WithinBaseFittingResources(catalog, type, fitting))
                 {
                     kit = new(type, fitting, fitting.Select(slot => slot.FlagId).ToHashSet(), [], magazines);

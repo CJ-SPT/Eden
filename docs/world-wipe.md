@@ -8,7 +8,7 @@ Sign in to administration and open **World**. Choose how to recreate the world.
 - **Configure new settings** opens [World setup](world-configuration.md#first-start) on the next start. The previous active
   settings are available as a starting point, and you can paste a custom configuration draft.
 
-Wiping a legacy Fresh Universe save opens setup for an Established Universe with the seeded market.
+Wiping a legacy Fresh Universe save opens setup for an Established Universe with the Standard market.
 
 Type `WIPE WORLD` and select **Back up, wipe world and stop server**. The request page reports the backup directory.
 Wait for **World wipe complete** in the server console before restarting. Account creation and sign-in reopen when the

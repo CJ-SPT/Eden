@@ -7,7 +7,6 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
-using Eden.World.Configuration;
 using Eden.World.Market;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -163,52 +162,6 @@ public sealed class StarterMarketTests
             );
         }
         Assert.DoesNotContain(RegionalMarketCatalog.Read(f.Catalog).Stations, station => station.Station.Id == SchoolStation);
-    }
-
-    [Fact]
-    public void LowsecTrafficStationSeedsOnlyTheEarnedPvpKitAtReferencePrices()
-    {
-        using Fixture f = new();
-        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
-        {
-            catalog.Database.ExecuteSqlRaw(
-                """
-                INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000141','{{"securityStatus":0.1}}');
-                INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
-                    SELECT 60003998,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z FROM Station WHERE Id=60015157;
-                """
-            );
-        }
-        var configuration = new WorldConfigurationStore(f.Database, f.Clock);
-        var active = configuration.Read();
-        var settings = active.Active.Draft.Settings;
-        var draft = active.Active.Draft with
-        {
-            Settings = settings with
-            {
-                Capsuleers = settings.Capsuleers with { EarnedPvpShips = true },
-                Economy = settings.Economy with { ProgressiveMarkets = true },
-                DevelopmentSupply = settings.DevelopmentSupply with { TestingMarket = false },
-            },
-        };
-        configuration.Save(active.Generation, draft, "admin");
-        WorldInitialization.Initialize(f.Database, f.Clock);
-        using var host = Eden.Server.ServerServices.Build(f.Database, f.Clock, liveWorld: true);
-        var market = host.GetRequiredService<IPilotMarket>();
-        var orders = market.Orders(Pilot).Where(order => order.StationId == SchoolStation).ToArray();
-        Assert.DoesNotContain(orders, order => order.Bid || order.TypeId == (int)StarterMarketType.Venture);
-        foreach (int typeId in StarterMarketRules.PvpKitTypes)
-        {
-            var order = Assert.Single(orders, order => order.TypeId == typeId);
-            Assert.Equal(MarketSnapshotCatalog.Quotes[typeId].SellCents, order.PriceCents);
-            var category = (InventoryCategory)f.Catalog.FittingType(typeId)!.CategoryId;
-            int stock = Math.Max(1, RegionalMarketRules.InitialStock(category) / RegionalMarketRules.SecondaryStockDivisor);
-            Assert.Equal(stock, order.Remaining);
-        }
-        var hull = Assert.Single(orders, order => order.TypeId == (int)StarterMarketType.Merlin);
-        var bought = market.Buy(Pilot, SchoolStation, [new(hull.TypeId, hull.PriceCents, 1)]);
-        Assert.Equal(StartingCents - hull.PriceCents, bought.BalanceCents);
-        Assert.DoesNotContain(market.Orders(Pilot, hull.TypeId), order => order.Id == hull.Id);
     }
 
     [Fact]
@@ -385,7 +338,6 @@ public sealed class StarterMarketTests
             Database = new(Db.Path);
             TestCatalog.AddSchool(Database.CatalogPath, 17, 1, 1, SchoolSystem, SchoolStation, 601);
             PassiveCatalogFixture.LoadStarterMarket(Database.CatalogPath);
-            PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath, new HashSet<int> { (int)StarterMarketType.WarpScrambler, 3435 });
             using (CatalogDbContext catalog = new(Database.CatalogPath, writable: true))
             {
                 catalog.Database.ExecuteSqlRaw(

@@ -48,12 +48,13 @@ internal sealed partial record FittingCalculation
         Pilot pilot,
         Ship? ship = null,
         int? ownerTypeId = null,
-        IReadOnlySet<long>? overloadedModules = null
+        IReadOnlySet<long>? overloadedModules = null,
+        OwnedItem[]? proposedModules = null
     )
     {
         // A paid-cycle owner supplies its explicit overload selection. Neither
         // the module snapshot nor derived ship values may enter the normal cache.
-        string? revision = ownerTypeId is null && overloadedModules is null ? world.FitRevision(pilot.Id) : null;
+        string? revision = ownerTypeId is null && overloadedModules is null && proposedModules is null ? world.FitRevision(pilot.Id) : null;
         SessionPerformance.FittingCalculated();
         ship ??= pilot.ActiveShip;
         if (overloadedModules is not null && ship.OwnerId != pilot.Id)
@@ -64,7 +65,7 @@ internal sealed partial record FittingCalculation
         var hullAttributes = PilotFittingStore.ReadAttributes(catalog, ship.TypeId).ToDictionary();
         hullAttributes[DogmaAttributeId.Mass] = hull.Mass ?? 0;
         hullAttributes[DogmaAttributeId.CargoCapacity] = hull.Capacity ?? 0;
-        var items = world.FittedItems(pilot.Id, ship.Id);
+        var items = proposedModules ?? world.FittedItems(pilot.Id, ship.Id);
         var moduleAttributes = items.ToDictionary(i => i.Id, i => MutaplasmidStore.Attributes(world, catalog, i.Id, i.TypeId));
         var modules = items
             .Select(i => new FittingLocation(
@@ -83,7 +84,7 @@ internal sealed partial record FittingCalculation
         {
             throw new InvalidDataException("Overload selection must belong to this owned ship's fitted modules.");
         }
-        var loaded = world.LoadedFittingItems(pilot.Id, moduleIds);
+        var loaded = proposedModules is null ? world.LoadedFittingItems(pilot.Id, moduleIds) : [];
         var chargeAttributes = loaded
             .Select(i => i.TypeId)
             .Distinct()
@@ -747,7 +748,7 @@ internal sealed partial record FittingCalculation
         }
         return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels)
         {
-            Transient = ownerTypeId is not null || overloadedModules is not null,
+            Transient = ownerTypeId is not null || overloadedModules is not null || proposedModules is not null,
             OverloadedModules = overloads,
         };
 

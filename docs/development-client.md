@@ -245,14 +245,14 @@ Put the verified build-3662168 `catalog.sqlite` beside the new world path and st
 dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Economy\world.sqlite'
 ```
 
-Follow the console to [World setup](world-configuration.md#first-start). The default Progressive market seeds regional NPC
-and starter stock. Turn off `settings.developmentSupply.testingGrants` in the advanced draft to disable the testing wallet grant.
+Import the [Standard market snapshot](world-configuration.md#market-presets) beside the new save, then follow the console
+to [World setup](world-configuration.md#first-start). Captured orders are available from first use without production unlocks.
+Turn off `settings.developmentSupply.testingGrants` in the advanced draft to disable the testing wallet grant.
 You can adjust `settings.developmentSupply.institutionalStock`
 (default 1,000 replenishing units per order), service costs, prices, manufacturing indices and belt renewal in the same draft.
 
-Institutional NPC offers stock catalog blueprints and skillbooks at pinned base prices. Ships, modules and minerals
-also depend on the market policy selected in the draft. See [market presets](world-configuration.md#market-presets)
-and the [starter production audit](starter-production.json).
+The selected market policy determines which ships, modules, minerals, blueprints and skillbooks are available.
+[Market presets](world-configuration.md#market-presets) · [Starter production audit](starter-production.json)
 
 
 ## Optional gameplay checks
