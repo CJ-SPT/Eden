@@ -4,11 +4,14 @@ using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
+using Eden.World.Structures;
 
 namespace Eden.World.Flight;
 
@@ -23,9 +26,17 @@ internal sealed partial class PilotTranslocationStore
         using WorldActionScope action = new(database, new(ships: [targetId], pilots: [targetId]));
         var world = action.World;
         var live = LiveWorld.Find(database.Path);
+        if (world.Set<SavedStructure>().Find(targetId) is { State: not StructureState.Destroyed } structure)
+        {
+            return StructureTarget(structure, docked: false);
+        }
         var ship = world.Ships.Find(targetId) ?? world.Filter<Pilot>(p => p.Id == targetId).SingleOrDefault()?.ActiveShip;
         if (ship is { StoredInId: null })
         {
+            if (ship.Position is null && ship.StructureId is long structureId)
+            {
+                return StructureTarget(PilotStructureStore.Require(world, structureId), docked: true);
+            }
             var station = catalog.RequireStation(ship.StationId);
             return ship.Position is { } point
                 ? Space(ship.TypeId, point.SystemId ?? station.SolarSystemId, new(point.X, point.Y, point.Z))
@@ -58,9 +69,24 @@ internal sealed partial class PilotTranslocationStore
         {
             return Space(item.TypeId, systemId, live?.PublishedPosition(systemId, targetId) ?? new(drone.X, drone.Y, drone.Z));
         }
-        throw new InvalidDataException("Choose a known system, station, celestial, pilot, ship, NPC, wreck, asteroid or deployed drone.");
+        throw new InvalidDataException("Choose a known system, station, structure, celestial, pilot, ship, NPC, wreck, asteroid or drone.");
 
         TranslocationTarget Space(int typeId, int systemId, SpacePosition position) =>
             new(targetId, SystemObjects.FindSystem(catalog, systemId), null, position, catalog.RequireItem(typeId).Radius ?? 0);
+
+        TranslocationTarget StructureTarget(SavedStructure target, bool docked)
+        {
+            var profile = StructureCatalog.Require(catalog, target.TypeId);
+            return new(
+                targetId,
+                SystemObjects.FindSystem(catalog, target.SystemId),
+                null,
+                new(target.X, target.Y, target.Z),
+                profile.Radius
+            )
+            {
+                StructureId = docked ? target.Id : null,
+            };
+        }
     }
 }

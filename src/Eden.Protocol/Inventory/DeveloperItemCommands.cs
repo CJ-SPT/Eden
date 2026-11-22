@@ -15,10 +15,15 @@ internal sealed class DeveloperItemCommands(IPilotItemSpawning spawning)
         try
         {
             bool cargo = command[0].Equals("/load", StringComparison.OrdinalIgnoreCase);
-            PilotRole allowed = cargo ? PilotRole.GameMasterLow | PilotRole.GameMasterHigh : PilotRole.WorldMod;
-            if ((context.Roles & (long)allowed) == 0)
+            long? expectedHangar = null;
+            if (command[0].Equals("/create", StringComparison.OrdinalIgnoreCase) && command.Length == 4)
             {
-                throw new InvalidDataException("Item creation requires the corresponding world-modifier or game-master role.");
+                if (!long.TryParse(command[3], NumberStyles.None, CultureInfo.InvariantCulture, out long hangar) || hangar <= 0)
+                {
+                    throw new InvalidDataException("Choose the current docked location.");
+                }
+                expectedHangar = hangar;
+                command = command[..3];
             }
             int index = cargo ? 2 : 1;
             if (
@@ -44,7 +49,7 @@ internal sealed class DeveloperItemCommands(IPilotItemSpawning spawning)
             var result = spawning.Create(
                 context.Pilot.PilotId,
                 context.Pilot.ShipId,
-                new(typeId, quantity, cargo ? ItemSpawnDestination.ShipCargo : ItemSpawnDestination.StationHangar)
+                new(typeId, quantity, cargo ? ItemSpawnDestination.ShipCargo : ItemSpawnDestination.StationHangar, expectedHangar)
             );
             if (result is ItemSpawnResult.Redemption reward)
             {

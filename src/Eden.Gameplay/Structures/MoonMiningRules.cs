@@ -29,6 +29,19 @@ public interface IMoonExtractions
     IReadOnlyList<Mining.PersonalMiningLog> Ledger(long pilotId, long structureId);
 }
 
+public enum MoonExtractionPhase
+{
+    Midway,
+    Stopped,
+    Ready,
+    Decay,
+}
+
+public interface IMoonExtractionGameMaster
+{
+    MoonExtraction AdvanceExtraction(long pilotId, long structureId, MoonExtractionPhase phase);
+}
+
 public sealed record MoonMiningObserver(long Id, string Name, int SystemId);
 
 public static class MoonMiningRules
@@ -47,6 +60,28 @@ public static class MoonMiningRules
     public const long RockEndId = 8_700_000_000_000;
 
     public static bool IsMoonRock(long id) => id >= FirstRockId && id < RockEndId;
+
+    // EVE.js 261108.1 reference uses distinct previews just before eligibility and auto-fracture.
+    public static MoonExtraction Advance(MoonExtraction extraction, MoonExtractionPhase phase, long now)
+    {
+        long shift = Math.Min(
+            0,
+            phase switch
+            {
+                MoonExtractionPhase.Midway => now - (extraction.StartedAt + (extraction.ReadyAt - extraction.StartedAt) / 2),
+                MoonExtractionPhase.Stopped => now + TimeSpan.TicksPerMinute - extraction.ReadyAt,
+                MoonExtractionPhase.Ready => now - extraction.ReadyAt,
+                MoonExtractionPhase.Decay => now + 5 * TimeSpan.TicksPerSecond - extraction.AutoFractureAt,
+                _ => throw new InvalidDataException("Unknown moon extraction phase."),
+            }
+        );
+        return extraction with
+        {
+            StartedAt = extraction.StartedAt + shift,
+            ReadyAt = extraction.ReadyAt + shift,
+            AutoFractureAt = extraction.AutoFractureAt + shift,
+        };
+    }
 
     public static long ExtractionId(long rockId) => (rockId - FirstRockId) / MaximumRocks;
 

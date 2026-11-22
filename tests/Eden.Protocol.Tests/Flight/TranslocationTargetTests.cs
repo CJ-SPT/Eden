@@ -3,6 +3,7 @@ using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
@@ -21,6 +22,25 @@ public sealed partial class TranslocationTests
 {
     private const long RuntimeTarget = 7_000_000_000_001;
     private static readonly SpacePosition s_runtimePosition = new(80_000_000, 20_000_000, 30_000_000);
+
+    [Fact]
+    public void UpwellAndDockedPilotResolveToTheActualStructureSystem()
+    {
+        using Structures.StructureTests.Fixture f = new(liveWorld: true);
+        var structure = f.Online();
+        f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
+        var travel = f.Db.Services.GetRequiredService<IPilotTranslocation>();
+        var direct = travel.Resolve(structure.Id);
+        Assert.Equal(structure.Position, direct.Position);
+        Assert.False(direct.Docked);
+        var docked = travel.Resolve(f.PilotId);
+        Assert.Equal(structure.Id, docked.StructureId);
+        Assert.Equal(structure.SystemId, docked.System.Id);
+        var other = f.Db.Store.FindPilot(1000002)!;
+        var moved = travel.Move(other.PilotId, other.ShipId, docked);
+        Assert.Equal(structure.Id, moved.Pilot.DockedLocationId);
+        Assert.Equal(structure.SystemId, moved.Pilot.SystemId);
+    }
 
     [Fact]
     public void RuntimeResolverUsesTheLatestResidentDronePosition()

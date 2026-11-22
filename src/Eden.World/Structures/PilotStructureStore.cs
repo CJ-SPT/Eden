@@ -21,7 +21,7 @@ internal sealed partial class PilotStructureStore(
     WorldDatabase database,
     TimeProvider clock,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
-) : IPilotStructures, IStructureContacts, IMoonExtractions, IStructureGameMaster
+) : IPilotStructures, IStructureContacts, IMoonExtractions, IStructureGameMaster, IMoonExtractionGameMaster
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

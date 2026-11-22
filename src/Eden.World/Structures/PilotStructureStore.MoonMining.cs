@@ -5,6 +5,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -12,6 +13,32 @@ namespace Eden.World.Structures;
 
 internal sealed partial class PilotStructureStore
 {
+    public MoonExtraction AdvanceExtraction(long pilotId, long structureId, MoonExtractionPhase phase)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Moon extraction commands require a running world.");
+        using var selection = live.EnterPersistence("moon extraction GM participants", TransactionParticipants.None);
+        int system =
+            live.Economy.Inspect(world => world.Structure(structureId)?.SystemId)
+            ?? throw new InvalidDataException("The refinery is unavailable.");
+        using var world = live.Economy.Begin(new(systems: [system], pilots: [pilotId]));
+        var pilot = world.Pilots.Find(pilotId);
+        if (pilot is null || pilot.ActiveShip.StructureId != structureId || pilot.ActiveShip.Position is not null)
+        {
+            throw new InvalidDataException("Dock at the refinery that owns the moon extraction.");
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        long now = Now;
+        Advance(world, catalog, now, system);
+        var extraction =
+            ActiveExtraction(world, structureId) ?? throw new InvalidDataException("This refinery has no active moon extraction.");
+        var advanced = MoonMiningRules.Advance(ReadExtraction(extraction), phase, now);
+        extraction.StartedAt = advanced.StartedAt;
+        extraction.ReadyAt = advanced.ReadyAt;
+        extraction.AutoFractureAt = advanced.AutoFractureAt;
+        world.Commit();
+        return advanced;
+    }
+
     public MoonExtraction? Current(long pilotId, long structureId) =>
         ReadMoonMining(
             (world, catalog) =>

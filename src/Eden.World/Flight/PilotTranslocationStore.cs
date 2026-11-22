@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Docking;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -13,6 +14,7 @@ using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Eden.World.Thermal;
 
 namespace Eden.World.Flight;
@@ -31,6 +33,18 @@ internal sealed partial class PilotTranslocationStore(
     public TranslocationTarget Resolve(long targetId)
     {
         return LiveWorld.Execute(database.Path, () => ResolveOwned(targetId), nameof(Resolve));
+    }
+
+    public TranslocationTarget ResolveSystem(string name)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var matching = catalog
+            .Definitions.Systems.Values.Where(system => system.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Take(2)
+            .ToArray();
+        return matching is [var system]
+            ? Resolve(system.Id)
+            : throw new InvalidDataException("Choose an exact, unambiguous solar system name.");
     }
 
     private TranslocationTarget ResolveOwned(long targetId)
@@ -98,7 +112,7 @@ internal sealed partial class PilotTranslocationStore(
         using (database.EnterMovement())
         {
             // Loading a system can initialize its asteroid rows before the move action begins.
-            var destinationObjects = target.StationId is null ? objects.Load(target.System.Id) : [];
+            var destinationObjects = target.Docked ? [] : objects.Load(target.System.Id);
             using WorldActionScope transaction = new(database, new(systems: [target.System.Id], pilots: [pilotId]));
             var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -114,10 +128,26 @@ internal sealed partial class PilotTranslocationStore(
             }
             var ship = pilot.ActiveShip;
             var previous = PilotFleetStore.Read(catalog, ship);
-            if (target.StationId is int stationId)
+            if (target.Docked)
             {
-                ship.StationId = stationId;
-                ship.StructureId = null;
+                if (target.StructureId is long structureId)
+                {
+                    var structure = PilotStructureStore.Require(world, structureId);
+                    var profile = StructureCatalog.Require(catalog, structure.TypeId);
+                    if (
+                        structure.SystemId != target.System.Id
+                        || !StructureRules.CanDock(profile, structure.State, catalog.RequireItem(ship.TypeId).GroupId)
+                    )
+                    {
+                        throw new InvalidDataException("The target structure cannot accommodate your ship.");
+                    }
+                    ship.StructureId = structureId;
+                }
+                else
+                {
+                    ship.StationId = target.StationId!.Value;
+                    ship.StructureId = null;
+                }
                 if (ship.Position is { } saved)
                 {
                     world.Positions.Remove(saved);

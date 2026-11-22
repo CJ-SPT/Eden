@@ -23,6 +23,10 @@ internal sealed class PilotItemSpawningStore(WorldDatabase database, TimeProvide
         }
         var type = catalog.FittingType(request.TypeId) ?? throw new InvalidDataException("Unknown inventory type.");
         ItemSpawnRules.Check(request, (InventoryCategory)type.CategoryId, pilot.ActiveShip.Position is null, type.GroupId);
+        if (request.ExpectedHangarId is long hangarId && hangarId != pilot.ActiveShip.DockedLocationId)
+        {
+            throw new InvalidDataException("The specified destination must be your current docked location.");
+        }
         if (ItemSpawnRules.AutomaticReward(request.TypeId))
         {
             var token = AccountRedemptionStore.Grant(

@@ -702,6 +702,33 @@ warnings or errors. Missing routes and argument variants were classified by stat
 
 **Optional maintainer checks:** None.
 
+## Native GM extraction and travel commands
+
+The four native moon planner buttons send `/extraction advance mid|stop|ready|decay`. The authorized selected pilot supplies the refinery
+through the docked or control context. The resident owner checks that the pilot is still docked there, then advances the start, ready
+and auto-fracture deadlines together. The operation keeps the extraction length and yield and publishes the updated native planner
+event. The regular fracture path creates the ore field. The reference stop and decay previews place their deadlines one minute and
+five seconds ahead, respectively. [Manual moon extraction](structures.md#manual-moon-extraction)
+
+The QA warp vector tool can read the current position with `/getpos` and send `/warptopoint x y z` through the normal warp authority.
+`/stop` uses the flight stop operation. The GM travel handler accepts the supported self coordinate and offset forms
+(`/tr me pos=x,y,z`, `/tr me offset=x,y,z` and `/tr me me offset=x,y,z`). It resolves direct Upwell IDs to arrival positions
+and follows a docked pilot to their actual Upwell structure. The separate Move Me picker sends an exact solar system name through
+`publicQaToolsServer.MoveMeTo` and uses the existing authorized session handoff.
+
+The command parser accepts quoted arguments, so the stock skill wrapper's quoted `me` and numeric pilot IDs work for
+`/giveskill`. The character appearance picker can supply the current hangar as the fourth token in `/create`. The item store
+checks the specified hangar against the active ship in the same transaction. The parser and discovery response share their role
+registry. The [slash audit](#native-slash-command-audit) records the pinned client modules and EVE.js fingerprints.
+
+**Automated validation:** The exact `MoonExtractionTests.NativeMoonButtonsAdvanceOneSavedTimelineAndKeepTheExtractionYield` check
+passed in 18.74 s. The affected `TranslocationTests`, `DeveloperToolsTests`, `ItemSpawningTests`, `MoonExtractionTests` and
+`StructureGameMasterTests` filter passed 160 cases in 208.39 s. The solution build had zero warnings and errors.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Use the four GM buttons on a running refinery extraction and verify the planner countdown.
+
 ## Runtime TR destinations, November 8, 2026
 
 `slash.SlashCmd('/tr me <destinationID>')` now accepts positive signed 64-bit IDs. Alongside the existing solar systems, NPC stations and normalized catalog celestials, the resolver supports saved pilots, assembled ships outside containers, living NPCs, unexpired wrecks, nondepleted asteroids and deployed drones. A pilot destination uses that pilot's active ship. Docked pilot/ship destinations dock the caller in the same NPC station; space destinations use the resolved position and collision radius with Eden's existing 10 km clearance. The destination pilot, ship and contents are never moved or transferred. Existing authenticated GM/world-mod role and selected-pilot requirements remain in force. Arbitrary coordinates, names, extra flags, stored hulls, inventory-only items and unsupported structures remain outside the command.

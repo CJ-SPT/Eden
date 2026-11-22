@@ -648,7 +648,7 @@ public sealed partial class TranslocationTests
                 "/tr me 99999999",
                 "/tr 90000002 30000144",
                 "/tr me 9223372036854775808",
-                "/tr me pos=1,2,3",
+                "/tr me pos=1,NaN,3",
                 "/tr me 30000144 noblock",
                 "/heal me",
                 new string('x', 129),
@@ -666,6 +666,46 @@ public sealed partial class TranslocationTests
         Assert.True(f.Context.Flight.Moving);
         Assert.Equal("invbroker", f.Context.ResolveReference(binding.Id));
         Assert.Equal(before, f.Db.Store.FindPilot(1000001));
+    }
+
+    [Fact]
+    public void NativePositionAndOffsetCommandsUseCurrentCoordinates()
+    {
+        using Fixture f = new(inSpace: true);
+        f.Select();
+        var target = new SpacePosition(800_000_000, 70_000_000, 80_000_000);
+        Assert.Equal(PilotCallResult.None, f.Call("/tr me pos=800000000,70000000,80000000"));
+        Assert.Equal(target, f.Context.Pilot.Position);
+        var result = Assert.IsType<PilotCallResult.Success>(f.Call("/getpos"));
+        Assert.Equal(new object?[] { target.X, target.Y, target.Z }, Assert.IsType<object?[]>(result.Reply.ToBlue()));
+        Assert.Equal(PilotCallResult.None, f.Call("/tr me me offset=0,1000,-42"));
+        Assert.Equal(target + new SpacePosition(0, 1000, -42), f.Context.Pilot.Position);
+    }
+
+    [Theory]
+    [InlineData(PilotRole.Player, false)]
+    [InlineData(PilotRole.WorldMod, true)]
+    public void NativeQaMoveMeUsesExactCatalogNamesAndRoleGate(PilotRole role, bool allowed)
+    {
+        using Fixture f = new(role);
+        f.Select();
+        using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
+        var caller = f.Context.Pilot;
+        string name = catalog.RequireSystem(OtherSystem).Name;
+        var invalid = f.Router.Call(f.Context, "publicQaToolsServer", "MoveMeTo", new object?[] { name + " missing" }, _ => { });
+        Assert.IsType<PilotCallResult.Failure>(invalid);
+        Assert.Equal(caller, f.Context.Pilot);
+        var result = f.Router.Call(f.Context, "publicQaToolsServer", "MoveMeTo", new object?[] { name }, _ => { });
+        if (allowed)
+        {
+            Assert.Equal(PilotCallResult.None, result);
+            Assert.Equal(OtherSystem, f.Context.Pilot.SystemId);
+        }
+        else
+        {
+            Assert.IsType<PilotCallResult.Failure>(result);
+            Assert.Equal(caller, f.Context.Pilot);
+        }
     }
 
     [Theory]

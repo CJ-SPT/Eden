@@ -10,10 +10,6 @@ internal sealed class DeveloperSkillCommands(IPilotSkillGrants grants, FreeSkill
 {
     internal PilotCallResult Grant(PilotCallContext context, string[] command)
     {
-        if ((context.Roles & (long)PilotRole.GameMasterHigh) == 0)
-        {
-            throw new InvalidDataException("Giving skills requires a high game-master role.");
-        }
         if (
             command is not [_, var subject, var type, var level]
             || !int.TryParse(type, NumberStyles.None, CultureInfo.InvariantCulture, out int typeId)

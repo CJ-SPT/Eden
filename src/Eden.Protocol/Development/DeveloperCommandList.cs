@@ -1,35 +1,17 @@
-using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Development;
 
 internal sealed record DeveloperCommandList(IReadOnlyList<string> Commands) : BlueModel
 {
-    internal static DeveloperCommandList For(long roles)
-    {
-        List<string> commands = [];
-        if ((roles & (long)PilotRole.WorldMod) != 0)
-        {
-            commands.AddRange(["create", "createitem"]);
-        }
-        if ((roles & (long)PilotRole.GameMasterHigh) != 0)
-        {
-            commands.Add("giveskill");
-        }
-        if ((roles & (long)(PilotRole.GameMasterLow | PilotRole.GameMasterHigh)) != 0)
-        {
-            commands.Add("load");
-        }
-        if ((roles & (long)PilotRole.GameMasterHigh) != 0)
-        {
-            commands.Add("structure");
-        }
-        if ((roles & (long)(PilotRole.GameMasterLow | PilotRole.WorldMod)) != 0)
-        {
-            commands.Add("tr");
-        }
-        return new(commands);
-    }
+    internal static DeveloperCommandList For(long roles) =>
+        new(
+            DeveloperCommands
+                .Roles.Where(command => (roles & (long)command.Value) != 0)
+                .Select(command => command.Key[1..])
+                .Order(StringComparer.Ordinal)
+                .ToArray()
+        );
 
     public override object ToBlue() =>
         // svc_slash.FetchRemoteCommandList deliberately calls SlashCmd('/'),

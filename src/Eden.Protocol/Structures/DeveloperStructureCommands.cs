@@ -10,11 +10,6 @@ internal sealed class DeveloperStructureCommands(IStructureGameMaster structures
 {
     internal PilotCallResult Execute(PilotCallContext context, string[] tokens)
     {
-        // Build 3662168 structuremenu.GetStructureMenu checks HasGMHRole before exposing these actions.
-        if ((context.Roles & (long)PilotRole.GameMasterHigh) == 0)
-        {
-            throw new InvalidDataException("Structure GM commands require the high game-master role.");
-        }
         if (
             tokens.Length is < 3 or > 4
             || !long.TryParse(tokens[2], NumberStyles.None, CultureInfo.InvariantCulture, out long id)

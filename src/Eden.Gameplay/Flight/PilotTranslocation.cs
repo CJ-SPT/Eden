@@ -3,13 +3,19 @@ using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Flight;
 
-public sealed record TranslocationTarget(long Id, FlightSystem System, int? StationId, SpacePosition Position, double Radius);
+public sealed record TranslocationTarget(long Id, FlightSystem System, int? StationId, SpacePosition Position, double Radius)
+{
+    public long? StructureId { get; init; }
+    public bool Docked => StationId.HasValue || StructureId.HasValue;
+    public bool Coordinate { get; init; }
+}
 
 public sealed record PilotTranslocation(DockedPilot Pilot, InventoryChange ShipChange);
 
 public interface IPilotTranslocation
 {
     TranslocationTarget Resolve(long targetId);
+    TranslocationTarget ResolveSystem(string name);
     PilotTranslocation Move(long pilotId, long expectedShipId, long targetId);
 
     // A delayed camera handoff commits the resolved destination snapshot, even
@@ -30,7 +36,9 @@ public static class TranslocationRules
         {
             throw new InvalidDataException("The destination has invalid collision data.");
         }
-        var position = target.Position + new SpacePosition(target.Radius + shipRadius + ArrivalClearance, 0, 0);
+        var position = target.Coordinate
+            ? target.Position
+            : target.Position + new SpacePosition(target.Radius + shipRadius + ArrivalClearance, 0, 0);
         // Moving only along +X passes each intersected body's far surface once.
         // Recheck earlier bodies when another body's clearance overlaps them.
         for (int pass = 0; pass <= Math.Max(obstacles.Count, MaximumCompoundClearancePasses); pass++)

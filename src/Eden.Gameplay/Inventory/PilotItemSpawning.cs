@@ -9,7 +9,7 @@ public enum ItemSpawnDestination
     ShipCargo,
 }
 
-public sealed record ItemSpawnRequest(int TypeId, int Quantity, ItemSpawnDestination Destination);
+public sealed record ItemSpawnRequest(int TypeId, int Quantity, ItemSpawnDestination Destination, long? ExpectedHangarId = null);
 
 public abstract record ItemSpawnResult
 {

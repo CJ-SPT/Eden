@@ -27,10 +27,14 @@ public sealed class DeveloperToolsTests
     private const int NewSkill = 3300;
 
     [Theory]
-    [InlineData(PilotRole.Developer, "Available commands: ['create', 'createitem', 'giveskill', 'load', 'structure', 'tr']")]
-    [InlineData(PilotRole.WorldMod, "Available commands: ['create', 'createitem', 'tr']")]
+    [InlineData(
+        PilotRole.Developer,
+        "Available commands: ['create', 'createitem', 'extraction', 'getpos', 'giveskill', "
+            + "'load', 'stop', 'structure', 'tr', 'warptopoint']"
+    )]
+    [InlineData(PilotRole.WorldMod, "Available commands: ['create', 'createitem', 'extraction', 'getpos', 'stop', 'tr', 'warptopoint']")]
     [InlineData(PilotRole.GameMasterHigh, "Available commands: ['giveskill', 'load', 'structure']")]
-    [InlineData(PilotRole.GameMasterLow, "Available commands: ['load', 'tr']")]
+    [InlineData(PilotRole.GameMasterLow, "Available commands: ['extraction', 'getpos', 'load', 'stop', 'tr', 'warptopoint']")]
     [InlineData(PilotRole.QualityAssurance, "Available commands: []")]
     [InlineData(PilotRole.Player, "Available commands: []")]
     public void SlashDiscoveryReturnsNativeRoleFilteredCommandList(PilotRole roles, string reason)
@@ -43,6 +47,19 @@ public sealed class DeveloperToolsTests
         Assert.Equal(reason, BlueMarshal.Text(values["reason"]));
         Assert.Equal(before, f.Saved());
         Assert.Empty(f.Redemption.Read(Account));
+    }
+
+    [Fact]
+    public void NativeImagePickerDestinationAndQuotedSkillTargetReachExistingOwners()
+    {
+        using Fixture f = new();
+        long station = f.Client.Context.Pilot.DockedLocationId;
+        f.AddType(12235, 365, 23, 8000);
+        long item = f.Create($"/create 12235 1 {station}");
+        Assert.Contains(f.Inventory.List(Pilot, station), entry => entry.Id == item);
+        Assert.IsType<PilotCallResult.Failure>(f.Client.Call("SlashCmd", [$"/create 12235 1 {station + 1}"], "slash"));
+        Assert.Equal(PilotCallResult.None, f.Client.Call("SlashCmd", ["/giveskill \"me\" 3300 2"], "slash"));
+        Assert.Equal(2, Assert.Single(f.Reader.ReadSkills(Pilot), skill => skill.TypeId == 3300).Level);
     }
 
     // Representative build-3662168 catalog rows, including every ordinary injector.
