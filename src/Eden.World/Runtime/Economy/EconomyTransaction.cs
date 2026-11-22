@@ -66,10 +66,27 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(NpcMarketAssortment), assortments)
             .Where(o => assortments.Contains(new(o.StationId, o.TypeId, o.Bid, o.Kind, o.SourceOrderId)));
 
-    internal IEnumerable<EconomySavedPersonalOrder> StationPersonalOrders(int station, int type) =>
+    internal IEnumerable<EconomySavedPersonalOrder> StationPersonalOrders(int station, int? typeId = null) =>
         ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>())
-            .IndexedSnapshots(nameof(SavedPersonalOrder.StationId), station, (nameof(SavedPersonalOrder.TypeId), type))
-            .Where(order => order.StationId == station && order.TypeId == type);
+            .IndexedSnapshots(
+                nameof(SavedPersonalOrder.StationId),
+                station,
+                typeId is int type ? (nameof(SavedPersonalOrder.TypeId), type) : null
+            )
+            .Where(order => order.StationId == station && (typeId is null || order.TypeId == typeId));
+
+    internal EconomySavedRegionalMarketStock? RegionalStockState(long orderId) =>
+        ((EconomySet<SavedRegionalMarketStock, EconomySavedRegionalMarketStock>)Set<SavedRegionalMarketStock>()).ReadSnapshot(new(orderId));
+
+    internal IEnumerable<EconomyIndustryJob> StationInstalledIndustryJobs(int station) =>
+        ((EconomySet<IndustryJob, EconomyIndustryJob>)Set<IndustryJob>())
+            .IndexedSnapshots(nameof(IndustryJob.StationId), (long)station)
+            .Where(job => job.StationId == station && job.Status == IndustryJobStatus.Installed);
+
+    internal IEnumerable<EconomyIndustryJob> PilotInstalledIndustryJobs(long pilot) =>
+        ((EconomySet<IndustryJob, EconomyIndustryJob>)Set<IndustryJob>())
+            .IndexedSnapshots(nameof(IndustryJob.PilotId), pilot)
+            .Where(job => job.PilotId == pilot && job.Status == IndustryJobStatus.Installed);
 
     internal bool BlueprintInstalled(long itemId) =>
         ((EconomySet<IndustryJob, EconomyIndustryJob>)Set<IndustryJob>())

@@ -77,12 +77,49 @@ internal sealed partial class PilotMarketStore
     internal EconomyNpcMarketOrder? StarterOreBid(EconomyTransaction world, CatalogDbContext catalog, int stationId, int typeId)
     {
         var station = Station(catalog, stationId);
-        new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, stationId, Now, typeId);
-        return world
-            .StationMarketOrders(stationId, typeId)
-            .SingleOrDefault(order =>
-                order.RegionId == station.RegionId && order.Kind == NpcMarketKind.Regional && order.Bid && order.Remaining > 0
-            );
+        long now = Now;
+        if (world.Settings.UsesFreshUniverseMarket() && ReadBid() is { } current && StarterOreBidIsCurrent(world, catalog, current, now))
+        {
+            return current.Remaining > 0 ? current : null;
+        }
+        new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, stationId, now, typeId);
+        var refreshed = ReadBid();
+        return refreshed is { Remaining: > 0 } ? refreshed : null;
+
+        EconomyNpcMarketOrder? ReadBid() =>
+            world
+                .StationMarketOrders(stationId, typeId)
+                .SingleOrDefault(order => order.RegionId == station.RegionId && order.Kind == NpcMarketKind.Regional && order.Bid);
+    }
+
+    private static bool StarterOreBidIsCurrent(EconomyTransaction world, CatalogDbContext catalog, EconomyNpcMarketOrder order, long now)
+    {
+        if (
+            order.Issued == 0
+            || now - order.Issued >= TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks
+            || world.RegionalStockState(order.Id) is not { DemandVersion: 1 } state
+            || world.ActiveTicks - state.RefreshedTicks >= RegionalMarketRules.RecoveryIntervalTicks
+        )
+        {
+            return false;
+        }
+        var profiles = RegionalMarketCatalog.Read(catalog);
+        if (
+            !profiles.StationsById.TryGetValue(order.StationId, out var profile)
+            || profiles.DemandFor(catalog, order.TypeId)
+                is not { Category: InventoryCategory.Asteroid, RawResource: true, RequiresUnlock: false }
+            || MarketSnapshotCatalog.Quotes.GetValueOrDefault(order.TypeId)?.BuyCents is not long reference
+        )
+        {
+            return false;
+        }
+        long anchor = RegionalMarketRules.SnapshotAnchor(reference, profile.Role, bid: true);
+        int capacity = RegionalMarketRules.StarterOreDemand(anchor);
+        // During the same recovery interval the stored quantity and its quote already reflect same-action sales.
+        return state.AnchorCents == anchor
+            && order.Entered == capacity
+            && order.Remaining <= capacity
+            && order.PriceCents == RegionalMarketRules.Quote(anchor, bid: true, order.Remaining, capacity);
     }
 
     private void SeedDevelopment(WorldAction world, CatalogDbContext catalog, CatalogStationDefinition station, int? typeId)

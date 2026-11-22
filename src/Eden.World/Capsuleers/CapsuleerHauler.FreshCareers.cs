@@ -46,25 +46,26 @@ internal sealed partial class CapsuleerHauler
 
         bool rookie = Pilot.ShipGroupId == (int)HullClass.Corvette;
         var policy = world.Settings.Capsuleers;
-        var routes = FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, policy);
-        if (
-            (Work.Journey is not null || Work.CareerPlan?.Profession == CapsuleerProfession.Hauling)
-            && TryFreshDelivery(world, routes, startNew: false)
-        )
-        {
-            return;
-        }
-        bool courier = policy.FreshCourierPilots && routes.Courier is not null;
-        bool bounty =
-            policy.FreshBountyPilots
-            && policy.BeltRatting
-            && world.Settings.NpcPopulation.Pirates
-            && catalog.BeltAnchors(Pilot.SystemId).Count > 0;
         var preference =
             (rookie ? null : CapsuleerCareerTraining.Profession(catalog, Pilot.ShipTypeId, (HullClass)Pilot.ShipGroupId))
             ?? Work.CareerPlan?.Profession
             ?? FreshCareerRules.Profession(agent.Slot);
-        if (rookie && TryRookieMining(world, requireDemand: courier || bounty))
+        bool preferCourier = preference == CapsuleerProfession.Hauling;
+        bool reconsider = !rookie || ReviewRookieWork();
+        FreshCareerRoutes? routes = null;
+        FreshCareerRoutes Routes() => routes ??= FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, policy);
+        if ((Work.Journey is not null || preferCourier) && TryFreshDelivery(world, Routes(), startNew: false))
+        {
+            return;
+        }
+        bool bounty =
+            (!preferCourier || reconsider)
+            && policy.FreshBountyPilots
+            && policy.BeltRatting
+            && world.Settings.NpcPopulation.Pirates
+            && catalog.BeltAnchors(Pilot.SystemId).Count > 0;
+        bool courier = policy.FreshCourierPilots && (preferCourier || reconsider && !bounty) && Routes().Courier is not null;
+        if (rookie && reconsider && TryRookieMining(world, requireDemand: true))
         {
             return;
         }
@@ -126,7 +127,7 @@ internal sealed partial class CapsuleerHauler
         {
             return;
         }
-        if (profession == CapsuleerProfession.Hauling && courier && TryFreshDelivery(world, routes, startNew: true))
+        if (profession == CapsuleerProfession.Hauling && courier && TryFreshDelivery(world, Routes(), startNew: true))
         {
             return;
         }
@@ -135,14 +136,38 @@ internal sealed partial class CapsuleerHauler
         {
             return;
         }
-        if (profession != CapsuleerProfession.Hauling && courier && TryFreshDelivery(world, routes, startNew: true))
+        if (
+            profession != CapsuleerProfession.Hauling
+            && reconsider
+            && policy.FreshCourierPilots
+            && TryFreshDelivery(world, Routes(), startNew: true)
+        )
         {
             return;
         }
-        if (!rookie || !TryRookieMining(world, requireDemand: false))
+        if (!rookie || !reconsider || !TryRookieMining(world, requireDemand: false))
         {
-            Wait("Waiting for reachable starter work.");
+            int delay = rookie && _background ? FreshCareerRules.BackgroundIdleRetrySeconds(pilotId) : HaulingRules.PollSeconds;
+            Wait("Waiting for reachable starter work.", delay);
         }
+    }
+
+    private bool ReviewRookieWork()
+    {
+        if (!_background)
+        {
+            return true;
+        }
+        if (Work.RookieWorkReviewAt > Work.ActiveTicks)
+        {
+            return false;
+        }
+        bool alreadyStaggered = Work.RookieWorkReviewAt != 0;
+        _work = Work with
+        {
+            RookieWorkReviewAt = FreshCareerRules.NextBackgroundReview(pilotId, Work.ActiveTicks, opening: !alreadyStaggered),
+        };
+        return alreadyStaggered;
     }
 
     private bool TryRookieMining(EconomyTransaction world, bool requireDemand)
@@ -180,11 +205,10 @@ internal sealed partial class CapsuleerHauler
 
     private bool TryFreshBounty(EconomyTransaction world, CombatAnomaly? scoutedAnomaly, bool rookie, CapsuleerCareerPlan? training)
     {
-        if (rookie && !OwnsRookieEquipment(world, (int)CombatWeaponType.CivilianGatlingRailgun))
+        if (rookie && !TryFitRookieWeapon(world))
         {
             return false;
         }
-        FitRookieWeapon(world);
         var prior = Work.CareerPlan;
         if (rookie && prior?.Profession != CapsuleerProfession.Combat)
         {
@@ -260,6 +284,8 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         int proposed = Pilot.StationId == source ? delivery.DestinationStationId : source;
+        var policy = world.Settings.Capsuleers;
+        var avoided = AvoidedSupplierSystems();
         var prepared = startNew ? Route(proposed) : null;
         if (startNew && prepared is null)
         {
@@ -280,42 +306,65 @@ internal sealed partial class CapsuleerHauler
         }
         return true;
 
-        CapsuleerTrafficRoute? Route(int destination) =>
-            CapsuleerTrafficRoutes.ToStation(
+        CapsuleerTrafficRoute? Route(int destination)
+        {
+            var preparedRoute = destination == source ? routes.Return : delivery;
+            if (
+                preparedRoute is not null
+                && preparedRoute.SourceStationId == Pilot.StationId
+                && preparedRoute.DestinationStationId == destination
+                && TrafficRules.RouteAllows((HullClass)Pilot.ShipGroupId, visitsHighSecurity: true)
+                && policy.CanUse(catalog.Definitions, preparedRoute)
+                && !preparedRoute.Systems.Skip(1).Any(avoided.Contains)
+            )
+            {
+                return preparedRoute;
+            }
+            return CapsuleerTrafficRoutes.ToStation(
                 catalog,
                 Pilot.StationId,
                 destination,
                 (HullClass)Pilot.ShipGroupId,
-                AvoidedSupplierSystems(),
+                avoided,
                 destination == source ? CapsuleerRecruitmentRules.MaximumJumps : FreshCareerRules.DeliveryJumps,
-                policy: world.Settings.Capsuleers
+                policy: policy
             );
+        }
     }
 
-    private void FitRookieWeapon(EconomyTransaction world)
+    private bool TryFitRookieWeapon(EconomyTransaction world)
     {
-        if (Pilot.ShipGroupId != (int)HullClass.Corvette)
-        {
-            return;
-        }
         int weapon = (int)CombatWeaponType.CivilianGatlingRailgun;
+        var catalog = _operation.Catalog;
         var stock = world
             .Filter<OwnedItem>(item => item.OwnerId == pilotId)
             .Where(item => item.TypeId == weapon && item.Quantity > 0)
             .ToArray();
-        if (
-            stock.Any(item => item.LocationId == Pilot.ShipId && InventoryDefinitions.IsHighSlot(item.FlagId))
-            || stock.FirstOrDefault(item => item.LocationId == Pilot.StationId && item.FlagId == (int)InventoryFlag.Hangar) is not { } owned
-        )
+        var fitted = stock.FirstOrDefault(item => item.LocationId == Pilot.ShipId && InventoryDefinitions.IsHighSlot(item.FlagId));
+        if (fitted is { Online: true })
         {
-            return;
+            return true;
         }
-        var catalog = _operation.Catalog;
-        var fitted = PilotFittingStore
-            .Fit(world, catalog, pilotId, [owned.Id], Pilot.StationId, (int)InventoryFlag.AutoFit, Now)
-            .Single(change => change.Item.LocationId == Pilot.ShipId);
-        PilotFittingStore.SetOnline(world, catalog, pilotId, Pilot.ShipId, fitted.Item.Id, true, Now);
+        long equipped;
+        if (fitted is not null)
+        {
+            equipped = fitted.Id;
+        }
+        else
+        {
+            var owned = stock.FirstOrDefault(item => item.LocationId == Pilot.StationId && item.FlagId == (int)InventoryFlag.Hangar);
+            if (owned is null)
+            {
+                return false;
+            }
+            equipped = PilotFittingStore
+                .Fit(world, catalog, pilotId, [owned.Id], Pilot.StationId, (int)InventoryFlag.AutoFit, Now)
+                .Single(change => change.Item.LocationId == Pilot.ShipId)
+                .Item.Id;
+        }
+        PilotFittingStore.SetOnline(world, catalog, pilotId, Pilot.ShipId, equipped, true, Now);
         _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
+        return true;
     }
 
     private bool OwnsRookieEquipment(EconomyTransaction world, int type) =>

@@ -31,11 +31,7 @@ internal sealed partial class CapsuleerIndustry
         }
         long id = pilot.PilotId;
         int station = pilot.StationId;
-        if (
-            world
-                .Filter<IndustryJob>(job => job.PilotId == id)
-                .Any(job => job.StationId == station && job.Status == IndustryJobStatus.Installed)
-        )
+        if (world.PilotInstalledIndustryJobs(id).Any(job => job.StationId == station))
         {
             return true;
         }
@@ -55,9 +51,15 @@ internal sealed partial class CapsuleerIndustry
         );
     }
 
-    private static IQueryable<SavedPersonalOrder> StarterBids(EconomyTransaction world, long pilot, int station, long now) =>
+    private static IEnumerable<EconomySavedPersonalOrder> StarterBids(
+        EconomyTransaction world,
+        long pilot,
+        int station,
+        long now,
+        int? product = null
+    ) =>
         world
-            .Filter<SavedPersonalOrder>(order => order.StationId == station)
+            .StationPersonalOrders(station, product)
             .Where(order =>
                 order.Bid
                 && order.PilotId != pilot
@@ -67,6 +69,9 @@ internal sealed partial class CapsuleerIndustry
                 && order.PriceCents > 0
                 && order.EscrowCents >= order.PriceCents
             );
+
+    private static EconomySavedPersonalOrder? BestStarterBid(EconomyTransaction world, long pilot, int station, long now, int product) =>
+        StarterBids(world, pilot, station, now, product).MinBy(order => (-order.PriceCents, order.Id));
 
     internal bool WorkStarterIndustry(
         EconomyTransaction world,
@@ -86,26 +91,25 @@ internal sealed partial class CapsuleerIndustry
         }
         long id = pilot.PilotId;
         int product = (int)MiningLaserType.MinerI;
-        var hangar = Hangar(world, id, station);
-        var bid = StarterBids(world, id, station, now)
-            .Where(order => order.TypeId == product)
-            .OrderByDescending(order => order.PriceCents)
-            .ThenBy(order => order.Id)
-            .FirstOrDefault();
         var job = world
-            .Filter<IndustryJob>(job => job.PilotId == id)
-            .FirstOrDefault(job =>
-                job.StationId == station
-                && job.OutputCorporationId == null
-                && job.Status == IndustryJobStatus.Installed
-                && job.ProductTypeId == product
-            );
+            .PilotInstalledIndustryJobs(id)
+            .FirstOrDefault(job => job.StationId == station && job.OutputCorporationId == null && job.ProductTypeId == product);
         if (job is not null)
         {
             factoryWork = true;
-            return PilotIndustryStore.Ready(world, job, now)
-                && DeliverStarterJob(world, catalog, pilot, job, bid, legacyMarketJob: !StarterTradeSettled(world, id));
+            var installed = world.Set<IndustryJob>().Find(job.Id)!;
+            return PilotIndustryStore.Ready(world, installed, now)
+                && DeliverStarterJob(
+                    world,
+                    catalog,
+                    pilot,
+                    installed,
+                    BestStarterBid(world, id, station, now, product),
+                    legacyMarketJob: !StarterTradeSettled(world, id)
+                );
         }
+        var bid = BestStarterBid(world, id, station, now, product);
+        var hangar = Hangar(world, id, station);
         if (bid is null)
         {
             bool sold = SellStarterOre(world, catalog, pilot, hangar);
@@ -142,27 +146,35 @@ internal sealed partial class CapsuleerIndustry
         var products = catalog.Definition(s_starterFleetProducts, 0);
         long id = pilot.PilotId;
         int station = pilot.StationId;
-        var bids = StarterBids(world, id, station, now)
-            .OrderByDescending(order => order.PriceCents)
-            .ThenBy(order => order.Id)
-            .AsEnumerable()
-            .ToLookup(order => order.TypeId);
-        var job = world
-            .Filter<IndustryJob>(job => job.PilotId == id)
-            .FirstOrDefault(job => job.StationId == station && job.Status == IndustryJobStatus.Installed);
+        var job = world.PilotInstalledIndustryJobs(id).FirstOrDefault(job => job.StationId == station);
         if (job is not null)
         {
             if (!products.Contains(job.ProductTypeId))
             {
                 return null;
             }
-            if (!PilotIndustryStore.Ready(world, job, now))
+            var installed = world.Set<IndustryJob>().Find(job.Id)!;
+            if (!PilotIndustryStore.Ready(world, installed, now))
             {
                 return new();
             }
-            return new(MarketChanged: DeliverStarterJob(world, catalog, pilot, job, bids[job.ProductTypeId].FirstOrDefault()));
+            return new(
+                MarketChanged: DeliverStarterJob(
+                    world,
+                    catalog,
+                    pilot,
+                    installed,
+                    BestStarterBid(world, id, station, now, job.ProductTypeId)
+                )
+            );
         }
-        if (bids.Count == 0)
+        var bids = StarterBids(world, id, station, now)
+            .Where(order => products.Contains(order.TypeId))
+            .OrderByDescending(order => order.PriceCents)
+            .ThenBy(order => order.Id)
+            .DistinctBy(order => order.TypeId)
+            .ToArray();
+        if (bids.Length == 0)
         {
             return null;
         }
@@ -170,18 +182,13 @@ internal sealed partial class CapsuleerIndustry
         var sources = catalog.Definition(CapsuleerProvisioningCatalog.StarterOreSources, pilot.SystemId);
         var recipes = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
         var hangar = Hangar(world, id, station);
-        foreach (var demand in bids.Where(demand => products.Contains(demand.Key)))
+        foreach (var bid in bids)
         {
-            var bid = demand.FirstOrDefault(order => order.EscrowCents >= order.PriceCents);
-            if (bid is null)
+            if (StarterOutputInProgress(world, station, bid.TypeId) >= bid.Remaining)
             {
                 continue;
             }
-            if (StarterOutputInProgress(world, station, demand.Key) >= bid.Remaining)
-            {
-                continue;
-            }
-            var recipe = recipes[demand.Key]
+            var recipe = recipes[bid.TypeId]
                 .FirstOrDefault(recipe =>
                     recipe.Materials.All(material => material.TypeId is long type && sources.Contains((int)type))
                     && recipe.Skills.All(skill => PilotSkillReader.Level(world, catalog, id, skill.TypeId) >= skill.Level)
@@ -200,7 +207,7 @@ internal sealed partial class CapsuleerIndustry
         CatalogDbContext catalog,
         DockedPilot pilot,
         IndustryJob job,
-        SavedPersonalOrder? bid,
+        EconomySavedPersonalOrder? bid,
         bool legacyMarketJob = false
     )
     {
@@ -246,21 +253,23 @@ internal sealed partial class CapsuleerIndustry
 
     private static long StarterOutputInProgress(EconomyTransaction world, int station, int type) =>
         world
-            .Filter<IndustryJob>(job => job.StationId == station)
-            .Where(job => job.Status == IndustryJobStatus.Installed && job.SuspendedAt == null && job.ProductTypeId == type)
+            .StationInstalledIndustryJobs(station)
+            .Where(job => job.SuspendedAt == null && job.ProductTypeId == type)
             .Sum(job => (long)job.OutputQuantity);
 
     private bool PlaceStarterBid(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, long now, int type)
     {
         long id = pilot.PilotId;
+        long balance = StarterBalance(world, id);
         if (
             MarketSnapshotCatalog.Quotes.GetValueOrDefault(type)?.SellCents is not long price
+            || balance < price
             || world.Filter<MarketExecution>(trade => trade.PilotId == id).Any(trade => trade.TypeId == type && trade.IsBuy)
             || world
                 .Filter<SavedPersonalOrder>(order => order.PilotId == id)
                 .Any(order => order.TypeId == type && order.Bid && order.Expires > now && order.Status == PersonalOrderStatus.Open)
             || !PilotMarketStore.HasSupplyListingSlot(world, catalog, id)
-            || StarterBalance(world, id) < price + PilotMarketStore.SupplyBrokerFee(world, catalog, id, pilot.StationId, price, 1)
+            || balance < price + PilotMarketStore.SupplyBrokerFee(world, catalog, id, pilot.StationId, price, 1)
         )
         {
             return false;
@@ -276,7 +285,7 @@ internal sealed partial class CapsuleerIndustry
         OwnedItem[] hangar,
         ManufacturingRecipeDefinition recipe,
         out int[] oreTypes,
-        SavedPersonalOrder? funding = null
+        EconomySavedPersonalOrder? funding = null
     )
     {
         oreTypes = [];
@@ -304,8 +313,13 @@ internal sealed partial class CapsuleerIndustry
         }
         if (blueprint is null)
         {
+            long balance = StarterBalance(world, id);
+            if (balance <= jobCost)
+            {
+                return SellStarterOre(world, catalog, pilot, hangar);
+            }
             var ask = market.SupplyOrders(world, catalog, station, [recipe.BlueprintTypeId], id).MinBy(order => order.PriceCents);
-            if (ask is null || StarterBalance(world, id) < ask.PriceCents + jobCost)
+            if (ask is null || balance < ask.PriceCents + jobCost)
             {
                 return SellStarterOre(world, catalog, pilot, hangar);
             }
@@ -389,7 +403,8 @@ internal sealed partial class CapsuleerIndustry
                 pilot.PilotId,
                 [new(item.Id, station, item.TypeId, bid?.PriceCents ?? 1, quantity)],
                 0,
-                skipUnmatched: !starterMarket
+                skipUnmatched: !starterMarket,
+                starterOre: starterMarket
             );
             if (result.Trades.Count > 0)
             {
@@ -398,9 +413,6 @@ internal sealed partial class CapsuleerIndustry
         }
         return false;
     }
-
-    internal bool HasStarterOreDemand(EconomyTransaction world, CatalogDbContext catalog, int station, IEnumerable<int> types) =>
-        types.Distinct().Any(type => market.StarterOreBid(world, catalog, station, type) is not null);
 
     private static long StarterBalance(WorldAction world, long pilot) => world.Set<PilotWallet>().Find(pilot)?.Cents ?? 0;
 }

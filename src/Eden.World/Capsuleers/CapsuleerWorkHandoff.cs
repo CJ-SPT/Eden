@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -54,6 +55,7 @@ internal static class CapsuleerWorkHandoff
             )
             {
                 CareerPlan = MinerCheckpoint.Read(row.Progress)?.CareerPlan,
+                RookieWorkReviewAt = pilot.ShipGroupId == (int)HullClass.Corvette ? FreshCareerRules.NextBackgroundReview(id, ticks) : 0,
             }
         );
     }
@@ -107,6 +109,7 @@ internal static class CapsuleerWorkHandoff
             {
                 CareerPlan =
                     profession is not { } work || previous?.Profession == work ? previous : new(work, 0, CapsuleerTrainingFocus.Work),
+                RookieWorkReviewAt = pilot.ShipGroupId == (int)HullClass.Corvette ? FreshCareerRules.NextBackgroundReview(id, ticks) : 0,
             }
         );
     }

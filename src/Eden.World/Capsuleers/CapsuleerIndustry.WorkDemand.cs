@@ -134,28 +134,25 @@ internal sealed partial class CapsuleerIndustry
         }
         int corporation = employer.Id;
         var jobs = world
-            .Filter<IndustryJob>(job => job.StationId == station)
-            .Where(job => job.Status == IndustryJobStatus.Installed && (job.PilotId == id || job.OutputCorporationId == corporation))
+            .StationInstalledIndustryJobs(station)
+            .Where(job => job.PilotId == id || job.OutputCorporationId == corporation)
             .ToArray();
-        if (jobs.Any(job => job.PilotId == id && PilotIndustryStore.Ready(world, job, now)))
+        if (jobs.Any(job => job.PilotId == id && PilotIndustryStore.Ready(world, world.Set<IndustryJob>().Find(job.Id)!, now)))
         {
             return true;
         }
         var orders = world
-            .Filter<SavedPersonalOrder>(order => order.StationId == station)
+            .StationPersonalOrders(station)
             .Where(order => order.Status == PersonalOrderStatus.Open && order.Expires > now && order.Remaining > 0 && order.PriceCents > 0)
-            .Select(order => new
-            {
-                order.Id,
-                order.TypeId,
-                order.Remaining,
-                order.Bid,
-                order.PriceCents,
-                order.EscrowCents,
-                order.PilotId,
-                order.CorporationId,
-            })
             .ToArray();
+        var customerBids = orders
+            .Where(order => order.Bid && order.EscrowCents >= order.PriceCents && order.PilotId != id && order.CorporationId != corporation)
+            .ToArray();
+        bool reserveEligible = employer.BalanceCents > 0 && employer.StationId == station;
+        if (customerBids.Length == 0 && !reserveEligible)
+        {
+            return false;
+        }
         var stock = DepotStacks(world, corporation, station);
         var onHand = stock.ToLookup(item => item.TypeId, item => (long)item.Quantity);
         var pending = jobs.Where(job =>
@@ -168,7 +165,7 @@ internal sealed partial class CapsuleerIndustry
             .Filter<Pilot>(member => member.CorporationId == corporation)
             .Take(CapsuleerCorporationRules.TargetMembers)
             .ToArray();
-        var assigned = AssignedFactoryOrders(world, pilot, now, members);
+        var assigned = customerBids.Length > 0 ? AssignedFactoryOrders(world, pilot, now, members) : [];
         var blueprints = ManufacturingCatalog.Recipes(catalog);
         var products = Hangar(world, id, station)
             .Where(item => item.BlueprintRuns != 0)
@@ -186,17 +183,7 @@ internal sealed partial class CapsuleerIndustry
             .OfType<int>()
             .ToHashSet();
         double security = ManufacturingCatalog.Security(catalog, pilot.SystemId);
-        foreach (
-            var bids in orders
-                .Where(order =>
-                    order.Bid
-                    && order.EscrowCents >= order.PriceCents
-                    && order.PilotId != id
-                    && order.CorporationId != corporation
-                    && !assigned.Contains(order.Id)
-                )
-                .GroupBy(order => order.TypeId)
-        )
+        foreach (var bids in customerBids.Where(order => !assigned.Contains(order.Id)).GroupBy(order => order.TypeId))
         {
             int type = bids.Key;
             if (!recipes.Contains(type) || !ManufacturingCatalog.Allowed(catalog, type, security))
@@ -227,7 +214,7 @@ internal sealed partial class CapsuleerIndustry
             }
         }
 
-        if (employer.BalanceCents <= 0 || employer.StationId != station || products.Count == 0)
+        if (!reserveEligible || products.Count == 0)
         {
             return false;
         }

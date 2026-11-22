@@ -5,6 +5,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
 using Eden.World.Runtime.Economy;
 
@@ -12,6 +13,40 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerMiner
 {
+    private bool ReviewRookieWork(bool background)
+    {
+        if (Pilot.ShipGroupId != (int)HullClass.Corvette || Work.RookieWorkReviewAt > Work.ActiveTicks && background)
+        {
+            return false;
+        }
+        if (!background)
+        {
+            return true;
+        }
+        bool alreadyStaggered = Work.RookieWorkReviewAt != 0;
+        _work = Work with
+        {
+            RookieWorkReviewAt = FreshCareerRules.NextBackgroundReview(pilotId, Work.ActiveTicks, opening: !alreadyStaggered),
+        };
+        return alreadyStaggered;
+    }
+
+    private bool HasRookieOreDemand(EconomyTransaction world)
+    {
+        var sources = _operation.Catalog.Definition(CapsuleerProvisioningCatalog.StarterOreSources, Pilot.SystemId);
+        long now = Now;
+        return world
+            .StationMarketOrders(Pilot.StationId)
+            .Any(order =>
+                order.Kind == NpcMarketKind.Regional
+                && order.Bid
+                && order.Remaining > 0
+                && order.PriceCents > 0
+                && order.Issued + order.DurationDays * TimeSpan.TicksPerDay > now
+                && sources.Any(material => material.Contains(order.TypeId))
+            );
+    }
+
     private bool WaitForHuntReserve()
     {
         if (

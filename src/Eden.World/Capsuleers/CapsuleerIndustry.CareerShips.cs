@@ -237,7 +237,7 @@ internal sealed partial class CapsuleerIndustry
         }
         long balance = StarterBalance(world, id);
         decimal spending = balance + bids.Sum(bid => (decimal)bid.EscrowCents);
-        if (QuoteCareerKit(world, catalog, id, station, missing, spending, coverProduction) is { } purchases)
+        if (spending > 0 && QuoteCareerKit(world, catalog, id, station, missing, spending, coverProduction) is { } purchases)
         {
             CancelCareerBids(world, catalog, bids);
             market.ExecuteBuy(world, catalog, id, station, purchases, 0);

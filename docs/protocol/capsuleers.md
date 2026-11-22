@@ -119,12 +119,64 @@ Other focused tests shared the workstation, so the elapsed comparisons are obser
 | Maximum checkpoint capture | 28.08 ms | 37.78 ms |
 | Maximum checkpoint write | 5.384 s | 6.530 s |
 
-The scale run exposed a larger due queue for the follow-up. The focused behavior evidence and the scale results
+The first scale run exposed a larger due queue for the follow-up. The focused behavior evidence and the scale results
 are retained under `artifacts/fresh-dynamic-bot-replay/`.
 
 The final `Test-Feature.ps1` selection ran 73 cases in 258.44 seconds. It included the populated behavior replay,
 the pinned fresh-universe gameplay replays, and the capsuleer production, handoff, resident economy, corporation,
 and work-selection fixtures. Debug and Release builds, 17 Python policy tests, and formatting verification passed.
+
+### Queue recovery at 10,000 pilots
+
+A worker change keeps the scheduler's diagnostic cadence. A work handoff used to reset the timer and trigger
+another scan of the overdue queue. Starter production now reads station orders and installed jobs from the resident
+indexes. A starter ore quote can skip a refresh during its current recovery interval when the stored quantity and
+price still match the market rules.
+
+Offscreen corvettes first review alternate jobs after 15–44 active seconds and then every 60–119 active seconds.
+Pilots waiting for reachable work retry every 20–40 active seconds, with a stable offset per pilot around the
+existing 30-second interval. Pilots keep doing their current work between reviews. Observed pilots can review work
+on their normal turns. Accepted contracts, flight, installed industry and replacement decisions retain their
+existing deadlines.
+
+The Release comparison used the same frozen save, 10,000 scheduled pilots, 1,002 systems, one simulated player,
+market maintenance and 90-second window. It ran the `900-False` case of `ReplaySustainedBotThroughput` serially
+on the same workstation with worker tracing disabled. Results are under `artifacts/fresh-dynamic-bot-queue/`.
+
+| 90-second populated replay | Main `3c05dd9b` | Follow-up with staggered retries |
+| --- | ---: | ---: |
+| Oldest due job at the end | 0.577 s | 0.101 s |
+| Due jobs at the end | 2,973 | 411 |
+| Median oldest due job in the final 30 seconds | 0.065 s | 0.089 s |
+| P95 oldest due job in the final 30 seconds | 1.290 s | 0.209 s |
+| Peak oldest due job in the final 30 seconds | 1.500 s | 0.217 s |
+| First recovery below 1 second | 36.43 s | 42.52 s |
+| Completed actions | 261,240 | 280,954 |
+| Paid mining collections | 10,269 | 10,444 |
+| Scheduler failures | 0 | 0 |
+| Process CPU | 102.64 s | 117.48 s |
+| Warm full-session frame p99 | 18.73 ms | 28.74 ms |
+| Maximum checkpoint capture | 24.22 ms | 31.93 ms |
+| Maximum checkpoint write | 1.156 s | 1.150 s |
+
+Without staggered retries, the follow-up had recovered by the end of its first serial replay, but its minute-one
+burst reached 3.96 seconds. The frozen save had roughly 3,000 pilots on the same 30-second idle retry. Staggering
+the new idle retries spread that work across subsequent turns. In both final comparisons the warm player requests
+issued zero SQL commands, opened zero database connections and rebuilt zero fits. This was a workstation replay.
+
+Both populated behavior cases repeated the factory, hunt, loss, replacement and second paid factory sale on the
+same frozen save. Each advanced 97 pilots with zero scheduler failures. The Moa case completed 5,224 actions
+and the Drake case completed 5,188 actions before the final checkpoints. The traces record two 100-round sales
+per operator and the one-spare decision to stay docked after the loss. The replay applies the loss through
+the resident ship-loss operation. The native manufacturing test also repeated the four fitted-ship purchases
+and reopen checks in the gameplay evidence above.
+
+The final `Test-Feature.ps1` selection passed 52 cases in 163.99 seconds. It covered the populated behavior
+replay, fresh-world job choice, native combat fits, capsuleer handoff and work rules, ammunition supply, and
+regional markets. The exact fresh courier and bounty replacement case passed separately in 22 seconds after
+an earlier checkpoint error during the combined selection. The regional market failed-payment test was excluded
+from the final selection after reproducing its cleanup failure on unchanged main. Debug and Release builds,
+17 Python policy tests and formatting checks passed.
 
 ## Miner approach stalls
 

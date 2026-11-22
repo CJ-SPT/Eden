@@ -16,6 +16,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed record FreshCareerRoutes(CapsuleerTrafficRoute? Courier, CatalogAgent? Agent, CapsuleerTrafficRoute? Combat)
 {
+    internal CapsuleerTrafficRoute? Return { get; init; }
     private static readonly CatalogDefinition<int[]> s_frontierStations = new("fresh-frontier-stations", LoadFrontierStations);
     private static readonly CatalogDefinition<FreshCareerRoutes> s_routes = new(
         "capsuleer-rookie-career-routes",
@@ -142,10 +143,10 @@ internal sealed record FreshCareerRoutes(CapsuleerTrafficRoute? Courier, Catalog
                         HullClass.Corvette,
                         maximumJumps: FreshCareerRules.DeliveryJumps
                     )
-                        is not null
+                        is { } returning
                 )
                 {
-                    return new(outbound, agent, combat);
+                    return new(outbound, agent, combat) { Return = returning };
                 }
             }
         }

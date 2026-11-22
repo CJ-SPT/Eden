@@ -517,7 +517,8 @@ internal sealed partial class PilotMarketStore
         long pilotId,
         IReadOnlyList<MarketSale> items,
         int days,
-        bool skipUnmatched = false
+        bool skipUnmatched = false,
+        bool starterOre = false
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -528,7 +529,15 @@ internal sealed partial class PilotMarketStore
         }
         foreach (int type in items.Select(i => i.TypeId).Distinct())
         {
-            Seed(world, catalog, station, type);
+            if (starterOre && world is EconomyTransaction resident && world.Settings.UsesFreshUniverseMarket())
+            {
+                SeedInstitutional(world, catalog, station);
+                StarterOreBid(resident, catalog, station.Id, type);
+            }
+            else
+            {
+                Seed(world, catalog, station, type);
+            }
         }
         List<InventoryChange> changes = [];
         List<MarketExecution> trades = [];

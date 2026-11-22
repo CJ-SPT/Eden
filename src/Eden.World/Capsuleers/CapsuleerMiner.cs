@@ -366,7 +366,7 @@ internal sealed partial class CapsuleerMiner(
             }
             if (!defended.HoldsNavigation)
             {
-                Step();
+                Step(background);
             }
             var next = Commit(
                 job,
@@ -702,12 +702,12 @@ internal sealed partial class CapsuleerMiner(
         _obstacles = _objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
     }
 
-    private void Step()
+    private void Step(bool background)
     {
         switch (Work.Activity)
         {
             case MinerActivity.Docked:
-                PrepareTrip();
+                PrepareTrip(background);
                 break;
             case MinerActivity.FlyingToBelt:
             case MinerActivity.FlyingToGate:
@@ -770,7 +770,7 @@ internal sealed partial class CapsuleerMiner(
         }
     }
 
-    private void PrepareTrip()
+    private void PrepareTrip(bool background)
     {
         if (WaitForHuntReserve())
         {
@@ -924,6 +924,7 @@ internal sealed partial class CapsuleerMiner(
             moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now, moonSupply);
         }
         _work = Work with { FactorySupply = supply };
+        bool reconsideredRookie = false;
         if (moon is null && TryTakeHuntingWork())
         {
             return;
@@ -971,15 +972,13 @@ internal sealed partial class CapsuleerMiner(
                     aboard = PilotInventoryStore.List(resident, _operation.Catalog, pilotId, Pilot.ShipId);
                 }
             }
-            if (
-                fresh
-                && ore.Length > 0
-                && !starterWorkDemand
-                && !industry.HasStarterOreDemand(resident, _operation.Catalog, Pilot.StationId, ore.Select(item => item.TypeId))
-                && TryRookieFlight(resident, localBounty: true)
-            )
+            if (fresh && ore.Length > 0 && !starterWorkDemand && ReviewRookieWork(background))
             {
-                return;
+                reconsideredRookie = true;
+                if (!HasRookieOreDemand(resident) && TryRookieFlight(resident, localBounty: true))
+                {
+                    return;
+                }
             }
         }
         using var equipment = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerEquipment");
@@ -1044,7 +1043,7 @@ internal sealed partial class CapsuleerMiner(
                     : Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear."
                     : "Waiting to revisit stripped belts.",
             };
-            if (fresh && _operation.World is EconomyTransaction rookie)
+            if (fresh && _operation.World is EconomyTransaction rookie && (reconsideredRookie || ReviewRookieWork(background)))
             {
                 TryRookieFlight(rookie);
             }

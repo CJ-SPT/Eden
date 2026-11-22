@@ -188,7 +188,7 @@ internal sealed partial class CapsuleerScheduler
         _pendingHaulers.Remove(pilot);
         _presentations.Remove(system);
         _readiness.Remove(system);
-        _diagnosticTimestamp = null;
+        // Keep the overdue-queue scan on its normal cadence even when many pilots change lanes in one turn.
 
         var registration = _registrations[pilot];
         if (registration.Career != career)
