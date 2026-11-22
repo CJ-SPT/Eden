@@ -27,6 +27,7 @@ WORLD_TRANSPORT = {
     "src/Eden.World/Storage/WorldDbContext.EconomicProjection.cs": "Projection on the existing owning SQL transaction connection.",
     "src/Eden.World/Runtime/LiveWorld.cs": "Owned world memory image and detached checkpoint transport.",
     "src/Eden.World/Runtime/LiveWorld.Checkpoint.Copy.cs": "Bounded checkpoint copies of the owned world memory image.",
+    "src/Eden.World/Runtime/Economy/ResidentEconomy.Checkpoint.cs": "Durable checkpoint rebases on the world memory image under the persistence owner.",
     "src/Eden.World/Runtime/WorldSnapshot.cs": "Detached world checkpoint image transport.",
     "src/Eden.World/Runtime/WorldDatabaseCopy.cs": "Native detached copies of already-owned world connections.",
     "src/Eden.Server/Launcher/LauncherStore.cs": "Authentication persistence through the existing world connection owner.",
