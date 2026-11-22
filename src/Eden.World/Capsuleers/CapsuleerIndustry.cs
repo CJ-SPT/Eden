@@ -41,7 +41,8 @@ internal sealed partial class CapsuleerIndustry(
     PilotReprocessingStore refinery,
     PilotMarketStore market,
     PilotFittingStore fitting,
-    PilotPlanetaryIndustryStore planetary
+    PilotPlanetaryIndustryStore planetary,
+    CapsuleerCareerTraining careerTraining
 )
 {
     private static readonly CatalogDefinition<bool> s_ironCompatible = new(

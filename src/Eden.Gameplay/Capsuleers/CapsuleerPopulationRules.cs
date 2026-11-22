@@ -21,6 +21,10 @@ public static class CapsuleerPopulationRules
     public static void Validate(CapsuleerPopulationPolicy policy)
     {
         policy.Freight.Validate();
+        if (policy.RatDamageReductionPercent is < 0 or > 100)
+        {
+            throw new InvalidDataException("Bot rat damage reduction must be between 0 and 100 percent.");
+        }
         if (policy.ActivePilotCap is < 0 or > MaximumActivePilotCap)
         {
             throw new InvalidDataException("The active bot cap must be between 0 (unlimited) and 1,000,000.");

@@ -3,6 +3,7 @@ using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -10,6 +11,7 @@ using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
 using Eden.Infrastructure.Registration;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Weapons;
@@ -387,7 +389,12 @@ internal sealed partial class NpcCombatStore(
             attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage),
             attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
         );
-        damage = damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier));
+        double reduction = RattingRules.IncomingDamageMultiplier(
+            npc.Role,
+            pilot.AccountId == CapsuleerCommunityStore.MinerAccountId,
+            world.Settings.Capsuleers.RatDamageReductionPercent
+        );
+        damage = damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier) * reduction);
         double chance = CombatDamage.HitChance(
             range,
             CombatDamage.AngularVelocity(separation, velocity - NpcMotion.Velocity(npc)),

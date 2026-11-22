@@ -14,7 +14,7 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         var avoided = (Work.Routine?.Threats ?? []).Where(threat => threat.ExpiresAt > Work.ActiveTicks).Select(threat => threat.SystemId);
-        if (ammunitionSupply.FindPvpSupplier(world, _operation.Catalog, database.Traffic, Pilot, avoided.ToHashSet()) is not { } route)
+        if (ammunitionSupply.FindPvpSupplier(world, _operation.Catalog, database.Traffic, Pilot, avoided.ToHashSet(), Now) is not { } route)
         {
             return false;
         }

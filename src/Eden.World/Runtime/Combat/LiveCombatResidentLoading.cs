@@ -18,6 +18,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Ammunition;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
@@ -206,6 +207,7 @@ internal sealed partial class LiveCombatRuntime
             world.Set<SavedCrimewatch>().Find(pilotId)?.Timers().Npc ?? new CombatTimer()
         )
         {
+            AutonomousPilot = pilot.AccountId == CapsuleerCommunityStore.MinerAccountId,
             LocalCooldowns = world
                 .Set<ModuleCooldown>()
                 .Where(cooldown => fitted.Select(item => item.Id).Contains(cooldown.ModuleId))

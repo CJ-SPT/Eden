@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using Eden.Data.Catalog;
 using Eden.Data.Catalog.Capsuleers;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -19,114 +21,144 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
-    private sealed record SnapshotPvpFit(long KillId, ReplacementKit Kit, ReplacementPart[] Parts, bool DealsDamage);
+    private sealed record SnapshotPvpFit(
+        long KillId,
+        ReplacementKit Kit,
+        ReplacementPart[] Parts,
+        bool DealsDamage,
+        (int Stage, int AdvancedModules, int Modules) Progress
+    );
 
     private sealed record SnapshotPvpFits(int[] HullTypes, IReadOnlyDictionary<int, SnapshotPvpFit[]> ByHull);
 
     private static readonly ConditionalWeakTable<TrafficSnapshot, ConcurrentDictionary<long, Lazy<SnapshotPvpFits>>> s_snapshotPvpFits =
         new();
 
-    private (ReplacementKit Kit, MarketPurchase[] Purchases)? QuoteSnapshotPvpFit(
+    private CapsuleerPvpFitGoal? SelectSnapshotPvpGoal(
         EconomyTransaction world,
         CatalogDbContext catalog,
         TrafficSnapshot snapshot,
         DockedPilot pilot,
         int station,
-        long budget,
-        int? stagingSystem = null,
-        bool visitsHighSecurity = false
+        Ship? current,
+        int stagingSystem,
+        bool visitsHighSecurity
     )
     {
-        if (budget <= 0 || snapshot.Profiles.Count == 0)
+        if (snapshot.Profiles.Count == 0)
         {
             return null;
         }
-
         var fits = s_snapshotPvpFits
             .GetOrCreateValue(snapshot)
             .GetOrAdd(catalog.Definitions.Identity.Generation, _ => new(() => LoadSnapshotPvpFits(catalog, snapshot)))
             .Value;
         long id = pilot.PilotId;
-        var hullTypes = visitsHighSecurity
-            ? fits.HullTypes.Where(type => TrafficRules.RouteAllows((HullClass)catalog.RequireItem(type).GroupId, true)).ToArray()
-            : fits.HullTypes;
-        var usableHulls = PilotSkillReader.UsableTypes(world, catalog, id, hullTypes);
-        var hullOffers = market.SupplyOrders(world, catalog, station, usableHulls.ToArray(), id);
         var policy = world.Settings.Capsuleers;
         bool canFlySupport =
             policy.RoamingGangs
             && PatrolRules.Allowed(
-                new(PatrolKind.Roam, stagingSystem ?? pilot.SystemId),
-                catalog.Definition(CapsuleerProvisioningCatalog.Security, stagingSystem ?? pilot.SystemId),
+                new(PatrolKind.Roam, stagingSystem),
+                catalog.Definition(CapsuleerProvisioningCatalog.Security, stagingSystem),
                 policy
             );
+        var previous = current is null
+            ? default
+            : PvpFitProgress(catalog, current.TypeId, world.FittedItems(id, current.Id).Select(item => item.TypeId));
+        var hullOffers = market.SupplyOrders(world, catalog, station, fits.HullTypes, id);
         var candidates = hullOffers
-            .Where(ask => ask.PriceCents < budget && StandardMarketRules.CanFill(1, ask.Remaining, ask.MinimumVolume))
+            .Where(ask => StandardMarketRules.CanFill(1, ask.Remaining, ask.MinimumVolume))
             .Select(ask => ask.TypeId)
             .Distinct()
+            .Where(type => PvpRouteAllows(catalog, type, visitsHighSecurity))
             .SelectMany(type => fits.ByHull[type])
-            .Where(fit => fit.DealsDamage || canFlySupport)
+            .Where(fit => (fit.DealsDamage || canFlySupport) && (current is null || fit.Progress.CompareTo(previous) > 0))
             .ToArray();
         if (candidates.Length == 0)
         {
             return null;
         }
-
-        var equipment = candidates.SelectMany(fit => fit.Parts).Select(part => part.TypeId).Where(type => !usableHulls.Contains(type));
-        var usableEquipment = PilotSkillReader.UsableTypes(world, catalog, id, equipment.Distinct().ToArray());
-        var viable = candidates
-            .Where(fit => fit.Parts.All(part => usableHulls.Contains(part.TypeId) || usableEquipment.Contains(part.TypeId)))
-            .ToArray();
-        var requested = viable
-            .SelectMany(fit => fit.Parts)
-            .Select(part => part.TypeId)
-            .Where(type => usableEquipment.Contains(type))
-            .Distinct()
-            .ToArray();
-        var offers = hullOffers.Concat(market.SupplyOrders(world, catalog, station, requested, id)).ToLookup(ask => ask.TypeId);
+        var types = candidates.SelectMany(fit => fit.Parts).Select(part => part.TypeId).Distinct().ToArray();
+        var usable = PilotSkillReader.UsableTypes(world, catalog, id, types);
+        var offers = hullOffers
+            .Concat(market.SupplyOrders(world, catalog, station, types.Where(type => !fits.ByHull.ContainsKey(type)).ToArray(), id))
+            .ToLookup(ask => ask.TypeId);
         Dictionary<ReplacementPart, MarketPurchase?> quotes = [];
-        List<SnapshotPvpFit> affordable = [];
-        foreach (var fit in viable)
+        foreach (
+            var fit in candidates
+                .OrderByDescending(fit => fit.DealsDamage)
+                .ThenByDescending(fit => current is null && fit.Parts.All(part => usable.Contains(part.TypeId)))
+                .ThenBy(fit => fit.Progress)
+                .ThenBy(fit => TravelerRoutineRules.Mix((ulong)id ^ TravelerRoutineRules.Mix((ulong)fit.KillId)))
+        )
         {
-            decimal cost = 0;
-            foreach (var part in fit.Parts)
+            if (fit.Parts.All(part => Available(part)))
             {
-                if (!quotes.TryGetValue(part, out var quote))
-                {
-                    quotes[part] = quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity);
-                }
-                if (quote is null || quote.Quantity != part.Quantity)
-                {
-                    cost = decimal.MaxValue;
-                    break;
-                }
-                cost += (decimal)quote.LimitPriceCents * quote.Quantity;
-                if (cost > budget)
-                {
-                    break;
-                }
-            }
-            if (cost <= budget)
-            {
-                affordable.Add(fit);
-            }
-        }
-
-        // Different pilots use different affordable fits without changing their preference on every station review.
-        var ranked = affordable
-            .OrderByDescending(fit => fit.DealsDamage)
-            .ThenBy(fit => TravelerRoutineRules.Mix((ulong)id ^ TravelerRoutineRules.Mix((ulong)fit.KillId)));
-        foreach (var fit in ranked)
-        {
-            if (
-                CanReplaceKit(world, catalog, id, CapsuleerCareer.Hauling, fit.Kit, fit.Parts)
-                && PilotFittingStore.CanOnlineFit(world, catalog, id, fit.Kit)
-            )
-            {
-                return (fit.Kit, fit.Parts.Select(part => quotes[part]!).ToArray());
+                return new(fit.Kit.HullTypeId, fit.Kit.Slots, fit.Kit.Magazines);
             }
         }
         return null;
+
+        bool Available(ReplacementPart part)
+        {
+            if (!quotes.TryGetValue(part, out var quote))
+            {
+                quotes[part] = quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity);
+            }
+            return quote?.Quantity == part.Quantity;
+        }
+    }
+
+    private MarketPurchase[]? QuotePvpGoal(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilot,
+        int station,
+        ReplacementPart[] parts,
+        long budget
+    )
+    {
+        if (budget <= 0)
+        {
+            return null;
+        }
+        var offers = market
+            .SupplyOrders(world, catalog, station, parts.Select(part => part.TypeId).ToArray(), pilot)
+            .ToLookup(ask => ask.TypeId);
+        List<MarketPurchase> purchases = [];
+        decimal cost = 0;
+        foreach (var part in parts)
+        {
+            var quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity);
+            if (quote is null || quote.Quantity != part.Quantity)
+            {
+                return null;
+            }
+            cost += (decimal)quote.LimitPriceCents * quote.Quantity;
+            if (cost > budget)
+            {
+                return null;
+            }
+            purchases.Add(quote);
+        }
+        return purchases.ToArray();
+    }
+
+    private static bool PvpRouteAllows(CatalogDbContext catalog, int type, bool visitsHighSecurity) =>
+        !visitsHighSecurity || TrafficRules.RouteAllows((HullClass)catalog.RequireItem(type).GroupId, true);
+
+    private static (int Stage, int AdvancedModules, int Modules) PvpFitProgress(
+        CatalogDbContext catalog,
+        int hull,
+        IEnumerable<int> modules
+    )
+    {
+        var types = modules.ToArray();
+        return (
+            CapsuleerWorkHulls.Stage(catalog, hull, CapsuleerProfession.Combat),
+            types.Count(type => catalog.Read(CatalogData.Client.Types, (long)type)?.TechLevel >= 2),
+            types.Length
+        );
     }
 
     private static SnapshotPvpFits LoadSnapshotPvpFits(CatalogDbContext catalog, TrafficSnapshot snapshot)
@@ -198,6 +230,8 @@ internal sealed partial class CapsuleerIndustry
 
         ReplacementKit kit = new(profile.HullTypeId, slots, effects.Keys.ToHashSet(), [], magazines.ToArray());
         var parts = kit.Parts();
-        return SupportedKit(catalog, kit, parts) ? new(profile.KillId, kit, parts, dealsDamage) : null;
+        return SupportedKit(catalog, kit, parts)
+            ? new(profile.KillId, kit, parts, dealsDamage, PvpFitProgress(catalog, kit.HullTypeId, slots.Select(slot => slot.TypeId)))
+            : null;
     }
 }

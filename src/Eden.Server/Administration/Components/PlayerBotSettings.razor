@@ -72,6 +72,10 @@
                       Help="Allows eligible combat pilots to hunt NPC pirates in asteroid belts.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BeltRatting" aria-describedby="@field.Help" /></Control>
         </SettingField>
+        <SettingField Label="Rat damage reduction (%)"
+                      Help="Reduces incoming pirate NPC damage to bot ships. Set 0 for full damage or 100 for no damage.">
+            <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.RatDamageReductionPercent" min="0" max="100" aria-describedby="@field.Help" /></Control>
+        </SettingField>
         <SettingField Label="Run ordinary combat anomalies"
                       Help="Allows eligible combat pilots to visit ordinary combat anomalies.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.AnomalyRatting" aria-describedby="@field.Help" /></Control>

@@ -119,6 +119,7 @@ public sealed record CapsuleerPopulationPolicy(
     public int GeneratedCombatPercent { get; init; } = 35;
     public bool SituationalAwareness { get; init; } = true;
     public bool BeltRatting { get; init; } = true;
+    public int RatDamageReductionPercent { get; init; } = 25;
     public bool AnomalyRatting { get; init; } = true;
     public bool Exploration { get; init; } = true;
     public bool WreckSalvage { get; init; } = true;

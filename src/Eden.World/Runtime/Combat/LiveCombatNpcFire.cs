@@ -1,4 +1,5 @@
 using Eden.Data.World.Drones;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -141,7 +142,12 @@ internal sealed partial class LiveCombatRuntime
         {
             return true;
         }
-        var paid = LiveNpcCombatRules.Fire(ship, npc, velocity, now, roll);
+        double incomingDamage = RattingRules.IncomingDamageMultiplier(
+            npc.Role,
+            ship.AutonomousPilot,
+            database.Settings.Capsuleers.RatDamageReductionPercent
+        );
+        var paid = LiveNpcCombatRules.Fire(ship, npc, velocity, now, roll, incomingDamage);
         if (paid.Shot.Health.Remaining.Destroyed)
         {
             // The durable action settles capsule, insurance, inventory and report together.

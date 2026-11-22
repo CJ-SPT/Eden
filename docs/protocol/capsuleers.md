@@ -2,12 +2,62 @@
 
 [Protocol index](../protocol.md)
 
+## Bot PvP fit progression and rat damage
+
+With activity-funded PvP enabled, eligible bots save the exact hull, fitting slots and magazines from a supported
+zKillboard fit. Goal selection uses complete market stock at the current station or a reachable supplier. A pilot can
+commit to a goal before it can fly or afford it. At dock it uses the normal skillbook, unallocated SP and training
+queue services. Tight fits can prompt CPU, powergrid and rigging training. It buys the entire goal with liquid
+personal ISK above its starting grant once the full fit can stay online. Buying, fitting, loading, boarding and
+saving the next locally available goal share the resident transaction. The saved goal survives checkpoint reopen
+and retains its fitting when the imported snapshot refreshes.
+
+After the first purchase, the bot prefers the next available career stage, or more Tech II modules or more fitted
+slots at the same stage. It keeps flying its current ship until the upgrade is ready. It can rat between PvP sorties
+while working toward its goal. The original parked work ship remains available for the existing recovery path.
+When a market review finds no next goal, an eligible bot checks again after five minutes.
+
+**Rat damage reduction (%)** is a saved bot setting with a default of 25 and a range of 0–100. Normal pirate NPC
+weapon damage is multiplied by the remaining percentage against bot ships. The same rule applies to resident turret
+fire, settled turret and missile hits, and the bot's incoming-DPS estimate. Human pilots and other damage sources
+use their ordinary damage rules.
+
+UniWiki documents planning the skills for a whole fitting. The local EVE.js build 3396210 uses ownership and skill
+checks in `shipService.js` when boarding. Eden resolves the complete fit and damage against pinned build 3662168.
+[UniWiki fitting plans](https://wiki.eveuniversity.org/Guide_to_using_EVEMon) · [Population settings](../capsuleer-population.md)
+
+### Automated validation
+
+The exact `EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen`,
+`ResidentPirateDamageIsReducedOnlyForBotShips`, `PirateDamageReductionCanMakeAnEncounterSurvivable`
+and `SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves` filters passed eight cases
+in 11.91 seconds, after an 8.91-second warning-free build. The upgrade case saved a Catalyst goal after an
+Incursus purchase, reopened, trained the missing hull skill, held the Incursus while the wallet was short,
+and then bought and boarded the Catalyst while keeping the original work ship.
+
+The affected ammunition supply, ratting, NPC aggression, missiles, gangs, traffic navigation, population
+settings, administration and Fresh Universe filter passed 136 cases in 99.96 seconds. Eight catalog-backed
+Fresh Universe cases were skipped in that run. Two were then exercised with the installed build-3662168 catalog.
+`NativeCombatKitsPayForManufactureAndBoardTwoCruisersABattlecruiserAndABattleship` passed. The courier and ratting
+replay hit a world-owner file lock during cleanup on the first run and passed the isolated retry in 29.93 seconds.
+The same cleanup failure reproduced on unchanged main at `575a08eb`. The catalog and formatting policy suites and
+formatting checks passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Activity-funded PvP ships
 
 New worlds use the Established Universe profile with the Standard market and **Buy PvP ships with activity
 income** enabled. Existing worlds load their saved profile and policy. Administrators can enable the setting for an
 existing established world. The Fresh Universe sections below document the earlier creation profile and its saved-world
-behavior. [Population settings](../capsuleer-population.md#activity-funded-pvp-ships)
+behavior. The original purchase rules and validation are recorded below. Current pilots use the
+[saved progression goal](#bot-pvp-fit-progression-and-rat-damage). [Population settings](../capsuleer-population.md#activity-funded-pvp-ships)
 
 A pilot at an eligible NPC market in an active system can spend the liquid personal ISK above its saved starting cash.
 Ratting pays ordinary personal NPC bounties. Miners can sell surplus supported ore into existing orders after unloading

@@ -68,6 +68,9 @@ public static class RattingRules
     private const double SurvivalMargin = 2;
     private const double DamageMargin = .75;
 
+    public static double IncomingDamageMultiplier(NpcRole role, bool autonomousPilot, int reductionPercent) =>
+        role == NpcRole.Pirate && autonomousPilot ? (100 - reductionPercent) / 100d : 1;
+
     public static bool Choose(long pilot, long sequence) =>
         TravelerRoutineRules.Draw(TravelerRoutineRules.Create(pilot), sequence) % DepartureDivisor == 0;
 

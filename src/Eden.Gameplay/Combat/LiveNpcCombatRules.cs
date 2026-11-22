@@ -8,7 +8,14 @@ public sealed record LiveNpcShot(LiveCombatShip Ship, NpcShot Shot);
 
 public static class LiveNpcCombatRules
 {
-    public static LiveNpcShot Fire(LiveCombatShip ship, LiveCombatNpc npc, SpacePosition velocity, long now, double roll)
+    public static LiveNpcShot Fire(
+        LiveCombatShip ship,
+        LiveCombatNpc npc,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        double incomingDamageMultiplier = 1
+    )
     {
         ship = ship.SettleRepairs(now);
         var attributes = npc.Attributes;
@@ -25,7 +32,7 @@ public static class LiveNpcCombatRules
             attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage),
             attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
         );
-        damage = damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier));
+        damage = damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier) * incomingDamageMultiplier);
         double chance = CombatDamage.HitChance(
             range,
             CombatDamage.AngularVelocity(separation, velocity - npc.Velocity),

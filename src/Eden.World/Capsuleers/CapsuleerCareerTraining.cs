@@ -91,6 +91,16 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         long id = pilot.PilotId;
         bool reset = world.Settings.FreshUniverse && pilot.ShipGroupId == (int)HullClass.Corvette && saved is { HighestHullStage: > 0 };
         var plan = Choose(world, catalog, pilot, profession, !reset && saved?.Profession == profession ? saved : null, now);
+        if (CapsuleerIndustry.RequiresEarnedPvp(world) && CapsuleerCorporations.Organization(world, id).PvpFitGoal is { } goal)
+        {
+            var kit = goal.Kit();
+            var parts = kit.Parts();
+            if (!CapsuleerIndustry.PvpFitQualified(world, catalog, pilot, kit, parts, out bool needsFittingSkills))
+            {
+                var result = TrainEquipment(world, catalog, pilot, parts.Select(part => part.TypeId).ToArray(), now, needsFittingSkills);
+                return new(plan, result.MarketChanged, result.LevelChanged);
+            }
+        }
         if (PilotTrainingStore.ReadFreePoints(world, id) == 0)
         {
             return new(plan);
@@ -180,18 +190,50 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
     internal bool TrainForModule(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, int module, long now) =>
         TrainForEquipment(world, catalog, pilot, [module], now);
 
-    internal bool TrainForEquipment(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, int[] types, long now)
+    internal bool TrainForEquipment(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        int[] types,
+        long now,
+        bool improveFittingResources = false
+    ) => TrainEquipment(world, catalog, pilot, types, now, improveFittingResources).MarketChanged;
+
+    private (bool MarketChanged, bool LevelChanged) TrainEquipment(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        int[] types,
+        long now,
+        bool improveFittingResources
+    )
     {
-        if (Expand(catalog, types.SelectMany(type => RequiredSkills(catalog, type))) is not { Length: > 0 } targets)
+        var required = types.SelectMany(type => RequiredSkills(catalog, type));
+        if (improveFittingResources)
         {
-            return false;
+            var fittingSkills = new[] { (int)FittingSkill.CpuManagement, (int)FittingSkill.PowerGridManagement }.Concat(
+                Enum.GetValues<RiggingSkill>().Select(skill => (int)skill)
+            );
+            required = required.Concat(
+                fittingSkills.Where(type => catalog.FittingType(type) is not null).Select(type => new TrainingTarget(type, 5))
+            );
+        }
+        if (Expand(catalog, required) is not { Length: > 0 } targets)
+        {
+            return default;
         }
         long id = pilot.PilotId;
-        if (PilotTrainingStore.ReadFreePoints(world, id) > 0 && Spend(world, catalog, pilot, targets, now, out bool bought, out _))
+        var state = training.Advance(world, id, now);
+        bool changed = state.ChangedSkills.Count > 0;
+        if (
+            PilotTrainingStore.ReadFreePoints(world, id) > 0
+            && Spend(world, catalog, pilot, targets, now, out bool bought, out bool allocated)
+        )
         {
-            return bought;
+            return (bought, changed || allocated);
         }
-        return training.Advance(world, id, now).Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now, out _);
+        bool marketChanged = state.Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now, out _);
+        return (marketChanged, changed);
     }
 
     internal CapsuleerQualificationTurn AdvanceQualification(

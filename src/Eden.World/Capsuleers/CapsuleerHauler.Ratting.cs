@@ -139,7 +139,8 @@ internal sealed partial class CapsuleerHauler
         ResupplyProgress supplies,
         CombatAnomaly? site,
         FittingCalculation? fit = null,
-        bool intentionalHunt = false
+        bool intentionalHunt = false,
+        bool fundingFit = false
     )
     {
         var policy = database.Settings.Capsuleers;
@@ -182,7 +183,8 @@ internal sealed partial class CapsuleerHauler
                 );
         }
         if (
-            !FreshCombat
+            !fundingFit
+            && !FreshCombat
             && !_background
             && HasPvpShip
             && (_operation.World is not Eden.World.Runtime.Economy.EconomyTransaction work || !DynamicWorkPilot(work))

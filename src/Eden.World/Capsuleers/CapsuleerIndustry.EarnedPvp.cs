@@ -1,16 +1,19 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Docking;
+using Eden.World.Fittings;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
+    private static readonly TimeSpan PvpFitReviewInterval = TimeSpan.FromMinutes(5);
     private static readonly CatalogDefinition<int[]> s_pvpTradeHubs = new(
         "pvp-shopping-trade-hubs",
         (catalog, _) => catalog.Definitions.Stations.Keys.Where(CapsuleerEncounterRules.IsTradeHubStation).ToArray()
@@ -41,11 +44,12 @@ internal sealed partial class CapsuleerIndustry
     {
         long id = pilot.PilotId;
         int station = pilot.StationId;
+        int staging = stagingSystem ?? pilot.SystemId;
         if (
             !RequiresEarnedPvp(world)
             || world.Set<SavedCapsuleerAgent>().Find(id) is not { } agent
             || !CapsuleerWorkHulls.CanLeaveShip(world, catalog, pilot)
-            || !CanStagePvp(world, catalog, stagingSystem ?? pilot.SystemId)
+            || !CanStagePvp(world, catalog, staging)
             || !StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)
         )
         {
@@ -53,16 +57,15 @@ internal sealed partial class CapsuleerIndustry
         }
 
         var organization = CapsuleerCorporations.Organization(world, id);
-        if (organization.EarnedPvpShipId is long ownedId && world.Ships.Find(ownedId) is { } owned && owned.OwnerId == id)
+        var owned = OwnedPvpShip(world, id, organization);
+        if (owned is not null && owned.Id != pilot.ShipId)
         {
-            // Leave an existing fit at its station if the pilot cannot reach it from this hangar.
             if (
-                owned.Id == pilot.ShipId
-                || owned.Position is not null
+                owned.Position is not null
                 || owned.StationId != station
                 || owned.StructureId.HasValue
                 || owned.StoredInId.HasValue
-                || !TrafficRules.RouteAllows((HullClass)catalog.RequireItem(owned.TypeId).GroupId, visitsHighSecurity)
+                || !PvpRouteAllows(catalog, owned.TypeId, visitsHighSecurity)
             )
             {
                 return default;
@@ -72,51 +75,133 @@ internal sealed partial class CapsuleerIndustry
             return new(Boarded: true);
         }
 
-        long budget = StarterBalance(world, id) - agent.StartingCents;
-        // The opening grant remains available for the pilot's work. Buy the whole combat kit in one market transaction.
-        if (
-            budget <= 0
-            || QuoteSnapshotPvpFit(world, catalog, snapshot, pilot, station, budget, stagingSystem, visitsHighSecurity) is not { } quote
-        )
+        var goal = organization.PvpFitGoal;
+        if (goal is null)
+        {
+            if (stagingSystem is null && organization.PvpFitReviewAt > now)
+            {
+                return default;
+            }
+            goal = SelectSnapshotPvpGoal(world, catalog, snapshot, pilot, station, owned, staging, visitsHighSecurity);
+            if (goal is null)
+            {
+                return default;
+            }
+            organization = organization with { PvpFitGoal = goal };
+            CapsuleerCorporations.SaveOrganization(world, id, organization);
+        }
+
+        var kit = goal.Kit();
+        var parts = kit.Parts();
+        if (!SupportedKit(catalog, kit, parts))
+        {
+            CapsuleerCorporations.SaveOrganization(world, id, organization with { PvpFitGoal = null });
+            return default;
+        }
+        if (!PvpRouteAllows(catalog, kit.HullTypeId, visitsHighSecurity))
         {
             return default;
         }
-        var bought = market.ExecuteBuy(world, catalog, id, station, quote.Purchases, 0);
-        if (bought.Trades.Sum(trade => (long)trade.Quantity) != quote.Purchases.Sum(purchase => (long)purchase.Quantity))
+        if (!PvpFitQualified(world, catalog, pilot, kit, parts, out bool needsFittingSkills))
+        {
+            bool boughtBook = careerTraining.TrainForEquipment(
+                world,
+                catalog,
+                pilot,
+                parts.Select(part => part.TypeId).ToArray(),
+                now,
+                improveFittingResources: needsFittingSkills
+            );
+            return new(MarketChanged: boughtBook);
+        }
+        long budget = StarterBalance(world, id) - agent.StartingCents;
+        if (QuotePvpGoal(world, catalog, id, station, parts, budget) is not { } purchases)
+        {
+            return default;
+        }
+        var bought = market.ExecuteBuy(world, catalog, id, station, purchases, 0);
+        if (bought.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(purchase => (long)purchase.Quantity))
         {
             throw new InvalidDataException("PvP ship offers changed before purchase.");
         }
-        long ship = BoardKit(world, catalog, pilot, quote.Kit, now, requireOnlineFit: true);
-        CapsuleerCorporations.SaveOrganization(world, id, organization with { EarnedPvpShipId = ship, PvpWorkShipId = pilot.ShipId });
+        long ship = BoardKit(world, catalog, pilot, kit, now, requireOnlineFit: true);
+        var nextGoal = SelectSnapshotPvpGoal(world, catalog, snapshot, pilot, station, world.Ships.Find(ship), staging, visitsHighSecurity);
+        CapsuleerCorporations.SaveOrganization(
+            world,
+            id,
+            organization with
+            {
+                EarnedPvpShipId = ship,
+                PvpWorkShipId = owned is null ? pilot.ShipId : organization.PvpWorkShipId,
+                PvpFitGoal = nextGoal,
+                PvpFitReviewAt = 0,
+            }
+        );
         return new(Boarded: true, MarketChanged: true);
     }
+
+    internal static bool PvpFitQualified(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        ReplacementKit kit,
+        ReplacementPart[] parts,
+        out bool needsFittingSkills
+    )
+    {
+        needsFittingSkills = false;
+        if (!CanReplaceKit(world, catalog, pilot.PilotId, CapsuleerCareer.Hauling, kit, parts))
+        {
+            return false;
+        }
+        needsFittingSkills = !PilotFittingStore.CanOnlineFit(world, catalog, pilot.PilotId, kit);
+        return !needsFittingSkills;
+    }
+
+    private static Ship? OwnedPvpShip(WorldAction world, long pilot, CapsuleerOrganization organization) =>
+        organization.EarnedPvpShipId is long ship && world.Ships.Find(ship) is { } owned && owned.OwnerId == pilot ? owned : null;
 
     internal CapsuleerTrafficRoute? FindPvpSupplier(
         EconomyTransaction world,
         CatalogDbContext catalog,
         TrafficSnapshot snapshot,
         DockedPilot pilot,
-        IReadOnlySet<int> avoided
+        IReadOnlySet<int> avoided,
+        long now
     )
     {
         long id = pilot.PilotId;
         if (
             !world.Settings.Economy.StandardMarket
-            || snapshot.Profiles.Count == 0
             || world.Set<SavedCapsuleerAgent>().Find(id) is not { } agent
-            || StarterBalance(world, id) - agent.StartingCents is not > 0
             || !CapsuleerWorkHulls.CanLeaveShip(world, catalog, pilot)
-            || CapsuleerCorporations.Organization(world, id).EarnedPvpShipId is long ship && world.Ships.Find(ship) is not null
         )
         {
             return null;
         }
+        var organization = CapsuleerCorporations.Organization(world, id);
+        var owned = OwnedPvpShip(world, id, organization);
+        if (owned is not null && owned.Id != pilot.ShipId)
+        {
+            return null;
+        }
 
+        var goal = organization.PvpFitGoal;
+        if (goal is null && (snapshot.Profiles.Count == 0 || organization.PvpFitReviewAt > now))
+        {
+            return null;
+        }
         long budget = StarterBalance(world, id) - agent.StartingCents;
+        var kit = goal?.Kit();
+        var parts = kit?.Parts();
+        if (kit is not null && (budget <= 0 || !PvpFitQualified(world, catalog, pilot, kit, parts!, out _)))
+        {
+            return null;
+        }
         var policy = world.Settings.Capsuleers;
         var neighbors = CapsuleerTrafficRoutes.Read(catalog, pilot.SystemId, policy).Routes;
         var hubs = catalog.Definition(s_pvpTradeHubs, 0);
-        return neighbors
+        var routes = neighbors
             .SelectMany(route => new[] { route.SourceStationId, route.DestinationStationId })
             .Concat(hubs)
             .Distinct()
@@ -126,20 +211,47 @@ internal sealed partial class CapsuleerIndustry
             )
             .OfType<CapsuleerTrafficRoute>()
             .OrderBy(route => route.Systems.Length)
-            .ThenBy(route => route.DestinationStationId)
-            .FirstOrDefault(route =>
-                QuoteSnapshotPvpFit(
+            .ThenBy(route => route.DestinationStationId);
+        foreach (var route in routes)
+        {
+            bool highSecurity = PvpRouteVisitsHighSecurity(catalog, route);
+            if (goal is null)
+            {
+                goal = SelectSnapshotPvpGoal(
                     world,
                     catalog,
                     snapshot,
                     pilot,
                     route.DestinationStationId,
-                    budget,
+                    owned,
                     pilot.SystemId,
-                    PvpRouteVisitsHighSecurity(catalog, route)
-                )
-                    is not null
-            );
+                    highSecurity
+                );
+                if (goal is null)
+                {
+                    continue;
+                }
+                CapsuleerCorporations.SaveOrganization(world, id, organization with { PvpFitGoal = goal });
+                kit = goal.Kit();
+                parts = kit.Parts();
+                if (!PvpFitQualified(world, catalog, pilot, kit, parts, out _) || budget <= 0)
+                {
+                    return null;
+                }
+            }
+            if (
+                PvpRouteAllows(catalog, goal.HullTypeId, highSecurity)
+                && QuotePvpGoal(world, catalog, id, route.DestinationStationId, parts!, budget) is not null
+            )
+            {
+                return route;
+            }
+        }
+        if (goal is null)
+        {
+            CapsuleerCorporations.SaveOrganization(world, id, organization with { PvpFitReviewAt = now + PvpFitReviewInterval.Ticks });
+        }
+        return null;
     }
 
     internal static bool PvpRouteVisitsHighSecurity(CatalogDbContext catalog, CapsuleerTrafficRoute route) =>

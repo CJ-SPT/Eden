@@ -46,4 +46,9 @@ public sealed record ReplacementKit(
             .ToArray();
 }
 
+public sealed record CapsuleerPvpFitGoal(int HullTypeId, FittingSlot[] Slots, ReplacementMagazine[] Magazines)
+{
+    public ReplacementKit Kit() => new(HullTypeId, Slots, Slots.Select(slot => slot.FlagId).ToHashSet(), [], Magazines);
+}
+
 public sealed record ReplacementResult(bool Boarded, bool MarketChanged, long? OrderDeadline, long[]? OrderIds = null);

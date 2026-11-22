@@ -32,13 +32,17 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed partial class CapsuleerAmmunitionSupplyTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(bool remoteSupplier)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(bool remoteSupplier, bool progress)
     {
         const int incursus = (int)TechOneHullType.Incursus;
         const int rifter = (int)TechOneHullType.Rifter;
         const int minmatarFrigate = 3329;
+        const int gallenteDestroyer = 33093;
+        int nextHull = progress ? CapsuleerPatrolFit.Catalyst : rifter;
+        int nextSkill = progress ? gallenteDestroyer : minmatarFrigate;
         const int railgun = (int)CombatWeaponType.GatlingRailgun75mm;
         const int scrambler = 447;
         const int repairer = (int)StarterMarketType.SmallArmorRepairer;
@@ -53,6 +57,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PrepareCatalog(fixture);
+        if (progress)
+        {
+            PassiveCatalogFixture.LoadSmallHull(fixture.Database.CatalogPath, nextHull);
+        }
         PassiveCatalogFixture.LoadInformation(fixture.Database.CatalogPath, new HashSet<int> { 26528 });
         PassiveCatalogFixture.LoadTackleTiers(fixture.Database.CatalogPath, new HashSet<int> { scrambler });
         PassiveCatalogFixture.LoadStarterMarket(fixture.Database.CatalogPath, new HashSet<int> { repairer, 3426, 3435, 3449 });
@@ -99,8 +107,8 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         {
             CharacterId = profile.CharacterId + 1,
             KillId = profile.KillId + 1,
-            Name = "Rifter pilot",
-            HullTypeId = rifter,
+            Name = "Next hull pilot",
+            HullTypeId = nextHull,
         };
         TrafficSnapshotTests.Install(fixture.Database, unavailableSkill, profile);
         var parts = profile
@@ -110,7 +118,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         parts[charge] *= 5;
         Assert.True(parts.Values.Sum() * priceCents < openingCents);
         var orders = parts
-            .Append(new(rifter, 1))
+            .Append(new(nextHull, 1))
             .Select(
                 (part, index) =>
                     new LiveMarketOrder(
@@ -120,9 +128,9 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                         listingStation.RegionId,
                         part.Key,
                         Bid: false,
-                        part.Key == rifter ? priceCents / 2 : priceCents,
-                        part.Value,
-                        part.Value,
+                        part.Key == nextHull ? priceCents / 2 : priceCents,
+                        progress && part.Key != incursus && part.Key != nextHull ? part.Value * 2 : part.Value,
+                        progress && part.Key != incursus && part.Key != nextHull ? part.Value * 2 : part.Value,
                         fixture.Clock.Now,
                         MarketDefinitions.NpcOrderDays,
                         MarketDefinitions.StationRange,
@@ -206,7 +214,15 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 {
                     CapsuleerCommunityStore.GrantRequirements(setup, catalog, pilotId, type, []);
                 }
-                if (setup.Set<PilotSkill>().Find(pilotId, minmatarFrigate) is { } trained)
+                if (progress)
+                {
+                    CapsuleerCommunityStore.GrantRequirements(setup, catalog, pilotId, nextSkill, []);
+                    var skill =
+                        setup.Set<PilotSkill>().Find(pilotId, nextSkill)
+                        ?? setup.Add(new PilotSkill { PilotId = pilotId, TypeId = nextSkill }).Entity;
+                    skill.Points = 0;
+                }
+                else if (setup.Set<PilotSkill>().Find(pilotId, nextSkill) is { } trained)
                 {
                     setup.Remove(trained);
                 }
@@ -228,7 +244,9 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 Assert.False(pending.MarketChanged);
                 Assert.Equal(workShipId, work.Pilots.Find(pilotId)!.ActiveShipId);
                 Assert.Equal(openingCents, work.Set<PilotWallet>().Find(pilotId)!.Cents);
-                Assert.Null(CapsuleerCorporations.Organization(work, pilotId).EarnedPvpShipId);
+                var organization = CapsuleerCorporations.Organization(work, pilotId);
+                Assert.Null(organization.EarnedPvpShipId);
+                Assert.Equal(remoteSupplier ? null : incursus, organization.PvpFitGoal?.HullTypeId);
                 Assert.Empty(work.Filter<MarketExecution>(row => row.PilotId == pilotId));
                 work.Commit();
             }
@@ -273,7 +291,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 ships.Dock(work, catalog, pilotId, workShipId, Depot);
                 var docked = ships.FindPilot(work, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
 
-                var usableHulls = PilotSkillReader.UsableTypes(work, catalog, pilotId, [incursus, rifter]);
+                var usableHulls = PilotSkillReader.UsableTypes(work, catalog, pilotId, [incursus, nextHull]);
                 Assert.Equal(incursus, Assert.Single(usableHulls));
                 var turn = supply.TryBuyEarnedPvpShip(work, catalog, snapshot, docked, fixture.Clock.Now);
                 Assert.Equal(!remoteSupplier, turn.Boarded);
@@ -281,7 +299,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 if (remoteSupplier)
                 {
                     Assert.Empty(work.Filter<MarketExecution>(row => row.PilotId == pilotId));
-                    var quote = supply.FindPvpSupplier(work, catalog, snapshot, docked, new HashSet<int>());
+                    var quote = supply.FindPvpSupplier(work, catalog, snapshot, docked, new HashSet<int>(), fixture.Clock.Now);
                     var route = Assert.IsType<CapsuleerTrafficRoute>(quote);
                     Assert.Equal(Depot, route.SourceStationId);
                     Assert.Equal(listingStation.Id, route.DestinationStationId);
@@ -340,7 +358,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 );
                 var purchases = work.Filter<MarketExecution>(row => row.PilotId == pilotId).ToArray();
                 Assert.Equal(parts.Count, purchases.Length);
-                Assert.DoesNotContain(purchases, row => row.TypeId == rifter);
+                Assert.DoesNotContain(purchases, row => row.TypeId == nextHull);
                 Assert.All(
                     purchases,
                     row =>
@@ -350,7 +368,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                         Assert.Equal(listingStation.OwnerId, row.CounterpartyId);
                         var stock = work.Set<NpcMarketOrder>().Find(row.OrderId)!;
                         Assert.Equal(NpcMarketKind.Standard, stock.Kind);
-                        Assert.Equal(parts[row.TypeId] - row.Quantity, stock.Remaining);
+                        Assert.Equal(orders.Single(order => order.TypeId == row.TypeId).Remaining - row.Quantity, stock.Remaining);
                     }
                 );
                 Assert.Equal(1, purchases.Single(row => row.TypeId == incursus).Quantity);
@@ -361,7 +379,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 purchaseIds = purchases.Select(row => row.Id).Order().ToArray();
                 work.Commit();
             }
-            var otherHull = Assert.Single(market.Orders(pilotId, rifter), order => !order.Bid && order.StationId == listingStation.Id);
+            var otherHull = Assert.Single(market.Orders(pilotId, nextHull), order => !order.Bid && order.StationId == listingStation.Id);
             Assert.Equal((priceCents / 2, 1), (otherHull.PriceCents, otherHull.Remaining));
             await live.FlushAsync();
         }
@@ -374,6 +392,39 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             Assert.Equal(paidShipId, current.ShipId);
             Assert.Equal(paidShipId, CapsuleerCorporations.Organization(review, pilotId).EarnedPvpShipId);
             var supply = reopened.GetRequiredService<CapsuleerIndustry>();
+            if (progress)
+            {
+                var goal = Assert.IsType<CapsuleerPvpFitGoal>(CapsuleerCorporations.Organization(review, pilotId).PvpFitGoal);
+                Assert.Equal(nextHull, goal.HullTypeId);
+                var wallet = review.Set<PilotWallet>().Find(pilotId)!;
+                wallet.Cents = openingCents;
+                Assert.DoesNotContain(nextHull, PilotSkillReader.UsableTypes(review, catalog, pilotId, [nextHull]));
+                PilotTrainingStore.CreditSilentFreePoints(review, pilotId, 20_000);
+                for (
+                    int attempt = 0;
+                    attempt < 8 && !PilotSkillReader.UsableTypes(review, catalog, pilotId, [nextHull]).Contains(nextHull);
+                    attempt++
+                )
+                {
+                    Assert.False(supply.TryBuyEarnedPvpShip(review, catalog, snapshot, current, fixture.Clock.Now).Boarded);
+                }
+                Assert.Contains(nextHull, PilotSkillReader.UsableTypes(review, catalog, pilotId, [nextHull]));
+                Assert.False(supply.TryBuyEarnedPvpShip(review, catalog, snapshot, current, fixture.Clock.Now).Boarded);
+                Assert.Equal(paidShipId, review.Pilots.Find(pilotId)!.ActiveShipId);
+                Assert.Equal(openingCents, wallet.Cents);
+                wallet.Cents = walletAfterPurchase;
+                Assert.True(supply.TryBuyEarnedPvpShip(review, catalog, snapshot, current, fixture.Clock.Now).Boarded);
+                var upgraded = review.Pilots.Find(pilotId)!.ActiveShipId;
+                Assert.Equal(nextHull, review.Ships.Find(upgraded)!.TypeId);
+                Assert.Equal(Depot, review.Ships.Find(paidShipId)!.StationId);
+                var organization = CapsuleerCorporations.Organization(review, pilotId);
+                Assert.Equal(upgraded, organization.EarnedPvpShipId);
+                Assert.Equal(workShipId, organization.PvpWorkShipId);
+                Assert.Null(organization.PvpFitGoal);
+                Assert.True(wallet.Cents >= openingCents);
+                review.Commit();
+                return;
+            }
             var repeated = supply.TryBuyEarnedPvpShip(review, catalog, snapshot, current, fixture.Clock.Now);
             Assert.False(repeated.Boarded);
             Assert.False(repeated.MarketChanged);

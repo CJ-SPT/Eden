@@ -160,20 +160,27 @@ internal sealed partial class CapsuleerHauler
     private bool TryEarnedPvpDeparture(EconomyTransaction world, CombatAnomaly? scoutedAnomaly)
     {
         UnloadRattingLoot();
-        if (!HasPvpShip)
+        var acquisition = ammunitionSupply.TryBuyEarnedPvpShip(world, _operation.Catalog, database.Traffic, Pilot, Now);
+        _operation.MarketChanged |= acquisition.MarketChanged;
+        if (acquisition.Boarded)
         {
-            var acquisition = ammunitionSupply.TryBuyEarnedPvpShip(world, _operation.Catalog, database.Traffic, Pilot, Now);
-            _operation.MarketChanged |= acquisition.MarketChanged;
-            if (!acquisition.Boarded)
-            {
-                return TryShopForPvpShip(world);
-            }
             _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
             ResetTradeHull();
+        }
+        else if (TryShopForPvpShip(world))
+        {
+            return true;
+        }
+        if (!HasPvpShip)
+        {
+            return false;
         }
         var supplies = resupply.Dock(database, world, _operation.Catalog, pilotId, Work.Resupply, Now, out var fit);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
-        return TryGangDeparture(authorizedHunt: true) || TryLaunchSortie(supplies, scoutedAnomaly, fit, intentionalHunt: true);
+        return CapsuleerCorporations.Organization(world, pilotId).PvpFitGoal is not null
+                && TryLaunchSortie(supplies, scoutedAnomaly, fit, fundingFit: true)
+            || TryGangDeparture(authorizedHunt: true)
+            || TryLaunchSortie(supplies, scoutedAnomaly, fit, intentionalHunt: true);
     }
 }

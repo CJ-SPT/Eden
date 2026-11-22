@@ -103,6 +103,7 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.AutomaticAlliances), false);
             await renderer.Change(nameof(SettingsForm.NewSovereigntyClaims), false);
             await renderer.Change(nameof(SettingsForm.EarnedPvpShips), true);
+            await renderer.Change(nameof(SettingsForm.RatDamageReductionPercent), "40");
             await renderer.ChangeSelection("bot-region", "10000002");
             await renderer.ChangeSelection("bot-region-access", nameof(CapsuleerRegionAccess.TransitOnly));
             await renderer.ChangeSelection("bot-system", "30000142");
@@ -139,6 +140,8 @@ public sealed partial class AdministrationTests
             Assert.False(botPolicy.AutomaticAlliances);
             Assert.False(botPolicy.NewSovereigntyClaims);
             Assert.True(botPolicy.EarnedPvpShips);
+            Assert.Equal(40, botPolicy.RatDamageReductionPercent);
+            Assert.Equal(25, saved.Active.Draft.Settings.Capsuleers.RatDamageReductionPercent);
             Assert.False(saved.Active.Draft.Settings.Capsuleers.EarnedPvpShips);
             await renderer.ChangeSelection("bot-region", "10000002");
             await renderer.ChangeSelection("bot-system", "30000142");

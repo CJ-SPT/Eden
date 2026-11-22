@@ -1,6 +1,8 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -13,6 +15,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
+using Eden.World.Capsuleers;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Market;
@@ -46,6 +49,38 @@ public sealed class NpcAggressionTests
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<PilotWallet>());
         Assert.Empty(saved.Set<ModuleCooldown>());
+    }
+
+    [Theory]
+    [InlineData(false, 2.475)]
+    [InlineData(true, 1.85625)]
+    public void ResidentPirateDamageIsReducedOnlyForBotShips(bool bot, double expected)
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        if (bot)
+        {
+            using var world = live.Economy.Begin();
+            const long account = CapsuleerCommunityStore.MinerAccountId;
+            if (world.Set<Account>().Find(account) is null)
+            {
+                world.Add(
+                    new Account
+                    {
+                        Id = account,
+                        UserName = "Bot account",
+                        CloneGrade = AccountCloneGrade.Omega,
+                    }
+                );
+            }
+            world.Pilots.Find(s_pilot.PilotId)!.AccountId = account;
+            world.Commit();
+        }
+        f.Combat.Acquire([s_pilot], f.Clock.Now);
+        f.Clock.Milliseconds = 7500;
+        var shot = Assert.IsType<NpcShot>(f.Fire());
+        Assert.Equal(expected, shot.Applied, 7);
+        Assert.Equal(200 - expected, shot.Health.Remaining.Shield, 7);
     }
 
     [Theory]

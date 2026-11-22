@@ -67,6 +67,7 @@ public sealed record LiveCombatShip(
     CombatTimer? NpcAggression = null
 )
 {
+    public bool AutonomousPilot { get; init; }
     public IReadOnlyDictionary<long, long> LocalCooldowns { get; init; } = new Dictionary<long, long>();
 
     public LiveCombatShip SettleRepairs(long now)

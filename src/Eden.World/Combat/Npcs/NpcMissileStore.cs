@@ -3,12 +3,14 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Weapons;
@@ -193,7 +195,12 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                     attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
                     payload.Target!.Velocity.Length
                 );
-                var damage = payload.Warhead.Damage.Scale(application);
+                double reduction = RattingRules.IncomingDamageMultiplier(
+                    npc.Role,
+                    pilot.AccountId == CapsuleerCommunityStore.MinerAccountId,
+                    world.Settings.Capsuleers.RatDamageReductionPercent
+                );
+                var damage = payload.Warhead.Damage.Scale(application * reduction);
                 var result = PilotHealthStore.Apply(world, shipId, defense, damage, row.UpdatedAt);
                 PilotInteractionHistoryStore.Damage(world, shipId, PilotInteractionHistoryStore.Npc(npc, row.ChargeTypeId), result.Applied);
                 var insurance = result.Remaining.Destroyed

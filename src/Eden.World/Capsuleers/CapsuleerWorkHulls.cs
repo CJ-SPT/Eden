@@ -79,7 +79,7 @@ internal static class CapsuleerWorkHulls
                 ) && !world.Filter<Ship>(child => child.StoredInId == ship).Any();
     }
 
-    private static int Stage(CatalogDbContext catalog, int type, CapsuleerProfession profession)
+    internal static int Stage(CatalogDbContext catalog, int type, CapsuleerProfession profession)
     {
         var hull = (HullClass)(catalog.FittingType(type)?.GroupId ?? 0);
         if (CapsuleerCareerTraining.Profession(catalog, type, hull) != profession)

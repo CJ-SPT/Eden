@@ -1514,7 +1514,8 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 host.GetRequiredService<PilotReprocessingStore>(),
                 host.GetRequiredService<PilotMarketStore>(),
                 host.GetRequiredService<PilotFittingStore>(),
-                host.GetRequiredService<PilotPlanetaryIndustryStore>()
+                host.GetRequiredService<PilotPlanetaryIndustryStore>(),
+                host.GetRequiredService<CapsuleerCareerTraining>()
             );
             using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
             using var world = host.GetRequiredService<LiveWorld>().Economy.Begin();

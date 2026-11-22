@@ -158,6 +158,7 @@ internal sealed class CapsuleerRatting(
                 )
                 .ToArray();
         }
+        int damageReduction = database.Settings.Capsuleers.RatDamageReductionPercent;
         List<RattingOpponent> enemies = [];
         foreach (var contact in contacts)
         {
@@ -212,7 +213,7 @@ internal sealed class CapsuleerRatting(
                     npc.SignatureRadius,
                     Math.Max(npc.Velocity.Length, attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity)),
                     distance,
-                    incoming,
+                    incoming.Scale(RattingRules.IncomingDamageMultiplier(npc.Role, true, damageReduction)),
                     Repair(npc.RepairProfile.Shield),
                     Repair(npc.RepairProfile.Armor)
                 )

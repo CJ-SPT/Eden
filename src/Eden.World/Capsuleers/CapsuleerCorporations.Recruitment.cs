@@ -31,6 +31,12 @@ internal sealed record CapsuleerOrganization(long DueTicks = 0, long? Applicatio
     public long? EarnedPvpShipId { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CapsuleerPvpFitGoal? PvpFitGoal { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public long PvpFitReviewAt { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? PvpWorkShipId { get; init; }
     public long? StarterMarketJobId { get; init; }
     public int? OperatingStationId { get; init; }

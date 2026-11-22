@@ -81,6 +81,7 @@ public sealed class SettingsForm
 
     public bool SituationalAwareness { get; set; }
     public bool BeltRatting { get; set; }
+    public int RatDamageReductionPercent { get; set; }
     public bool AnomalyRatting { get; set; }
     public bool BotExploration { get; set; }
     public bool BotWreckSalvage { get; set; }
@@ -375,6 +376,7 @@ public sealed class SettingsForm
             FreightCargoTypeIds = settings.Capsuleers.Freight.CargoTypeIds,
             SituationalAwareness = settings.Capsuleers.SituationalAwareness,
             BeltRatting = settings.Capsuleers.BeltRatting,
+            RatDamageReductionPercent = settings.Capsuleers.RatDamageReductionPercent,
             AnomalyRatting = settings.Capsuleers.AnomalyRatting,
             BotExploration = settings.Capsuleers.Exploration,
             BotWreckSalvage = settings.Capsuleers.WreckSalvage,
@@ -470,6 +472,7 @@ public sealed class SettingsForm
             {
                 SituationalAwareness = SituationalAwareness,
                 BeltRatting = BeltRatting,
+                RatDamageReductionPercent = RatDamageReductionPercent,
                 AnomalyRatting = AnomalyRatting,
                 Exploration = BotExploration,
                 WreckSalvage = BotWreckSalvage,

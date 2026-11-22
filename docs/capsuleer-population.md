@@ -53,12 +53,12 @@ A new established world starts with the Standard market and **Buy PvP ships with
 on an existing established save, open **Player bots → PvP roams & regional conflicts**, select that option, save for
 restart and restart the server.
 
-An eligible pilot can spend personal ISK above its starting cash on a PvP fit from the installed zKillboard traffic
-snapshot. It selects among hulls and fits its skills can operate and buys the full fit through ordinary orders. Ratters
-earn bounties, and miners can sell surplus ore after checking production and moon-supply needs. Haulers can make a
-shopping trip to a reachable market when their staging station lacks stock. The work ship stays docked where the
-pilot boards the paid ship. The paid fit can be used for roams, camps and gangs. [Import zKillboard traffic](#zkill-backed-travelers) ·
-[Implementation and validation](protocol/capsuleers.md#activity-funded-pvp-ships)
+An eligible pilot chooses a complete fit from the installed zKillboard traffic snapshot and saves that goal. It trains
+the hull and fitting skills at dock and earns ISK in its current ship. Ratters earn bounties, and miners can sell surplus
+ore after checking production and moon-supply needs. The pilot spends only personal ISK above its starting cash and
+can shop at a reachable market for the full fit. After boarding, it looks for a higher-stage hull or a better-equipped
+fit at the same stage. The pilot keeps its previous ships and can rat between PvP sorties to fund the next goal.
+[Import zKillboard traffic](#zkill-backed-travelers) · [Fit progression and validation](protocol/capsuleers.md#bot-pvp-fit-progression-and-rat-damage)
 
 ## Mining fleets
 
@@ -339,6 +339,10 @@ human-active clock still stops when the last player leaves. See the
 [scheduling replay and validation](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026).
 
 ### Belt ratting, ship variety and paid resupply
+
+Under **Player bots → PvE combat & salvage**, **Rat damage reduction (%)** defaults to 25%. It reduces the turret and
+missile damage pirate NPCs deal to bot ships. The ratting encounter assessment uses the same reduction. Set it to
+0 for full damage or 100 to prevent pirate NPC weapon damage to bot ships.
 
 Existing combat-fit travelers can choose a local belt-ratting sortie on one third of eligible dock departures while
 any human pilot is selected, including when the traveler's system has no human observer.

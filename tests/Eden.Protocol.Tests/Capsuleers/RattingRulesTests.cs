@@ -27,6 +27,20 @@ public sealed class RattingRulesTests
     }
 
     [Fact]
+    public void PirateDamageReductionCanMakeAnEncounterSurvivable()
+    {
+        var enemy = Enemy with { DamagePerSecond = new(10000, 0, 0, 0) };
+        var reduced = enemy with
+        {
+            DamagePerSecond = enemy.DamagePerSecond.Scale(RattingRules.IncomingDamageMultiplier(NpcRole.Pirate, true, 99)),
+        };
+        Assert.False(RattingRules.Assess(Pilot, 1000, [Weapon], [enemy]).Capable);
+        Assert.True(RattingRules.Assess(Pilot, 1000, [Weapon], [reduced]).Capable);
+        Assert.Equal(1, RattingRules.IncomingDamageMultiplier(NpcRole.Pirate, false, 99));
+        Assert.Equal(1, RattingRules.IncomingDamageMultiplier(NpcRole.Concord, true, 99));
+    }
+
+    [Fact]
     public void RepairsApplicationCapacitorAndAmmunitionCanEachRejectACombatHull()
     {
         Assert.False(RattingRules.Assess(Pilot, 1000, [], [Enemy]).Capable);
