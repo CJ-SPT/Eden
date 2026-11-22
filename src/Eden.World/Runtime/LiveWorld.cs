@@ -916,6 +916,14 @@ internal sealed partial class LiveWorld : IDisposable
                     Report($"World checkpoint market rebase deferred: {exception.Message}", failure: true);
                 }
             }
+            try
+            {
+                Economy.RebaseSavedHistories(_memory, snapshot.Economy);
+            }
+            catch (Exception exception)
+            {
+                Report($"World checkpoint history rebase deferred: {exception.Message}", failure: true);
+            }
             return null;
         }
         catch (Exception exception)

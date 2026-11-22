@@ -44,6 +44,7 @@ internal sealed class WorldSnapshot(
     internal int CopySteps => copySteps;
     internal long ProjectionAllocatedBytes { get; private set; }
     internal IReadOnlyList<WorldTableProjection>? ProjectionTables { get; private set; }
+    internal EconomyCheckpoint? Economy => economy;
     internal EconomyProjection<EconomyNpcMarketOrder>? NpcMarketOrders =>
         economy?.Tables.OfType<EconomyProjection<EconomyNpcMarketOrder>>().SingleOrDefault();
 

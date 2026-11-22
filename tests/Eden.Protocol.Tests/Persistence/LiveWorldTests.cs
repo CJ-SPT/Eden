@@ -486,6 +486,16 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
             Assert.Equal(records + 2, projection.Rows);
             Assert.Equal(66, projection.Commands);
             Assert.Equal(0, DiskValue(database.Path, $"SELECT COUNT(*) FROM WorldSkillHistory WHERE Id={removed}"));
+
+            using (var append = live.Economy.Begin(new(pilots: [pilot])))
+            {
+                append.Add(Event(points + records + 1, 36));
+                append.Commit();
+            }
+            expected.Add(new(now, skill, points + records + 1, 36));
+            await live.FlushAsync();
+            projection = Assert.Single(live.LastCheckpoint!.ProjectionTables!, table => table.Table == "WorldSkillHistory");
+            Assert.Equal(3, projection.Rows);
         }
         using var reopened = ServerServices.Build(database, clock, liveWorld: true);
         expected.Reverse();
@@ -499,6 +509,121 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
                 TypeId = skill,
                 Points = balance,
                 EventId = eventId,
+            };
+    }
+
+    [Fact]
+    public async Task HistoryRebaseSkipsDirtyParentsAndRowsChangedWhileSaving()
+    {
+        const long existingPilot = 90000001;
+        const long newPilot = 91000001;
+        const long ship = 91000002;
+        const long changedPoints = (1L << 53) + 7;
+        const long changedAmount = (1L << 53) + 9;
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        TestClock clock = new();
+        Action? afterPersist = null;
+        using LiveWorld live = new(
+            database,
+            clock,
+            _ => { },
+            (snapshot, path) =>
+            {
+                LiveWorld.PersistSnapshot(snapshot, path);
+                afterPersist?.Invoke();
+            }
+        );
+        live.MeasureCheckpoints = true;
+        long changedHistory;
+        long changedTrade;
+        using (var prepare = live.Economy.Begin())
+        {
+            prepare.Add(new InventoryOwner { Id = newPilot });
+            prepare.Add(
+                new Ship
+                {
+                    Id = ship,
+                    OwnerId = newPilot,
+                    TypeId = 601,
+                    StationId = 60000004,
+                }
+            );
+            prepare.Add(
+                new Pilot
+                {
+                    Id = newPilot,
+                    AccountId = 1000001,
+                    Name = "New checkpoint pilot",
+                    ActiveShipId = ship,
+                    CreatedAt = clock.Now,
+                }
+            );
+            prepare.Add(Event(newPilot));
+            prepare.Add(Trade(newPilot));
+            prepare.Add(Event(existingPilot));
+            prepare.Add(Trade(existingPilot));
+            changedHistory = prepare.Add(Event(existingPilot)).Entity.Id;
+            changedTrade = prepare.Add(Trade(existingPilot)).Entity.Id;
+            prepare.Commit();
+        }
+        afterPersist = () =>
+        {
+            afterPersist = null;
+            using var update = live.Economy.Begin(new(pilots: [existingPilot]));
+            update.Set<TrainingLog>().Find(changedHistory)!.Points = changedPoints;
+            update.Set<MarketExecution>().Find(changedTrade)!.WalletAmountCents = changedAmount;
+            update.Commit();
+        };
+        await live.FlushAsync();
+        Assert.Equal(3, Rows("WorldSkillHistory"));
+        Assert.Equal(3, Rows("WorldMarketTrade"));
+        Assert.Equal(1, DiskValue(database.Path, $"SELECT Points FROM WorldSkillHistory WHERE Id={changedHistory}"));
+
+        await live.FlushAsync();
+        Assert.Equal(2, Rows("WorldSkillHistory"));
+        Assert.Equal(2, Rows("WorldMarketTrade"));
+        Assert.Equal(3, DiskValue(database.Path, "SELECT COUNT(*) FROM WorldSkillHistory"));
+        Assert.Equal(3, DiskValue(database.Path, "SELECT COUNT(*) FROM WorldMarketTrade"));
+        Assert.Equal(changedPoints, DiskValue(database.Path, $"SELECT Points FROM WorldSkillHistory WHERE Id={changedHistory}"));
+        Assert.Equal(changedAmount, DiskValue(database.Path, $"SELECT WalletAmountCents FROM WorldMarketTrade WHERE Id={changedTrade}"));
+        Assert.Equal(0, DiskValue(database.Path, "SELECT COUNT(*) FROM pragma_foreign_key_check"));
+
+        using (var append = live.Economy.Begin(new(pilots: [existingPilot])))
+        {
+            append.Add(Event(existingPilot));
+            append.Add(Trade(existingPilot));
+            append.Commit();
+        }
+        await live.FlushAsync();
+        Assert.Equal(2, Rows("WorldSkillHistory"));
+        Assert.Equal(2, Rows("WorldMarketTrade"));
+        Assert.Equal(4, DiskValue(database.Path, "SELECT COUNT(*) FROM WorldSkillHistory"));
+        Assert.Equal(4, DiskValue(database.Path, "SELECT COUNT(*) FROM WorldMarketTrade"));
+
+        long Rows(string table) => Assert.Single(live.LastCheckpoint!.ProjectionTables!, rows => rows.Table == table).Rows;
+
+        TrainingLog Event(long pilot) =>
+            new()
+            {
+                PilotId = pilot,
+                Time = clock.Now,
+                TypeId = 3449,
+                Points = 1,
+                EventId = 36,
+            };
+
+        MarketExecution Trade(long pilot) =>
+            new()
+            {
+                PilotId = pilot,
+                Time = clock.Now,
+                OrderId = 1,
+                StationId = 60000004,
+                TypeId = 34,
+                IsBuy = true,
+                Quantity = 1,
+                PriceCents = 1,
             };
     }
 

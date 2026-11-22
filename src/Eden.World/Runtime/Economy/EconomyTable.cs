@@ -347,6 +347,11 @@ internal sealed partial class EconomyTable<TRow, TState>(
 
     internal bool HasPendingProjection(EconomyChange<TState> row) => _sqlBaselines.ContainsKey(row.Key) && Same(row.Key, row.Value);
 
+    internal bool HasPendingInsert(EconomyChange<TState> row) =>
+        row.Value is not null && _sqlBaselines.TryGetValue(row.Key, out var baseline) && baseline is null && Same(row.Key, row.Value);
+
+    internal bool HasSqlRow(EconomyKey id) => _sqlBaselines.TryGetValue(id, out var baseline) ? baseline is not null : Contains(id);
+
     public void Projected(WorldDbContext world, IEconomyProjection projection)
     {
         var rows = ((EconomyProjection<TState>)projection).Rows;
