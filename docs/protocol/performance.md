@@ -6871,7 +6871,7 @@ and memory at the host level.
 An eight-second live EventPipe allocation sample attributed 28% of sampled bytes to resting-sale settlement. The resident
 path now reads typed, transaction-private station books for resting sales and multi-type regional refreshes. It keeps
 price, modification time, and order ID as the sale priority, and opens selected entities for writes after reading the
-station book. The four-sale fixture allocated approximately 140 KB, down from 295 KB, with the same fills and zero SQL
+station book. The Release four-sale fixture allocated approximately 138 KB, down from 295 KB, with the same fills and zero SQL
 commands, connections, or fitting rebuilds.
 
 Checkpoint projection reached 6.3 seconds and allocated about 349 MB late in the same live run. The checkpoint now uses
@@ -6909,3 +6909,21 @@ transaction-private changes, candidate ordering, escrow visibility, and combat-a
 In five warmed comparisons with the same 2,300-item inventory, 200 fitted and loaded item selections allocated
 2.84 MB, down from 19.75 MB, and median time fell from 40.04 to 10.82 ms, with zero SQL commands. The measurement
 covers resident transaction setup and item selection. Full dogma graph evaluation was outside that measurement.
+
+The same 15-minute Windows replay with the follow-up changes kept 10,000 scheduled and completed 2,630,458
+actions without failures. Allocation per action fell from 147.5 KB to 140.3 KB. Final five-minute job age
+p95 fell from 15.9 to 8.15 seconds, and 134 of 298 samples reached one second. Frame and market request p99
+fell to 25.7 and 53.6 ms. The replay still failed the one-second queue-age assertion.
+
+### HostCram observation with 10,000 pilots
+
+HostCram ran `48d5f913` with settings revision 15 and the existing 10,000 cap. Once every pilot had advanced,
+121 checkpoint samples from 05:15:47 to 05:45:49 UTC recorded 5,247,003 job sequence advances. Simulation time advanced
+30 minutes. Oldest job age was 460 ms at p95, peaked at 640 ms, and ended at 355 ms. The server used an average
+of 1.29 of four vCPUs. Its peak resident set was 3.98 GiB, with no restarts, OOM kills, or logged simulation or checkpoint
+failures in the observation. The Windows replays above use an observer and pre-activate the saved roster in a private copy.
+The production observation uses the live player workload and samples durable checkpoints every 15 seconds.
+
+### Live acceptance
+
+Agent client testing is disabled.
