@@ -114,6 +114,43 @@ internal sealed partial class EconomyTransaction(
     internal override long? SkillPoints(long pilot, int type) =>
         ((EconomySet<PilotSkill, EconomyPilotSkill>)Set<PilotSkill>()).ReadSnapshot(new(pilot, type))?.Points;
 
+    internal override OwnedItem[] FittedItems(long owner, long ship)
+    {
+        var items = (EconomySet<OwnedItem, EconomyOwnedItem>)Set<OwnedItem>();
+        var owned = items.IndexedKeys(nameof(OwnedItem.OwnerId), owner);
+        var located = items.IndexedKeys(nameof(OwnedItem.LocationId), ship);
+        // Match the expression query's candidate order, including owner-index ties.
+        return items.SelectIndexedRows(
+            owned.Count <= located.Count ? owned : located,
+            row => Matches(row.OwnerId, row.LocationId, row.FlagId),
+            row => Matches(row.OwnerId, row.LocationId, row.FlagId)
+        );
+
+        bool Matches(long rowOwner, long location, int flag) =>
+            rowOwner == owner && location == ship && InventoryDefinitions.IsFittedSlot(flag);
+    }
+
+    internal override OwnedItem[] LoadedFittingItems(long owner, long[] modules)
+    {
+        var items = (EconomySet<OwnedItem, EconomyOwnedItem>)Set<OwnedItem>();
+        var owned = items.IndexedKeys(nameof(OwnedItem.OwnerId), owner);
+        HashSet<EconomyKey> located = [];
+        if (owned.Count != 0)
+        {
+            foreach (long module in modules)
+            {
+                located.UnionWith(items.IndexedKeys(nameof(OwnedItem.LocationId), module));
+            }
+        }
+        return items.SelectIndexedRows(
+            owned.Count <= located.Count ? owned : located,
+            row => Matches(row.OwnerId, row.LocationId),
+            row => Matches(row.OwnerId, row.LocationId)
+        );
+
+        bool Matches(long rowOwner, long location) => rowOwner == owner && Enumerable.Contains(modules, location);
+    }
+
     internal override IReadOnlyList<long> ContainedInventoryIds(long location)
     {
         var items = (EconomySet<OwnedItem, EconomyOwnedItem>)Set<OwnedItem>();

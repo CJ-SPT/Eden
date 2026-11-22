@@ -64,17 +64,7 @@ internal sealed partial record FittingCalculation
         var hullAttributes = PilotFittingStore.ReadAttributes(catalog, ship.TypeId).ToDictionary();
         hullAttributes[DogmaAttributeId.Mass] = hull.Mass ?? 0;
         hullAttributes[DogmaAttributeId.CargoCapacity] = hull.Capacity ?? 0;
-        var items = world
-            .Set<OwnedItem>()
-            .Where(i =>
-                i.OwnerId == pilot.Id
-                && i.LocationId == ship.Id
-                && (
-                    (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
-                    || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
-                )
-            )
-            .ToArray();
+        var items = world.FittedItems(pilot.Id, ship.Id);
         var moduleAttributes = items.ToDictionary(i => i.Id, i => MutaplasmidStore.Attributes(world, catalog, i.Id, i.TypeId));
         var modules = items
             .Select(i => new FittingLocation(
@@ -93,7 +83,7 @@ internal sealed partial record FittingCalculation
         {
             throw new InvalidDataException("Overload selection must belong to this owned ship's fitted modules.");
         }
-        var loaded = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && Enumerable.Contains(moduleIds, i.LocationId)).ToArray();
+        var loaded = world.LoadedFittingItems(pilot.Id, moduleIds);
         var chargeAttributes = loaded
             .Select(i => i.TypeId)
             .Distinct()

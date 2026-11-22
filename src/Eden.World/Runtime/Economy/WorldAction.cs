@@ -10,6 +10,7 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.World.Fittings;
 using Eden.World.Market;
 using Microsoft.EntityFrameworkCore;
@@ -93,6 +94,21 @@ internal abstract class WorldAction
 
     internal virtual IQueryable<T> Filter<T>(Expression<Func<T, bool>> predicate)
         where T : class => Set<T>().Where(predicate);
+
+    internal virtual OwnedItem[] FittedItems(long owner, long ship) =>
+        Set<OwnedItem>()
+            .Where(i =>
+                i.OwnerId == owner
+                && i.LocationId == ship
+                && (
+                    (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+                    || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
+                )
+            )
+            .ToArray();
+
+    internal virtual OwnedItem[] LoadedFittingItems(long owner, long[] modules) =>
+        Set<OwnedItem>().Where(i => i.OwnerId == owner && Enumerable.Contains(modules, i.LocationId)).ToArray();
 
     internal virtual IEnumerable<EconomyWorldAsteroid> AsteroidsInSystem(int system) =>
         Filter<WorldAsteroid>(a => a.SystemId == system)

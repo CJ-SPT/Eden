@@ -594,6 +594,23 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
         return matches.Count == 1 && matches.Contains(row);
     }
 
+    internal IReadOnlyCollection<EconomyKey> IndexedKeys(string column, object value) => table.Indexed(column, value);
+
+    internal TRow[] SelectIndexedRows(
+        IReadOnlyCollection<EconomyKey> candidates,
+        Func<TState, bool> matchSnapshot,
+        Func<TRow, bool> matchRow
+    )
+    {
+        var keys = candidates.Where(key => table.Snapshot(key) is { } snapshot && matchSnapshot(snapshot));
+        if (_local.Count != 0)
+        {
+            keys = keys.Concat(_local.Keys).Distinct();
+        }
+        // Find can add private rows; finish selecting keys before materializing them.
+        return keys.ToArray().Select(Find).OfType<TRow>().Where(matchRow).ToArray();
+    }
+
     internal IEnumerable<TState> IndexedSnapshots(string column, object value, (string Column, int Value)? alternate = null)
     {
         var keys = table.Indexed(column, value);
