@@ -6859,3 +6859,23 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare scheduled population and role activity, oldest job age, and peak memory during the deployed ramp.
+
+## Mature fresh-world market and checkpoint throughput
+
+HostCram ran revision `7118d3fe` with settings revision 15. Beginner market supply, progressive markets, and regional hub
+supply were enabled. All three were disabled in the settings revision 14 replay above. At 28 minutes of uptime, the
+dashboard reported 10,000 scheduled pilots, 8,618 due jobs, 35.2 seconds of oldest job age, and 9.2 ms mean session frame
+processing. The same process reached 120.4 seconds of oldest job age by 40 minutes. The queue grew despite available CPU
+and memory at the host level.
+
+An eight-second live EventPipe allocation sample attributed 28% of sampled bytes to resting-sale settlement. The resident
+path now reads typed, transaction-private station books for resting sales and multi-type regional refreshes. It keeps
+price, modification time, and order ID as the sale priority, and opens selected entities for writes after reading the
+station book. The four-sale fixture allocated approximately 140 KB, down from 295 KB, with the same fills and zero SQL
+commands, connections, or fitting rebuilds.
+
+Checkpoint projection reached 6.3 seconds and allocated about 349 MB late in the same live run. The checkpoint now uses
+primary-key lookups for combat damage and asteroid deletions. It also folds unchanged, newly inserted skill history and
+market executions into the compatibility database only after a durable save. The owner applies bounded batches and retains
+pending changes when the parent is unavailable or the captured row has changed. The retry fixture saved 8,192 skill history
+inserts and projected only three changed rows on the following checkpoint.
