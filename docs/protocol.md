@@ -164,6 +164,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Bot moon refineries](protocol/capsuleers.md#bot-moon-refineries)
 - [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement)
 - [Capsuleer mining fleets](protocol/capsuleers.md#capsuleer-mining-fleets)
+- [Miner approach stalls](protocol/capsuleers.md#miner-approach-stalls)
 - [Rival gang interception at gates](protocol/capsuleers.md#rival-gang-interception-at-gates)
 - [Nearby procurement for bot factories](protocol/capsuleers.md#nearby-procurement-for-bot-factories)
 - [Combined factory pickups](protocol/capsuleers.md#combined-factory-pickups)

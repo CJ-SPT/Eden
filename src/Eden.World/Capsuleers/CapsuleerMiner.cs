@@ -102,6 +102,7 @@ internal sealed partial class CapsuleerMiner(
     );
     private const int RetrySeconds = 60;
     private const double ApproachRange = 500;
+    private const double MiningApproachFraction = 0.9;
     private bool _loaded;
     private TackleEffect[] _incoming = [];
     private bool _warpBlocked;
@@ -151,6 +152,7 @@ internal sealed partial class CapsuleerMiner(
     internal DockedPilot? PreparationPilot => _pilot;
     private InventoryItem? _laser;
     private double _miningReach;
+    private double MiningApproachRange => _miningReach * MiningApproachFraction;
     private MinerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
@@ -1246,7 +1248,7 @@ internal sealed partial class CapsuleerMiner(
             return;
         }
         _target = rock;
-        _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position!, Pilot.Flight.ShipRadius, rock, _miningReach, false, true);
+        _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position!, Pilot.Flight.ShipRadius, rock, MiningApproachRange, false, true);
         _work = Work with { Activity = MinerActivity.ApproachingOre, TargetId = rock.Id };
     }
 
@@ -1264,6 +1266,12 @@ internal sealed partial class CapsuleerMiner(
         }
         if (Distance(target) > _miningReach)
         {
+            // Follow thrust tapers at the ordered range. Reissue saved approaches aimed at the lock threshold.
+            double approachRange = MiningApproachRange;
+            if (_navigation.FollowTarget?.Id != target.Id || _navigation.FollowRange != approachRange)
+            {
+                _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position!, Pilot.Flight.ShipRadius, target, approachRange, false, true);
+            }
             Move();
             if (Distance(target) > _miningReach)
             {

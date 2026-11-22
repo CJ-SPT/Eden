@@ -2,6 +2,40 @@
 
 [Protocol index](../protocol.md)
 
+## Miner approach stalls
+
+In a November 22 dedicated-server checkpoint, 28 of 30 Ventures approaching ore were within 50 m outside the
+8 km bot locking threshold and moving below 0.1 m/s. Garin Elden was 16.6 m outside it with about 13,000 m³
+of ore in a 100,000 m³ mining hold. The pinned build 3662168 catalog gives the Venture a 5,000 m³ base hold
+and Miner I a 10 km range. The server applied a 20× hold multiplier.
+
+Navigation tapers follow thrust near the ordered distance. Ordering the same distance as the lock threshold
+left miners crawling toward that threshold. The bot now aims at 90% of its locking threshold and reissues
+saved approach orders that still point at the old range. It can lock as soon as it crosses the threshold.
+EVE.js checks the compatible mining hold independently of approach in `server/src/services/mining/miningRuntime.js`
+(SHA-256 `0A4A64EE74D915099DC268ACD4FF0CF6EEB5DE4E11011797AC04FD0372AA93B5`).
+[EVE University Venture data](https://wiki.eveuniversity.org/Venture)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerMinerTests.MinerResumesSavedApproachThatTapersOutsideLockRange`
+reopens a resident checkpoint with a Venture 20 m outside its 8 km threshold. At `88905c68`, the bot remained
+in `ApproachingOre` through ten simulated seconds (7.64 seconds for the runner). With the fix it locked the
+same rock within that window and started a paid mining cycle (7.78 seconds for the runner).
+
+The solution built with zero warnings or errors. All 97 cases passed in 49.78 seconds under the combined
+`FullyQualifiedName~` filter for `CapsuleerMinerTests`, `CapsuleerHandoffTests`, `CapsuleerTrafficNavigationTests`,
+`MiningRulesTests`, `PilotAwarenessTests`, `CapsuleerDeadlineTests`, and `CapsuleerMiningFleetTests`.
+The catalog and formatting policy suites passed all 17 cases.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Watch a previously stalled Venture resume mining and dock to unload after it fills its hold.
+
 ## Fresh-world frontier patrols
 
 Fresh bounty hunters with a paid combat fit can rebase from high security to a nearby low-security station with

@@ -11,6 +11,7 @@ using Eden.Gameplay.Chat;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
@@ -26,6 +27,7 @@ using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -439,6 +441,59 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             Until(MinerActivity.Docked, reopened.GetRequiredService<CapsuleerMaintenance>(), clock);
             using WorldDbContext saved = new(database.Path);
             Assert.Equal(quantity, saved.Set<WorldAsteroid>().Find(target)!.Quantity);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task MinerResumesSavedApproachThatTapersOutsideLockRange()
+    {
+        var directory = TestDirectory.Create("capsuleer-mining-approach-");
+        var database = new WorldDatabase(Path.Combine(directory.FullName, "world.sqlite"));
+        var clock = new TestClock();
+        try
+        {
+            CreateWorld(database, clock);
+            long targetId;
+            using (var host = ServerServices.Build(database, clock, liveWorld: true))
+            {
+                UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+                var approaching = Until(MinerActivity.ApproachingOre, host.GetRequiredService<CapsuleerMaintenance>(), clock);
+                var pilot = approaching.Pilot;
+                var work = approaching.Work;
+                var rock = Assert.IsType<StaticSpaceObject>(work.Navigation.FollowTarget);
+                targetId = rock.Id;
+                // Recreate a saved Miner I approach 20 m outside the old 8 km follow and lock threshold.
+                const double lockRange = 8_000;
+                var radial = (pilot.Position! - rock.Position).Unit;
+                var position = rock.Position + radial * (rock.Radius + pilot.Flight.ShipRadius + lockRange + 20);
+                NavigationState navigation = new();
+                navigation.Follow(pilot.ShipId, work.Stamp, position, pilot.Flight.ShipRadius, rock, lockRange, false, true);
+                var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot.PilotId);
+                using (CapsuleerOperation operation = new(database, job, host.GetRequiredService<MarketChangeSignal>()))
+                {
+                    SqliteWorld.SetPosition(operation.World, operation.Catalog, pilot.ShipId, position, Kisogo, clock.Now);
+                    operation.Commit(job, new(pilot.PilotId, work with { Navigation = navigation.Capture() }), null);
+                }
+                await host.GetRequiredService<LiveWorld>().FlushAsync();
+            }
+
+            using var reopened = ServerServices.Build(database, clock, liveWorld: true);
+            UpdateSelection(reopened, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+            var worker = reopened.GetRequiredService<CapsuleerMaintenance>();
+            MinerObservation? miner = null;
+            for (int second = 0; second < 10 && miner?.Work.Activity != MinerActivity.Locking; second++)
+            {
+                clock.Seconds++;
+                miner = worker.Tick();
+            }
+            Assert.NotNull(miner);
+            Assert.Equal(MinerActivity.Locking, miner.Work.Activity);
+            Assert.Equal(targetId, miner.Work.TargetId);
+            Assert.Equal(targetId, Until(MinerActivity.Mining, worker, clock).Work.TargetId);
         }
         finally
         {
