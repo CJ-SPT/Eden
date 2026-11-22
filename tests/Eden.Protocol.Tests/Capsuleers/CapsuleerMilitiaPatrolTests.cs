@@ -194,7 +194,7 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
         WorldInitialization.Initialize(database, clock);
     }
 
-    private static void StagePilots(LiveWorld live, WorldDatabase database, TestClock clock)
+    private static void StagePilots(LiveWorld live, WorldDatabase database, TestClock clock, bool includeCaldari = true)
     {
         using var world = live.Economy.Begin(new(systems: [Aldranette, Nennamaila]));
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -210,7 +210,10 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                 }
             );
         }
-        Stage(CaldariPilot, CaldariShip, Nennamaila, NennamailaStation, AldranetteStation, "Nennamaila Patrol Test");
+        if (includeCaldari)
+        {
+            Stage(CaldariPilot, CaldariShip, Nennamaila, NennamailaStation, AldranetteStation, "Nennamaila Patrol Test");
+        }
         Stage(GallentePilot, GallenteShip, Aldranette, AldranetteStation, NennamailaStation, "Aldranette Patrol Test");
         CapsuleerPopulationStore.ScheduleFounders(world);
         world.Commit();

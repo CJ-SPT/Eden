@@ -47,6 +47,9 @@ public enum StandingEvent
     AgentMissionFailed = 74,
     AgentMissionDeclined = 75,
     PromotionFactionIncrease = 216,
+
+    // Build 3662168 appLogConst.eventStandingCombatAggressionOwnFaction.
+    CombatAggressionOwnFaction = 225,
     TacticalSiteDefended = 229,
     TacticalSiteConquered = 230,
 }

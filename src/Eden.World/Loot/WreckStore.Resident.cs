@@ -119,9 +119,10 @@ internal sealed partial class WreckStore
             return;
         }
         var definition = catalog.Read(CatalogData.Client.Types, (long)npc.TypeId);
+        var militia = MilitiaLoot(catalog, npc);
         var type = definition?.WreckTypeID is long wreckType
             ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
-            : null;
+            : militia?.Wreck;
         bool container = ded is not null && (npc.Role == NpcRole.MissionStructure || type is null);
         if (container)
         {
@@ -198,7 +199,8 @@ internal sealed partial class WreckStore
             }
             return;
         }
-        foreach (var drop in Drops(world, catalog, npc).Concat(Eden.World.Agents.PilotMissionStore.KeyLoot(world, npc, now)))
+        var drops = militia is null ? Drops(world, catalog, npc) : [militia.Drop];
+        foreach (var drop in drops.Concat(Eden.World.Agents.PilotMissionStore.KeyLoot(world, npc, now)))
         {
             _ = catalog.RequireItem(drop.TypeId);
             world

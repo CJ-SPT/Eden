@@ -131,6 +131,7 @@ public sealed class SavedPilotHostility
     public long ExpiresAt { get; set; }
     public long LastAttackAt { get; set; }
     public bool SecurityPenaltyRecorded { get; set; }
+    public bool MilitiaPenaltyRecorded { get; set; }
 }
 
 public sealed class SavedSecurityStatus

@@ -250,7 +250,7 @@ internal sealed class MilitiaProgressionStore(WorldDatabase database, TimeProvid
         }
     }
 
-    private static void Apply(
+    internal static void Apply(
         WorldAction world,
         Pilot pilot,
         SavedNpcStanding standing,
@@ -259,7 +259,8 @@ internal sealed class MilitiaProgressionStore(WorldDatabase database, TimeProvid
         int corporation,
         int system,
         long now,
-        List<MissionStandingChange>? changes
+        List<MissionStandingChange>? changes,
+        int victimType = 0
     )
     {
         double before = standing.Value;
@@ -280,6 +281,7 @@ internal sealed class MilitiaProgressionStore(WorldDatabase database, TimeProvid
                 After = after,
                 VictimCorporationId = corporation,
                 SystemId = system,
+                VictimTypeId = victimType,
             }
         );
         changes?.Add(new(standing.SourceId, before, after));

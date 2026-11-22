@@ -1,5 +1,32 @@
 # Faction warfare
 
+## Battlefield rally points, friendly fire and defender loot
+
+Battlefield acceleration gates resolve the landing point for the defender, attacker or neutral entrant from the pinned
+build 3662168 dungeon. The four dungeons (9898–9901) identify three type 10124 beacons by localized object name ID.
+The faction landings are 90 km on either side of the center, with the neutral landing 50 km off-axis. Activation
+rechecks the destination and access before applying a suspect flag. Ordinary complex gates use their existing beacon.
+
+A first unlawful attack against a pilot of the same militia records the empire standing change as native event 225
+(`appLogConst.eventStandingCombatAggressionOwnFaction`). Both participants must be on the same active capture-room grid
+for the 2× penalty. An attack elsewhere applies 0.5×. Eden uses 2.5% of the distance to −10 as the base penalty.
+The committed ship-pair hostility suppresses duplicate standing losses within the active engagement. The standings
+change feeds the existing militia membership rules. [CCP friendly-fire policy](https://www.eveonline.com/news/view/standings-and-awoxing-update)
+
+Scout and Small complex defenders leave an empire small wreck containing one of the three opposing militia-store
+insignia grades. The pinned wrecks and tags match the four empires and the supported small weapon offers. Eden
+selects the grade deterministically from the NPC spawn identity. The same resident action settles the loss and
+creates the wreck. The normal ownership and cargo transfer rules apply when a pilot collects the tag.
+[CCP Scout and Small drops](https://www.eveonline.com/news/view/patch-notes-version-24-01)
+· [Eden LP offer snapshot](../../src/Eden.World/Market/loyalty-offers.json)
+
+**Automated validation.** The four-layout rally and gate filter passed 7 cases in 12 seconds. The two friendly-fire
+cases passed in 5 seconds. The four empire loot cases passed in 16.01 seconds, including transfer and checkpoint.
+A simulated native flight session at full safety saw the opposing militia affiliation, locked and fired, and took
+return fire. The related five cases passed in 7 seconds. The broader filter passed 170 of 171 tests in 57 seconds.
+The legacy fixture was corrected to recreate its real columns, and all three focused schema tests then passed in
+8.44 seconds, including both version 218 save layouts.
+
 ## Aldranette–Nennamaila militia patrols
 
 Enable **Aldranette–Nennamaila militia patrols** in Player bots and save the settings draft for restart. The established

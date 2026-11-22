@@ -70,13 +70,15 @@ internal static partial class CrimewatchPersistence
         attacker.Apply(CrimewatchRules.Player(attacker.Timers(), end, decision.Flag, true, now));
         target.Apply(CrimewatchRules.Player(target.Timers(), end, CrimewatchFlag.None, false, now));
         PilotKillRightStore.Earn(world, victim, source, decision, now);
-        ConcordPersistence.Schedule(world, catalog, world.Pilots.Find(source)!, now);
-        long sourceShip = world.Pilots.Find(source)!.ActiveShipId;
+        var offender = world.Pilots.Find(source)!;
+        ConcordPersistence.Schedule(world, catalog, offender, now);
+        long sourceShip = offender.ActiveShipId;
         if (world is EconomyTransaction && decision.Flag != CrimewatchFlag.None)
         {
             NpcSentryOffenses.Record(world, catalog, sourceShip, system, now);
         }
-        long victimShip = world.Pilots.Find(victim)!.ActiveShipId;
+        var affected = world.Pilots.Find(victim)!;
+        long victimShip = affected.ActiveShipId;
         world.RemoveRange(world.Filter<SavedPilotHostility>(h => h.SourceShipId == sourceShip && h.ExpiresAt <= now));
         var hostility =
             world.Set<SavedPilotHostility>().Find(sourceShip, victimShip)
@@ -90,6 +92,10 @@ internal static partial class CrimewatchPersistence
         {
             PilotSecurityStatusStore.RecordIllegalAggression(world, catalog, source, victim, system, lowsec, now);
             hostility.SecurityPenaltyRecorded = true;
+        }
+        if (world is EconomyTransaction && decision.Flag != CrimewatchFlag.None && !hostility.MilitiaPenaltyRecorded)
+        {
+            hostility.MilitiaPenaltyRecorded = MilitiaFriendlyFire.Record(world, catalog, offender, affected, system, now);
         }
         hostility.ExpiresAt = Math.Max(hostility.ExpiresAt, checked(end + CrimewatchRules.PvpDuration.Ticks));
         hostility.LastAttackAt = Math.Max(hostility.LastAttackAt, now);

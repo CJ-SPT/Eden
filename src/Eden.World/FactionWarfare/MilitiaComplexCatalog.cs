@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using Eden.Data.Catalog;
 using Eden.Data.Catalog.FactionWarfare;
 using Eden.Gameplay.Agents;
@@ -29,19 +29,35 @@ internal sealed record MilitiaBattlefieldProfile(
     IReadOnlyList<StaticSpaceObject> Points,
     StaticSpaceObject Scoreboard,
     InventoryTypeList Capturing,
-    InventoryTypeList Blocking
+    InventoryTypeList Blocking,
+    SpacePosition DefenderRally,
+    SpacePosition AttackerRally,
+    SpacePosition NeutralRally
 );
 
-internal sealed class MilitiaComplexCatalog(string catalogPath)
+internal static class MilitiaComplexCatalog
 {
-    private readonly ConcurrentDictionary<int, Lazy<MilitiaComplexProfile?>> _profiles = new();
+    private static readonly FrozenDictionary<int, (MilitiaComplexVariant Variant, MilitiaFaction Occupier)> s_dungeons =
+        MilitiaComplexVariants
+            .All.Append(MilitiaComplexVariants.Battlefield)
+            .SelectMany(variant => Enum.GetValues<MilitiaFaction>().Select(faction => (Variant: variant, Occupier: faction)))
+            .ToFrozenDictionary(entry => entry.Variant.Dungeon(entry.Occupier));
 
-    internal MilitiaComplexProfile? Read(MilitiaComplexVariant variant, MilitiaFaction occupier) =>
-        _profiles.GetOrAdd(variant.Dungeon(occupier), id => new(() => Load(variant, occupier, id))).Value;
+    private static readonly CatalogDefinition<MilitiaComplexProfile?> s_profiles = new(
+        "militia-complex-profile",
+        (catalog, id) => Load(catalog, s_dungeons[id].Variant, s_dungeons[id].Occupier, id)
+    );
 
-    private MilitiaComplexProfile? Load(MilitiaComplexVariant variant, MilitiaFaction occupier, int dungeonId)
+    internal static MilitiaComplexProfile? Read(CatalogProvider catalog, MilitiaComplexVariant variant, MilitiaFaction occupier) =>
+        catalog.Definition(s_profiles, variant.Dungeon(occupier));
+
+    private static MilitiaComplexProfile? Load(
+        CatalogDbContext catalog,
+        MilitiaComplexVariant variant,
+        MilitiaFaction occupier,
+        int dungeonId
+    )
     {
-        using CatalogDbContext catalog = new(catalogPath);
         var dungeon = catalog.Read(CatalogData.Client.Dungeons, (long)dungeonId);
         if (dungeon is null)
         {
@@ -93,6 +109,7 @@ internal sealed class MilitiaComplexCatalog(string catalogPath)
             const int lastScoreboard = 73450;
             const int capturingHulls = 514;
             const int blockingHulls = 521;
+            const int rallyBeacon = 10124;
             var points = objects
                 .Where(o => o.TypeID is >= firstZoneA and <= lastZoneA or >= firstZoneB and <= lastZoneC)
                 .OrderBy(o => o.TypeID)
@@ -102,12 +119,29 @@ internal sealed class MilitiaComplexCatalog(string catalogPath)
             {
                 throw new InvalidDataException($"Battlefield {dungeonId} requires three capture points.");
             }
+            // Pinned client 3662168 dungeon object name IDs identify each side's rally beacon and the neutral beacon.
+            var (defender, attacker, neutral) = occupier switch
+            {
+                MilitiaFaction.Amarr => (638491, 638492, 638487),
+                MilitiaFaction.Minmatar => (638500, 638501, 638496),
+                MilitiaFaction.Caldari => (638510, 638511, 638506),
+                MilitiaFaction.Gallente => (638519, 638520, 638515),
+                _ => throw new ArgumentOutOfRangeException(nameof(occupier)),
+            };
             return new(
                 points,
                 Body(objects.Single(o => o.TypeID is >= firstScoreboard and <= lastScoreboard)),
                 CatalogTypeLists.Read(catalog, capturingHulls),
-                CatalogTypeLists.Read(catalog, blockingHulls)
+                CatalogTypeLists.Read(catalog, blockingHulls),
+                Rally(defender),
+                Rally(attacker),
+                Rally(neutral)
             );
+
+            SpacePosition Rally(int name) =>
+                objects.SingleOrDefault(o => o.TypeID == rallyBeacon && o.ObjectNameID == name) is { Position: not null } marker
+                    ? Position(marker)
+                    : throw new InvalidDataException($"Battlefield {dungeonId} is missing rally point {name}.");
         }
 
         StaticSpaceObject Body(ClientDungeonsRoomsValueObjectsValue obj)

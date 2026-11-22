@@ -39,8 +39,6 @@ internal sealed partial class MilitiaComplexStore(
         .GroupBy(variant => variant.Family)
         .ToArray();
 
-    private readonly MilitiaComplexCatalog _catalog = new(database.CatalogPath);
-
     // Guarded by the resident owner. Continuity is deliberately absent from a saved world.
     private readonly Dictionary<long, Sample> _samples = new();
 
@@ -63,6 +61,19 @@ internal sealed partial class MilitiaComplexStore(
         internal SpacePosition Beacon => Room + Profile.Beacon.Position;
         internal SpacePosition Gate => Entry + Profile.Gate!.Position;
         internal bool Replaced => Saved is not null && (Saved.Generation != Generation || Saved.Occupier != System.Occupier);
+
+        internal SpacePosition GateDestination(MilitiaFaction? faction)
+        {
+            if (Profile.Battlefield is not { } battlefield)
+            {
+                return Beacon;
+            }
+            var rally =
+                faction == System.Occupier ? battlefield.DefenderRally
+                : MilitiaRules.AreEnemies(faction, System.Occupier) ? battlefield.AttackerRally
+                : battlefield.NeutralRally;
+            return Room + rally;
+        }
     }
 
     private sealed record Participant(Pilot Pilot, Presence Presence, int Side, bool CanCapture)
@@ -504,7 +515,10 @@ internal sealed partial class MilitiaComplexStore(
         }
     }
 
-    private IEnumerable<Site> Read(WorldAction world, int systemId, long now)
+    private IEnumerable<Site> Read(WorldAction world, int systemId, long now) =>
+        Read(world, CatalogProvider.Open(database.CatalogPath), systemId, now);
+
+    private static IEnumerable<Site> Read(WorldAction world, CatalogProvider catalog, int systemId, long now)
     {
         if (FactionWarzoneStore.System(world, systemId) is not { PendingTransferAt: null } system)
         {
@@ -526,7 +540,7 @@ internal sealed partial class MilitiaComplexStore(
                 : (state.ReplaceAt.HasValue || !sameOccupation) ? checked(state.Generation + 1)
                 : state.Generation;
             int variant = (int)((systemId + (long)generation) % family.Count());
-            var profile = _catalog.Read(family.ElementAt(variant), system.Occupier);
+            var profile = MilitiaComplexCatalog.Read(catalog, family.ElementAt(variant), system.Occupier);
             if (profile is null)
             {
                 continue;
@@ -631,11 +645,11 @@ internal sealed partial class MilitiaComplexStore(
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (activate is null)
         {
-            return live.Economy.Inspect(world => ValidateGate(world, catalog, pilotId, gateId, now).Site.Beacon);
+            return live.Economy.Inspect(world => ValidateGate(world, catalog, pilotId, gateId, now).Destination);
         }
         using var action = live.Economy.Begin(new(pilots: [pilotId]));
         var gate = ValidateGate(action, catalog, pilotId, gateId, now);
-        if (gate.Site.Beacon != activate)
+        if (gate.Destination != activate)
         {
             throw new InvalidDataException("This acceleration gate destination changed.");
         }
@@ -648,10 +662,16 @@ internal sealed partial class MilitiaComplexStore(
         }
         action.SaveChanges();
         action.Commit();
-        return gate.Site.Beacon;
+        return gate.Destination;
     }
 
-    private (Site Site, bool Neutral) ValidateGate(WorldAction world, CatalogDbContext catalog, long pilotId, long gateId, long now)
+    private (Site Site, bool Neutral, SpacePosition Destination) ValidateGate(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long gateId,
+        long now
+    )
     {
         var pilot = world.Set<Pilot>().Find(pilotId) ?? throw new InvalidDataException("Unknown acceleration gate pilot.");
         var ship = world.Set<Ship>().Find(pilot.ActiveShipId);
@@ -696,6 +716,6 @@ internal sealed partial class MilitiaComplexStore(
         {
             throw new InvalidDataException("Neutral pilots need Partial or Disabled safety to activate this militia acceleration gate.");
         }
-        return (site, neutral);
+        return (site, neutral, site.GateDestination(faction));
     }
 }

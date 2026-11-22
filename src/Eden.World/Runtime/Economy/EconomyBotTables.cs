@@ -1360,7 +1360,15 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<Eden.Data.World.Combat.SavedPilotHostility, EconomySavedPilotHostility>(
                 "WorldPilotHostility",
                 row => new(row.SourceShipId, row.TargetShipId),
-                row => new(row.SourceShipId, row.TargetShipId, row.ExpiresAt, row.LastAttackAt, row.SecurityPenaltyRecorded),
+                row =>
+                    new(
+                        row.SourceShipId,
+                        row.TargetShipId,
+                        row.ExpiresAt,
+                        row.LastAttackAt,
+                        row.SecurityPenaltyRecorded,
+                        row.MilitiaPenaltyRecorded
+                    ),
                 state => new Eden.Data.World.Combat.SavedPilotHostility
                 {
                     SourceShipId = state.SourceShipId,
@@ -1368,10 +1376,19 @@ internal sealed partial class ResidentEconomy
                     ExpiresAt = state.ExpiresAt,
                     LastAttackAt = state.LastAttackAt,
                     SecurityPenaltyRecorded = state.SecurityPenaltyRecorded,
+                    MilitiaPenaltyRecorded = state.MilitiaPenaltyRecorded,
                 },
                 ProjectSavedPilotHostility,
-                "SourceShipId,TargetShipId,ExpiresAt,LastAttackAt,SecurityPenaltyRecorded",
-                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt64(4), reader.GetBoolean(5)),
+                "SourceShipId,TargetShipId,ExpiresAt,LastAttackAt,SecurityPenaltyRecorded,MilitiaPenaltyRecorded",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetBoolean(5),
+                        reader.GetBoolean(6)
+                    ),
                 state => new(state.SourceShipId, state.TargetShipId),
                 indexes: [new("SourceShipId", row => row.SourceShipId), new("TargetShipId", row => row.TargetShipId)],
                 primaryColumn: null

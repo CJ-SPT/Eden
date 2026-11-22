@@ -57,6 +57,11 @@ public interface IMilitiaProgression
 
 public static class MilitiaProgressionRules
 {
+    // Eden's base fraction. CCP publishes the location multipliers, not the underlying amount.
+    public const double FriendlyFireBaseFactionLoss = .025;
+    public const double InsideSiteFriendlyFireMultiplier = 2;
+    public const double OutsideSiteFriendlyFireMultiplier = .5;
+
     public const int MaximumRank = 9;
     public const int MaximumPvpLoyalty = 50_000;
     public const decimal IskPerPvpLoyaltyPoint = 10_000m;

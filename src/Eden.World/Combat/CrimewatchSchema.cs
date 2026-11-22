@@ -41,6 +41,19 @@ internal static class CrimewatchSchema
         }
     }
 
+    internal static void UpgradeMilitiaFriendlyFire(WorldDbContext world)
+    {
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPilotHostility')")
+                .AsEnumerable()
+                .Contains("MilitiaPenaltyRecorded")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility ADD COLUMN MilitiaPenaltyRecorded INTEGER NOT NULL DEFAULT 0");
+        }
+    }
+
     internal static void Upgrade(WorldDbContext world)
     {
         world.Database.ExecuteSqlRaw(

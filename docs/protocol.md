@@ -479,6 +479,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Faction Warfare
 
+- [Battlefield rally points, friendly fire and defender loot](protocol/faction-warfare.md#battlefield-rally-points-friendly-fire-and-defender-loot)
 - [Aldranette–Nennamaila militia patrols](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
 - [Resident faction warfare capture and combat eligibility](protocol/faction-warfare.md#resident-capture-and-combat-eligibility)
 - [Theaters of War shipcaster reads, November 21, 2026](protocol/faction-warfare.md#theaters-of-war-shipcaster-reads--november-21-2026)
