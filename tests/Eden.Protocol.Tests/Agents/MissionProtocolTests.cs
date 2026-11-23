@@ -3,11 +3,14 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Server;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -430,6 +433,42 @@ public sealed class MissionProtocolTests
         Assert.IsType<PilotCallResult.Failure>(f.Call(service, "GetMissionObjectiveInfo", [MissionFixture.PilotId + 1]));
         Assert.IsType<PilotCallResult.Failure>(f.Call($"@agent:{MissionFixture.PilotId}", "DoAction", [null]));
         Assert.IsType<PilotCallResult.Failure>(f.Call(service, "DoAction", [offer.Id * MissionRules.ActionStride + 31]));
+    }
+
+    [Fact]
+    public async Task LargeWorldMissionSequenceKeepsNativeBookmarkNearSystemCelestialAcrossCheckpoint()
+    {
+        using MissionFixture f = new(division: MissionRules.SecurityDivision, live: true);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        using (var action = live.Economy.Begin())
+        {
+            action.Next("WorldMission", 95_200);
+            action.Commit();
+        }
+
+        var offer = f.Request();
+        Assert.True(offer.Id > 95_200);
+        using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
+        var nearest = catalog.CelestialsInSystem(offer.SystemId).Min(body => offer.Position.DistanceTo(new(body.X, body.Y, body.Z)));
+        Assert.InRange(nearest, 0, WarpCapacitorRules.AstronomicalUnit / 10);
+
+        var accepted = f.Accept(offer);
+        Assert.Equal(offer.Position, accepted.Position);
+        var journal = Assert.IsType<object?[]>(MissionFixture.Reply(f.Call("agentMgr", "GetMyJournalDetails", [])));
+        var row = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(journal[0])));
+        var bookmark = Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(row[6])));
+        var fields = BlueRead.Fields(bookmark.State);
+        Assert.Equal(accepted.Position.X, fields["x"]);
+        Assert.Equal(accepted.Position.Y, fields["y"]);
+        Assert.Equal(accepted.Position.Z, fields["z"]);
+
+        await live.FlushAsync();
+        f.StopResident();
+        using var reopened = ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true);
+        var missions = reopened.GetRequiredService<IPilotMissions>();
+        Assert.Equal(accepted.Position, missions.EntryPoint(MissionFixture.PilotId, MissionFixture.AgentId));
+        var entrance = Assert.Single(missions.Sites(accepted.SystemId), site => site.Position == site.Entrance);
+        Assert.Equal(accepted.Position, entrance.Position);
     }
 
     [Fact]

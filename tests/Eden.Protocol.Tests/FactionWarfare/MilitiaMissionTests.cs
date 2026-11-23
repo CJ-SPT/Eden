@@ -43,6 +43,8 @@ public sealed class MilitiaMissionTests
         var offer = fixture.Request();
         Assert.Equal(MissionId, offer.MissionId);
         Assert.Equal(TargetSystem, offer.SystemId);
+        var destinationPlanet = new SpacePosition(2e12, 3e11, -1e12);
+        Assert.InRange(offer.Position.DistanceTo(destinationPlanet), 0, WarpCapacitorRules.AstronomicalUnit / 10);
         Assert.Equal((int)MilitiaFaction.Minmatar, offer.EnemyFactionId);
         Assert.True(offer.HasShipRestrictions);
         Assert.Empty(fixture.Missions.Sites(TargetSystem));
@@ -144,11 +146,13 @@ public sealed class MilitiaMissionTests
                 (50010001,30000142,50010002),(50010002,{TargetSystem},50010001);
             INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (2,'Celestial'),(11,'Entity');
             INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES
-                (310,'Beacon',2),(366,'Warp Gate',2),(1186,'FW NPC',11),(186,'Wreck',2);
+                (7,'Planet',2),(310,'Beacon',2),(366,'Warp Gate',2),(1186,'FW NPC',11),(186,'Wreck',2);
             INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Radius) VALUES
                 (10124,'Arrival beacon',310,0),(17831,'Acceleration Gate',366,500),({BeaconType},'Small beacon',310,0),
-                (92245,'Republic escort frigate',1186,10),(92244,'Republic escort cruiser',1186,20),
+                (11,'Planet',7,6000000),(92245,'Republic escort frigate',1186,10),(92244,'Republic escort cruiser',1186,20),
                 ({ObjectiveType},'Republic commander',1186,20),(26973,'Wreck',186,20);
+            INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
+                (40000007,{TargetSystem},11,7,6000000,2e12,3e11,-1e12);
             INSERT OR IGNORE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES
                 ({ObjectiveType},9,100),({ObjectiveType},263,100),({ObjectiveType},265,100);
             """

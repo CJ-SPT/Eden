@@ -65,6 +65,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Agent missions and research
 
+- [Bounded mission site placement](protocol/agents.md#bounded-mission-site-placement--november-22-2026)
 - [Data Center family and one-time space agents](protocol/agents.md#data-center-family-and-one-time-space-agents--november-15-2026)
 - [Resident trade objectives and item rewards](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026)
 - [Mission branch integration](protocol/agents.md#mission-branch-integration--november-15-2026)

@@ -2,6 +2,42 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Bounded mission site placement — November 22, 2026
+
+The offer builder multiplied the global mission sequence by 10 billion metres on two axes. At sequence 95,202 the
+regression fixture placed the new site about 8,997 AU from its nearest celestial. New dungeons cycle through a fixed
+three-dimensional set of slots within 0.1 AU of an anchor in the mission's system. The catalog supplies the first
+planet, then the first available celestial or station, with the system origin as a fallback. Militia missions use
+their war-zone destination for this lookup. The offer saves its coordinates once for its bookmark, warp and rooms.
+
+EVE.js `server/src/services/agent/agentMissionRuntime.js` (`F9039040331E109B166E9E73D916E11B58C16F13B652D40BA1FA0C4838DAF7FA`)
+also derives a bounded offset from a destination-system celestial. Eden's spacing and limit are server policy.
+The pinned build 3662168 `WarpToBookmark` disassembly shows the client forwarding the mission location to `WarpToLocation`.
+The local catalog audit found celestial anchors in 8,089 systems, with the farthest selected anchor 45.28 AU from its
+system origin. EVE University documents the warpable location in the assigned system.
+[EVE University security missions](https://wiki.eveuniversity.org/Security_missions)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionProtocolTests.LargeWorldMissionSequenceKeepsNativeBookmarkNearSystemCelestialAcrossCheckpoint`
+reproduced the distance on the old code, then passed in 8.46 seconds. It exercises offer creation, acceptance, the native
+journal bookmark and the resident checkpoint/reopen path. The militia mission test checks placement beside a planet
+in a different system from the agent.
+
+The solution build passed. The targeted filter passed 99 cases in 1 minute 21 seconds across `MissionProtocolTests`,
+`MissionGateTests`, `MissionEncounterTests`, `MiningMissionTests`, `MilitiaMissionTests`, `MissionChainTests` and
+`MissionPersistenceTests`. The catalog setup and formatting policy suites passed 17 Python checks.
+The formatter encountered archived dependency files in the ignored `.artifacts` tree. A rerun with that tree
+excluded passed CSharpier and the line-width check.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Request a new security mission and check its bookmark distance from the surrounding celestials.
+
 ## Data Center family and one-time space agents — November 15, 2026
 
 This milestone implements a complete native family through shared capabilities: **50** Keeping Crime In Check

@@ -9,6 +9,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.FactionWarfare;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 using Eden.World.FactionWarfare;
@@ -106,10 +107,11 @@ internal sealed partial class PilotMissionStore
                 ?? catalog.StationsInSystem(station.SolarSystemId).FirstOrDefault(s => s.Id != station.Id)
                 ?? throw new InvalidDataException("This agent has no supported courier destination.");
         }
-        // A fixed offset from a real station gives each live mission a distinct location.
-        // Historical closed missions remain part of the sequence so restarts cannot overlap sites.
         long serial = world.Next("WorldMission");
-        double offset = MissionRules.PlacementOffset * serial;
+        int systemId = warzoneDestination ?? agent.Space?.SystemId ?? destination!.SolarSystemId;
+        var position = profile.DungeonId.HasValue
+            ? MissionPlacementRules.Place(PlacementAnchor(catalog, systemId), serial)
+            : agent.Space?.Position ?? new SpacePosition(destination!.X, destination.Y, destination.Z);
         var row = new SavedMission
         {
             PilotId = pilot.Id,
@@ -121,10 +123,10 @@ internal sealed partial class PilotMissionStore
             OfferedAt = now,
             ExpiresAt = checked(now + profile.Lifetime.Ticks),
             DestinationStation = destination?.Id ?? 0,
-            SystemId = warzoneDestination ?? agent.Space?.SystemId ?? destination!.SolarSystemId,
-            X = agent.Space?.Position.X ?? station!.X + offset,
-            Y = agent.Space?.Position.Y ?? station!.Y + MissionRules.PlacementOffset,
-            Z = agent.Space?.Position.Z ?? station!.Z - offset,
+            SystemId = systemId,
+            X = position.X,
+            Y = position.Y,
+            Z = position.Z,
             IskCents = reward.IskCents,
             BonusIskCents = MissionBonusRules.Quote(reward.IskCents),
             BonusWindowTicks = MissionBonusRules.Window.Ticks,
@@ -140,6 +142,19 @@ internal sealed partial class PilotMissionStore
         }
         world.Add(row);
         return row;
+    }
+
+    private static SpacePosition PlacementAnchor(CatalogDbContext catalog, int systemId)
+    {
+        const int planetGroup = 7;
+        var bodies = catalog.CelestialsInSystem(systemId);
+        if ((bodies.FirstOrDefault(body => body.GroupId == planetGroup) ?? bodies.FirstOrDefault()) is { } anchor)
+        {
+            return new(anchor.X, anchor.Y, anchor.Z);
+        }
+        return catalog.StationsInSystem(systemId).FirstOrDefault() is { } station
+            ? new(station.X, station.Y, station.Z)
+            : SpacePosition.Zero;
     }
 
     private static IEnumerable<MissionProfile> ProfilesForAgent(CatalogDbContext catalog, CatalogAgent agent, int level, bool storyline)
