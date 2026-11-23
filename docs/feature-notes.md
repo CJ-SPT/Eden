@@ -67,8 +67,9 @@ The account redeem queue now supports administrator-issued inventory, fixed SP a
 Personal jump clones now support installation, naming, destruction and activation at NPC stations, with saved bodies, fees and cooldowns. Installation and activation each cost **900,000 ISK**; swaps within one station do not start or reset a cooldown. Infomorph skills and Alpha limits apply. The client can leave a docked ship in its hangar before jumping. Learning implants persist with each body. Rorqual and Titan vats can install and receive clones. Upwell installation, Pochven installation and native presentation remain open. See the [jump-clone notes](protocol/characters.md#persistent-personal-jump-clones) and [mobile jump clones](protocol/capital-logistics.md#mobile-jump-clones).
 
 The agent directory includes all active pinned-catalog agents. Pilots can find agents, save contacts, and accept supported
-combat, delivery, trade, mining and Data Center missions. R&D agents support passive research and paid datacore redemption.
-Daily bonus research missions remain open. [Supported missions](missions.md) · [Agent and research records](protocol/agents.md)
+combat, delivery, trade, mining, Data Center, and Paragon missions. R&D agents support passive research, paid datacore
+redemption, and bonus assignments. Direct mission penalties and capped derived faction changes for ordinary storylines
+settle through resident checkpoints. [Supported missions](missions.md) · [Agent and research records](protocol/agents.md)
 
 Home stations now persist independently of ship travel. Select the current NPC station or your school corporation’s headquarters for **100,000 ISK**. A docked capsule away from home can use **Self-Destruct** in the home-station panel to return there in a replacement capsule; other ships, wallet and skills stay in place. New pilots retain their starting station as home. Player-corporation remote offices remain pending. See the [home-station notes](protocol/characters.md#persistent-home-stations-and-docked-clone-transfer).
 

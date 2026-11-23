@@ -21,7 +21,10 @@ namespace Eden.World.Agents;
 
 internal sealed partial class PilotMissionStore
 {
-    private sealed record MissionPayment(long BalanceCents, long PointsBefore, long PointsAfter);
+    private sealed record MissionPayment(long? BalanceCents, long PointsBefore, long PointsAfter)
+    {
+        internal long? CorporationPointsAfter { get; init; }
+    }
 
     private SavedMission Offer(
         WorldAction world,
@@ -35,6 +38,10 @@ internal sealed partial class PilotMissionStore
         int? courierDestination = null
     )
     {
+        if (agent.Type == AgentType.Heraldry)
+        {
+            return OfferParagon(world, catalog, pilot, agent, now);
+        }
         bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
         if (fixedAgent)
         {
@@ -45,27 +52,32 @@ internal sealed partial class PilotMissionStore
             );
             storyline = true;
         }
-        if (!storyline && agent.Type is not (AgentType.Basic or AgentType.FactionalWarfare))
+        if (!storyline && agent.Type is not (AgentType.Basic or AgentType.FactionalWarfare or AgentType.Research))
         {
             throw new InvalidDataException("This special agent does not offer ordinary missions.");
         }
-        if (!storyline && agent.Type != AgentType.FactionalWarfare && MissionRules.KindForDivision(agent.DivisionId) is null)
+        bool research = agent.Type == AgentType.Research;
+        if (!storyline && !research && agent.Type != AgentType.FactionalWarfare && MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");
         }
-        var profiles = ProfilesForAgent(catalog, agent, level, storyline)
-            .Where(p => p.Definition.Chain is null || world is EconomyTransaction)
-            .Where(p => p.Kind != MissionKind.Trade && p.Definition.ItemReward is null || world is EconomyTransaction)
-            .OrderBy(p => p.Definition.OfferOrder)
-            .ThenBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
-            .ThenBy(p => p.Definition.MissionId)
-            .ToArray();
-        if (continuation is null && profiles.Length == 0)
+        var profiles = research
+            ? []
+            : ProfilesForAgent(catalog, agent, level, storyline)
+                .Where(p => p.Definition.Chain is null || world is EconomyTransaction)
+                .Where(p => p.Kind != MissionKind.Trade && p.Definition.ItemReward is null || world is EconomyTransaction)
+                .OrderBy(p => p.Definition.OfferOrder)
+                .ThenBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
+                .ThenBy(p => p.Definition.MissionId)
+                .ToArray();
+        if (!research && continuation is null && profiles.Length == 0)
         {
             throw new InvalidDataException("No supported mission content is available for this agent and level yet.");
         }
-        int sequence = world.Set<SavedMission>().Count(m => m.PilotId == pilot.Id && m.AgentId == agent.Id);
-        var profile = continuation ?? profiles[sequence % profiles.Length];
+        int sequence = research ? 0 : world.Set<SavedMission>().Count(m => m.PilotId == pilot.Id && m.AgentId == agent.Id);
+        var profile = research
+            ? ResearchMissionProfile(world, catalog, pilot, agent, now)
+            : continuation ?? profiles[sequence % profiles.Length];
         var skill = profile.Kind switch
         {
             MissionKind.Combat => MissionSocialSkill.SecurityConnections,
@@ -81,6 +93,10 @@ internal sealed partial class PilotMissionStore
             storyline
         );
         reward = WorldTuningRules.Mission(reward, world.Settings.Rewards);
+        if (research)
+        {
+            reward = reward with { IskCents = 0, LoyaltyPoints = 0, FactionFraction = 0 };
+        }
         var station = agent.Space is null
             ? catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.")
             : null;
@@ -105,6 +121,7 @@ internal sealed partial class PilotMissionStore
             destination =
                 destinations.FirstOrDefault()
                 ?? catalog.StationsInSystem(station.SolarSystemId).FirstOrDefault(s => s.Id != station.Id)
+                ?? (research ? ResearchCourierDestination(catalog, station, agent.CorporationId) : null)
                 ?? throw new InvalidDataException("This agent has no supported courier destination.");
         }
         long serial = world.Next("WorldMission");
@@ -129,7 +146,7 @@ internal sealed partial class PilotMissionStore
             Z = position.Z,
             IskCents = reward.IskCents,
             BonusIskCents = MissionBonusRules.Quote(reward.IskCents),
-            BonusWindowTicks = MissionBonusRules.Window.Ticks,
+            BonusWindowTicks = research ? 0 : MissionBonusRules.Window.Ticks,
             LoyaltyPoints = reward.LoyaltyPoints,
             CorporationFraction = reward.CorporationFraction,
             FactionFraction = reward.FactionFraction,
@@ -200,15 +217,18 @@ internal sealed partial class PilotMissionStore
 
     private MissionPayment Pay(
         WorldAction world,
+        CatalogDbContext catalog,
         Pilot pilot,
         CatalogAgent agent,
         SavedMission mission,
+        int missionTitleId,
         long now,
         List<MissionStandingChange> standings,
         IReadOnlyList<long> sharers
     )
     {
         int count = sharers.Count + 1;
+        int corporation = agent.CorporationId;
         long iskShare = mission.IskCents / count;
         long bonus = Bonus(mission)?.Payable(now) ?? 0;
         long bonusShare = bonus / count;
@@ -218,7 +238,17 @@ internal sealed partial class PilotMissionStore
         {
             Credit(world, recipient, agent, mission, now, iskShare, bonusShare, lpShare);
             List<MissionStandingChange> gains = [];
-            Gain(world, recipient, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, gains);
+            ApplyMissionStanding(
+                world,
+                recipient,
+                corporation,
+                standingShare,
+                now,
+                corporation,
+                mission.SystemId,
+                gains,
+                missionTitleId: missionTitleId
+            );
             foreach (var gain in gains)
             {
                 world.AfterCommit(() => fleets.NotifyStandingChanged(recipient, gain.SourceId, gain.After));
@@ -234,7 +264,17 @@ internal sealed partial class PilotMissionStore
             bonus - bonusShare * sharers.Count,
             mission.LoyaltyPoints - lpShare * sharers.Count
         );
-        Gain(world, pilot.Id, agent.Id, mission.CorporationFraction, now, agent.CorporationId, mission.SystemId, standings);
+        ApplyMissionStanding(
+            world,
+            pilot.Id,
+            agent.Id,
+            mission.CorporationFraction,
+            now,
+            corporation,
+            mission.SystemId,
+            standings,
+            missionTitleId: missionTitleId
+        );
         if (MilitiaMissionCatalog.Issuer(mission.MissionId) is { } militia)
         {
             MilitiaProgressionStore.AdjustStanding(
@@ -250,11 +290,32 @@ internal sealed partial class PilotMissionStore
         }
         else
         {
-            Gain(world, pilot.Id, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, standings);
+            ApplyMissionStanding(
+                world,
+                pilot.Id,
+                corporation,
+                standingShare,
+                now,
+                corporation,
+                mission.SystemId,
+                standings,
+                missionTitleId: missionTitleId
+            );
         }
         if (mission.Storyline && agent.FactionId is int faction)
         {
-            Gain(world, pilot.Id, faction, mission.FactionFraction, now, agent.CorporationId, mission.SystemId, standings);
+            ApplyMissionStanding(
+                world,
+                pilot.Id,
+                faction,
+                mission.FactionFraction,
+                now,
+                corporation,
+                mission.SystemId,
+                standings,
+                missionTitleId: missionTitleId
+            );
+            ApplyStorylineDerivedStandings(world, catalog, agent, mission, faction, now, standings);
         }
         return payment;
     }
@@ -316,45 +377,6 @@ internal sealed partial class PilotMissionStore
         return new(wallet.Cents, before, world.Set<SavedLoyaltyBalance>().Find(pilotId, issuer)?.Points ?? 0);
     }
 
-    private static void Gain(
-        WorldAction world,
-        long pilotId,
-        long source,
-        double fraction,
-        long now,
-        int corporation,
-        int system,
-        List<MissionStandingChange> changes
-    )
-    {
-        if (fraction == 0)
-        {
-            return;
-        }
-        var standing =
-            world.Set<SavedNpcStanding>().Find(pilotId, source)
-            ?? world.Add(new SavedNpcStanding { PilotId = pilotId, SourceId = source }).Entity;
-        double before = standing.Value;
-        standing.Value = MissionRules.Gain(before, fraction);
-        if (before != standing.Value)
-        {
-            world.Add(
-                new SavedStandingTransaction
-                {
-                    PilotId = pilotId,
-                    SourceId = source,
-                    Time = now,
-                    Event = StandingEvent.AgentMissionCompleted,
-                    Before = before,
-                    After = standing.Value,
-                    VictimCorporationId = corporation,
-                    SystemId = system,
-                }
-            );
-            changes.Add(new(source, before, standing.Value));
-        }
-    }
-
     private void Progress(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent, int level, long now)
     {
         if (agent.FactionId is not int faction || level > 4)
@@ -380,7 +402,7 @@ internal sealed partial class PilotMissionStore
         }
         // Native storyline agents are level one. The offer inherits the regular mission level.
         var active = world.Filter<SavedMission>(m => m.PilotId == pilot.Id && m.ClosedAt == null).ToArray();
-        var busy = active.Where(m => !Expire(world, m, now)).Select(m => m.AgentId).ToHashSet();
+        var busy = active.Where(m => !Expire(world, catalog, m, now)).Select(m => m.AgentId).ToHashSet();
         var distances = Distances(catalog, agent.SystemId!.Value);
         bool highSecurity =
             (catalog.Read(CatalogData.Client.Systems, (long)agent.SystemId.Value)?.SecurityStatus ?? 0) >= CrimewatchRules.HighSecurity;
@@ -433,9 +455,13 @@ internal sealed partial class PilotMissionStore
 
     private static bool Expire(WorldDbContext world, SavedMission mission, long now)
     {
-        if (mission.ClosedAt is null && now >= mission.ExpiresAt && MissionCatalog.IsFixed(mission.MissionId))
+        if (
+            mission.ClosedAt is null
+            && now >= mission.ExpiresAt
+            && (MissionCatalog.IsFixed(mission.MissionId) || ResearchMissionCatalog.IsResearch(mission.MissionId))
+        )
         {
-            throw new InvalidDataException("One-time mission expiry requires the resident world.");
+            throw new InvalidDataException("This mission's expiry requires the resident world.");
         }
         if (mission.ClosedAt is null && now >= mission.ExpiresAt)
         {

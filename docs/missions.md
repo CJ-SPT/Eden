@@ -2,9 +2,13 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **437 definitions: 74 combat encounters, 194 ordinary deliveries, 92 delivery storylines, four trade storylines, 50 one-time Data Center missions and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,455** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+The build-3662168 audit admits **508 definitions** across the ordinary, storyline, Data Center, Paragon, research, and militia pools.
+That includes **83 combat encounters, 194 ordinary deliveries, 92 delivery storylines, four trade storylines, 50 Data Center
+missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus missions, and 16 militia encounters**.
+The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
+**2,384** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
-New offers include a timed ISK bonus: an additional **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
+New offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
 See [timed bonus rules and validation](protocol/agents.md#timed-mission-bonuses--november-14-2026).
 
@@ -43,6 +47,9 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Duo of Death | Angel, Blood, Guristas, Sansha, Serpentis; levels 3 and 4 | 10 |
 | Eliminate the Pirate Campers | Sansha and Serpentis level 1; Thukker level 2; Angel level 3 | 4 |
 | Seek and Destroy | Angel and Guristas levels 1–3; Sansha levels 1–2; Blood levels 1 and 3; Serpentis levels 2–3; two Thukker-supplier templates using the same Sansha dungeons | 14 |
+| The Score | Angel and Guristas level 1, Blood and Serpentis level 2, Guristas level 3 | 5 |
+| The Roving Rogue Drones and The Drone Infestation | Level 1 | 2 |
+| Smuggler Interception | Angel and Sansha level 2 | 2 |
 
 Avenge a Fallen Comrade requires destruction of the **Habitat** in the Angel, Guristas, Serpentis and level-two DED pockets; guards are optional and no cargo is required. Level-one DED instead requires all six DED soldiers. Each variant retains its empty entrance room and acceleration gate. The remaining variants with unverified reinforcement triggers stay blocked. See the [evejs comparison and validation](protocol/agents.md#avenge-a-fallen-comrade--november-14-2026).
 
@@ -68,6 +75,35 @@ Duo of Death requires both named combatants, with optional sentries/spider drone
 
 Each encounter selects one deterministic alternative from each reported group. Variable counts use the report's upper bound. Reported distances guide selection among the pinned room's native NPC anchors; missing distances retain explicit Eden hints (typically 20–25 km). Fixed batteries use their own catalog positions, and ship groups use deterministic spacing around the selected anchors. See [mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) for placement policy and save compatibility. Catalog twins are admitted only when their full `killMission` payload matches a reviewed encounter and they do not declare chains or extra scripts. This is a content reconstruction, not recovery of CCP's hidden mission selection or NPC-group tables.
 
+The level-three Guristas Score locks the second gate behind the first combat pocket's guards. The four ships
+at the radio telescope complete the final objective. The Drone Infestation requires destroying its Drone Silo.
+In both Smuggler Interception variants the last of two destroyed transports drops ten Militants for turn-in.
+[Encounter evidence and validation](protocol/agents.md#mission-gap-expansion--november-22-2026)
+
+## Paragon hull exchanges
+
+Visit IRIS at a Paragon station and bring the requested packaged hull. The issuing station's personal hangar and
+the active ship's Cargo Hold are eligible. Acceptance issues no hull. The pinned catalog sets each hull's Alpha and
+Omega payouts. Completion credits the pilot's EverMarks wallet and matches the amount for their player corporation.
+
+Offers and accepted missions each have a 24-hour window. The character can decline and request another hull without
+a penalty. A completed turn-in closes the character's other Paragon offers and starts the same 23-hour cooldown at
+every IRIS location. Eden rotates through the verified hulls by mission ID for each agent. The 32 ammunition, four
+standing-reward, and one singleton Heraldry records remain blocked pending gameplay evidence.
+[CCP's Paragon mission rules](https://support.eveonline.com/hc/en-us/articles/6807979979036-Heraldry-and-Emblems)
+
+## R&D bonus assignments
+
+With a research project running, request a bonus assignment from the R&D agent. Mineral Acquisition consumes
+300, 900, 2,700, or 8,100 Tritanium for levels one through four. The Special Delivery issues one singleton package
+for delivery to the marked station. Eden alternates between the two and starts the next assignment's deterministic
+12–23-hour cooldown when the current one ends. An assignment is available immediately when starting eligible research
+without prior assignment history.
+
+Turn-in grants one day's research points at the current project rate, direct agent and corporation standing,
+and one completion toward the ordinary storyline tally. Passive research and datacore purchases use the same
+project as before. Cancelling research closes its current mission. [Research assignment reports](https://wiki.eveuniversity.org/index.php?title=Research_missions&oldid=216855)
+
 ## Trade missions and item rewards
 
 Materials For War Preparation joins the ordinary sixteen-completion storyline pool at levels one through four.
@@ -92,8 +128,8 @@ The implant is a normal reward and remains payable after the six-hour ISK bonus 
 Decline, quit and expiry grant nothing. Native objectives use fetch, with no acceptance gift or dungeon bookmark.
 
 The report supplies the ore and implant grades; existing Eden ISK, direct standing and bonus policy also applies,
-with no storyline LP. Item rewards are not split with fleet members. Derived standings remain outside current
-mission support. Level-five storylines, other special-agent trade lifecycles, blueprint-copy rewards and timed item rewards
+with no storyline LP. Item rewards are personal. Standard storyline faction gains also apply capped, single-hop derived
+standing changes for known faction relationships. Level-five storylines, other special-agent trade lifecycles, blueprint-copy rewards and timed item rewards
 remain unavailable. See the [trade engine and reward checkpoint record](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026).
 
 Trade templates account for 460 catalog definitions. This milestone supplies shared player-sourced fetch objectives
@@ -120,8 +156,8 @@ do not qualify. Acceptance issues no free tags. Only the required quantity is co
 Completion, decline, quitting and offer/accepted expiry permanently end that pilot's assignment with that agent.
 Reopening the conversation or restarting the server cannot reset it. Agents sharing a Copper mission definition
 still have separate one-time assignments. Existing Eden base ISK, six-hour bonus and direct corporation/faction
-standing gains apply, with zero LP and personal rewards. Derived standing changes and failure-standing penalties
-remain unimplemented; reward amounts are Eden policy rather than recovered CCP payout tables.
+standing gains apply, with zero LP and personal rewards. Accepted quits and expirations apply the Eden direct
+agent and corporation loss baseline. Data Center assignments apply direct standing changes only.
 
 Ordinary pirates now supply all 50 required tag types through lootable wrecks. Eden uses a stable **25%** chance of
 one matching-faction tag: frigates supply Copper/Bronze, destroyers Silver/Brass, cruisers Palladium/Gold,
@@ -211,7 +247,7 @@ The client catalog omits courier agent-level assignments. Existing eight level a
 
 These bands are not CCP level assignments. Rewards use Eden's existing level/difficulty/social-skill rules. Pickup is the issuing agent's station; the existing route policy selects a neighboring station, preferring the corporation, then a local fallback. Missing catalog deadlines retain seven days. Authored positive deadlines apply to both the offer and the completion window; acceptance starts a fresh window. The existing twenty definitions stay first in their eligible offer pools, followed by the expansion in stable order. Supplier restrictions mean an individual agent offers only a subset of the total pool. Generic delivery storylines still require sixteen completed missions for the same faction and level.
 
-Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded. Non-generic storyline, career, epic-arc, COSMOS, research, mining and other specialized agent lifecycles are outside the courier pool. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers; those require verified reports and explicit bindings. Level-five combat remains outside the admitted encounter policy.
+Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded from the ordinary courier pool. Specialized lifecycles use their own agents and eligibility. Career, epic-arc, non-Data-Center COSMOS and level-five combat remain unavailable through this milestone. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers. Those need verified reports and explicit bindings.
 
 Gameplay references: [University distribution reports](https://wiki.eveuniversity.org/Distribution_mission_reports), [agent types and divisions](https://wiki.eveuniversity.org/Agent), and the revision-specific encounter links recorded per definition. The source reports describe gameplay; pinned catalog records determine build-specific identities. Source inspection and automated checks do not establish native client acceptance.
 
@@ -225,4 +261,4 @@ python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sql
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **945 types and 5,619 source records**, plus Data Center system geography, for automated tests, including all authored NPC alternatives, objective cargo, reward alternatives, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved. Chain, trade and Data Center execution tests use the resident world.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **1,025 types and 6,209 source records**, plus Data Center system geography, for automated tests. These include authored NPC alternatives, objective cargo, reward alternatives, geometry, faction and corporation references, Paragon and R&D missions, and loot dependencies. SDE mission records retain the English name fallback. The fixture captures native English messages separately. Chain, trade, Data Center, Paragon, and R&D execution tests use the resident world.

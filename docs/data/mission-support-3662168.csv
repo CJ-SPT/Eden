@@ -111,8 +111,8 @@ missionId,name,template,status,reason
 1211,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1212,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1213,Preliminary Strike,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1214,The Drone Infestation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1215,The Drone Infestation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1214,The Drone Infestation,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1215,The Drone Infestation,BasicKillMission,blocked,Requires a verified reinforcement trigger
 1216,The Missing Convoy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1217,The Infested Ruins,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1218,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -134,7 +134,7 @@ missionId,name,template,status,reason
 1234,The Hidden Stash,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1235,The Hidden Stash,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1236,The Black Market Hub,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1237,The Roving Rogue Drones,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1237,The Roving Rogue Drones,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1238,Duo of Death,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1239,Duo of Death,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1240,Duo of Death,BasicKillMission,admitted,Catalog cargo or reviewed encounter
@@ -1027,7 +1027,7 @@ missionId,name,template,status,reason
 2388,Police Invasion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2389,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2390,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2391,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2391,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2392,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2393,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2394,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1042,15 +1042,15 @@ missionId,name,template,status,reason
 2403,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2404,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2405,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2407,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2407,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2408,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2409,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2416,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2449,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2416,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2449,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2453,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2459,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2469,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2470,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2470,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2471,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2472,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2473,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1076,11 +1076,11 @@ missionId,name,template,status,reason
 2539,The Assault,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2540,The Assault,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2541,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2542,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2542,Smuggler Interception,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2543,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2544,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2545,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2546,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2546,Smuggler Interception,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2547,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2548,Smuggler Interception,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2550,The Mordus Headhunters,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1315,11 +1315,11 @@ missionId,name,template,status,reason
 2789,From Bad To Worse,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2790,High Spirits,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2791,Transmitter Replacement,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-2792,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2793,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2794,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2795,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2804,The Special Delivery,ResearchCourierMission,blocked,Requires another mission or agent lifecycle
+2792,Mineral Acquisition,ResearchTradeMission,admitted,Research bonus assignment
+2793,Mineral Acquisition,ResearchTradeMission,admitted,Research bonus assignment
+2794,Mineral Acquisition,ResearchTradeMission,admitted,Research bonus assignment
+2795,Mineral Acquisition,ResearchTradeMission,admitted,Research bonus assignment
+2804,The Special Delivery,ResearchCourierMission,admitted,Research bonus assignment
 2805,Threat From Abroad (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2806,Threat From Abroad (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2807,Unwelcome Guests (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -2016,7 +2016,7 @@ missionId,name,template,status,reason
 13556,The Insorum Hijacking,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13557,A Mote in the Eye,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13558,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13559,Decapitation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13559,Decapitation,BasicKillMission,admitted,Existing faction warfare mission binding
 13560,The Fox Hunt,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13561,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13562,Roid Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2026,7 +2026,7 @@ missionId,name,template,status,reason
 13566,Proven Loyalty,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13567,Starbase Smashing,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13568,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13569,Decapitation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13569,Decapitation,BasicKillMission,admitted,Existing faction warfare mission binding
 13570,The Fox Hunt,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13571,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13572,Roid Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2038,7 +2038,7 @@ missionId,name,template,status,reason
 13578,Customs Interdiction (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13579,Customs Interdiction (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13580,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13581,Decapitation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13581,Decapitation,BasicKillMission,admitted,Existing faction warfare mission binding
 13582,The Fox Hunt,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13583,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13584,Roid Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2048,7 +2048,7 @@ missionId,name,template,status,reason
 13588,Proven Loyalty,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13589,Starbase Smashing,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13590,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13591,Decapitation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13591,Decapitation,BasicKillMission,admitted,Existing faction warfare mission binding
 13592,The Fox Hunt,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13593,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13594,Roid Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2057,7 +2057,7 @@ missionId,name,template,status,reason
 13597,Covert Assistance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13598,Proven Loyalty,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13599,Starbase Smashing,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13600,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13600,Knife in the Throat,BasicKillMission,admitted,Existing faction warfare mission binding
 13601,Only the Good Die Young,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13602,Precursor to Rescue,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13603,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2066,7 +2066,7 @@ missionId,name,template,status,reason
 13606,Target Practice,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13607,Best Laid Plans,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13608,A Dark Lesson,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13609,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13609,Knife in the Throat,BasicKillMission,admitted,Existing faction warfare mission binding
 13610,Only the Good Die Young,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13611,Precursor to Rescue,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13612,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2076,12 +2076,12 @@ missionId,name,template,status,reason
 13616,Best Laid Plans,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13617,A Dark Lesson,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13618,A Wolf in the Fold,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13619,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13619,Knife in the Throat,BasicKillMission,admitted,Existing faction warfare mission binding
 13620,Only the Good Die Young,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13621,Precursor to Rescue,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13622,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13623,Roid Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13624,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13624,Knife in the Throat,BasicKillMission,admitted,Existing faction warfare mission binding
 13625,Gate Keepers,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13626,Target Practice,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13627,Only the Good Die Young,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2100,7 +2100,7 @@ missionId,name,template,status,reason
 13641,Mannar Mining Colony,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13642,Silence Deep as Death,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13643,Communications Cold War,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13644,A Left Hook,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13644,A Left Hook,BasicKillMission,admitted,Existing faction warfare mission binding
 13645,Fathers and Sons,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13646,Tightening the Noose,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13647,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2110,12 +2110,12 @@ missionId,name,template,status,reason
 13651,Contingency Plan,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13652,Morale and Morality,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13653,Chain Reaction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13654,A Left Hook,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13655,A Left Hook,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13654,A Left Hook,BasicKillMission,admitted,Existing faction warfare mission binding
+13655,A Left Hook,BasicKillMission,admitted,Existing faction warfare mission binding
 13656,Fathers and Sons,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13657,Fathers and Sons,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13658,Tightening the Noose,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13659,A Left Hook,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13659,A Left Hook,BasicKillMission,admitted,Existing faction warfare mission binding
 13660,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13661,Tightening the Noose,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13662,Fathers and Sons,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2148,11 +2148,11 @@ missionId,name,template,status,reason
 13696,Roidiest Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13697,Roidiest Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13698,Halt the Invasion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13699,Lethal Strike,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13699,Lethal Strike,BasicKillMission,admitted,Existing faction warfare mission binding
 13700,The Cost of Hubris,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13701,Shades of Grey,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13702,Uproot,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13703,Lethal Strike,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13703,Lethal Strike,BasicKillMission,admitted,Existing faction warfare mission binding
 13704,Shades of Grey,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13705,Dead Men Tell No Tales,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13706,The Cost of Hubris,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2166,7 +2166,7 @@ missionId,name,template,status,reason
 13714,Roidiest Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13715,Uproot,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13716,Halt the Invasion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13717,Lethal Strike,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13717,Lethal Strike,BasicKillMission,admitted,Existing faction warfare mission binding
 13718,The Cost of Hubris,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13719,Shades of Grey,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13720,Dead Men Tell No Tales,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2175,7 +2175,7 @@ missionId,name,template,status,reason
 13723,Supply Interdiction,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13724,Roidiest Rage,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13725,Halt the Invasion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13726,Lethal Strike,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+13726,Lethal Strike,BasicKillMission,admitted,Existing faction warfare mission binding
 13727,The Cost of Hubris,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13728,Shades of Grey,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13729,Uproot,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2799,89 +2799,89 @@ missionId,name,template,status,reason
 16411,Listening Post,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 16412,Kicking the Nest,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 16414,Waste Not,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-17013,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17028,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17029,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17030,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17033,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17034,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17035,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17036,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17037,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17038,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17039,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17040,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17041,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17042,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17043,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17044,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17060,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17061,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17062,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17063,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17064,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17065,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17066,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17067,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17068,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17069,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17070,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17071,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17072,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17073,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17074,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17075,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17076,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17077,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17078,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17079,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17080,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17081,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17082,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17083,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17084,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17085,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17086,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17087,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17088,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17089,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17090,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17091,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17092,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17093,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17094,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17095,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17096,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17097,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17098,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17099,Paragon Requests,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17100,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17101,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17102,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17103,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17104,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17105,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17106,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17107,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17108,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17109,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17110,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17111,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17112,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17113,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17114,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17115,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17116,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
+17013,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17028,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17029,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17030,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17033,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17034,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17035,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17036,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17037,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17038,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17039,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17040,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17041,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17042,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17043,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17044,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17060,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17061,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17062,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17063,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17064,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17065,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17066,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17067,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17068,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17069,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17070,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17071,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17072,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17073,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17074,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17075,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17076,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17077,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17078,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17079,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17080,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17081,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17082,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17083,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17084,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17085,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17086,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17087,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17088,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17089,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17090,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17091,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17092,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17093,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17094,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17095,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17096,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17097,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17098,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17099,Paragon Requests,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17100,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17101,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17102,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17103,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17104,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17105,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17106,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17107,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17108,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17109,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17110,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17111,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17112,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17113,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17114,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17115,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
+17116,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
 17130,The Missing Pilot,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 17131,Pioneering Spirit,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 17132,Shattered Catalyst,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17133,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
+17133,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
 17134,GREAD5 Mission,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 17135,GREAD4 Mission,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17179,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17180,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17181,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
-17182,Paragon Requests: Ships for Tips,HeraldryMission,blocked,Requires another mission or agent lifecycle
+17179,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17180,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17181,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
+17182,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
 17183,Golgothan Fields,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 17184,Caldari Prime Breakout,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 17185,Intaki Liberation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle

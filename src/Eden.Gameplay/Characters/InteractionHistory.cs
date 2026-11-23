@@ -46,6 +46,11 @@ public enum StandingEvent
 
     AgentMissionFailed = 74,
     AgentMissionDeclined = 75,
+
+    // Build 3662168 appLogConst.eventStandingDerivedModificationPositive / Negative.
+    DerivedModificationPositive = 82,
+    DerivedModificationNegative = 83,
+
     PromotionFactionIncrease = 216,
 
     // Build 3662168 appLogConst.eventStandingCombatAggressionOwnFaction.
@@ -67,7 +72,10 @@ public sealed record StandingTransaction(
     int VictimCorporationId,
     int SystemId,
     int VictimTypeId
-);
+)
+{
+    public int? MissionTitleId { get; init; }
+}
 
 public interface IPilotInteractionHistory
 {

@@ -45,7 +45,7 @@ internal sealed partial class PilotMissionStore
             var rows = world.Filter<SavedMission>(m => m.SystemId == systemId && m.State == MissionState.Accepted).ToArray();
             foreach (var row in rows)
             {
-                Expire(world, row, now);
+                Expire(world, catalog, row, now);
             }
             var sites = rows.Where(m => m.State == MissionState.Accepted)
                 .Where(m => MissionCatalog.Find(catalog, m.MissionId).DungeonId.HasValue)
@@ -173,7 +173,7 @@ internal sealed partial class PilotMissionStore
             foreach (var site in pending)
             {
                 var row = world.Set<SavedMission>().Find(site.Id);
-                if (row is { State: MissionState.Accepted, ObjectiveComplete: false } && !Expire(world, row, now))
+                if (row is { State: MissionState.Accepted, ObjectiveComplete: false } && !Expire(world, catalog, row, now))
                 {
                     var profile = MissionCatalog.Find(catalog, row.MissionId);
                     if (world.Set<SavedMissionRoom>().Find(row.Id, site.RoomId) is null && !(profile.Rooms.Length == 1 && row.Wave >= 0))

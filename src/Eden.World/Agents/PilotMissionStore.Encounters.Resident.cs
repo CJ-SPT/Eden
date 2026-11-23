@@ -25,7 +25,7 @@ internal sealed partial class PilotMissionStore
         var mission =
             world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId)
             ?? throw new InvalidDataException("Mission NPC has no saved mission.");
-        if (mission.State != MissionState.Accepted || Expire(world, mission, now))
+        if (mission.State != MissionState.Accepted || Expire(world, catalog, mission, now))
         {
             return;
         }

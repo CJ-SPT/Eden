@@ -105,7 +105,8 @@ internal sealed record StandingTransactionRow(StandingTransaction Transaction) :
                 // Standing.GetStandingTransactions multiplies by ten before the
                 // graph subtracts changes from the current standing value.
                 ["modification"] = (Transaction.After - Transaction.Before) / NativeStandingScale,
-                ["int_1"] = Transaction.VictimCorporationId,
+                // FmtStandingTransaction localizes mission event titles from this argument.
+                ["int_1"] = Transaction.MissionTitleId ?? Transaction.VictimCorporationId,
                 ["int_2"] = Transaction.SystemId,
                 ["int_3"] = Transaction.VictimTypeId,
                 ["msg"] = null,

@@ -113,9 +113,11 @@ public sealed record MissionOffer(
     public MissionRetrieval? Retrieval { get; init; }
     public bool CombatComplete { get; init; }
     public MissionBonus? Bonus { get; init; }
+    public long? DeclineCooldownEndsAt { get; init; }
     public int EnemyFactionId { get; init; }
     public bool HasShipRestrictions { get; init; }
     public MissionItemReward? ItemReward { get; init; }
+    public double? ResearchPoints { get; init; }
 }
 
 public sealed record MissionStandingChange(long SourceId, double Before, double After);
@@ -131,6 +133,8 @@ public sealed record MissionUpdate(
 )
 {
     public MissionOffer? Continuation { get; init; }
+    public IReadOnlyList<long> RetiredAgentIds { get; init; } = [];
+    public long? CorporationPointsAfter { get; init; }
 }
 
 public sealed record MissionSite(

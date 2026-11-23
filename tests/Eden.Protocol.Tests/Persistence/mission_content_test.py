@@ -10,7 +10,7 @@ from contextlib import closing
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
-from mission_content import delivery_rejection, courier_chain_definitions, trade_definitions
+from mission_content import delivery_rejection, courier_chain_definitions, militia_mission_ids, special_agent_mission, trade_definitions
 from mission_fixed_agents import data_center_definitions
 
 
@@ -180,14 +180,22 @@ class MissionAdmissionTests(unittest.TestCase):
         self.setUp()
         self.assertIsNotNone(delivery_rejection(self.mission, 'A delivery', 0))
 
-    def test_audit_covers_the_pinned_catalog_and_exactly_matches_the_offer_manifest(self):
+    def test_audit_covers_the_pinned_catalog_and_exactly_matches_supported_missions(self):
         with (ROOT / 'docs/data/mission-support-3662168.csv').open(encoding='utf-8', newline='') as stream:
             audit = list(csv.DictReader(stream))
         manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
         self.assertEqual(2892, len(audit))
         self.assertEqual(len(audit), len({row['missionId'] for row in audit}))
         admitted = {int(row['missionId']) for row in audit if row['status'] == 'admitted'}
-        self.assertEqual({m['missionId'] for m in manifest['missions']}, admitted)
+        fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
+        hulls = {t['id'] for t in fixture['types'] if t['categoryId'] == 6}
+        special = {r['key']: special_agent_mission(r['key'], r['data'], hulls)
+                   for r in fixture['records'] if r['dataset'] == 'client/missions'}
+        self.assertEqual(41, sum(reason == 'Paragon packaged hull exchange' for reason in special.values()))
+        self.assertEqual(5, sum(reason == 'Research bonus assignment' for reason in special.values()))
+        militia = militia_mission_ids()
+        self.assertEqual(16, len(militia))
+        self.assertEqual({m['missionId'] for m in manifest['missions']} | {mid for mid, reason in special.items() if reason} | militia, admitted)
         self.assertTrue(all(row['reason'] for row in audit))
 
     def test_avenge_variants_keep_report_objectives_and_exclude_unverified_reinforcements(self):

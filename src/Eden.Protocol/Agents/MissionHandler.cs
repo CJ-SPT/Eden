@@ -140,10 +140,16 @@ internal sealed partial class MissionHandler(
             if (method == "GetReplayTimestamp")
             {
                 // Build 3662168 dockedUI.AgentsPanel calls Agents.GetAgentTimers
-                // for every row before rendering it. Ordinary missions have no replay lock.
-                return args is [long timerPilot] && timerPilot == pilotId
-                    ? PilotCallResult.None
-                    : new PilotCallResult.Failure("Read only your own agent replay timestamp.");
+                // for every row before rendering it.
+                if (args is not [long timerPilot] || timerPilot != pilotId)
+                {
+                    return new PilotCallResult.Failure("Read only your own agent replay timestamp.");
+                }
+                if (agent.Type == AgentType.Heraldry && missions.Information(pilotId, agentId).ReplayAt is long replayAt)
+                {
+                    return replayAt;
+                }
+                return PilotCallResult.None;
             }
             if (method == "DoAction" && args is [var action] && action is null or long)
             {
@@ -153,6 +159,10 @@ internal sealed partial class MissionHandler(
                 }
                 if (action is null)
                 {
+                    if (agent.Type == AgentType.Heraldry && missions.Information(pilotId, agentId).ReplayAt is long replayAt)
+                    {
+                        return ParagonCooldown(null, replayAt);
+                    }
                     var current = missions.Current(pilotId, agentId);
                     return new MissionConversation(current, "", missions.Access(pilotId, agentId).Reason);
                 }
@@ -174,6 +184,14 @@ internal sealed partial class MissionHandler(
                         ? missions.CompleteWithFleet(pilotId, agentId, instanceId)
                         : missions.Act(pilotId, agentId, operation, instanceId == 0 ? null : instanceId);
                     Notify(context, agentId, update);
+                    if (
+                        agent.Type == AgentType.Heraldry
+                        && update.Event == "completed"
+                        && missions.Information(pilotId, agentId).ReplayAt is long replayAt
+                    )
+                    {
+                        return ParagonCooldown(update.Offer, replayAt);
+                    }
                     return new MissionConversation(update.Offer, update.Event, "Request a mission from this agent.");
                 }
                 if (operation == MissionAction.Complete && missions.CanShareReward(pilotId, agentId, instanceId))
@@ -202,7 +220,7 @@ internal sealed partial class MissionHandler(
             var offer = missions.Current(pilotId, agentId);
             if (method == "GetMissionBriefingInfo" && args.Length == 0)
             {
-                return offer is null ? PilotCallResult.None : new MissionBriefing(offer);
+                return offer is null ? PilotCallResult.None : new MissionBriefing(offer, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
             if (method == "GetMissionObjectiveInfo" && args.Length == 0)
             {
@@ -284,6 +302,9 @@ internal sealed partial class MissionHandler(
 
     private static object?[] FleetRewardLabel(string name) => [$"UI/Agents/StandardMission/{name}", BlueEmpty.Dictionary];
 
+    private MissionConversation ParagonCooldown(MissionOffer? offer, long replayAt) =>
+        new(offer, "", "IRIS is on cooldown.") { ReplayDelay = Math.Max(1, replayAt - clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) };
+
     private void Notify(PilotCallContext context, long agentId, MissionUpdate update)
     {
         foreach (var change in update.Items)
@@ -294,10 +315,20 @@ internal sealed partial class MissionHandler(
         {
             context.Notifications.Add(new NpcStandingSet(standing.SourceId, context.Pilot.PilotId, standing.After));
         }
-        if (update.BalanceCents is long balance && update.Offer is { } offer)
+        if (update.BalanceCents is long balance)
         {
             context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, balance / (double)MarketDefinitions.CentsPerIsk));
+        }
+        if (update.Offer is { } offer && (update.BalanceCents is not null || update.PointsBefore != update.PointsAfter))
+        {
             loyalty.Notify(context, offer.Agent.CorporationId, update.PointsBefore, update.PointsAfter);
+            if (update.CorporationPointsAfter is long points)
+            {
+                loyalty.NotifyCorporation(context, offer.Agent.CorporationId, points);
+            }
+        }
+        if (update.BalanceCents is not null || update is { Event: "completed", Offer.Agent.Type: AgentType.Research })
+        {
             foreach (var storyline in missions.Journal(context.Pilot.PilotId).Where(m => m.Storyline && m.State == MissionState.Offered))
             {
                 context.Notifications.Add(new AgentMissionChanged("offered", storyline.Agent.Id));
@@ -306,6 +337,14 @@ internal sealed partial class MissionHandler(
         if (update.Event.Length > 0)
         {
             context.Notifications.Add(new AgentMissionChanged(update.Event, agentId));
+            if (update.Offer?.Agent.Type == AgentType.Research)
+            {
+                context.Notifications.Add(new ResearchChanged("research_update_ppd"));
+            }
+        }
+        foreach (long retired in update.RetiredAgentIds)
+        {
+            context.Notifications.Add(new AgentMissionChanged("offer_removed", retired));
         }
         if (update.Continuation is not null)
         {

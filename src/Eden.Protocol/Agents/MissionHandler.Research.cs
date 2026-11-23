@@ -12,12 +12,15 @@ internal sealed partial class MissionHandler
     {
         long pilotId = context.Pilot.PilotId;
         ResearchProject? Current() => research.Research(pilotId, agentId).SingleOrDefault();
-        PilotCallResult Conversation(string message) => new ResearchConversation(Current(), message);
+        MissionOffer? ActiveOffer() =>
+            missions.Current(pilotId, agentId) is { State: MissionState.Offered or MissionState.Accepted } offer ? offer : null;
+        ResearchConversation Conversation(ResearchProject? current, string message, string eventName = "") =>
+            new(current, message, current is null ? null : ActiveOffer(), eventName);
         void Changed(string name) => context.Notifications.Add(new ResearchChanged(name));
         if (action is null)
         {
             var current = Current();
-            return new ResearchConversation(
+            return Conversation(
                 current,
                 current is null
                     ? "Choose Start Research to select a science field."
@@ -42,30 +45,47 @@ internal sealed partial class MissionHandler
                         {
                             if (ResearchDialog.Choice(answer, fields.Count) is not int index)
                             {
-                                return Conversation("Research selection cancelled.");
+                                return Conversation(Current(), "Research selection cancelled.");
                             }
                             _ = research.StartResearch(pilotId, agentId, fields[index].SkillId);
                             Changed("research_started");
-                            return Conversation("Research has started.");
+                            return Conversation(Current(), "Research has started.");
                         }
                     )
                 );
             case (long)ResearchAction.Cancel:
                 var cancelled = Current() ?? throw new InvalidDataException("This agent has no active research project.");
+                string cancellation = ActiveOffer() is not null
+                    ? "Cancel this project and end the open mission? All unspent research points with this agent will be lost."
+                    : "Cancel this project? All unspent research points with this agent will be lost.";
                 return new PilotCallResult.ClientCall(
                     new ResearchDialog(
                         "YesNo",
-                        ["Cancel Research", "Cancel this project? All unspent research points with this agent will be lost.", agentId],
+                        ["Cancel Research", cancellation, agentId],
                         [],
                         answer =>
                         {
                             if (answer is not true)
                             {
-                                return Conversation("Research continues.");
+                                return Conversation(Current(), "Research continues.");
                             }
-                            research.CancelResearch(pilotId, agentId, cancelled.Id);
+                            string? missionEvent = research.CancelResearch(pilotId, agentId, cancelled.Id) switch
+                            {
+                                MissionState.Declined => "offer_declined",
+                                MissionState.Quit => "quit",
+                                MissionState.Failed => "failed",
+                                _ => null,
+                            };
+                            if (missionEvent is not null)
+                            {
+                                context.Notifications.Add(new AgentMissionChanged(missionEvent, agentId));
+                            }
                             Changed("research_update_ppd");
-                            return Conversation("Research cancelled. Unspent research points have been discarded.");
+                            return Conversation(
+                                null,
+                                "Research cancelled. Unspent research points have been discarded.",
+                                missionEvent ?? ""
+                            );
                         }
                     )
                 );
@@ -74,7 +94,7 @@ internal sealed partial class MissionHandler
                 int maximum = (int)Math.Min(int.MaxValue, Math.Floor(project.Points / ResearchRules.PointsPerDatacore));
                 if (maximum == 0)
                 {
-                    return Conversation("You need at least 100 research points to buy a datacore.");
+                    return Conversation(project, "You need at least 100 research points to buy a datacore.");
                 }
                 return new PilotCallResult.ClientCall(
                     new ResearchDialog(
@@ -93,7 +113,7 @@ internal sealed partial class MissionHandler
                         {
                             if (answer is null)
                             {
-                                return Conversation("Datacore purchase cancelled.");
+                                return Conversation(Current(), "Datacore purchase cancelled.");
                             }
                             if (answer is not long quantity || quantity <= 0 || quantity > maximum)
                             {
@@ -105,12 +125,32 @@ internal sealed partial class MissionHandler
                                 new AccountBalanceChanged(pilotId, purchase.BalanceCents / (double)MarketDefinitions.CentsPerIsk)
                             );
                             Changed("research_update_ppd");
-                            return Conversation("Datacores delivered to your Item Hangar.");
+                            return Conversation(Current(), "Datacores delivered to your Item Hangar.");
                         }
                     )
                 );
             default:
-                return new PilotCallResult.Failure("Choose an action from this research agent's conversation.");
+                if (action is not long token || token < 0)
+                {
+                    return new PilotCallResult.Failure("Choose an action from this research agent's conversation.");
+                }
+                long instanceId = token / MissionRules.ActionStride;
+                var operation = (MissionAction)(token % MissionRules.ActionStride);
+                if ((instanceId == 0) != (operation == MissionAction.Request))
+                {
+                    return new PilotCallResult.Failure("Use the action from the current research mission.");
+                }
+                var update = missions.Act(pilotId, agentId, operation, instanceId == 0 ? null : instanceId);
+                Notify(context, agentId, update);
+                if (update.Event == "completed")
+                {
+                    return Conversation(Current(), $"Mission complete. You earned {update.Offer!.ResearchPoints:0.00} RP.", update.Event);
+                }
+                if (operation != MissionAction.Defer && update.Offer is { State: MissionState.Offered or MissionState.Accepted })
+                {
+                    return new MissionConversation(update.Offer, update.Event, "Request a research mission from this agent.");
+                }
+                return Conversation(Current(), "Your research project continues.", update.Event);
         }
     }
 }

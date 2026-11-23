@@ -4,6 +4,7 @@ import json
 import pathlib
 import re
 import sqlite3
+from mission_content import ship_types, special_agent_mission
 
 
 def export(catalog, output):
@@ -43,7 +44,16 @@ def export(catalog, output):
         pending.update(o['typeID'] for r in dungeon['rooms'].values() for o in r['objects'].values())
         if dungeon.get('dungeonNameID'):
             read('client/localization_fsd_en-us', dungeon['dungeonNameID'])
-    for definition in content['missions']:
+    for key, raw in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='client/npccharacters' AND Data LIKE '%1000419%'"):
+        npc = json.loads(raw)
+        if npc.get('corporationID') == 1000419 and not npc.get('deleted') and npc.get('agent', {}).get('agentType') == 13:
+            read('client/npccharacters', key)
+            read('client/localization_fsd_en-us', npc['nameID'])
+    hulls = ship_types(db)
+    special = [dict(missionId=int(key), waves=[]) for key, raw in db.execute(
+        "SELECT Key,Data FROM SourceRecord WHERE Dataset='client/missions' AND (Data LIKE '%HeraldryMission%' OR Data LIKE '%Research%')"
+    ) if special_agent_mission(int(key), json.loads(raw), hulls)]
+    for definition in [*content['missions'], *special]:
         mission = read('client/missions', definition['missionId'])
         if mission.get('factionID'):
             factions.add(mission['factionID'])

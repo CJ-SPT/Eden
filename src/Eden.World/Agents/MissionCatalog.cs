@@ -8,6 +8,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
+using Eden.World.Inventory;
 
 namespace Eden.World.Agents;
 
@@ -39,6 +40,7 @@ internal sealed record MissionProfile(
     internal int SupplierFaction { get; init; }
     internal int SupplierCorporation { get; init; }
     internal ImmutableArray<MissionDeposit> Deposits { get; init; } = [];
+    internal bool Paragon { get; init; }
 
     internal bool AvailableTo(CatalogAgent agent) =>
         (
@@ -46,6 +48,8 @@ internal sealed record MissionProfile(
                 ? agent.Type == AgentType.FactionalWarfare && (int)militia == agent.FactionId
                 : agent.Type != AgentType.FactionalWarfare
         )
+        && Paragon == (agent.Type == AgentType.Heraldry)
+        && ResearchMissionCatalog.IsResearch(Definition.MissionId) == (agent.Type == AgentType.Research)
         && (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
         && (SupplierCorporation == 0 || SupplierCorporation == agent.CorporationId)
         && (Definition.FixedAgentIds.IsEmpty || Definition.FixedAgentIds.Contains(agent.Id));
@@ -156,14 +160,18 @@ internal static class MissionCatalog
 
     private static MissionProfile? Load(CatalogDbContext catalog, int missionId)
     {
-        var definition =
-            s_content.Value.Missions.SingleOrDefault(m => m.MissionId == missionId) ?? MilitiaMissionCatalog.Load(catalog, missionId);
-        if (definition is null)
+        var mission = catalog.Read(CatalogData.Client.Missions, (long)missionId);
+        if (mission is null)
         {
             return null;
         }
-        var mission = catalog.Read(CatalogData.Client.Missions, (long)definition.MissionId);
-        if (mission is null)
+        var paragon = ParagonMissionCatalog.Load(catalog, mission, missionId);
+        var definition =
+            s_content.Value.Missions.SingleOrDefault(m => m.MissionId == missionId)
+            ?? MilitiaMissionCatalog.Load(catalog, missionId)
+            ?? paragon
+            ?? ResearchMissionCatalog.LoadDefinition(mission, missionId);
+        if (definition is null)
         {
             return null;
         }
@@ -196,6 +204,10 @@ internal static class MissionCatalog
             _ => throw new InvalidDataException("Unsupported singleton mission cargo definition."),
         };
         double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
+        if (paragon is not null)
+        {
+            volume = PilotInventoryStore.Volume(catalog, cargoType);
+        }
         if (definition.Mining && (mission.ContentTemplate != BasicMiningMission || dungeonId is null || !(volume > 0)))
         {
             throw new InvalidDataException("Mining mission does not have a catalog dungeon and objective cargo.");
@@ -226,6 +238,7 @@ internal static class MissionCatalog
         }
         return new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
         {
+            Paragon = paragon is not null,
             CargoSingleton = singleton,
             Lifetime = MissionRules.Lifetime(mission.ExpirationTime),
             SupplierFaction = checked((int)(mission.FactionID ?? 0)),

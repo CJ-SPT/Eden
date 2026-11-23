@@ -22,7 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Agents;
 
-public sealed class ResearchAgentTests
+public sealed partial class ResearchAgentTests
 {
     private const int Field = 11452;
     private const int Datacore = 20424;

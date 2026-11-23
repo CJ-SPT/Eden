@@ -2,6 +2,107 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Mission gap expansion — November 22, 2026
+
+The build-3662168 audit now admits **508 of 2,892** catalog mission records. This milestone adds **55** playable definitions
+and accounts for **16** existing militia encounters previously missing from the admitted total of 437. Nine ordinary security
+missions join the manifest. Paragon and research offers have their own catalog admission and stay out of ordinary
+agent rotations. The [content guide](../missions.md) describes the playable flows and the [audit](../data/mission-support-3662168.csv)
+records the remaining blockers. Career, epic-arc, non-Data-Center COSMOS, Anomic, and level-five combat still need
+separate mission content or lifecycles.
+
+### Content and client evidence
+
+| Family | Mission IDs | Source revisions |
+| --- | --- | --- |
+| The Score | 2391, 2407, 2416, 2449, 2470 | EVE University oldids 192048, 209646, 192046, 192055, 223423 |
+| The Roving Rogue Drones and The Drone Infestation | 1237, 1214 | EVE University oldids 203054, 230772 |
+| Smuggler Interception | 2542, 2546 | EVE University oldids 231043, 191943 |
+| Mineral Acquisition and The Special Delivery | 2792–2795, 2804 | EVE University oldids 213371, 213400 |
+
+The older EVE.js 261108.1 security packs, level one 1.1.10 and levels two and three 1.1.9, provide a second comparison.
+Eden uses the report's required groups for The Score and both reported transports for Sansha Smuggler Interception.
+The pinned dungeon records supply the layouts, gate and structure IDs. Level-two Drone Infestation still needs a
+verified trigger for its optional reinforcement. [The Score level-three report](https://wiki.eveuniversity.org/index.php?title=The_Score_(Guristas_Pirates)_(Level_3)&oldid=223423)
+
+Paragon uses the 41 build-3662168 `HeraldryMission` records for a single packaged hull with no standing reward.
+The other 37 Heraldry records request ammunition, a singleton hull, or grant standing rewards. The twelve pinned
+IRIS identities use agent type 13 and corporation 1000419. Eden quotes the authored clone-grade amount when the offer
+is created, then uses that saved amount at turn-in. Completion atomically consumes the hull, credits personal and
+eligible corporate EverMarks, retires other active IRIS offers, and starts a character-wide 23-hour cooldown. The
+wallet uses the existing loyalty balance and `OnLPChange` / `OnCorpLPChange`. [CCP Paragon patch notes](https://www.eveonline.com/news/view/patch-notes-version-20-10) ·
+[CCP corporation EverMarks](https://www.eveonline.com/news/view/feedback-and-iteration-factional-warfare) ·
+[EVE University Paragon report](https://wiki.eveuniversity.org/Paragon)
+
+The original `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`evemissions.client.mission` renders type-13 loyalty points as EverMarks. The stock Agent Finder uses the existing
+directory type, the journal uses `UI/Agents/MissionTypes/Heraldry`, and `Agents.GetAgentTimers` calls the bound
+`GetReplayTimestamp(characterID)`. Eden returns the saved absolute replay deadline there and the remaining ticks
+in the conversation's `missionCantReplay` field. `offer_removed` retires the other dialogs and refreshes the journal.
+EVE.js `agentMgrService.js` and its EverMarks wallet modules were checked for comparison. The pinned archive owns
+the dialogue and replay wire contract.
+
+The same archive's `agentDialogueUtil.GetMissionObjectiveHTML` reads numeric `researchPoints` and rounds only for display.
+The stock journal appends research rows on a scoped refresh. Eden follows the scoped mission event with a full research
+journal invalidation so the project list and mission tracker both refresh. The five templates run through all 244 pinned
+level-one through level-four R&D agents. The courier uses the existing station route with a nearest-reachable-station
+fallback where necessary. Podion's two agents use Futzchag, two jumps away. The alternating assignments and deterministic
+12–23-hour delay are Eden policy. Scheduled invitation mail remains open. EVE.js `researchRuntime.js` comparison SHA-256
+`d6e8e398bb3ff9ba1f0711ba86ba1dcca4707cd935d287c9760a8a8bdd0c6ee8`.
+[Research missions report](https://wiki.eveuniversity.org/index.php?title=Research_missions&oldid=216855)
+
+### Standing settlement
+
+Regular mission quits and accepted expirations apply direct agent and corporation losses once. Declining is free when
+four hours have elapsed since that agent's last free decline. A repeat decline within the window applies a smaller loss.
+Offered missions can expire without a loss. The pinned `AgentDialogueWindow.GetMissionTimeText` consumes `-1` for the
+generic decline warning and positive remaining ticks for the countdown. The ordinary penalty baseline comes from
+two recorded Tranquility outcomes in the EVE.js build-3396210 reference. Eden uses **4.08959% agent / 0.35054%
+corporation** for quit and accepted expiry, and **1.74096% agent / 0.14922% corporation** for repeat decline, applied
+toward −10. These are Eden-wide baselines based on Gone Berserk (2504) and The Disgruntled Employee (921).
+Paragon and R&D closures carry no direct penalty. Militia keeps its separate rules.
+
+Standard storyline faction gains also apply capped, single-hop derived changes. Eden uses the incoming relationship
+toward the issuing faction, the pinned faction `sizeFactor` ratio, and a cap in the direction of change. The 390
+relationship rows came from the factual Tranquility `standingMgr.GetNPCNPCStandings` cache recorded in the EVE.js input dated August 22, 2026.
+The local EVE.js input was `tools/DatabaseCreator/staticTables/npcStandingsAuthority/data.json`, SHA-256
+`63d9b8146a3fa07f79ed01e721160bcd835b18483f16218f761add0166501b3e`. Eden's pinned `client/factions` SHA-256 is
+`43fd274f2f85f8a221dff3f21dcd30dcfc6d8939b2f6124a1a145f68c52f8dfb`. Data Center, failure, and militia derived changes
+remain outside this rule. The pinned standing history uses event types 74/75 for failure/decline and 82/83 for derived
+changes. New direct mission transactions put the mission-name localization ID in `int_1`, as consumed by
+`eveFormat.FmtStandingTransaction`. [CCP standing mechanics](https://support.eveonline.com/hc/en-us/articles/203217152-Standings) ·
+[EVE University derived standings](https://wiki.eveuniversity.org/NPC_standings#Derived_standings)
+
+### Automated validation
+
+The solution build passed with zero warnings or errors. The catalog setup, formatting policy, and mission admission
+suites passed 36 Python checks. CSharpier checked 3,073 files and the 140-character policy passed.
+
+The integrated filter selected the `Eden.Protocol.Tests.Agents` namespace, `MilitiaMissionTests`,
+`CorporationLoyaltyTests`, `LoyaltyWalletServiceTests`, and `CharacterInteractionHistoryTests`. It passed 890 of 892
+cases in 845.09 seconds. Both failures came from the existing Blockade replay. The suite ran before the replay fixture
+and expiry-notification follow-ups, which were validated separately below.
+
+The exact Blockade departure method reproduced both inherited failures on `2ae11e20`. The non-resident variant
+called resident-only warp, and the resident fixture lacked its pinned warp capacitor profile. The replay now uses
+the resident world and the existing capacitor fixture. Its exact method passed in 11 seconds.
+
+The final expiry follow-up ran 20 cases in 81.02 seconds with
+`MissionStandingTests.AcceptedFailureSettlesDirectStandingsOnceAcrossCheckpoint`, `ParagonMissionTests`, `MissionTrackerTests`,
+`MilitiaMissionTests.DecliningAndExpiringCountOnlyOncePerMission`, and
+`DataCenterMissionTests.EveryTerminalStatePermanentlyClosesTheAssignmentAcrossCheckpoint`. It checks closure through
+the existing read paths and verifies that journal-triggered standing losses publish after the resident commit.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Turn in a packaged hull to IRIS and open a second IRIS conversation to check the shared cooldown and EverMarks wallet.
+- Start an R&D project and complete Mineral Acquisition. Confirm the journal and project balance refresh together.
+- In the level-three Guristas Score, clear the first combat pocket and confirm the gate and radio-telescope objective.
+
 ## Bounded mission site placement — November 22, 2026
 
 The offer builder multiplied the global mission sequence by 10 billion metres on two axes. At sequence 95,202 the

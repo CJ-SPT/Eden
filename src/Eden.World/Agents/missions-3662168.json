@@ -2953,6 +2953,772 @@
       ]
     },
     {
+      "missionId": 2407,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=209646",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16885,
+                16878
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16882,
+                16874
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16882,
+                16874
+              ],
+              "count": 1,
+              "range": 48000,
+              "required": true
+            },
+            {
+              "types": [
+                16878,
+                16885
+              ],
+              "count": 1,
+              "range": 48000,
+              "required": true
+            },
+            {
+              "types": [
+                16887
+              ],
+              "count": 1,
+              "range": 48000,
+              "required": true
+            },
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 1,
+              "range": 48000,
+              "required": true
+            },
+            {
+              "types": [
+                16882,
+                16874
+              ],
+              "count": 3,
+              "range": 45000,
+              "required": false
+            }
+          ],
+          "roomId": 15022
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15023,
+          "entryObjectId": 653507
+        },
+        {
+          "roomId": 15022,
+          "entryObjectId": 653506
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 653508,
+          "destinationRoomId": 15022
+        }
+      ]
+    },
+    {
+      "missionId": 2391,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Guristas_Pirates)_(Level_1)",
+      "sourceRevision": "oldid=192048",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17002,
+                16987
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17002,
+                16987,
+                17006
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": true
+            },
+            {
+              "types": [
+                23985,
+                23984
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": true
+            },
+            {
+              "types": [
+                17001,
+                17006,
+                16989
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            }
+          ],
+          "roomId": 15026
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15027,
+          "entryObjectId": 653575
+        },
+        {
+          "roomId": 15026,
+          "entryObjectId": 653574
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 653576,
+          "destinationRoomId": 15026
+        }
+      ]
+    },
+    {
+      "missionId": 2416,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Blood_Raiders)",
+      "sourceRevision": "oldid=192046",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16935,
+                16947
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23979
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16936,
+                16947
+              ],
+              "count": 5,
+              "range": 48000,
+              "required": false
+            },
+            {
+              "types": [
+                16946,
+                16933
+              ],
+              "count": 3,
+              "range": 62000,
+              "required": true
+            },
+            {
+              "types": [
+                23980
+              ],
+              "count": 1,
+              "range": 62000,
+              "required": true
+            },
+            {
+              "types": [
+                16929
+              ],
+              "count": 1,
+              "range": 62000,
+              "required": true
+            }
+          ],
+          "roomId": 15001
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15000,
+          "entryObjectId": 652798
+        },
+        {
+          "roomId": 15001,
+          "entryObjectId": 652800
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 652799,
+          "destinationRoomId": 15001
+        }
+      ]
+    },
+    {
+      "missionId": 2449,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Serpentis)_(level_2)",
+      "sourceRevision": "oldid=192055",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17121,
+                17117,
+                17116,
+                17120
+              ],
+              "count": 5,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17121,
+                17117
+              ],
+              "count": 4,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                23994,
+                23995
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17279,
+                17118
+              ],
+              "count": 3,
+              "range": 62000,
+              "required": true
+            },
+            {
+              "types": [
+                23973
+              ],
+              "count": 2,
+              "range": 62000,
+              "required": true
+            },
+            {
+              "types": [
+                17114
+              ],
+              "count": 1,
+              "range": 62000,
+              "required": true
+            }
+          ],
+          "roomId": 15003
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15002,
+          "entryObjectId": 652822
+        },
+        {
+          "roomId": 15003,
+          "entryObjectId": 652824
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 652823,
+          "destinationRoomId": 15003
+        }
+      ]
+    },
+    {
+      "missionId": 2470,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Guristas_Pirates)_(Level_3)",
+      "sourceRevision": "oldid=223423",
+      "rooms": [
+        {
+          "roomId": 14776,
+          "entryObjectId": 642754
+        },
+        {
+          "roomId": 14777,
+          "entryObjectId": 642757
+        },
+        {
+          "roomId": 14778,
+          "entryObjectId": 642866
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 642755,
+          "destinationRoomId": 14777
+        },
+        {
+          "fromObjectId": 642756,
+          "destinationRoomId": 14778,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 14777,
+          "groups": [
+            {
+              "types": [
+                16989
+              ],
+              "count": 1,
+              "range": 50000
+            },
+            {
+              "types": [
+                16995,
+                16991
+              ],
+              "count": 2,
+              "range": 50000
+            },
+            {
+              "types": [
+                16989
+              ],
+              "count": 1,
+              "range": 54000
+            },
+            {
+              "types": [
+                16995,
+                16991
+              ],
+              "count": 2,
+              "range": 54000
+            },
+            {
+              "types": [
+                16986
+              ],
+              "count": 1,
+              "range": 62000
+            },
+            {
+              "types": [
+                23987
+              ],
+              "count": 1,
+              "range": 62000
+            }
+          ]
+        },
+        {
+          "roomId": 14778,
+          "groups": [
+            {
+              "types": [
+                17001
+              ],
+              "count": 1,
+              "range": 62000,
+              "required": false
+            },
+            {
+              "types": [
+                16991
+              ],
+              "count": 2,
+              "range": 62000,
+              "required": false
+            },
+            {
+              "types": [
+                16989,
+                16986
+              ],
+              "count": 2,
+              "range": 64000,
+              "required": false
+            },
+            {
+              "types": [
+                24087
+              ],
+              "count": 1,
+              "range": 64000,
+              "required": false
+            },
+            {
+              "types": [
+                16989,
+                16986
+              ],
+              "count": 2,
+              "range": 70000
+            },
+            {
+              "types": [
+                16995
+              ],
+              "count": 1,
+              "range": 70000
+            },
+            {
+              "types": [
+                24014,
+                24015
+              ],
+              "count": 1,
+              "range": 70000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2542,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Smuggler_Interception_(Angel_Cartel)_(Level_2)",
+      "sourceRevision": "oldid=231043",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877,
+                16886,
+                16887,
+                16882
+              ],
+              "count": 6,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 8,
+              "range": 50000
+            },
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 1,
+              "range": 50000
+            },
+            {
+              "types": [
+                16875,
+                16884
+              ],
+              "count": 1,
+              "range": 50000
+            },
+            {
+              "types": [
+                16165
+              ],
+              "count": 2,
+              "range": 50000,
+              "lootTypeId": 25373,
+              "lootQuantity": 10
+            }
+          ],
+          "roomId": 15347
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15346,
+          "entryObjectId": 671872
+        },
+        {
+          "roomId": 15347,
+          "entryObjectId": 671874
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 671873,
+          "destinationRoomId": 15347
+        }
+      ]
+    },
+    {
+      "missionId": 2546,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Smuggler_Interception_(Sansha's_Nation)",
+      "sourceRevision": "oldid=191943",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17059,
+                17067,
+                17068,
+                17078
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17081,
+                17076,
+                17068
+              ],
+              "count": 6,
+              "range": 45000
+            },
+            {
+              "types": [
+                17073
+              ],
+              "count": 1,
+              "range": 45000
+            },
+            {
+              "types": [
+                16167
+              ],
+              "count": 2,
+              "range": 45000,
+              "lootTypeId": 25373,
+              "lootQuantity": 10
+            }
+          ],
+          "roomId": 15015
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15014,
+          "entryObjectId": 653069
+        },
+        {
+          "roomId": 15015,
+          "entryObjectId": 653071
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 653070,
+          "destinationRoomId": 15015
+        }
+      ]
+    },
+    {
+      "missionId": 1237,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Roving_Rogue_Drones",
+      "sourceRevision": "oldid=203054",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                10995,
+                10993
+              ],
+              "count": 4,
+              "range": 55000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3750
+              ],
+              "count": 1,
+              "range": 55000,
+              "enemyFaction": 500025
+            }
+          ],
+          "roomId": 3118
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3117,
+          "entryObjectId": 59190
+        },
+        {
+          "roomId": 3118,
+          "entryObjectId": 59191
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 59189,
+          "destinationRoomId": 3118
+        }
+      ]
+    },
+    {
+      "missionId": 1214,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Drone_Infestation_(Level_1)",
+      "sourceRevision": "oldid=230772",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                10995,
+                10993
+              ],
+              "count": 2,
+              "range": 30000,
+              "required": false,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3750
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                10995,
+                10993
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3750
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18035
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false,
+              "enemyFaction": 500025
+            }
+          ],
+          "roomId": 13829
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 13828,
+          "entryObjectId": 582810
+        },
+        {
+          "roomId": 13829,
+          "entryObjectId": 582811
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 582809,
+          "destinationRoomId": 13829
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 582824,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
       "missionId": 931,
       "level": 1,
       "difficulty": 500,

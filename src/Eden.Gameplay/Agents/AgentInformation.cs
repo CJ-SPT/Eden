@@ -4,6 +4,7 @@ public sealed record AgentServiceInformation(CatalogAgent Agent, bool MissionSer
 {
     public IReadOnlyList<ResearchField> ResearchFields { get; init; } = [];
     public ResearchProject? Research { get; init; }
+    public long? ReplayAt { get; init; }
 }
 
 public static class AgentInformationRules

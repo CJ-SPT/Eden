@@ -42,7 +42,7 @@ internal sealed partial class PilotMissionStore
         var active = world
             .Filter<SavedMission>(mission => mission.PilotId == id)
             .SingleOrDefault(mission => mission.AgentId == agent.Id && mission.ClosedAt == null);
-        if (active is not null && Expire(world, active, now))
+        if (active is not null && Expire(world, catalog, active, now))
         {
             active = null;
         }

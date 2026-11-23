@@ -13,31 +13,43 @@ internal enum ResearchAction
     Buy = 14,
 }
 
-internal sealed record ResearchConversation(ResearchProject? Project, string Message) : BlueModel
+internal sealed record ResearchConversation(ResearchProject? Project, string Message, MissionOffer? Offer = null, string Event = "")
+    : BlueModel
 {
-    public override object ToBlue() =>
-        new object?[]
+    public override object ToBlue()
+    {
+        List<object?> actions = [];
+        if (Project is null)
         {
-            new object?[]
+            actions.Add(new object?[] { (int)ResearchAction.Start, (int)ResearchAction.Start });
+        }
+        else
+        {
+            if (Offer is not null)
             {
-                new object?[] { Message, null },
-                Project is null
-                    ? new List<object?> { new object?[] { (int)ResearchAction.Start, (int)ResearchAction.Start } }
-                    : new List<object?>
-                    {
-                        new object?[] { (int)ResearchAction.Buy, (int)ResearchAction.Buy },
-                        new object?[] { (int)ResearchAction.Cancel, (int)ResearchAction.Cancel },
-                    },
-            },
+                actions.Add(MissionConversation.Action(Offer, MissionAction.View));
+            }
+            else if (Project.CanRequestMission)
+            {
+                actions.Add(new object?[] { (int)MissionAction.Request, (int)MissionAction.Request });
+            }
+            actions.Add(new object?[] { (int)ResearchAction.Buy, (int)ResearchAction.Buy });
+            actions.Add(new object?[] { (int)ResearchAction.Cancel, (int)ResearchAction.Cancel });
+        }
+        return new object?[]
+        {
+            new object?[] { new object?[] { Message, null }, actions },
             new Dictionary<string, object?>
             {
-                ["missionCompleted"] = false,
-                ["missionDeclined"] = false,
-                ["missionQuit"] = false,
+                ["missionCompleted"] = Event == "completed",
+                ["missionDeclined"] = Event == "offer_declined",
+                ["missionQuit"] = Event == "quit",
                 ["missionCantReplay"] = false,
+                ["missionFailed"] = Event == "failed",
                 ["loyaltyPoints"] = 0,
             },
         };
+    }
 }
 
 internal sealed record ResearchDialog(

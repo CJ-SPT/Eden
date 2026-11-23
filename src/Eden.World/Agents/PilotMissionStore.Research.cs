@@ -116,14 +116,23 @@ internal sealed partial class PilotMissionStore
     {
         row.Points = ResearchRules.Accrue(row.Points, row.PointsPerDay, row.SettledAt, now);
         row.SettledAt = Math.Max(row.SettledAt, now);
-        row.PointsPerDay = ResearchRules.PointsPerDay(
+        row.PointsPerDay = ResearchRate(world, catalog, pilot, agent, row);
+        return new(row.Id, agent, row.SkillId, row.Points, row.PointsPerDay);
+    }
+
+    private static double ResearchRate(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        CatalogAgent agent,
+        SavedResearchProject row
+    ) =>
+        ResearchRules.PointsPerDay(
             agent.Level,
             Skill(world, catalog, pilot, row.SkillId),
             Skill(world, catalog, pilot, MissionSocialSkill.Negotiation),
             Access(world, catalog, pilot, agent).Agent
         );
-        return new(row.Id, agent, row.SkillId, row.Points, row.PointsPerDay);
-    }
 
     public IReadOnlyList<ResearchProject> Research(long pilotId, long? agentId = null) =>
         ResearchOperation(
@@ -133,7 +142,20 @@ internal sealed partial class PilotMissionStore
                     .Filter<SavedResearchProject>(p => p.PilotId == pilotId && (agentId == null || p.AgentId == agentId))
                     .OrderBy(p => p.AgentId)
                     .ToArray()
-                    .Select(row => SettleResearch(world, catalog, pilot, ResearchAgent(row.AgentId), row, now))
+                    .Select(row =>
+                    {
+                        var agent = ResearchAgent(row.AgentId);
+                        var settled = SettleResearch(world, catalog, pilot, agent, row, now);
+                        return settled with
+                        {
+                            CanRequestMission =
+                                agentId.HasValue
+                                && world is EconomyTransaction
+                                && ResearchMissionCatalog.Supports(agent)
+                                && Access(world, catalog, pilot, agent).Allowed
+                                && ResearchMissionAvailable(LatestResearchMission(world, pilotId, row.AgentId), now),
+                        };
+                    })
                     .ToArray()
         );
 
@@ -188,14 +210,14 @@ internal sealed partial class PilotMissionStore
         world.Filter<SavedResearchProject>(p => p.PilotId == pilotId && p.AgentId == agentId && p.Id == projectId).SingleOrDefault()
         ?? throw new InvalidDataException("This research action is stale. Reopen the agent conversation.");
 
-    public void CancelResearch(long pilotId, long agentId, long projectId) =>
+    public MissionState? CancelResearch(long pilotId, long agentId, long projectId) =>
         ResearchOperation(
             pilotId,
-            (world, _, pilot, _) =>
+            (world, catalog, pilot, now) =>
             {
                 RequireStation(pilot, ResearchAgent(agentId).StationId);
                 world.Remove(ResearchRow(world, pilotId, agentId, projectId));
-                return true;
+                return CloseResearchMission(world, catalog, pilotId, agentId, now);
             }
         );
 

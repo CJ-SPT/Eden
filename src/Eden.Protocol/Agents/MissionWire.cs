@@ -55,7 +55,9 @@ internal sealed record SpaceAgentLocation(CatalogAgent Agent) : BlueModel
 
 internal sealed record MissionConversation(MissionOffer? Offer, string Event, string Greeting) : BlueModel
 {
-    private static object?[] Action(MissionOffer offer, MissionAction action) =>
+    internal long? ReplayDelay { get; init; }
+
+    internal static object?[] Action(MissionOffer offer, MissionAction action) =>
         [checked(offer.Id * MissionRules.ActionStride + (int)action), (int)action];
 
     public override object ToBlue()
@@ -73,7 +75,7 @@ internal sealed record MissionConversation(MissionOffer? Offer, string Event, st
             actions.Add(Action(Offer, MissionAction.Defer));
             actions.Add(Action(Offer, MissionAction.Quit));
         }
-        else
+        else if (ReplayDelay is null)
         {
             actions.Add(new object?[] { (int)MissionAction.Request, (int)MissionAction.Request });
         }
@@ -83,7 +85,7 @@ internal sealed record MissionConversation(MissionOffer? Offer, string Event, st
             ["missionCompleted"] = false,
             ["missionDeclined"] = false,
             ["missionQuit"] = false,
-            ["missionCantReplay"] = false,
+            ["missionCantReplay"] = (object?)ReplayDelay ?? false,
         };
         if (Event.Length != 0)
         {
@@ -131,13 +133,17 @@ internal sealed record MissionKeywords(MissionOffer Offer) : BlueModel
         };
 }
 
-internal sealed record MissionBriefing(MissionOffer Offer) : BlueModel
+internal sealed record MissionBriefing(MissionOffer Offer, long Now) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             ["ContentID"] = Offer.MissionId,
-            ["Decline Time"] = null,
+            ["Decline Time"] = Offer.DeclineCooldownEndsAt is long end
+                ? end > Now
+                    ? end - Now
+                    : -1L
+                : null,
             ["Expiration Time"] = Offer.ExpiresAt,
             ["Mission Title ID"] = Offer.NameId == 0 ? Offer.Name : Offer.NameId,
             ["Mission Briefing ID"] = Offer.BriefingId == 0 ? Offer.Briefing : Offer.BriefingId,
@@ -200,7 +206,11 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
     {
         List<object?> objectives = [];
         List<object?> dungeons = [];
-        List<object?> rewards = [new object?[] { CreditsType, Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk, null }];
+        List<object?> rewards = [];
+        if (Offer.Agent.Type is not (AgentType.Heraldry or AgentType.Research))
+        {
+            rewards.Add(new object?[] { CreditsType, Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk, null });
+        }
         if (Offer.ItemReward is { } itemReward)
         {
             rewards.Add(new object?[] { itemReward.TypeId, itemReward.Quantity, null });
@@ -316,7 +326,7 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
                 }
                 : new List<object?>(),
             ["collateral"] = new List<object?>(),
-            ["researchPoints"] = 0,
+            ["researchPoints"] = Offer.ResearchPoints is double researchPoints ? researchPoints : (object)0,
         };
     }
 }
@@ -373,7 +383,14 @@ internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadO
                         {
                             (int)o.State,
                             o.Storyline,
-                            o.Kind == MissionKind.Trade
+                            o.Agent.Type == AgentType.Heraldry ? "UI/Agents/MissionTypes/Heraldry"
+                            : o.Agent.Type == AgentType.Research
+                                ? (
+                                    o.Kind == MissionKind.Trade
+                                        ? "UI/Agents/MissionTypes/ResearchTrade"
+                                        : "UI/Agents/MissionTypes/ResearchCourier"
+                                )
+                            : o.Kind == MissionKind.Trade
                                 ? (o.Storyline ? "UI/Agents/MissionTypes/StorylineTrade" : "UI/Agents/MissionTypes/Trade")
                             : o.Storyline ? "UI/Agents/MissionTypes/StorylineCourier"
                             : o.Kind == MissionKind.Combat ? "UI/Agents/MissionTypes/Encounter"

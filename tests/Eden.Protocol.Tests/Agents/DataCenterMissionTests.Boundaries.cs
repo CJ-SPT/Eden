@@ -2,6 +2,7 @@ using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -75,6 +76,28 @@ public sealed partial class DataCenterMissionTests
             f.Missions.Act(MissionFixture.PilotId, agent.Id, terminal == "quit" ? MissionAction.Quit : MissionAction.Decline, offer.Id);
         }
         Assert.Equal(balance, Live(f).WalletBalance(MissionFixture.PilotId));
+        Live(f)
+            .Economy.Inspect(world =>
+            {
+                var penalties = world.Set<SavedStandingTransaction>().Where(row => row.Event == StandingEvent.AgentMissionFailed).ToArray();
+                if (terminal is "quit" or "accepted-expiry")
+                {
+                    Assert.Equal(2, penalties.Length);
+                    Assert.Equal(
+                        StandingRules.FactionLoss(8, MissionStandingRules.QuitAgentFraction),
+                        Assert.Single(penalties, row => row.SourceId == agent.Id).After
+                    );
+                    Assert.Equal(
+                        StandingRules.FactionLoss(0, MissionStandingRules.QuitCorporationFraction),
+                        Assert.Single(penalties, row => row.SourceId == agent.CorporationId).After
+                    );
+                }
+                else
+                {
+                    Assert.Empty(penalties);
+                }
+                return true;
+            });
         Assert.Throws<InvalidDataException>(() => f.Request(agent.Id));
         await Live(f).FlushAsync();
         f.StopResident();

@@ -4,7 +4,10 @@ namespace Eden.Gameplay.Agents;
 
 public sealed record ResearchField(int SkillId, string Name, int? DatacoreTypeId);
 
-public sealed record ResearchProject(long Id, CatalogAgent Agent, int SkillId, double Points, double PointsPerDay);
+public sealed record ResearchProject(long Id, CatalogAgent Agent, int SkillId, double Points, double PointsPerDay)
+{
+    public bool CanRequestMission { get; init; }
+}
 
 public sealed record DatacorePurchase(long BalanceCents, InventoryChange Item);
 
@@ -13,7 +16,7 @@ public interface IPilotResearch
     IReadOnlyList<ResearchField> Fields(long pilotId, long agentId);
     IReadOnlyList<ResearchProject> Research(long pilotId, long? agentId = null);
     ResearchProject StartResearch(long pilotId, long agentId, int skillId);
-    void CancelResearch(long pilotId, long agentId, long projectId);
+    MissionState? CancelResearch(long pilotId, long agentId, long projectId);
     DatacorePurchase BuyDatacores(long pilotId, long agentId, long projectId, int quantity);
 }
 
@@ -27,6 +30,12 @@ public static class ResearchRules
     private const decimal BaseQuality = 20;
     private const decimal NegotiationQuality = 5;
     private const decimal Percent = 100;
+    private const int MinimumMissionCooldownHours = 12;
+    private const int MissionCooldownHourCount = 12;
+
+    // Use the saved instance to select a stable delay within the reported 12–23-hour window.
+    public static long NextMissionAt(long missionId, long closedAt) =>
+        checked(closedAt + (MinimumMissionCooldownHours + missionId % MissionCooldownHourCount) * TimeSpan.TicksPerHour);
 
     public static double PointsPerDay(int agentLevel, int fieldLevel, int negotiation, double standing)
     {

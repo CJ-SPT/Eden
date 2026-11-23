@@ -8,10 +8,8 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
-using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
-using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -47,7 +45,7 @@ internal sealed partial class PilotMissionStore
                 return false;
             }
             var offer = Snapshot(world, catalog, pilot, row);
-            if (offer.Agent.Space is not null || offer.Agent.Type == AgentType.FactionalWarfare)
+            if (offer.Agent.Space is not null || offer.Agent.Type is AgentType.FactionalWarfare or AgentType.Research or AgentType.Heraldry)
             {
                 return false;
             }
@@ -73,9 +71,10 @@ internal sealed partial class PilotMissionStore
         long now = Now;
         training.Advance(transaction, pilotId, now);
         var pilot = ResidentPilot(transaction, pilotId);
-        if (share && (Agent(agentId).Space is not null || Agent(agentId).Type == AgentType.FactionalWarfare))
+        var agent = Agent(agentId);
+        if (share && (agent.Space is not null || agent.Type is AgentType.FactionalWarfare or AgentType.Research or AgentType.Heraldry))
         {
-            throw new InvalidDataException("This one-time agent's rewards are personal.");
+            throw new InvalidDataException("This agent's mission rewards are personal.");
         }
         long[] recipients = share ? fleets.Fleetmates(pilotId).Select(p => p.Id).Where(transaction.PilotExists).ToArray() : [];
         if (recipients.Length > MaximumOtherMissionRecipients)
@@ -83,7 +82,7 @@ internal sealed partial class PilotMissionStore
             Random.Shared.Shuffle(recipients.AsSpan());
             recipients = recipients[..MaximumOtherMissionRecipients];
         }
-        var result = Act(transaction, catalog, pilot, Agent(agentId), action, offerId, now, recipients);
+        var result = Act(transaction, catalog, pilot, agent, action, offerId, now, recipients);
         transaction.Commit();
         return result;
     }
@@ -91,26 +90,31 @@ internal sealed partial class PilotMissionStore
     private static Pilot ResidentPilot(WorldAction world, long pilotId) =>
         world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown mission pilot.");
 
-    private static bool Expire(WorldAction world, SavedMission mission, long now)
+    private static bool Expire(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedMission mission,
+        long now,
+        List<MissionStandingChange>? standings = null
+    )
     {
         if (mission.ClosedAt is null && now >= mission.ExpiresAt)
         {
             if (
                 mission.State == MissionState.Accepted
                 && world is EconomyTransaction
-                && MilitiaMissionCatalog.Issuer(mission.MissionId) is { } faction
-                && world.Pilots.Find(mission.PilotId) is { } pilot
+                && NpcDirectory.Agent(catalog, mission.AgentId) is { } agent
             )
             {
-                MilitiaProgressionStore.AdjustStanding(
-                    world,
-                    pilot,
-                    faction,
-                    -MilitiaProgressionRules.MissionFailureFraction,
-                    StandingEvent.AgentMissionFailed,
-                    mission.SystemId,
-                    now
-                );
+                var changes = standings ?? [];
+                ApplyMissionPenalty(world, catalog, agent, mission, StandingEvent.AgentMissionFailed, now, changes);
+                if (standings is null && changes.Count != 0 && LiveWorld.Find(world.WorldPath)?.Fleets is { } notifications)
+                {
+                    foreach (var change in changes)
+                    {
+                        world.AfterCommit(() => notifications.NotifyStandingChanged(mission.PilotId, change.SourceId, change.After));
+                    }
+                }
             }
             Close(world, mission, MissionState.Failed, now);
             return true;

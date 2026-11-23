@@ -281,8 +281,30 @@ public sealed class SavedStandingTransaction
     public int SystemId { get; set; }
     public int VictimTypeId { get; set; }
 
-    public StandingTransaction Snapshot() =>
-        new(Id, PilotId, SourceId, Time, Event, Before, After, VictimCorporationId, SystemId, VictimTypeId);
+    public StandingTransaction Snapshot()
+    {
+        // Standing history reuses its event-specific argument for a combat victim type or a mission title.
+        int? missionTitle =
+            Event is StandingEvent.AgentMissionCompleted or StandingEvent.AgentMissionDeclined or StandingEvent.AgentMissionFailed
+            && VictimTypeId > 0
+                ? VictimTypeId
+                : null;
+        return new(
+            Id,
+            PilotId,
+            SourceId,
+            Time,
+            Event,
+            Before,
+            After,
+            VictimCorporationId,
+            SystemId,
+            missionTitle is null ? VictimTypeId : 0
+        )
+        {
+            MissionTitleId = missionTitle,
+        };
+    }
 }
 
 public sealed class SavedTaskCounter
