@@ -170,6 +170,7 @@ internal sealed partial class LiveWorld : IDisposable
             return;
         }
         ObserveWalletBalances(changes);
+        ObserveLoyaltyBalances(changes);
         if (
             changes.Any(change =>
                 change.Table

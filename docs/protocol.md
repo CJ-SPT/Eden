@@ -660,6 +660,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 - [Catalog-wide station production, November 9, 2026](protocol/industry.md#catalog-wide-station-production-november-9-2026)
 - [Science integration on main, November 9, 2026](protocol/industry.md#science-integration-on-main-november-9-2026)
+- [Personal LP balances across system jumps](protocol/industry.md#personal-lp-balances-across-system-jumps)
 - [LP-wallet nearest-station lookup, November 9, 2026](protocol/industry.md#lp-wallet-nearest-station-lookup-november-9-2026)
 - [Production-driven market progression, November 8, 2026](protocol/industry.md#production-driven-market-progression--november-8-2026)
 - [LP-store Resource Wars presence read, November 8, 2026](protocol/industry.md#lp-store-resource-wars-presence-read-november-8-2026)

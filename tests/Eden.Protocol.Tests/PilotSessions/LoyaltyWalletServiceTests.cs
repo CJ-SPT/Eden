@@ -1,4 +1,5 @@
 using Eden.Data.World.Market;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Redemption;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -7,6 +8,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,90 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class LoyaltyWalletServiceTests
 {
+    [Fact]
+    public void PersonalLpCreditStaysVisibleWhenReturningToJita()
+    {
+        const long account = RedemptionTests.Account;
+        const int jita = 30000142;
+        const int navy = 1000035;
+        const int concord = 1000125;
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        var systems = db.Services.GetRequiredService<ISystemObjects>();
+        var travel = db.Services.GetRequiredService<IPilotGateTravel>();
+        var pilot = db.Store.FindPilot(account)!;
+        var jitaGate = Assert.Single(systems.Load(jita), gate => gate.DestinationGateId is not null);
+        var perimeterGate = Assert.Single(systems.Load(jitaGate.DestinationSystemId!.Value), gate => gate.Id == jitaGate.DestinationGateId);
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            action.Add(
+                new SavedLoyaltyBalance
+                {
+                    PilotId = pilot.PilotId,
+                    IssuerCorporationId = navy,
+                    Points = 160_000,
+                }
+            );
+            action.Add(
+                new SavedLoyaltyBalance
+                {
+                    PilotId = pilot.PilotId,
+                    IssuerCorporationId = concord,
+                    Points = 50_000,
+                }
+            );
+            action.Commit();
+        }
+        using CourierServiceTests.Client client = new(db, clock, account);
+        client.Refresh();
+        CheckWallet(160_000);
+        Jump(jitaGate, perimeterGate);
+        CheckWallet(160_000);
+
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            action.Set<SavedLoyaltyBalance>().Find(pilot.PilotId, navy)!.Points += 160_000;
+            action.Commit();
+        }
+        using (live.UseSystem(pilot.SystemId))
+        {
+            clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            client.Advance();
+        }
+        Assert.Equal(
+            new LoyaltyBalanceChanged(navy, 160_000, 320_000),
+            Assert.Single(client.Context.Notifications.OfType<LoyaltyBalanceChanged>())
+        );
+        CheckWallet(320_000);
+        client.Context.Notifications.Clear();
+
+        Jump(perimeterGate, jitaGate);
+        CheckWallet(320_000);
+        Jump(jitaGate, perimeterGate);
+        CheckWallet(320_000);
+        Assert.Empty(client.Context.Notifications.OfType<LoyaltyBalanceChanged>());
+
+        void Jump(StaticSpaceObject source, StaticSpaceObject destination)
+        {
+            db.Store.SetPosition(pilot.ShipId, source.Position, pilot.SystemId);
+            pilot = travel.Transfer(pilot.PilotId, pilot.ShipId, source.Id, destination.Id);
+            Assert.Equal(source.DestinationSystemId, pilot.SystemId);
+            client.Refresh();
+        }
+
+        void CheckWallet(long navyPoints)
+        {
+            using var system = live.UseSystem(pilot.SystemId);
+            var balances = Assert.IsType<List<object?>>(Reply(client.Call("GetAllMyCharacterWalletLPBalances", [], "LPSvc")));
+            Assert.Collection(
+                balances,
+                row => Assert.Equal(new object?[] { (long)navy, navyPoints }, Assert.IsType<object?[]>(row)),
+                row => Assert.Equal(new object?[] { (long)concord, 50_000L }, Assert.IsType<object?[]>(row))
+            );
+        }
+    }
+
     [Fact]
     public void ExternalCashCreditsRefreshTheRecipientAndOwnNotificationsAreNotDuplicatedByPolling()
     {
