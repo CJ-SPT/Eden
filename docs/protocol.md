@@ -607,6 +607,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Container item menus](protocol/inventory.md#container-item-context-menus-november-15-2026)
 - [Resident cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026)
 - [Criminal loot and lawful recovery](protocol/inventory.md#criminal-loot-and-lawful-recovery-november-14-2026)
+- [NPC wreck ownership from damage](protocol/inventory.md#npc-wreck-ownership-from-damage)
 - [Loot abandonment and theft](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026)
 - [Direct player trading](protocol/inventory.md#direct-player-trading)
 - [Targeted stack merging, November 9, 2026](protocol/inventory.md#targeted-stack-merging-november-9-2026)

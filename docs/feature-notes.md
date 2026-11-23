@@ -284,10 +284,12 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 - Criminal player attacks award lasting kill rights. Owners can activate a right for free or list it for public or
   restricted access. Activation makes the target suspect for 15 minutes. [Character kill rights](protocol/combat.md#character-kill-rights)
 - NPC bounties and mining and ratting SP settle on a configurable per-pilot tick. Fleetmates can share eligible bounties and loot.
+  Ordinary NPC wrecks belong to the pilot who dealt the most damage, and mission wrecks go to the mission owner.
   Eligible security gains, ship losses and wrecks persist. Pilot
   capsule loss destroys active-body implants and returns the pilot to their saved home station.
   [Bounty ticks](protocol/combat.md#bounty-and-activity-sp-ticks) · [Security gain](protocol/combat.md#persistent-security-status-from-pirate-kills) ·
-  [Capsule loss](protocol/combat.md#capsule-destruction-and-home-station-respawn-november-7-2026)
+  [Capsule loss](protocol/combat.md#capsule-destruction-and-home-station-respawn-november-7-2026) ·
+  [NPC wreck ownership](protocol/inventory.md#npc-wreck-ownership-from-damage)
 - Docked pilots can insure eligible ships and repair at NPC station facilities or the native Upwell repair shop where
   available. Eligible Upwell structures also provide tether repair and asset safety.
   [NPC station repair](protocol/combat.md#native-station-repair-november-2-2026) · [Upwell repair](protocol/structures.md#native-upwell-repair-shop)

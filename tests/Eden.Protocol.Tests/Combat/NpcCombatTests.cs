@@ -1,11 +1,13 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -23,6 +25,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
@@ -525,6 +528,66 @@ public sealed class NpcCombatTests
         Assert.Null(f.Combat.Fire(wing.PilotId, wing.ShipId, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1));
         Assert.NotNull(f.Fire());
         Assert.Equal(200, f.Health.Read(wing.PilotId, f.Clock.Now).Remaining.Shield);
+    }
+
+    [Fact]
+    public async Task NpcWreckBelongsToTheHighestDamagePilotAcrossShipsAndKeepsTheFinalBlow()
+    {
+        using Fixture f = new(liveWorld: true, useTestClock: true);
+        var live = f.Db.Services.GetRequiredService<LiveWorld>();
+        var final = f.Pilot;
+        var contributor = f.Db.Store.FindPilot(1000002)!;
+        f.Db.Store.SetPosition(contributor.ShipId, final.Position, f.Npc.SystemId);
+        using (var action = live.Economy.Begin(new(systems: [f.Npc.SystemId], pilots: [final.PilotId, contributor.PilotId])))
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath))
+        {
+            var npc = action.Set<WorldNpc>().Find(f.Npc.Id)!;
+            var defense = ShipHealth.DefenseFrom(PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
+            npc.ShieldCharge = 0;
+            npc.ArmorDamage = defense.Armor;
+            npc.StructureDamage = defense.Structure - 1;
+            npc.UpdatedAt = f.Clock.Now;
+            var wing = PilotInteractionHistoryStore.Player(action, action.Pilots.Find(contributor.PilotId)!, contributor.ShipId);
+            var finisher = PilotInteractionHistoryStore.Player(action, action.Pilots.Find(final.PilotId)!, final.ShipId);
+            PilotInteractionHistoryStore.Damage(action, npc.Id, wing, 35);
+            PilotInteractionHistoryStore.Damage(action, npc.Id, wing with { EntityId = contributor.ShipId + 100 }, 35);
+            PilotInteractionHistoryStore.Damage(action, npc.Id, finisher, 40);
+            action.Commit();
+        }
+
+        using (var action = live.Economy.Begin(new(systems: [f.Npc.SystemId], pilots: [final.PilotId])))
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath))
+        {
+            var npc = action.Set<WorldNpc>().Find(f.Npc.Id)!;
+            var hit = NpcDamagePersistence.Apply(
+                action,
+                catalog,
+                npc,
+                action.Pilots.Find(final.PilotId)!,
+                final.ShipId,
+                PilotFittingStore.ReadAttributes(catalog, npc.TypeId),
+                new(10, 0, 0, 0),
+                f.Clock.Now,
+                bypassResistances: true
+            );
+            Assert.True(hit.Destroyed);
+            action.Commit();
+        }
+        var wrecks = f.Db.Services.GetRequiredService<IWrecks>();
+        var wreck = Assert.Single(wrecks.List(f.Npc.SystemId, f.Clock.Now));
+        Assert.Equal(contributor.PilotId, wreck.OwnerId);
+        Assert.Equal(contributor.CorpId, wreck.CorporationId);
+        var item = Assert.Single(wrecks.Read(contributor.PilotId, wreck.Id, f.Clock.Now).Items);
+        Assert.Equal(contributor.PilotId, item.OwnerId);
+        var report = Assert.Single(f.Db.Services.GetRequiredService<IPilotInteractionHistory>().Combat(final.PilotId, 5, null));
+        Assert.Equal(final.PilotId, report.FinalBlow.CharacterId);
+        Assert.Equal(70, report.OtherAttackers.Where(party => party.CharacterId == contributor.PilotId).Sum(party => party.Damage));
+
+        await live.FlushAsync();
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(contributor.PilotId, saved.Set<WorldWreck>().Find(wreck.Id)!.OwnerId);
+        Assert.Equal(contributor.PilotId, saved.Set<OwnedItem>().Find(item.Id)!.OwnerId);
+        Assert.Empty(saved.Set<SavedCombatDamage>().Where(row => row.VictimId == f.Npc.Id));
     }
 
     [Fact]
