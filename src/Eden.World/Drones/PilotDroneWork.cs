@@ -7,6 +7,7 @@ using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Propulsion;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -253,6 +254,7 @@ internal sealed partial class PilotDroneStore
                 wreck is null
                 || wreck.SystemId != system
                 || wreck.ExpiresAt <= now
+                || MissionSalvageRules.IsWreck(id)
                 || wreck.SalvagedAt is not null
                 || wreck.SalvageJson is null
                 ? null
@@ -325,7 +327,7 @@ internal sealed partial class PilotDroneStore
                     )
                     .ToArray();
                 endpoint = candidates
-                    .Where(w => CanAutoSalvage(world, pilot, w))
+                    .Where(w => !MissionSalvageRules.IsWreck(w.Id) && CanAutoSalvage(world, pilot, w))
                     .Where(w => source.DistanceTo(new(w.X, w.Y, w.Z)) <= controlRange)
                     .OrderBy(w => new SpacePosition(w.X, w.Y, w.Z).DistanceTo(contact.Position))
                     .ThenBy(w => w.Id)

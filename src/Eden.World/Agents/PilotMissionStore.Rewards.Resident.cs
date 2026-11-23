@@ -45,7 +45,7 @@ internal sealed partial class PilotMissionStore
                 return false;
             }
             var offer = Snapshot(world, catalog, pilot, row);
-            if (offer.Agent.Space is not null || offer.Agent.Type is AgentType.FactionalWarfare or AgentType.Research or AgentType.Heraldry)
+            if (offer.Agent.Space is not null || PersonalRewards(offer.Agent.Type))
             {
                 return false;
             }
@@ -72,7 +72,7 @@ internal sealed partial class PilotMissionStore
         training.Advance(transaction, pilotId, now);
         var pilot = ResidentPilot(transaction, pilotId);
         var agent = Agent(agentId);
-        if (share && (agent.Space is not null || agent.Type is AgentType.FactionalWarfare or AgentType.Research or AgentType.Heraldry))
+        if (share && (agent.Space is not null || PersonalRewards(agent.Type)))
         {
             throw new InvalidDataException("This agent's mission rewards are personal.");
         }
@@ -89,6 +89,9 @@ internal sealed partial class PilotMissionStore
 
     private static Pilot ResidentPilot(WorldAction world, long pilotId) =>
         world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown mission pilot.");
+
+    private static bool PersonalRewards(AgentType type) =>
+        type is AgentType.FactionalWarfare or AgentType.Research or AgentType.Heraldry or AgentType.Career;
 
     private static bool Expire(
         WorldAction world,
@@ -124,6 +127,8 @@ internal sealed partial class PilotMissionStore
 
     private static void Close(WorldAction world, SavedMission mission, MissionState state, long now)
     {
+        CloseCareerSalvage(world, mission);
+        RetireCareerExploration(world, mission);
         if (MissionCatalog.IsMining(mission.MissionId))
         {
             world.RemoveRange(MissionDeposits(world.Set<WorldAsteroid>(), mission.Id));

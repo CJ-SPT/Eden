@@ -2,6 +2,80 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Career agent chains — November 22, 2026
+
+Eden admits all **180 career stages** for the **100 active career agents** in build 3662168. The five divisions
+each have four empire variants, for **20 authored sequences**. The build's mission audit now admits **688 of 2,892**
+records. [Playable objectives](../missions.md#career-agents) · [Complete catalog audit](../data/mission-support-3662168.csv)
+
+### Source evidence
+
+The exporter reads the exact agent assignments from `client/npccharacters.agent.storyLineMissions` and orders them by the
+stage in `sde/missions`. It checks the expected cardinality at the agent, sequence and stage levels. The pinned mission,
+dungeon and blueprint records supply station contacts, topology, item quantities, rewards and available blueprint recipes.
+The original archive used for the client call checks has SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+
+| Division | Reviewed report |
+| --- | --- |
+| Enforcer | [Cash Flow for Capsuleers, oldid 215464](https://wiki.eveuniversity.org/index.php?title=Enforcer_(Career_Agent)&oldid=215464) |
+| Soldier of Fortune | [Ten training missions, oldid 224310](https://wiki.eveuniversity.org/index.php?title=Soldier_of_Fortune&oldid=224310) |
+| Explorer | [Five training missions, oldid 221957](https://wiki.eveuniversity.org/index.php?title=Explorer&oldid=221957) |
+| Industrialist (Entrepreneur) | [Balancing the Books, oldid 214335](https://wiki.eveuniversity.org/index.php?title=Industrialist_(Entrepreneur)&oldid=214335) |
+| Industrialist (Producer) | [Making Mountains of Molehills, oldid 229156](https://wiki.eveuniversity.org/index.php?title=Industrialist_(Producer)&oldid=229156) |
+
+The older EVE.js 261108.1 comparison includes career content pack 1.4.4, `careerAgentMissions.js` SHA-256
+`bf8a9180bc9a9753d9a39f621271900c8ed93edd088e8dd5f1d08c66b6eb042e`, and `careerAgentChains.json` SHA-256
+`ceb0fd7e10dd61d67a98a9e3831e5f6577623366c00136d3c54078d1a7efd3d0`. It corroborates encounter roles and progression.
+The pinned catalog supplies Eden's bindings.
+
+### Resident progression and client calls
+
+- Turn-in applies the objective, item and ISK rewards, standings, and next offer in the same resident transaction.
+  Checkpoints retain chain position, site progress and issued gifts. Career completions grant personal rewards, no LP,
+  and no ordinary storyline credit. The last stage grants the catalog's direct 1.5% faction increase.
+- The client primes `agentMgr.GetCompletedCareerAgentIDs` with a list of IDs and receives an integer-keyed Boolean
+  dictionary. Entries become true after completing that agent's terminal stage. Briefing and detail dictionaries use
+  None for an indefinite expiry, and journal row tuples use zero. The conversation hides the request action for a
+  closed chain.
+- The module lessons require the correct owned target and a valid tackle activation or a paid remote repair cycle.
+  The approved loss objectives settle through ship-loss persistence. Training ore, salvage and hacking use the native
+  mining, salvager and analyzer paths. The civilian shuttle copies use pinned manufacturing recipes.
+- The Explorer entry point uses the normal scanner. Data, relic and gas sites require 100% probe resolution. The
+  agent tracker supplies the proof and next steps without a warp bookmark that bypasses scanning. The gas pocket
+  uses the reusable key; the data and relic proofs require a successful analyzer board.
+
+Eden authors encounters and triggers for these objectives using the reported roles, catalog objects and native modules.
+Enforcer uses cleared waves to advance part seven. Its scripted antagonist escape, recurring gate damage,
+optional contraband and some NPC reactions are omitted. The warehouse stage requires destruction of the warehouse.
+Soldier of Fortune accepts clearing the entire enemy fleet as an alternate completion in the second ship-loss lesson.
+Concurrent ship damage can delay an electric-cloud pulse. Explorer uses a short, repeatable training board, grants
+sixteen core scanner probes, and omits Rulie's speech and optional gas harvesting. Career ISK payouts use Eden's
+mission reward rules. Blueprint copies have the observed ME 5 and TE 2 and their catalog run counts.
+
+### Automated validation
+
+- `dotnet restore --artifacts-path artifacts/feature-tests` and `dotnet build --no-restore --artifacts-path artifacts/feature-tests`
+  passed. The solution build took 12.04 seconds with zero warnings and errors.
+- `Test-Feature.ps1` passed the exact
+  `FullyQualifiedName=Eden.Protocol.Tests.Agents.CareerMissionTests.SoldierRetriesTheFailedStageAfterDowntimeWithItsCompletedPredecessor`
+  filter in 12.11 seconds, including rejection before 11:00 UTC and acceptance of the same stage at downtime.
+- The final filtered run passed **195/195** in 100.48 seconds with no skips. It covered all four career test classes,
+  ordinary mission chains, protocol and structure objectives, agent directory, hacking and probes, and exact ordinary
+  mining, salvage, tackle, remote repair and Guristas Score cases. The results and exact filter are under
+  `artifacts/career-agent-missions-20261122`.
+- Regenerating the career manifest, fixture and audit admitted 180 career definitions and kept the 446-definition
+  ordinary manifest byte-identical. The mission content Python suite passed **19/19** in 0.44 seconds.
+  `Format.ps1 -Check`, local documentation links and `git diff --check` passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Mission gap expansion — November 22, 2026
 
 The build-3662168 audit now admits **508 of 2,892** catalog mission records. This milestone adds **55** playable definitions

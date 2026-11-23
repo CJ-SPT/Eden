@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
@@ -12,9 +13,11 @@ using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -26,7 +29,8 @@ using Eden.World.Thermal;
 namespace Eden.World.Repair;
 
 [Injectable]
-internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepairEvents events, TimeProvider clock) : IPilotRemoteRepairing
+internal sealed partial class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepairEvents events, TimeProvider clock)
+    : IPilotRemoteRepairing
 {
     public bool IsOnline(long pilotId, long shipId, long moduleId) =>
         LiveReadModels.Find(database.Path)?.RemoteRepairModuleOnline(pilotId, shipId, moduleId, ReadOnline)
@@ -76,7 +80,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         bool overloaded
     )
     {
-        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [targetId]));
+        using WorldActionScope transaction = new(database, select: world => RemoteRepairParticipants(world, pilotId, targetId));
         var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -121,6 +125,12 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         var module = RemoteRepairRules.Define(item.Id, item.TypeId, effect, attributes);
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         _ = Health(world, pilot, ship, now);
+        if (world.Set<WorldNpc>().Find(targetId) is { } npc && PilotMissionStore.CareerEffectTarget(world, pilot, npc, effect) is not null)
+        {
+            var lesson = StartCareerRepair(world, catalog, pilot, npc, module, ship, now);
+            transaction.Commit();
+            return lesson;
+        }
         var target = Target(world, catalog, pilot, targetId, now);
         double distance = Distance(catalog, pilot, target.Pilot);
         if (

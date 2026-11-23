@@ -56,6 +56,7 @@ internal sealed record SpaceAgentLocation(CatalogAgent Agent) : BlueModel
 internal sealed record MissionConversation(MissionOffer? Offer, string Event, string Greeting) : BlueModel
 {
     internal long? ReplayDelay { get; init; }
+    internal bool SuppressRequest { get; init; }
 
     internal static object?[] Action(MissionOffer offer, MissionAction action) =>
         [checked(offer.Id * MissionRules.ActionStride + (int)action), (int)action];
@@ -75,7 +76,7 @@ internal sealed record MissionConversation(MissionOffer? Offer, string Event, st
             actions.Add(Action(Offer, MissionAction.Defer));
             actions.Add(Action(Offer, MissionAction.Quit));
         }
-        else if (ReplayDelay is null)
+        else if (ReplayDelay is null && !SuppressRequest)
         {
             actions.Add(new object?[] { (int)MissionAction.Request, (int)MissionAction.Request });
         }
@@ -106,7 +107,10 @@ internal sealed record MissionConversation(MissionOffer? Offer, string Event, st
         }
         // Pinned OldMissionController.update_mission unpacks ((message, actions), lastActionInfo).
         // A message is (localization ID or literal text, catalog mission ID).
-        object?[] message = Offer is null ? [Greeting, null] : [Offer.BriefingId == 0 ? Offer.Briefing : Offer.BriefingId, Offer.MissionId];
+        object?[] message =
+            Offer is null || SuppressRequest && Event.Length == 0
+                ? [Greeting, null]
+                : [Offer.BriefingId == 0 ? Offer.Briefing : Offer.BriefingId, Offer.MissionId];
         return new object?[] { new object?[] { message, actions }, last };
     }
 }
@@ -144,7 +148,7 @@ internal sealed record MissionBriefing(MissionOffer Offer, long Now) : BlueModel
                     ? end - Now
                     : -1L
                 : null,
-            ["Expiration Time"] = Offer.ExpiresAt,
+            ["Expiration Time"] = Offer.NonExpiring ? null : Offer.ExpiresAt,
             ["Mission Title ID"] = Offer.NameId == 0 ? Offer.Name : Offer.NameId,
             ["Mission Briefing ID"] = Offer.BriefingId == 0 ? Offer.Briefing : Offer.BriefingId,
             ["Mission Keywords"] = new MissionKeywords(Offer),
@@ -215,6 +219,26 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
         {
             rewards.Add(new object?[] { itemReward.TypeId, itemReward.Quantity, null });
         }
+        List<object?> gifts = [];
+        if (Offer.Cargo is { } courierGift)
+        {
+            gifts.Add(new object?[] { courierGift.TypeId, courierGift.Quantity, null });
+        }
+        if (Offer.CareerGift is { } careerGift)
+        {
+            gifts.Add(new object?[] { careerGift.TypeId, careerGift.Quantity, null });
+        }
+        List<object?> bonuses = [];
+        if (Offer.Bonus is { } duration)
+        {
+            long time = duration.Remaining(Now);
+            long minutes = duration.WindowTicks / TimeSpan.TicksPerMinute;
+            bonuses.Add(new object?[] { time, CreditsType, duration.IskCents / (double)MarketDefinitions.CentsPerIsk, null, minutes });
+            if (Offer.CareerBonusItem is { } careerBonus)
+            {
+                bonuses.Add(new object?[] { time, careerBonus.TypeId, careerBonus.Quantity, null, minutes });
+            }
+        }
         bool combatComplete = Offer.Retrieval is null ? Offer.ObjectiveComplete : Offer.CombatComplete;
         if (Offer.Cargo is { } cargo)
         {
@@ -239,7 +263,7 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
                 }
             );
         }
-        else if (Offer.DungeonId.HasValue)
+        else if (Offer.DungeonId.HasValue && !Offer.RequiresScanner)
         {
             var dungeon = new Dictionary<string, object?>
             {
@@ -306,25 +330,11 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
             ["objectives"] = objectives,
             ["dungeons"] = dungeons,
             ["locations"] = new List<object?> { Offer.SystemId },
-            ["agentGift"] = Offer.Cargo is { } gift
-                ? new List<object?> { new object?[] { gift.TypeId, gift.Quantity, null } }
-                : new List<object?>(),
+            ["agentGift"] = gifts,
             ["normalRewards"] = rewards,
             ["loyaltyPoints"] = Offer.Rewards.LoyaltyPoints,
             // Build 3662168 agentDialogueUtil consumes ticks, type, quantity, extra, and original minutes.
-            ["bonusRewards"] = Offer.Bonus is { } bonus
-                ? new List<object?>
-                {
-                    new object?[]
-                    {
-                        bonus.Remaining(Now),
-                        CreditsType,
-                        bonus.IskCents / (double)MarketDefinitions.CentsPerIsk,
-                        null,
-                        bonus.WindowTicks / TimeSpan.TicksPerMinute,
-                    },
-                }
-                : new List<object?>(),
+            ["bonusRewards"] = bonuses,
             ["collateral"] = new List<object?>(),
             ["researchPoints"] = Offer.ResearchPoints is double researchPoints ? researchPoints : (object)0,
         };
@@ -340,7 +350,7 @@ internal sealed record MissionJournalInfo(MissionOffer Offer, long Now) : BlueMo
             ["briefingTextID"] = Offer.BriefingId == 0 ? Offer.Briefing : Offer.BriefingId,
             ["contentID"] = Offer.MissionId,
             ["iconID"] = null,
-            ["expirationTime"] = Offer.ExpiresAt,
+            ["expirationTime"] = Offer.NonExpiring ? null : Offer.ExpiresAt,
             ["missionState"] = (int)Offer.State,
             ["objectives"] = new MissionObjectives(Offer, Now),
         };
@@ -398,8 +408,8 @@ internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadO
                             : "UI/Agents/MissionTypes/Courier",
                             o.NameId,
                             o.Agent.Id,
-                            o.ExpiresAt,
-                            o.DungeonId.HasValue
+                            o.NonExpiring ? 0L : o.ExpiresAt,
+                            o.DungeonId.HasValue && !o.RequiresScanner
                                 ? new List<object?> { new MissionBookmark(o) }
                                 : new List<object?>(),
                             false,

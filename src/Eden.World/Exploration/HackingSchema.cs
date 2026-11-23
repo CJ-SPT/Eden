@@ -1,4 +1,5 @@
 using Eden.Data.World.Exploration;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Exploration;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -75,7 +76,9 @@ internal static class HackingSchema
                     continue;
                 }
                 container.Failures++;
-                container.Destroyed = container.Failures >= GhostSiteRules.MaximumFailures((ExplorationKind?)site?.Kind);
+                container.Destroyed =
+                    !MissionContainerRules.IsContainer(container.Id)
+                    && container.Failures >= GhostSiteRules.MaximumFailures((ExplorationKind?)site?.Kind);
             }
             world.Remove(attempt);
         }

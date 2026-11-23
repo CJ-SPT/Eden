@@ -37,7 +37,8 @@ internal sealed partial class LiveReadModels
         "WorldMission",
         "WorldMissionRoom",
         "WorldMissionStructure",
-        "WorldAsteroid"
+        "WorldAsteroid",
+        "WorldHackingContainer"
     );
 
     internal MissionSitesView MissionSites(int systemId, long now, Func<MissionSitesView> load) =>

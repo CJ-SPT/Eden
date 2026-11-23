@@ -69,7 +69,7 @@ public static class MissionTrackingRules
             return new(current, [missing, present, complete], false);
         }
         var travel = new MissionTrackerObjective(MissionObjectiveKind.Travel, offer.Agent.Id, offer.SystemId);
-        if (offer.Kind == MissionKind.Trade && offer.Retrieval is { } trade)
+        if ((offer.Kind == MissionKind.Trade || offer.RequiresScanner) && offer.Retrieval is { } trade)
         {
             var fetchTrade = new MissionTrackerObjective(
                 MissionObjectiveKind.Fetch,
@@ -90,7 +90,7 @@ public static class MissionTrackingRules
                     : atAgent ? complete
                     : returnTrade,
                 [fetchTrade, returnTrade, complete],
-                false
+                inDungeon
             );
         }
         if (offer.Kind == MissionKind.Mining && offer.Retrieval is { } ore)

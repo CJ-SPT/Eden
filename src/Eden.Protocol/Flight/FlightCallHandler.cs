@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
@@ -25,7 +26,8 @@ internal sealed class FlightCallHandler(
     IDedEscalations? escalations = null,
     IWormholeTravel? wormholes = null,
     IMilitiaComplexes? complexes = null,
-    ICapitalNavigation? navigation = null
+    ICapitalNavigation? navigation = null,
+    IPilotMissions? missions = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -123,8 +125,15 @@ internal sealed class FlightCallHandler(
                 return new PilotCallResult.Failure(error.Message);
             }
         }
+        var training =
+            command is FlightCommand.WarpTo trainingWarp && MissionRules.IsSiteId(trainingWarp.TargetId)
+                ? missions
+                    ?.TrainingSites(context.Pilot.PilotId, context.Pilot.SystemId)
+                    .SingleOrDefault(site => site.Id == trainingWarp.TargetId)
+                : null;
         if (
             command is FlightCommand.WarpToScan
+            || training is not null
             || command is FlightCommand.WarpTo { TargetId: >= CombatAnomalyRules.FirstSiteId and < CombatAnomalyRules.FirstObjectId }
             || command is FlightCommand.WarpTo siteWarpRequest
                 && (
@@ -134,15 +143,18 @@ internal sealed class FlightCallHandler(
                 )
         )
         {
-            var site = anomalies
-                .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
-                .Concat(anomalies.Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
-                .Concat(complexes?.Sites(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-                .SingleOrDefault(s =>
-                    command is FlightCommand.WarpToScan scan
-                        ? scan.TargetId == s.TargetId
-                        : command is FlightCommand.WarpTo item && item.TargetId == s.Id
-                );
+            var site =
+                training
+                ?? anomalies
+                    .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    .Concat(anomalies.Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
+                    .Concat(complexes?.Sites(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
+                    .Concat(missions?.TrainingSites(context.Pilot.PilotId, context.Pilot.SystemId) ?? [])
+                    .SingleOrDefault(s =>
+                        command is FlightCommand.WarpToScan scan
+                            ? scan.TargetId == s.TargetId
+                            : command is FlightCommand.WarpTo item && item.TargetId == s.Id
+                    );
             if (site is null)
             {
                 return new PilotCallResult.Failure("This combat anomaly is no longer available in this system.");

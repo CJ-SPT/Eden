@@ -1,5 +1,6 @@
 using Eden.Data.World.Agents;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Exploration;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
@@ -81,6 +82,20 @@ internal sealed partial class PilotMissionStore
         if (mission is null || mission.State != MissionState.Accepted || mission.SystemId != system || mission.ExpiresAt <= Now)
         {
             throw new InvalidDataException("This acceleration gate is no longer available.");
+        }
+        if (CareerMissionCatalog.Find(mission.MissionId) is { } career)
+        {
+            if (mission.PilotId != pilot.Id)
+            {
+                throw new InvalidDataException("Only the assigned pilot can use this career mission gate.");
+            }
+            if (
+                career.Scan is MissionScanKind.Data or MissionScanKind.Relic or MissionScanKind.Gas
+                && world.Set<SavedResolvedSignature>().Find(pilot.Id, MissionRules.FirstSiteId + mission.Id)?.SystemId != system
+            )
+            {
+                throw new InvalidDataException("Resolve this training signature to 100% before activating its gate.");
+            }
         }
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);
         bool cleared = true;

@@ -164,7 +164,11 @@ internal sealed partial class MissionHandler(
                         return ParagonCooldown(null, replayAt);
                     }
                     var current = missions.Current(pilotId, agentId);
-                    return new MissionConversation(current, "", missions.Access(pilotId, agentId).Reason);
+                    var access = missions.Access(pilotId, agentId);
+                    return new MissionConversation(current, "", access.Reason)
+                    {
+                        SuppressRequest = agent.Type == AgentType.Career && !access.Allowed,
+                    };
                 }
                 long token = (long)action;
                 if (token < 0)
@@ -192,7 +196,10 @@ internal sealed partial class MissionHandler(
                     {
                         return ParagonCooldown(update.Offer, replayAt);
                     }
-                    return new MissionConversation(update.Offer, update.Event, "Request a mission from this agent.");
+                    return new MissionConversation(update.Offer, update.Event, "Request a mission from this agent.")
+                    {
+                        SuppressRequest = agent.Type == AgentType.Career && !missions.Access(pilotId, agentId).Allowed,
+                    };
                 }
                 if (operation == MissionAction.Complete && missions.CanShareReward(pilotId, agentId, instanceId))
                 {
@@ -258,7 +265,7 @@ internal sealed partial class MissionHandler(
                     || distance is not (double or long)
                     || referringAgent is not null && !Equals(referringAgent, agentId)
                     || BlueMarshal.Text(args[0]) != "dungeon"
-                    || offer is not { Kind: MissionKind.Combat or MissionKind.Mining, State: MissionState.Accepted }
+                    || offer is not { Kind: MissionKind.Combat or MissionKind.Mining, State: MissionState.Accepted, RequiresScanner: false }
                     || offer.SystemId != context.Pilot.SystemId
                     || context.Pilot.Position is null
                 )
@@ -293,7 +300,7 @@ internal sealed partial class MissionHandler(
             [offer.Agent.Id] = (10 - current.GetValueOrDefault(offer.Agent.Id)) * offer.Rewards.CorporationFraction,
             [offer.Agent.CorporationId] = (10 - current.GetValueOrDefault(offer.Agent.CorporationId)) * offer.Rewards.CorporationFraction,
         };
-        if (offer.Storyline && offer.Agent.FactionId is int faction)
+        if ((offer.Storyline || offer.Rewards.FactionFraction > 0) && offer.Agent.FactionId is int faction)
         {
             gains[faction] = (10 - current.GetValueOrDefault(faction)) * offer.Rewards.FactionFraction;
         }

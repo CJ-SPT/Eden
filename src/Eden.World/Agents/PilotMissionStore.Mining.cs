@@ -1,7 +1,9 @@
+using Eden.Data.Catalog.Agents;
 using Eden.Data.World.Agents;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
+using Eden.World.Catalog;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -68,9 +70,23 @@ internal sealed partial class PilotMissionStore
         mission.ObjectiveComplete = !MissionDeposits(world.Set<WorldAsteroid>(), mission.Id).Any(a => a.Quantity > 0);
     }
 
-    internal static void MiningDepleted(WorldAction world, long deposit)
+    internal static void MiningProgress(WorldAction world, CatalogDbContext catalog, long deposit, bool depleted, long now)
     {
         var mission = world.Set<SavedMission>().Find(MissionMiningRules.MissionId(deposit))!;
-        mission.ObjectiveComplete = !MissionDeposits(world.Set<WorldAsteroid>(), mission.Id).Any(a => a.Quantity > 0);
+        if (!MissionCatalog.IsCareerMining(mission.MissionId))
+        {
+            if (depleted)
+            {
+                mission.ObjectiveComplete = !MissionDeposits(world.Set<WorldAsteroid>(), mission.Id).Any(a => a.Quantity > 0);
+            }
+            return;
+        }
+        var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        if (profile.Definition.Mining)
+        {
+            mission.ObjectiveComplete = true;
+            return;
+        }
+        SpawnTriggeredWaves(world, catalog, mission, profile, MissionWaveTrigger.Mining, 0, now);
     }
 }

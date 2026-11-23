@@ -5,6 +5,7 @@ using Eden.Data.World.Exploration;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -13,6 +14,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -27,7 +29,8 @@ using Eden.World.Thermal;
 namespace Eden.World.Exploration;
 
 [Injectable]
-internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAnomalies sites) : IPilotProbeScanning
+internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAnomalies sites, IPilotMissions? missions = null)
+    : IPilotProbeScanning
 {
     private const int CapsuleGroup = 29;
     private static readonly JsonSerializerOptions s_json = new() { IgnoreReadOnlyProperties = true };
@@ -344,7 +347,10 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 database,
                 world => SystemId(world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot."), geographic)
             );
-            var signatures = sites.Signatures(system, now);
+            var signatures = sites
+                .Signatures(system, now)
+                .Concat(missions?.TrainingSites(pilotId, system).Where(site => site.IsSignature) ?? [])
+                .ToArray();
             return Write(pilotId, (world, catalog) => Begin(world, catalog, pilotId, placements, signatures, now));
         }
     }
@@ -463,7 +469,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         {
             return Array.Empty<ProbeScanResult>();
         }
-        var results = authoritative.Results.Where(r => Available(world, catalog, r.Site.Id, authoritative.SystemId, now)).ToArray();
+        var results = authoritative
+            .Results.Where(r => Available(world, catalog, pilotId, r.Site.Id, authoritative.SystemId, now))
+            .ToArray();
         foreach (var result in results.Where(r => r.Certainty >= 1))
         {
             if (world.Set<SavedResolvedSignature>().Find(pilotId, result.Site.Id) is null)
@@ -481,8 +489,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         return results;
     }
 
-    private static bool Available(WorldAction world, CatalogDbContext catalog, long siteId, int systemId, long now) =>
+    private static bool Available(WorldAction world, CatalogDbContext catalog, long pilotId, long siteId, int systemId, long now) =>
         WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(world, systemId, siteId, now)
+        || MissionRules.IsSiteId(siteId) && PilotMissionStore.TrainingSignatureAvailable(world, catalog, pilotId, siteId, systemId, now)
         || world.Set<WorldCombatAnomaly>().Find(siteId) is { IsSignature: true, CompletedAt: null } combat && combat.SystemId == systemId
         || world.Set<SavedExplorationSite>().Find(siteId) is { ReplaceAt: null } exploration
             && exploration.SystemId == systemId
@@ -498,9 +507,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
             database,
             world =>
                 (
-                    database.Settings.Exploration.AlwaysResolvedSignatures
+                    database.Settings.Exploration.AlwaysResolvedSignatures && !MissionRules.IsSiteId(siteId)
                     || world.Set<SavedResolvedSignature>().Find(pilotId, siteId)?.SystemId == systemId
-                ) && Available(world, catalog, siteId, systemId, now)
+                ) && Available(world, catalog, pilotId, siteId, systemId, now)
         );
     }
 }

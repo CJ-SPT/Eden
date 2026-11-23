@@ -97,15 +97,18 @@ internal static class ProbeScanningWire
                 ["dungeonNameID"] = name && !result.Site.Wormhole ? result.Site.NameId : null,
                 ["archetypeID"] =
                     group && !result.Site.Wormhole
-                        ? result.Site.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
-                            ? Eden.Gameplay.Mining.MiningSiteRules.GasArchetype
-                            : result.Site.Exploration switch
-                            {
-                                ExplorationKind.Data => HackingRules.DataArchetype,
-                                ExplorationKind.Ghost => GhostSiteRules.Archetype,
-                                ExplorationKind.Relic => HackingRules.RelicArchetype,
-                                _ => CombatAnomalyRules.CombatSiteArchetypeId,
-                            }
+                        ? result.Site.ArchetypeId
+                            ?? (
+                                result.Site.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
+                                    ? Eden.Gameplay.Mining.MiningSiteRules.GasArchetype
+                                    : result.Site.Exploration switch
+                                    {
+                                        ExplorationKind.Data => HackingRules.DataArchetype,
+                                        ExplorationKind.Ghost => GhostSiteRules.Archetype,
+                                        ExplorationKind.Relic => HackingRules.RelicArchetype,
+                                        _ => CombatAnomalyRules.CombatSiteArchetypeId,
+                                    }
+                            )
                         : null,
                 ["factionID"] = name ? result.Site.FactionId : null,
                 ["certainty"] = result.Certainty,

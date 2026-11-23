@@ -52,16 +52,18 @@ internal sealed partial class PilotMissionStore
             );
             storyline = true;
         }
-        if (!storyline && agent.Type is not (AgentType.Basic or AgentType.FactionalWarfare or AgentType.Research))
+        if (!storyline && agent.Type is not (AgentType.Basic or AgentType.FactionalWarfare or AgentType.Research or AgentType.Career))
         {
             throw new InvalidDataException("This special agent does not offer ordinary missions.");
         }
         bool research = agent.Type == AgentType.Research;
-        if (!storyline && !research && agent.Type != AgentType.FactionalWarfare && MissionRules.KindForDivision(agent.DivisionId) is null)
+        bool career = agent.Type == AgentType.Career;
+        bool special = research || career;
+        if (!storyline && !special && agent.Type != AgentType.FactionalWarfare && MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");
         }
-        var profiles = research
+        var profiles = special
             ? []
             : ProfilesForAgent(catalog, agent, level, storyline)
                 .Where(p => p.Definition.Chain is null || world is EconomyTransaction)
@@ -70,14 +72,21 @@ internal sealed partial class PilotMissionStore
                 .ThenBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
                 .ThenBy(p => p.Definition.MissionId)
                 .ToArray();
-        if (!research && continuation is null && profiles.Length == 0)
+        if (!special && continuation is null && profiles.Length == 0)
         {
             throw new InvalidDataException("No supported mission content is available for this agent and level yet.");
         }
-        int sequence = research ? 0 : world.Set<SavedMission>().Count(m => m.PilotId == pilot.Id && m.AgentId == agent.Id);
-        var profile = research
-            ? ResearchMissionProfile(world, catalog, pilot, agent, now)
-            : continuation ?? profiles[sequence % profiles.Length];
+        int sequence = special ? 0 : world.Set<SavedMission>().Count(m => m.PilotId == pilot.Id && m.AgentId == agent.Id);
+        var profile =
+            continuation
+            ?? (
+                agent.Type switch
+                {
+                    AgentType.Research => ResearchMissionProfile(world, catalog, pilot, agent, now),
+                    AgentType.Career => CareerOfferProfile(world, catalog, pilot, agent, now),
+                    _ => profiles[sequence % profiles.Length],
+                }
+            );
         var skill = profile.Kind switch
         {
             MissionKind.Combat => MissionSocialSkill.SecurityConnections,
@@ -96,6 +105,10 @@ internal sealed partial class PilotMissionStore
         if (research)
         {
             reward = reward with { IskCents = 0, LoyaltyPoints = 0, FactionFraction = 0 };
+        }
+        if (career)
+        {
+            reward = reward with { LoyaltyPoints = 0, FactionFraction = profile.CareerFactionFraction };
         }
         var station = agent.Space is null
             ? catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.")
@@ -138,7 +151,7 @@ internal sealed partial class PilotMissionStore
             Storyline = storyline,
             State = MissionState.Offered,
             OfferedAt = now,
-            ExpiresAt = checked(now + profile.Lifetime.Ticks),
+            ExpiresAt = Deadline(profile, now),
             DestinationStation = destination?.Id ?? 0,
             SystemId = systemId,
             X = position.X,
@@ -146,7 +159,10 @@ internal sealed partial class PilotMissionStore
             Z = position.Z,
             IskCents = reward.IskCents,
             BonusIskCents = MissionBonusRules.Quote(reward.IskCents),
-            BonusWindowTicks = research ? 0 : MissionBonusRules.Window.Ticks,
+            BonusWindowTicks =
+                research ? 0
+                : profile.CareerBonusTicks > 0 ? profile.CareerBonusTicks
+                : MissionBonusRules.Window.Ticks,
             LoyaltyPoints = reward.LoyaltyPoints,
             CorporationFraction = reward.CorporationFraction,
             FactionFraction = reward.FactionFraction,
@@ -302,7 +318,7 @@ internal sealed partial class PilotMissionStore
                 missionTitleId: missionTitleId
             );
         }
-        if (mission.Storyline && agent.FactionId is int faction)
+        if ((mission.Storyline || agent.Type == AgentType.Career) && agent.FactionId is int faction)
         {
             ApplyMissionStanding(
                 world,

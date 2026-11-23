@@ -27,6 +27,7 @@ internal sealed partial class PilotMissionStore
         }
         var previous = world
             .Filter<SavedMission>(m => m.PilotId == row.PilotId && m.AgentId == row.AgentId && m.Id < row.Id)
+            .Where(m => !profile.Definition.Career || m.MissionId != row.MissionId || m.State != MissionState.Failed)
             .OrderByDescending(m => m.Id)
             .FirstOrDefault();
         MissionChainRules.RequirePredecessor(chain, previous?.MissionId, previous?.ClosedAt is null ? null : previous.State);

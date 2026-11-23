@@ -64,6 +64,11 @@ def militia_mission_ids():
     return {int(key) for key in re.findall(r'^\s+new\((\d+), \d+, MilitiaFaction\.', bindings.read_text(encoding='utf-8'), re.MULTILINE)}
 
 
+def career_mission_ids():
+    manifest = Path(__file__).resolve().parent.parent / 'src/Eden.World/Agents/career-missions-3662168.json'
+    return {row['missionId'] for row in json.loads(manifest.read_text(encoding='utf-8'))['missions']}
+
+
 def special_agent_mission(mid, data, hulls):
     template = data['contentTemplate'].rsplit('_', 1)[-1]
     if (2792 <= mid <= 2795 and template == 'ResearchTradeMission') or (mid == 2804 and template == 'ResearchCourierMission'):
@@ -532,6 +537,7 @@ def extend(db, missions, group):
     audit = []
     hulls = ship_types(db)
     militia = militia_mission_ids()
+    career = career_mission_ids()
     for key, raw in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='client/missions' ORDER BY CAST(Key AS INTEGER)"):
         mid, data = int(key), json.loads(raw)
         sde = source(db, 'sde/missions', mid)
@@ -542,6 +548,8 @@ def extend(db, missions, group):
             if template != 'BasicKillMission' or not data.get('killMission', {}).get('dungeonID'):
                 raise ValueError(f'Militia binding {mid} needs a catalog encounter')
             special_agent = 'Existing faction warfare mission binding'
+        if mid in career:
+            special_agent = 'Pinned career agent chain stage'
         if mid in KNOWN_BLOCKERS:
             reason = KNOWN_BLOCKERS[mid]
         elif mid in admitted:

@@ -19,9 +19,9 @@ internal sealed partial class PilotMissionStore
                 return null;
             }
             using CatalogDbContext catalog = new(database.CatalogPath);
-            return MissionCatalog.Find(catalog, mission.MissionId).DungeonId is null
-                ? null
-                : new SpacePosition(mission.X, mission.Y, mission.Z);
+            return MissionCatalog.Find(catalog, mission.MissionId) is { DungeonId: not null, Definition.Scan: null }
+                ? new SpacePosition(mission.X, mission.Y, mission.Z)
+                : null;
         });
     }
 

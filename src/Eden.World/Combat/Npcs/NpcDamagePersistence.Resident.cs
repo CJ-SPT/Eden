@@ -85,6 +85,10 @@ internal static partial class NpcDamagePersistence
             npc.Id,
             now
         );
+        if (npc.Role == NpcRole.MissionStructure && npc.AnchorKind == NpcAnchorKind.Mission && result.Applied > 0)
+        {
+            Eden.World.Agents.PilotMissionStore.CareerStructureDamaged(world, catalog, npc, now);
+        }
         var attacker =
             sourceParty ?? PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
         if (sourceType is > 0)

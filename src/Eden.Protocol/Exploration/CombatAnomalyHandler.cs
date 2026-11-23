@@ -65,8 +65,9 @@ internal sealed class CombatAnomalyHandler(
         if (service == "scanMgr" && method == "SignalTrackerRegister" && args.Length == 0)
         {
             _system = context.Pilot.SystemId;
-            _known = PublicSites(_system.Value, Now);
-            _signatures = sites.Signatures(_system.Value, Now);
+            var training = missions.TrainingSites(context.Pilot.PilotId, _system.Value);
+            _known = Anomalies(_system.Value, Now, training);
+            _signatures = Signatures(_system.Value, Now, training);
             context.Notifications.Add(new SignalTrackerFullState(_system.Value, _known, _signatures));
             probes?.Enter(context);
             RevealSignatures(context, _signatures, []);
@@ -79,9 +80,11 @@ internal sealed class CombatAnomalyHandler(
         if (service == "@systemScan" && method == "GetFullState" && args.Length == 0)
         {
             probes?.Enter(context);
-            var signatures = sites.Signatures(context.Pilot.SystemId, Now);
+            int system = context.Pilot.SystemId;
+            var training = missions.TrainingSites(context.Pilot.PilotId, system);
+            var signatures = Signatures(system, Now, training);
             RevealSignatures(context, signatures, []);
-            return new SignalTrackerState(PublicSites(context.Pilot.SystemId, Now), signatures);
+            return new SignalTrackerState(Anomalies(system, Now, training), signatures);
         }
         return PilotCallResult.Unsupported;
     }
@@ -119,14 +122,38 @@ internal sealed class CombatAnomalyHandler(
             context.Flight.RefreshAnomalies([]);
             return;
         }
-        var current = PublicSites(system, now);
-        var signatures = sites.Signatures(system, now);
         var position = context.Pilot.Position;
-        TrackGhostSite(context, position, signatures);
         var missionSites = missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).ToArray();
+        if (
+            context.Flight.CanTarget
+            && position is not null
+            && Array.Find(
+                missionSites,
+                s =>
+                    s.PilotId == context.Pilot.PilotId
+                    && (
+                        s.CareerVisit?.Contains(position, context.Pilot.Flight.ShipRadius) == true
+                        || s.CareerHazard?.Contains(position) == true
+                    )
+            )
+                is { } visit
+            && missions.VisitCareerSite(context.Pilot.PilotId, system, visit.Id)
+        )
+        {
+            missionSites = missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).ToArray();
+        }
+        var training = missionSites
+            .Where(site => site.PilotId == context.Pilot.PilotId)
+            .Select(site => site.CareerScanner)
+            .OfType<CombatAnomaly>()
+            .ToArray();
+        var current = Anomalies(system, now, training);
+        var signatures = Signatures(system, now, training);
+        TrackGhostSite(context, position, signatures);
         context.Flight.RefreshAnomalies(
             current
                 .Concat(signatures)
+                .Where(site => !site.CareerTraining)
                 .Concat(escalations?.Sites(context.Pilot.PilotId, system, now) ?? [])
                 .SelectMany(s => s.Objects)
                 .Concat(missionSites.SelectMany(s => s.Objects))
@@ -166,18 +193,31 @@ internal sealed class CombatAnomalyHandler(
         _known = current;
     }
 
-    private IReadOnlyList<CombatAnomaly> PublicSites(int system, long now)
+    private IReadOnlyList<CombatAnomaly> Anomalies(int system, long now, IReadOnlyList<CombatAnomaly> training)
     {
         var ordinary = sites.List(system, now);
         var militia = complexes?.Sites(system, now);
-        return militia is { Count: > 0 } ? ordinary.Concat(militia).ToArray() : ordinary;
+        return training.Count != 0 || militia is { Count: > 0 }
+            ? ordinary.Concat(militia ?? []).Concat(training.Where(site => !site.IsSignature)).ToArray()
+            : ordinary;
+    }
+
+    private IReadOnlyList<CombatAnomaly> Signatures(int system, long now, IReadOnlyList<CombatAnomaly> training)
+    {
+        var ordinary = sites.Signatures(system, now);
+        return training.Count == 0 ? ordinary : ordinary.Concat(training.Where(site => site.IsSignature)).ToArray();
     }
 
     private void RevealSignatures(PilotCallContext context, IReadOnlyList<CombatAnomaly> added, IReadOnlyList<CombatAnomaly> removed)
     {
         if (tuning?.Settings.Exploration.AlwaysResolvedSignatures == true && (added.Count > 0 || removed.Count > 0))
         {
-            context.Notifications.Add(new AutomaticSignatureResults(added, removed));
+            var publicAdded = added.Where(site => !site.CareerTraining).ToArray();
+            var publicRemoved = removed.Where(site => !site.CareerTraining).ToArray();
+            if (publicAdded.Length != 0 || publicRemoved.Length != 0)
+            {
+                context.Notifications.Add(new AutomaticSignatureResults(publicAdded, publicRemoved));
+            }
         }
     }
 

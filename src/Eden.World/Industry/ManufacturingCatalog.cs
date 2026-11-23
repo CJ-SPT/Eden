@@ -61,8 +61,10 @@ internal static class ManufacturingCatalog
                 || product.TypeID is not > 0 or > int.MaxValue
                 || product.Quantity is not > 0 or > int.MaxValue
                 || recipe.Time is not > 0
-                || types.GetValueOrDefault(blueprint.BlueprintTypeID.Value)?.Published != 1
-                || types.GetValueOrDefault(product.TypeID.Value)?.Published != 1
+                || (
+                    types.GetValueOrDefault(blueprint.BlueprintTypeID.Value)?.Published != 1
+                    || types.GetValueOrDefault(product.TypeID.Value)?.Published != 1
+                ) && !IsCivilianShuttleRecipe(blueprint.BlueprintTypeID.Value, product.TypeID.Value)
                 || !catalog.Definitions.Items.TryGetValue((int)blueprint.BlueprintTypeID.Value, out var source)
                 || source.CategoryId != (int)InventoryCategory.Blueprint
                 || !catalog.Definitions.Items.ContainsKey((int)product.TypeID.Value)
@@ -100,4 +102,8 @@ internal static class ManufacturingCatalog
         }
         return result.ToFrozenDictionary();
     }
+
+    // The four Producer stage-eight gifts use unpublished blueprint and hull types in build 3662168.
+    private static bool IsCivilianShuttleRecipe(long blueprint, long product) =>
+        (blueprint, product) is (27300, 27299) or (27302, 27301) or (27304, 27303) or (27306, 27305);
 }

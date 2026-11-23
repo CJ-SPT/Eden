@@ -9,6 +9,7 @@ namespace Eden.World.Information;
 internal static class InformationCatalog
 {
     private const int AbyssalMetaGroup = 15;
+    private const int CivilianSalvagerType = 26983; // Pinned Industrialist acceptance gift, unpublished.
     private static readonly CatalogTypeRule s_support = new(typeof(InformationCatalog).FullName!, Validate);
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
@@ -24,7 +25,8 @@ internal static class InformationCatalog
         var attributes = catalog.FittingAttributes(typeId);
         var active = InformationRules.Effect(group);
         if (
-            type?.Published != 1
+            type is null
+            || type.Published != 1 && typeId != CivilianSalvagerType
             || type.MetaGroupID == AbyssalMetaGroup
             || effects.Count != FittingCatalog.Effects(catalog, typeId).Count
             || !FittingCatalog.Effects(catalog, typeId).Contains(DogmaEffect.Online)

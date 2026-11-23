@@ -44,7 +44,10 @@ public sealed record RemoteRepairCycle(
     long CompletesAt,
     int RampCycles = 0,
     bool Settled = false
-);
+)
+{
+    public bool CareerTarget { get; init; }
+}
 
 public sealed record RemoteRepairActivation(RemoteRepairCycle Cycle, double Capacitor, Magazine? Magazine = null);
 
@@ -67,6 +70,7 @@ public interface IPilotRemoteRepairing
         bool continuation = false
     );
     void Complete(long pilotId, long moduleId, long now);
+    void CompleteCareer(long pilotId, RemoteRepairCycle cycle, long now);
     void Stop(long pilotId, long moduleId);
     bool IsOnline(long pilotId, long shipId, long moduleId);
 }

@@ -18,6 +18,7 @@ using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
@@ -186,6 +187,14 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             )
             {
                 throw new InvalidDataException("This wreck is unavailable or cannot be tractored by this pilot.");
+            }
+            if (MissionSalvageRules.IsWreck(targetId))
+            {
+                if (module.Effect == DogmaEffect.TractorBeam)
+                {
+                    throw new InvalidDataException("The career mission wreck cannot be tractored.");
+                }
+                PilotMissionStore.RequireCareerSalvage(world, pilot.Id, targetId, now);
             }
             targetPosition = WreckPosition(wreck);
             radius = catalog.FittingType(wreck.TypeId)!.Radius ?? 0;

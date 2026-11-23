@@ -171,7 +171,7 @@ public static class HackingRules
         return dy == 0 ? Math.Abs(dx) == 1 : Math.Abs(dy) == 1 && (dx == 0 || dx == (a.Y % 2 == 0 ? -1 : 1));
     }
 
-    public static HackingBoard Create(int seed, int difficulty, int coherence, int strength, int slots)
+    public static HackingBoard Create(int seed, int difficulty, int coherence, int strength, int slots, bool training = false)
     {
         if (difficulty is < 0 or > 5 || coherence <= 0 || strength <= 0 || slots is < 1 or > MaximumSlots)
         {
@@ -197,10 +197,10 @@ public static class HackingRules
                         difficulty < 3 ? HackingSubsystem.LowCore
                         : difficulty == 3 ? HackingSubsystem.MediumCore
                         : HackingSubsystem.HighCore;
-                    hp = 50 + difficulty * 10;
-                    attack = 10;
+                    hp = training ? 20 : 50 + difficulty * 10;
+                    attack = training ? 5 : 10;
                 }
-                else if (x != 0 && roll < 12 + difficulty * 2)
+                else if (!training && x != 0 && roll < 12 + difficulty * 2)
                 {
                     type = HackingNode.Defense;
                     subtype = (HackingSubsystem)(
@@ -218,12 +218,12 @@ public static class HackingRules
                     hp = subtype == HackingSubsystem.Antivirus ? 30 + difficulty * 5 : 40 + difficulty * 10;
                     attack = subtype == HackingSubsystem.Antivirus ? 30 : 20;
                 }
-                else if (x != 0 && roll < 28 + difficulty * 2)
+                else if (training ? x == 1 && y == 0 : x != 0 && roll < 28 + difficulty * 2)
                 {
                     type = HackingNode.UtilityTile;
                     subtype = (HackingSubsystem)random.Next(4);
                 }
-                else if (x != 0 && roll < 33 + difficulty * 2)
+                else if (!training && x != 0 && roll < 33 + difficulty * 2)
                 {
                     type = HackingNode.Cache;
                 }
@@ -236,7 +236,7 @@ public static class HackingRules
                         hp,
                         attack,
                         id != 0,
-                        CacheDefense: type == HackingNode.Cache && random.Next(2) == 0
+                        CacheDefense: !training && type == HackingNode.Cache && random.Next(2) == 0
                     )
                 );
             }

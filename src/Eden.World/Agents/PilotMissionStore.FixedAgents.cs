@@ -9,7 +9,7 @@ internal sealed partial class PilotMissionStore
 {
     private static void RequireFixedAssignment(WorldAction world, CatalogDbContext catalog, SavedMission row, MissionProfile profile)
     {
-        if (profile.Definition.FixedAgentIds.IsEmpty)
+        if (profile.Definition.Career || profile.Definition.FixedAgentIds.IsEmpty)
         {
             return;
         }

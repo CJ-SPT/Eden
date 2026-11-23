@@ -2,15 +2,34 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **508 definitions** across the ordinary, storyline, Data Center, Paragon, research, and militia pools.
-That includes **83 combat encounters, 194 ordinary deliveries, 92 delivery storylines, four trade storylines, 50 Data Center
-missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus missions, and 16 militia encounters**.
+The build-3662168 audit admits **688 definitions**. That includes **83 combat encounters, 194 ordinary deliveries, 92 delivery
+storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
+missions, 16 militia encounters, and 180 career stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**2,384** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**2,204** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 New offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
 See [timed bonus rules and validation](protocol/agents.md#timed-mission-bonuses--november-14-2026).
+
+## Career agents
+
+All **100** career agents in the pinned catalog offer their faction's chain. Each of the five divisions has one version per
+empire. Find an agent through the Agency and return to that agent's station to turn in each completed stage.
+
+| Division | Stages per empire | Objectives |
+| --- | ---: | --- |
+| Enforcer | 10 | Clear sequential waves, recover cargo, approach landmarks and destroy a designated installation |
+| Soldier of Fortune | 10 | Combat waves, frigate losses, tackle and remote repair, a damaging approach, and a hostage rescue |
+| Explorer | 5 | Find an anomaly, tour training rooms, resolve private data, relic and gas signatures, and return their proofs |
+| Industrialist (Entrepreneur) | 10 | Mine, salvage, recover mission cargo, hack containers, make deliveries, and acquire or produce requested goods |
+| Industrialist (Producer) | 10 | Mine and refine ore, manufacture from finite-run copies, deliver goods, and recover supplies |
+
+Each chain is once per pilot per agent. Offers and accepted career missions have no expiry. Declining or quitting ends that
+agent's chain. Failing a required training objective permits a retry after the next 11:00 UTC downtime. Career bonuses still
+have deadlines. The chain supplies catalog gifts such as ships, training equipment and blueprint copies, and the final
+turn-in grants direct empire standing. Bring the required hull or module where the briefing calls for it.
+[Career agent implementation record](protocol/agents.md#career-agent-chains--november-22-2026)
 
 ## Mining content
 
@@ -247,7 +266,7 @@ The client catalog omits courier agent-level assignments. Existing eight level a
 
 These bands are not CCP level assignments. Rewards use Eden's existing level/difficulty/social-skill rules. Pickup is the issuing agent's station; the existing route policy selects a neighboring station, preferring the corporation, then a local fallback. Missing catalog deadlines retain seven days. Authored positive deadlines apply to both the offer and the completion window; acceptance starts a fresh window. The existing twenty definitions stay first in their eligible offer pools, followed by the expansion in stable order. Supplier restrictions mean an individual agent offers only a subset of the total pool. Generic delivery storylines still require sixteen completed missions for the same faction and level.
 
-Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded from the ordinary courier pool. Specialized lifecycles use their own agents and eligibility. Career, epic-arc, non-Data-Center COSMOS and level-five combat remain unavailable through this milestone. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers. Those need verified reports and explicit bindings.
+Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded from the ordinary courier pool. Specialized lifecycles use their own agents and eligibility. Epic arcs, non-Data-Center COSMOS and level-five combat remain unavailable. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers. Those need verified reports and explicit bindings.
 
 Gameplay references: [University distribution reports](https://wiki.eveuniversity.org/Distribution_mission_reports), [agent types and divisions](https://wiki.eveuniversity.org/Agent), and the revision-specific encounter links recorded per definition. The source reports describe gameplay; pinned catalog records determine build-specific identities. Source inspection and automated checks do not establish native client acceptance.
 

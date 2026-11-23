@@ -23,6 +23,7 @@ public sealed record CombatAnomaly(
 )
 {
     public int? ArchetypeId { get; init; }
+    public bool CareerTraining { get; init; }
 }
 
 public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);

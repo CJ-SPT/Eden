@@ -167,6 +167,12 @@ internal sealed class RemoteRepairHandler(
             }
             try
             {
+                if (repair.CareerTarget)
+                {
+                    repairing.CompleteCareer(cycle.PilotId, repair, Now());
+                    Stop(context, cycle);
+                    continue;
+                }
                 repairing.Complete(cycle.PilotId, repair.Module.ItemId, Now());
                 if (!context.Flight.Cloaked && !cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
                 {

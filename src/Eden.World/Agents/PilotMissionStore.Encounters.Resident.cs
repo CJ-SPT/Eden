@@ -5,8 +5,10 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -26,6 +28,10 @@ internal sealed partial class PilotMissionStore
             world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId)
             ?? throw new InvalidDataException("Mission NPC has no saved mission.");
         if (mission.State != MissionState.Accepted || Expire(world, catalog, mission, now))
+        {
+            return;
+        }
+        if (TryFailCareerRescue(world, catalog, mission, npc, now))
         {
             return;
         }
@@ -83,6 +89,10 @@ internal sealed partial class PilotMissionStore
         {
             member.LootQuantity = 0;
         }
+        if (member.LootQuantity > 0 && TryDeliverCareerCargo(world, catalog, mission, profile, npc, member))
+        {
+            member.LootQuantity = 0;
+        }
         if (mission.ObjectiveComplete)
         {
             return;
@@ -90,9 +100,7 @@ internal sealed partial class PilotMissionStore
         int roomId = profile.WaveRoom(member.Wave);
         var progress = world.Set<SavedMissionRoom>().Find(mission.Id, roomId);
         int currentWave = progress?.Wave ?? mission.Wave;
-        int nextWave = Enumerable
-            .Range(currentWave + 1, profile.Definition.Waves.Length - currentWave - 1)
-            .FirstOrDefault(w => profile.WaveRoom(w) == roomId, -1);
+        int nextWave = NextNormalWave(profile, roomId, currentWave);
         bool allRequiredSpawned = Enumerable
             .Range(0, profile.Definition.Waves.Length)
             .Where(w => profile.Definition.Waves[w].Groups.Any(g => g.Required))
@@ -114,11 +122,82 @@ internal sealed partial class PilotMissionStore
         {
             Spawn(world, catalog, mission, nextWave, now);
         }
-        if (decision.Complete)
+        if (decision.Complete && profile.Definition.SalvageObjectId is null)
         {
             mission.ObjectiveComplete =
                 member.CompletesMission || MissionStructureRules.Complete(true, StructureProgress(world, mission.Id));
         }
+    }
+
+    private static int NextNormalWave(MissionProfile profile, int roomId, int currentWave) =>
+        Enumerable
+            .Range(currentWave + 1, profile.Definition.Waves.Length - currentWave - 1)
+            .FirstOrDefault(
+                i => profile.WaveRoom(i) == roomId && profile.Definition.Waves[i].Trigger == MissionWaveTrigger.PreviousWaveCleared,
+                -1
+            );
+
+    private static void SpawnTriggeredWaves(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedMission mission,
+        MissionProfile profile,
+        MissionWaveTrigger trigger,
+        long objectId,
+        long now
+    )
+    {
+        for (int index = 0; index < profile.Definition.Waves.Length; index++)
+        {
+            var wave = profile.Definition.Waves[index];
+            if (wave.Trigger != trigger || wave.TriggerObjectId != objectId)
+            {
+                continue;
+            }
+            int active = world.Set<SavedMissionRoom>().Find(mission.Id, profile.WaveRoom(index))?.Wave ?? -1;
+            if (active < index)
+            {
+                Spawn(world, catalog, mission, index, now);
+            }
+        }
+    }
+
+    private static bool TryDeliverCareerCargo(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedMission mission,
+        MissionProfile profile,
+        WorldNpc npc,
+        SavedMissionMember member
+    )
+    {
+        if (
+            world is not EconomyTransaction
+            || !profile.Definition.Career
+            || !profile.Definition.Waves[member.Wave].Groups.Any(g => g.LootToPilotCargo && g.LootTypeId == member.LootTypeId)
+            || world.Pilots.Find(mission.PilotId)?.ActiveShip is not { Position: { } saved } ship
+            || (saved.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId) != mission.SystemId
+        )
+        {
+            return false;
+        }
+        var owner =
+            LiveWorld.Find(world.WorldPath)?.CombatForSystem(mission.SystemId)?.InformationPosition(ship.Id)
+            ?? new SpacePosition(saved.X, saved.Y, saved.Z);
+        if (owner.DistanceTo(new(npc.X, npc.Y, npc.Z)) > NpcEncounterDefinitions.VisibilityRange)
+        {
+            return false;
+        }
+        int flag = (int)InventoryFlag.Cargo;
+        double free =
+            PilotInventoryStore.HoldCapacity(world, catalog, mission.PilotId, ship.Id, flag)
+            - InventoryPersistence.UsedVolume(world, catalog, mission.PilotId, ship.Id, flag);
+        if (PilotInventoryStore.Volume(catalog, member.LootTypeId) * member.LootQuantity > free + InventoryDefinitions.ResourceTolerance)
+        {
+            return false;
+        }
+        InventoryPersistence.MergeOutput(world, catalog, mission.PilotId, ship.Id, flag, member.LootTypeId, member.LootQuantity);
+        return true;
     }
 
     private static void Spawn(WorldAction world, CatalogDbContext catalog, SavedMission mission, int wave, long now)
@@ -153,7 +232,9 @@ internal sealed partial class PilotMissionStore
                 );
             }
         }
-        bool initial = !Enumerable.Range(0, wave).Any(w => profile.WaveRoom(w) == roomId);
+        bool initial =
+            profile.Definition.Waves[wave].Trigger != MissionWaveTrigger.Mining
+            && !Enumerable.Range(0, wave).Any(w => profile.WaveRoom(w) == roomId);
         var obstacles = profile.Rooms.SelectMany(r => r.Objects).Select(o => o with { Position = o.Position - room.Position }).ToArray();
         var placements = MissionSpawnRules.Place(initial, spawns.Select(s => s.Member).ToArray(), room.SpawnAnchors, obstacles);
         for (int slot = 0; slot < spawns.Count; slot++)
@@ -162,6 +243,7 @@ internal sealed partial class PilotMissionStore
             var group = spawn.Group;
             var npcProfile = spawn.Profile;
             int type = spawn.Member.TypeId;
+            bool repairTarget = group.CareerPassive && profile.Definition.CareerEffect?.TypeId == type;
             int faction = group.EnemyFaction == 0 ? profile.EnemyFaction : group.EnemyFaction;
             int corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
             long id = checked(
@@ -173,11 +255,12 @@ internal sealed partial class PilotMissionStore
                 {
                     Id = id,
                     TypeId = type,
+                    Name = group.CareerName,
                     SystemId = mission.SystemId,
                     CorporationId = corporation,
                     FactionId = faction,
                     AnchorKind = NpcAnchorKind.Mission,
-                    Role = NpcRole.Pirate,
+                    Role = group.CareerPassive ? NpcRole.Convoy : NpcRole.Pirate,
                     EncounterId = MissionRules.FirstSiteId + mission.Id,
                     SpawnSlot = slot,
                     HomeX = p.X,
@@ -186,10 +269,11 @@ internal sealed partial class PilotMissionStore
                     X = p.X,
                     Y = p.Y,
                     Z = p.Z,
-                    ShieldCharge = npcProfile.Attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
+                    ShieldCharge = npcProfile.Defense.Shield * (repairTarget ? 0.5 : 1),
+                    ArmorDamage = repairTarget ? npcProfile.Defense.Armor * 0.5 : 0,
                     UpdatedAt = now,
                     MotionAt = now,
-                    AcquisitionRange = placements[slot].AcquisitionRange,
+                    AcquisitionRange = group.CareerPassive ? 0 : placements[slot].AcquisitionRange,
                 }
             );
             world.Add(

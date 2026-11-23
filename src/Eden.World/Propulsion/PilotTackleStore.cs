@@ -216,6 +216,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
             if (npc is not null)
             {
                 NpcHostility.Record(world, catalog, npc, pilot.ActiveShipId, now);
+                Eden.World.Agents.PilotMissionStore.CompleteCareerEffect(world, pilot, npc, module.Effect, now);
             }
         }
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;

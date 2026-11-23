@@ -400,16 +400,17 @@ internal sealed partial class PilotMiningStore
         }
         world.SaveChanges();
         bool depleted = asteroid.Quantity == 0;
-        if (depleted)
+        if (MissionMiningRules.IsDeposit(asteroid.Id))
         {
-            if (MissionMiningRules.IsDeposit(asteroid.Id))
+            if (extracted > 0)
             {
-                PilotMissionStore.MiningDepleted(world, asteroid.Id);
+                PilotMissionStore.MiningProgress(world, catalog, asteroid.Id, depleted, now);
+                world.SaveChanges();
             }
-            else
-            {
-                MiningSiteStore.Collected(world, asteroid.Id, now);
-            }
+        }
+        else if (depleted)
+        {
+            MiningSiteStore.Collected(world, asteroid.Id, now);
             world.SaveChanges();
         }
         return new(

@@ -336,10 +336,15 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _missionSites.ObserveValues(
             changes,
             (_, view, change) =>
-                change.Table != "WorldAsteroid"
-                || change.Id == 0
-                || MissionMiningRules.IsDeposit(change.Id)
-                    && view.Sites.Any(s => s.Private && s.Id == MissionMiningRules.MissionId(change.Id))
+                change.Table switch
+                {
+                    "WorldAsteroid" => change.Id == 0
+                        || MissionMiningRules.IsDeposit(change.Id)
+                            && view.Sites.Any(s => s.Private && s.Id == MissionMiningRules.MissionId(change.Id)),
+                    "WorldHackingContainer" => MissionContainerRules.IsContainer(change.Id)
+                        && view.Sites.Any(s => s.Private && s.Objects.Any(o => o.Id == change.Id)),
+                    _ => true,
+                }
         );
         ObserveMissionTracking(changes);
         _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);

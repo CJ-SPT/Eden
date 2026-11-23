@@ -9,6 +9,7 @@ public static class ScannerTargetIds
     private const int Suffixes = 1000;
     public const long ExplorationSequenceOffset = 8_000_000;
     public const long MiningSequenceOffset = 12_000_000;
+    private const long MissionSequenceOffset = 16_500_000;
 
     public static string FromCombatSequence(long sequence)
     {
@@ -32,8 +33,14 @@ public static class ScannerTargetIds
     public static string FromMiningSequence(long sequence)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        if (sequence >= MissionSequenceOffset - MiningSequenceOffset)
+        {
+            throw new InvalidDataException("The mining scanner identifier range is exhausted.");
+        }
         return FromSequence(checked(MiningSequenceOffset + sequence));
     }
+
+    public static string FromMissionSequence(long sequence) => FromSequence(checked(MissionSequenceOffset + sequence));
 
     // Native scan rows have a narrow ID column. Vary the letters first so
     // adjacent sites remain distinguishable even when its last digit is clipped.

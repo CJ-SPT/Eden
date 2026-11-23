@@ -3,9 +3,11 @@ using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
+using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -64,6 +66,10 @@ internal sealed partial class PilotInformationStore
                     drop.Quantity
                 )
             );
+        }
+        if (MissionSalvageRules.IsWreck(wreck.Id))
+        {
+            PilotMissionStore.RequireCareerSalvage(world, pilot.Id, wreck.Id, now).ObjectiveComplete = true;
         }
         wreck.SalvagedAt = now;
         bool occupied = world.Set<OwnedItem>().Any(i => i.LocationId == wreck.Id) || world.Ships.Any(s => s.StoredInId == wreck.Id);

@@ -50,12 +50,26 @@ internal static class PassiveCatalogFixture
         double Z
     );
 
+    private sealed record StationDefinition(
+        int Id,
+        int SolarSystemId,
+        int TypeId,
+        int OwnerId,
+        string OwnerName,
+        int OperationId,
+        int OrbitId,
+        double X,
+        double Y,
+        double Z
+    );
+
     private sealed record Fixture(
         int Build,
         IReadOnlyList<TypeDefinition> Types,
         IReadOnlyList<Record> Records,
         IReadOnlyList<SystemDefinition>? Systems = null,
-        IReadOnlyList<CelestialDefinition>? Celestials = null
+        IReadOnlyList<CelestialDefinition>? Celestials = null,
+        IReadOnlyList<StationDefinition>? Stations = null
     );
 
     private static readonly ConcurrentDictionary<string, Lazy<Fixture>> Fixtures = new(StringComparer.Ordinal);
@@ -240,6 +254,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadMissions(string path) => Load(path, "MissionCatalog.json", null);
 
+    internal static void LoadCareerMissions(string path) => Load(path, "CareerMissionCatalog.json", null);
+
     internal static void LoadNpcConvoys(string path) => Load(path, "NpcConvoyCatalog.json", null);
 
     internal static void LoadNpcMining(string path)
@@ -298,6 +314,17 @@ internal static class PassiveCatalogFixture
                 $"""
                 INSERT OR REPLACE INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,OrbitId,X,Y,Z)
                 VALUES ({body.Id},{body.SolarSystemId},{body.TypeId},{body.GroupId},{body.Radius},{body.OrbitId},{body.X},{body.Y},{body.Z})
+                """
+            );
+        }
+        foreach (var station in data.Stations ?? [])
+        {
+            catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO NpcCorporation VALUES ({station.OwnerId},{station.OwnerName})");
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR IGNORE INTO Station(Id,SolarSystemId,TypeId,OwnerId,OperationId,OrbitId,X,Y,Z)
+                VALUES ({station.Id},{station.SolarSystemId},{station.TypeId},{station.OwnerId},{station.OperationId},
+                        {station.OrbitId},{station.X},{station.Y},{station.Z})
                 """
             );
         }

@@ -4,6 +4,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
@@ -11,6 +12,8 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Docking;
 using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -29,7 +32,10 @@ internal sealed partial class PilotMissionStore(
     INpcDirectory directory,
     TimeProvider clock,
     PilotTrainingStore training,
-    ICooperativeFleets fleets
+    ICooperativeFleets fleets,
+    PilotLossSettlement losses,
+    SqliteWorld lookup,
+    IPilotDamageEvents damageEvents
 ) : IPilotMissions, IPilotMissionContainers, IPilotResearch
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -123,6 +129,15 @@ internal sealed partial class PilotMissionStore(
                         ReplayAt = ParagonReplayAt(world, catalog, pilotId, now),
                     };
                 }
+                if (agent.Type == AgentType.Career)
+                {
+                    return new(
+                        agent,
+                        CareerMissionCatalog.ForAgent(catalog, agent).Count != 0,
+                        access.Allowed && active is null,
+                        access.Reason
+                    );
+                }
                 bool content =
                     agent.Type is AgentType.Basic or AgentType.Event or AgentType.FactionalWarfare
                     && access.Allowed
@@ -166,6 +181,10 @@ internal sealed partial class PilotMissionStore(
         if (agent.Type == AgentType.Heraldry)
         {
             return ParagonAccess(world, catalog, pilot, agent, now);
+        }
+        if (agent.Type == AgentType.Career)
+        {
+            return CareerAccess(world, catalog, pilot, agent, now);
         }
         bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
         if (
@@ -479,7 +498,10 @@ internal sealed partial class PilotMissionStore(
         long agentId = agent.Id;
         if (
             world is not EconomyTransaction
-            && (agent.Type is AgentType.FactionalWarfare or AgentType.Heraldry || MissionCatalog.FixedAgentIds.Contains(agentId))
+            && (
+                agent.Type is AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career
+                || MissionCatalog.FixedAgentIds.Contains(agentId)
+            )
         )
         {
             throw new InvalidDataException("This agent's mission actions require the resident world.");
@@ -530,17 +552,22 @@ internal sealed partial class PilotMissionStore(
                 RequireResidentReward(world, row, profile);
                 row.State = MissionState.Accepted;
                 row.AcceptedAt = now;
-                row.ExpiresAt = checked(now + profile.Lifetime.Ticks);
+                row.ExpiresAt = Deadline(profile, now);
+                if (profile.CareerGift is not null)
+                {
+                    changes.Add(CareerGift(world, catalog, row, profile, agent.StationId!.Value));
+                }
                 if (profile.Kind == MissionKind.Courier)
                 {
                     changes.Add(CreateCourierCargo(world, catalog, pilotId, agent.StationId!.Value, profile));
                 }
-                if (profile.Kind == MissionKind.Mining)
+                if (!profile.Deposits.IsEmpty)
                 {
                     SeedMiningDeposits(world, row, profile);
                 }
                 SeedContainers(world, catalog, row, profile);
                 SeedStructures(world, catalog, row, profile, now);
+                SeedCareerSalvage(world, catalog, pilot, row, profile, now);
                 eventName = "accepted";
                 break;
             case MissionAction.Complete:
@@ -594,8 +621,12 @@ internal sealed partial class PilotMissionStore(
                 {
                     changes.Add(rewardChange);
                 }
+                if (mission.Definition.Career && CareerBonus(world, catalog, row, mission, agent.StationId!.Value, now) is { } bonusItem)
+                {
+                    changes.Add(bonusItem);
+                }
                 Close(world, row, MissionState.Completed, now);
-                if (!row.Storyline && agent.Type is not (AgentType.FactionalWarfare or AgentType.Heraldry))
+                if (!row.Storyline && agent.Type is not (AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career))
                 {
                     Progress(world, catalog, pilot, agent, row.Level, now);
                 }
@@ -736,6 +767,9 @@ internal sealed partial class PilotMissionStore(
                 .Rooms.SelectMany(r => r.Gates)
                 .Any(g => g.Access.AllowedShips is not null || g.Access.AllowedRaces.Count > 0),
             ItemReward = row.ItemRewardTypeId > 0 && row.ItemRewardQuantity > 0 ? new(row.ItemRewardTypeId, row.ItemRewardQuantity) : null,
+            CareerGift = profile.CareerGift,
+            RequiresScanner = profile.Definition.Scan is not null,
+            CareerBonusItem = profile.CareerBonusItem,
             ResearchPoints = ResearchMissionPoints(world, catalog, pilot, agent, row),
             Retrieval =
                 profile.Kind != MissionKind.Courier && profile.CargoType > 0

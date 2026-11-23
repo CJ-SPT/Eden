@@ -1574,107 +1574,107 @@ missionId,name,template,status,reason
 3093,Deadly Arrival,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 3094,Deadly Arrival,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 3095,Deadly Arrival,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-3096,Balancing the Books (1 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3105,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3106,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3107,Balancing the Books (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3108,Balancing the Books (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3109,Balancing the Books (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3110,Balancing the Books (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
+3096,Balancing the Books (1 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3105,Making Mountains of Molehills (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3106,Making Mountains of Molehills (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3107,Balancing the Books (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3108,Balancing the Books (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3109,Balancing the Books (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3110,Balancing the Books (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
 3111,Song Of Birds,StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3112,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3113,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3114,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3115,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3116,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3117,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3118,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3119,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3120,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3121,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3122,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3123,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3124,Balancing the Books (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3125,Balancing the Books (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3126,Balancing the Books (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3127,Balancing the Books (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3128,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3129,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3130,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3131,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3132,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3133,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3134,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3135,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3136,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3137,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3138,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3139,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3140,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3142,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3143,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3144,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3145,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3146,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3147,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3148,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3149,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3150,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3151,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3152,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3157,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3159,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3160,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3161,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3162,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3163,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3164,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3165,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3166,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3168,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3170,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3172,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3173,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3174,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3177,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3179,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3180,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3181,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3182,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3185,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3198,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3201,Balancing the Books (1 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3203,Balancing the Books (1 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3205,Balancing the Books (1 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3209,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3210,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3211,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3212,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3213,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3214,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3215,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3217,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3218,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3219,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3221,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3227,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3228,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3229,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3233,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3234,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3235,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3236,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3240,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3241,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3242,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3243,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3244,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3245,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3246,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3250,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3251,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-3252,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3253,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3112,Balancing the Books (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3113,Balancing the Books (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3114,Balancing the Books (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3115,Balancing the Books (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3116,Balancing the Books (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3117,Balancing the Books (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3118,Balancing the Books (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3119,Balancing the Books (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3120,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3121,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3122,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3123,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3124,Balancing the Books (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3125,Balancing the Books (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3126,Balancing the Books (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3127,Balancing the Books (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3128,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3129,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3130,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3131,Cash Flow for Capsuleers (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3132,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3133,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3134,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3135,Cash Flow for Capsuleers (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3136,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3137,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3138,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3139,Cash Flow for Capsuleers (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3140,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3142,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3143,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3144,Cash Flow for Capsuleers (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3145,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3146,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3147,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3148,Cash Flow for Capsuleers (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3149,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3150,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3151,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3152,Cash Flow for Capsuleers (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3157,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3159,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3160,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3161,Cash Flow for Capsuleers (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3162,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3163,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3164,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3165,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3166,Making Mountains of Molehills (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3168,Making Mountains of Molehills (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3170,Balancing the Books (9 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3172,Making Mountains of Molehills (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3173,Balancing the Books (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3174,Making Mountains of Molehills (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3177,Balancing the Books (8 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3179,Balancing the Books (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3180,Balancing the Books (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3181,Balancing the Books (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3182,Making Mountains of Molehills (3 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3185,Balancing the Books (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3198,Making Mountains of Molehills (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3201,Balancing the Books (1 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3203,Balancing the Books (1 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3205,Balancing the Books (1 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3209,Balancing the Books (8 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3210,Balancing the Books (8 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3211,Balancing the Books (8 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3212,Making Mountains of Molehills (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3213,Balancing the Books (9 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3214,Balancing the Books (9 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3215,Balancing the Books (9 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3217,Balancing the Books (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3218,Balancing the Books (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3219,Balancing the Books (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3221,Making Mountains of Molehills (8 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3227,Making Mountains of Molehills (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3228,Making Mountains of Molehills (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3229,Making Mountains of Molehills (3 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3233,Making Mountains of Molehills (8 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3234,Making Mountains of Molehills (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3235,Making Mountains of Molehills (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3236,Making Mountains of Molehills (3 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3240,Making Mountains of Molehills (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3241,Making Mountains of Molehills (8 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3242,Making Mountains of Molehills (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3243,Making Mountains of Molehills (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3244,Making Mountains of Molehills (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3245,Making Mountains of Molehills (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3246,Making Mountains of Molehills (3 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3250,Making Mountains of Molehills (5 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+3251,Making Mountains of Molehills (8 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+3252,Making Mountains of Molehills (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+3253,Making Mountains of Molehills (10 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
 3258,A Feast Fit for a King,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 3259,A Feast Fit for a King,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 3318,What Slavery Begets,BasicKillMission,blocked,Requires level-five encounter policy
@@ -2268,26 +2268,26 @@ missionId,name,template,status,reason
 13824,Are You Receiving? (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13825,Are You Receiving? (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13826,Are You Receiving? (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-13846,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13847,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13848,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13849,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13866,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13867,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13868,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13869,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13871,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13872,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13873,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13874,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13875,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13876,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13877,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13878,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-13879,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-13880,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-13881,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-13882,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
+13846,Balancing the Books (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13847,Balancing the Books (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13848,Balancing the Books (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13849,Balancing the Books (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13866,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13867,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13868,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13869,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+13871,Making Mountains of Molehills (2 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13872,Making Mountains of Molehills (2 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13873,Making Mountains of Molehills (2 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13874,Making Mountains of Molehills (2 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13875,Making Mountains of Molehills (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13876,Making Mountains of Molehills (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13877,Making Mountains of Molehills (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13878,Making Mountains of Molehills (6 of 10),StorylineTradeMission,admitted,Pinned career agent chain stage
+13879,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+13880,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+13881,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
+13882,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
 14117,A Beacon Beckons,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14118,Agent Inquiry,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14119,Of Interest,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
@@ -2469,30 +2469,30 @@ missionId,name,template,status,reason
 14975,Across the Line,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14976,Slipping Away,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14980,Where's the Line?,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14990,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14991,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
+14990,Cosmic Anomalies (1 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+14991,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,admitted,Pinned career agent chain stage
 14992,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14993,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14995,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14996,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14997,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14998,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14999,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15000,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15001,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15002,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
+14993,Relic Site Scanning (4 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+14995,Data Site Scanning (3 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+14996,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+14997,Cosmic Anomalies (1 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+14998,Cosmic Anomalies (1 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+14999,Cosmic Anomalies (1 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15000,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,admitted,Pinned career agent chain stage
+15001,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,admitted,Pinned career agent chain stage
+15002,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,admitted,Pinned career agent chain stage
 15003,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 15004,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 15005,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15006,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15007,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15008,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15009,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15010,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15011,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15012,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15013,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-15014,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15006,Relic Site Scanning (4 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15007,Relic Site Scanning (4 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15008,Relic Site Scanning (4 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15009,Data Site Scanning (3 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15010,Data Site Scanning (3 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15011,Data Site Scanning (3 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15012,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15013,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
+15014,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
 15015,Enemy of my Enemy,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 15017,Recruitment Drive,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 15018,Intelligence Mining,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
@@ -2543,46 +2543,46 @@ missionId,name,template,status,reason
 15094,Troop Build up - Lai Dai Corporation,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 15095,Troop Build up - Kaalakiota Corporation,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 15096,Troop Build up - Sukuuvestaa Corporation,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-15102,The Swap (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15103,The Swap (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15104,The Swap (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15105,The Swap (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15106,Angel of Mercy (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15107,Angel of Mercy (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15108,Angel of Mercy (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15109,Angel of Mercy (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15110,Your Undivided Attention (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15111,Your Undivided Attention (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15112,Your Undivided Attention (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15113,Your Undivided Attention (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15114,A Friend in Need (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15115,A Friend in Need (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15116,A Friend in Need (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15117,A Friend in Need (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15118,The Stand (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15119,The Stand (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15120,The Stand (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15121,The Stand (5 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15122,Don't Look Back (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15123,Don't Look Back (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15124,Don't Look Back (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15125,Don't Look Back (6 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15126,Weapon of Choice (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15127,Weapon of Choice (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15128,Weapon of Choice (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15129,Weapon of Choice (7 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15130,The Pacifist (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15131,The Pacifist (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15132,The Pacifist (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15133,The Pacifist (8 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15134,Glue (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15135,Glue (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15136,Glue (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15137,Glue (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15138,The Exam (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15139,The Exam (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15140,The Exam (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15141,The Exam (10 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
+15102,The Swap (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15103,The Swap (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15104,The Swap (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15105,The Swap (1 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15106,Angel of Mercy (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15107,Angel of Mercy (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15108,Angel of Mercy (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15109,Angel of Mercy (2 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15110,Your Undivided Attention (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15111,Your Undivided Attention (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15112,Your Undivided Attention (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15113,Your Undivided Attention (3 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15114,A Friend in Need (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15115,A Friend in Need (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15116,A Friend in Need (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15117,A Friend in Need (4 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15118,The Stand (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15119,The Stand (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15120,The Stand (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15121,The Stand (5 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15122,Don't Look Back (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15123,Don't Look Back (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15124,Don't Look Back (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15125,Don't Look Back (6 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15126,Weapon of Choice (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15127,Weapon of Choice (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15128,Weapon of Choice (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15129,Weapon of Choice (7 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15130,The Pacifist (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15131,The Pacifist (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15132,The Pacifist (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15133,The Pacifist (8 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15134,Glue (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15135,Glue (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15136,Glue (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15137,Glue (9 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15138,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15139,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15140,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
+15141,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
 15143,Intelligence Mining,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15144,Fear of Angels,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15168,Onslaught,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

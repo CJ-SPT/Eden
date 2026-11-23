@@ -7,7 +7,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Agents;
 
 [Injectable]
-internal sealed class AgentDirectoryHandler(INpcDirectory directory) : ISelectedPilotCallHandler
+internal sealed class AgentDirectoryHandler(INpcDirectory directory, IPilotMissions missions) : ISelectedPilotCallHandler
 {
     private const int MaximumCareerAgentIds = 1000;
 
@@ -73,14 +73,13 @@ internal sealed class AgentDirectoryHandler(INpcDirectory directory) : ISelected
                 {
                     return new PilotCallResult.Failure("Choose valid NPC agent IDs.");
                 }
-                var agents = ids.Cast<long>().Distinct().ToArray();
+                var agents = ids.Cast<long>().ToHashSet();
                 if (agents.Any(id => directory.Agent(id) is null))
                 {
                     return new PilotCallResult.Failure("Choose active NPC agents.");
                 }
-                // Career mission chains are not implemented; every requested
-                // agent must still be present so the native cache can prime once.
-                return new BlueMap<long, bool>(agents.ToDictionary(id => id, _ => false));
+                var completed = missions.CompletedCareerAgents(context.Pilot.PilotId, agents);
+                return new BlueMap<long, bool>(agents.ToDictionary(id => id, completed.Contains));
             default:
                 return new PilotCallResult.Failure("Invalid agent directory request.");
         }

@@ -41,6 +41,10 @@ internal sealed record MissionProfile(
     internal int SupplierCorporation { get; init; }
     internal ImmutableArray<MissionDeposit> Deposits { get; init; } = [];
     internal bool Paragon { get; init; }
+    internal MissionItemReward? CareerGift { get; init; }
+    internal MissionItemReward? CareerBonusItem { get; init; }
+    internal long CareerBonusTicks { get; init; }
+    internal double CareerFactionFraction { get; init; }
 
     internal bool AvailableTo(CatalogAgent agent) =>
         (
@@ -50,13 +54,16 @@ internal sealed record MissionProfile(
         )
         && Paragon == (agent.Type == AgentType.Heraldry)
         && ResearchMissionCatalog.IsResearch(Definition.MissionId) == (agent.Type == AgentType.Research)
+        && Definition.Career == (agent.Type == AgentType.Career)
         && (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
         && (SupplierCorporation == 0 || SupplierCorporation == agent.CorporationId)
         && (Definition.FixedAgentIds.IsEmpty || Definition.FixedAgentIds.Contains(agent.Id));
 
     internal bool AttacksFaction(int? faction) =>
         faction.HasValue
-        && Definition.Waves.SelectMany(w => w.Groups).Any(g => (g.EnemyFaction == 0 ? EnemyFaction : g.EnemyFaction) == faction);
+        && Definition
+            .Waves.SelectMany(w => w.Groups)
+            .Any(g => !g.CareerPassive && (g.EnemyFaction == 0 ? EnemyFaction : g.EnemyFaction) == faction);
 }
 
 internal sealed record MissionRoomProfile(
@@ -67,6 +74,8 @@ internal sealed record MissionRoomProfile(
 )
 {
     internal ImmutableArray<MissionSpawnAnchor> SpawnAnchors { get; init; } = [];
+    internal MissionVisitPoint? CareerVisit { get; init; }
+    internal MissionVisitPoint? CareerHazard { get; init; }
 }
 
 internal sealed record MissionRoomGate(long ObjectId, int DestinationRoomId, bool RequiresClear, MissionGateAccess Access);
@@ -133,7 +142,12 @@ internal static class MissionCatalog
     internal static IEnumerable<MissionProfile> ForMilitia(CatalogDbContext catalog, CatalogAgent agent) =>
         MilitiaMissionCatalog.ForAgent(agent).Select(id => catalog.Definition(s_profile, id)).OfType<MissionProfile>();
 
-    internal static bool IsMining(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining);
+    internal static bool IsMining(int missionId) =>
+        s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining) || IsCareerMining(missionId);
+
+    internal static bool IsCareerMining(int missionId) => CareerMissionCatalog.Find(missionId) is { CareerDeposits.IsEmpty: false };
+
+    internal static bool IsCareerSalvage(int missionId) => CareerMissionCatalog.Find(missionId)?.SalvageObjectId is not null;
 
     internal static bool IsFixed(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && !m.FixedAgentIds.IsEmpty);
 
@@ -151,9 +165,11 @@ internal static class MissionCatalog
         {
             return true;
         }
-        return s_content
-            .Value.Missions.Where(m => m.Chain?.RootMissionId == chain.RootMissionId)
-            .All(m =>
+        var parts = profile.Definition.Career
+            ? CareerMissionCatalog.ForAgent(catalog, agent).Where(m => m.Chain!.RootMissionId == chain.RootMissionId)
+            : s_content.Value.Missions.Where(m => m.Chain?.RootMissionId == chain.RootMissionId);
+        return parts.Any()
+            && parts.All(m =>
                 catalog.Definition(s_profile, m.MissionId) is { } part && part.AvailableTo(agent) && !part.AttacksFaction(agent.FactionId)
             );
     }
@@ -168,6 +184,7 @@ internal static class MissionCatalog
         var paragon = ParagonMissionCatalog.Load(catalog, mission, missionId);
         var definition =
             s_content.Value.Missions.SingleOrDefault(m => m.MissionId == missionId)
+            ?? CareerMissionCatalog.Find(missionId)
             ?? MilitiaMissionCatalog.Load(catalog, missionId)
             ?? paragon
             ?? ResearchMissionCatalog.LoadDefinition(mission, missionId);
@@ -175,7 +192,8 @@ internal static class MissionCatalog
         {
             return null;
         }
-        if (definition.Trade && (mission.KillMission is not null || definition.Mining || !definition.Waves.IsEmpty))
+        int? dungeonId = definition.DungeonId ?? checked((int?)mission.KillMission?.DungeonID);
+        if (definition.Trade && (dungeonId is not null || definition.Mining || !definition.Waves.IsEmpty))
         {
             throw new InvalidDataException("Trade missions require a cargo objective without a dungeon.");
         }
@@ -194,9 +212,12 @@ internal static class MissionCatalog
             ?? catalog.Read(CatalogData.Sde.Missions, (long)definition.MissionId)?.Name?.En
             ?? "Mission";
         string briefing = catalog.Read(CatalogData.Client.LocalizationFsdEnUs, (long)briefingId)?.Text ?? name;
-        int? dungeonId = checked((int?)mission.KillMission?.DungeonID);
-        int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
-        int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
+        int cargoType =
+            definition.ObjectiveTypeId
+            ?? checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
+        int quantity =
+            definition.ObjectiveQuantity
+            ?? checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
         bool singleton = (mission.CourierMission?.ObjectiveSingleton ?? 0) switch
         {
             0 => false,
@@ -204,11 +225,13 @@ internal static class MissionCatalog
             _ => throw new InvalidDataException("Unsupported singleton mission cargo definition."),
         };
         double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
-        if (paragon is not null)
+        if (paragon is not null || definition.Career && cargoType > 0)
         {
-            volume = PilotInventoryStore.Volume(catalog, cargoType);
+            volume = PilotInventoryStore.Volume(catalog, cargoType, singleton);
         }
-        if (definition.Mining && (mission.ContentTemplate != BasicMiningMission || dungeonId is null || !(volume > 0)))
+        if (
+            definition.Mining && (dungeonId is null || !(volume > 0) || !definition.Career && mission.ContentTemplate != BasicMiningMission)
+        )
         {
             throw new InvalidDataException("Mining mission does not have a catalog dungeon and objective cargo.");
         }
@@ -222,7 +245,11 @@ internal static class MissionCatalog
             faction = checked((int)(dungeon.FactionID ?? 0));
             corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
             rooms = Rooms(catalog, definition, dungeon, corporation);
-            if (definition.Mining)
+            if (!definition.CareerDeposits.IsEmpty)
+            {
+                deposits = CareerDeposits(catalog, dungeon, definition);
+            }
+            else if (definition.Mining)
             {
                 deposits = Deposits(catalog, dungeon, cargoType, quantity, volume);
             }
@@ -240,11 +267,90 @@ internal static class MissionCatalog
         {
             Paragon = paragon is not null,
             CargoSingleton = singleton,
-            Lifetime = MissionRules.Lifetime(mission.ExpirationTime),
+            Lifetime = definition.Career && mission.ExpirationTime == 0 ? TimeSpan.MaxValue : MissionRules.Lifetime(mission.ExpirationTime),
             SupplierFaction = checked((int)(mission.FactionID ?? 0)),
             SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),
             Deposits = deposits,
+            CareerGift = definition.Career
+                ? CareerItem(
+                    definition.GiftTypeId ?? mission.InitialAgentGiftTypeID,
+                    definition.GiftQuantity ?? mission.InitialAgentGiftQuantity
+                )
+                : null,
+            CareerBonusItem = definition.Career
+                ? CareerItem(mission.MissionRewards?.BonusReward?.RewardTypeID, mission.MissionRewards?.BonusReward?.RewardQuantity)
+                : null,
+            CareerBonusTicks =
+                definition.Career && mission.MissionRewards?.BonusTimeInterval is long bonusMinutes
+                    ? TimeSpan.FromMinutes(bonusMinutes).Ticks
+                    : 0,
+            CareerFactionFraction =
+                definition.Career && mission.FactionID is long issuer
+                    ? (mission.ExtraStandings?.GetValueOrDefault(issuer.ToString(System.Globalization.CultureInfo.InvariantCulture)) ?? 0)
+                        / 100
+                    : 0,
         };
+    }
+
+    private static MissionItemReward? CareerItem(long? typeId, long? quantity) =>
+        typeId is > 0 && quantity is > 0 ? new(checked((int)typeId.Value), checked((int)quantity.Value)) : null;
+
+    private static ImmutableArray<MissionDeposit> CareerDeposits(
+        CatalogDbContext catalog,
+        ClientDungeons dungeon,
+        MissionDefinition definition
+    )
+    {
+        if (
+            !definition.Career
+            || definition.CareerDeposits.Length > MissionMiningRules.DepositsPerMission
+            || dungeon.Rooms?.Count != 1
+            || definition.CareerDeposits.Select(deposit => deposit.ObjectId).Distinct().Count() != definition.CareerDeposits.Length
+        )
+        {
+            throw new InvalidDataException("Invalid career mission ore pocket.");
+        }
+        var objects = dungeon.Rooms.Values.Single().Objects!.Values.ToDictionary(obj => obj.ObjectID!.Value);
+        var entry = Position(objects[dungeon.EntryObjectID!.Value].Position!);
+        return definition
+            .CareerDeposits.Select(deposit =>
+            {
+                if (
+                    !objects.TryGetValue(deposit.ObjectId, out var obj)
+                    || obj.TypeID is not long typeId
+                    || obj.Position is null
+                    || deposit.Quantity <= 0
+                )
+                {
+                    throw new InvalidDataException("Invalid career mission deposit.");
+                }
+                var type = catalog.RequireItem(checked((int)typeId));
+                if (!MiningDefinitions.IsResource(type.CategoryId, type.GroupId))
+                {
+                    throw new InvalidDataException("Career mission deposit has an invalid resource type.");
+                }
+                return new MissionDeposit(
+                    new(
+                        deposit.ObjectId,
+                        type.Id,
+                        type.GroupId,
+                        type.CategoryId,
+                        1,
+                        Position(obj.Position) - entry,
+                        DungeonObjectGeometry.Radius(
+                            type.CategoryId,
+                            type.Radius,
+                            deposit.Quantity,
+                            PilotInventoryStore.Volume(catalog, type.Id)
+                        )
+                    )
+                    {
+                        IsGlobal = false,
+                    },
+                    deposit.Quantity
+                );
+            })
+            .ToImmutableArray();
     }
 
     private static ImmutableArray<MissionDeposit> Deposits(
@@ -309,14 +415,21 @@ internal static class MissionCatalog
             }
             : definition.Rooms.ToArray();
         if (
-            bindings.Length != source.Count
+            !definition.Career && bindings.Length != source.Count
             || bindings.Select(r => r.RoomId).Distinct().Count() != bindings.Length
             || bindings[0].EntryObjectId != dungeon.EntryObjectID
-            || !definition.Mining && definition.Waves.IsDefaultOrEmpty
+            || !definition.Mining && !definition.Career && definition.Waves.IsDefaultOrEmpty
             || definition.Waves.Length * MissionRules.MembersPerWave > MissionRules.NpcsPerMission
         )
         {
             throw new InvalidDataException("Mission room bindings or NPC identity budget are invalid.");
+        }
+        if (
+            definition.SalvageObjectId is long wreckId
+            && (!definition.Career || !source.Values.Any(room => room.Objects!.Values.Any(obj => obj.ObjectID == wreckId)))
+        )
+        {
+            throw new InvalidDataException("Career mission wreck is outside the pinned dungeon rooms.");
         }
         var catalogGates = dungeon.Connections?.Select(g => g.FromObjectID).ToHashSet() ?? [];
         if (!catalogGates.SetEquals(definition.Gates.Select(g => (long?)g.FromObjectId)))
@@ -337,6 +450,12 @@ internal static class MissionCatalog
             var entry = room.Objects!.Values.Single(o => o.ObjectID == binding.EntryObjectId);
             var origin = Position(entry.Position!);
             var offset = roomPositions[binding.RoomId];
+            MissionVisitPoint? BindPoint(long objectId, double range) =>
+                room.Objects.Values.SingleOrDefault(o => o.ObjectID == objectId)?.Position is { } position
+                    ? new(offset + Position(position) - origin, range, objectId)
+                    : null;
+            var visit = definition.CareerVisit is { } visitTarget ? BindPoint(visitTarget.ObjectId, visitTarget.Range) : null;
+            var hazard = definition.CareerHazard is { } hazardTarget ? BindPoint(hazardTarget.ObjectId, hazardTarget.Range) : null;
             var anchors = room
                 .Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null)
                 .OrderBy(o => o.ObjectID)
@@ -361,10 +480,12 @@ internal static class MissionCatalog
                 var gate = definition.Gates.FirstOrDefault(g => g.FromObjectId == item.ObjectID);
                 bool container = definition.Containers.Any(c => c.ObjectId == item.ObjectID);
                 bool structure = definition.Structures.Any(s => s.ObjectId == item.ObjectID);
+                bool isVisitTarget = item.ObjectID.HasValue && (item.ObjectID == visit?.ObjectId || item.ObjectID == hazard?.ObjectId);
                 if (
                     type is null
                     || definition.Mining && MiningDefinitions.IsResource(type.CategoryId, type.GroupId)
-                    || !container && !structure && type.CategoryId is not (2 or 25)
+                    || definition.CareerDeposits.Any(deposit => deposit.ObjectId == item.ObjectID)
+                    || !container && !structure && !isVisitTarget && type.CategoryId is not (2 or 25)
                     || type.GroupId == InvisibleBeaconGroup
                     || item.ObjectID == binding.EntryObjectId
                 )
@@ -396,7 +517,7 @@ internal static class MissionCatalog
                         Solid = gate is null && DungeonObjectGeometry.IsSolid(type.GroupId),
                         AccelerationGateDirection = gate is null ? null : (roomPositions[gate.DestinationRoomId] - position).Unit,
                         Name =
-                            (container || structure) && item.ObjectNameID is long name
+                            (container || structure || isVisitTarget) && item.ObjectNameID is long name
                                 ? catalog.Read(CatalogData.Client.LocalizationFsdEnUs, name)?.Text
                                 : null,
                         StandingThresholds = container || structure ? NpcProfileCatalog.ReadStandingThresholds(catalog, type.Id) : null,
@@ -428,7 +549,47 @@ internal static class MissionCatalog
             {
                 throw new InvalidDataException($"Mission {definition.MissionId}, room {binding.RoomId}: invalid gate source.");
             }
-            rooms.Add(new(binding.RoomId, offset, objects.ToImmutableArray(), gates) { SpawnAnchors = anchors });
+            rooms.Add(
+                new(binding.RoomId, offset, objects.ToImmutableArray(), gates)
+                {
+                    SpawnAnchors = anchors,
+                    CareerVisit = visit,
+                    CareerHazard = hazard,
+                }
+            );
+        }
+        if (rooms.Sum(r => r.Gates.Length) != definition.Gates.Length)
+        {
+            throw new InvalidDataException("Every mission gate must belong to a bound room.");
+        }
+        if (
+            definition.CareerVisit is { } careerVisit
+            && (
+                !definition.Career
+                || careerVisit.Range <= 0
+                || !double.IsFinite(careerVisit.Range)
+                || careerVisit.ThermalDamage < 0
+                || !double.IsFinite(careerVisit.ThermalDamage)
+                || rooms.Count(r => r.CareerVisit is not null) != 1
+            )
+        )
+        {
+            throw new InvalidDataException("A career proximity objective requires one bound target and a positive range.");
+        }
+        if (
+            definition.CareerHazard is { } careerHazard
+            && (
+                !definition.Career
+                || careerHazard.Range <= 0
+                || !double.IsFinite(careerHazard.Range)
+                || careerHazard.ElectromagneticDamage <= 0
+                || !double.IsFinite(careerHazard.ElectromagneticDamage)
+                || careerHazard.IntervalSeconds <= 0
+                || rooms.Count(r => r.CareerHazard is not null) != 1
+            )
+        )
+        {
+            throw new InvalidDataException("A career hazard requires one bound emitter, a positive range, damage and an interval.");
         }
         if (definition.Waves.Any(w => w.RoomId != 0 && !bindings.Any(r => r.RoomId == w.RoomId)))
         {
@@ -492,6 +653,37 @@ internal static class MissionCatalog
                     throw new InvalidDataException("Invalid mission key loot definition.");
                 }
                 _ = catalog.RequireItem(group.LootTypeId);
+            }
+            if (group.LootToPilotCargo && (!definition.Career || group.LootTypeId <= 0 || group.LootQuantity <= 0))
+            {
+                throw new InvalidDataException("Direct career cargo requires an objective item and positive quantity.");
+            }
+        }
+        if (
+            definition.SalvageObjectId is not null
+            && (
+                rooms.Sum(room => room.Objects.Length) >= MissionRules.NpcsPerMission
+                || definition.Waves.Length * MissionRules.MembersPerWave >= MissionRules.NpcsPerMission
+            )
+        )
+        {
+            throw new InvalidDataException("The career wreck's reserved slot is occupied.");
+        }
+        foreach (var wave in definition.Waves.Where(w => w.Trigger != MissionWaveTrigger.PreviousWaveCleared))
+        {
+            var waveRoom = rooms.Single(room => room.Id == (wave.RoomId == 0 ? rooms[0].Id : wave.RoomId));
+            bool valid = wave.Trigger switch
+            {
+                MissionWaveTrigger.Visit => waveRoom.CareerVisit is not null,
+                MissionWaveTrigger.Mining => rooms.Count == 1 && !definition.CareerDeposits.IsEmpty,
+                MissionWaveTrigger.StructureDamaged or MissionWaveTrigger.StructureDestroyed => definition.Structures.Any(s =>
+                    s.ObjectId == wave.TriggerObjectId
+                ) && waveRoom.Objects.Any(o => o.Id == wave.TriggerObjectId),
+                _ => false,
+            };
+            if (!definition.Career || !valid)
+            {
+                throw new InvalidDataException("Mission wave trigger needs a career objective in its own room.");
             }
         }
         return rooms.ToImmutableArray();

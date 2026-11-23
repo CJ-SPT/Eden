@@ -113,6 +113,11 @@ internal sealed partial class WreckStore
 
     internal static void Create(WorldAction world, CatalogDbContext catalog, WorldNpc npc, Pilot pilot, long now)
     {
+        const int pirateCapsuleType = 27287; // Build-3662168 Enforcer objective, without a catalog wreck.
+        if (npc.AnchorKind == NpcAnchorKind.Mission && npc.TypeId == pirateCapsuleType)
+        {
+            return;
+        }
         var ded = Eden.World.Exploration.CombatAnomalyStore.DedLoot(world, catalog, npc);
         if (npc.Role == NpcRole.MissionStructure && ded is null)
         {
