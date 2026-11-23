@@ -13,6 +13,29 @@ namespace Eden.World.Skills;
 
 internal sealed partial class PilotSkillReader
 {
+    internal static IReadOnlyDictionary<int, ExpertVirtualSkill> VirtualSkills(WorldAction world, CatalogDbContext catalog, long pilotId) =>
+        world is EconomyTransaction resident ? resident.ExpertSkills(catalog, pilotId) : EconomyExpertSkills.Empty.Grants;
+
+    internal static int OperationalLevel(WorldAction world, CatalogDbContext catalog, long pilotId, int skill) =>
+        Math.Max(Level(world, catalog, pilotId, skill), VirtualSkills(world, catalog, pilotId).GetValueOrDefault(skill)?.Level ?? 0);
+
+    internal static IReadOnlyDictionary<int, int> OperationalLevels(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int[] skills,
+        IReadOnlyDictionary<int, ExpertVirtualSkill>? grants = null
+    )
+    {
+        grants ??= VirtualSkills(world, catalog, pilotId);
+        return grants.Count == 0
+            ? Levels(world, catalog, pilotId, skills)
+            : skills.ToDictionary(
+                skill => skill,
+                skill => Math.Max(Level(world, catalog, pilotId, skill), grants.GetValueOrDefault(skill)?.Level ?? 0)
+            );
+    }
+
     internal static int Level(WorldAction world, CatalogDbContext catalog, long pilotId, int skill)
     {
         long points = world.SkillPoints(pilotId, skill) ?? 0;
@@ -53,12 +76,18 @@ internal sealed partial class PilotSkillReader
     internal static void CheckRequirements(WorldAction world, CatalogDbContext catalog, long pilotId, int typeId)
     {
         var attributes = catalog.FittingAttributes(typeId);
+        IReadOnlyDictionary<int, ExpertVirtualSkill>? grants = null;
         foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
         {
             int skill = checked((int)attributes.GetValueOrDefault(skillAttribute));
-            if (skill != 0 && Level(world, catalog, pilotId, skill) < attributes.GetValueOrDefault(levelAttribute))
+            double required = attributes.GetValueOrDefault(levelAttribute);
+            if (skill != 0 && Level(world, catalog, pilotId, skill) < required)
             {
-                throw new InvalidDataException("The pilot has not trained the required module skills.");
+                grants ??= VirtualSkills(world, catalog, pilotId);
+                if ((grants.GetValueOrDefault(skill)?.Level ?? 0) < required)
+                {
+                    throw new InvalidDataException("The pilot has not trained the required module skills.");
+                }
             }
         }
     }
@@ -73,7 +102,7 @@ internal sealed partial class PilotSkillReader
             .Where(skill => skill != 0)
             .Distinct()
             .ToArray();
-        var levels = Levels(world, catalog, pilotId, skills);
+        var levels = OperationalLevels(world, catalog, pilotId, skills);
         return attributes.Where(pair => SkillRequirementRules.Meets(pair.Value, levels)).Select(pair => pair.Key).ToFrozenSet();
     }
 }

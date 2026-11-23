@@ -325,7 +325,7 @@ public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
         }
         other.Advance();
         var update = Assert.Single(client.Context.Notifications.OfType<ServerSkillsChanged>());
-        Assert.Equal(1000, update.Skills.Entries[3327].Skill.Points);
+        Assert.Equal(1000L, update.Skills.Entries[3327].TrainedPoints);
         Assert.Single(client.Context.Notifications, n => n.Name == "OnServerBrainUpdated");
         Assert.Empty(client.Context.Notifications.OfType<FreeSkillPointsChanged>());
         Assert.Empty(other.Context.Notifications.OfType<ServerSkillsChanged>());

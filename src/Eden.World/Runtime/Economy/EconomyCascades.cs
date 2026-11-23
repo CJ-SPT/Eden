@@ -64,6 +64,7 @@ internal sealed partial class EconomyTransaction
                 break;
             case Eden.Data.World.Characters.Pilot removed:
                 Eden.World.Skills.PersonalSkillPlanStore.RemoveForPilot(this, removed.Id);
+                RemoveRange(Filter<Eden.Data.World.Skills.SavedExpertSystem>(system => system.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Docking.SavedShipSkinLicense>(license => license.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Combat.SavedKillRight>(row => row.OwnerId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Combat.SavedKillRight>(row => row.TargetId == removed.Id));

@@ -36,7 +36,8 @@ internal sealed class PilotServices(
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
     SessionFrameMonitor? frames = null,
-    Eden.Gameplay.FactionWarfare.IFactionWarzones? warzones = null
+    Eden.Gameplay.FactionWarfare.IFactionWarzones? warzones = null,
+    ExpertSystemHandler? expertSystems = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -80,7 +81,8 @@ internal sealed class PilotServices(
             operations,
             diagnostics,
             handoff,
-            presentation
+            presentation,
+            expertSystems
         );
         PilotSessionTick tick = new(
             clock,
@@ -95,13 +97,43 @@ internal sealed class PilotServices(
             autoMining: autoMining,
             abyss: abyss,
             environments: environments,
-            warzoneUpdates: warzones is null ? null : new Eden.Protocol.FactionWarfare.FactionWarzoneUpdates(warzones)
+            warzoneUpdates: warzones is null ? null : new Eden.Protocol.FactionWarfare.FactionWarzoneUpdates(warzones),
+            expertSystems: expertSystems
         );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();
             return (packet, Stopwatch.GetTimestamp());
         }
+        // A rental keeps an otherwise idle pilot's session asleep until its deadline.
+        async Task WaitForExpertSystemExpiryAsync(Task incoming)
+        {
+            while (expertSystems is not null && !incoming.IsCompleted && context.NextExpertSystemExpiry is long deadline)
+            {
+                long remaining = deadline - clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                if (remaining > 0)
+                {
+                    using var stopWait = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    // Split long waits within the timer's supported range.
+                    var delay = TimeSpan.FromTicks(Math.Clamp(remaining, TimeSpan.TicksPerMillisecond, TimeSpan.FromDays(30).Ticks));
+                    var deadlineWait = Task.Delay(delay, clock, stopWait.Token);
+                    if (await Task.WhenAny(incoming, deadlineWait) == incoming)
+                    {
+                        await stopWait.CancelAsync();
+                        return;
+                    }
+                    await deadlineWait;
+                    if (deadline > clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    {
+                        continue;
+                    }
+                }
+
+                await tick.AdvanceAsync(context, output, report, accountId, clientId);
+                modSession.Observe();
+            }
+        }
+
         Task? checkpoint = null;
         SessionTickSchedule? schedule = null;
         try
@@ -148,6 +180,7 @@ internal sealed class PilotServices(
                 if (!ticking)
                 {
                     schedule?.PauseMeasurement();
+                    await WaitForExpertSystemExpiryAsync(incoming);
                 }
                 var arrived = await incoming;
                 SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);

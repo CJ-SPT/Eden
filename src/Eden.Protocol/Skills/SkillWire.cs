@@ -6,12 +6,18 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Skills;
 
-internal sealed record TrainedSkillReply(TrainedSkill Skill) : BlueModel
+internal sealed record TrainedSkillReply(int TypeId, int? TrainedLevel, long? TrainedPoints, double Rank, int? VirtualLevel) : BlueModel
 {
+    internal TrainedSkillReply(TrainedSkill skill, int? grantedLevel = null)
+        : this(skill.TypeId, skill.Level, skill.Points, skill.Rank, grantedLevel > skill.Level ? grantedLevel : null) { }
+
+    internal TrainedSkillReply(ExpertVirtualSkill grant)
+        : this(grant.TypeId, null, null, grant.Rank, grant.Level) { }
+
     public override object ToBlue() =>
         new BlueConstructor(
             "characterskills.common.character_skill_entry.CharacterSkillEntry",
-            [Skill.TypeId, Skill.Level, Skill.Points, Skill.Rank, null]
+            [TypeId, TrainedLevel, TrainedPoints, Rank, VirtualLevel]
         );
 }
 

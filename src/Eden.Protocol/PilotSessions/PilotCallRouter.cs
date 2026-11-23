@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -68,6 +69,7 @@ internal sealed class PilotCallContext(
     {
         ReleaseStructureControl();
         ReportedSkillTypes.Clear();
+        ObserveExpertSystems(null);
         DestroyedShip = null;
         ActiveFlight = startFlight(pilot);
     }
@@ -113,6 +115,7 @@ internal sealed class PilotCallContext(
         DestroyedShip = null;
         NextSkillCompletion = null;
         ReportedSkillTypes.Clear();
+        ObserveExpertSystems(null);
         _bindings.ReleasePilotReferences();
         NotificationsBeforeFlight.Clear();
         Notifications.Clear();
@@ -125,6 +128,15 @@ internal sealed class PilotCallContext(
     public bool AssetHoldingItemFailureEnabled { get; set; }
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
+    internal ExpertSystemState? ExpertSystems { get; private set; }
+    internal long? NextExpertSystemExpiry { get; private set; }
+
+    internal void ObserveExpertSystems(ExpertSystemState? state)
+    {
+        ExpertSystems = state;
+        NextExpertSystemExpiry = state?.Systems.Min(system => (long?)system.ExpiresAt);
+    }
+
     internal HashSet<int> ReportedSkillTypes { get; } = [];
     public List<PilotNotification> Notifications { get; } = [];
 

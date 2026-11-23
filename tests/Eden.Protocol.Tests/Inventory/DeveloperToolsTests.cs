@@ -97,7 +97,7 @@ public sealed class DeveloperToolsTests
         Assert.Empty(f.Training.Advance(Pilot).Queue);
         Assert.Contains(f.Training.History(Pilot, 10), item => item.TypeId == NewSkill && item.EventId == 177);
         var removed = Assert.Single(f.Client.Context.Notifications.OfType<Eden.Protocol.Skills.ServerSkillsRemoved>());
-        Assert.Equal(-1, removed.Skills.Entries[NewSkill].Skill.Points);
+        Assert.Equal(-1L, removed.Skills.Entries[NewSkill].TrainedPoints);
         Assert.Equal(2, Assert.Single(f.Reader.ReadSkills(target.PilotId), item => item.TypeId == NewSkill).Level);
     }
 

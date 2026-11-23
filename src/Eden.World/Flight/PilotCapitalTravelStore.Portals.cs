@@ -69,7 +69,7 @@ internal sealed partial class PilotCapitalTravelStore
         IReadOnlyList<InventoryChange> fuelChanges = [];
         if (moduleType == CapitalTravelRules.TitanPortalGenerator)
         {
-            int level = PilotSkillReader.Level(world, catalog, pilotId, CapitalTravelRules.JumpPortalGenerationSkill);
+            int level = PilotSkillReader.OperationalLevel(world, catalog, pilotId, CapitalTravelRules.JumpPortalGenerationSkill);
             double reduction =
                 catalog.FittingAttributes(CapitalTravelRules.JumpPortalGenerationSkill)[DogmaAttributeId.JumpPortalFuelBonusPercent]
                 * level

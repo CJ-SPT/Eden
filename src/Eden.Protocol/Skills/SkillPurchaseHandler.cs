@@ -36,12 +36,11 @@ internal sealed class SkillPurchaseHandler(IPilotSkillPurchases purchases, IPilo
             var purchase = purchases.Purchase(context.Pilot.PilotId, ids.Cast<long>().Select(id => (int)id).ToArray());
             if (purchase.TypeIds.Count > 0)
             {
-                var updates = new BlueMap<int, TrainedSkillReply>(
-                    skills
-                        .ReadSkills(context.Pilot.PilotId)
-                        .Where(skill => purchase.TypeIds.Contains(skill.TypeId))
-                        .ToDictionary(skill => skill.TypeId, skill => new TrainedSkillReply(skill))
+                var updates = SkillHandler.SkillRows(
+                    skills.ReadSkills(context.Pilot.PilotId).Where(skill => purchase.TypeIds.Contains(skill.TypeId)),
+                    context.ExpertSystems?.Skills.Where(grant => purchase.TypeIds.Contains(grant.TypeId))
                 );
+                context.ReportedSkillTypes.UnionWith(updates.Entries.Keys);
                 context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
                 context.Notifications.Add(
                     new AccountBalanceChanged(context.Pilot.PilotId, (double)purchase.BalanceCents / MarketDefinitions.CentsPerIsk)

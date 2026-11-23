@@ -88,6 +88,9 @@ Personal Skill Plans support creating, editing, and deleting plans with ordered 
 tracking survive restarts. Each pilot can track a personal or certified plan.
 [Persistent personal skill plans](protocol/characters.md#persistent-personal-skill-plans)
 
+Expert Systems can grant temporary levels for operating ships and modules. Rentals and top-ups survive restarts. The
+Skill Catalogue shows virtual levels alongside permanent skill training. [Resident Expert Systems](protocol/characters.md#resident-expert-systems)
+
 The admin site's **Progression → Skill training speed** sets the server rate for newly scheduled training after restart. The client uses that rate for new estimates and the saved timeline for scheduled levels. Pilots can pause and resume to apply the active rate to an existing queue while keeping earned progress. See the [skill training speed notes](protocol/characters.md#world-skill-training-speed-november-21-2026).
 
 The Character Sheet's **Attributes** tab now has saved neural attributes and remapping: 99 base points, 17–27 per attribute, one timed remap every 365 days, and two initial bonus remaps. Remapping preserves earned SP and recalculates the remaining training queue. The **Biography** tab supports Unicode text and formatting, saves through the client's autosave call, and retains each pilot's biography across restarts. These additions have automated coverage; native presentation and editing remain unverified. Implants, boosters and clone management remain separate work. See [attributes and biography](protocol/characters.md#character-sheet-attributes-and-biography-november-4-2026).

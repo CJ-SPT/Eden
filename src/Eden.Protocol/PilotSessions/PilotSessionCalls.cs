@@ -22,7 +22,8 @@ internal sealed class PilotSessionCalls(
     IPilotOperationScope? operations = null,
     SessionDiagnostics? diagnostics = null,
     ICapsuleerHandoff? handoff = null,
-    ICapsuleerPresentation? presentation = null
+    ICapsuleerPresentation? presentation = null,
+    ExpertSystemHandler? expertSystems = null
 )
 {
     private bool _initialStateSent;
@@ -84,6 +85,7 @@ internal sealed class PilotSessionCalls(
         void Dispatch()
         {
             using var arrivalContext = updates.AdoptConduit(context) ? context.Flight.UseSystem() : null;
+            expertSystems?.Advance(context);
             using (SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh))
             {
                 presentation?.Refresh();
@@ -105,6 +107,7 @@ internal sealed class PilotSessionCalls(
             {
                 using var entryLatency = SessionLatency.Measure(SessionLatencyPhase.Entry);
                 using var entering = SessionPerformance.Begin("enter", diagnostics?.Trace ?? report);
+                expertSystems?.Enter(context);
                 updates.Enter(context);
             }
             using var currentLocation = context.Selected ? context.Flight.UseSystem() : null;

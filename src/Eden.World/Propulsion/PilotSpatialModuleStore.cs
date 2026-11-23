@@ -246,7 +246,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
                 .GetValueOrDefault(DogmaAttributeId.CloakingTargetingDelayBonus);
             values[DogmaAttributeId.CloakingTargetingDelay] =
                 values.GetValueOrDefault(DogmaAttributeId.CloakingTargetingDelay)
-                * (1 + bonus * PilotSkillReader.Level(world, catalog, pilotId, SpatialModuleRules.CloakingSkill) / 100);
+                * (1 + bonus * PilotSkillReader.OperationalLevel(world, catalog, pilotId, SpatialModuleRules.CloakingSkill) / 100);
         }
         var module = SpatialModuleRules.Define(moduleId, item.TypeId, effect, values);
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);

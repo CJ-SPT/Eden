@@ -27,6 +27,7 @@ internal static class EconomyOwnership
             SavedCharacterSetting setting => setting.PilotId,
             SavedPilotActivity activity => activity.PilotId,
             SavedPersonalSkillPlans plans => plans.PilotId,
+            SavedExpertSystem system => system.PilotId,
             SavedShipSkinLicense license => license.PilotId,
             SavedCorporationChange change => change.PilotId,
             SavedCorporationMemberAccess access => access.PilotId,

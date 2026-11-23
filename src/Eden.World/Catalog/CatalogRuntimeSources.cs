@@ -29,6 +29,7 @@ internal sealed class CatalogRuntimeSources
         "client/dungeons",
         "client/dynamicitemattributes",
         "client/epicarcs",
+        "client/expertsystems",
         "client/factions",
         "client/fighterabilitiesbytype",
         "client/graphicids",

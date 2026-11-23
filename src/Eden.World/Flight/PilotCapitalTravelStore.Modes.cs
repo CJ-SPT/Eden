@@ -109,13 +109,13 @@ internal sealed partial class PilotCapitalTravelStore
         int skill = CapitalModeRules.RequiredSkill(effect);
         double bonus = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.ConsumptionQuantityBonus);
         double required =
-            attributes[DogmaAttributeId.ConsumptionQuantity] - PilotSkillReader.Level(world, catalog, pilot.Id, skill) * bonus;
+            attributes[DogmaAttributeId.ConsumptionQuantity] - PilotSkillReader.OperationalLevel(world, catalog, pilot.Id, skill) * bonus;
         int fuelType = checked((int)attributes[DogmaAttributeId.ConsumptionType]);
         bool industrial = effect == DogmaEffect.CapitalIndustrialCore;
         if (industrial)
         {
             double role = catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.IndustrialCoreFuelPercent);
-            int level = PilotSkillReader.Level(world, catalog, pilot.Id, CapitalModeRules.CapitalIndustrialShips);
+            int level = PilotSkillReader.OperationalLevel(world, catalog, pilot.Id, CapitalModeRules.CapitalIndustrialShips);
             required *= 1 + role * level / 100;
         }
         int quantity = checked((int)Math.Round(required, MidpointRounding.AwayFromZero));

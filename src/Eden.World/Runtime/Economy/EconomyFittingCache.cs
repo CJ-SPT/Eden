@@ -9,11 +9,36 @@ internal sealed partial class ResidentEconomy
     private long _fitGeneration;
     private readonly Dictionary<long, long> _pilotFits = [];
 
-    internal string FitRevision(long pilot) =>
-        $"resident:{_fitGeneration}:{_pilotFits.GetValueOrDefault(pilot)}:{_database.Catalog.Identity.Generation}:{pilot}";
+    internal string FitRevision(long pilot, long now)
+    {
+        long deadline = ExpertSkillDeadline(pilot, now);
+        long revision = _pilotFits.GetValueOrDefault(pilot);
+        long generation = _database.Catalog.Identity.Generation;
+        return deadline == long.MaxValue
+            ? $"resident:{_fitGeneration}:{revision}:{generation}:{pilot}"
+            : $"resident:{_fitGeneration}:{revision}:{generation}:{pilot}:{deadline}";
+    }
+
+    internal string? PersistedFitRevision(long pilot)
+    {
+        long now = _owner.SimulationTime;
+        // Existing SQL fitting paths calculate trained levels and share the resident cache only without active grants.
+        return ExpertSkillDeadline(pilot, now) == long.MaxValue ? FitRevision(pilot, now) : null;
+    }
 
     private void InvalidateFits(IReadOnlyCollection<Eden.World.Runtime.Combat.CombatRowChange> changes)
     {
+        foreach (var change in changes)
+        {
+            if (change.Table == "WorldExpertSystem")
+            {
+                _expertSkills.Remove(change.Id);
+            }
+            else if (change.Table == "schema")
+            {
+                _expertSkills.Clear();
+            }
+        }
         foreach (long pilot in changes.Where(c => c.Table == "WorldFitRevision").Select(c => c.Id).Distinct())
         {
             _pilotFits[pilot] = _pilotFits.GetValueOrDefault(pilot) + 1;
@@ -52,7 +77,7 @@ internal sealed partial class EconomyTransaction
     }
 
     internal override string? FitRevision(long pilot) =>
-        previewCatalog is not null || PendingFitChanges() ? null : store.FitRevision(pilot);
+        previewCatalog is not null || PendingFitChanges() ? null : store.FitRevision(pilot, ExpertSkillTime);
 
     internal override Dictionary<DogmaAttributeId, double>? CachedFit(FitCacheKey key, string? revision) =>
         revision is null ? null

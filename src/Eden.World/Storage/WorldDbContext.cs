@@ -227,6 +227,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldNpcMiningCargo>().HasOne<WorldNpc>().WithMany().HasForeignKey(c => c.NpcId);
         PersonalSettingsSchema.Configure(model);
         PersonalSkillPlanSchema.Configure(model);
+        ExpertSystemSchema.Configure(model);
         Eden.World.Docking.ShipSkinLicenseSchema.Configure(model);
         Eden.World.Docking.AppliedShipSkinSchema.Configure(model);
         model.Entity<SavedPilotNote>().ToTable("WorldPilotNote").HasKey(note => new { note.PilotId, note.TargetId });

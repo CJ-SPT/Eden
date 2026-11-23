@@ -27,15 +27,20 @@ internal sealed class PilotBrain(
     IPilotJumpCloneSkills clones,
     IPilotNavigationSkills navigation,
     IPilotFitting? fitting = null,
-    IWorldTuning? tuning = null
+    IWorldTuning? tuning = null,
+    IPilotExpertSystems? expertSystems = null
 )
 {
     private const double Percent = 100;
 
     // The native client applies these earned modifiers to its local dogma graph.
-    public PilotBrainState Read(long pilotId, long shipId)
+    public PilotBrainState Read(long pilotId, long shipId, IReadOnlyList<ExpertVirtualSkill>? grants = null)
     {
         var levels = skills.ReadSkills(pilotId).ToDictionary(skill => skill.TypeId, skill => skill.Level);
+        foreach (var grant in grants ?? expertSystems?.Read(pilotId).Skills ?? [])
+        {
+            levels[grant.TypeId] = Math.Max(levels.GetValueOrDefault(grant.TypeId), grant.Level);
+        }
         // Docked OnlineModule activates the local graph before calling the server.
         // Absolute Godma output values alone do not supply its earned fitting budget.
         var resourceEffects = FittingRules
@@ -187,7 +192,8 @@ internal sealed class PilotBrain(
         return new(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), character, effects, []);
     }
 
-    public BrainUpdate Update(long pilotId, long shipId) => Read(pilotId, shipId).Update();
+    public BrainUpdate Update(long pilotId, long shipId, IReadOnlyList<ExpertVirtualSkill>? grants = null) =>
+        Read(pilotId, shipId, grants).Update();
 
     private static void AddGatheringEffects(List<BrainEffect> effects, long shipId, ResourcePolicy policy)
     {

@@ -43,7 +43,7 @@ internal sealed partial class PilotCombatStore
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         var combatSkills = Enum.GetValues<CombatSkill>();
-        var skillLevels = PilotSkillReader.Levels(world, catalog, pilotId, combatSkills.Select(s => (int)s).ToArray());
+        var skillLevels = PilotSkillReader.OperationalLevels(world, catalog, pilotId, combatSkills.Select(s => (int)s).ToArray());
         var levels = combatSkills.ToDictionary(skill => skill, skill => skillLevels[(int)skill]);
         var loaded = PilotAmmunitionStore.Contents(world, module.Id);
         var cooldown = world.Set<ModuleCooldown>().Find(module.Id);

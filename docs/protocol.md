@@ -315,6 +315,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [World skill training speed, November 21, 2026](protocol/characters.md#world-skill-training-speed-november-21-2026)
 - <a id="local-skill-plan-gateway-november-2-2026"></a>[Local skill-plan gateway, November 2, 2026](protocol/characters.md#local-skill-plan-gateway-november-2-2026)
 - [Persistent personal skill plans](protocol/characters.md#persistent-personal-skill-plans)
+- [Resident Expert Systems](protocol/characters.md#resident-expert-systems)
 - <a id="character-creation-and-first-spawn-november-2-2026"></a>[Character creation and first spawn, November 2, 2026](protocol/characters.md#character-creation-and-first-spawn-november-2-2026)
 - <a id="initial-corvette-fitting"></a>[Initial corvette fitting](protocol/characters.md#initial-corvette-fitting)
 

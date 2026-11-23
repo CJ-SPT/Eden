@@ -30,7 +30,9 @@ internal sealed partial class PilotPropulsionStore
         long pilotId,
         NavigationSkill skill,
         DogmaAttributeId source
-    ) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill) * (catalog.FittingAttributes((int)skill).GetValueOrDefault(source, 0));
+    ) =>
+        PilotSkillReader.OperationalLevel(world, catalog, pilotId, (int)skill)
+        * catalog.FittingAttributes((int)skill).GetValueOrDefault(source, 0);
 
     internal static IReadOnlyList<NavigationBonus> NavigationBonuses(WorldAction world, CatalogDbContext catalog, long pilotId)
     {

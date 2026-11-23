@@ -20,7 +20,8 @@ internal sealed class SkillHandler(
     PropulsionHandler propulsion,
     FittingOperations fittingOperations,
     IPilotCharacterSheet sheet,
-    IPilotJumpCloneSkills cloneSkills
+    IPilotJumpCloneSkills cloneSkills,
+    IPilotExpertSystems? expertSystems = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -39,7 +40,6 @@ internal sealed class SkillHandler(
                 ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills", PilotBindingLifetime.Pilot),
                 ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => Current(context, pilotId),
-                ("expertSystemMgr", "GetMyExpertSystems") => BlueEmpty.IndexedDictionary,
                 ("@skills", "GetAttributes") when args.Length == 0 => new BlueMap<DogmaAttributeId, int>(
                     sheet.ReadEffectiveAttributes(pilotId).ToDogma()
                 ),
@@ -102,7 +102,10 @@ internal sealed class SkillHandler(
         {
             InventoryChangesWire.NotifyItemChange(context, change);
         }
-        var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => result.TypeIds.Contains(s.TypeId)));
+        var updates = SkillRows(
+            skills.ReadSkills(context.Pilot.PilotId).Where(s => result.TypeIds.Contains(s.TypeId)),
+            context.ExpertSystems?.Skills.Where(grant => result.TypeIds.Contains(grant.TypeId))
+        );
         context.ReportedSkillTypes.UnionWith(updates.Entries.Keys);
         context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
         return PilotCallResult.None;
@@ -137,7 +140,10 @@ internal sealed class SkillHandler(
         if (state.ChangedSkills.Count > 0)
         {
             propulsion.RefreshNavigation(context);
-            var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)));
+            var updates = SkillRows(
+                skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)),
+                context.ExpertSystems?.Skills.Where(grant => state.ChangedSkills.Contains(grant.TypeId))
+            );
             long changedAt = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             context.ReportedSkillTypes.UnionWith(updates.Entries.Keys);
             if (updates.Entries.Count > 0)
@@ -146,20 +152,7 @@ internal sealed class SkillHandler(
                     removed ? new ServerSkillsRemoved(updates, changedAt) : new ServerSkillsChanged(updates, changedAt)
                 );
             }
-            context.Notifications.Add(new ServerBrainUpdated(brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)));
-            if (state.ChangedSkills.Any(skill => Enum.IsDefined((InfomorphSkill)skill)))
-            {
-                var clones = cloneSkills.ReadCloneSkills(context.Pilot.PilotId);
-                long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-                var item = new DogmaItemKey.Item(context.Pilot.PilotId);
-                context.Notifications.Add(
-                    new ModuleAttributesChanged([
-                        new(context.Pilot.PilotId, item, DogmaAttributeId.MaxJumpClones, now, clones.Capacity),
-                        new(context.Pilot.PilotId, item, DogmaAttributeId.CloneJumpCooldown, now, clones.CooldownHours),
-                    ])
-                );
-            }
-            fittingOperations.NotifyShipAttributes(context);
+            RefreshSkillEffects(context, state.ChangedSkills, changedAt);
         }
         var rows = state.Queue.Select((entry, index) => new SkillQueueRow(index, entry)).ToArray();
         if (notify)
@@ -180,12 +173,112 @@ internal sealed class SkillHandler(
         return new BlueList<SkillHistoryRow>(training.History(pilotId, count).Select(entry => new SkillHistoryRow(entry)).ToArray());
     }
 
-    private static BlueMap<int, TrainedSkillReply> SkillRows(IEnumerable<TrainedSkill> source) =>
-        new(source.ToDictionary(skill => skill.TypeId, skill => new TrainedSkillReply(skill)));
+    private void RefreshSkillEffects(PilotCallContext context, IEnumerable<int> changedSkills, long now)
+    {
+        long pilotId = context.Pilot.PilotId;
+        context.Notifications.Add(new ServerBrainUpdated(brain.Update(pilotId, context.Pilot.ShipId, context.ExpertSystems?.Skills)));
+        if (changedSkills.Any(skill => Enum.IsDefined((InfomorphSkill)skill)))
+        {
+            var clones = cloneSkills.ReadCloneSkills(pilotId);
+            var item = new DogmaItemKey.Item(pilotId);
+            context.Notifications.Add(
+                new ModuleAttributesChanged([
+                    new(pilotId, item, DogmaAttributeId.MaxJumpClones, now, clones.Capacity),
+                    new(pilotId, item, DogmaAttributeId.CloneJumpCooldown, now, clones.CooldownHours),
+                ])
+            );
+        }
+        fittingOperations.NotifyShipAttributes(context);
+    }
+
+    internal void ApplyExpertSystems(PilotCallContext context, ExpertSystemChange change)
+    {
+        var before = change.Before.Skills.ToDictionary(grant => grant.TypeId);
+        var after = change.After.Skills.ToDictionary(grant => grant.TypeId);
+        int[] affected = before
+            .Keys.Union(after.Keys)
+            .Where(type => before.GetValueOrDefault(type) != after.GetValueOrDefault(type))
+            .ToArray();
+        if (affected.Length == 0)
+        {
+            return;
+        }
+
+        var trained = skills.ReadSkills(context.Pilot.PilotId).ToDictionary(skill => skill.TypeId);
+        Dictionary<int, TrainedSkillReply> changed = [];
+        Dictionary<int, TrainedSkillReply> removed = [];
+        foreach (int type in affected)
+        {
+            var actual = trained.GetValueOrDefault(type);
+            var previous = Project(actual, before.GetValueOrDefault(type));
+            var current = Project(actual, after.GetValueOrDefault(type));
+            if (previous == current)
+            {
+                continue;
+            }
+            if (current is null && previous is not null)
+            {
+                removed[type] = new(new TrainedSkill(type, -1, previous.Rank));
+            }
+            else if (current is not null)
+            {
+                changed[type] = current;
+            }
+        }
+
+        if (changed.Count == 0 && removed.Count == 0)
+        {
+            return;
+        }
+
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (changed.Count > 0)
+        {
+            context.ReportedSkillTypes.UnionWith(changed.Keys);
+            context.Notifications.Add(new ServerSkillsChanged(new(changed), now));
+        }
+        if (removed.Count > 0)
+        {
+            context.ReportedSkillTypes.ExceptWith(removed.Keys);
+            context.Notifications.Add(new ServerSkillsRemoved(new(removed), now));
+        }
+
+        propulsion.RefreshNavigation(context);
+        RefreshSkillEffects(context, changed.Keys.Concat(removed.Keys), now);
+    }
+
+    private static TrainedSkillReply? Project(TrainedSkill? skill, ExpertVirtualSkill? grant) =>
+        skill is not null ? new(skill, grant?.Level)
+        : grant is not null ? new(grant)
+        : null;
+
+    internal static BlueMap<int, TrainedSkillReply> SkillRows(
+        IEnumerable<TrainedSkill> source,
+        IEnumerable<ExpertVirtualSkill>? grants = null
+    )
+    {
+        var rented = grants?.ToDictionary(grant => grant.TypeId);
+        var rows = source.ToDictionary(
+            skill => skill.TypeId,
+            skill => new TrainedSkillReply(skill, rented?.GetValueOrDefault(skill.TypeId)?.Level)
+        );
+        if (rented is not null)
+        {
+            foreach (var grant in rented.Values)
+            {
+                rows.TryAdd(grant.TypeId, new TrainedSkillReply(grant));
+            }
+        }
+        return new(rows);
+    }
 
     private BlueMap<int, TrainedSkillReply> Current(PilotCallContext context, long pilot)
     {
-        var rows = SkillRows(skills.ReadSkills(pilot));
+        if (context.ExpertSystems is null && expertSystems is not null)
+        {
+            context.ObserveExpertSystems(expertSystems.Read(pilot));
+        }
+        var rows = SkillRows(skills.ReadSkills(pilot), context.ExpertSystems?.Skills);
         context.ReportedSkillTypes.Clear();
         context.ReportedSkillTypes.UnionWith(rows.Entries.Keys);
         return rows;
@@ -194,7 +287,11 @@ internal sealed class SkillHandler(
     internal void ReportDeleted(PilotCallContext context, IReadOnlyList<int> deleted)
     {
         // Build 3662168 skillsvc removes entries with negative trainedSkillPoints and no virtual level.
-        var missing = deleted.Where(context.ReportedSkillTypes.Remove).Select(type => new TrainedSkill(type, -1, 1)).ToArray();
+        var activeRentals = context.ExpertSystems?.Skills.Select(grant => grant.TypeId).ToHashSet();
+        var missing = deleted
+            .Where(type => activeRentals?.Contains(type) != true && context.ReportedSkillTypes.Remove(type))
+            .Select(type => new TrainedSkill(type, -1, 1))
+            .ToArray();
         if (missing.Length > 0)
         {
             context.Notifications.Add(new ServerSkillsRemoved(SkillRows(missing), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));

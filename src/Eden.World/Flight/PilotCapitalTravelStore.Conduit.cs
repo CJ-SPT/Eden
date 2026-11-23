@@ -59,7 +59,7 @@ internal sealed partial class PilotCapitalTravelStore
         if (CapitalTravelRules.CarrierConduitHull(group))
         {
             int skill = CapitalTravelRules.CapitalJumpPortalGenerationSkill;
-            int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
+            int level = PilotSkillReader.OperationalLevel(world, catalog, pilot.Id, skill);
             var bonus = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.ConduitPassengerSkillBonus);
             double baseSeats = catalog.FittingAttributes(pilot.ActiveShip.TypeId)[DogmaAttributeId.ConduitPassengerCount];
             count += checked((int)(level * bonus * count / baseSeats));

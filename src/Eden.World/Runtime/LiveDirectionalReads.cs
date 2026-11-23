@@ -27,7 +27,7 @@ internal sealed partial class LiveReadModels
     );
 
     internal DirectionalObserver DirectionalObserver(long pilot, Func<DirectionalObserver> load) =>
-        Read(_directionalObservers, pilot, load);
+        ReadSkillDependent(_directionalObservers, pilot, pilot, load);
 
     internal IReadOnlyList<DirectionalEntry> DirectionalContacts(int system, Func<IReadOnlyList<DirectionalEntry>> load) =>
         Read(_directionalContacts, system, load);

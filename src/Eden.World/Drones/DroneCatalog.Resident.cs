@@ -102,7 +102,7 @@ internal static partial class DroneCatalog
 
         double SkillMultiplier(HullBonusSkill skill, DogmaAttributeId bonus) =>
             1
-            + PilotSkillReader.Level(world, catalog, pilotId, (int)skill)
+            + PilotSkillReader.OperationalLevel(world, catalog, pilotId, (int)skill)
                 * catalog.FittingAttributes((int)skill).GetValueOrDefault(bonus)
                 / 100;
     }

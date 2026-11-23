@@ -48,6 +48,7 @@ public sealed class SavedInboxNotification
                 Type == InboxNotificationType.StructureItemsDelivered
                     ? JsonSerializer.Deserialize<StructureDeliveryContent>(Message)
                     : null,
+            ExpertSystemTypeId = Type == InboxNotificationType.ExpertSystemExpired ? JsonSerializer.Deserialize<int>(Message) : null,
         };
 }
 

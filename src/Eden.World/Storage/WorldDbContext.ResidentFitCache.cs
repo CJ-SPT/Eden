@@ -31,7 +31,7 @@ public sealed partial class WorldDbContext
             && !WorldConnections.HasChanges(this, "WorldFitRevision")
         )
         {
-            return economy.FitRevision(pilotId);
+            return economy.PersistedFitRevision(pilotId);
         }
         return Database.SqlQuery<string>($"SELECT Stamp AS Value FROM WorldFitRevision WHERE PilotId={pilotId}").FirstOrDefault()
             ?? "initial";

@@ -45,7 +45,10 @@ internal sealed partial class PilotMiningStore
     )
     {
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
-        var levels = s_miningSkills.ToDictionary(skill => skill, skill => PilotSkillReader.Level(world, catalog, pilotId, (int)skill));
+        var levels = s_miningSkills.ToDictionary(
+            skill => skill,
+            skill => PilotSkillReader.OperationalLevel(world, catalog, pilotId, (int)skill)
+        );
         return MiningRules.ModuleAttributes(
             new(
                 module.GroupId,
@@ -256,7 +259,7 @@ internal sealed partial class PilotMiningStore
         }
         if (laser.Family == MiningFamily.Gas)
         {
-            int limit = PilotSkillReader.Level(world, catalog, pilotId, (int)MiningSkill.GasHarvesting);
+            int limit = PilotSkillReader.OperationalLevel(world, catalog, pilotId, (int)MiningSkill.GasHarvesting);
             var active = world
                 .Set<ModuleCooldown>()
                 .Where(c => c.Kind == ModuleCooldownKind.Cycle && c.ReadyAt > now)

@@ -28,6 +28,7 @@ internal sealed partial class EconomyTransaction
         typeof(WorldTackle),
         typeof(Ship),
         typeof(PilotSkill),
+        typeof(SavedExpertSystem),
         typeof(Pilot),
         typeof(ActiveFittedModule),
         typeof(SavedMutatedItem),
@@ -212,6 +213,9 @@ internal sealed partial class EconomyTransaction
             {
                 case PilotSkill skill:
                     pilots.Add(skill.PilotId);
+                    break;
+                case SavedExpertSystem expert:
+                    pilots.Add(expert.PilotId);
                     break;
                 case Pilot pilot:
                     pilots.Add(pilot.Id);

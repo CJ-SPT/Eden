@@ -84,7 +84,7 @@ internal sealed partial class PilotCapitalTravelStore
             attributes[DogmaAttributeId.IndustrialProtectionDuration]
             * (
                 1
-                + PilotSkillReader.Level(action, catalog, pilotId, IndustrialProtectionRules.OperationSkill)
+                + PilotSkillReader.OperationalLevel(action, catalog, pilotId, IndustrialProtectionRules.OperationSkill)
                     * catalog.FittingAttributes(IndustrialProtectionRules.OperationSkill)[DogmaAttributeId.DurationBonus]
                     / 100
             );

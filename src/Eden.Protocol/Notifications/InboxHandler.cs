@@ -218,6 +218,11 @@ internal sealed record InboxContactData(ContactNotificationContent Content) : Bl
         new Dictionary<string, object?> { ["level"] = Content.Level, ["message"] = new BlueUnicode(Content.Message) };
 }
 
+internal sealed record InboxExpertSystemData(int TypeId) : BlueModel
+{
+    public override object ToBlue() => new Dictionary<string, object?> { ["typeID"] = TypeId };
+}
+
 internal sealed record InboxNotificationReply(InboxNotification Notification) : BlueModel
 {
     internal static BlueModel Data(InboxNotification notification) =>
@@ -225,6 +230,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
         : notification.AllianceId is int alliance ? new InboxAllianceData(alliance)
         : notification.KillRight is { } killRight ? new InboxKillRightData(notification.Type, notification.SenderId, killRight.Right)
         : notification.StructureDelivery is { } delivery ? new InboxStructureDeliveryData(notification.SenderId, delivery)
+        : notification.ExpertSystemTypeId is int typeId ? new InboxExpertSystemData(typeId)
         : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>

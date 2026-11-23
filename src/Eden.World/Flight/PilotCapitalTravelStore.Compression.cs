@@ -184,7 +184,7 @@ internal sealed partial class PilotCapitalTravelStore
     {
         var attributes = catalog.FittingAttributes(module);
         int list = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.CompressibleItemsTypeList));
-        int skill = PilotSkillReader.Level(world, catalog, pilotId, ShipCompressionRules.FleetCompressionLogistics);
+        int skill = PilotSkillReader.OperationalLevel(world, catalog, pilotId, ShipCompressionRules.FleetCompressionLogistics);
         double range = attributes.GetValueOrDefault(DogmaAttributeId.MaxRange) * (1 + skill * 0.1);
         if (list <= 0 || !double.IsFinite(range) || range <= 0)
         {

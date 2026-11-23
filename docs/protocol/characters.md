@@ -930,6 +930,59 @@ single case and passed all 73 remaining tests in 35.57 s. Both Python policy sui
 **Optional maintainer checks.** Create a personal plan in the Skill Catalogue with two skills and a milestone. Track
 it, reconnect to verify its ordering and tracking, then delete it and confirm the tracked plan clears.
 
+## Resident Expert Systems
+
+Build **3662168** `expertSystems/client/service.pyj` calls `expertSystemMgr.GetMyExpertSystems`, `ConsumeExpertSystem(itemID)`,
+and `RemoveMyExpertSystem(typeID)`. The reply maps Expert System type IDs to absolute installation and expiry FILETIMEs.
+`OnExpertSystemsUpdated` sends that map, an added flag, and the affected type ID. The pinned `CharacterSkillEntry` uses
+its fifth field for the virtual level and retains separate trained level and skill points. The original client archive
+has SHA-256 prefix `37fb2af4fa0e`.
+
+EVE.js **261108.1**, build **3396210**, implements this in `expertSystemMgrService.js` (`882bbaba6e11`),
+`expertSystemRuntime.js` (`607888ef5ae3`), and `expertSystemProjection.js` (`f5031ac60458`). The pinned catalog
+`client/expertsystems` contains 16 visible, nonretired systems with seven-day durations. The client loads each system's
+skill grants from that catalog. [CCP Expert Systems](https://www.eveonline.com/news/view/expert-systems-now-live) ·
+[EVE University Character Sheet](https://wiki.eveuniversity.org/Character_Sheet#Expert_Systems)
+
+Consuming an eligible item saves the system and removes one inventory unit in one resident transaction. A pilot can run
+three different systems. An active system with at most 30 days remaining can be extended by another copy. Its original
+installation time is kept. Removing a system lowers the active grants immediately. Expiry applies at the saved deadline
+and creates a type **253** notice in the pilot's inbox when the session settles the expiration.
+
+Active systems provide virtual levels for operating ships and modules and calculating fitted bonuses. Overlapping grants
+use the highest available level alongside the pilot's trained level. Skill points, skill training, and extraction use the
+permanent skill records. Rental state and inventory custody survive checkpoints and restart.
+
+**Automated validation.** Two exact methods passed in 14.95 s after an 18.46 s build. They cover a real pinned Mining
+Barge system, native Retriever boarding and Strip Miner fitting, virtual skill rows, the exact warm-cache deadline,
+expiry notices, restart, and atomic inventory custody. They also check the concurrent-install limit and top-up window.
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Skills.ExpertSystemTests.NativeExpertSystemUnlocksRetrieverAndStripMinerUntilExactExpiryThenSupportsRemoval|FullyQualifiedName=Eden.Protocol.Tests.Skills.ExpertSystemTests.NativeExpertSystemLimitsPreserveItemsAndAllowTopUpWhileSlotsAreFull
+```
+
+The initial expanded run passed 537 of 557 cases with one optional market replay skipped. Fourteen failures came from
+existing trained-skill readers running without a resident world. They now receive an empty rental projection without
+opening SQL. The other five failures, a legacy fitting query-budget assertion and four gameplay-error packet
+assertions, reproduced without this change on both `872a7ea5` and `9ed725ee`.
+
+The rebased run registered `client/expertsystems` in the prepared catalog. Both native cases, the earned-navigation
+brain case, and the unallocated-SP application case passed in 21.10 s after a 38.78 s build. The installation-limit
+case exercises native reads and consumption under `GameplaySqlGuard`.
+
+The solution built in 0.86 s with zero warnings or errors. The following final filter passed all 457 cases in 253.79 s,
+including the previously affected trained-skill readers. The catalog and formatting policy suites passed all 17 cases.
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Skills|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.FreeSkillPointServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.DeveloperToolsTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests|FullyQualifiedName~Eden.Protocol.Tests.Fittings.ResidentFittingSelectionTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.PropulsionTests|FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotDroneTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillExtractor)&FullyQualifiedName!=Eden.Protocol.Tests.Combat.FittingSnapshotTests.ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes&FullyQualifiedName!~GameplayRejectionShowsTextAndKeepsTheModuleAndSessionIntact
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Activate the Mining Barge Expert System on a pilot without Mining Barge trained. Inspect
+the virtual levels, board a Retriever and fit a Strip Miner I, then remove the Expert System and check the module and
+hull requirements.
+
 ## Character creation and first spawn, November 2, 2026
 
 Build 3662168 reads three slots from the account row. The creator checks the name with `charUnboundMgr.ValidateNameEx` and submits the name, race, bloodline, gender, ancestry, avatar, portrait, school and two optional arguments to `CreateCharacterWithDoll`. It sends 64 for undefined ancestry, refreshes the roster and selects the new ID. Eden accepts positional selection and the creator’s `charID` keyword. Only an owned character can start the flight session.

@@ -29,7 +29,12 @@ internal sealed partial class PilotMissileStore
         IReadOnlyDictionary<DogmaAttributeId, double> charge
     )
     {
-        var levels = PilotSkillReader.Levels(world, catalog, pilot, Enum.GetValues<BreacherSkill>().Select(skill => (int)skill).ToArray());
+        var levels = PilotSkillReader.OperationalLevels(
+            world,
+            catalog,
+            pilot,
+            Enum.GetValues<BreacherSkill>().Select(skill => (int)skill).ToArray()
+        );
         var fitted = launcher.ToDictionary();
         var loaded = charge.ToDictionary();
         Scale(fitted, DogmaAttributeId.WeaponCycleTime, BreacherSkill.RapidFiring, DogmaAttributeId.MissileRateBonus);

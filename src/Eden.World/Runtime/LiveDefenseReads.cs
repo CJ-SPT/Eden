@@ -25,5 +25,6 @@ internal sealed partial class LiveReadModels
         }
     }
 
-    internal CapsuleerDefenseProfile DefenseProfile(long pilot, Func<CapsuleerDefenseProfile> load) => Read(_defenseProfiles, pilot, load);
+    internal CapsuleerDefenseProfile DefenseProfile(long pilot, Func<CapsuleerDefenseProfile> load) =>
+        ReadSkillDependent(_defenseProfiles, pilot, pilot, load);
 }

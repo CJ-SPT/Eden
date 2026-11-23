@@ -24,7 +24,8 @@ internal sealed class PilotSessionTick(
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
-    Eden.Protocol.FactionWarfare.FactionWarzoneUpdates? warzoneUpdates = null
+    Eden.Protocol.FactionWarfare.FactionWarzoneUpdates? warzoneUpdates = null,
+    ExpertSystemHandler? expertSystems = null
 )
 {
     public async Task AdvanceAsync(
@@ -56,6 +57,7 @@ internal sealed class PilotSessionTick(
             await output.FlushNotificationsAsync();
             return;
         }
+        expertSystems?.Advance(context);
         var flight = context.Flight;
         var previousControl = context.ControlledStructureId;
         var beforeConduit = flight.Pilot;

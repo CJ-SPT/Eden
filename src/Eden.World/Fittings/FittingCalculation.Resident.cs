@@ -599,8 +599,13 @@ internal sealed partial record FittingCalculation
                     .Where(s => s.PilotId == pilot.Id && Enumerable.Contains(relevantSkills, s.TypeId))
                     .Select(s => s.TypeId)
                     .ToHashSet();
+        var grants = PilotSkillReader.VirtualSkills(world, catalog, pilot.Id);
         var activeSkills = relevantSkills
-            .Where(skill => hullSkills.Contains(skill) || (trained?.Contains(skill) ?? world.SkillPoints(pilot.Id, skill).HasValue))
+            .Where(skill =>
+                hullSkills.Contains(skill)
+                || grants.ContainsKey(skill)
+                || (trained?.Contains(skill) ?? world.SkillPoints(pilot.Id, skill).HasValue)
+            )
             .ToArray();
         var skillIds = activeSkills
             .Concat(Enum.GetValues<FittingSkill>().Select(s => (int)s))
@@ -608,7 +613,7 @@ internal sealed partial record FittingCalculation
             .Concat(Enum.GetValues<TargetingSkill>().Select(s => (int)s))
             .Distinct()
             .ToArray();
-        var levels = PilotSkillReader.Levels(world, catalog, pilot.Id, skillIds);
+        var levels = PilotSkillReader.OperationalLevels(world, catalog, pilot.Id, skillIds, grants);
         foreach (int skill in activeSkills)
         {
             int level = levels.GetValueOrDefault(skill);

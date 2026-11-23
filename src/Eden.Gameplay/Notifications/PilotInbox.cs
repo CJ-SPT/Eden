@@ -21,6 +21,7 @@ public enum InboxNotificationType
 
     // Build 3662168 eve.common.script.util.notificationconst.
     StructureItemsDelivered = 199,
+    ExpertSystemExpired = 253,
 
     // Build 3662168 notifications.common.notificationconst.
     MilitiaMemberStandingWarning = 298,
@@ -92,6 +93,7 @@ public sealed record InboxNotification(
 )
 {
     public StructureDeliveryContent? StructureDelivery { get; init; }
+    public int? ExpertSystemTypeId { get; init; }
 }
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);
