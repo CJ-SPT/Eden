@@ -217,11 +217,12 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         bool Active,
         double Duration,
         long StartedAt,
-        object? GraphicInfo = null
+        object? GraphicInfo = null,
+        int Repeat = 0
     ) : DestinyCommand("OnSpecialFX")
     {
         protected override object?[] Arguments =>
-            [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, Offensive, Start, Active, Duration, 0, StartedAt, 0, GraphicInfo];
+            [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, Offensive, Start, Active, Duration, Repeat, StartedAt, 0, GraphicInfo];
     }
 
     internal sealed record AttackIndicator(long Id, long ModuleId, long TargetId, bool Active) : DestinyCommand("OnSpecialFX")

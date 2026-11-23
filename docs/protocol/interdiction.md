@@ -253,3 +253,36 @@ FullyQualifiedName~Eden.Protocol.Tests.Propulsion.HicInterdictionTests.|FullyQua
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Inspect the moving bubble from a second client. Cycle both focused scripts on a locked target.
+
+## HIC bubble visuals across paid cycles
+
+Eden previously sent an `OnSpecialFX` stop and start on each paid repeat. This recreated the bubble graphic on the
+pilot's client, and peers received the same transition when the active contact changed. The one-cycle FX timer could
+also expire before the server processed the renewal.
+
+The pilot and observers now keep the original visual through a successful renewal at the same radius. The pinned
+`FxSequencer.OnSpecialFX` adds one to the positive wire repeat count, so Eden uses `int.MaxValue - 1` for the bubble
+visual. `Activation.PurgeTriggers` retains that activation across normal cycle boundaries, and the HIC effect's
+`Repeat` method leaves the graphic in place. The server sends a stop when the generator ends and rebuilds the visual
+when a newly paid cycle changes the radius. Each renewal charges capacitor and commits a new paid deadline in the
+resident world.
+
+The pinned archive and [gameplay references](#references-and-pinned-client) are the same as above. The local evejs
+`server/src/space/runtime/activeModuleSpecialFx.js` uses extended client repeat counts for continuous beam visuals
+(SHA-256 `235a5ae1bd7971ba1649cf58c42c0c5554b5ce7501684990c192444e38980e62`).
+
+**Automated validation.** `HicInterdictionTests.NativeFieldDeactivateFinishesThePaidCycleAndPublishesRange` reproduced
+the one-cycle FX payload before the fix. After the fix, the exact case passed (9.39 s build and 7.85 s runner time),
+including a repeat processed 250 ms after its deadline. The test checks the pilot and observer command queues for
+continuity and verifies one stop after deactivation. The affected filter passed 116 cases in 75.26 s. Both Python
+policy suites and all 16 inert pinned-client cases passed, including native expiration and explicit trigger removal.
+The shared checkout's format sweep included archived packages and concurrent edits. The clean worktree passed
+the repository format and line-width checks after restore in 37.96 s.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Propulsion.HicInterdictionTests.|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.InterdictionTests.|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.NullifierTests.|FullyQualifiedName~Eden.Protocol.Tests.Combat.AdvancedWeaponTests.|FullyQualifiedName~Eden.Protocol.Tests.Combat.SmartbombTests.|FullyQualifiedName~Eden.Protocol.Tests.Combat.AreaWeaponTests.|FullyQualifiedName~Eden.Protocol.Tests.Fleets.CommandBurstTests.|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTetherTests.
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Watch two consecutive bubble cycles from both clients and verify the bubble drops after deactivation.

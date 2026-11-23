@@ -13,6 +13,9 @@ namespace Eden.Protocol.Flight;
 
 internal sealed class FlightEffects(Action<DestinyCommand> emit)
 {
+    // Build 3662168 adds one to the FX repeat count. The generator's explicit stop ends the visual.
+    private const int FieldVisualRepeats = int.MaxValue - 1;
+
     private static bool Changed<T>(T[]? current, T[]? previous) =>
         !ReferenceEquals(current, previous) && ((current?.Length ?? 0) != 0 || (previous?.Length ?? 0) != 0);
 
@@ -259,7 +262,8 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                             ["mulitplierBonusPerCycle"] = spool.PerCycle,
                             ["multiplierBonusMax"] = spool.Maximum,
                         }
-                    : null
+                    : null,
+                Repeat: active && effect.FieldRange is not null ? FieldVisualRepeats : 0
             )
         );
 

@@ -17,7 +17,8 @@ with zipfile.ZipFile(archive) as source:
     hic = zlib.decompress(source.read('eve/client/script/environment/effects/WarpDisruptFieldGenerating.pyj'))
     button = zlib.decompress(source.read('eve/client/script/ui/inflight/shipModuleButton/shipmodulebutton.pyj'))
     godma = zlib.decompress(source.read('eve/client/script/environment/godma.pyj'))
-worker = 'BLOB = %r\nHIC = %r\nBUTTON = %r\nGODMA = %r\n' % (blob, hic, button, godma)
+    sequencer = zlib.decompress(source.read('eve/client/script/parklife/fxSequencer.pyj'))
+worker = 'BLOB = %r\nHIC = %r\nBUTTON = %r\nGODMA = %r\nSEQUENCER = %r\n' % (blob, hic, button, godma, sequencer)
 worker += r'''
 import marshal
 
@@ -93,6 +94,48 @@ for radius in [None, 16000.0, 20000.0, 26000.0]:
     prepare(state)
     assert state.gfxModel.scaling == (expected / 20000.0,) * 3
 print('4 pinned HIC radius and scaling cases passed; no renderer or client started')
+
+activation = next(c for c in walk(marshal.loads(SEQUENCER[8:])) if c.co_name == 'Activation')
+repeat_activation = method(activation, 'Repeat')
+purge_triggers = method(activation, 'PurgeTriggers')
+update_repeat_time = method(activation, 'UpdateRepeatTime')
+remove_trigger = method(activation, 'RemoveTrigger')
+repeat_field = method(field, 'Repeat')
+SECOND = 10000000L
+blue = Stub()
+blue.os = Stub()
+blue.os.GetSimTime = lambda: now
+heapq = Stub()
+heapq.heappop = lambda entries: entries.pop(0)
+heapq.heapify = lambda entries: None
+for repeat in [1, 2147483647]:
+    started = 134000000000000000L
+    trigger = Stub()
+    trigger.duration = 30000.0
+    # OnSpecialFX has already normalized the wire count and AddTrigger has stamped the expiry.
+    trigger.repeat = repeat
+    trigger.stamp = started + 30 * SECOND * repeat
+    stops = []
+    state = Stub()
+    state.triggers = [trigger]
+    state.stamp = started + 30 * SECOND
+    state.duration = trigger.duration
+    state.effect = Stub()
+    state.effect.Repeat = lambda duration: repeat_field(state.effect, duration)
+    state.isOn = True
+    state.Stop = lambda: stops.append(True)
+    state.PurgeTriggers = lambda: purge_triggers(state)
+    state.UpdateRepeatTime = lambda: update_repeat_time(state)
+    now = started + 30 * SECOND + 1
+    repeat_activation(state)
+    if repeat == 1:
+        assert stops == [True] and not state.triggers
+    else:
+        assert not stops and state.triggers == [trigger]
+        assert state.stamp == started + 60 * SECOND
+        remove_trigger(state, trigger)
+        assert not state.triggers
+print('2 pinned HIC visual expiry cases passed; no renderer or client started')
 
 button = marshal.loads(BUTTON[8:])
 relevant_effect = method(button, 'GetRelevantEffect')

@@ -744,6 +744,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Focused interdiction at NPC stargates](protocol/navigation.md#focused-interdiction-at-npc-stargates)
 - [Interdiction cleanup during session ticks](protocol/interdiction.md#interdiction-cleanup-during-session-ticks)
 - [Native HIC visuals and scripted activation](protocol/interdiction.md#native-hic-visuals-and-scripted-activation)
+- [HIC bubble visuals across paid cycles](protocol/interdiction.md#hic-bubble-visuals-across-paid-cycles)
 - [Empty-space context menu latency](protocol/navigation.md#empty-space-context-menu-latency)
 - [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)
 - [Direct station-to-space TR, November 8, 2026](protocol/navigation.md#direct-station-to-space-tr-november-8-2026)

@@ -212,25 +212,30 @@ internal sealed class InterdictionHandler(
             Repeats = repeats,
         };
         bool field = activation.Effect == DogmaEffect.WarpDisruptSphere;
-        WeaponContact contact = new(
-            module,
-            activation.TypeId,
-            0,
-            target?.Id,
-            active.StartTime,
-            activation.Duration,
-            field ? "effects.WarpDisruptFieldGenerating" : TackleWire.Graphic(activation.Effect),
-            FieldRange: field ? activation.Range : null
-        );
+        var old = previous?.Contact;
+        // Keep the same visual in the observer snapshot when a new cycle pays for the same field.
+        WeaponContact contact =
+            field && old is not null && old.FieldRange == activation.Range
+                ? old
+                : new(
+                    module,
+                    activation.TypeId,
+                    0,
+                    target?.Id,
+                    active.StartTime,
+                    activation.Duration,
+                    field ? "effects.WarpDisruptFieldGenerating" : TackleWire.Graphic(activation.Effect),
+                    FieldRange: field ? activation.Range : null
+                );
         _cycles[module] = new(active, activation, contact, target, repeats);
-        if (previous?.Contact is { } old)
-        {
-            context.Flight.RepeatWeaponEffect(old, contact);
-        }
-        else
+        if (old is null)
         {
             context.Notifications.Add(new ShipEffectChanged(active, Now, true, true));
             context.Flight.SetWeaponEffect(contact, true);
+        }
+        else if (!ReferenceEquals(old, contact))
+        {
+            context.Flight.RepeatWeaponEffect(old, contact);
         }
         context.Notifications.Add(
             new ModuleAttributesChanged([

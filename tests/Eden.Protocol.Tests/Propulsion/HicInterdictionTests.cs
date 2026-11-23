@@ -417,13 +417,14 @@ public sealed class HicInterdictionTests
         context.Flight.Snapshot();
         var route = scope.ServiceProvider.GetRequiredService<ModuleActivationHandler>();
         var handler = scope.ServiceProvider.GetRequiredService<InterdictionHandler>();
-        Assert.Same(PilotCallResult.None, route.Call(context, "dogmaIM", "Activate", [module, "warpDisruptSphere", null, 1L]));
+        Assert.Same(PilotCallResult.None, route.Call(context, "dogmaIM", "Activate", [module, "warpDisruptSphere", null, 2L]));
         var field = Assert.Single(
             context.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>(),
             effect => effect is { ModuleId: var id, Graphic: "effects.WarpDisruptFieldGenerating", Start: true } && id == module
         );
         var command = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(field)), 2);
         var arguments = BlueRead.Tuple(command[1], 14);
+        Assert.True(Assert.IsType<long>(arguments[10]) > 2);
         var graphic = Assert.IsType<BlueInstance>(arguments[13]);
         Assert.Equal("utillib.KeyVal", graphic.Name);
         Assert.Equal(19200d, Assert.IsType<double>(Assert.IsType<Dictionary<string, object?>>(graphic.State)["range"]), 6);
@@ -435,10 +436,32 @@ public sealed class HicInterdictionTests
             effect => effect.ModuleId == module && effect.Start
         );
         Assert.Equal(BlueMarshal.Encode(field), BlueMarshal.Encode(replay));
+
+        context.Flight.Updates.Clear();
+        observerFlight.Updates.Clear();
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromMilliseconds(30250));
+        handler.Advance(context);
+        observerFlight.RefreshPeers();
+        var renewed = Assert.IsType<DogmaActiveEffect>(handler.ActiveEffect(pilot, module));
+        Assert.Equal(fixture.Clock.Now, renewed.StartTime);
+        Assert.Equal(1, renewed.Repeats);
+        Assert.Empty(context.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>());
+        Assert.Empty(observerFlight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>());
+
         Assert.Same(PilotCallResult.None, route.Call(context, "dogmaIM", "Deactivate", [module, "warpDisruptSphere"]));
         Assert.NotNull(handler.ActiveEffect(pilot, module));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(30));
         handler.Advance(context);
+        observerFlight.RefreshPeers();
         Assert.Null(handler.ActiveEffect(pilot, module));
+        foreach (var flight in new[] { context.Flight, observerFlight })
+        {
+            var stopped = Assert.Single(
+                flight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>(),
+                effect => effect.Id == ship && effect.ModuleId == module
+            );
+            Assert.Equal(field.Graphic, stopped.Graphic);
+            Assert.False(stopped.Start);
+        }
     }
 }
