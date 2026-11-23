@@ -2,6 +2,44 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Module online state in space
+
+Pilots can switch fitted, idle modules online or offline in normal flight without a nearby fitting service. Offlining
+does not cost capacitor. Onlining away from an eligible fitting service requires at least 95% charge and reduces it to
+33% of capacity. Docked pilots and pilots with access to Eden's mobile fitting service can online modules without that
+charge. A weapons timer prevents use of the fitting service, so the ordinary capacitor rule applies to onlining. Installing
+or removing a module in space still requires a fitting service.
+
+Build 3662168 `OnlineEffect.Start` in `eve/common/script/dogma/online.pyj` checks `CanFitItemInSpace` before charging
+capacitor. `appConst.pyj` specifies 95 and 33 for the minimum and remainder. Below the threshold the native
+`NotEnoughCapacitorForOnline` error reports the module type and current and required charge percentages. Both
+`dogmaIM.SetModuleOnline` and `TakeModuleOffline` and the bound Godma `online` effect calls use the same resident
+operation. Capacitor and module online state commit together and are saved by the existing checkpoint.
+
+The original client archive SHA-256 is `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+EVE.js 261108.1 for build 3396210 also supports in-space toggles and checks for 95% charge in
+`moduleOperation.js` (SHA-256 prefix `C27F281DEB63`). It uses a 5% remainder. Eden takes the value from its pinned
+client. The tests use the build-3662168 Venture and Civilian Gatling Railgun catalog records.
+[EVE University modules](https://wiki.eveuniversity.org/Modules#Offline) ·
+[EVE University Orca fitting service](https://wiki.eveuniversity.org/Orca_Guide)
+
+**Automated validation.** The solution build passed in 20.31 seconds with zero warnings or errors. The exact-method
+filter selected `FittedModuleTogglesAwayFromServiceAndOnlyOnliningChargesCapacitor`,
+`VentureRefitsAtRorqualAndRespectsRangeAndWeaponsDeadline` and
+`GameplayRejectionShowsTextAndKeepsTheModuleAndSessionIntact`. All seven cases passed in 14.25 seconds. They cover both
+native routes, refusal below 95%, success at 95%, capacitor and online-state persistence, idempotent retries, fitting-service
+exemption, the weapons timer and the original invalid-operation dialog.
+
+The same filter plus the `PilotFittingTests`, `FittingConstraintTests`, `DeveloperFittingTests` and `MicrowarpdriveTests`
+classes passed all 42 cases in 26.89 seconds. The catalog and formatting policy suites passed eight and nine tests.
+`Format.ps1 -Check` passed across 3,150 files. The affected run and policy checks took 73.21 seconds in total.
+The new documentation links, file encoding, whitespace and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Toggle an idle module offline and online outside fitting-service range. After it goes
+online, try to online a second fitted module before the capacitor recovers.
+
 ## Trained skills in fitting simulation
 
 The build 3662168 fitting simulator reads the selected character's skill modifiers from its local dogma location. If that

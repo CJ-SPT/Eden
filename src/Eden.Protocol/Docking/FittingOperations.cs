@@ -133,6 +133,13 @@ internal sealed class FittingOperations(
         {
             return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
+        catch (ModuleOnlineCapacitorException error)
+        {
+            return new PilotCallResult.NamedFailure(
+                "NotEnoughCapacitorForOnline",
+                new ModuleOnlineCapacitorErrorValues(error.ModuleTypeId, error.CurrentPercent)
+            );
+        }
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);

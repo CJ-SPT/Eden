@@ -403,7 +403,7 @@ internal sealed partial class PilotFittingStore
         long itemId,
         bool online,
         long now,
-        bool mobileRefit = false,
+        ModuleOnlineMode mode = ModuleOnlineMode.Docked,
         bool allowOfflineIfInsufficient = false
     )
     {
@@ -417,9 +417,9 @@ internal sealed partial class PilotFittingStore
                 && i.FlagId >= (int)InventoryFlag.LowSlot0
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             );
-        if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null && !mobileRefit)
+        if (shipId != pilot.ActiveShipId || item is null || (pilot.ActiveShip.Position is null) != (mode == ModuleOnlineMode.Docked))
         {
-            throw new InvalidDataException("Change module online state on your docked active ship.");
+            throw new InvalidDataException("Change online state only for modules fitted to your active ship.");
         }
         var previous = PilotInventoryStore.List(world, catalog, pilotId, shipId).Single(i => i.Id == itemId);
         if (
@@ -464,6 +464,16 @@ internal sealed partial class PilotFittingStore
             {
                 item.Online = false;
                 return [];
+            }
+            if (mode == ModuleOnlineMode.InSpaceWithCapacitorCost)
+            {
+                double charge = ModuleFittingRules.CapacitorAfterOnlining(
+                    item.TypeId,
+                    checkpoint.Resources.Capacitor,
+                    checkpoint.Resources.Attributes.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity)
+                );
+                ShipResources.SetCapacitor(world, shipId, charge, now);
+                checkpoint = checkpoint with { Resources = checkpoint.Resources with { Capacitor = charge } };
             }
         }
         world.SaveChanges();
