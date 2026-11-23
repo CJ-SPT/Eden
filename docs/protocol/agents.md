@@ -2,6 +2,38 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Level-four Mordus Headhunters — November 23, 2026
+
+Reviewed mission 2561 and admitted its catalog twins 2562 and 2564 after matching their full encounter payload. Build 3662168
+supplies dungeon 991, faction 500018, lobby room 14936, and combat rooms 14937 and 14938. The two acceleration gates are
+649927 and 649979. Both player reports direct pilots to clear the first combat pocket and kill the third group in pocket two.
+Eden enforces the first clear at the second gate. All 12 members of the final objective group must be defeated. Its battleship
+mix includes one Mordus Mammoth (type 16037) and two Mordus Sequestors, an explicit Eden selection from the reported roster.
+[EVE University revision 231829](https://wiki.eveuniversity.org/index.php?title=The_Mordus_Headhunters_(Level_4)&oldid=231829) ·
+[EVE-Survival report, October 16, 2017](https://eve-survival.org/wikka.php?wakka=MordusHeadhunters4)
+
+Group ranges select room-local anchors. Spawns use Eden's shared mission aggression and loot rules. Report-specific group
+aggro and uncertain loot distributions remain outside this admission. The older-build EVE.js mission packs were checked for
+comparison. The room, gate, and actor bindings come from Eden's pinned catalog and the cited player reports. Lower-level
+variants remain blocked while their timed waves and variant-dependent objectives are unresolved.
+
+**Automated validation**
+
+The solution built with zero warnings or errors in 29.85 seconds. The exact resident test
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.LevelFourMordusHeadhuntersRequiresTheFirstPocketAndOnlyTheMammothGroupInTheSecond`
+passed in 8.97 seconds. The expanded mission content, layout, spawn clearance and encounter checks passed 29 tests in
+31.22 seconds. The mission-content, catalog and formatting Python suites passed 19, eight and nine checks.
+The combined Blockade and Mordus manifests passed 32 focused tests in 54.96 seconds after a 15.93-second feature build.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Approach the second gate before clearing pocket one, then complete pocket two by destroying the Mammoth group while the
+other groups remain alive.
+
 ## Station Event agent availability — November 23, 2026
 
 Build 3662168's station Agents panel puts Event agents through its usual standings check. The selected pilot's

@@ -387,6 +387,37 @@ def extend(db, missions, group):
                 group('Pithatis Enforcer/Pithatis Assaulter', 1, 70000)]),
         ]))
 
+    # Both reports identify clearing pocket one and defeating pocket two's third group.
+    # Keep one Mammoth in that group and use native room anchors for reported ranges.
+    first_pocket, second_pocket = 14937, 14938
+    missions.append(dict(
+        missionId=2561, level=4, difficulty=500, storyline=False, offerOrder=1,
+        source='https://wiki.eveuniversity.org/The_Mordus_Headhunters_(Level_4)', sourceRevision='oldid=231829',
+        rooms=[dict(roomId=14936, entryObjectId=649926), dict(roomId=first_pocket, entryObjectId=649928),
+               dict(roomId=second_pocket, entryObjectId=649991)],
+        gates=[dict(fromObjectId=649927, destinationRoomId=first_pocket),
+               dict(fromObjectId=649979, destinationRoomId=second_pocket, requiresClear=True)],
+        waves=[
+            dict(roomId=first_pocket, groups=[
+                group('Mordus Leopard/Mordus Lion', 5, 22000),
+                group('Mordus Phanti/Mordus Gigamar/Mordus Sequestor', 3, 22000),
+                group('Mordus Gladius', 4, 78000), group('Mordus Bounty Hunter', 2, 78000),
+                group('Mordus Puma/Mordus Lion', 5, 78000),
+                group('Mordus Katana/Mordus Gladius', 6, 83000), group('Mordus Bobcat', 4, 83000),
+                group('Mordus Sequestor', 2, 83000)]),
+            dict(roomId=second_pocket, groups=[
+                group('Mordus Sabre/Mordus Katana', 8, 18000, required=False),
+                group('Mordus Bounty Hunter', 2, 18000, required=False),
+                group('Mordus Gladius', 5, 50000, required=False),
+                group('Mordus Bobcat/Mordus Cheetah/Mordus Leopard/Mordus Lion/Mordus Puma', 12, 50000, required=False),
+                group('Mordus Sequestor/Mordus Phanti/Mordus Gigamar', 5, 50000, required=False),
+                group('Mordus Katana', 4, 80000), group('Mordus Leopard/Mordus Lion', 5, 80000),
+                group('Mordus Sequestor', 2, 80000), group('Mordus Mammoth', 1, 80000),
+                group('Mordus Katana/Mordus Bounty Hunter', 5, 100000, required=False),
+                group('Mordus Bounty Hunter', 2, 100000, required=False),
+                group('Mordus Cheetah/Mordus Puma', 8, 100000, required=False)]),
+        ]))
+
     militants = 25373
     for mid, faction, title, revision, entry, carrier, groups in [
         (2542, 500011, '(Angel_Cartel)_(Level_2)', 231043, 671874, 'Angel Cartel Personnel Transport',

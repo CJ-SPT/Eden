@@ -1094,10 +1094,10 @@ missionId,name,template,status,reason
 2558,The Mordus Headhunters,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2559,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2560,The Mordus Headhunters,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2561,The Mordus Headhunters,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2562,The Mordus Headhunters,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2561,The Mordus Headhunters,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2562,The Mordus Headhunters,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2563,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2564,The Mordus Headhunters,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2564,The Mordus Headhunters,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2565,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2566,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2567,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

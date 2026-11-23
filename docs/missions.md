@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **918 definitions**. That includes **86 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **921 definitions**. That includes **89 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,974** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,971** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -82,6 +82,7 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Eliminate a Pirate Nuisance | Angel, Blood, Guristas, Sansha, Serpentis; level 1 | 5 |
 | The Blockade | Guristas levels 1–2 and Sansha level 1, plus the original level-one reconstruction | 4 |
 | The Assault | Guristas, level 4 | 1 |
+| The Mordus Headhunters | Level 4, three templates sharing the reviewed dungeon | 3 |
 | Dread Pirate Scarlet | Both catalog templates, level 4, same reviewed dungeon | 2 |
 | The Spy Stash | Guristas, level 3 | 1 |
 | The Hidden Stash | Angel, Blood, Guristas, Sansha, Serpentis; levels 1 and 2 | 10 |
@@ -123,6 +124,9 @@ The level-three Guristas Score locks the second gate behind the first combat poc
 at the radio telescope complete the final objective. The Drone Infestation requires destroying its Drone Silo.
 In both Smuggler Interception variants the last of two destroyed transports drops ten Militants for turn-in.
 [Encounter evidence and validation](protocol/agents.md#mission-gap-expansion--november-22-2026)
+
+The level-four Mordus Headhunters requires clearing the first combat pocket to open the second gate. The final objective
+requires the full Mammoth group in pocket two. The three other groups are optional. [Encounter evidence](protocol/agents.md#level-four-mordus-headhunters--november-23-2026)
 
 ## Paragon hull exchanges
 

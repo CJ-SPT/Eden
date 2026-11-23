@@ -3859,6 +3859,215 @@
       ]
     },
     {
+      "missionId": 2561,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/The_Mordus_Headhunters_(Level_4)",
+      "sourceRevision": "oldid=231829",
+      "rooms": [
+        {
+          "roomId": 14936,
+          "entryObjectId": 649926
+        },
+        {
+          "roomId": 14937,
+          "entryObjectId": 649928
+        },
+        {
+          "roomId": 14938,
+          "entryObjectId": 649991
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 649927,
+          "destinationRoomId": 14937
+        },
+        {
+          "fromObjectId": 649979,
+          "destinationRoomId": 14938,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 14937,
+          "groups": [
+            {
+              "types": [
+                16031,
+                16033
+              ],
+              "count": 5,
+              "range": 22000
+            },
+            {
+              "types": [
+                16034,
+                16036,
+                16035
+              ],
+              "count": 3,
+              "range": 22000
+            },
+            {
+              "types": [
+                16022
+              ],
+              "count": 4,
+              "range": 78000
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 78000
+            },
+            {
+              "types": [
+                16030,
+                16033
+              ],
+              "count": 5,
+              "range": 78000
+            },
+            {
+              "types": [
+                16023,
+                16022
+              ],
+              "count": 6,
+              "range": 83000
+            },
+            {
+              "types": [
+                16027
+              ],
+              "count": 4,
+              "range": 83000
+            },
+            {
+              "types": [
+                16035
+              ],
+              "count": 2,
+              "range": 83000
+            }
+          ]
+        },
+        {
+          "roomId": 14938,
+          "groups": [
+            {
+              "types": [
+                16020,
+                16023
+              ],
+              "count": 8,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                16022
+              ],
+              "count": 5,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16027,
+                16028,
+                16031,
+                16033,
+                16030
+              ],
+              "count": 12,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16035,
+                16034,
+                16036
+              ],
+              "count": 5,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16023
+              ],
+              "count": 4,
+              "range": 80000
+            },
+            {
+              "types": [
+                16031,
+                16033
+              ],
+              "count": 5,
+              "range": 80000
+            },
+            {
+              "types": [
+                16035
+              ],
+              "count": 2,
+              "range": 80000
+            },
+            {
+              "types": [
+                16037
+              ],
+              "count": 1,
+              "range": 80000
+            },
+            {
+              "types": [
+                16023,
+                16040
+              ],
+              "count": 5,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                16028,
+                16030
+              ],
+              "count": 8,
+              "range": 100000,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 2542,
       "level": 2,
       "difficulty": 500,
@@ -7301,6 +7510,424 @@
       "source": "build-3662168 client/missions; Eden delivery volume-band policy",
       "sourceRevision": "3662168",
       "waves": []
+    },
+    {
+      "missionId": 2562,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/The_Mordus_Headhunters_(Level_4)",
+      "sourceRevision": "oldid=231829",
+      "rooms": [
+        {
+          "roomId": 14936,
+          "entryObjectId": 649926
+        },
+        {
+          "roomId": 14937,
+          "entryObjectId": 649928
+        },
+        {
+          "roomId": 14938,
+          "entryObjectId": 649991
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 649927,
+          "destinationRoomId": 14937
+        },
+        {
+          "fromObjectId": 649979,
+          "destinationRoomId": 14938,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 14937,
+          "groups": [
+            {
+              "types": [
+                16031,
+                16033
+              ],
+              "count": 5,
+              "range": 22000
+            },
+            {
+              "types": [
+                16034,
+                16036,
+                16035
+              ],
+              "count": 3,
+              "range": 22000
+            },
+            {
+              "types": [
+                16022
+              ],
+              "count": 4,
+              "range": 78000
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 78000
+            },
+            {
+              "types": [
+                16030,
+                16033
+              ],
+              "count": 5,
+              "range": 78000
+            },
+            {
+              "types": [
+                16023,
+                16022
+              ],
+              "count": 6,
+              "range": 83000
+            },
+            {
+              "types": [
+                16027
+              ],
+              "count": 4,
+              "range": 83000
+            },
+            {
+              "types": [
+                16035
+              ],
+              "count": 2,
+              "range": 83000
+            }
+          ]
+        },
+        {
+          "roomId": 14938,
+          "groups": [
+            {
+              "types": [
+                16020,
+                16023
+              ],
+              "count": 8,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                16022
+              ],
+              "count": 5,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16027,
+                16028,
+                16031,
+                16033,
+                16030
+              ],
+              "count": 12,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16035,
+                16034,
+                16036
+              ],
+              "count": 5,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16023
+              ],
+              "count": 4,
+              "range": 80000
+            },
+            {
+              "types": [
+                16031,
+                16033
+              ],
+              "count": 5,
+              "range": 80000
+            },
+            {
+              "types": [
+                16035
+              ],
+              "count": 2,
+              "range": 80000
+            },
+            {
+              "types": [
+                16037
+              ],
+              "count": 1,
+              "range": 80000
+            },
+            {
+              "types": [
+                16023,
+                16040
+              ],
+              "count": 5,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                16028,
+                16030
+              ],
+              "count": 8,
+              "range": 100000,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2564,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/The_Mordus_Headhunters_(Level_4)",
+      "sourceRevision": "oldid=231829",
+      "rooms": [
+        {
+          "roomId": 14936,
+          "entryObjectId": 649926
+        },
+        {
+          "roomId": 14937,
+          "entryObjectId": 649928
+        },
+        {
+          "roomId": 14938,
+          "entryObjectId": 649991
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 649927,
+          "destinationRoomId": 14937
+        },
+        {
+          "fromObjectId": 649979,
+          "destinationRoomId": 14938,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 14937,
+          "groups": [
+            {
+              "types": [
+                16031,
+                16033
+              ],
+              "count": 5,
+              "range": 22000
+            },
+            {
+              "types": [
+                16034,
+                16036,
+                16035
+              ],
+              "count": 3,
+              "range": 22000
+            },
+            {
+              "types": [
+                16022
+              ],
+              "count": 4,
+              "range": 78000
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 78000
+            },
+            {
+              "types": [
+                16030,
+                16033
+              ],
+              "count": 5,
+              "range": 78000
+            },
+            {
+              "types": [
+                16023,
+                16022
+              ],
+              "count": 6,
+              "range": 83000
+            },
+            {
+              "types": [
+                16027
+              ],
+              "count": 4,
+              "range": 83000
+            },
+            {
+              "types": [
+                16035
+              ],
+              "count": 2,
+              "range": 83000
+            }
+          ]
+        },
+        {
+          "roomId": 14938,
+          "groups": [
+            {
+              "types": [
+                16020,
+                16023
+              ],
+              "count": 8,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                16022
+              ],
+              "count": 5,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16027,
+                16028,
+                16031,
+                16033,
+                16030
+              ],
+              "count": 12,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16035,
+                16034,
+                16036
+              ],
+              "count": 5,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16023
+              ],
+              "count": 4,
+              "range": 80000
+            },
+            {
+              "types": [
+                16031,
+                16033
+              ],
+              "count": 5,
+              "range": 80000
+            },
+            {
+              "types": [
+                16035
+              ],
+              "count": 2,
+              "range": 80000
+            },
+            {
+              "types": [
+                16037
+              ],
+              "count": 1,
+              "range": 80000
+            },
+            {
+              "types": [
+                16023,
+                16040
+              ],
+              "count": 5,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                16040
+              ],
+              "count": 2,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                16028,
+                16030
+              ],
+              "count": 8,
+              "range": 100000,
+              "required": false
+            }
+          ]
+        }
+      ]
     },
     {
       "missionId": 2585,
