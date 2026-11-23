@@ -1,5 +1,6 @@
 using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 
@@ -12,6 +13,12 @@ internal sealed partial class FlightSession
     internal void RefreshEntosis() => ApplyFlightProperties();
 
     private long _cloakGraceUntil;
+    private bool SubcapitalFieldSpooling => _microJump?.Module.Effect == DogmaEffect.MicroJumpField;
+    internal bool MicroJumpBlocked =>
+        MicrowarpdriveBlocked
+        || ModuleEffects.IncomingTackle.Any(t => t.Module.Effect is DogmaEffect.FocusedWarpDisruption or DogmaEffect.FocusedWarpScrambling)
+        || SpatialStatus.FieldScrambledUntil > clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
     internal bool CanActivatePropulsion =>
         CanUseSelfModules && !InWarp && (!Cloaked || clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() < _cloakGraceUntil);
 
@@ -81,15 +88,20 @@ internal sealed partial class FlightSession
             activation.Module.TypeId,
             null,
             null,
-            activation.Module.Field is not null ? "effects.MicroJumpFieldEngageCapital" : "effects.MicroJumpDriveEngage",
-            false,
+            activation.Module.Effect switch
+            {
+                DogmaEffect.MicroJumpField => "effects.MicroJumpFieldEngage",
+                DogmaEffect.CapitalMicroJumpField => "effects.MicroJumpFieldEngageCapital",
+                _ => "effects.MicroJumpDriveEngage",
+            },
+            activation.Module.Effect == DogmaEffect.MicroJumpField,
             active,
             active,
             activation.Module.DurationMilliseconds,
             activation.StartedAt
         );
 
-    internal void AdoptMicroJump(MicroJumpResult jump)
+    internal void AdoptMicroJump(MicroJumpResult jump, SpatialModule module)
     {
         // World committed the position before this observer publication. Preserve the paid heading/velocity;
         // SetBallPosition also resets native interpolation and spatial membership (Carbon Ballpark.cpp).
@@ -100,7 +112,7 @@ internal sealed partial class FlightSession
         _navigation.SetVelocity(jump.Velocity);
         Update(new DestinyCommand.SetBallPosition(Pilot.ShipId, jump.Position.X, jump.Position.Y, jump.Position.Z));
         Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, jump.Velocity.X, jump.Velocity.Y, jump.Velocity.Z));
-        Update(new DestinyCommand.MicroJumpVisual(Pilot.ShipId, jump.Position));
+        Update(DestinyCommand.MicroJumpVisual.ForModule(Pilot.ShipId, jump.Position, module));
         PublishMotion();
         PublishContact();
     }

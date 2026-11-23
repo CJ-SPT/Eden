@@ -1,6 +1,8 @@
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Combat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -86,21 +88,26 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments => [Id];
     }
 
-    internal sealed record MicroJumpVisual(long Id, SpacePosition Position) : DestinyCommand("OnSpecialFX")
+    internal sealed record MicroJumpVisual(long Id, SpacePosition Position, long? ModuleId = null, int? ModuleTypeId = null)
+        : DestinyCommand("OnSpecialFX")
     {
         private const double FlashMilliseconds = 1000;
+
+        internal static MicroJumpVisual ForModule(long id, SpacePosition position, SpatialModule module) =>
+            module.Effect == DogmaEffect.MicroJumpField ? new(id, position, module.ItemId, module.TypeId) : new(id, position);
+
         protected override object?[] Arguments =>
             [
                 Id,
-                null,
-                null,
+                ModuleId,
+                ModuleTypeId,
                 null,
                 null,
                 "effects.MicroJumpDriveJump",
                 false,
                 true,
                 false,
-                FlashMilliseconds,
+                ModuleId.HasValue ? (object)1 : FlashMilliseconds,
                 0,
                 null,
                 0,

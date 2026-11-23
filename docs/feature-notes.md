@@ -265,6 +265,8 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 - **Mobility and electronic warfare.** Use supported propulsion, cloaks, micro jumps, tackle, capacitor warfare and remote
   assistance. Interdictors, focused HIC scripts and nullifiers have their own fitting and activation rules.
   [Travel](protocol/navigation.md) · [Interdiction](protocol/interdiction.md) · [Area weapons](protocol/area-weapons.md)
+- **Command Destroyers.** The subcapital Micro Jump Field Generator moves the source and up to 24 nearby eligible ships
+  together. [Subcapital Micro Jump Field Generator](protocol/navigation.md#subcapital-micro-jump-field-generator)
 - **Drones and information modules.** Supported hulls can control combat, mining and utility drones. Combat drones can
   assist and guard fleetmates. Scanners, probes, salvagers and tractors use their own eligibility and range rules.
   [Drones](protocol/drones.md) · [Information modules](protocol/information.md)

@@ -102,7 +102,7 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadSignatureSuppression(string path) => Load(path, "SignatureSuppressionCatalog.json", null);
 
-    internal static void LoadTechTwoHulls(string path) => Load(path, "TechTwoHullCatalog.json", null);
+    internal static void LoadTechTwoHulls(string path, int? hull = null) => Load(path, "TechTwoHullCatalog.json", null, hullType: hull);
 
     internal static void LoadSpatialModules(string path) => Load(path, "SpatialModuleCatalog.json", null);
 

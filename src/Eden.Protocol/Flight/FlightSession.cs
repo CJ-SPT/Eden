@@ -80,7 +80,7 @@ internal sealed partial class FlightSession(
                 InWarp || PreparingWarp,
                 Cloaked,
                 ModuleEffects.WarpBlocked,
-                BastionActive
+                BastionActive || SubcapitalFieldSpooling
             )
         );
         Effects.Tether(Pilot.ShipId, next, _tether);
@@ -482,11 +482,14 @@ internal sealed partial class FlightSession(
                 _navigation = displacement.PriorNavigation?.Copy() ?? new();
                 _simulatedStamp = Stamp;
                 CorrectPosition(Pilot.ShipId, destination, _navigation.Velocity, _simulatedStamp);
-                Update(
-                    displacement.PriorNavigation is null
-                        ? new DestinyCommand.Stop(Pilot.ShipId)
-                        : new DestinyCommand.MicroJumpVisual(Pilot.ShipId, destination)
-                );
+                if (displacement.PriorNavigation is null)
+                {
+                    Update(new DestinyCommand.Stop(Pilot.ShipId));
+                }
+                if (displacement.Landing is not null || displacement.PriorNavigation is not null)
+                {
+                    Update(displacement.Landing ?? new DestinyCommand.MicroJumpVisual(Pilot.ShipId, destination));
+                }
                 PublishMotion();
                 PublishContact();
             }
@@ -1233,6 +1236,10 @@ internal sealed partial class FlightSession(
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems, bool automatic = false)
     {
+        if (SubcapitalFieldSpooling)
+        {
+            return new PilotCallResult.Failure("Wait for the micro-jump spool to finish before jumping.");
+        }
         if (CapitalModuleActive)
         {
             return new PilotCallResult.Failure("Wait for the active capital module to finish before jumping.");
@@ -1581,7 +1588,11 @@ internal sealed partial class FlightSession(
         {
             return new PilotCallResult.Failure("Wait for the paid Entosis cycle to finish before travelling.");
         }
-        if (MicroJumpSpooling && command is not (FlightCommand.RefreshState or FlightCommand.Speed or FlightCommand.Stop))
+        if (
+            MicroJumpSpooling
+            && command is not FlightCommand.RefreshState
+            && (SubcapitalFieldSpooling || command is not (FlightCommand.Speed or FlightCommand.Stop))
+        )
         {
             return new PilotCallResult.Failure("Wait for the micro-jump spool to finish before navigating.");
         }

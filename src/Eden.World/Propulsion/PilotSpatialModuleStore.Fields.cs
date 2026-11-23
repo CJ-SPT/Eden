@@ -29,16 +29,24 @@ internal sealed partial class PilotSpatialModuleStore
         long now
     )
     {
-        var values = FittingCalculation.Read(world, catalog, source).Graph.Attributes(item.Id);
-        var field = SpatialModuleRules.Define(item.Id, item.TypeId, DogmaEffect.CapitalMicroJumpField, values).Field!;
+        var effect = SpatialModuleRules.JumpEffect(item.TypeId);
+        bool capitalField = effect == DogmaEffect.CapitalMicroJumpField;
+        var values = capitalField
+            ? FittingCalculation.Read(world, catalog, source).Graph.Attributes(item.Id)
+            : catalog.FittingAttributes(item.TypeId);
+        var field = SpatialModuleRules.Define(item.Id, item.TypeId, effect, values).Field!;
         int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
         double sourceRadius = catalog.RequireItem(source.ActiveShip.TypeId).Radius ?? 0;
-        long end = SpatialModuleRules.Deadline(now, field.ScrambleMilliseconds);
+        long scrambleUntil = capitalField ? SpatialModuleRules.Deadline(now, field.ScrambleMilliseconds) : 0;
         int capitals = field.CapitalLimit;
         int subcapitals = field.PassengerLimit;
         List<MicroJumpArrival> arrivals = [];
-        foreach (var candidate in candidates.OrderBy(c => origin.DistanceTo(c.Position)).ThenBy(c => c.ShipId))
+        foreach (var candidate in candidates.OrderBy(c => origin.DistanceTo(c.Position)).ThenBy(c => c.ShipId).DistinctBy(c => c.ShipId))
         {
+            if (capitals == 0 && subcapitals == 0)
+            {
+                break;
+            }
             var victim = world.Pilots.Find(candidate.PilotId);
             if (
                 victim is null
@@ -64,20 +72,26 @@ internal sealed partial class PilotSpatialModuleStore
             {
                 continue;
             }
-            AggressionDecision decision;
-            try
+            AggressionDecision? aggression = null;
+            if (capitalField)
             {
-                decision = CrimewatchPersistence.CheckPlayer(world, catalog, source, victim, system, now);
-            }
-            catch (InvalidDataException)
-            {
-                // Safety can prohibit aggression against one recipient while others remain eligible.
-                continue;
+                try
+                {
+                    aggression = CrimewatchPersistence.CheckPlayer(world, catalog, source, victim, system, now);
+                }
+                catch (InvalidDataException)
+                {
+                    // Preserve the capital field's existing Crimewatch behavior.
+                    continue;
+                }
             }
             var arrival = at + offset;
             (position.X, position.Y, position.Z) = (arrival.X, arrival.Y, arrival.Z);
-            State(world, candidate.ShipId).FieldScrambledUntil = end;
-            CrimewatchPersistence.Player(world, catalog, source.Id, victim.Id, system, decision, now, now);
+            if (aggression is { } decision)
+            {
+                State(world, candidate.ShipId).FieldScrambledUntil = scrambleUntil;
+                CrimewatchPersistence.Player(world, catalog, source.Id, victim.Id, system, decision, now, now);
+            }
             arrivals.Add(new(candidate.ShipId, arrival));
             if (capital)
             {
@@ -88,7 +102,10 @@ internal sealed partial class PilotSpatialModuleStore
                 subcapitals--;
             }
         }
-        state.FieldScrambledUntil = end;
+        if (capitalField)
+        {
+            state.FieldScrambledUntil = scrambleUntil;
+        }
         return arrivals;
     }
 }

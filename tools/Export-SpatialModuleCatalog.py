@@ -1,11 +1,11 @@
-"""Export build-3662168 cloaks and standard micro-jump drives and inert fitting inputs from the read-only catalog."""
+"""Export build-3662168 cloaks, subcapital micro-jump modules and fitting inputs from the read-only catalog."""
 import argparse
 import json
 from pathlib import Path
 import sqlite3
 
 
-GROUPS = {330, 1189}
+GROUPS = {330, 1189, 1533}
 BUILD = 3662168
 
 
@@ -25,8 +25,8 @@ def export(catalog_path, output):
             source = record('client/types', type_id) if group_id in GROUPS else {}
             if source.get('published') == 1:
                 cohort.append(type_id)
-        if len(cohort) != 18:
-            raise ValueError('Expected 14 published cloaks and four standard micro-jump drives')
+        if len(cohort) != 19:
+            raise ValueError('Expected 14 published cloaks, four standard micro-jump drives and one micro-jump field generator')
         # Include cloak/MJD skills, eligible hulls, a rejected frigate and an MWD.
         pending = set(cohort) | {601, 638, 587, 16227, 33468, 11579, 4385, 434}
         types, records, attributes, effects = [], {}, {306, 560, 619, 973, 552}, set()

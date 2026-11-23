@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Personal map visit history](#personal-map-visit-history)
+- [Subcapital Micro Jump Field Generator](#subcapital-micro-jump-field-generator)
 - [Insider QA tab, November 21, 2026](#insider-qa-tab-november-21-2026)
 - [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
 - [Distant warping ships in the overview, November 17, 2026](#distant-warping-ships-in-the-overview-november-17-2026)
@@ -80,6 +81,44 @@ and formatting policy suites passed 8 and 9 cases. `Format.ps1 -Check` and the w
 
 **Optional maintainer checks.** Open **Star Map → Personal → Systems Visited**, make a round trip through a gate, and reopen
 the map after reconnecting.
+
+## Subcapital Micro Jump Field Generator
+
+Build **3662168** gives type **37479**, group **1533**, effect **6208** (`microJumpPortalDrive`), and the engage visual
+`effects.MicroJumpFieldEngage`. The fitted profile pays **85 GJ** for a **9-second** base spool, blooms signature radius by
+**150%**, and sets a **160-second** reactivation delay. Micro Jump Drive Operation and Command Destroyers reduce spool time.
+The pinned fitting restrictions include Command Destroyers and an explicit exception for the Skua. Voluntary movement is
+locked while spooling.
+
+The generator moves the source and up to **24** other eligible ships by **100 km** along the source's heading. Eligibility is
+measured at settlement within **6 km** of surface distance. Capital-sized ships, industrial command ships, ships protected by
+tether or arrival immunity, cloaked ships, and ships under warp scram stay in place. The field can move a ship through an
+ordinary warp disruptor. Passenger motion is preserved and the server publishes displacement after the resident commit.
+
+EVE.js **261108.1**, build **3396210**, implements ship displacement in `microJumpDriveRuntime.js` (`dc0619d26b35`) and
+publishes arrival effects in `moduleRuntimeCallbacks.js` (`60ed639a267d`). Eden follows the pinned July 24.01 rules for
+low-security space. Full safety allows activation, the source receives a weapons timer, and moved pilots receive no
+suspect or criminal flags. This subcapital field applies no post-jump scramble and is unavailable in high-security space.
+Non-ship displacement and same-tick deduplication across separate fields remain open.
+[CCP 24.01 patch notes](https://www.eveonline.com/news/view/patch-notes-version-24-01) ·
+[EVE University propulsion guide](https://wiki.eveuniversity.org/Propulsion_equipment#Micro_Jump_Field_Generator)
+
+**Automated validation.** `SubcapitalMicroJumpFieldMovesEligibleShipsInLowsecAndPersistsPositions` passed three cases in
+12.41 seconds through `Test-Feature.ps1` after a 6.20-second build. The cases verified high-security rejection, capacitor
+payment, signature bloom, authentic effect IDs and sources, transport at the surface range boundary, capital exclusion,
+Crimewatch and resident position through checkpoint reopen. An offline content export verified fitting for type 37479 and
+the field role for all six admitted Command Destroyers. The solution built in 1.11 seconds with zero warnings or errors.
+The following filter passed 78 tests in 59.28 seconds. The catalog setup and formatting policy suites passed 8 and 9 cases.
+`Format.ps1 -Check` and the whitespace check also passed.
+
+```text
+FullyQualifiedName~CapitalTravelTests.SubcapitalMicroJumpFieldMovesEligibleShipsInLowsecAndPersistsPositions|FullyQualifiedName~CapitalTravelTests.CapitalMicroJumpUsesPinnedCostsAndRangeIncludingSarathielInSiege|FullyQualifiedName~CapitalTravelTests.CapitalMicroJumpFieldTranslatesNearbyShipsAndPersistsScramble|FullyQualifiedName~SpatialModuleTests|FullyQualifiedName~SpatialModuleOperationTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~StructureTetherTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** In low-security space, spool a Command Destroyer's field at full safety with a second pilot
+inside range. Verify the two ships land together and the source receives a weapons timer.
 
 ## Gate-arrival cloak, November 17, 2026
 

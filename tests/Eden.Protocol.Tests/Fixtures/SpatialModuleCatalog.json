@@ -3926,6 +3926,106 @@
       ]
     },
     {
+      "id": 37479,
+      "name": "Micro Jump Field Generator",
+      "groupId": 1533,
+      "groupName": "Micro Jump Field Generators",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 85.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 31.0
+        },
+        {
+          "id": 73,
+          "value": 9000.0
+        },
+        {
+          "id": 182,
+          "value": 4385.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 160000.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 906,
+          "value": 1.0
+        },
+        {
+          "id": 973,
+          "value": 150.0
+        },
+        {
+          "id": 1014,
+          "value": 1.0
+        },
+        {
+          "id": 1299,
+          "value": 1534.0
+        },
+        {
+          "id": 1303,
+          "value": 89808.0
+        },
+        {
+          "id": 1544,
+          "value": 1.0
+        },
+        {
+          "id": 1970,
+          "value": 1.0
+        },
+        {
+          "id": 2066,
+          "value": 100000.0
+        },
+        {
+          "id": 2067,
+          "value": 6000.0
+        },
+        {
+          "id": 2343,
+          "value": 1.0
+        },
+        {
+          "id": 2832,
+          "value": 24.0
+        }
+      ]
+    },
+    {
       "id": 88710,
       "name": "Xarasier Large Micro Jump Drive",
       "groupId": 1189,
@@ -7454,6 +7554,24 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 1970,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 296756,
+        "dataType": 3,
+        "defaultValue": 0.0,
+        "unitID": 137,
+        "name": "disallowInHighSec",
+        "attributeID": 1970,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Security status restriction, preventing ships from entering high sec and modules from being activated."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 2033,
       "data": {
         "stackable": 1,
@@ -7504,6 +7622,46 @@
         "tooltipTitleID": 895865,
         "categoryID": 36,
         "description": "Resistance against Energy Neutralizing and Nosferatu"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2066,
+      "data": {
+        "stackable": 1,
+        "iconID": 1389,
+        "displayNameID": 310230,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 1,
+        "name": "mjdJumpRange",
+        "attributeID": 2066,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 310231,
+        "categoryID": 17,
+        "description": "distance jumped on mjd activation in meters"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2067,
+      "data": {
+        "stackable": 1,
+        "iconID": 1391,
+        "displayNameID": 310232,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 1,
+        "name": "mjfgRadius",
+        "attributeID": 2067,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "tooltipTitleID": 310233,
+        "categoryID": 17,
+        "description": "range effected by mjfg scoop"
       }
     },
     {
@@ -7601,6 +7759,24 @@
         "displayWhenZero": 0,
         "categoryID": 28,
         "name": "speedFactorFloor"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2343,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 312093,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 137,
+        "name": "disallowTethering",
+        "attributeID": 2343,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "If this ship attribute is NOT 0 then they will be prevented from activating the structure tethering."
       }
     },
     {
@@ -7759,6 +7935,24 @@
         "displayWhenZero": 0,
         "categoryID": 4,
         "name": "explosiveDamageResonanceMax"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2832,
+      "data": {
+        "stackable": 1,
+        "iconID": 1391,
+        "displayNameID": 318141,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "name": "mjdShipJumpCap",
+        "attributeID": 2832,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 17,
+        "description": "The maximum number of ships that can be jumped per activation"
       }
     },
     {
@@ -10179,6 +10373,26 @@
         "effectName": "shipHybridDmg1CBC2",
         "propulsionChance": 0,
         "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6208,
+      "data": {
+        "guid": "effects.MicroJumpFieldEngage",
+        "isAssistance": 0,
+        "isOffensive": 1,
+        "effectCategory": 1,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6208,
+        "propulsionChance": 0,
+        "effectName": "microJumpPortalDrive",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "published": 1
       }
     },
     {
@@ -14875,6 +15089,116 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 37479,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 85.0
+          },
+          {
+            "attributeID": 9,
+            "value": 40.0
+          },
+          {
+            "attributeID": 30,
+            "value": 5.0
+          },
+          {
+            "attributeID": 50,
+            "value": 31.0
+          },
+          {
+            "attributeID": 73,
+            "value": 9000.0
+          },
+          {
+            "attributeID": 182,
+            "value": 4385.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 633,
+            "value": 1.0
+          },
+          {
+            "attributeID": 669,
+            "value": 160000.0
+          },
+          {
+            "attributeID": 763,
+            "value": 1.0
+          },
+          {
+            "attributeID": 906,
+            "value": 1.0
+          },
+          {
+            "attributeID": 973,
+            "value": 150.0
+          },
+          {
+            "attributeID": 1014,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1299,
+            "value": 1534.0
+          },
+          {
+            "attributeID": 1303,
+            "value": 89808.0
+          },
+          {
+            "attributeID": 1544,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1970,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2066,
+            "value": 100000.0
+          },
+          {
+            "attributeID": 2067,
+            "value": 6000.0
+          },
+          {
+            "attributeID": 2343,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2832,
+            "value": 24.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6208,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 88710,
       "data": {
         "dogmaAttributes": [
@@ -16050,6 +16374,28 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 1189
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37479,
+      "data": {
+        "descriptionID": 510189,
+        "typeID": 37479,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 1,
+        "isDynamicType": 0,
+        "typeNameID": 510188,
+        "iconID": 20971,
+        "published": 1,
+        "marketGroupID": 2135,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 340852.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1533
       }
     },
     {

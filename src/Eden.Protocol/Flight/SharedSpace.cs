@@ -295,7 +295,11 @@ internal sealed class SharedSpace(
 
     private readonly ConcurrentDictionary<long, ShipMotion> _motion = new();
 
-    internal sealed record Displacement(SpacePosition Position, NavigationState? PriorNavigation = null);
+    internal sealed record Displacement(
+        SpacePosition Position,
+        NavigationState? PriorNavigation = null,
+        DestinyCommand.MicroJumpVisual? Landing = null
+    );
 
     private readonly ConcurrentDictionary<long, Displacement> _displacements = new();
     private readonly ConcurrentDictionary<long, CapitalJump> _conduitArrivals = new();
@@ -349,12 +353,26 @@ internal sealed class SharedSpace(
             .ToArray();
     }
 
-    internal void TranslateForMicroJump(int systemId, MicroJumpArrival arrival) =>
-        Displace(systemId, arrival.ShipId, arrival.Position, true);
+    internal void TranslateForMicroJump(int systemId, MicroJumpArrival arrival, SpatialModule source) =>
+        Displace(
+            systemId,
+            arrival.ShipId,
+            arrival.Position,
+            true,
+            source.Effect == DogmaEffect.MicroJumpField
+                ? DestinyCommand.MicroJumpVisual.ForModule(arrival.ShipId, arrival.Position, source)
+                : null
+        );
 
     public void Displace(int systemId, long shipId, SpacePosition position) => Displace(systemId, shipId, position, false);
 
-    private void Displace(int systemId, long shipId, SpacePosition position, bool preserveMotion)
+    private void Displace(
+        int systemId,
+        long shipId,
+        SpacePosition position,
+        bool preserveMotion,
+        DestinyCommand.MicroJumpVisual? landing = null
+    )
     {
         RunMotion(
             systemId,
@@ -376,7 +394,7 @@ internal sealed class SharedSpace(
                         Target = preserveMotion ? motion.Target : null,
                     };
                     _history.TryRemove(shipId, out _);
-                    _displacements[shipId] = new(position, navigation);
+                    _displacements[shipId] = new(position, navigation, landing);
                 }
                 if (_ships.TryGetValue(shipId, out var contact) && contact.Pilot.SystemId == systemId)
                 {
@@ -400,7 +418,7 @@ internal sealed class SharedSpace(
                         };
                     _ships[shipId] = displaced;
                     PublishMilitiaPresence(displaced);
-                    _displacements[shipId] = new(position, navigation);
+                    _displacements[shipId] = new(position, navigation, landing);
                 }
             },
             nameof(Displace)

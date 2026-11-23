@@ -10,6 +10,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.World.Ammunition;
@@ -17,6 +18,7 @@ using Eden.World.Catalog;
 using Eden.World.Defenses;
 using Eden.World.Drones;
 using Eden.World.Flight;
+using Eden.World.Propulsion;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
@@ -241,6 +243,13 @@ internal static class ShipContentAudit
                     || role == HullCapability.ShipModes
                         && hullClass == HullClass.Marauder
                         && CapitalModeCatalog.Supported(catalog, CapitalModeRules.BastionOne)
+                    || role == HullCapability.MicroJumpFields
+                        && hullClass == HullClass.CommandDestroyer
+                        && SpatialModuleCatalog.Supported(
+                            catalog,
+                            SpatialModuleRules.SubcapitalField,
+                            SpatialModuleRules.MicroJumpFieldGroup
+                        )
                 );
         }
         var attributes = catalog.FittingAttributes(type.Id);

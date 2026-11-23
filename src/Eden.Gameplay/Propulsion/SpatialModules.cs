@@ -17,7 +17,7 @@ public sealed record SpatialModule(
 )
 {
     public bool Cloak => SpatialModuleRules.IsCloak(Effect);
-    public CapitalMicroJumpField? Field { get; init; }
+    public MicroJumpField? Field { get; init; }
     public bool WarpSafe => Effect == DogmaEffect.CovertCloaking;
 }
 
@@ -49,7 +49,7 @@ public interface IPilotGateCloak
     bool PreservesCloak(long pilotId, long shipId, long moduleId);
 }
 
-public sealed record CapitalMicroJumpField(double Radius, int PassengerLimit, int CapitalLimit, double ScrambleMilliseconds);
+public sealed record MicroJumpField(double Radius, int PassengerLimit, int CapitalLimit, double ScrambleMilliseconds);
 
 public sealed record MicroJumpPassenger(long PilotId, long ShipId, SpacePosition Position);
 
@@ -80,6 +80,10 @@ public static class SpatialModuleRules
 {
     public const int CloakGroup = 330;
     public const int MicroJumpGroup = 1189;
+
+    // Build 3662168 type 37479 is the only published group-1533 field generator.
+    public const int MicroJumpFieldGroup = 1533;
+    public const int SubcapitalField = 37479;
     public const int CapitalMicroJumpGroup = 4769;
     public const int CapitalDrive = 83465;
     public const int CapitalField = 83485;
@@ -92,16 +96,31 @@ public static class SpatialModuleRules
     public const double JumpDistance = 100000;
     public const double ActivationGraceMilliseconds = 5000;
 
-    public static bool IsDriveGroup(int group) => group is MicroJumpGroup or CapitalMicroJumpGroup;
+    public static bool IsDriveGroup(int group) => group is MicroJumpGroup or MicroJumpFieldGroup or CapitalMicroJumpGroup;
 
-    public static bool IsDrive(int group, int type) => group == MicroJumpGroup || group == CapitalMicroJumpGroup && IsCapital(type);
+    public static bool IsDrive(int group, int type) =>
+        group switch
+        {
+            MicroJumpGroup => true,
+            MicroJumpFieldGroup => type == SubcapitalField,
+            CapitalMicroJumpGroup => IsCapital(type),
+            _ => false,
+        };
 
     public static bool IsCapital(int type) => type is CapitalDrive or CapitalField;
 
-    public static DogmaEffect JumpEffect(int type) => type == CapitalField ? DogmaEffect.CapitalMicroJumpField : DogmaEffect.MicroJumpDrive;
+    public static DogmaEffect JumpEffect(int type) =>
+        type switch
+        {
+            SubcapitalField => DogmaEffect.MicroJumpField,
+            CapitalField => DogmaEffect.CapitalMicroJumpField,
+            _ => DogmaEffect.MicroJumpDrive,
+        };
+
+    public static bool IsField(DogmaEffect effect) => effect is DogmaEffect.MicroJumpField or DogmaEffect.CapitalMicroJumpField;
 
     public static double Distance(int type, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        IsCapital(type) ? attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpRange) : JumpDistance;
+        type == SubcapitalField || IsCapital(type) ? attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpRange) : JumpDistance;
 
     public static bool IsCloak(DogmaEffect effect) =>
         effect is DogmaEffect.Cloaking or DogmaEffect.PrototypeCloaking or DogmaEffect.CovertCloaking;
@@ -142,15 +161,21 @@ public static class SpatialModuleRules
         {
             throw new InvalidDataException("Invalid spatial module attributes.");
         }
-        if (effect == DogmaEffect.CapitalMicroJumpField)
+        if (IsField(effect))
         {
             double radius = attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpFieldRadius);
-            double scramble = attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpScrambleDuration);
             int passengers = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpPassengerLimit));
-            int capitals = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpCapitalLimit));
-            if (!double.IsFinite(radius) || radius <= 0 || !double.IsFinite(scramble) || scramble <= 0 || passengers <= 0 || capitals <= 0)
+            bool capital = effect == DogmaEffect.CapitalMicroJumpField;
+            double scramble = capital ? attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpScrambleDuration) : 0;
+            int capitals = capital ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpCapitalLimit)) : 0;
+            if (
+                !double.IsFinite(radius)
+                || radius <= 0
+                || passengers <= 0
+                || capital && (!double.IsFinite(scramble) || scramble <= 0 || capitals <= 0)
+            )
             {
-                throw new InvalidDataException("Invalid capital micro jump field attributes.");
+                throw new InvalidDataException("Invalid micro jump field attributes.");
             }
             module = module with { Field = new(radius, passengers, capitals, scramble) };
         }

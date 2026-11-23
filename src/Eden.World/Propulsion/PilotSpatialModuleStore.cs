@@ -116,6 +116,10 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         {
             throw new InvalidDataException("Invalid micro-jump velocity.");
         }
+        if (effect == DogmaEffect.MicroJumpField && LiveWorld.Find(database.Path) is null)
+        {
+            throw new InvalidDataException("A micro jump field requires the resident world.");
+        }
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -159,13 +163,14 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         {
             throw new InvalidDataException("Use an online spatial module fitted to your active ship in space.");
         }
-        if (
-            effect == DogmaEffect.CapitalMicroJumpField
-            && CrimewatchPersistence.Security(catalog, CrimewatchPersistence.System(catalog, pilot.ActiveShip))
-                >= CrimewatchRules.HighSecurity
-        )
+        int? fieldSystem = SpatialModuleRules.IsField(effect) ? CrimewatchPersistence.System(catalog, pilot.ActiveShip) : null;
+        if (fieldSystem is int systemId && CrimewatchPersistence.Security(catalog, systemId) >= CrimewatchRules.HighSecurity)
         {
-            throw new InvalidDataException("Capital micro jump fields cannot activate in high-security space.");
+            throw new InvalidDataException(
+                effect == DogmaEffect.CapitalMicroJumpField
+                    ? "Capital micro jump fields cannot activate in high-security space."
+                    : "Micro jump fields cannot activate in high-security space."
+            );
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
@@ -204,6 +209,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         }
         if (
             status.CloakModuleId != 0
+            || effect == DogmaEffect.MicroJumpField && status.GateCloaked(now)
             || world.Set<ModuleCooldown>().Find(moduleId)?.ReadyAt > now
             || world.Set<ActiveFittedModule>().Find(moduleId) is not null
         )
@@ -281,6 +287,14 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
             state.VelocityY = velocity.Y;
             state.VelocityZ = velocity.Z;
             Cooldown(world, moduleId, ready);
+        }
+        if (effect == DogmaEffect.MicroJumpField && fieldSystem is int generatorSystem)
+        {
+            // The field gives its pilot a weapons timer on activation, even if no passenger is moved.
+            var crimewatch = CrimewatchPersistence.State(world, pilotId);
+            crimewatch.SystemId = generatorSystem;
+            var timers = crimewatch.Timers();
+            crimewatch.Apply(timers with { Weapons = CrimewatchRules.Extend(timers.Weapons, now, CrimewatchRules.WeaponsDuration) });
         }
         world.SaveChanges();
         var updated = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
@@ -395,7 +409,10 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
     {
         using WorldActionScope transaction = new(
             database,
-            new(pilots: candidates?.Select(c => c.PilotId).Append(pilotId) ?? [pilotId], ships: [shipId])
+            new(
+                pilots: candidates?.Select(c => c.PilotId).Append(pilotId) ?? [pilotId],
+                ships: candidates?.Select(c => c.ShipId).Append(shipId) ?? [shipId]
+            )
         );
         var world = transaction.World;
         var pilot = world.Pilots.Find(pilotId);
@@ -410,6 +427,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var item = world.Set<OwnedItem>().Find(moduleId);
+        bool field = item is not null && SpatialModuleRules.IsField(SpatialModuleRules.JumpEffect(item.TypeId));
         MicroJumpResult? result = null;
         if (
             pilot.ActiveShipId == shipId
@@ -418,7 +436,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
             && item.OwnerId == pilotId
             && item.LocationId == shipId
             && InventoryDefinitions.IsMediumSlot(item.FlagId)
-            && (item.TypeId != SpatialModuleRules.CapitalField || candidates is not null && world is EconomyTransaction)
+            && (!field || candidates is not null && world is EconomyTransaction)
             && !Scrambled(world, shipId, now)
             && ReadStatus(world, catalog, shipId).CloakModuleId == 0
         )
@@ -427,14 +445,11 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
             var destination = SpatialModuleRules.Jump(
                 origin,
                 new(state.HeadingX, state.HeadingY, state.HeadingZ),
-                SpatialModuleRules.IsCapital(item.TypeId)
+                field || SpatialModuleRules.IsCapital(item.TypeId)
                     ? SpatialModuleRules.Distance(item.TypeId, catalog.FittingAttributes(item.TypeId))
                     : SpatialModuleRules.JumpDistance
             );
-            var arrivals =
-                item.TypeId == SpatialModuleRules.CapitalField
-                    ? CompleteField(world, catalog, pilot, item, state, origin, destination - origin, candidates!, now)
-                    : [];
+            var arrivals = field ? CompleteField(world, catalog, pilot, item, state, origin, destination - origin, candidates!, now) : [];
             position.X = destination.X;
             position.Y = destination.Y;
             position.Z = destination.Z;

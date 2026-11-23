@@ -33,6 +33,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             "cloakingPrototype" => DogmaEffect.PrototypeCloaking,
             "cloakingWarpSafe" => DogmaEffect.CovertCloaking,
             MicroJumpEffect => DogmaEffect.MicroJumpDrive,
+            "microJumpPortalDrive" => DogmaEffect.MicroJumpField,
             "microJumpPortalDriveCapital" => DogmaEffect.CapitalMicroJumpField,
             _ => null,
         };
@@ -134,6 +135,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
                 context.Pilot.ShipId != cycle.ShipId
                 || !context.Flight.CanUseSelfModules
                 || context.Flight.InWarp && !activation.Module.WarpSafe
+                || activation.Module.Effect == DogmaEffect.MicroJumpField && context.Flight.MicroJumpBlocked
                 || !modules.Available(cycle.PilotId, cycle.ShipId, activation.Module.ItemId)
             )
             {
@@ -164,9 +166,9 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
                 {
                     foreach (var passenger in jump.Passengers)
                     {
-                        space.TranslateForMicroJump(context.Pilot.SystemId, passenger);
+                        space.TranslateForMicroJump(context.Pilot.SystemId, passenger, activation.Module);
                     }
-                    context.Flight.AdoptMicroJump(jump);
+                    context.Flight.AdoptMicroJump(jump, activation.Module);
                 }
                 Stop(context, cycle);
             }
