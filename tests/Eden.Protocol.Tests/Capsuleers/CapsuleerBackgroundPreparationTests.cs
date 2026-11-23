@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Server;
@@ -319,7 +320,70 @@ public sealed class CapsuleerBackgroundPreparationTests
         host.PrepareActivatedPopulations();
         using WorldDbContext visited = new(f.Database.Path);
         Assert.Contains(visited.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Third);
-        Assert.DoesNotContain(visited.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Source);
+        Assert.Equal([Third, Fourth], visited.Set<SavedCapsuleerSystem>().Select(system => system.SystemId).Order().ToArray());
+    }
+
+    [Fact]
+    public async Task EstablishedPopulationPreparesUnvisitedSystemsWhileSomeonePlaysAndStopsAtTheCap()
+    {
+        const int cap = 3;
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerProvisioningTests.AddSystem(f.Database, Third);
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems', {0}, {1});",
+                Source,
+                """{"securityStatus":1.0}"""
+            );
+        }
+        PrepareStartup(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0) { ActivePilotCap = cap });
+        long[] pilots;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var activity = host.GetRequiredService<CapsuleerActivitySource>();
+            var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+            Assert.False(f.Database.Settings.FreshUniverse);
+            Assert.True(preparation.PrepareNext().Complete);
+            Assert.Empty(Founders());
+
+            var session = Guid.NewGuid();
+            activity.Update(session, Third);
+            for (int i = 0; i < 2; i++)
+            {
+                var occupied = preparation.PrepareNext();
+                Assert.Null(occupied.Failure);
+                Assert.Equal(Third, occupied.SystemId);
+                Assert.Equal(i + 1, Founders().Length);
+            }
+            activity.Update(session, null);
+            Assert.True(preparation.PrepareNext().Complete);
+            Assert.All(Founders(), agent => Assert.Equal(Third, agent.CommunitySystemId));
+
+            activity.Update(session, Third);
+            var unvisited = preparation.PrepareNext();
+            Assert.Null(unvisited.Failure);
+            Assert.Equal(Source, unvisited.SystemId);
+            Assert.Equal([Third], activity.Read().ActiveSystems);
+            Assert.True(preparation.PrepareNext().Complete);
+            var founders = Founders();
+            Assert.Equal(cap, founders.Length);
+            Assert.Single(founders, agent => agent.CommunitySystemId == Source);
+            pilots = founders.Select(agent => agent.PilotId).ToArray();
+            await live.FlushAsync();
+
+            SavedCapsuleerAgent[] Founders() =>
+                live.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).ToArray());
+        }
+
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        Assert.Equal(
+            pilots,
+            restored.Economy.Inspect(world => world.Set<SavedCapsuleerJob>().Select(job => job.PilotId).Order().ToArray())
+        );
     }
 
     [Fact]
@@ -610,7 +674,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.Equal(1, preparation.Calls);
     }
 
-    internal static void PrepareStartup(CapsuleerHaulerTests.Fixture f)
+    internal static void PrepareStartup(CapsuleerHaulerTests.Fixture f, CapsuleerPopulationPolicy? policy = null)
     {
         var settings = new WorldConfigurationStore(f.Database, f.Clock);
         var state = settings.Read();
@@ -618,7 +682,10 @@ public sealed class CapsuleerBackgroundPreparationTests
             state.Generation,
             state.Active.Draft with
             {
-                Settings = state.Active.Draft.Settings with { Capsuleers = new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0) },
+                Settings = state.Active.Draft.Settings with
+                {
+                    Capsuleers = policy ?? new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0) { PrepareUnvisitedSystems = false },
+                },
             },
             "background test"
         );

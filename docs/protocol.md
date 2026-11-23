@@ -140,6 +140,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Autonomous capsuleers
 
+- [Unvisited systems in Established Universe](protocol/capsuleers.md#unvisited-systems-in-established-universe)
 - [Bot PvP fit progression and rat damage](protocol/capsuleers.md#bot-pvp-fit-progression-and-rat-damage)
 - [Activity-funded PvP ships](protocol/capsuleers.md#activity-funded-pvp-ships)
 - [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)

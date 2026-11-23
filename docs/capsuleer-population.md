@@ -6,8 +6,8 @@
 
 Open **Player bots** in the server web editor. **Bot population** sets the world-wide cap. **Where bots work** sets
 work or transit access by region or solar system. Expand **Ambient traffic** for station travelers and watched-gate
-visitors. Saves created with the earlier Fresh Universe profile also have controls for background preparation and
-its dedicated mining, courier and bounty careers. Save for restart and restart the server to apply the revision.
+visitors. Saves created with the earlier Fresh Universe profile also have controls for its dedicated mining, courier
+and bounty careers. Save for restart and restart the server to apply the revision.
 
 Reducing a limit pauses excess pilots and preserves their identities, ships, possessions, losses and activity. When
 slots reopen, Eden reuses eligible saved pilots before preparing new ones.
@@ -16,10 +16,10 @@ the main population switch pauses both, including miners. Reciprocal gate observ
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
-The station-traffic multiplier scales each established system's geography-based traveler roster. Established worlds prepare
-new rosters as players enter systems. Existing travelers can continue through empty systems and dedicated miners
-can work the belts in their home systems. In legacy Fresh Universe saves, active players also enable background
-preparation of eligible unvisited high-security station systems. Occupied systems get priority.
+The station-traffic multiplier scales each established system's geography-based traveler roster. With **Prepare bots in
+unvisited systems** enabled, Eden prepares eligible high-security systems with stations while anyone is playing.
+Occupied systems get priority. Existing travelers can continue through empty systems and dedicated miners can work
+the belts in their home systems.
 
 Watching either end of a stargate can bring additional visitors through it. Those pilots use the same ships, station
 waits and gate transfers throughout their trips. An established visitor can continue while either system is occupied,

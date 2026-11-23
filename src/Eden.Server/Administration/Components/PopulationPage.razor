@@ -7,7 +7,7 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">Ordinary pilots run in occupied systems. Active roaming gangs and escorted shipments continue while anyone is playing.
+<p class="muted">Bots can work in unobserved systems while anyone is playing.
     All pilots pause when the last player leaves, retaining their ships, possessions and pending work.</p>
 @if (Error is not null)
 {
@@ -25,7 +25,7 @@
         <p>Fresh-universe careers · Couriers: @(snapshot.Policy.FreshCourierPilots ? "On" : "Off") ·
             Bounty hunters: @(snapshot.Policy.FreshBountyPilots && snapshot.Policy.BeltRatting ? "On" : "Off")</p>
         <p>Fresh founder cohorts per system: @snapshot.Policy.FreshFounderCohortsPerSystem</p>
-        <p>Prepare bots in unvisited systems (fresh universes): @(snapshot.Policy.PrepareUnvisitedSystems ? "On" : "Off")</p>
+        <p>Prepare bots in unvisited systems: @(snapshot.Policy.PrepareUnvisitedSystems ? "On" : "Off")</p>
         <p>Corporation formation and recruitment: @(snapshot.Policy.AutomaticRecruitment ? "On" : "Off") ·
             Form and grow alliances: @(snapshot.Policy.AutomaticAlliances ? "On" : "Off") ·
             Start new sovereignty claims: @(snapshot.Policy.NewSovereigntyClaims ? "On" : "Off")</p>

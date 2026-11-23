@@ -2,6 +2,45 @@
 
 [Protocol index](../protocol.md)
 
+## Unvisited systems in Established Universe
+
+The population switch still required `FreshUniverse` after `af60d570` made Established Universe the setup profile.
+The resident worker now honors `settings.capsuleers.prepareUnvisitedSystems` in both profiles. With a player selected,
+it prepares occupied systems before eligible unvisited high-security station systems. Existing work-access rules,
+the active cap, and each profile's roster rules apply. Established background batches defer while the oldest scheduled
+bot job is at least 250 ms late. The last player leaving pauses preparation.
+
+The worker uses the pinned build 3662168 system security and station catalog. EVE.js 261108.1 (build 3396210) was
+checked for its separate lazy on-arrival NPC spawns in `server/src/config/schema/npc.js`. No client calls change.
+[UniWiki NPC Mining Operations](https://wiki.eveuniversity.org/NPC_Mining_Operations) · [Population controls](../capsuleer-population.md#population-controls)
+
+### Automated validation
+
+The exact filters for `EstablishedPopulationPreparesUnvisitedSystemsWhileSomeonePlaysAndStopsAtTheCap` and
+`OnlyOccupiedSystemsArePreparedAndLeavingStopsPendingFounders` passed both cases in 10.49 seconds. The established
+replay covers occupied-system priority, pausing when the last player leaves, resuming into an unvisited system, the
+active cap and saved jobs after checkpoint reopen. The switch-off case prepares only the visited systems.
+
+The broader `FullyQualifiedName~` filter joined `CapsuleerBackgroundPreparationTests`, `CapsuleerPopulationRetryTests`,
+`CapsuleerPopulationSettingsTests`, `CapsuleerGlobalPopulationTests`, `ResidentPopulationTests`, `CapsuleerMiningFleetTests`,
+`CapsuleerInboundGateAcceptanceTests`, `CapsuleerPresentationTests`, `CapsuleerTrafficAcceptanceTests`, and the methods
+`PopulationControlsRenderAndSavePendingValuesThroughTheAuthenticatedEditor`,
+`PopulationRequiresAdministratorAndReportsSavedCoverageWithoutAdvancingJobs`,
+`SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves` and
+`FreshPopulationPreparesUnvisitedWorkSystemsWhileSomeonePlaysAndStopsAtTheCap` with `|`. All 65 cases passed in 65.63 seconds,
+including the legacy Fresh Universe replay with the installed build 3662168 catalog. The solution built in 6.95 seconds
+with zero warnings or errors. The 8 catalog and 9 formatting policy tests, `Format.ps1 -Check`, and `git diff --check`
+passed. The full .NET suite was outside this run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+With active bot slots available, select a character after updating and restarting the server, then refresh **Population**
+to check **Prepared systems** as the worker runs.
+
 ## Bot PvP fit progression and rat damage
 
 With activity-funded PvP enabled, eligible bots save the exact hull, fitting slots and magazines from a supported

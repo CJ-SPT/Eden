@@ -24,7 +24,7 @@
             </Control>
         </SettingField>
         <SettingField Label="Prepare bots in unvisited systems"
-                      Help="In fresh universes, prepare eligible high-security systems ahead of player visits while someone plays.">
+                      Help="Prepare eligible high-security systems with stations while anyone is playing. Occupied systems get priority.">
             <Control Context="field">
                 <InputCheckbox id="@field.Input" @bind-Value="Form.PrepareUnvisitedSystems" aria-describedby="@field.Help" />
             </Control>

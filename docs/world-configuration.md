@@ -603,7 +603,7 @@ Open **Player bots**, make changes, and select **Save for restart**. The **Popul
 settings, occupied slots, saved/paused totals, individual system access and waiting reasons.
 
 - **Bot population** contains the master switch, the world-wide **Active bot cap**
-  (`settings.capsuleers.activePilotCap`) and the switch for preparing unvisited systems in fresh universes
+  (`settings.capsuleers.activePilotCap`) and **Prepare bots in unvisited systems**
   (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
   **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
 - In legacy Fresh Universe saves, **Fresh founder cohorts per system** (`settings.capsuleers.freshFounderCohortsPerSystem`) sets one
@@ -658,9 +658,9 @@ before missing station-traffic/miner slots are prepared in entered regions. New 
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
 Normal startup retains saved pilots and starts preparation when a human selects a character. Occupied systems get priority.
-With fresh-universe background preparation enabled, Eden also prepares eligible unvisited high-security station
-systems in bounded batches. It respects the active bot cap and work access rules, and preparation stops when the last
-player leaves. Established worlds prepare new communities on demand in occupied systems.
+With **Prepare bots in unvisited systems** enabled, Eden also prepares eligible unvisited high-security systems with
+stations in bounded batches. It respects the active bot cap and work access rules, and preparation stops when the last
+player leaves. Turning the setting off limits new community preparation to occupied systems.
 Saved identities and possessions are reused, and dormant time produces no catch-up rewards. Completed catalog/settings/snapshot
 fingerprints are reused; interrupted preparation retries missing communities
 without replacing completed pilots. Unsupported or temporarily depleted communities are recorded

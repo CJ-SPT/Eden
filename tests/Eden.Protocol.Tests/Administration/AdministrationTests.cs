@@ -393,8 +393,8 @@ public sealed partial class AdministrationTests
         Assert.Empty(snapshot.RegionalConflicts);
         Assert.Contains("href=\"/population\"", html);
         Assert.Contains("Active population settings", html);
-        Assert.Contains("Explore data and relic sites: On", html);
-        Assert.Contains("Salvage NPC wrecks: On", html);
+        Assert.Contains("Data and relic exploration: On", html);
+        Assert.Contains("Prepare bots in unvisited systems: On", html);
         Assert.Contains("Saved pilots", html);
         Assert.DoesNotContain("Recent system returns", html);
         Assert.DoesNotContain("Forgone remote seconds on return", html);

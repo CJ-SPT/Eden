@@ -23,7 +23,7 @@ internal sealed class CapsuleerBackgroundPreparation(
     private readonly Dictionary<int, CapsuleerRetry> _systemRetries = [];
     private readonly Dictionary<CapsuleerScheduler.InboundPreparation, CapsuleerRetry> _inboundRetries = [];
     private readonly long _started = clock.GetTimestamp();
-    private Queue<int>? _freshSystems;
+    private Queue<int>? _unvisitedSystems;
     private int _lastSystem;
 
     private long NowTicks => clock.GetElapsedTime(_started).Ticks;
@@ -41,16 +41,16 @@ internal sealed class CapsuleerBackgroundPreparation(
             if (occupied.Count == 0)
             {
                 _inboundRetries.Clear();
-                if (_freshSystems is null)
+                if (_unvisitedSystems is null)
                 {
                     _systemRetries.Clear();
                 }
                 return new(ReadProgress(occupied), null, true);
             }
-            if (database.Settings.FreshUniverse && policy.Enabled && policy.PrepareUnvisitedSystems && _freshSystems is null)
+            if (_unvisitedSystems is null && policy.Enabled && policy.PrepareUnvisitedSystems && LiveWorld.Find(database.Path) is not null)
             {
                 var catalog = database.Catalog;
-                _freshSystems = new(
+                _unvisitedSystems = new(
                     catalog
                         .SystemPolitics.Where(entry =>
                             entry.Value.Security >= CrimewatchRules.HighSecurity
@@ -62,7 +62,7 @@ internal sealed class CapsuleerBackgroundPreparation(
                 );
             }
             var inboundRequests = scheduler.InboundPreparations();
-            foreach (int system in _systemRetries.Keys.Where(system => _freshSystems is null && !occupied.Contains(system)).ToArray())
+            foreach (int system in _systemRetries.Keys.Where(system => _unvisitedSystems is null && !occupied.Contains(system)).ToArray())
             {
                 _systemRetries.Remove(system);
             }
@@ -101,25 +101,25 @@ internal sealed class CapsuleerBackgroundPreparation(
                 .FirstOrDefault();
             bool foreground = target != 0;
             bool atCapacity = false;
-            if (!foreground && _freshSystems is { Count: > 0 })
+            if (!foreground && _unvisitedSystems is { Count: > 0 })
             {
-                if (
-                    policy.FreshFounderCohortsPerSystem > FreshCareerRules.DefaultFounderCohorts
-                    && scheduler.Read().OldestDelayTicks >= ExpansionBacklogLimit.Ticks
-                )
-                {
-                    // Let existing jobs catch up before founding more background pilots.
-                    return new(progress, null, false) { RetryLater = true, RetryAfter = ExpansionBacklogLimit };
-                }
                 int cap = policy.ActivePilotCap;
                 if (cap > 0)
                 {
-                    using var owner = synchronization.Enter("fresh population capacity");
+                    using var owner = synchronization.Enter("background population capacity");
                     atCapacity = LiveWorld.Find(database.Path)?.Economy.AdmittedCapsuleerCount >= cap;
                 }
                 if (!atCapacity)
                 {
-                    target = NextFreshSystem(now);
+                    if (
+                        (!database.Settings.FreshUniverse || policy.FreshFounderCohortsPerSystem > FreshCareerRules.DefaultFounderCohorts)
+                        && scheduler.Read().OldestDelayTicks >= ExpansionBacklogLimit.Ticks
+                    )
+                    {
+                        // Let existing jobs catch up before founding more background pilots.
+                        return new(progress, null, false) { RetryLater = true, RetryAfter = ExpansionBacklogLimit };
+                    }
+                    target = NextUnvisitedSystem(now);
                 }
             }
             if (target == 0)
@@ -128,7 +128,7 @@ internal sealed class CapsuleerBackgroundPreparation(
                 bool complete =
                     progress.CompletedSystems == progress.TotalSystems
                     && inboundRequests.Count == 0
-                    && (atCapacity || _freshSystems is null or { Count: 0 });
+                    && (atCapacity || _unvisitedSystems is null or { Count: 0 });
                 return new(progress, null, complete)
                 {
                     RetryLater = !complete,
@@ -167,7 +167,7 @@ internal sealed class CapsuleerBackgroundPreparation(
                     !turn.HasMoreWork
                         && updated.CompletedSystems == updated.TotalSystems
                         && inboundRequests.Count == 0
-                        && _freshSystems is null or { Count: 0 }
+                        && _unvisitedSystems is null or { Count: 0 }
                 );
             }
             catch (CapsuleerBlueprintNotPreparedException)
@@ -183,9 +183,9 @@ internal sealed class CapsuleerBackgroundPreparation(
         }
     }
 
-    private int NextFreshSystem(long now)
+    private int NextUnvisitedSystem(long now)
     {
-        var candidates = _freshSystems!;
+        var candidates = _unvisitedSystems!;
         int remaining = candidates.Count;
         while (remaining-- > 0)
         {

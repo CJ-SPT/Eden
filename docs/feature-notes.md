@@ -17,7 +17,8 @@
   complexes in Aldranette–Nennamaila. [Faction Warfare](protocol/faction-warfare.md)
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. On new established worlds, eligible
   bots buy and fit separate PvP ships with spendable ISK from ordinary work. Corporate pilots can take paid production work,
-  replace lost ships and fund first sovereignty claims. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
+  replace lost ships and fund first sovereignty claims. With background preparation enabled, eligible high-security systems
+  gain bots ahead of player visits. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
   [First claims](protocol/sovereignty.md#autonomous-first-claims)
 
