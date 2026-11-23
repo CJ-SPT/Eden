@@ -6942,7 +6942,13 @@ with managed out-of-memory failures and an oldest due job of 20.65 seconds. The 
 actions, reached 56.50 seconds p95 oldest job age in the latter half and ended with 6,308 due jobs and 56.96 seconds of delay.
 This control forced a checkpoint every 15 seconds. Some forced checkpoints spent 26–31 seconds syncing the roughly 800 MiB save.
 
-An allocation trace at the start of that second replay attributed 16.7% of sampled allocations to Standard region preparation
+The first candidate switched to the copied world's native 300-second checkpoint interval and kept the same 70% test heap.
+All 10,000 jobs advanced over 900.9 measured seconds and completed 2,131,898 scheduler actions with zero failures. The queue
+still grew. The final five-minute p95 oldest job age was 86.89 seconds and the final age was 90.47 seconds. Warm player frame
+and regional best-ask request p99 were 31.20 and 29.47 ms with zero SQL commands or fitting rebuilds. The runtime completed
+448,694 population refreshes whose deadlines had arrived during the run.
+
+An allocation trace at the start of the 180-second control attributed 16.7% of sampled allocations to Standard region preparation
 and 23.6% to pilot ship-attribute reads. The mature save held about 1.5 million inventory rows, mostly individual ore stacks
 in bot hangars, and about 1.37 million Standard market orders. Standard order identities now use an inline station and source ID
 index. Owner and location indexes cover resident item selection. The regional order loader sizes its per-type arrays directly,
@@ -6971,3 +6977,46 @@ and exact jump count. The frozen save held 2,031,393 training history rows.
 `EDEN_BOT_REPLAY_NATIVE_CHECKPOINTS=1` to use the saved world's checkpoint timer. The report tracks distinct bot job advances
 and distinguishes jobs already due from jobs whose deadline falls after the window. HostCram artifacts are under
 `artifacts/hostcram-10k-standard-20261122/`.
+
+### Automated validation
+
+Commit `6965d649` ran on the same HostCram copy with the native checkpoint interval, a 70% test heap limit, and market and
+activity reward maintenance. The matched columns use the first 600 seconds of each candidate run.
+
+| Measurement | First candidate | `6965d649` |
+| --- | ---: | ---: |
+| Minimum scheduled pilots | 10,000 | 10,000 |
+| Completed actions | 1,417,618 | 1,585,784 |
+| Queue recovery below one second | Did not recover | 85.09 s |
+| Final five-minute oldest job age p95 | 50.37 s | 100.61 ms |
+| Final five-minute oldest job age maximum | 53.73 s | 510.97 ms |
+| Oldest job age at the end | 53.73 s | 109.65 ms |
+| Warm frame p99 | 31.20 ms | 39.68 ms |
+| Warm regional best-ask p99 | 305.95 ms | 300.67 ms |
+
+All 10,000 pilots advanced in the patched run. It recorded zero scheduler failures and zero kernel OOM kills, averaged
+0.88 vCPU, and peaked at 5.89 GiB process RSS. The first native checkpoint showed that 589 of the original 845 stationary
+collecting haulers had left that state. Due NPC population refreshes fell from about 498 per second in the full first candidate
+to about 111 per second in the patched replay. The warmed frame and market requests issued zero SQL commands, connections,
+or fitting rebuilds.
+
+The bot checks passed. The replay's overall verdict failed the 250 ms regional best-ask p99 assertion. The two slowest
+requests waited 603 and 300 ms before processing, and processing took 4.15 and 0.64 ms. The recorded traffic owner holds
+at 95.95, 296.86, and 597.09 seconds were 654, 439, and 482 ms. The first two coincided with those requests. The test stopped at
+the market latency assertion, and inspection of the trace found three traffic owner holds above its 250 ms limit.
+
+The Release build passed without warnings. The final focused test selection passed 35 cases in 29.04 seconds including runner
+overhead. It covered the offscreen hauling scenario, capsuleer ore unloading and escrow, starter manufacturing and courier
+stock, training-history checkpoint retry, Standard market behavior and resident market order uniqueness. Reverting only the NPC
+motion change in a temporary checkout reproduced the new offscreen case failure, with the other four variants passing.
+The clean solution build and formatting check, 13 Python policy and market importer tests, and the snapshot freeze and checksum
+check passed. The full .NET suite was outside the validation scope.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The original public container and listener returned after the final replay.
+Live configuration revision 22 still caps active bots at 6,000. The 70% managed heap limit applied to the isolated runs only.
+
+### Optional maintainer checks
+
+None.
