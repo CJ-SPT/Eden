@@ -136,6 +136,24 @@ internal sealed class InventoryHandler(
         return transfers.Move(context, service, new InventoryMoveRequest(ids, source, flag, quantity));
     }
 
+    private PilotCallResult CrystalDamage(DockedPilot pilot, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (keywords is { Count: > 0 })
+        {
+            return new PilotCallResult.Failure("Unexpected crystal damage options.");
+        }
+        // Build 3662168 CrystalDamageTracker.PrimeCrystals sends a Python set through the inventory manager moniker.
+        IReadOnlyCollection<long>? items = args switch
+        {
+            [HashSet<long> ids] => ids,
+            [List<object?> list] when list.All(id => id is long) => list.Cast<long>().ToHashSet(),
+            _ => null,
+        };
+        return items is null || items.Any(id => id <= 0)
+            ? new PilotCallResult.Failure("Choose positive crystal item IDs.")
+            : new BlueMap<long, double>(inventory.CrystalDamage(pilot.PilotId, items));
+    }
+
     private PilotCallResult ItemInfo(PilotCallContext context, long id)
     {
         var pilot = context.Pilot;
@@ -437,6 +455,7 @@ internal sealed class InventoryHandler(
         return (service, method) switch
         {
             ("invbroker", "SplitStack") => SplitFromWire(context, args, keywords),
+            ("invbroker", "GetDamageForCrystals") => CrystalDamage(pilot, args, keywords),
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] =>
                 PilotCallResult.None,
             ("corpFittingMgr", "GetCommunityFittings") => BlueEmpty.IndexedDictionary,

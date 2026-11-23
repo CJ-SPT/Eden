@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Crystal damage in inventory](#crystal-damage-in-inventory)
 - [Inactive ship transfers and move-rule audit, November 15, 2026](#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
 
 - [Container stacking and fitting, November 15, 2026](#container-stacking-and-fitting-november-15-2026)
@@ -35,6 +36,34 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Crystal damage in inventory
+
+Build **3662168** `CrystalDamageTracker.PrimeCrystals` in `eve/client/script/ui/services/inventorysvc.pyj` passes a Python
+set of unprimed item IDs to the bound inventory manager's `GetDamageForCrystals` and merges the returned dictionary.
+The original client archive has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**, build **3396210**, uses `invBrokerService.js`
+(`8cec4112de1b`) and `crystalDurability.js` (`f6e598591778`) to return damage divided by catalog hit points.
+[Crystal damage](https://wiki.eveuniversity.org/Crystal_damage)
+
+Eden answers the bound call from the selected pilot's resident inventory. The reply contains an item ID and a damage ratio
+from zero to one for each personally owned wear-enabled crystal. Unused crystals return zero. The read preserves item state
+and uses the same committed damage that survives unloading, transfers and checkpoints.
+
+**Automated validation.** `NativeCrystalDamageBatchReadsOnlyOwnedWearEnabledCrystalsFromTheResidentWorld` passed in
+31.64 seconds through `Test-Feature.ps1` after a 44.95-second build. The test marshals the native Python set, calls
+through the inventory manager binding, changes resident wear, rejects malformed arguments, and observes zero SQL commands,
+connections or fitting calculations on the warm read. The solution built in 9.74 seconds with zero warnings or errors.
+The following filter passed 20 tests in 42.08 seconds. The catalog setup and formatting policy suites passed 8 and 9 cases.
+`Format.ps1 -Check` and the whitespace check passed. The exact test passed again on `95ebcb42` in 12.51 seconds after a
+40.26-second build.
+
+```text
+FullyQualifiedName~EnergyTierTests.NativeCrystalDamageBatchReadsOnlyOwnedWearEnabledCrystalsFromTheResidentWorld|FullyQualifiedName~EnergyTierTests.NativeItemInfoReadsOwnedLooseCrystalConditionWithoutPrimingAnActiveModule|FullyQualifiedName~EnergyTierTests.NativePrimeIncludesSkilledLaserAttributesAndSavedCrystalDamage|FullyQualifiedName~EnergyTierTests.CrystalWearUsesTheCatalogFlagProbabilityAndIncrement|FullyQualifiedName~AmmunitionLookupTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~InventoryOwnershipTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Unload a partly worn crystal and inspect its damage in the Item Hangar alongside a fresh crystal.
 
 ## Inactive ship transfers and move-rule audit, November 15, 2026
 

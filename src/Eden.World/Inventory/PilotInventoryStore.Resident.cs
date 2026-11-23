@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -10,6 +11,7 @@ using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Industry;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -19,6 +21,42 @@ namespace Eden.World.Inventory;
 
 internal sealed partial class PilotInventoryStore
 {
+    public IReadOnlyDictionary<long, double> CrystalDamage(long pilotId, IReadOnlyCollection<long> itemIds)
+    {
+        Dictionary<long, double> result = [];
+        if (itemIds.Count == 0)
+        {
+            return result;
+        }
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Crystal condition requires the resident world.");
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return live.Economy.Inspect(
+            world =>
+            {
+                var items = world.Set<OwnedItem>();
+                foreach (long id in itemIds)
+                {
+                    if (
+                        items.Find(id) is not { } item
+                        || item.OwnerId != pilotId
+                        || catalog.FittingType(item.TypeId)?.CategoryId != (int)InventoryCategory.Charge
+                    )
+                    {
+                        continue;
+                    }
+                    var attributes = catalog.FittingAttributes(item.TypeId);
+                    if (attributes.GetValueOrDefault(DogmaAttributeId.CrystalsGetDamaged) > 0)
+                    {
+                        double hitPoints = attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints);
+                        result[id] = CrystalRules.DamageRatio(item.CrystalDamage, hitPoints);
+                    }
+                }
+                return result;
+            },
+            new(pilots: [pilotId])
+        );
+    }
+
     internal static IReadOnlyList<InventoryItem> List(WorldAction world, CatalogDbContext catalog, long pilotId, long locationId)
     {
         var items = world

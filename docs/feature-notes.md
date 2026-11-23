@@ -167,6 +167,9 @@ and change an eligible structure's abandonment deadline. [Structure GM commands]
 
 ## Inventory, ships and holds
 
+Inventory displays the saved wear of personally owned frequency and mining crystals through the native crystal damage query.
+[Crystal damage in inventory](protocol/inventory.md#crystal-damage-in-inventory)
+
 Pilots docked in a cored Upwell structure with repair access can use the native repair shop for free ship and module repairs.
 [Upwell repair shop](protocol/structures.md#native-upwell-repair-shop)
 

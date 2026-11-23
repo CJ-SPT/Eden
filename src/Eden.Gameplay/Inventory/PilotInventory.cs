@@ -34,6 +34,7 @@ public sealed class CargoCapacityException(double available, double required) : 
 public interface IPilotInventory
 {
     IReadOnlyList<InventoryItem> List(long pilotId, long locationId);
+    IReadOnlyDictionary<long, double> CrystalDamage(long pilotId, IReadOnlyCollection<long> itemIds);
     IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request);
 }
 

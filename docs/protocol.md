@@ -594,6 +594,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Inventory and ship ownership
 
 - [Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
+- [Crystal damage in inventory](protocol/inventory.md#crystal-damage-in-inventory)
 - [Container stacking and fitting](protocol/inventory.md#container-stacking-and-fitting-november-15-2026)
 - [Container item menus](protocol/inventory.md#container-item-context-menus-november-15-2026)
 - [Resident cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026)

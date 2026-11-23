@@ -8,9 +8,11 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
@@ -391,6 +393,103 @@ public sealed class EnergyTierTests
         Assert.Empty(info.ActiveEffects);
         Assert.Empty(context.Notifications);
         Assert.IsType<PilotCallResult.UnsupportedCall>(handler.Call(context, "dogmaIM", "ItemGetInfo", [id + 100000]));
+    }
+
+    [Fact]
+    public void NativeCrystalDamageBatchReadsOnlyOwnedWearEnabledCrystalsFromTheResidentWorld()
+    {
+        const string Method = "GetDamageForCrystals";
+        const int StationGroup = 15;
+        using Fixture f = WithTiers(Pulse, FactionRadio, Gleam, Radio);
+        long laser = f.Fit(Pulse);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        var other = f.Db.Store.FindPilot(1000002)!;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        live.Economy.Warm();
+        long worn,
+            fresh,
+            ordinary,
+            foreign;
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId, other.PilotId])))
+        {
+            worn = Add(Gleam, pilot.PilotId, pilot.ShipId, InventoryFlag.Cargo, .42, true);
+            fresh = Add(FactionRadio, pilot.PilotId, pilot.StationId, InventoryFlag.Hangar, 0, false);
+            ordinary = Add(Radio, pilot.PilotId, pilot.StationId, InventoryFlag.Hangar, 0, false);
+            foreign = Add(Gleam, other.PilotId, other.StationId, InventoryFlag.Hangar, .88, true);
+            action.Commit();
+
+            long Add(int type, long owner, long location, InventoryFlag flag, double damage, bool singleton)
+            {
+                long id = action.NextItemId();
+                action.Add(
+                    new OwnedItem
+                    {
+                        Id = id,
+                        TypeId = type,
+                        OwnerId = owner,
+                        LocationId = location,
+                        FlagId = (int)flag,
+                        Quantity = 1,
+                        Singleton = singleton,
+                        CrystalDamage = damage,
+                    }
+                );
+                return id;
+            }
+        }
+
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), f.Db.Objects),
+            7,
+            SignedSettings.Empty
+        );
+        object selection = Set(worn, fresh, ordinary, foreign, laser, long.MaxValue);
+        object?[] bind = [new object?[] { (long)pilot.StationId, StationGroup }, new object?[] { Method, new object?[] { selection } }];
+        Assert.IsType<PilotCallResult.UnsupportedCall>(Call("invbroker", "MachoBindObject", bind));
+        context.Select(pilot);
+        var bound = Assert.IsType<BoundPilotReply>(Success(Call("invbroker", "MachoBindObject", bind)));
+        CheckDamage(bound.Reply, .42);
+        string manager = Assert.IsType<string>(context.ResolveReference(bound.Reference.Id));
+
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            action.Set<OwnedItem>().Find(worn)!.CrystalDamage = .66;
+            action.Commit();
+        }
+        using (var measured = SessionPerformance.Begin("resident crystal damage lookup", _ => { }, force: true)!)
+        {
+            CheckDamage(Success(Call(manager, Method, [selection])), .66);
+            Assert.Equal(0, measured.Commands);
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        Assert.Empty(Assert.IsType<BlueMap<long, double>>(Success(Call(manager, Method, [Set(foreign, ordinary)]))).Entries);
+        Assert.IsType<PilotCallResult.Failure>(Call(manager, Method, [new List<object?> { worn, "invalid" }]));
+        Assert.IsType<PilotCallResult.Failure>(Call(manager, Method, [Set(-1)]));
+        Assert.IsType<PilotCallResult.Failure>(Call(manager, Method, [Set(worn), fresh]));
+        Assert.IsType<PilotCallResult.Failure>(Call(manager, Method, [Set(worn)], new() { ["ownerID"] = other.PilotId }));
+        Assert.Empty(context.Notifications);
+        Assert.Empty(context.NotificationsBeforeFlight);
+
+        PilotCallResult Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+            router.Call(context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+
+        void CheckDamage(BlueModel reply, double damage)
+        {
+            var decoded = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
+            Assert.Equal(2, decoded.Count);
+            Assert.Equal(damage, Assert.IsType<double>(decoded[worn]));
+            Assert.Equal(0, Assert.IsType<double>(decoded[fresh]));
+        }
+
+        static BlueConstructor Set(params long[] ids) => new("__builtin__.set", [ids.Cast<object?>().ToList()]);
+
+        static BlueModel Success(PilotCallResult result) => Assert.IsType<PilotCallResult.Success>(result).Reply;
     }
 
     [Fact]

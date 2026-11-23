@@ -6,6 +6,9 @@ public sealed record CrystalWear(double Damage, bool Destroyed);
 
 public static class CrystalRules
 {
+    public static double DamageRatio(double damage, double hitPoints) =>
+        double.IsFinite(damage) && double.IsFinite(hitPoints) && hitPoints > 0 ? Math.Clamp(damage / hitPoints, 0, 1) : 0;
+
     // The catalog expresses volatility as a probability, not a percentage.
     // Wear is independent of the hit roll, including missed paid shots.
     public static CrystalWear Use(
