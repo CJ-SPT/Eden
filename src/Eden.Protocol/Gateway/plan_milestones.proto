@@ -1,0 +1,37 @@
+syntax = "proto3";
+package eve_public.character.skill.plan.milestone;
+option csharp_namespace = "Eden.Protocol.Gateway.Plans.Milestones";
+
+import "plan_milestone_types.proto";
+import "plan_types.proto";
+
+// Build 3662168 eve_public/character/skill/plan/milestone.proto.
+message GetAllRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+}
+message GetAllResponse {
+  message Milestone {
+    .eve_public.skill.plan.milestone.Identifier identifier = 1;
+    .eve_public.skill.plan.milestone.Attributes data = 2;
+  }
+
+  repeated Milestone milestones = 1;
+}
+
+message CreateRequest {
+  .eve_public.skill.plan.milestone.Attributes milestone = 1;
+}
+message CreateResponse {
+  .eve_public.skill.plan.milestone.Identifier milestone = 1;
+}
+
+message DeleteRequest {
+  .eve_public.skill.plan.milestone.Identifier milestone = 1;
+}
+message DeleteResponse {}
+
+message SetDescriptionRequest {
+  .eve_public.skill.plan.milestone.Identifier identifier = 1;
+  string description = 2;
+}
+message SetDescriptionResponse {}

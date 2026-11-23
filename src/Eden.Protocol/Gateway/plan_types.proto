@@ -1,0 +1,21 @@
+syntax = "proto3";
+package eve_public.skill.plan;
+option csharp_namespace = "Eden.Protocol.Gateway.Plans.Shared";
+
+import "plan_skill_type.proto";
+
+// Shared personal and certified plan types from build 3662168.
+message Identifier {
+  bytes uuid = 1;
+}
+
+message Attributes {
+  string name = 1;
+  repeated SkillRequirement skill_requirements = 2;
+  string description = 3;
+}
+
+message SkillRequirement {
+  .eve_public.skilltype.Identifier skill_type = 1;
+  uint32 level = 2;
+}

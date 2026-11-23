@@ -1,0 +1,19 @@
+syntax = "proto3";
+package eve_public.skill.plan.milestone;
+option csharp_namespace = "Eden.Protocol.Gateway.Plans.Milestones.Shared";
+
+import "plan_item_type.proto";
+import "plan_types.proto";
+
+message Identifier {
+  bytes uuid = 1;
+}
+
+message Attributes {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+  oneof milestone {
+    .eve_public.inventory.genericitemtype.Identifier train_to_type = 2;
+    .eve_public.skill.plan.SkillRequirement skill = 3;
+  }
+  string description = 4;
+}

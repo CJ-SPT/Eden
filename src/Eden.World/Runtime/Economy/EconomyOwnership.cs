@@ -3,6 +3,7 @@ using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 
 namespace Eden.World.Runtime.Economy;
 
@@ -24,6 +25,7 @@ internal static class EconomyOwnership
             SavedTaskCounter counter => counter.PilotId,
             SavedCharacterSetting setting => setting.PilotId,
             SavedPilotActivity activity => activity.PilotId,
+            SavedPersonalSkillPlans plans => plans.PilotId,
             SavedCorporationChange change => change.PilotId,
             SavedCorporationMemberAccess access => access.PilotId,
             SavedJetcan can => can.OwnerId,

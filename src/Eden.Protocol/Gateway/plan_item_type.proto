@@ -1,0 +1,7 @@
+syntax = "proto3";
+package eve_public.inventory.genericitemtype;
+option csharp_namespace = "Eden.Protocol.Gateway.Plans.ItemTypes";
+
+message Identifier {
+  uint64 sequential = 1;
+}

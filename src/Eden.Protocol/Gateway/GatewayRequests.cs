@@ -4,8 +4,8 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Maps;
+using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
-using Eden.Protocol.Gateway.Plans;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
@@ -21,13 +21,13 @@ public sealed class GatewayRequests(
     IPlayerCorporations corporations,
     Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null,
     Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyUpdates = null,
-    IFactionWarzones? factionWarzones = null
+    IFactionWarzones? factionWarzones = null,
+    IPersonalSkillPlans? personalSkillPlans = null
 )
 {
     private readonly ConcurrentDictionary<long, ConcurrentDictionary<int, MilitiaAdvantageState>> _factionObservations = new();
 
     private readonly ByteString _instanceId = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
-    private const string PersonalPlans = "eve_public.character.skill.plan.";
     private const string FreelanceProjects = "eve_public.freelance.project.api.";
 
     public Response Handle(Request request, long? authenticatedAccount = null)
@@ -59,6 +59,11 @@ public sealed class GatewayRequests(
                         ObserveFactionScores
                     )
             )
+            ?? (
+                personalSkillPlans is null
+                    ? null
+                    : PersonalSkillPlanRequests.Read(type, payload, request.AuthoritativeContext, authenticatedAccount, personalSkillPlans)
+            )
             ?? CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
             ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =
@@ -66,12 +71,6 @@ public sealed class GatewayRequests(
             ?? (
                 type switch
                 {
-                    // The stock client compares the untracked plan to UUID(int=0).
-                    PersonalPlans + "GetActiveRequest" => new GetActiveResponse
-                    {
-                        SkillPlan = new Identifier { Uuid = ByteString.CopyFrom(new byte[16]) },
-                    },
-                    PersonalPlans + "GetAllRequest" => new GetAllResponse(),
                     // Location Info reads the local corruption stage before drawing even a high-security system.
                     "eve_public.pirate.corruption.api.GetSystemInfoRequest" => new Corruption.GetSystemInfoResponse
                     {

@@ -1,0 +1,7 @@
+syntax = "proto3";
+package eve_public.skilltype;
+option csharp_namespace = "Eden.Protocol.Gateway.Plans.SkillTypes";
+
+message Identifier {
+  uint64 sequential = 1;
+}

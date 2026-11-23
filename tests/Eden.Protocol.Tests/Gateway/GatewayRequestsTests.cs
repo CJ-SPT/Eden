@@ -198,23 +198,38 @@ public sealed class GatewayRequestsTests
     [Fact]
     public void SkillPlanResponsesCarryTheCorrectTypeAndRequestIdentity()
     {
-        using TestWorld world = new();
+        const long Account = 1000001;
+        const string Api = "type.googleapis.com/eve_public.character.skill.plan.";
+        using TestWorld world = new(liveWorld: true);
         var gateway = world.Services.GetRequiredService<GatewayRequests>();
         var request = new Request
         {
             ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
             CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
-            Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.character.skill.plan.GetActiveRequest" },
+            AuthoritativeContext = new AuthoritativeContext
+            {
+                Identity = new ActiveIdentity { Character = new CharacterIdentifier { Sequential = 90000001 } },
+            },
+            Payload = new Any { TypeUrl = Api + "GetActiveRequest" },
         };
-        var response = gateway.Handle(request);
+        Assert.Equal(401u, gateway.Handle(request).StatusCode);
+        Assert.Equal(401u, gateway.Handle(request, 1000002).StatusCode);
+        var response = Response.Parser.ParseFrom(gateway.Handle(request, Account).ToByteArray());
         Assert.Equal(200u, response.StatusCode);
         Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
         Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
+        Assert.Equal(Api + "GetActiveResponse", response.Payload.TypeUrl);
         Assert.Equal(new byte[16], response.Payload.Unpack<GetActiveResponse>().SkillPlan.Uuid.ToByteArray());
+        Assert.Equal("0A120A1000000000000000000000000000000000", Convert.ToHexString(response.Payload.Value.ToByteArray()));
 
-        request.Payload.TypeUrl = "type.googleapis.com/eve_public.character.skill.plan.GetAllRequest";
-        Assert.Empty(gateway.Handle(request).Payload.Unpack<GetAllResponse>().SkillPlans);
+        request.Payload.TypeUrl = Api + "GetAllRequest";
+        var all = gateway.Handle(request, Account);
+        Assert.Equal(200u, all.StatusCode);
+        Assert.Equal(Api + "GetAllResponse", all.Payload.TypeUrl);
+        Assert.Empty(all.Payload.Unpack<GetAllResponse>().SkillPlans);
         request.Payload.TypeUrl = "type.googleapis.com/unknown.GetAllRequest";
-        Assert.Equal(501u, gateway.Handle(request).StatusCode);
+        var unsupported = gateway.Handle(request, Account);
+        Assert.Equal(501u, unsupported.StatusCode);
+        Assert.Null(unsupported.Payload);
     }
 }

@@ -2,6 +2,58 @@ syntax = "proto3";
 package eve_public.character.skill.plan;
 option csharp_namespace = "Eden.Protocol.Gateway.Plans";
 
-message Identifier { bytes uuid = 1; }
-message GetActiveResponse { Identifier skill_plan = 1; }
-message GetAllResponse { repeated Identifier skill_plans = 1; }
+import "plan_types.proto";
+
+// Build 3662168 eve_public/character/skill/plan/plan.proto.
+message GetAllRequest {}
+message GetAllResponse {
+  repeated .eve_public.skill.plan.Identifier skill_plans = 1;
+}
+
+message GetRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+}
+message GetResponse {
+  .eve_public.skill.plan.Attributes skill_plan = 1;
+}
+
+message CreateRequest {
+  .eve_public.skill.plan.Attributes skill_plan = 1;
+}
+message CreateResponse {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+}
+
+message SetSkillRequirementsRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+  repeated .eve_public.skill.plan.SkillRequirement requirements = 2;
+}
+message SetSkillRequirementsResponse {}
+
+message SetNameRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+  string name = 2;
+}
+message SetNameResponse {}
+
+message SetDescriptionRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+  string description = 2;
+}
+message SetDescriptionResponse {}
+
+message DeleteRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+}
+message DeleteResponse {}
+
+message GetActiveRequest {}
+message GetActiveResponse {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+  .eve_public.skill.plan.Attributes skill_plan_info = 2;
+}
+
+message SetActiveRequest {
+  .eve_public.skill.plan.Identifier skill_plan = 1;
+}
+message SetActiveResponse {}

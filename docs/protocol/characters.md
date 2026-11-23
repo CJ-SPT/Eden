@@ -889,6 +889,47 @@ Build 3662168 sends tracked-plan and personal-plan queries over the bidirectiona
 
 **Automated checks.** Restore, build and formatting passed. All 62 tests passed, including checks for correlation, response type, the no-plan UUID, and rejection of an unsupported request.
 
+## Persistent personal skill plans
+
+The build **3662168** `skillPlanRequestsMessenger.pyj` sends personal plan requests through the gateway. The corresponding
+`eve_public.character.skill.plan` descriptors return identifiers from `GetAll` and full attributes from `Get`. Both use
+16-byte UUIDs in network byte order. The original client archive has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**,
+build **3396210**, stores the equivalent plans in `skillPlanGatewayService.js` (`79dae729edbd`) and `skillPlanState.js`
+(`c246937f2106`). [CCP skill plans](https://support.eveonline.com/hc/en-us/articles/4406388028178-Skill-Plans-and-How-They-Work) ·
+[EVE University skill plans](https://wiki.eveuniversity.org/Skill_Plans)
+
+Pilots can create, list, edit, and delete personal plans. The gateway checks the authenticated account against the
+character in the request, and each pilot's plans and tracked choice persist through resident checkpoints. Names,
+descriptions, and skill requirements can be edited independently. Requirement order and distinct levels of the same skill
+are retained. Build 3662168 limits each pilot to ten plans, with 150 skill levels and five milestones per plan. Plan names
+and descriptions have 50- and 1,000-character limits respectively.
+
+Milestones can target an item or a skill level and carry a description. The client uses the personal milestone gateway
+to load, create, and remove them. Pilots can track one owned personal plan or certified catalog plan. The zero UUID clears
+tracking. Deleting an active personal plan clears tracking with it. Corporation plans and public sharing remain open.
+
+**Automated validation.** The three exact methods passed in 8.60 s after a 16.54 s build. They cover native response
+identity, simultaneous edits, ordered skills, both milestone shapes, two-pilot isolation, certified and personal tracking,
+restart and validation limits.
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Gateway.PersonalSkillPlanGatewayTests.PersonalPlanAndMilestonesRetainNativeOrderAndTrackingAcrossCheckpoint|FullyQualifiedName=Eden.Protocol.Tests.Gateway.PersonalSkillPlanGatewayTests.InvalidChangesKeepPlanContentsAndEnforceNativeLimits|FullyQualifiedName=Eden.Protocol.Tests.Gateway.GatewayRequestsTests.SkillPlanResponsesCarryTheCorrectTypeAndRequestIdentity
+```
+
+The solution built in 0.92 s with no warnings or errors. The initial combined run passed 73 tests and timed out in
+`CopyAllowsAnotherPaidShotAndKeepsEachCapturedGenerationCoherent` while firing during a paused checkpoint copy.
+The same timeout reproduced in the exact test on `554e385e` before this change. The following filter excluded that
+single case and passed all 73 remaining tests in 35.57 s. Both Python policy suites passed their 17 tests.
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Gateway|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CheckpointOwnershipTests|FullyQualifiedName~BiomassPreparationCancellationAndFinalDeletionUseNativeRepliesAcrossSessions)&FullyQualifiedName!=Eden.Protocol.Tests.Persistence.CheckpointOwnershipTests.CopyAllowsAnotherPaidShotAndKeepsEachCapturedGenerationCoherent
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Create a personal plan in the Skill Catalogue with two skills and a milestone. Track
+it, reconnect to verify its ordering and tracking, then delete it and confirm the tracked plan clears.
+
 ## Character creation and first spawn, November 2, 2026
 
 Build 3662168 reads three slots from the account row. The creator checks the name with `charUnboundMgr.ValidateNameEx` and submits the name, race, bloodline, gender, ancestry, avatar, portrait, school and two optional arguments to `CreateCharacterWithDoll`. It sends 64 for undefined ancestry, refreshes the roster and selects the new ID. Eden accepts positional selection and the creator’s `charID` keyword. Only an owned character can start the flight session.

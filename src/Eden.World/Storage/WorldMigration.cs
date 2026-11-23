@@ -222,6 +222,7 @@ internal static class WorldMigration
         KillRightSchema.Upgrade(world);
         LauncherSchema.Upgrade(world);
         Eden.World.Characters.PersonalSettingsSchema.Upgrade(world);
+        Eden.World.Skills.PersonalSkillPlanSchema.Upgrade(world);
         if (version < 155)
         {
             world.Database.ExecuteSqlRaw(

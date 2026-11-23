@@ -82,7 +82,11 @@ Character settings support the stock client's read, save and delete calls. Each 
 
 Each account has three character slots. Choose **Add Character** to create a pilot in the stock client. New pilots start docked at their school's AIR station with their race's corvette and starting skills. The location panel shows the system, security status, constellation, region, and station.
 
-The Character Sheet opens for Eden Pilot and shows the Jita home station. Each local pilot has a saved account profile, pilot identity, and the starting skills for their race from the pinned catalog. Character selection and the Skill Catalogue show 384,047 SP for fresh seeded Caldari pilots. Buy a physical skillbook, right-click **Inject Skill**, then train it through the existing queue. Injection consumes one book and starts at zero SP; training checks prerequisites and the local Alpha limits. Queue progress, pause and resume survive restarts. The local gateway answers the personal plan list and tracked-plan lookup. See the [character-sheet service roadmap](protocol/characters.md#character-sheet-service-roadmap).
+The Character Sheet opens for Eden Pilot and shows the Jita home station. Each local pilot has a saved account profile, pilot identity, and the starting skills for their race from the pinned catalog. Character selection and the Skill Catalogue show 384,047 SP for fresh seeded Caldari pilots. Buy a physical skillbook, right-click **Inject Skill**, then train it through the existing queue. Injection consumes one book and starts at zero SP; training checks prerequisites and the local Alpha limits. Queue progress, pause and resume survive restarts. See the [character-sheet service roadmap](protocol/characters.md#character-sheet-service-roadmap).
+
+Personal Skill Plans support creating, editing, and deleting plans with ordered skill levels and milestones. Plans and
+tracking survive restarts. Each pilot can track a personal or certified plan.
+[Persistent personal skill plans](protocol/characters.md#persistent-personal-skill-plans)
 
 The admin site's **Progression → Skill training speed** sets the server rate for newly scheduled training after restart. The client uses that rate for new estimates and the saved timeline for scheduled levels. Pilots can pause and resume to apply the active rate to an existing queue while keeping earned progress. See the [skill training speed notes](protocol/characters.md#world-skill-training-speed-november-21-2026).
 
