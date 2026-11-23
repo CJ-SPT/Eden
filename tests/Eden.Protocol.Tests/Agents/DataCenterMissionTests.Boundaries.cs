@@ -4,6 +4,8 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +13,42 @@ namespace Eden.Protocol.Tests.Agents;
 
 public sealed partial class DataCenterMissionTests
 {
+    [Fact]
+    public void EventAgentAvailabilityRequiresPlayableContentAndUsesThePilotsOneTimeAssignment()
+    {
+        const long unsupported = 3019998;
+        using MissionFixture f = new(
+            live: true,
+            configure: catalog => MissionFixture.Agent(catalog, unsupported, AgentType.Event, 1, MissionRules.DistributionDivision)
+        );
+        var agent = Directory(f).Agent(FirstAgent)!;
+        var highLevelAgent = Content().Missions.First(m => !m.FixedAgentIds.IsEmpty && m.Level == 4).FixedAgentIds[0];
+        object?[] batch = [new List<object?> { unsupported, agent.Id, highLevelAgent, agent.Id, MissionFixture.AgentId }];
+        List<object?> Available() =>
+            Assert.IsType<List<object?>>(MissionFixture.Reply(f.Call("agentMgr", "GetAvailableEventAgents", batch)));
+        List<object?> Actions(long id)
+        {
+            var conversation = Assert.IsType<object?[]>(MissionFixture.Reply(f.Call($"@agent:{id}", "DoAction", [null])));
+            return Assert.IsType<List<object?>>(Assert.IsType<object?[]>(conversation[0])[1]);
+        }
+
+        Prepare(f, agent);
+        Assert.Equal(agent.Id, Assert.Single(Available()));
+        Assert.Empty(Actions(unsupported));
+        Assert.Empty(Actions(highLevelAgent));
+        Assert.IsType<PilotCallResult.Failure>(f.Call("agentMgr", "GetAvailableEventAgents", [MissionFixture.PilotId, batch[0]]));
+        var offer = f.Request(agent.Id);
+        Assert.Equal(agent.Id, Assert.Single(Available()));
+        Assert.NotEmpty(Actions(agent.Id));
+        f.Clock.Seconds += (offer.ExpiresAt - f.Clock.Now) / TimeSpan.TicksPerSecond;
+        Assert.Empty(Available());
+        Assert.False(f.Missions.Information(MissionFixture.PilotId, agent.Id).MissionAvailable);
+        Assert.Null(Live(f).Economy.Inspect(world => world.Set<SavedMission>().Find(offer.Id)!.ClosedAt));
+        Assert.Empty(Actions(agent.Id));
+        Assert.Empty(Available());
+        Assert.Equal(agent.Id, Assert.Single(f.Missions.AvailableEventAgents(MissionFixture.PilotId + 1, new HashSet<long> { agent.Id })));
+    }
+
     [Fact]
     public void ChangedNativeAssignmentCannotUseTheCompiledBindingOrFallBackToAnOrdinaryMission()
     {

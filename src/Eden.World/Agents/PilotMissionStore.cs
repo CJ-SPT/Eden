@@ -211,7 +211,9 @@ internal sealed partial class PilotMissionStore(
             && (
                 world is not EconomyTransaction
                 || agent.Space is null
-                || world.Filter<SavedMission>(m => m.PilotId == pilot.Id && m.AgentId == agent.Id && m.ClosedAt != null).Any()
+                || world
+                    .Filter<SavedMission>(m => m.PilotId == pilot.Id && m.AgentId == agent.Id && (m.ClosedAt != null || m.ExpiresAt <= now))
+                    .Any()
             )
         )
         {

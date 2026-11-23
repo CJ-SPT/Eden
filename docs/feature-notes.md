@@ -71,6 +71,7 @@ combat, delivery, trade, mining, Data Center, and Paragon missions. All 100 care
 including combat, scanning, hacking, and industry lessons. R&D agents support passive research, paid datacore redemption,
 and bonus assignments. Mission progress, direct mission penalties, and capped derived faction changes for ordinary
 storylines persist through resident checkpoints.
+The station Agents tab checks Event agents against the pilot's current mission and Eden's supported assignments.
 [Nine epic arcs](missions.md#epic-arcs) offer branching progression, cross-agent handoffs and a 90-day replay interval.
 [Supported missions](missions.md) · [Agent and research records](protocol/agents.md)
 

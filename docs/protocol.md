@@ -65,6 +65,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Agent missions and research
 
+- [Station Event agent availability](protocol/agents.md#station-event-agent-availability--november-23-2026)
 - [Epic arc chains](protocol/agents.md#epic-arc-chains--november-22-2026)
 - [Career agent chains](protocol/agents.md#career-agent-chains--november-22-2026)
 - [Mission gap expansion](protocol/agents.md#mission-gap-expansion--november-22-2026)
