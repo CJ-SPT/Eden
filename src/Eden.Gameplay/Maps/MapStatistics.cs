@@ -34,6 +34,8 @@ public readonly record struct MapActivityCounts(int Jumps, int Ships, int NpcShi
 
 public readonly record struct MapHistoryRow(int SystemId, MapActivityCounts Counts);
 
+public readonly record struct MapSystemVisit(int SystemId, int Visits, long LastVisitedAt);
+
 public sealed record MapHistorySnapshot(long UpdatedAt, IReadOnlyList<MapHistoryRow> Rows)
 {
     public static MapHistorySnapshot Empty { get; } = new(1, []);
@@ -48,4 +50,5 @@ public interface IMapStatistics
 {
     MapHistorySnapshot History(MapHistoryStatistic statistic, int hours);
     MapPilotPopulation Population();
+    IReadOnlyList<MapSystemVisit> SystemVisits(long characterId);
 }

@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Personal map visit history](#personal-map-visit-history)
 - [Insider QA tab, November 21, 2026](#insider-qa-tab-november-21-2026)
 - [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
 - [Distant warping ships in the overview, November 17, 2026](#distant-warping-ships-in-the-overview-november-17-2026)
@@ -47,6 +48,38 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Personal map visit history
+
+Build **3662168** calls `map.GetSolarSystemVisits()` from `mapView/filters/mapFilterVisited.pyj` and
+`maps/starModeHandler.pyj`. Both map views read `lastDateTime`, `solarSystemID` and `visits` from the returned rows.
+The original archive has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**, build **3396210**, provides a direct rowset
+and maintains per-character counts and FILETIMEs in `mapService.js` (`6c06a8e47c57`) and `mapTelemetryState.js`
+(`2e7cd5c31f5c`). [EVE University guide to the Systems Visited filter](https://wiki.eveuniversity.org/Guide_to_AIR_Career_Programme)
+
+Eden records the selected pilot's current system when the session attaches the pilot or accepts a system change. Arrival from another
+system increases the count. A same-system attachment only refreshes the last-visited time. The map includes wormhole
+systems and excludes private Abyssal locations. An Abyssal excursion still makes the return to known space a new visit.
+History starts with the first observed location after upgrading. The route reads the selected character's resident history,
+and the world checkpoint persists its counts, timestamps and last-system marker together. Biomassing clears the pilot's history.
+
+**Automated validation.** The exact method `PersonalVisitsFollowSelectedPilotArrivalsAndSurviveCheckpointReopen` passed
+through `Test-Feature.ps1` in 12.66 seconds after a 22.78-second build. The solution build completed in 6.10 seconds with
+zero warnings or errors. The following focused filter passed 47 tests in 43.56 seconds.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Maps.MapNavigationTests|FullyQualifiedName~Eden.Protocol.Tests.Maps.MapStartupTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHandoffTests|FullyQualifiedName~CharacterDeletionTests
+```
+
+The tests exercise native rowset shape, selection gating, real stargate transfers, reconnect and checkpoint reopen,
+private-system omission, biomassing and a warm RPC with zero SQL, connections or fitting recalculations. The catalog setup
+and formatting policy suites passed 8 and 9 cases. `Format.ps1 -Check` and the whitespace check passed. The separate missing-catalog test timed out at
+15 seconds in both the worktree build and the available pre-change build. The full .NET suite was outside the scope of this run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open **Star Map → Personal → Systems Visited**, make a round trip through a gate, and reopen
+the map after reconnecting.
 
 ## Gate-arrival cloak, November 17, 2026
 

@@ -1,8 +1,11 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Capsuleers;
@@ -274,6 +277,88 @@ public sealed class MapNavigationTests
         Assert.Single(restored.History(MapHistoryStatistic.Jumps, 24).Rows);
         clock.AdvanceWallTime(TimeSpan.FromHours(23));
         Assert.Empty(restored.History(MapHistoryStatistic.Jumps, 24).Rows);
+    }
+
+    [Fact]
+    public async Task PersonalVisitsFollowSelectedPilotArrivalsAndSurviveCheckpointReopen()
+    {
+        const long Account = 1000001;
+        var clock = CalendarTestData.Clock();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        var pilot = world.Store.FindPilot(Account)!;
+        var gate = world.Objects.Single(body => body.DestinationGateId.HasValue);
+        var statistics = world.Services.GetRequiredService<IMapStatistics>();
+        Assert.Empty(statistics.SystemVisits(pilot.PilotId));
+        long firstArrival = clock.Now;
+        long returnAt;
+        using (var scope = world.Services.CreateScope())
+        {
+            var factory = scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
+            using PilotCallContext context = new(Account, pilot.Account, [pilot], factory.Create, 42, SignedSettings.Empty);
+            var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            Assert.Same(PilotCallResult.Unsupported, Call([]));
+            context.Select(pilot);
+            Assert.Equal(new MapSystemVisit(pilot.SystemId, 1, firstArrival), Assert.Single(statistics.SystemVisits(pilot.PilotId)));
+
+            world.Store.SetPosition(pilot.ShipId, gate.Position);
+            var travel = scope.ServiceProvider.GetRequiredService<IPilotGateTravel>();
+            Assert.Throws<InvalidDataException>(() => travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.Id));
+            Assert.Single(statistics.SystemVisits(pilot.PilotId));
+
+            clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+            var arrived = travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId!.Value);
+            var systems = scope.ServiceProvider.GetRequiredService<ISystemObjects>();
+            var destinationObjects = systems.Load(arrived.SystemId);
+            context.Flight.Relocate(arrived, destinationObjects);
+            long visitedAt = clock.Now;
+            var returnGate = destinationObjects.Single(body => body.Id == gate.DestinationGateId);
+            world.Store.SetPosition(pilot.ShipId, returnGate.Position);
+            clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+            var returned = travel.Transfer(pilot.PilotId, pilot.ShipId, returnGate.Id, gate.Id);
+            context.Flight.Relocate(returned, world.Objects);
+            returnAt = clock.Now;
+
+            Assert.IsType<PilotCallResult.Failure>(Call([pilot.PilotId]));
+            Assert.IsType<PilotCallResult.Failure>(Call([], new() { ["characterID"] = CalendarTestData.Guest }));
+            using var metrics = SessionPerformance.Begin("personal map visits", _ => { }, force: true)!;
+            var reply = Assert.IsType<PilotCallResult.Success>(Call([]));
+            var rows = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply)));
+            Assert.Equal("eve.common.script.sys.rowset.Rowset", rows.Name);
+            var fields = BlueRead.Fields(rows.State);
+            Assert.Equal(
+                new[] { "lastDateTime", "solarSystemID", "visits" },
+                Assert.IsType<List<object?>>(fields["header"]).Select(BlueMarshal.Text)
+            );
+            var lines = Assert.IsType<List<object?>>(fields["lines"]);
+            Assert.Equal(new object?[] { returnAt, (long)pilot.SystemId, 2L }, BlueRead.Tuple(lines[0], 3));
+            Assert.Equal(new object?[] { visitedAt, (long)arrived.SystemId, 1L }, BlueRead.Tuple(lines[1], 3));
+            Assert.Equal(2, lines.Count);
+            Assert.Empty(statistics.SystemVisits(CalendarTestData.Guest));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+
+            PilotCallResult Call(object?[] args, Dictionary<string, object?>? keywords = null) =>
+                router.Call(context, "map", "GetSolarSystemVisits", args, _ => { }, keywords);
+        }
+        await world.Services.GetRequiredService<LiveWorld>().FlushAsync();
+        world.Services.Dispose();
+        using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<IMapStatistics>();
+        Assert.Equal(new MapSystemVisit(pilot.SystemId, 2, returnAt), restored.SystemVisits(pilot.PilotId)[0]);
+        clock.AdvanceWallTime(TimeSpan.FromDays(2));
+        using var selected = reopened.GetRequiredService<IHumanPresence>().Select(pilot.PilotId, pilot.SystemId);
+        Assert.Equal(new MapSystemVisit(pilot.SystemId, 2, clock.Now), restored.SystemVisits(pilot.PilotId)[0]);
+        selected.Transfer(AbyssalRules.FirstSystem);
+        Assert.Equal(2, restored.SystemVisits(pilot.PilotId).Count);
+        selected.Transfer(pilot.SystemId);
+        Assert.Equal(new MapSystemVisit(pilot.SystemId, 3, clock.Now), restored.SystemVisits(pilot.PilotId)[0]);
+        selected.Dispose();
+        var deletion = reopened.GetRequiredService<ICharacterDeletion>();
+        long deletionReady = deletion.Prepare(Account, pilot.PilotId);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(deletionReady - clock.Now));
+        deletion.Delete(Account, pilot.PilotId);
+        Assert.Empty(restored.SystemVisits(pilot.PilotId));
     }
 
     [Fact]

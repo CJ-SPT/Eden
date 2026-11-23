@@ -11,6 +11,7 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.World.Maps;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -74,6 +75,7 @@ internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvide
         world.RemoveRange(world.Filter<QueuedLevel>(q => q.PilotId == pilotId).ToArray());
         var hulls = world.Filter<Ship>(ship => ship.OwnerId == pilotId).Select(ship => ship.Id).ToArray();
         world.RemoveRange(world.Filter<FlightPosition>(position => Enumerable.Contains(hulls, position.ShipId)).ToArray());
+        MapStatisticsStore.ClearVisitsOnCommit(world, pilotId);
         transaction.Commit();
     }
 

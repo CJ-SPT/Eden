@@ -16,6 +16,23 @@ internal sealed class MapStatisticsStore(WorldDatabase database, TimeProvider cl
     public MapPilotPopulation Population() =>
         LiveWorld.Find(database.Path)?.MapStatistics.Population(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? MapPilotPopulation.Empty;
 
+    public IReadOnlyList<MapSystemVisit> SystemVisits(long characterId) =>
+        LiveWorld.Find(database.Path)?.MapStatistics.SystemVisits(characterId) ?? [];
+
+    internal static void ClearVisitsOnCommit(WorldAction world, long pilot)
+    {
+        if (world is EconomyTransaction && LiveWorld.Find(world.WorldPath) is { } live)
+        {
+            world.AfterCommit(() =>
+            {
+                if (live.MapStatistics.ClearSystemVisits(pilot))
+                {
+                    live.EconomicObjectsChanged();
+                }
+            });
+        }
+    }
+
     internal static void Record(WorldAction world, int systemId, long time, MapActivityKind kind)
     {
         if (MapStatistics.IsKnownSpace(systemId) && LiveWorld.Find(world.WorldPath) is { } live)

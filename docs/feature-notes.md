@@ -131,6 +131,10 @@ executor, and the executor can transfer EverMarks to member corporations.
 
 ## Travel and navigation
 
+The star map's **Personal → Systems Visited** filter shows each pilot's visit counts and latest timestamps. History starts
+when the pilot first selects a character after upgrading and persists across world restarts.
+[Personal map visit history](protocol/navigation.md#personal-map-visit-history)
+
 Developer accounts can use **GM / WM Extras → TR me here!** on known solar systems, NPC stations and standard static celestials. Travel preserves the active hull, fittings, cargo, wallet and medical home. Cross-system space destinations use a three-tick native jump transition to hand off the camera and input controls; a docked departure first undocks and loads its source ballpark. Same-system moves keep the current flight connection and stream nearby contacts as the ship relocates. Station destinations are immediate. Native camera/menu recovery remains unverified. See the [translocation notes](protocol/navigation.md#developer-translocation) and [developer travel guide](development-client.md#developer-travel).
 
 Map startup now answers the native jump-bridge access, faction ownership and home-station lookups that previously stopped scene loading with **Invalid Packet Destination**. The home marker uses the saved medical home independently of the ship's current location. The bridge reply preserves the client's three-part tuple; unimplemented player bridges, alliance sovereignty and faction-war occupations return empty collections, allowing the client to use its bundled universe and NPC faction data. Rendering and navigation remain unverified. See the [map startup notes](protocol/navigation.md#native-map-startup) and [home-marker correction](protocol/navigation.md#map-home-station-row).

@@ -692,6 +692,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026)
 - [Star map statistics](protocol/navigation.md#star-map-statistics-november-20-2026)
 - [Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026)
+- [Personal map visit history](protocol/navigation.md#personal-map-visit-history)
 - [Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026)
 - [shorter gate transitions](protocol/navigation.md#shorter-gate-transitions-and-spread-arrivals--november-9-2026)
 - [Insider QA tab, November 21, 2026](protocol/navigation.md#insider-qa-tab-november-21-2026)

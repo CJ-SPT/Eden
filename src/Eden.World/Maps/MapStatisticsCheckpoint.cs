@@ -5,12 +5,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Maps;
 
-internal sealed record MapStatisticsPayload(MapActivityEvent[] Events, MapPilotSample[] Samples);
+internal sealed record MapStatisticsPayload(
+    MapActivityEvent[] Events,
+    MapPilotSample[] Samples,
+    ImmutableDictionary<long, MapVisitHistory>? Visits = null
+);
 
 internal sealed record MapStatisticsCheckpoint(
     ImmutableSortedDictionary<long, ImmutableList<MapActivityEvent>> Events,
     ImmutableQueue<MapPilotSample> Samples,
-    long Cutoff
+    long Cutoff,
+    ImmutableDictionary<long, MapVisitHistory> Visits
 )
 {
     internal static MapStatisticsPayload? Read(WorldDbContext world)
@@ -21,7 +26,7 @@ internal sealed record MapStatisticsCheckpoint(
 
     internal void Apply(WorldDbContext world)
     {
-        if (Events.IsEmpty && Samples.IsEmpty)
+        if (Events.IsEmpty && Samples.IsEmpty && Visits.IsEmpty)
         {
             world.Database.ExecuteSqlRaw("DELETE FROM WorldMapStatistics WHERE Id=1");
             return;
@@ -29,7 +34,8 @@ internal sealed record MapStatisticsCheckpoint(
         string json = JsonSerializer.Serialize(
             new MapStatisticsPayload(
                 Events.Values.SelectMany(events => events).Where(activity => activity.Time > Cutoff).ToArray(),
-                [.. Samples]
+                [.. Samples],
+                Visits
             )
         );
         world.Database.ExecuteSql(

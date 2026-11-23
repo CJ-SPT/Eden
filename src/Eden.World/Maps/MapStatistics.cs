@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Maps;
 
 namespace Eden.World.Maps;
@@ -7,7 +8,9 @@ internal readonly record struct MapActivityEvent(long Time, int SystemId, MapAct
 
 internal sealed record MapPilotSample(long Time, IReadOnlyDictionary<int, MapPilotCounts> Systems);
 
-// Both index roots are immutable so checkpoint serialization can run outside the world owner.
+internal sealed record MapVisitHistory(int LastSystem, ImmutableSortedDictionary<int, MapSystemVisit> Systems);
+
+// Index roots are immutable so checkpoint serialization can run outside the world owner.
 internal sealed class MapStatistics
 {
     // Pinned idCheckers.IsKnownSpaceSystem, excluding the base ID that has no system.
@@ -26,6 +29,7 @@ internal sealed class MapStatistics
         ImmutableList<MapActivityEvent>
     >.Empty;
     private ImmutableQueue<MapPilotSample> _samples = ImmutableQueue<MapPilotSample>.Empty;
+    private ImmutableDictionary<long, MapVisitHistory> _visits = ImmutableDictionary<long, MapVisitHistory>.Empty;
     private long _lastSampleMinute = long.MinValue;
     private readonly Dictionary<(MapHistoryStatistic Statistic, int Hours), HistoryCache> _history = [];
     private long _jumpsRevision;
@@ -35,6 +39,62 @@ internal sealed class MapStatistics
     private MapPilotPopulation _population = MapPilotPopulation.Empty;
 
     internal static bool IsKnownSpace(int systemId) => systemId is >= FirstKnownSystem and <= LastKnownSystem;
+
+    internal bool RecordVisit(long pilot, int system, long now)
+    {
+        bool onMap = IsKnownSpace(system) || WormholeRules.IsWormholeSystem(system);
+        if (!onMap && !AbyssalRules.IsSystem(system))
+        {
+            return false;
+        }
+        lock (_gate)
+        {
+            var history = _visits.GetValueOrDefault(pilot);
+            if (!onMap)
+            {
+                // The return is a new visit. Keep the boundary without storing the private location ID.
+                if (history is not { LastSystem: > 0 })
+                {
+                    return false;
+                }
+                _visits = _visits.SetItem(pilot, history with { LastSystem = 0 });
+                return true;
+            }
+            var systems = history?.Systems ?? ImmutableSortedDictionary<int, MapSystemVisit>.Empty;
+            var previous = systems.GetValueOrDefault(system);
+            int count = previous.Visits + (history?.LastSystem == system ? 0 : 1);
+            var visit = new MapSystemVisit(system, count, Math.Max(now, previous.LastVisitedAt));
+            if (visit == previous)
+            {
+                return false;
+            }
+            _visits = _visits.SetItem(pilot, new(system, systems.SetItem(system, visit)));
+            return true;
+        }
+    }
+
+    internal IReadOnlyList<MapSystemVisit> SystemVisits(long pilot)
+    {
+        MapVisitHistory? history;
+        lock (_gate)
+        {
+            history = _visits.GetValueOrDefault(pilot);
+        }
+        return history is null ? [] : Array.AsReadOnly(history.Systems.Values.ToArray());
+    }
+
+    internal bool ClearSystemVisits(long pilot)
+    {
+        lock (_gate)
+        {
+            if (!_visits.ContainsKey(pilot))
+            {
+                return false;
+            }
+            _visits = _visits.Remove(pilot);
+            return true;
+        }
+    }
 
     internal void Record(MapActivityEvent activity)
     {
@@ -172,12 +232,13 @@ internal sealed class MapStatistics
             long cutoff = now - HistoryRetention;
             _events = _events.RemoveRange(_events.Keys.TakeWhile(minute => minute < Minute(cutoff)));
             TrimSamples(now);
-            return new(_events, _samples, cutoff);
+            return new(_events, _samples, cutoff, _visits);
         }
     }
 
     internal void Restore(MapStatisticsPayload saved, long now)
     {
+        _visits = saved.Visits ?? ImmutableDictionary<long, MapVisitHistory>.Empty;
         foreach (var activity in saved.Events.Where(activity => activity.Time > now - HistoryRetention))
         {
             Record(activity);

@@ -32,7 +32,7 @@ internal sealed class MapNavigationHandler(IMapStatistics statistics) : ISelecte
                 ? new MapPopulationReply(statistics.Population())
                 : new PilotCallResult.Failure("Choose the EVE cluster statistics.");
         }
-        if (service != "map" || method is not ("GetHistory" or "GetAllRoamingWeatherSystems"))
+        if (service != "map" || method is not ("GetHistory" or "GetAllRoamingWeatherSystems" or "GetSolarSystemVisits"))
         {
             return PilotCallResult.Unsupported;
         }
@@ -45,6 +45,12 @@ internal sealed class MapNavigationHandler(IMapStatistics statistics) : ISelecte
             return args.Length == 0
                 ? new MapRoamingWeatherReply()
                 : new PilotCallResult.Failure("Roaming weather information does not accept arguments.");
+        }
+        if (method == "GetSolarSystemVisits")
+        {
+            return args.Length == 0
+                ? new MapSystemVisitsReply(statistics.SystemVisits(context.Pilot.PilotId))
+                : new PilotCallResult.Failure("Solar system visits do not accept arguments.");
         }
         if (
             args is not [long statistic, long hours]
@@ -122,4 +128,19 @@ internal sealed record MapRoamingWeatherReply : BlueModel
 {
     // MapSvc and both map color handlers iterate locationID/sceneType rows.
     public override object ToBlue() => new CompatibilityRowset(["locationID", "sceneType"], []).ToBlue();
+}
+
+internal sealed record MapSystemVisitsReply(IReadOnlyList<MapSystemVisit> Visits) : BlueModel
+{
+    // The pinned legacy and current map filters read these attributes from each visit.
+    public override object ToBlue() =>
+        new CompatibilityRowset(
+            ["lastDateTime", "solarSystemID", "visits"],
+            Visits.Select(visit => new MapSystemVisitRow(visit)).ToArray()
+        ).ToBlue();
+}
+
+internal sealed record MapSystemVisitRow(MapSystemVisit Visit) : BlueModel
+{
+    public override object ToBlue() => new object?[] { Visit.LastVisitedAt, Visit.SystemId, Visit.Visits };
 }
