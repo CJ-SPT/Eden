@@ -798,6 +798,34 @@ Sources: unchanged staged `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7
 
 **Optional maintainer checks:** After updating/rebuilding/restarting the server, save the Brutix Navy Issue as a personal fitting, reopen the fitting browser and reconnect to confirm it remains available. Overwrite the same plan, rename it and delete the test entry.
 
+## Grouped turrets on the target bracket
+
+In build 3662168, `targetInBar.ProcessShipEffect` adds an icon keyed by the effect's module ID when the
+notification names that target. On bracket creation, `godma.GetActiveModulesOnTargetID` also selects by
+the target recorded on each active module. Inert inspection used the pinned `code.ccp` archive
+SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+
+Eden previously sent the target on every member's active effect. The turret bank now assigns the target to
+the master in its start and stop notifications and in the active effect shown by ship primes. Every member
+still has a cycle state and its own Destiny firing effect. The reference EVE.js
+`space/runtime/scene/modules.js` publishes individual firing graphics for grouped turrets.
+
+**Automated validation**
+
+The two-gun regression on `cba9c4e6` produced two notifications carrying the same target. The fixed test
+activates through a non-master gun and checks for one targeted start and stop, a targetless active effect
+on the other gun, and two firing graphics. The exact test passed in 12.17 seconds including runner startup.
+The combined class filter for `WeaponBankTests`, `PilotCombatTests`, `PilotTurretTests`,
+`RemainingModuleHeatTests`, and `NaniteRepairProtocolTests` passed 90 cases in 75.50 seconds. All 17 Python
+policy cases and the repository formatting check passed.
+
+After rebasing onto `ce56936d`, the solution built in 59.67 seconds with zero warnings or errors and the
+`WeaponBankTests` and `FlightBoundaryTests` filter passed all 37 cases in 91.20 seconds.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
 ## Persistent weapon grouping
 
 Build 3662168's dogma location calls now support `LinkWeapons(ship, master, source)`, `MergeModuleGroups`, `PeelAndLink`, `UnlinkModule(ship, master)`, `DestroyWeaponBank`, `LinkAllWeapons` and `UnlinkAllModules`. Link/merge/peel/group-all return the complete master-to-slave-list map. Unlink returns the detached slave ID. Destroy and ungroup-all return None. The client updates its bank cache from these replies. The third member of the four-member ship-state tuple carries the same map for login and boarding. Fitting changes notify `OnWeaponBanksChanged(ship, banks)`.

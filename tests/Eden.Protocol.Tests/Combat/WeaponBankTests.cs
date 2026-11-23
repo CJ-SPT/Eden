@@ -313,12 +313,24 @@ public sealed class WeaponBankTests
         CombatHandler handler = new(f.Clock, f.Combat, targeting);
         context.Notifications.Clear();
         context.NotificationsBeforeFlight.Clear();
-        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Gun, "projectileFired", f.Npc.Id, 100L]));
-        Assert.Equal(398, f.Total(222));
-        Assert.NotNull(handler.ActiveEffect(pilot, second));
+        context.Flight.Updates.Clear();
         Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [second, "projectileFired", f.Npc.Id, 100L]));
         Assert.Equal(398, f.Total(222));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Gun, "projectileFired", f.Npc.Id, 100L]));
+        Assert.Equal(398, f.Total(222));
         Assert.Equal(2, context.Notifications.Count(n => n.Name == "OnGodmaShipEffect"));
+        var start = Assert.Single(TargetEffects());
+        Assert.True(start.Start);
+        Assert.Equal(f.Gun, start.Effect.ModuleId);
+        Assert.Equal(f.Npc.Id, handler.ActiveEffect(pilot, f.Gun)!.TargetId);
+        Assert.Null(Assert.IsType<DogmaActiveEffect>(handler.ActiveEffect(pilot, second)).TargetId);
+        var graphics = context
+            .Flight.Updates.Select(update => update.Command)
+            .OfType<DestinyCommand.TimedSpecialEffect>()
+            .Where(effect => effect.Start && effect.TargetId == f.Npc.Id)
+            .Select(effect => effect.ModuleId)
+            .ToArray();
+        Assert.Equal(new long?[] { f.Gun, second }, graphics);
         Assert.True(
             Assert.IsType<DamageMessageNotification>(Assert.Single(context.NotificationsBeforeFlight)).Message
                 is OutgoingCombatMessage { Banked: true }
@@ -337,6 +349,11 @@ public sealed class WeaponBankTests
         Assert.Null(handler.ActiveEffect(pilot, second));
         Assert.Equal(396, f.Total(222));
         Assert.Equal(4, context.Notifications.Count(n => n.Name == "OnGodmaShipEffect"));
+        var stop = Assert.Single(TargetEffects(), effect => !effect.Start);
+        Assert.Equal(f.Gun, stop.Effect.ModuleId);
+
+        IEnumerable<ShipEffectChanged> TargetEffects() =>
+            context.Notifications.OfType<ShipEffectChanged>().Where(effect => Equals(((object?[])effect.Arguments[5]!)[3], f.Npc.Id));
     }
 
     [Theory]

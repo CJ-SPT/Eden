@@ -59,17 +59,21 @@ internal sealed class CombatHandler(
 
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == module)) is { } cycle && cycle.ShipId == pilot.ShipId
-            ? new(
-                module,
-                pilot.PilotId,
-                pilot.ShipId,
-                cycle.Target,
-                (DogmaEffect)cycle.Weapon.EffectId,
-                cycle.StartTime,
-                cycle.Weapon.CycleMilliseconds,
-                cycle.Repeats
-            )
+            ? ModuleEffect(pilot.PilotId, cycle, module)
             : null;
+
+    // The client adds one target icon for each module that reports the target.
+    private static DogmaActiveEffect ModuleEffect(long pilot, Cycle cycle, long module) =>
+        new(
+            module,
+            pilot,
+            cycle.ShipId,
+            module == cycle.Weapon.ItemId ? cycle.Target : null,
+            (DogmaEffect)cycle.Weapon.EffectId,
+            cycle.StartTime,
+            cycle.Weapon.CycleMilliseconds,
+            cycle.Repeats
+        );
 
     public void Advance(PilotCallContext context)
     {
@@ -283,22 +287,7 @@ internal sealed class CombatHandler(
         foreach (var weapon in cycle.Weapons)
         {
             context.Notifications.Add(
-                new ShipEffectChanged(
-                    new DogmaActiveEffect(
-                        weapon.ItemId,
-                        context.Pilot.PilotId,
-                        cycle.ShipId,
-                        cycle.Target,
-                        (DogmaEffect)cycle.Weapon.EffectId,
-                        cycle.StartTime,
-                        cycle.Weapon.CycleMilliseconds,
-                        cycle.Repeats
-                    ),
-                    now,
-                    active,
-                    active,
-                    active ? null : now
-                )
+                new ShipEffectChanged(ModuleEffect(context.Pilot.PilotId, cycle, weapon.ItemId), now, active, active, active ? null : now)
             );
         }
     }

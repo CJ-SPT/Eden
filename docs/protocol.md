@@ -542,6 +542,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Apply a simulated fitting to the active ship](protocol/fitting.md#apply-a-simulated-fitting-to-the-active-ship)
 - [Bulk and corporation saved fittings, November 11, 2026](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026)
 - <a id="personal-saved-fitting-plans-november-6-2026"></a>[Personal saved fitting plans (November 6, 2026)](protocol/fitting.md#personal-saved-fitting-plans-november-6-2026)
+- [Grouped turrets on the target bracket](protocol/fitting.md#grouped-turrets-on-the-target-bracket)
 - <a id="persistent-weapon-grouping"></a>[Persistent weapon grouping](protocol/fitting.md#persistent-weapon-grouping)
 - <a id="shield-boosters-and-physical-skillbooks-november-2-2026"></a>[Shield boosters and physical skillbooks, November 2, 2026](protocol/fitting.md#shield-boosters-and-physical-skillbooks-november-2-2026)
 - <a id="fitting-defense-rate-selector-november-2-2026"></a>[Fitting defense-rate selector, November 2, 2026](protocol/fitting.md#fitting-defense-rate-selector-november-2-2026)
