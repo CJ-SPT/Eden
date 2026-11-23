@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Industry;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Industry;
@@ -84,7 +85,7 @@ internal sealed partial class CapsuleerIndustry
                 continue;
             }
             var materials = IndustryMaterials.Calculate(recipe.Materials, 1, blueprint.MaterialEfficiency);
-            if (MissingStarterMaterials(materials, hangar).Count > 0)
+            if (MissingHuntMaterials(materials, hangar).Count > 0)
             {
                 continue;
             }
@@ -108,4 +109,15 @@ internal sealed partial class CapsuleerIndustry
         }
         return false;
     }
+
+    private static Dictionary<int, int> MissingHuntMaterials(IReadOnlyDictionary<int, int> required, OwnedItem[] hangar) =>
+        required
+            .Select(material =>
+                (
+                    material.Key,
+                    Quantity: material.Value - hangar.Where(item => item.TypeId == material.Key).Sum(item => (long)item.Quantity)
+                )
+            )
+            .Where(material => material.Quantity > 0)
+            .ToDictionary(material => material.Key, material => checked((int)material.Quantity));
 }

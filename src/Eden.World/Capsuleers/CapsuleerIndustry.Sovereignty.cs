@@ -33,14 +33,6 @@ internal sealed partial class CapsuleerIndustry
     internal static bool CanTrainExpedition(CatalogDbContext catalog) =>
         ExpeditionHaulingSkill(catalog) > 0 && EntosisCatalog.Supported(catalog, CapsuleerAllianceRules.ExpeditionLink);
 
-    internal static bool ExpeditionQualified(EconomyTransaction world, CatalogDbContext catalog, long pilot) =>
-        CanTrainExpedition(catalog)
-        && PilotSkillReader.Level(world, catalog, pilot, ExpeditionHaulingSkill(catalog))
-            >= CapsuleerAllianceRules.ExpeditionHaulingSkillLevel
-        && PilotSkillReader
-            .UsableTypes(world, catalog, pilot, [CapsuleerAllianceRules.ExpeditionSquall, CapsuleerAllianceRules.ExpeditionLink])
-            .Count == 2;
-
     internal ExpeditionOutfit OutfitExpedition(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -53,11 +45,7 @@ internal sealed partial class CapsuleerIndustry
     {
         const int carrier = CapsuleerAllianceRules.ExpeditionSquall;
         const int link = CapsuleerAllianceRules.ExpeditionLink;
-        if (
-            catalog.FittingType(carrier) is null
-            || !EntosisCatalog.Supported(catalog, link)
-            || world.Settings.FreshUniverse && !ExpeditionQualified(world, catalog, pilot.PilotId)
-        )
+        if (catalog.FittingType(carrier) is null || !EntosisCatalog.Supported(catalog, link))
         {
             return default;
         }
@@ -93,16 +81,7 @@ internal sealed partial class CapsuleerIndustry
         ExpeditionOutfit supplies = new(true, false);
         if (shortfalls.Length != 0)
         {
-            supplies = BuySovereigntySupplies(
-                world,
-                catalog,
-                pilot,
-                corporation,
-                alliance,
-                shortfalls,
-                now,
-                allowBids: world.Settings.FreshUniverse
-            );
+            supplies = BuySovereigntySupplies(world, catalog, pilot, corporation, alliance, shortfalls);
             if (!supplies.Ready)
             {
                 return supplies;
@@ -110,14 +89,11 @@ internal sealed partial class CapsuleerIndustry
             hangar = Hangar(world, actor, station).Where(item => !item.Singleton).ToLookup(item => item.TypeId);
         }
 
-        if (!world.Settings.FreshUniverse)
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, carrier, []);
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, link, []);
+        if (!Qualify(world, catalog, actor, new(ExpeditionHaulingSkill(catalog), CapsuleerAllianceRules.ExpeditionHaulingSkillLevel)))
         {
-            CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, carrier, []);
-            CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, link, []);
-            if (!Qualify(world, catalog, actor, new(ExpeditionHaulingSkill(catalog), CapsuleerAllianceRules.ExpeditionHaulingSkillLevel)))
-            {
-                throw new InvalidDataException("The expedition carrier's hauling skill is unavailable.");
-            }
+            throw new InvalidDataException("The expedition carrier's hauling skill is unavailable.");
         }
         if (boarding)
         {
@@ -155,9 +131,7 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot pilot,
         SavedCorporation corporation,
         int alliance,
-        (int Type, int Quantity)[] shortfalls,
-        long now,
-        bool allowBids = false
+        (int Type, int Quantity)[] shortfalls
     )
     {
         var offers = market
@@ -171,10 +145,7 @@ internal sealed partial class CapsuleerIndustry
             var purchase = QuoteInput(offers[part.Type].Where(order => order.PriceCents <= ceiling), part.Type, part.Quantity);
             if (purchase is null || purchase.Quantity < part.Quantity)
             {
-                bool placed =
-                    allowBids
-                    && TryOrderExpeditionPart(world, catalog, pilot, corporation, members, new(part.Type, ceiling, part.Quantity), now);
-                return new(false, placed);
+                return default;
             }
             purchases.Add(purchase);
         }
@@ -185,49 +156,6 @@ internal sealed partial class CapsuleerIndustry
         }
         market.BuyCorporationStock(world, catalog, pilot.PilotId, pilot.StationId, corporation, purchases);
         return new(true, true);
-    }
-
-    private bool TryOrderExpeditionPart(
-        EconomyTransaction world,
-        CatalogDbContext catalog,
-        DockedPilot pilot,
-        SavedCorporation corporation,
-        int memberCount,
-        MarketPurchase part,
-        long now
-    )
-    {
-        if (
-            part.LimitPriceCents <= 0
-            || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot.PilotId)
-            || world
-                .Filter<SavedPersonalOrder>(order => order.CorporationId == corporation.Id)
-                .Any(order =>
-                    order.Bid
-                    && order.TypeId == part.TypeId
-                    && order.StationId == pilot.StationId
-                    && order.Status == PersonalOrderStatus.Open
-                    && order.Expires > now
-                )
-        )
-        {
-            return false;
-        }
-        long fee = PilotMarketStore.SupplyBrokerFee(world, catalog, pilot.PilotId, pilot.StationId, part.LimitPriceCents, part.Quantity);
-        if (!CapsuleerAlliances.CanFund(world, corporation, memberCount, checked(part.LimitPriceCents * part.Quantity + fee)))
-        {
-            return false;
-        }
-        market.BuyCorporationStock(
-            world,
-            catalog,
-            pilot.PilotId,
-            pilot.StationId,
-            corporation,
-            [part],
-            CapsuleerAllianceRules.FirstHubOrderDays
-        );
-        return true;
     }
 
     internal SovereigntyReagentCargo? LoadSovereigntyReagent(
@@ -277,7 +205,7 @@ internal sealed partial class CapsuleerIndustry
             int missing = quantity - stock.Sum(item => item.Quantity);
             if (missing > 0)
             {
-                if (!BuySovereigntySupplies(world, catalog, pilot, corporation, claim.AllianceId, [(shortage.TypeId, missing)], now).Ready)
+                if (!BuySovereigntySupplies(world, catalog, pilot, corporation, claim.AllianceId, [(shortage.TypeId, missing)]).Ready)
                 {
                     continue;
                 }

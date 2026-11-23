@@ -39,10 +39,10 @@ internal static class WorldMigration
         {
             var settings = setup.Draft.Settings;
             var supply = settings.DevelopmentSupply;
-            economy = new(supply.TestingMarket, supply.TestingGrants, supply.InstitutionalStock, settings.FreshUniverse);
+            economy = new(supply.TestingMarket, supply.TestingGrants, supply.InstitutionalStock);
         }
         // Every step receives the original version, even after historical PRAGMA writes.
-        LegacyWorldMigration.Initialize(world, version, economy?.FreshUniverse == true);
+        LegacyWorldMigration.Initialize(world, version);
         // An approved setup can resume after the first migration transaction has already committed.
         InitialEconomyMigration.Initialize(world, version, setup is { NewWorld: true } && version != 0 ? null : economy, economics);
         Eden.World.Market.StandardMarketSchema.Upgrade(world);
@@ -106,7 +106,7 @@ internal static class WorldMigration
         CorporationCalendarSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);
-        WorldConfigurationStore.Seed(world, catalog, clock, economy?.FreshUniverse == true);
+        WorldConfigurationStore.Seed(world, catalog, clock);
         if (
             !world
                 .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPilotHostility')")

@@ -55,7 +55,7 @@ internal sealed partial class CapsuleerHauler
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Looting, TargetId = 0 } };
             return null;
         }
-        if (activity.RemainingTicks <= 0 || !ratting.Assess(Pilot, enemies, Now, FreshCombat).Capable)
+        if (activity.RemainingTicks <= 0 || !ratting.Assess(Pilot, enemies, Now).Capable)
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning }, Retreating = enemies.Length > 0 };
             return null;
@@ -152,12 +152,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        if (
-            (!FreshCombat || Pilot.ShipGroupId != (int)HullClass.Corvette)
-            && (
-                TrafficRules.LightHull((HullClass)Pilot.ShipGroupId) || !CapsuleerPatrolFit.CombatHull(_operation.Catalog, Pilot.ShipTypeId)
-            )
-        )
+        if (TrafficRules.LightHull((HullClass)Pilot.ShipGroupId) || !CapsuleerPatrolFit.CombatHull(_operation.Catalog, Pilot.ShipTypeId))
         {
             return false;
         }
@@ -188,7 +183,6 @@ internal sealed partial class CapsuleerHauler
         }
         if (
             !fundingFit
-            && !FreshCombat
             && !_background
             && HasPvpShip
             && (_operation.World is not Eden.World.Runtime.Economy.EconomyTransaction work || !DynamicWorkPilot(work))
@@ -197,7 +191,7 @@ internal sealed partial class CapsuleerHauler
         {
             return true;
         }
-        if (!FreshCombat && (supplies.Requirements.Any(r => !r.Drone) || !RattingRules.Choose(pilotId, sequence)))
+        if (supplies.Requirements.Any(r => !r.Drone) || !RattingRules.Choose(pilotId, sequence))
         {
             return false;
         }
@@ -369,7 +363,7 @@ internal sealed partial class CapsuleerHauler
                     ratting.Arrive(Pilot, Now);
                 }
                 var enemies = ratting.Pirates(Pilot, _target!, Now);
-                if (enemies.Length > 0 && !_background && ratting.Assess(Pilot, enemies, Now, FreshCombat).Capable)
+                if (enemies.Length > 0 && !_background && ratting.Assess(Pilot, enemies, Now).Capable)
                 {
                     _work = Work with { Ratting = activity with { Phase = RattingPhase.Fighting, TargetId = enemies[0].Id } };
                 }

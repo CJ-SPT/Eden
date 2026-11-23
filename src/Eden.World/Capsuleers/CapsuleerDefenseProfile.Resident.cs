@@ -209,11 +209,7 @@ internal sealed partial record CapsuleerDefenseProfile
                 Overload = HeatProfile(catalog, fit, module.Item.TypeId),
             })
             .ToArray();
-        bool rookieCombat =
-            world.Settings.FreshUniverse
-            && catalog.FittingType(ship.TypeId)?.GroupId == (int)HullClass.Corvette
-            && world.Set<SavedCapsuleerAgent>().Find(pilotId) is not null
-            && modules.Any(module => module.Item.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun);
+        bool rookieCombat = false;
         bool miningFit = modules.Any(module => module.Effect == DogmaEffect.MiningLaser);
         bool combat = rookieCombat || (!miningFit && CapsuleerPatrolFit.CombatHull(catalog, ship.TypeId));
         return new CapsuleerDefenseProfile(combat, modules)

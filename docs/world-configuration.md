@@ -68,11 +68,6 @@ Existing settings are preserved; combinations that do not match a preset appear 
 changes market supply switches only. Wallet grants, balances, owned goods, player orders, service costs and
 reference-history choices retain their settings.
 
-The presets also apply to legacy **Fresh-universe** saves. That profile starts pilots at zero ISK with the
-starter package. Its default market uses starter ore buyers and blueprint and skillbook offers. To select that
-market again under **Custom**, enable progressive regional markets and turn off live orders, testing, regional
-hub supply and beginner supply. Other presets use their own available buyers and sellers.
-
 | Preset | Supply |
 | --- | --- |
 | Standard | Individual captured public live orders, with original supported stations, sides, prices, quantities, ranges, minimum volumes and expiration deadlines. |
@@ -606,22 +601,17 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   (`settings.capsuleers.activePilotCap`) and **Prepare bots in unvisited systems**
   (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
   **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
-- In legacy Fresh Universe saves, **Fresh founder cohorts per system** (`settings.capsuleers.freshFounderCohortsPerSystem`) sets one
-  to five cohorts of eligible starter miners, couriers, and bounty pilots per system. The default is one. The active cap and each role's
-  eligibility still apply. Reducing the setting pauses additional cohorts after restart and preserves their pilots and jobs.
 - **Where bots work** applies the default, then the region override, then the solar-system override
   (`settings.capsuleers.systemAccess`). To keep work out of a starter system, choose its region and solar system and
   set the system to **Transit only**. Bots may still cross it by stargate. Choose **Use region rule** to remove the
   system override. Restricted home communities pause, and saved assignments that require a restricted work
   destination wait with their checkpoints intact.
 - **Mining** controls mining fleets and threat awareness.
-- **Hauling & deliveries** controls dedicated agent couriers in fresh universes (`settings.capsuleers.freshCourierPilots`)
-  and new trade-good shipments on civilian routes (`settings.capsuleers.tradeGoodsFreight`). Disabling shipments
-  preserves existing cargo and normal market supply jobs. The freight settings set regional hull variety,
+- **Hauling & deliveries** controls new trade-good shipments on civilian routes (`settings.capsuleers.tradeGoodsFreight`).
+  Disabling shipments preserves existing cargo and normal market supply jobs. The freight settings set regional hull variety,
   ordinary/courier budget ranges in ISK, courier frequency, empty return trips, cargo type IDs and wreck survival.
   [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight)
-- **PvE combat & salvage** controls belt ratting, ordinary anomalies, wreck salvage and dedicated fresh-universe
-  bounty hunters (`settings.capsuleers.freshBountyPilots`). Dedicated hunters require belt ratting. Disabling salvage
+- **PvE combat & salvage** controls belt ratting, ordinary anomalies and wreck salvage. Disabling salvage
   stops a pending cycle when the pilot next runs. Ordinary wreck looting can still occur.
 - **Exploration** (`settings.capsuleers.exploration`) lets eligible bots acquire exploration equipment and scan and hack
   high-security pirate data and relic sites. Disabling it sends active explorers back to their departure stations.

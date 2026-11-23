@@ -15,7 +15,7 @@ namespace Eden.World.Configuration;
 public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider clock) : IWorldConfiguration
 {
     private static ConfigurationRevision Revision(SavedConfigurationRevision row) =>
-        new(row.Id, row.ParentId, row.Author, row.CreatedAt, ConfigurationValidation.Decode(row.Document));
+        new(row.Id, row.ParentId, row.Author, row.CreatedAt, ConfigurationValidation.Decode(row.Document, saved: true));
 
     private static ConfigurationState Snapshot(WorldDbContext world, SavedConfigurationState state) =>
         new(
@@ -34,8 +34,6 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
 
     private static ConfigurationRevision ReadActive(WorldDbContext world) =>
         Revision(world.Set<SavedConfigurationRevision>().Find(world.Set<SavedConfigurationState>().Single().ActiveRevisionId)!);
-
-    internal static bool IsFreshUniverse(WorldDbContext world) => ReadActive(world).Draft.Settings.FreshUniverse;
 
     public IReadOnlyList<ConfigurationRevisionInfo> History(int skip = 0, int limit = 50)
     {
@@ -86,11 +84,6 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         world.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         var state = world.Set<SavedConfigurationState>().Single();
-        var active = Revision(world.Set<SavedConfigurationRevision>().Find(state.ActiveRevisionId)!);
-        if (active.Draft.Settings.FreshUniverse != draft.Settings.FreshUniverse)
-        {
-            throw new InvalidDataException("A saved world's creation rules remain fixed until the world is wiped.");
-        }
         if (state.Generation != expectedGeneration)
         {
             throw new InvalidOperationException("Configuration changed. Reload the current revision before saving.");
@@ -134,7 +127,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         );
     }
 
-    internal static void Seed(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock, bool freshUniverse)
+    internal static void Seed(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
         if (world.Set<SavedConfigurationState>().Any())
         {
@@ -147,14 +140,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
             CatalogFingerprint = catalog.Definitions.Identity.SourceFingerprint,
             Settings = new()
             {
-                FreshUniverse = freshUniverse,
-                Economy = new(economy.ChargeServiceCosts, economy.DefaultManufacturingIndex)
-                {
-                    ProgressiveMarkets = freshUniverse ? true : null,
-                    RegionalHubSupply = !freshUniverse,
-                    BeginnerMarketSupply = !freshUniverse,
-                    SimulatedMarketHistory = !freshUniverse,
-                },
+                Economy = new(economy.ChargeServiceCosts, economy.DefaultManufacturingIndex),
                 DevelopmentSupply = new(supply.TestingMarket, supply.TestingGrants, supply.InstitutionalStock),
                 Resources = new(economy.RenewBelts, economy.RenewalHourUtc),
             },

@@ -101,8 +101,7 @@ internal sealed partial class CapsuleerIndustry
             {
                 level = PilotSkillReader.Level(world, catalog, pilot, skill);
                 if (
-                    !world.Settings.FreshUniverse
-                    && skill == s_industryQualification.TypeId
+                    skill == s_industryQualification.TypeId
                     && catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant) > 0
                 )
                 {
@@ -183,12 +182,7 @@ internal sealed partial class CapsuleerIndustry
                         {
                             return upstream;
                         }
-                        supply ??= world.Settings.FreshUniverse
-                            ? request
-                            : request with
-                            {
-                                MoonSupply = FindReactionSupply(world, catalog, operatorPilot, request),
-                            };
+                        supply ??= request with { MoonSupply = FindReactionSupply(world, catalog, operatorPilot, request) };
                     }
                 }
                 if (

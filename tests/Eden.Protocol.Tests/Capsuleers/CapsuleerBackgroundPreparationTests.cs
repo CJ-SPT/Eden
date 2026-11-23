@@ -344,7 +344,6 @@ public sealed class CapsuleerBackgroundPreparationTests
             var live = host.GetRequiredService<LiveWorld>();
             var activity = host.GetRequiredService<CapsuleerActivitySource>();
             var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
-            Assert.False(f.Database.Settings.FreshUniverse);
             Assert.True(preparation.PrepareNext().Complete);
             Assert.Empty(Founders());
 

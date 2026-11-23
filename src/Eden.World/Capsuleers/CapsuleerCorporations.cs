@@ -61,7 +61,7 @@ internal static partial class CapsuleerCorporations
         }
 
         var wallet = world.Set<PilotWallet>().Find(pilotId);
-        bool initial = !world.Settings.FreshUniverse && !world.Set<SavedCorporation>().Any(row => row.CapsuleerFoundingSystemId == system);
+        bool initial = !world.Set<SavedCorporation>().Any(row => row.CapsuleerFoundingSystemId == system);
         double rank = catalog.FittingAttributes(CorporationRules.ManagementSkill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
         if (wallet is null || rank <= 0 || !initial && wallet.Cents < CorporationRules.CreationFeeCents)
         {

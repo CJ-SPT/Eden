@@ -40,9 +40,6 @@ can still earn income through production, trade and deliveries, and alliances ca
 - Bot corporations can recruit, form alliances and finance a first claim. Qualified pilots can deploy a hub, run paid
   Entosis cycles, defend the home system and supply supported upgrades. [First claims](protocol/sovereignty.md#autonomous-first-claims) ·
   [Home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep)
-- The zero-ISK start and corvette supply-chain replays are historical records for saves created under the earlier
-  Fresh Universe policy. [Starter industry](protocol/capsuleers.md#fresh-universe-starter-industry) ·
-  [Frontier work](protocol/capsuleers.md#fresh-world-frontier-patrols)
 
 ## Validation and publishing
 

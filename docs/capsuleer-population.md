@@ -6,8 +6,7 @@
 
 Open **Player bots** in the server web editor. **Bot population** sets the world-wide cap. **Where bots work** sets
 work or transit access by region or solar system. Expand **Ambient traffic** for station travelers and watched-gate
-visitors. Saves created with the earlier Fresh Universe profile also have controls for its dedicated mining, courier
-and bounty careers. Save for restart and restart the server to apply the revision.
+visitors. Save for restart and restart the server to apply the revision.
 
 Reducing a limit pauses excess pilots and preserves their identities, ships, possessions, losses and activity. When
 slots reopen, Eden reuses eligible saved pilots before preparing new ones.
@@ -81,9 +80,8 @@ the region for corporations with paid advertisements. An application, an offer a
 
 Look up a member in Local or station guests and open its corporation in Show Info to see the CEO, ticker and headquarters.
 Membership persists across restarts, density changes and ship loss. Pilots with prior player-corporation employment
-keep their employment choices. In established worlds, the first bot founder in each headquarters system receives
-Corporation Management I and a one-time allowance for the normal 1,599,800 ISK fee. Later founders and all fresh-world
-founders need the skill and pay from their own wallets. [Autonomous recruitment](protocol/capsuleers.md#autonomous-corporation-recruitment)
+keep their employment choices. The first bot founder in each headquarters system receives
+Corporation Management I and a one-time allowance for the normal 1,599,800 ISK fee. Later founders need the skill and pay from their own wallets. [Autonomous recruitment](protocol/capsuleers.md#autonomous-corporation-recruitment)
 
 New charters draw from several naming styles and save their chosen name, ticker and logo at founding. Existing
 charters retain their names unless an administrator confirms a refresh for a legacy-generated bot charter with

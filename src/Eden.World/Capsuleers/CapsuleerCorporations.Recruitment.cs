@@ -38,7 +38,6 @@ internal sealed record CapsuleerOrganization(long DueTicks = 0, long? Applicatio
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? PvpWorkShipId { get; init; }
-    public long? StarterMarketJobId { get; init; }
     public int? OperatingStationId { get; init; }
     public CapsuleerRelocation? Relocation { get; init; }
     public CapsuleerEmployment? Employment { get; init; }
@@ -97,20 +96,14 @@ internal static partial class CapsuleerCorporations
         var profession =
             CapsuleerCareerTraining.Profession(catalog, pilot.ActiveShip.TypeId, hull)
             ?? (
-                (organization.ActiveWorker ?? agent.Career) == CapsuleerCareer.Mining ? CapsuleerProfession.Mining
-                : world.Settings.FreshUniverse
-                    ? LiveWorld.Find(database.Path)?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.CareerPlan?.Profession
-                        ?? FreshCareerRules.Profession(agent.Slot)
-                : CapsuleerProfession.Hauling
+                (organization.ActiveWorker ?? agent.Career) == CapsuleerCareer.Mining
+                    ? CapsuleerProfession.Mining
+                    : CapsuleerProfession.Hauling
             );
         long nextReview = checked(activeTicks + CapsuleerRecruitmentRules.ReviewDelay(pilotId).Ticks);
         organization = organization with { Profession = profession, DueTicks = nextReview };
         var former = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         organization = ObserveEmployer(organization, former, activeTicks);
-        if (world.Settings.FreshUniverse && former?.CeoId == pilotId && CorporationMembershipStore.BotLed(world, former))
-        {
-            FundFreshCharter(world, former, now);
-        }
         bool recruiting = world.Settings.Capsuleers.AutomaticRecruitment;
         if (recruiting && former?.CeoId == pilotId && CanRecruit(world, former))
         {
@@ -196,26 +189,7 @@ internal static partial class CapsuleerCorporations
         }
         SaveOrganization(world, pilotId, organization);
         var homeArea = CapsuleerTrafficRoutes.Neighbours(catalog, agent.CommunitySystemId).Prepend(agent.CommunitySystemId).ToArray();
-        return independent && (!world.Settings.FreshUniverse || agent.Career == CapsuleerCareer.Mining)
-            ? Found(world, catalog, database, pilot, homeArea, now)
-            : false;
-    }
-
-    private static void FundFreshCharter(EconomyTransaction world, SavedCorporation corporation, long now)
-    {
-        const long workingCapital = CorporationRules.CreationFeeCents;
-        const int key = CorporationWalletRules.MasterKey;
-        long balance = world.Set<PilotWallet>().Find(corporation.CeoId)?.Cents ?? 0;
-        long contribution = Math.Min(balance - workingCapital, workingCapital - corporation.BalanceCents);
-        if (contribution > 0)
-        {
-            CorporationWalletStore.Transfer(
-                world,
-                corporation.CeoId,
-                new(false, key, corporation.Id, key, contribution, "Fresh charter operating capital"),
-                now
-            );
-        }
+        return independent ? Found(world, catalog, database, pilot, homeArea, now) : false;
     }
 
     private static bool ReviewApplication(

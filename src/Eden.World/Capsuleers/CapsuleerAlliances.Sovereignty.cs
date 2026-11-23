@@ -28,14 +28,6 @@ internal sealed partial class CapsuleerAlliances
         (catalog, headquarters) => FirstClaimSystems(catalog, headquarters, CapsuleerAllianceRules.FirstClaimMaximumJumps)
     );
 
-    private static readonly CatalogDefinition<int[]> s_freshFirstClaimSystems = new(
-        "fresh-capsuleer-first-claim-systems",
-        (catalog, headquarters) => FirstClaimSystems(catalog, headquarters, CapsuleerAllianceRules.FreshFirstClaimMaximumJumps)
-    );
-
-    internal static int FirstClaimJumpLimit(WorldAction world) =>
-        world.Settings.FreshUniverse ? CapsuleerAllianceRules.FreshFirstClaimMaximumJumps : CapsuleerAllianceRules.FirstClaimMaximumJumps;
-
     private bool TryProcureFirstHub(EconomyTransaction world, CatalogDbContext catalog, SavedCorporation corporation, long now)
     {
         const int hubType = EntosisRules.HubTypeId;
@@ -118,7 +110,7 @@ internal sealed partial class CapsuleerAlliances
 
     internal static IEnumerable<int> UnclaimedSites(WorldAction world, CatalogDbContext catalog, int headquarters) =>
         catalog
-            .Definition(world.Settings.FreshUniverse ? s_freshFirstClaimSystems : s_firstClaimSystems, headquarters)
+            .Definition(s_firstClaimSystems, headquarters)
             .Where(system => world.Settings.Capsuleers.CanWork(catalog.Definitions, system) && !PilotEntosisStore.HasHub(world, system));
 
     private static bool HasHubSupply(WorldAction world, SavedCorporation corporation, long now)

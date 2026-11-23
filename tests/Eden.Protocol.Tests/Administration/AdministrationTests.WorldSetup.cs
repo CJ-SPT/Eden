@@ -58,22 +58,21 @@ public sealed partial class AdministrationTests
         Assert.Contains("Established Universe", page);
         Assert.Contains("data-tools", page);
         Assert.Contains("Import-LiveMarket.py", page);
-        Assert.DoesNotContain("Fresh Universe", page);
         Assert.DoesNotContain("name=\"profile\"", page);
-        using var retiredDraft = await client.GetAsync("/api/admin/world/setup-draft?profile=fresh");
+        using var retiredDraft = await client.GetAsync("/api/admin/world/setup-draft?profile=unknown");
         Assert.Equal(HttpStatusCode.BadRequest, retiredDraft.StatusCode);
         var draft = await client.GetFromJsonAsync<WorldConfigurationDraft>("/api/admin/world/setup-draft");
-        Assert.False(draft!.Settings.FreshUniverse);
+        Assert.NotNull(draft);
         Assert.True(draft.Settings.Capsuleers.EarnedPvpShips);
         Assert.Equal(2m, Assert.Single(draft.AdjustedPrices, price => price.TypeId == 34).PriceIsk);
         var custom = draft with { Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { ActivePilotCap = 5 } } };
         using var noToken = await client.PostAsync("/api/admin/world/setup", SetupForm());
         Assert.Equal(HttpStatusCode.BadRequest, noToken.StatusCode);
         string token = AntiforgeryTokenFrom(page);
-        using var retiredProfile = await client.PostAsync("/api/admin/world/setup", SetupForm(token, profile: "fresh"));
+        using var retiredProfile = await client.PostAsync("/api/admin/world/setup", SetupForm(token, profile: "unknown"));
         Assert.Equal(HttpStatusCode.BadRequest, retiredProfile.StatusCode);
-        var fresh = draft with { Settings = draft.Settings with { FreshUniverse = true } };
-        using var retiredSettings = await client.PostAsync("/api/admin/world/setup", SetupForm(token, WorldSetupStore.Export(fresh)));
+        const string invalidSettings = """{"settings":{"unknownSetting":true}}""";
+        using var retiredSettings = await client.PostAsync("/api/admin/world/setup", SetupForm(token, invalidSettings));
         Assert.Equal(HttpStatusCode.BadRequest, retiredSettings.StatusCode);
         Assert.False(File.Exists(path));
 
@@ -106,7 +105,6 @@ public sealed partial class AdministrationTests
         var active = new WorldConfigurationStore(database, TimeProvider.System).Read().Active;
         Assert.Equal("Corey", active.Author);
         Assert.Equal(5, active.Draft.Settings.Capsuleers.ActivePilotCap);
-        Assert.False(database.Settings.FreshUniverse);
         Assert.True(database.Settings.Capsuleers.EarnedPvpShips);
         Assert.True(database.Settings.DevelopmentSupply.TestingGrants);
         Assert.False(database.Settings.DevelopmentSupply.TestingMarket);

@@ -29,10 +29,6 @@ public static class CapsuleerPopulationRules
         {
             throw new InvalidDataException("The active bot cap must be between 0 (unlimited) and 1,000,000.");
         }
-        if (policy.FreshFounderCohortsPerSystem is < FreshCareerRules.DefaultFounderCohorts or > FreshCareerRules.MaximumFounderCohorts)
-        {
-            throw new InvalidDataException("Fresh founder cohorts per system must be between one and five.");
-        }
         if (
             !Enum.IsDefined(policy.DefaultRegionAccess)
             || policy.RegionAccess is null

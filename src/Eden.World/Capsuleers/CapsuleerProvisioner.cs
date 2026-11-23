@@ -71,7 +71,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             int total = catalog.Definitions.Systems.Count;
             int cached = total - systems.Length;
             progress?.Invoke(new(cached, total, 0));
-            if (systems.Length == 0 || maximumCommunities == 0 || database.Settings.FreshUniverse)
+            if (systems.Length == 0 || maximumCommunities == 0)
             {
                 return new(catalog.Definitions.Systems.Count, 0, systems.Length);
             }
@@ -127,10 +127,6 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             var result = Provision(systemId, catalog, action.World);
             action.Commit();
             return result;
-        }
-        if (database.Settings.FreshUniverse)
-        {
-            return new(0, 0, 0);
         }
         using WorldDbContext world = new(database.Path);
         return Provision(systemId, catalog, world);
@@ -347,21 +343,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             policy.SystemAccess.Count == 0
                 ? ""
                 : "|work-systems=" + string.Join(',', policy.SystemAccess.Select(rule => $"{rule.Key}={rule.Value}"));
-        string careerIdentity = database.Settings.FreshUniverse ? "|fresh-careers" : "";
-        if (database.Settings.FreshUniverse && policy.FreshFounderCohortsPerSystem != FreshCareerRules.DefaultFounderCohorts)
-        {
-            careerIdentity += FormattableString.Invariant($"|fresh-cohorts={policy.FreshFounderCohortsPerSystem}");
-        }
-        if (database.Settings.FreshUniverse && (!policy.FreshCourierPilots || !policy.FreshBountyPilots || !policy.BeltRatting))
-        {
-            careerIdentity += $":{policy.FreshCourierPilots}:{policy.FreshBountyPilots && policy.BeltRatting}";
-        }
         return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
             + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}"
             + miningIdentity
             + regionIdentity
-            + systemIdentity
-            + careerIdentity;
+            + systemIdentity;
     }
 
     private static CapsuleerTrafficRoute SelectRoute(

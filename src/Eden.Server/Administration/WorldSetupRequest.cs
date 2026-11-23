@@ -41,7 +41,7 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
             throw new InvalidDataException("Install the Eden catalog in the server data directory before creating a world.");
         }
         var draft = (Previous ?? new()) with { CatalogFingerprint = database.Catalog.Identity.SourceFingerprint };
-        if (Previous is not null && !draft.Settings.FreshUniverse)
+        if (Previous is not null)
         {
             return draft;
         }
@@ -57,7 +57,6 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
         {
             Settings = settings with
             {
-                FreshUniverse = false,
                 Economy = settings.Economy with
                 {
                     ChargeServiceCosts = true,

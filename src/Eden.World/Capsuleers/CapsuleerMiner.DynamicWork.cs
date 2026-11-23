@@ -13,40 +13,6 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerMiner
 {
-    private bool ReviewRookieWork(bool background)
-    {
-        if (Pilot.ShipGroupId != (int)HullClass.Corvette || Work.RookieWorkReviewAt > Work.ActiveTicks && background)
-        {
-            return false;
-        }
-        if (!background)
-        {
-            return true;
-        }
-        bool alreadyStaggered = Work.RookieWorkReviewAt != 0;
-        _work = Work with
-        {
-            RookieWorkReviewAt = FreshCareerRules.NextBackgroundReview(pilotId, Work.ActiveTicks, opening: !alreadyStaggered),
-        };
-        return alreadyStaggered;
-    }
-
-    private bool HasRookieOreDemand(EconomyTransaction world)
-    {
-        var sources = _operation.Catalog.Definition(CapsuleerProvisioningCatalog.StarterOreSources, Pilot.SystemId);
-        long now = Now;
-        return world
-            .StationMarketOrders(Pilot.StationId)
-            .Any(order =>
-                order.Kind == NpcMarketKind.Regional
-                && order.Bid
-                && order.Remaining > 0
-                && order.PriceCents > 0
-                && order.Issued + order.DurationDays * TimeSpan.TicksPerDay > now
-                && sources.Any(material => material.Contains(order.TypeId))
-            );
-    }
-
     private bool WaitForHuntReserve()
     {
         if (
@@ -63,67 +29,6 @@ internal sealed partial class CapsuleerMiner
             DueStamp = CapsuleerScheduleRules.Stamp(deadline, Work.ClockOffsetTicks),
             WaitingReason = "Finishing production of a replacement part.",
         };
-        return true;
-    }
-
-    private bool TryRookieFlight(EconomyTransaction world, bool localBounty = false)
-    {
-        var policy = world.Settings.Capsuleers;
-        var catalog = _operation.Catalog;
-        if (
-            Pilot.ShipGroupId != (int)HullClass.Corvette
-            || world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { } agent
-            || world.Filter<IndustryJob>(job => job.PilotId == pilotId).Any(job => job.Status == IndustryJobStatus.Installed)
-        )
-        {
-            return false;
-        }
-        CapsuleerProfession? work = null;
-        if (policy.FreshCourierPilots && FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, policy).Courier is { } delivery)
-        {
-            int destination = Pilot.StationId == delivery.SourceStationId ? delivery.DestinationStationId : delivery.SourceStationId;
-            if (
-                CapsuleerTrafficRoutes.ToStation(
-                    catalog,
-                    Pilot.StationId,
-                    destination,
-                    HullClass.Corvette,
-                    maximumJumps: CapsuleerRecruitmentRules.MaximumJumps,
-                    policy: policy
-                )
-                is not null
-            )
-            {
-                work = CapsuleerProfession.Hauling;
-            }
-        }
-        if (
-            work is null
-            && localBounty
-            && policy.FreshBountyPilots
-            && policy.BeltRatting
-            && world.Settings.NpcPopulation.Pirates
-            && FreshCareerRoutes.Read(catalog, Pilot.SystemId, policy).Combat is not null
-            && world
-                .Filter<OwnedItem>(item => item.OwnerId == pilotId)
-                .AsEnumerable()
-                .Any(item =>
-                    item.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun
-                    && item.Quantity > 0
-                    && (
-                        item.LocationId == Pilot.ShipId && InventoryDefinitions.IsHighSlot(item.FlagId)
-                        || item.LocationId == Pilot.StationId && item.FlagId == (int)InventoryFlag.Hangar
-                    )
-                )
-        )
-        {
-            work = CapsuleerProfession.Combat;
-        }
-        if (work is null)
-        {
-            return false;
-        }
-        CapsuleerWorkHandoff.ToFlight(_operation, world, Pilot, world.Ships.Find(Pilot.ShipId)!, Work.ActiveTicks, work);
         return true;
     }
 

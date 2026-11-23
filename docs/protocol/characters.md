@@ -86,7 +86,7 @@ The solution built in 26.60 seconds with zero warnings or errors. The focused ru
 `BoosterServiceTests`, `ImplantServiceTests`, `FreeSkillPointServiceTests`, `TrainingSpeedClientTests`, `FreePointClientTests`,
 `ConcordOverviewTests`, `PilotLoginTests` and `PlanetaryClientTests`. Exact method filters also covered the rendered settings
 page, revision save and export, repeated Blazor saves, training with booster expiry and clone changes, implant-driven queue
-rebasing, and `FreshProfileStartsEmptyAndPersistsAcrossRestart`. The catalog and formatting policy suites passed 8 and 9
+rebasing and startup on a new save. The catalog and formatting policy suites passed 8 and 9
 checks respectively. Formatting and diff checks passed. The milestone sequence took 157 seconds. Client adapter checks ran
 headlessly.
 

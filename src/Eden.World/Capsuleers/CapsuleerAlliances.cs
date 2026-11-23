@@ -30,9 +30,7 @@ internal sealed partial class CapsuleerAlliances(
     IHumanPresence presence,
     AllianceStore alliances,
     PilotMarketStore market,
-    MarketChangeSignal marketSignal,
-    SqliteWorld ships,
-    CapsuleerCareerTraining careers
+    MarketChangeSignal marketSignal
 ) : ICapsuleerAlliancePlanning
 {
     private const int SystemsPerReview = 32;
@@ -210,29 +208,6 @@ internal sealed partial class CapsuleerAlliances(
         {
             return false;
         }
-        if (
-            world.Settings.FreshUniverse
-            && PilotSkillReader.Level(world, catalog, ceo, AllianceRules.EmpireControlSkill) < AllianceRules.RequiredEmpireControlLevel
-        )
-        {
-            if (ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, ceo) is not { } pilot)
-            {
-                return false;
-            }
-            var training = careers.AdvanceQualification(
-                world,
-                catalog,
-                pilot,
-                [],
-                new(AllianceRules.EmpireControlSkill, AllianceRules.RequiredEmpireControlLevel),
-                now
-            );
-            if (training.MarketChanged)
-            {
-                world.AfterCommit(() => marketSignal.Changed());
-            }
-            return training.Progressed;
-        }
 
         long seed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
         for (int attempt = 0; attempt < MaximumIdentityAttempts; attempt++)
@@ -248,14 +223,11 @@ internal sealed partial class CapsuleerAlliances(
                 const int key = CorporationWalletRules.MasterKey;
                 CorporationWalletStore.Transfer(world, ceo, new(true, key, ceo, key, shortfall, "Alliance registration"), now);
             }
-            if (!world.Settings.FreshUniverse)
-            {
-                CapsuleerCommunityStore.GrantRequirements(world, catalog, ceo, AllianceRules.EmpireControlSkill, []);
-                var skill =
-                    world.Set<PilotSkill>().Find(ceo, AllianceRules.EmpireControlSkill)
-                    ?? world.Add(new PilotSkill { PilotId = ceo, TypeId = AllianceRules.EmpireControlSkill }).Entity;
-                skill.Points = Math.Max(skill.Points, TrainedSkill.PointsForLevel(rank, AllianceRules.RequiredEmpireControlLevel));
-            }
+            CapsuleerCommunityStore.GrantRequirements(world, catalog, ceo, AllianceRules.EmpireControlSkill, []);
+            var skill =
+                world.Set<PilotSkill>().Find(ceo, AllianceRules.EmpireControlSkill)
+                ?? world.Add(new PilotSkill { PilotId = ceo, TypeId = AllianceRules.EmpireControlSkill }).Entity;
+            skill.Points = Math.Max(skill.Points, TrainedSkill.PointsForLevel(rank, AllianceRules.RequiredEmpireControlLevel));
             var created = alliances.Create(world, catalog, ceo, details, now).Alliance;
             CorporationBillingStore.DefaultAllianceMaintenance(world, ceo);
             ApplyAndAccept(world, partner, founder, created.Id, now);

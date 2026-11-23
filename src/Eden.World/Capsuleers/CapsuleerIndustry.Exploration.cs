@@ -147,7 +147,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return false;
         }
-        long budget = StarterBalance(world, pilot.PilotId) / RattingRules.BudgetDivisor;
+        long budget = WalletBalance(world, pilot.PilotId) / RattingRules.BudgetDivisor;
         if (budget <= 0)
         {
             return false;

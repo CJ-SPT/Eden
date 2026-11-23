@@ -2,6 +2,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -28,7 +29,7 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed partial class CapitalTravelTests
 {
-    private const string FreshCatalog = "EDEN_FRESH_UNIVERSE_CATALOG";
+    private const string CapitalCatalog = "EDEN_CAPITAL_MARKET_CATALOG";
     private const int JitaHub = 60003760;
     private const int SobasekiLab = 60002419;
     private const int Charon = 20185;
@@ -41,19 +42,19 @@ public sealed partial class CapitalTravelTests
     {
         public InstalledCapitalMarketFactAttribute()
         {
-            string? path = Environment.GetEnvironmentVariable(FreshCatalog);
+            string? path = Environment.GetEnvironmentVariable(CapitalCatalog);
             if (!File.Exists(path) || !File.Exists(Path.Combine(Path.GetDirectoryName(path)!, "market-orders", "manifest.json")))
             {
-                Skip = $"Set {FreshCatalog} to build 3662168 catalog.sqlite next to a captured market-orders snapshot.";
+                Skip = $"Set {CapitalCatalog} to build 3662168 catalog.sqlite next to a captured market-orders snapshot.";
             }
         }
     }
 
     [InstalledCapitalMarketFact]
-    public async Task FreshStandardMarketFundsBuildsAndDeliversTheSameRhea()
+    public async Task StandardMarketFundsBuildsAndDeliversTheSameRhea()
     {
-        string source = Environment.GetEnvironmentVariable(FreshCatalog)!;
-        var directory = TestDirectory.Create("eden-fresh-capital-");
+        string source = Environment.GetEnvironmentVariable(CapitalCatalog)!;
+        var directory = TestDirectory.Create("eden-capital-acquisition-");
         try
         {
             WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
@@ -69,7 +70,7 @@ public sealed partial class CapitalTravelTests
                 File.Copy(Path.Combine(marketSource, file), Path.Combine(marketCopy, file));
             }
             TestClock clock = new(manifest.CapturedAt);
-            WorldInitialization.Initialize(database, clock, new(FreshUniverse: true));
+            WorldInitialization.Initialize(database, clock, new(TestingMarket: false, TestingGrants: false));
             var configuration = new WorldConfigurationStore(database, clock);
             var current = configuration.Read();
             configuration.Save(
@@ -90,12 +91,10 @@ public sealed partial class CapitalTravelTests
             JumpTimers timers;
             using (var host = ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(), liveWorld: true))
             {
-                Assert.True(database.Settings.FreshUniverse);
                 Assert.True(database.Settings.Economy.StandardMarket);
                 Assert.False(database.Settings.DevelopmentSupply.TestingMarket);
                 Assert.False(database.Settings.DevelopmentSupply.TestingGrants);
                 var live = host.GetRequiredService<LiveWorld>();
-                Assert.Empty(live.Economy.Inspect(world => world.Pilots.ToArray()));
                 var store = host.GetRequiredService<SqliteWorld>();
                 var market = host.GetRequiredService<IPilotMarket>();
                 var industry = host.GetRequiredService<IPilotIndustry>();
@@ -232,32 +231,37 @@ public sealed partial class CapitalTravelTests
                 void FundFromBounties(DockedPilot pilot, int kills)
                 {
                     const int officer = 13603;
-                    using var world = live.Economy.Begin(new(pilots: [pilot.PilotId], systems: [Jan]));
-                    new TestNpcPopulationSeeder(Jan, officer).Seed(world, catalog, Jan, clock.Now);
-                    world.SaveChanges();
-                    var owner = world.Pilots.Find(pilot.PilotId)!;
-                    var npcs = world
-                        .Filter<WorldNpc>(npc => npc.SystemId == Jan && npc.TypeId == officer && npc.DestroyedAt == null)
-                        .OrderBy(npc => npc.Id)
-                        .Take(kills)
-                        .ToArray();
-                    Assert.Equal(kills, npcs.Length);
-                    foreach (var npc in npcs)
+                    using (var world = live.Economy.Begin(new(pilots: [pilot.PilotId], systems: [Jan])))
                     {
-                        var hit = NpcDamagePersistence.Apply(
-                            world,
-                            catalog,
-                            npc,
-                            owner,
-                            pilot.ShipId,
-                            catalog.FittingAttributes(officer),
-                            new(1_000_000, 0, 0, 0),
-                            clock.Now
-                        );
-                        Assert.True(hit.Destroyed);
-                        Assert.NotNull(hit.Reward);
+                        new TestNpcPopulationSeeder(Jan, officer).Seed(world, catalog, Jan, clock.Now);
+                        world.SaveChanges();
+                        var owner = world.Pilots.Find(pilot.PilotId)!;
+                        var npcs = world
+                            .Filter<WorldNpc>(npc => npc.SystemId == Jan && npc.TypeId == officer && npc.DestroyedAt == null)
+                            .OrderBy(npc => npc.Id)
+                            .Take(kills)
+                            .ToArray();
+                        Assert.Equal(kills, npcs.Length);
+                        foreach (var npc in npcs)
+                        {
+                            var hit = NpcDamagePersistence.Apply(
+                                world,
+                                catalog,
+                                npc,
+                                owner,
+                                pilot.ShipId,
+                                catalog.FittingAttributes(officer),
+                                new(1_000_000, 0, 0, 0),
+                                clock.Now
+                            );
+                            Assert.True(hit.Destroyed);
+                            Assert.Null(hit.Reward);
+                        }
+                        world.Commit();
                     }
-                    world.Commit();
+                    clock.Seconds += database.Settings.Rewards.BountyTickSeconds;
+                    host.GetRequiredService<IActivityRewardTicks>().Advance();
+                    Assert.True(market.Balance(pilot.PilotId) > 0);
                 }
 
                 InventoryItem Buy(long pilot, int type, int count)

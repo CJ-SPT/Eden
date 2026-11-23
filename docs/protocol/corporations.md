@@ -217,7 +217,7 @@ The broader filter ORed `FullyQualifiedName~` matches for `CorporationBlueprintV
 `CargoContainerAssemblyTests`, `EconomicProjectionTests`, `ResidentEconomyTests`, `Eden.Protocol.Tests.Industry.IndustryTests`
 and `WorldInitializationTests`.
 
-After aligning fresh-world and upgrade foreign keys, final filter
+After aligning new-save and upgrade foreign keys, final filter
 `FullyQualifiedName~CorporationBlueprintVoteTests|FullyQualifiedName=Eden.Protocol.Tests.Market.ResidentEconomyTests.RegisteredResidentRowsCoverEveryScalarColumnOfTheirSavedModels`
 passed **23 tests** in **13.65 s**. The final stable sequence passed tool/solution restore, a zero-warning solution build,
 both Python policy suites (**8 catalog and 9 formatting tests**), formatting for **2,245 files**, the 140-column check and

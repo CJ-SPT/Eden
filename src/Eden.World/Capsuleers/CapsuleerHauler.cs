@@ -56,8 +56,6 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
     CapsuleerCareerTraining careerTraining,
-    PilotMissionStore missions,
-    PilotFleetStore fleet,
     MilitiaComplexStore militia
 )
 {
@@ -84,8 +82,6 @@ internal sealed class CapsuleerHaulerFactory(
             ammunitionSupply,
             entosis,
             careerTraining,
-            missions,
-            fleet,
             militia
         );
 }
@@ -112,8 +108,6 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
     CapsuleerCareerTraining careerTraining,
-    PilotMissionStore missions,
-    PilotFleetStore fleet,
     MilitiaComplexStore militia
 )
 {
@@ -1075,11 +1069,6 @@ internal sealed partial class CapsuleerHauler(
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (WaitForHuntReserve())
         {
-            return;
-        }
-        if (database.Settings.FreshUniverse && _operation.World is EconomyTransaction freshWorld)
-        {
-            WorkFreshCareer(freshWorld, scoutedAnomaly);
             return;
         }
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)

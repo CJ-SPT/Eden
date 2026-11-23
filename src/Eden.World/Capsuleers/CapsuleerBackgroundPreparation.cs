@@ -111,10 +111,7 @@ internal sealed class CapsuleerBackgroundPreparation(
                 }
                 if (!atCapacity)
                 {
-                    if (
-                        (!database.Settings.FreshUniverse || policy.FreshFounderCohortsPerSystem > FreshCareerRules.DefaultFounderCohorts)
-                        && scheduler.Read().OldestDelayTicks >= ExpansionBacklogLimit.Ticks
-                    )
+                    if (scheduler.Read().OldestDelayTicks >= ExpansionBacklogLimit.Ticks)
                     {
                         // Let existing jobs catch up before founding more background pilots.
                         return new(progress, null, false) { RetryLater = true, RetryAfter = ExpansionBacklogLimit };

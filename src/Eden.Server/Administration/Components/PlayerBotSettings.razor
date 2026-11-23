@@ -15,10 +15,6 @@
     <h3>Hauling &amp; deliveries</h3>
     <p class="muted">Budget ranges apply to new shipments. Actual cargo value depends on what fits in the hold and which goods are available.</p>
     <div class="settings-fields">
-        <SettingField Label="Dedicated courier pilots"
-                      Help="Admits dedicated pilots who take station-agent delivery contracts in fresh universes.">
-            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.FreshCourierPilots" aria-describedby="@field.Help" /></Control>
-        </SettingField>
         <SettingField Label="Carry trade goods on civilian routes"
                       Help="Loads new trade-good shipments for eligible travelers. Cargo already aboard and player-market supply jobs continue.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.TradeGoodsFreight" aria-describedby="@field.Help" /></Control>
@@ -64,10 +60,6 @@
 <section class="card settings-group">
     <h3>PvE combat &amp; salvage</h3>
     <div class="settings-fields">
-        <SettingField Label="Dedicated bounty hunters"
-                      Help="Admits dedicated combat pilots in fresh universes. Requires belt ratting.">
-            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.FreshBountyPilots" aria-describedby="@field.Help" /></Control>
-        </SettingField>
         <SettingField Label="Run belt-ratting sorties"
                       Help="Allows eligible combat pilots to hunt NPC pirates in asteroid belts.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BeltRatting" aria-describedby="@field.Help" /></Control>

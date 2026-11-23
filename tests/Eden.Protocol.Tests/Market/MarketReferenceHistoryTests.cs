@@ -60,7 +60,7 @@ public sealed class MarketReferenceHistoryTests
     }
 
     [Fact]
-    public void FreshWorldHasReferenceTickerHistoryWithoutCreatingExecutionsOrdersOrMoney()
+    public void NewSaveHasReferenceTickerHistoryWithoutCreatingExecutionsOrdersOrMoney()
     {
         using IndustryTests.Fixture f = new();
         var market = f.Db.Services.GetRequiredService<IPilotMarket>();

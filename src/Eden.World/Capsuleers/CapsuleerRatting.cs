@@ -111,17 +111,13 @@ internal sealed class CapsuleerRatting(
     private static bool WithinSite(StaticSpaceObject site, SpacePosition position) =>
         site.Id >= CombatAnomalyRules.FirstSiteId || site.Position.DistanceTo(position) <= NpcEncounterDefinitions.ChaseLeash;
 
-    internal RattingAssessment Assess(DockedPilot pilot, NpcContact[] contacts, long now, bool freshCombat = false)
+    internal RattingAssessment Assess(DockedPilot pilot, NpcContact[] contacts, long now)
     {
         var profile = defense.Profile(pilot.PilotId);
         var runtime = LiveCombatRuntime.Find(database.Path);
         var ship = runtime?.DefenseShip(pilot.PilotId, now);
         var hull = (Eden.Gameplay.Ships.HullClass)pilot.ShipGroupId;
-        if (
-            ship is null
-            || !profile.Combat
-            || TrafficRules.LightHull(hull) && !(freshCombat && hull == Eden.Gameplay.Ships.HullClass.Corvette)
-        )
+        if (ship is null || !profile.Combat || TrafficRules.LightHull(hull))
         {
             return new(false, double.PositiveInfinity, 0, "No supported resident combat fit.");
         }

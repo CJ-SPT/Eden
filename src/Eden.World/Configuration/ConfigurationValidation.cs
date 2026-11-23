@@ -15,10 +15,13 @@ internal static class ConfigurationValidation
         WriteIndented = true,
     };
 
+    // Stored revisions can contain settings removed by a later release.
+    private static readonly JsonSerializerOptions SavedJson = new(Json) { UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip };
+
     internal static string Encode(WorldConfigurationDraft draft) => JsonSerializer.Serialize(draft, Json);
 
-    internal static WorldConfigurationDraft Decode(string document) =>
-        JsonSerializer.Deserialize<WorldConfigurationDraft>(document, Json)
+    internal static WorldConfigurationDraft Decode(string document, bool saved = false) =>
+        JsonSerializer.Deserialize<WorldConfigurationDraft>(document, saved ? SavedJson : Json)
         ?? throw new InvalidDataException("A configuration document is required.");
 
     internal static void Validate(WorldConfigurationDraft draft, CatalogProvider catalog)
@@ -49,18 +52,6 @@ internal static class ConfigurationValidation
             throw new InvalidDataException("Every typed settings group is required.");
         }
         WorldTuningRules.Validate(settings);
-        if (
-            settings.FreshUniverse
-            && (
-                settings.DevelopmentSupply.TestingGrants
-                || settings.Progression is { GrantStartingEquipment: false } or { GrantStartingSkills: false }
-            )
-        )
-        {
-            throw new InvalidDataException(
-                "Fresh-universe progression requires starting skills and equipment with testing grants disabled."
-            );
-        }
         if (settings.Economy.StandardMarket && (settings.DevelopmentSupply.TestingMarket || settings.Economy.ProgressiveMarkets != false))
         {
             throw new InvalidDataException("Standard market requires testing and progressive markets to be disabled.");

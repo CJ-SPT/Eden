@@ -121,22 +121,12 @@ public sealed class WorldWipeTests
         Assert.Equal(rates, database.Settings.Progression);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ReconfigurationSurvivesWipeAndUsesEstablishedSettingsWithExistingAccounts(bool legacyFresh)
+    [Fact]
+    public void ReconfigurationSurvivesWipeAndUsesExistingSettingsAndAccounts()
     {
         using TestWorld fixture = new();
-        string path = legacyFresh ? Path.Combine(Path.GetDirectoryName(fixture.Path)!, "legacy-world.sqlite") : fixture.Path;
+        string path = fixture.Path;
         WorldDatabase database = new(path);
-        if (legacyFresh)
-        {
-            WorldInitialization.Initialize(database, economy: new(FreshUniverse: true));
-            Assert.True(database.Settings.UsesFreshUniverseMarket());
-            WorldInitialization.Initialize(database);
-            Assert.True(database.Settings.UsesFreshUniverseMarket());
-            Assert.Null(WorldSetupStore.Read(path));
-        }
         using var host = ServerServices.Build(database, liveWorld: true);
         var launcher = host.GetRequiredService<LauncherStore>();
         long accountId = launcher.Register(new("Retained Pilot", AccountPassword)).AccountId;
@@ -156,38 +146,22 @@ public sealed class WorldWipeTests
 
         string backup = path + ".backups/reconfigure";
         Assert.Throws<InvalidOperationException>(() =>
-            WorldWipe.Execute(path, backup, reconfigure: !legacyFresh, configurationGeneration: active.Generation)
+            WorldWipe.Execute(path, backup, reconfigure: true, configurationGeneration: active.Generation)
         );
         Assert.Null(WorldSetupStore.Read(path));
-        WorldWipe.Execute(path, backup, reconfigure: !legacyFresh, configurationGeneration: pending.Generation);
+        WorldWipe.Execute(path, backup, reconfigure: true, configurationGeneration: pending.Generation);
         Assert.Null(WorldSetupStore.Read(Path.Combine(backup, "world.sqlite")));
         var state = WorldSetupStore.Read(path)!;
         Assert.False(state.NewWorld);
         Assert.Null(state.Approval);
 
         WorldSetupRequest request = new(database, state);
-        if (legacyFresh)
-        {
-            PassiveCatalogFixture.LoadUtilityHulls(database.CatalogPath, new HashSet<int> { 34 });
-            Assert.Throws<InvalidDataException>(() => request.Prepare("", "Operator"));
-            StandardMarketTests.InstallSetupSnapshot(database);
-        }
         request.Prepare("", "Operator");
         var approval = WorldSetupStore.Read(path)!.Approval!;
         WorldInitialization.Initialize(database, setup: approval);
         Assert.Null(WorldSetupStore.Read(path));
-        Assert.False(database.Settings.FreshUniverse);
-        Assert.Equal(legacyFresh, database.Settings.Capsuleers.EarnedPvpShips);
-        if (legacyFresh)
-        {
-            Assert.True(database.Settings.Economy is { BeginnerMarketSupply: false, ProgressiveMarkets: false, StandardMarket: true });
-            Assert.False(database.Settings.DevelopmentSupply.TestingGrants);
-        }
-        else
-        {
-            Assert.Equal(draft.Settings.Economy, database.Settings.Economy);
-            Assert.Equal(draft.Settings.DevelopmentSupply, database.Settings.DevelopmentSupply);
-        }
+        Assert.Equal(draft.Settings.Economy, database.Settings.Economy);
+        Assert.Equal(draft.Settings.DevelopmentSupply, database.Settings.DevelopmentSupply);
         Assert.Equal(draft.Settings.Progression.TrainingSpeedMultiplier, database.Settings.Progression.TrainingSpeedMultiplier);
         Assert.Null(configuration.Read().Pending);
         Assert.Equal(pending.Pending!.Id, configuration.Get(pending.Pending.Id).Id);

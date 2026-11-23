@@ -36,7 +36,7 @@ internal static class WorldSetupStore
                 bool newWorld = row.GetBoolean(0);
                 return new(
                     newWorld,
-                    row.IsDBNull(1) ? null : new(ConfigurationValidation.Decode(row.GetString(1)), row.GetString(2), newWorld)
+                    row.IsDBNull(1) ? null : new(ConfigurationValidation.Decode(row.GetString(1), saved: true), row.GetString(2), newWorld)
                 );
             }
         }
@@ -53,10 +53,6 @@ internal static class WorldSetupStore
         if (!File.Exists(database.CatalogPath))
         {
             throw new InvalidDataException("Install the Eden catalog in the server data directory before creating a world.");
-        }
-        if (draft.Settings is { FreshUniverse: true })
-        {
-            throw new InvalidDataException("World setup creates an Established Universe. Set settings.freshUniverse to false.");
         }
         new WorldConfigurationStore(database, TimeProvider.System).Validate(draft);
         if (string.IsNullOrWhiteSpace(author) || author.Length > 128)

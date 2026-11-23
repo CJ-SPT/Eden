@@ -2,19 +2,42 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Retired world profile
+
+World startup loads the current settings from saved active and pending revisions. It ignores removed properties in
+stored configuration documents and omits them from exported revisions. Submitted drafts still require the current
+settings schema. Older saves use ordinary bot roster, recruitment and market rules with their retained settings.
+Configuration decoding does not rewrite saved pilot, wallet, inventory or market rows. World wipes follow the
+administrator's selected recreation option. [World setup](../world-configuration.md#first-start) · [World wipe](../world-wipe.md)
+
+### Automated validation
+
+`WorldConfigurationTests.OlderSavedSettingsLoadWhileImportsStillRejectUnknownSettings` passed in 16.70 seconds. It
+reopens saved active and pending settings with removed properties, verifies import rejection, and checks that startup
+activates the retained bot cap. The solution built in 1.14 seconds with zero warnings or errors. The wider affected
+selection passed 273 cases, skipped the opt-in browser case, and exposed an outdated immediate bounty assertion in
+the capital acquisition fixture. The exact rerun passed `StandardMarketFundsBuildsAndDeliversTheSameRhea` and
+`ExistingSchoolPilotsFoundAndJoinOnceAcrossCheckpointAndRestart` in 24.85 seconds. Both Python policy suites passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## First-start world setup
 
 New setup approvals use Established Universe. The default draft uses the Standard market, catalog-derived
 industry reference prices and activity-funded PvP ships. Setup validates an installed compatible capture before
-approving the Standard draft. Existing active settings remain available when reconfiguring
-an established save. The setup endpoint rejects a Fresh Universe profile or draft. Existing approved setup operations
-can still resume, and active legacy saves keep their rules until wiped. A wiped legacy save records that setup is
-required and the replacement starts with the established market defaults.
+approving the Standard draft. Reconfiguration starts with the previous active settings. Stored revisions can
+contain settings from earlier releases. Opening or exporting them uses the current settings model.
 [Operator flow](../world-configuration.md#first-start) · [Wipe choices](../world-wipe.md)
 
 The Standard default setup case passed in 7.70 seconds of test-run time. It detects a missing snapshot, then approves the
 draft and reads a finite captured order through the resident market. The combined filter covered the default draft,
-rejection of Fresh Universe creation, reuse and reconfiguration after wipe, and saved settings.
+invalid setup requests, reuse and reconfiguration after wipe, and saved settings.
 [Validation](capsuleers.md#activity-funded-pvp-ships)
 
 ### Original setup rollout
@@ -32,7 +55,7 @@ HTTPS administration origin. Loopback-only links are available for local connect
 cases in 3.83 seconds (API and view models).
 
 The setup-only administration host uses the existing administrator and antiforgery protection. It persists
-the selected Fresh or Established configuration in the stopped world before initialization. Startup activates
+the approved configuration in the stopped world before initialization. Startup activates
 the approved revision and removes the setup record in one transaction. A wiped checkpoint records when the
 next boot requires setup. Reuse keeps the staged revision, and the confirmation checks its configuration
 generation against the final checkpoint. The backup captures the old state before the change.
@@ -40,10 +63,10 @@ generation against the final checkpoint. The backup captures the old state befor
 See the [operator flow](../world-configuration.md#first-start) and [wipe choices](../world-wipe.md).
 
 **Automated validation.** The server filter covered administration, wipe, launcher API/accounts, startup,
-configuration persistence, character creation and the Fresh Universe restart case. It passed 90 cases
+configuration persistence, character creation and startup on an older save. It passed 90 cases
 with two opt-in skips in 57.30 seconds. An earlier run found an outdated population-page label assertion,
 which reproduced on baseline `721abebc` and was excluded from that filter. The installed build 3662168
-fresh-population case passed separately in 21.81 seconds. The final setup, wipe and readiness filter passed
+historical population case passed separately in 21.81 seconds. The final setup, wipe and readiness filter passed
 all 11 cases in 14.66 seconds. The launcher filter covered view models, API and launch, groups, CA downloads
 and TLS trust. It passed 56 cases in 19.93 seconds.
 
@@ -503,7 +526,7 @@ weekly archive importer or Git revision metadata.
 
 **Automated validation.** `AdministrationResumesInterruptedTrafficImportFromDiskAndInstallsSnapshot` passed in 11.42 seconds
 including runner startup. It interrupts name resolution, restarts the hosted worker, verifies archive cache reuse, and loads
-the published snapshot in a fresh world database instance. The focused filter below passed all 77 cases in 30.97 seconds.
+the published snapshot in a new world database. The focused filter below passed all 77 cases in 30.97 seconds.
 The solution build, catalog and formatting policy tests, formatter, documentation anchor and whitespace checks passed.
 An isolated provider check with the baseline CLI imported November 15–21, 2026 in 8 minutes 11 seconds. The persisted
 snapshot reopened with 45,191 profiles for 27,195 pilots, and the profile count matched its manifest.

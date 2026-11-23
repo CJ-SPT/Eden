@@ -29,7 +29,7 @@ and the precise behavior of the live game's beacon-loss race remain unverified.
 
 The independent pinned input fixture can be regenerated with `tools/Export-CapitalTravelCatalog.py` against the
 build-3662168 catalog. Runtime and persistence tests provision and move the ships and items through the resident world.
-The original delivery fixture uses owned hulls and inputs. The [fresh-world acquisition replay](#fresh-world-rhea-acquisition)
+The original delivery fixture uses owned hulls and inputs. The [acquisition replay](#standard-market-rhea-acquisition)
 also builds the delivered Rhea from market-purchased inputs in a new save.
 
 **Automated validation.** Tool and solution restores passed. The final solution build finished in 2.80 seconds with
@@ -50,7 +50,7 @@ FullyQualifiedName~CapitalTravelTests|FullyQualifiedName~TranslocationTests|Full
 **Optional maintainer checks.** Run the native Jita–Jan delivery. Verify the jump animation, capacitor gauge and
 timers after reconnect. Check beacon visibility and expiry from a third pilot.
 
-## Fresh-world Rhea acquisition
+## Standard market Rhea acquisition
 
 The replay starts two new corvette pilots at zero ISK on a new build-3662168 save with the supported Standard market
 preset. It uses the captured November 16 market orders. Test encounters settle real bounties at the configured 100× rate.
@@ -68,17 +68,16 @@ Jan station. The hull identity, unloaded cargo and jump timers survive a save re
 [CCP invention](https://support.eveonline.com/hc/en-us/articles/203210642-Invention)
 
 The regenerated [supply audit](../tech-two-supply-audit.json) closes the modeled paths for all four jump freighters.
-The default player-supplied market retains a modeled Rhea path with institutional sells restricted to originals and
-skillbooks. The executable acquisition and flight use the Standard preset. A default-market replay from raw extraction
-through every component remains open.
+The executable acquisition and flight use the Standard preset. A replay from raw extraction through every
+component remains open.
 
-**Automated validation.** Set `EDEN_FRESH_UNIVERSE_CATALOG` to build 3662168 `catalog.sqlite` beside its captured
-`market-orders` directory. The exact `FreshStandardMarketFundsBuildsAndDeliversTheSameRhea` case passed in 77.52
+**Automated validation.** Set `EDEN_CAPITAL_MARKET_CATALOG` to build 3662168 `catalog.sqlite` beside its captured
+`market-orders` directory. The exact `StandardMarketFundsBuildsAndDeliversTheSameRhea` case passed in 77.52
 seconds. The existing exact Jita-to-Jan delivery case passed in 8.11 seconds on the integrated revision.
 The focused merge filter passed all 259 cases with no skips in 237.83 seconds. It covered `CapitalTravelTests`, Upwell
 control, attacks, tethering, assets and Standup fighters, `ProductionCatalogTests`, `ScienceJobTests`, `ReactionJobTests`,
 `StandardMarketTests`, world initialization and migrations, jump clones and Insider QA. It also selected
-`FreshProfileStartsEmptyAndPersistsAcrossRestart` and `RatterBuysSalvagerAndResumesPaidRecoveryBeforeSellingIntoFundedDemand`.
+`RatterBuysSalvagerAndResumesPaidRecoveryBeforeSellingIntoFundedDemand`.
 The solution built with zero warnings and errors. Both Python suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
@@ -1052,7 +1051,7 @@ formatting and `git diff --check` passed.
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Upwell gunners can launch and recall Standup fighters. Standup combat and additional combat abilities remain open. |
-| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Authorized pilots can store and board their own ships through shared maintenance bays. Rorqual and Titan clone vats install clones for invited pilots and receive capsule arrivals. Fresh-world resupply remains open. |
+| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Authorized pilots can store and board their own ships through shared maintenance bays. Rorqual and Titan clone vats install clones for invited pilots and receive capsule arrivals. Autonomous resupply remains open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
@@ -1074,7 +1073,7 @@ or economizer, the provisional fixture costs are **47,413 nitrogen isotopes** an
 With no prior fatigue, the client formula predicts **91 seconds** of activation cooldown and **916 seconds** of fatigue
 at whole-second precision. The fixture starts with owned assets. Eden's production audit admits the industrial cyno
 blueprint `52695` and all four jump freighter recipes. Trace blueprint access, invention inputs, construction components,
-skillbooks, Liquid Ozone and ice-derived isotopes through existing acquisition paths for a fresh-world delivery.
+skillbooks, Liquid Ozone and ice-derived isotopes through existing acquisition paths for a delivery in a new save.
 [Production catalog](../production-catalog.json) · [Ice and industry](industry.md)
 
 ### Catalog inputs and gameplay rules

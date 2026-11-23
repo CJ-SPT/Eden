@@ -136,7 +136,7 @@ internal static class Program
         {
             return;
         }
-        string[] creationFlags = ["--fresh-universe", "--economy-world", "--testing-market", "--economy-config", "--npc-stock"];
+        string[] creationFlags = ["--economy-world", "--testing-market", "--economy-config", "--npc-stock"];
         if (args.Any(creationFlags.Contains))
         {
             throw new InvalidDataException("World creation settings have moved to administration. Start Eden without the creation flags.");

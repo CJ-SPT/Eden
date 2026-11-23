@@ -135,8 +135,6 @@ public sealed partial class AdministrationTests
         Assert.Contains("Regional conflicts", html);
         Assert.Contains("Regional operations per group", html);
         Assert.Contains("reuses them when slots reopen", html);
-        Assert.Contains("Dedicated courier pilots", html);
-        Assert.Contains("Dedicated bounty hunters", html);
         Assert.Contains("Ambient traffic", html);
         Assert.Contains("Explore data and relic sites", html);
         Assert.Contains("Salvage NPC wrecks", html);

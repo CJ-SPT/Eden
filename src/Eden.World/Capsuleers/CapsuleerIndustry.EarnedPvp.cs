@@ -19,7 +19,7 @@ internal sealed partial class CapsuleerIndustry
         (catalog, _) => catalog.Definitions.Stations.Keys.Where(CapsuleerEncounterRules.IsTradeHubStation).ToArray()
     );
 
-    internal static bool RequiresEarnedPvp(WorldAction world) => !world.Settings.FreshUniverse && world.Settings.Capsuleers.EarnedPvpShips;
+    internal static bool RequiresEarnedPvp(WorldAction world) => world.Settings.Capsuleers.EarnedPvpShips;
 
     internal static bool HasPvpShip(WorldAction world, long pilot, long ship) =>
         !RequiresEarnedPvp(world) || CapsuleerCorporations.Organization(world, pilot).EarnedPvpShipId == ship;
@@ -130,7 +130,7 @@ internal sealed partial class CapsuleerIndustry
             );
             return new(MarketChanged: boughtBook);
         }
-        long budget = StarterBalance(world, id) - agent.StartingCents;
+        long budget = WalletBalance(world, id) - agent.StartingCents;
         if (QuotePvpGoal(world, catalog, id, station, parts, budget) is not { } purchases)
         {
             return default;
@@ -217,7 +217,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        long budget = StarterBalance(world, id) - agent.StartingCents;
+        long budget = WalletBalance(world, id) - agent.StartingCents;
         var kit = goal?.Kit();
         var parts = kit?.Parts();
         if (kit is not null && (budget <= 0 || !PvpFitQualified(world, catalog, pilot, kit, parts!, out _)))

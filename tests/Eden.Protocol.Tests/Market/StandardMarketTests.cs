@@ -189,13 +189,13 @@ public sealed class StandardMarketTests
     [InlineData(MarketPreset.NpcOnly, NpcMarketKind.Institutional)]
     [InlineData(MarketPreset.Standard, NpcMarketKind.Standard)]
     [InlineData(MarketPreset.Testing, NpcMarketKind.Development)]
-    public async Task FreshWorldCanSwitchToRegularMarketAndRetainPlayerOrders(MarketPreset preset, NpcMarketKind expectedKind)
+    public async Task SwitchingMarketPresetsRetainsPlayerOrders(MarketPreset preset, NpcMarketKind expectedKind)
     {
         const int school = 18;
         const int system = 30001392;
         const int station = 60015159;
         const int shuttle = 672;
-        var directory = TestDirectory.Create("eden-fresh-market-");
+        var directory = TestDirectory.Create("eden-market-preset-");
         try
         {
             WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
@@ -215,7 +215,7 @@ public sealed class StandardMarketTests
                 );
             }
             TestClock clock = new();
-            WorldInitialization.Initialize(database, clock, new(FreshUniverse: true));
+            WorldInitialization.Initialize(database, clock, new(TestingMarket: false, TestingGrants: false));
             var configuration = new WorldConfigurationStore(database, clock);
             long pilot;
             long balance;
@@ -229,7 +229,6 @@ public sealed class StandardMarketTests
                     .Create(account, new("Market Pilot", 1, 1, 0, CharacterRules.UnspecifiedAncestry, [], [], school));
                 var market = host.GetRequiredService<IPilotMarket>();
                 Assert.Equal(0, market.Balance(pilot));
-                Assert.Empty(market.Orders(pilot, shuttle));
                 var live = host.GetRequiredService<LiveWorld>();
                 using (var economy = live.Economy.Begin())
                 {
@@ -257,13 +256,12 @@ public sealed class StandardMarketTests
                 }
                 var pending = configuration.Save(state.Generation, draft, "test");
                 Assert.NotNull(pending.Pending);
-                Assert.DoesNotContain(market.Orders(pilot, shuttle), row => !row.Bid);
+                Assert.Equal(state.Active.Draft.Settings.Economy, database.Settings.Economy);
                 await live.FlushAsync();
             }
 
             WorldInitialization.Initialize(database, clock);
             using var reopened = ServerServices.Build(database, clock, liveWorld: true);
-            Assert.True(database.Settings.FreshUniverse);
             Assert.False(database.Settings.DevelopmentSupply.TestingGrants);
             Assert.Equal(preset, SettingsForm.From(database.Settings).MarketPreset);
             var shop = reopened.GetRequiredService<IPilotMarket>();

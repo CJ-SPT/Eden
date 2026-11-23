@@ -922,7 +922,7 @@ the combined run. An additional actual-Athanor open/solid point assertion passed
 Tool/solution restore and the solution build passed with zero warnings/errors (0.76 seconds).
 The catalog Python policy suite passed eight cases in 1.044 seconds and formatting policy passed nine in 0.015 seconds.
 Formatting verified 2,471 files and the 140-column rule. Full export/conversion, pinned-converter bootstrap, preflight,
-fresh-profile equivalence, byte-identical incremental export, wrong-client rejection and output preservation passed;
+clean export equivalence, byte-identical incremental export, wrong-client rejection and output preservation passed;
 the latter combined exporter smoke checks took 2.42 seconds. Documentation links and `git diff --check` passed.
 The full .NET suite was not requested or run.
 

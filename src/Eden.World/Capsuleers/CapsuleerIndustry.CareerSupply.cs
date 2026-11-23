@@ -29,7 +29,7 @@ internal sealed partial class CapsuleerIndustry
         }
 
         var stock = Hangar(world, id, station).Where(item => !item.Singleton).ToLookup(item => item.TypeId);
-        long balance = StarterBalance(world, id);
+        long balance = WalletBalance(world, id);
         // Read the station's existing listings without seeding or refreshing supply just to choose a goal.
         var asks =
             balance > 0 && StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)

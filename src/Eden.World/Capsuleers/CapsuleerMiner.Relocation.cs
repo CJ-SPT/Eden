@@ -57,7 +57,7 @@ internal sealed partial class CapsuleerMiner
     {
         if (_operation.World is EconomyTransaction world && CapsuleerCorporations.FinishRelocation(world, _operation.Catalog, Pilot, Now))
         {
-            _work = Work with { OperatingStationId = Pilot.StationId, AvoidedBelts = [], StrippedBelts = [], StarterOreTypes = [] };
+            _work = Work with { OperatingStationId = Pilot.StationId, AvoidedBelts = [], StrippedBelts = [] };
         }
     }
 }

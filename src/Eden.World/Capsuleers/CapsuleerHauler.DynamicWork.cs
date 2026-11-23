@@ -28,7 +28,6 @@ internal sealed partial class CapsuleerHauler
     private bool HasPvpShip => CapsuleerIndustry.HasPvpShip(_operation.World, pilotId, Pilot.ShipId);
     private bool HasCommittedPvpShip =>
         !database.Settings.Capsuleers.EarnedPvpShips
-        || database.Settings.FreshUniverse
         || CapsuleerCorporations.ReadOrganization(Live?.Economy.Peek<SavedCapsuleerOrganization>(pilotId)).EarnedPvpShipId == Pilot.ShipId;
 
     private bool TryDynamicDockWork(CombatAnomaly? scoutedAnomaly)

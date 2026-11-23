@@ -4,7 +4,7 @@
 
 Eden’s sandbox keeps persistent pilots, ordinary losses and recovery, and regional economies that develop through mining,
 production and trade. The original design records the prototype and its gameplay prerequisites. Follow the
-[bot development milestones](bot-development-plan.md) for the ongoing fresh-universe program and the
+[bot development milestones](bot-development-plan.md) for planned work and the
 [capsuleer guide](capsuleer-population.md) for current behavior.
 
 <a id="1-the-experience-we-are-building"></a>

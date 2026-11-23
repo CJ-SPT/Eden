@@ -294,7 +294,7 @@ internal sealed partial class CapsuleerIndustry(
                 job.Activity == IndustryActivity.Reaction
                 || catalog.FittingType(job.ProductTypeId)?.GroupId == StructureRules.FuelBlockGroup
             );
-        if (!world.Settings.FreshUniverse && (installed.Length == 0 || awaitingRefinery) && !listed.Contains(CapsuleerMinerTwoRules.Module))
+        if ((installed.Length == 0 || awaitingRefinery) && !listed.Contains(CapsuleerMinerTwoRules.Module))
         {
             var minerTwo = ProduceMinerTwo(world, catalog, operatorPilot, corporation, hangar, minerTwoBids, now, out minerTwoSupply);
             if (minerTwo.HasValue)
@@ -446,10 +446,6 @@ internal sealed partial class CapsuleerIndustry(
         if (rank <= 0)
         {
             return false;
-        }
-        if (world.Settings.FreshUniverse)
-        {
-            return PilotSkillReader.Level(world, catalog, pilot, skill.TypeId) >= skill.Level;
         }
         var trained =
             world.Set<PilotSkill>().Find(pilot, skill.TypeId)

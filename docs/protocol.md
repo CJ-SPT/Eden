@@ -145,7 +145,6 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Bot PvP fit progression and rat damage](protocol/capsuleers.md#bot-pvp-fit-progression-and-rat-damage)
 - [Activity-funded PvP ships](protocol/capsuleers.md#activity-funded-pvp-ships)
 - [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)
-- [Fresh-world job choice and advanced combat fits (historical)](protocol/capsuleers.md#fresh-world-job-choice-and-advanced-combat-fits)
 - [Queue recovery at 10,000 pilots](protocol/capsuleers.md#queue-recovery-at-10000-pilots)
 - [Autonomous pilot creation under load](protocol/capsuleers.md#autonomous-pilot-creation-under-load)
 - [Bot population limits and work regions](protocol/capsuleers.md#bot-population-limits-and-work-regions)
@@ -153,14 +152,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Bot activity settings](protocol/capsuleers.md#bot-activity-settings)
 - [Bot data and relic exploration](protocol/capsuleers.md#bot-data-and-relic-exploration)
 - [Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade)
-- [Fresh-world frontier patrols (historical)](protocol/capsuleers.md#fresh-world-frontier-patrols)
-- [Fresh-world replacement markets (historical)](protocol/capsuleers.md#fresh-world-replacement-markets)
-- [Fresh-world corporate careers (historical)](protocol/capsuleers.md#fresh-world-corporate-careers)
-- [Fresh-universe hauling and bounty careers (historical)](protocol/capsuleers.md#fresh-universe-hauling-and-bounty-careers)
 - [First bot career ships](protocol/capsuleers.md#first-bot-career-ships)
 - [Earned bot career training](protocol/capsuleers.md#earned-bot-career-training)
-- [Fresh-universe starter industry (historical)](protocol/capsuleers.md#fresh-universe-starter-industry)
-- [Additional fresh-universe founder cohorts (historical)](protocol/capsuleers.md#additional-fresh-universe-founder-cohorts)
 - [Regional procurement for bot corporations](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
 - [Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 - [Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production)
@@ -245,7 +238,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Capital ships and jump logistics
 
-- [Fresh-world Rhea acquisition](protocol/capital-logistics.md#fresh-world-rhea-acquisition)
+- [Standard market Rhea acquisition](protocol/capital-logistics.md#standard-market-rhea-acquisition)
 - [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
 - [Carrier launch decks and light attack fighters](protocol/capital-logistics.md#carrier-launch-decks-and-light-attack-fighters)
 - [Fighter rocket and torpedo salvos](protocol/capital-logistics.md#fighter-rocket-and-torpedo-salvos)
@@ -615,7 +608,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
-- [Market presets on fresh worlds and demand batching](protocol/industry.md#market-presets-on-fresh-worlds-and-demand-batching)
+- [Market preset changes and demand batching](protocol/industry.md#market-preset-changes-and-demand-batching)
 - [Development market supply for bots](protocol/industry.md#development-market-supply-for-bots)
 - [Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
 - [Standard market preparation during bot jobs](protocol/industry.md#standard-market-preparation-during-bot-jobs)
@@ -789,10 +782,10 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
-- [Bot CPU and the fresh-world population ceiling](protocol/performance.md#bot-cpu-and-the-fresh-world-population-ceiling)
-- [Fresh-world backlog during starter ore sales](protocol/performance.md#fresh-world-backlog-during-starter-ore-sales)
-- [Sustaining expanded fresh-world bot populations](protocol/performance.md#sustaining-expanded-fresh-world-bot-populations)
-- [Mature fresh-world market and checkpoint throughput](protocol/performance.md#mature-fresh-world-market-and-checkpoint-throughput)
+- [Bot CPU and the historical population ceiling](protocol/performance.md#bot-cpu-and-the-historical-population-ceiling)
+- [Bot backlog during starter ore sales](protocol/performance.md#bot-backlog-during-starter-ore-sales)
+- [Sustaining expanded bot populations](protocol/performance.md#sustaining-expanded-bot-populations)
+- [Mature bot market and checkpoint throughput](protocol/performance.md#mature-bot-market-and-checkpoint-throughput)
 - [Standard market bot throughput on HostCram](protocol/performance.md#standard-market-bot-throughput-on-hostcram)
 - [CPU profiling at 2,500 autonomous capsuleers](protocol/performance.md#cpu-profiling-at-2500-autonomous-capsuleers)
 - [Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
@@ -897,7 +890,6 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sovereignty
 
-- [Fresh-world alliance and first-claim progression](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
 - [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims)
 - [Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep)
 - [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)
@@ -954,6 +946,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### World configuration
 
 - [First-start world setup](protocol/world-configuration.md#first-start-world-setup)
+- [Retired world profile](protocol/world-configuration.md#retired-world-profile)
 - [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 - [Optional data imports in server administration](protocol/world-configuration.md#optional-data-imports-in-server-administration)
 - [Resuming interrupted zKillboard imports](protocol/world-configuration.md#resuming-interrupted-zkillboard-imports)

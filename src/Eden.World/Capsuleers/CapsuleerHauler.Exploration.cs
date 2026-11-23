@@ -36,11 +36,7 @@ internal sealed partial class CapsuleerHauler
         bool explorer = Pilot.ShipTypeId == CapsuleerIndustry.ExplorerHull;
         if (
             !explorer
-            && (
-                world.Settings.FreshUniverse
-                || world.Set<SavedCapsuleerAgent>().Find(pilotId)?.Slot != ExplorerSlot
-                || Work.ActiveTicks < Work.ExplorationRetryAt
-            )
+            && (world.Set<SavedCapsuleerAgent>().Find(pilotId)?.Slot != ExplorerSlot || Work.ActiveTicks < Work.ExplorationRetryAt)
         )
         {
             return false;

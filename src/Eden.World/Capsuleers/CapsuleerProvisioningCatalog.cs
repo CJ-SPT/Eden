@@ -27,8 +27,6 @@ internal static class CapsuleerProvisioningCatalog
     );
     private static readonly CatalogDefinition<CapsuleerOrigin[]> s_origins = new("capsuleer-origins", (catalog, _) => LoadOrigins(catalog));
     private static readonly CatalogDefinition<CapsuleerSite> s_miningSites = new("capsuleer-mining-site", MiningSite);
-    private static readonly CatalogDefinition<CapsuleerSite> s_starterIndustry = new("starter-industry-site", StarterIndustrySite);
-    internal static readonly CatalogDefinition<ILookup<int, int>> StarterOreSources = new("starter-ore-sources", ReadStarterOreSources);
 
     private sealed record MiningHulls(CapsuleerMiningHull[] Barges, CapsuleerMiningHull[] Exhumers);
 
@@ -37,64 +35,6 @@ internal static class CapsuleerProvisioningCatalog
     internal static CapsuleerOrigin[] Origins(CatalogDbContext catalog) => catalog.Definition(s_origins, 0);
 
     internal static CapsuleerSite Mining(CatalogDbContext catalog, int systemId) => catalog.Definition(s_miningSites, systemId);
-
-    internal static CapsuleerSite StarterIndustry(CatalogDbContext catalog, int systemId) =>
-        catalog.Definition(s_starterIndustry, systemId);
-
-    internal static bool StarterIndustryServices(CatalogDbContext catalog, CatalogStationDefinition station) =>
-        StationCapabilities.Has(catalog, station.OperationId, StationService.Market)
-        && StationCapabilities.Has(catalog, station.OperationId, StationService.Manufacturing)
-        && StationCapabilities.Has(catalog, station.OperationId, StationService.Reprocessing)
-        && catalog.Read(CatalogData.Sde.NpcStations, (long)station.Id)
-            is { ReprocessingEfficiency: > 0 and <= 1, ReprocessingStationsTake: >= 0 and <= 1 };
-
-    private static CapsuleerSite StarterIndustrySite(CatalogDbContext catalog, int system)
-    {
-        if (
-            catalog.Read(CatalogData.Client.Systems, (long)system)?.SecurityStatus
-                is not >= Eden.Gameplay.Combat.CrimewatchRules.HighSecurity
-            || catalog.FittingType((int)MiningLaserType.Civilian) is null
-        )
-        {
-            return new(system, CapsuleerEligibility.MissingEquipment, null, null);
-        }
-        var station = catalog
-            .Definitions.StationsInSystem(system)
-            .Where(station => StarterIndustryServices(catalog, station))
-            .MinBy(station => station.Id);
-        if (station is null || !ManufacturingCatalog.Recipes(catalog).TryGetValue(StarterIndustryRules.MinerBlueprint, out var recipe))
-        {
-            return new(system, CapsuleerEligibility.MissingEquipment, null, null);
-        }
-        var belts = catalog.BeltAnchors(system);
-        if (belts.Count == 0 || !belts.All(belt => ValidCounts(catalog, belt.Id)))
-        {
-            return new(system, CapsuleerEligibility.NoUsableOre, null, null);
-        }
-        var sources = catalog.Definition(StarterOreSources, system);
-        return recipe.Materials.All(material => material.TypeId is > 0 and <= int.MaxValue && sources.Contains((int)material.TypeId.Value))
-            ? new(system, CapsuleerEligibility.Eligible, station.Id, null) { OreBelts = belts.Count }
-            : new(system, CapsuleerEligibility.NoUsableOre, null, null);
-    }
-
-    private static ILookup<int, int> ReadStarterOreSources(CatalogDbContext catalog, int system) =>
-        catalog
-            .BeltAnchors(system)
-            .SelectMany(belt => catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, (long)belt.Id) ?? [])
-            .Where(pair => pair.Value > 0)
-            .Select(pair => int.Parse(pair.Key, CultureInfo.InvariantCulture))
-            .Distinct()
-            .Where(id => SupportedOre(catalog, id))
-            .SelectMany(id =>
-                (catalog.Read(CatalogData.Client.Typematerials, (long)id)?.Materials ?? [])
-                    .Where(source => source.MaterialTypeID is > 0 and <= int.MaxValue)
-                    .Select(source => (Ore: id, Material: (int)source.MaterialTypeID!.Value))
-            )
-            .ToLookup(source => source.Material, source => source.Ore);
-
-    internal static bool BeltHasOre(CatalogDbContext catalog, long belt, IReadOnlyList<int> types) =>
-        catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, belt) is { } counts
-        && types.Any(type => counts.GetValueOrDefault(type.ToString(CultureInfo.InvariantCulture)) > 0);
 
     internal static bool HasMiningFleets(CatalogDbContext catalog) => catalog.Definition(s_miningHulls, 0).Barges.Length > 0;
 

@@ -236,7 +236,7 @@ public sealed class IndustrialDemandTests
     }
 
     [Fact]
-    public void FreshWorldHasMaterialAndProductBuyersAndOnlyBootstrapProductSupply()
+    public void ProgressiveMarketHasMaterialAndProductBuyersAndOnlyBootstrapProductSupply()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);

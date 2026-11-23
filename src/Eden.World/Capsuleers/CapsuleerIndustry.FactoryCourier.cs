@@ -46,11 +46,7 @@ internal sealed partial class CapsuleerIndustry
             .Select(member => (member.Id, Request: CurrentFactoryRequest(world, live, member.Id, employer.Id, now)))
             .Where(entry => entry.Request is not null)
             .ToArray();
-        if (
-            !world.Settings.FreshUniverse
-            && work is not null
-            && PlanPlanetaryCollection(world, catalog, courier, employer, work, requests, avoided, now) is { } planetary
-        )
+        if (work is not null && PlanPlanetaryCollection(world, catalog, courier, employer, work, requests, avoided, now) is { } planetary)
         {
             return planetary;
         }

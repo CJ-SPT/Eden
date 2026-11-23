@@ -21,20 +21,11 @@ internal static class CapsuleerPopulationActivation
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var suspended = world.Set<SavedCapsuleerSuspension>().ToDictionary(s => s.PilotId);
         var agents = world.Set<SavedCapsuleerAgent>().AsNoTracking().ToArray();
-        bool fresh = world.Settings.FreshUniverse;
         var eligibleAgents = agents
             .GroupBy(agent => agent.CommunitySystemId)
             .Where(community => policy.CanWork(catalog.Definitions, community.Key))
             .SelectMany(community =>
             {
-                if (fresh)
-                {
-                    return community.Where(agent =>
-                        agent.Career == CapsuleerCareer.Mining
-                            ? FreshCareerRules.AllowsMiningFounder(agent.Slot, policy)
-                            : FreshCareerRules.AllowsFounder(agent.Slot, policy)
-                    );
-                }
                 var traffic = CapsuleerTrafficRoutes.Geography(catalog, community.Key);
                 int count = CapsuleerEncounterRules.Haulers(seed, community.Key, traffic.GateCount, traffic.StationCount, policy);
                 return community.Where(agent => CapsuleerPopulationRules.Included(agent.Career, agent.Slot, count, policy));

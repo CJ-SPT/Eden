@@ -42,7 +42,7 @@ internal sealed partial class CapsuleerIndustry
     {
         long id = pilot.PilotId;
         int station = pilot.StationId;
-        long balance = StarterBalance(world, id);
+        long balance = WalletBalance(world, id);
         if (
             balance <= 0
             || pilot.Position is not null

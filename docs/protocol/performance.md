@@ -6169,8 +6169,7 @@ The bot worker accounted for 95% of sampled allocations during a separate 12-sec
 The stack for restoring hauler fittings accounted for 39%. Fittings now share immutable base attributes and look
 up a pilot's relevant skill points by composite key, including pending changes in that transaction. A trade
 prepares the selected career hull directly when the saved or entry hull qualifies. Selecting a new goal
-checks only hull groups that can supply the required career stage. Fresh careers prepare their slot's
-entry hull. Cold single-record catalog reads reuse a parameterized command within each operation.
+checks only hull groups that can supply the required career stage. Cold single-record catalog reads reuse a parameterized command within each operation.
 Partial mining keeps the system's asteroid contacts warm. Depletion, replenishment and physical changes refresh
 the affected system.
 
@@ -6222,11 +6221,10 @@ for each run. Per-second samples and checkpoint measurements are under `artifact
 
 The solution build passed in 9.99 s. The exact `ResidentDemandDoesNotVisitUnrelatedSimulatedSystems` and
 `PartialMiningKeepsAsteroidContactsWarmAndDepletionRefreshesOnlyTheMinedSystem` filters passed. The broader
-catalog, fitting, market, admission, scheduling, preparation, NPC and fresh-career selection passed 179 of
+catalog, fitting, market, admission, scheduling, preparation, NPC and historical career selection passed 179 of
 184 cases in 2 min 13 s. All five failures reproduced on `f285dfd7`. They were two fitting SQL-count assertions,
 the warm founder's SQL-count assertion and both disconnect variants of
-`RoutineProjectionPersistsNewResidentFounderBeforeItsDependents`. Fresh couriers and combat pilots earned and
-replaced both career ships in the installed-catalog test. Both Python policy suites passed all 17 checks.
+`RoutineProjectionPersistsNewResidentFounderBeforeItsDependents`. Both Python policy suites passed all 17 checks.
 
 After integration with the capital-logistics changes on `74904850`, the solution and Release test project
 built with zero warnings or errors in 10.84 s and 12.81 s. The integration filter covered resident demand,
@@ -6546,10 +6544,10 @@ Not performed; agent client testing is disabled.
 
 None.
 
-## Bot CPU and the fresh-world population ceiling
+## Bot CPU and the historical population ceiling
 
 The November 21 dedicated-server checkpoint had a cap of 5,000 and 2,418 saved autonomous pilots.
-Fresh-world background preparation had processed all 1,002 high-security systems with stations in
+Bot background preparation had processed all 1,002 high-security systems with stations in
 the pinned catalog. Of those, 955 had founders. There were 542 producer miners, 542 buyer miners,
 388 rookie couriers and 946 bounty pilots. The existing rules admit up to two miners, one courier
 and one bounty pilot per eligible system. Even if all four roles qualified everywhere, the initial
@@ -6588,7 +6586,7 @@ checkpoint requests. The established-world input is the previous CPU fixture wit
 active cap raised to 5,000. Its manifest SHA-256 is
 `AC31D4BE6C794B838941F5F7010C9546DE8360ABB6BC3B3B357B2D62FB25B59F`.
 Preparation and worker tracing were disabled for the comparison. All runs use private
-copies of the same save. Background preparation is enabled in the remote fresh world.
+copies of the same save. Background preparation is enabled in the remote benchmark save.
 
 Visiting 550 communities reached the cap late in an initial diagnostic run (550.8 s).
 The paired replays visit all 2,728 populated communities before starting the timer.
@@ -6642,12 +6640,12 @@ Not performed; agent client testing is disabled.
 
 ### Optional maintainer checks
 
-Repeat the CPU and observer measurements on a 5,000-pilot fresh-world fixture once its
+Repeat the CPU and observer measurements on a 5,000-pilot bot fixture once its
 admission rules can supply the additional pilots. The remote sample had about 777 saved
 job-sequence advances per second at 2,418 pilots. The established-world replay has a
 different activity mix, so it cannot establish the dedicated server's 5,000-pilot capacity.
 
-## Fresh-world backlog during starter ore sales
+## Bot backlog during starter ore sales
 
 At 18:42:24 UTC on November 21, the dedicated server showed 1,283 of 2,418 jobs due and
 the oldest 6.93 s late. Read-only samples of 11 published checkpoints between 18:43:34 and
@@ -6705,7 +6703,7 @@ Between seconds 60 and 179 it completed 572.4 actions/s at 0.690 ms process CPU 
 action. The oldest due job reached 99.8 ms in that window. End-to-end frame / market p99
 was 31.3 / 43.6 ms and the 120 observer calls issued zero SQL commands, opened zero
 connections and rebuilt zero fits. The test took 3 min 44 s including setup. The dedicated
-server's fresh-world queue still requires measurement on a deployed build.
+server's bot queue still requires measurement on a deployed build.
 
 The dedicated host first admitted 5,000 fresh pilots but reached 7.53 seconds of backlog as they began work.
 A four-minute diagnostic from the later checkpoint finished 3.72 seconds behind. An eight-second allocation
@@ -6733,16 +6731,15 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 When the branch is deployed, compare allocation rate and oldest due job age across several
-15-second checkpoints with the fresh world active. The pre-change profile and checkpoint
+15-second checkpoints with the benchmark save active. The pre-change profile and checkpoint
 samples are under `artifacts/bot-cpu-5000/` in the main checkout.
 
 
-## Sustaining expanded fresh-world bot populations
+## Sustaining expanded bot populations
 
 The dedicated Linux host has four vCPUs and 7.8 GiB of RAM. Earlier established-world replays used a different
-workload. Fresh universes need additional eligible founders. The
-[founder cohort setting](capsuleers.md#additional-fresh-universe-founder-cohorts) expands the roster through the
-resident provisioner and preserves existing pilots, jobs, and normal starter economics.
+workload. These measurements used an expanded resident bot roster.
+[Original workload and configuration](https://github.com/CJ-SPT/Eden/blob/c31ac05af42c133567e203bb6859799c19af3852/docs/protocol/performance.md)
 
 The market changes select a station and type assortment through its resident index before materializing
 rows for institutional refresh. In a matched probe with 16,384 unrelated orders in the same station, four sales
@@ -6756,7 +6753,7 @@ The detached image keeps the same generation, atomic replacement, and retry sema
 market rows projected per checkpoint fell from 48,877 to 481 and market projection allocations fell from
 20,390,504 to 232,408 bytes. Both runs completed seven checkpoints without bot failures.
 
-Expanded fresh worlds allow one offscreen admission per 50 ms while oldest due work is less than 100 ms late,
+The expanded roster tests allow one offscreen admission per 50 ms while oldest due work is less than 100 ms late,
 retaining up to four starts per interval when the queue drains. Start work enters at current simulation time.
 The deadline queue still orders already-due jobs. Starts do not accumulate during backlog or inactivity.
 
@@ -6774,7 +6771,7 @@ that Windows disk increased from 229 to 405 ms. The default uses an in-memory im
 
 ### Automated validation
 
-The exact `ReplaySustainedBotThroughput` filter can use the observer pilot and account in a frozen fresh-world
+The exact `ReplaySustainedBotThroughput` filter can use the observer pilot and account in a frozen bot
 save. The admission window waits for the required number of scheduled pilots before timing the steady workload.
 The replay records admission time, actual paid mining collections, process working set, queue age, latency, and
 checkpoint costs. Market and population maintenance can run during the measured window.
@@ -6784,13 +6781,13 @@ resident provisioner before the timed workload. With `EDEN_BOT_REPLAY_IMMUTABLE_
 runner links catalogs from a read-only fixture after checking manifest hashes and rollback journal headers.
 Keep the world, skills editor and active marker in the private replay directory.
 
-The merged market fix at `63a030c0` ran on the dedicated host against a private copy of its 2,418-pilot fresh
+The merged market fix at `63a030c0` ran on the dedicated host against a private copy of its 2,418-pilot
 save. The 180-second run recovered from its saved backlog in 58.1 seconds and completed 153,218 actions
 and 4,004 paid mining collections. In the final 90 seconds, due age p95 was 606 ms and peaked at 1.16 s. Warm
 frame p95/p99 was 53.1/88.0 ms and market p95/p99 was 32.9/44.7 ms. The test container ran alongside the idle
 production service for this diagnostic. Raw results are under `artifacts/remote-bot-10000-20261121/`.
 
-The ten-minute Fresh Universe replay at `8a1af1d4` retained all 10,000 pilots, completed 1,531,712 actions
+The ten-minute historical replay at `8a1af1d4` retained all 10,000 pilots, completed 1,531,712 actions
 and 42,723 paid mining collections, and wrote 41 checkpoints. It recorded zero action failures, frame p99
 of 60.7 ms, and market request p99 of 68.9 ms. Bot queue age p95 over the final five minutes was 166.9 seconds
 and ended at 168.9 seconds. It failed the one-second queue deadline. The test changed the container limit from
@@ -6798,7 +6795,7 @@ and ended at 168.9 seconds. It failed the one-second queue deadline. The test ch
 fall behind after the change.
 
 A separate established-world replay with two observers reached 10,000 scheduled pilots and stopped at
-105 seconds when the 6 GiB container OOM-killed the test host. In the next Fresh Universe restart diagnostic,
+105 seconds when the 6 GiB container OOM-killed the test host. In the next historical restart diagnostic,
 the detached file capture and read-only catalog fixtures left more than 3.7 GiB of host memory available.
 The scheduler reached 9,993 of the 10,000 saved pilots. It held the remaining seven while the existing queue
 had thousands of due jobs. That diagnostic ended at the admission plateau before the timed window. The
@@ -6806,7 +6803,7 @@ read-only catalog link integration test passed on Linux. The linked fixture kept
 world database and its own mutable skill state.
 
 With disk-backed checkpoint capture and the larger static geometry cache at `08aef8b9`, a ten-minute
-Fresh Universe replay retained 7,500 scheduled pilots and completed 1,567,231 actions, including 46,965
+historical replay retained 7,500 scheduled pilots and completed 1,567,231 actions, including 46,965
 paid mining collections. It wrote 41 checkpoints with zero action failures and no OOM kill. All final
 301 queue samples stayed below one second. Queue age p95 was 343 ms and the maximum was 726 ms.
 Warm frame and market p99 were 16.5 and 30.5 ms. Peak process working set was 3.87 GiB and the lowest
@@ -6837,7 +6834,7 @@ had queue age p95 of 652 ms and an ending age of 168 ms. Two of 301 samples exce
 with a maximum of 1.10 seconds. Frame and market request p99 were 67.0 and 38.9 ms. Peak process
 working set was 3.99 GiB and host available memory stayed above 3.14 GiB.
 
-The 15-minute Fresh Universe replay at `338d74d2` used the same frozen 10,000-pilot workload and the
+The 15-minute historical replay at `338d74d2` used the same frozen 10,000-pilot workload and the
 indexed ship deletion, direct checkpoint installation, quiet defense reads and scoped population
 invalidation. Admission took 22.0 seconds after preparing the starter roster. All 10,000 pilots stayed
 scheduled while completing 3,220,428 actions and 94,878 paid mining collections. The replay wrote 61
@@ -6860,7 +6857,7 @@ Not performed; agent client testing is disabled.
 
 Compare scheduled population and role activity, oldest job age, and peak memory during the deployed ramp.
 
-## Mature fresh-world market and checkpoint throughput
+## Mature bot market and checkpoint throughput
 
 HostCram ran revision `7118d3fe` with settings revision 15. Beginner market supply, progressive markets, and regional hub
 supply were enabled. All three were disabled in the settings revision 14 replay above. At 28 minutes of uptime, the

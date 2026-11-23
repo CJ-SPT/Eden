@@ -79,7 +79,7 @@ public static class WorldWipe
         ClearWorld(world);
         using (WorldDbContext replacement = new(world))
         {
-            if (reconfigure || WorldConfigurationStore.IsFreshUniverse(replacement))
+            if (reconfigure)
             {
                 WorldSetupStore.RequireReconfiguration(replacement);
             }

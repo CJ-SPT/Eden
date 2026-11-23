@@ -164,12 +164,7 @@ internal sealed partial class PilotMarketStore
         live.Economy.Inspect(static world =>
         {
             var settings = world.Set<SavedWorldEconomy>().Single();
-            return new WorldEconomySettings(
-                settings.TestingMarket,
-                settings.TestingGrants,
-                settings.InstitutionalStock,
-                world.Settings.FreshUniverse
-            );
+            return new WorldEconomySettings(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
         });
 
     private static long ResidentObserve(LiveWorld live, long pilotId) => live.Economy.Inspect(world => world.MarketHead(pilotId));

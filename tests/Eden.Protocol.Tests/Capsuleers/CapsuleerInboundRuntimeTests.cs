@@ -265,8 +265,6 @@ public sealed class CapsuleerInboundRuntimeTests
             host.GetRequiredService<CapsuleerIndustry>(),
             host.GetRequiredService<Eden.World.Sovereignty.PilotEntosisStore>(),
             host.GetRequiredService<CapsuleerCareerTraining>(),
-            host.GetRequiredService<Eden.World.Agents.PilotMissionStore>(),
-            host.GetRequiredService<Eden.World.Corporations.PilotFleetStore>(),
             host.GetRequiredService<MilitiaComplexStore>()
         );
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);

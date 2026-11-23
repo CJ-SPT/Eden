@@ -83,7 +83,7 @@ internal sealed partial class PilotMarketStore
         }
         using WorldDbContext world = new(database.Path);
         var settings = world.Set<SavedWorldEconomy>().Single();
-        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock, database.Settings.FreshUniverse);
+        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
     }
 
     public long Observe(long pilotId)

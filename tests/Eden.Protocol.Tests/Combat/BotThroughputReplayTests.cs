@@ -192,7 +192,6 @@ public sealed partial class ServerPerformanceReplayTests
             live.TrafficActions.ReportedTradePilots = s_slowTradePilots;
             if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_PREFILL_ROSTER") == "1")
             {
-                Assert.True(database.Settings.FreshUniverse);
                 Assert.True(requiredPilots is > 0);
                 await PrefillThroughputRoster(
                     host.GetRequiredService<ICapsuleerBackgroundPreparation>(),

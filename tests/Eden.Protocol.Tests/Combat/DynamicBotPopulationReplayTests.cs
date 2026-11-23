@@ -141,7 +141,6 @@ public sealed partial class ServerPerformanceReplayTests
                 new
                 {
                     population,
-                    settings.FreshUniverse,
                     combatShip,
                     corporation,
                 }

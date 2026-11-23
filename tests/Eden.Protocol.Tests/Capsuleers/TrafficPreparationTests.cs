@@ -173,22 +173,12 @@ public sealed class TrafficPreparationTests(ITestOutputHelper output)
         }
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ResidentFreshTradesSkipLegacyJourneyPreparation(bool freshUniverse)
+    [Fact]
+    public void ResidentTradesPrepareTheirJourney()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();
-        var configuration = fixture.Database.Configuration;
-        var active = configuration.Active!;
-        configuration.Install(
-            active with
-            {
-                Draft = active.Draft with { Settings = active.Draft.Settings with { FreshUniverse = freshUniverse } },
-            }
-        );
         long hauler = fixture.Founder().PilotId;
-        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true, loadConfiguration: false);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         long miner = live.Economy.Inspect(world =>
             world.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId
@@ -207,16 +197,7 @@ public sealed class TrafficPreparationTests(ITestOutputHelper output)
         Assert.Equal(hauler, input.Job.PilotId);
         Assert.Equal(CapsuleerAction.Trade, input.Job.Action);
         Assert.NotEqual(0, input.TrainingHull);
-        Assert.Equal(freshUniverse, input.FreshCareerTrade);
-        if (freshUniverse)
-        {
-            Assert.Null(input.Journey);
-            Assert.Null(input.Template);
-        }
-        else
-        {
-            Assert.NotNull(input.Journey);
-        }
+        Assert.NotNull(input.Journey);
     }
 
     [Fact]
