@@ -1831,6 +1831,455 @@
       ]
     },
     {
+      "missionId": 2256,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Stargate_Campers_(Level_2)",
+      "sourceRevision": "oldid=191678",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16105
+              ],
+              "count": 3,
+              "range": 25000
+            },
+            {
+              "types": [
+                16108
+              ],
+              "count": 3,
+              "range": 25000
+            },
+            {
+              "types": [
+                16109
+              ],
+              "count": 1,
+              "range": 25000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2257,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Stargate_Campers_(Level_2)",
+      "sourceRevision": "oldid=191678",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16105
+              ],
+              "count": 3,
+              "range": 25000
+            },
+            {
+              "types": [
+                16108
+              ],
+              "count": 3,
+              "range": 25000
+            },
+            {
+              "types": [
+                16109
+              ],
+              "count": 1,
+              "range": 25000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2250,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Stargate_Campers_(Level_3)",
+      "sourceRevision": "oldid=191679",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16107,
+                16108
+              ],
+              "count": 5,
+              "range": 25000
+            },
+            {
+              "types": [
+                16112,
+                16115
+              ],
+              "count": 3,
+              "range": 25000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2251,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Stargate_Campers_(Level_3)",
+      "sourceRevision": "oldid=191679",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16107,
+                16108
+              ],
+              "count": 5,
+              "range": 25000
+            },
+            {
+              "types": [
+                16112,
+                16115
+              ],
+              "count": 3,
+              "range": 25000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1256,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/The_Small_Armory",
+      "sourceRevision": "oldid=203906",
+      "rooms": [
+        {
+          "roomId": 3330,
+          "entryObjectId": 63951
+        },
+        {
+          "roomId": 3331,
+          "entryObjectId": 63953
+        },
+        {
+          "roomId": 3332,
+          "entryObjectId": 63973
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 63950,
+          "destinationRoomId": 3331
+        },
+        {
+          "fromObjectId": 63952,
+          "destinationRoomId": 3332,
+          "requiresClear": true
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 63988,
+          "required": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 3331,
+          "groups": [
+            {
+              "types": [
+                23999,
+                24004
+              ],
+              "count": 2,
+              "range": 42500
+            },
+            {
+              "types": [
+                17574
+              ],
+              "count": 2,
+              "range": 42500,
+              "required": false
+            },
+            {
+              "types": [
+                17146
+              ],
+              "count": 2,
+              "range": 42500,
+              "required": false
+            },
+            {
+              "types": [
+                16878,
+                16879
+              ],
+              "count": 3,
+              "range": 30000
+            },
+            {
+              "types": [
+                23969,
+                23974
+              ],
+              "count": 2,
+              "range": 30000
+            },
+            {
+              "types": [
+                16891,
+                16896,
+                24111
+              ],
+              "count": 2,
+              "range": 30000
+            },
+            {
+              "types": [
+                16878,
+                16879
+              ],
+              "count": 3,
+              "range": 77500
+            },
+            {
+              "types": [
+                16891,
+                16896
+              ],
+              "count": 1,
+              "range": 77500
+            },
+            {
+              "types": [
+                24004,
+                24005
+              ],
+              "count": 1,
+              "range": 77500
+            }
+          ]
+        },
+        {
+          "roomId": 3332,
+          "groups": [
+            {
+              "types": [
+                23969,
+                23974
+              ],
+              "count": 4,
+              "range": 65000,
+              "required": false
+            },
+            {
+              "types": [
+                16889,
+                16898
+              ],
+              "count": 2,
+              "range": 65000,
+              "required": false
+            },
+            {
+              "types": [
+                16562,
+                16561
+              ],
+              "count": 2,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                16889,
+                16898,
+                24112
+              ],
+              "count": 2,
+              "range": 115000,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1398,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Ritualist_Raids",
+      "sourceRevision": "oldid=222184",
+      "rooms": [
+        {
+          "roomId": 19092,
+          "entryObjectId": 845142
+        },
+        {
+          "roomId": 19093,
+          "entryObjectId": 845143
+        },
+        {
+          "roomId": 19094,
+          "entryObjectId": 845166
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 845141,
+          "destinationRoomId": 19093
+        },
+        {
+          "fromObjectId": 845144,
+          "destinationRoomId": 19094,
+          "requiresClear": true
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 845167,
+          "required": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 19093,
+          "groups": [
+            {
+              "types": [
+                16935,
+                16947
+              ],
+              "count": 3,
+              "range": 32500
+            },
+            {
+              "types": [
+                23983,
+                23981,
+                23982,
+                23980
+              ],
+              "count": 9,
+              "range": 32500
+            },
+            {
+              "types": [
+                24000,
+                24010,
+                24011,
+                24009
+              ],
+              "count": 4,
+              "range": 32500
+            },
+            {
+              "types": [
+                24137,
+                24136,
+                16938
+              ],
+              "count": 2,
+              "range": 32500
+            },
+            {
+              "types": [
+                17595
+              ],
+              "count": 2,
+              "range": 32500,
+              "required": false
+            }
+          ]
+        },
+        {
+          "roomId": 19094,
+          "groups": [
+            {
+              "types": [
+                16953,
+                16940
+              ],
+              "count": 3,
+              "range": 27500,
+              "required": false
+            },
+            {
+              "types": [
+                23981,
+                23983,
+                23982
+              ],
+              "count": 6,
+              "range": 27500
+            },
+            {
+              "types": [
+                24000,
+                24009,
+                24010
+              ],
+              "count": 9,
+              "range": 27500,
+              "required": false
+            },
+            {
+              "types": [
+                24139,
+                24140
+              ],
+              "count": 2,
+              "range": 27500
+            },
+            {
+              "types": [
+                13116
+              ],
+              "count": 6,
+              "range": 27500,
+              "required": false
+            },
+            {
+              "types": [
+                17594
+              ],
+              "count": 6,
+              "range": 27500,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 1227,
       "level": 1,
       "difficulty": 500,

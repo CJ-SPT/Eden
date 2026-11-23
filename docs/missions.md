@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **935 definitions**. That includes **103 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **941 definitions**. That includes **109 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,957** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,951** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -91,6 +91,9 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | The Hidden Stash | Angel, Blood, Guristas, Sansha, Serpentis; levels 1 and 2 | 10 |
 | Duo of Death | Angel, Blood, Guristas, Sansha, Serpentis; levels 3 and 4 | 10 |
 | Eliminate the Pirate Campers | Sansha and Serpentis level 1; Thukker level 2; Angel level 3 | 4 |
+| Eliminate the Stargate Campers | DED levels 2–3 (two templates each) | 4 |
+| The Small Armory | Angel Cartel, level 3 | 1 |
+| Ritualist Raids | Blood Raiders, level 4 | 1 |
 | Seek and Destroy | Angel and Guristas levels 1–3; Sansha levels 1–2; Blood levels 1 and 3; Serpentis levels 2–3; two Thukker-supplier templates using the same Sansha dungeons | 14 |
 | The Score | Angel and Guristas level 1, Blood and Serpentis level 2, Guristas level 3 | 5 |
 | The Roving Rogue Drones and The Drone Infestation | Level 1 | 2 |
@@ -142,6 +145,12 @@ and its five escorts. The Seven's Brothel and Prison Facility each require a nam
 Rogue Drone Harassment locks the second gate until the initial combat pocket is clear. Level two requires the Wrecker Alvum
 in the final pocket. Level three uses the reported variant that requires the first two final groups, with the separate Bomber
 Alvum optional. [Encounter evidence](protocol/agents.md#rogue-drone-harassment--november-23-2026)
+
+Eliminate the Stargate Campers requires defeating the DED patrol in a single normal-space pocket.
+The Small Armory and Ritualist Raids require clearing the ships guarding the second gate. Destroy the
+Small Armory to finish its mission. Ritualist Raids also requires the six destroyers and two battleships
+in the cathedral pocket. Sentries are optional in both complexes.
+[Encounter evidence](protocol/agents.md#stargate-campers-and-guarded-structures--november-23-2026)
 
 ## Paragon hull exchanges
 

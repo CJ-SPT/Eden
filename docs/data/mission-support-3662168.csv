@@ -146,7 +146,7 @@ missionId,name,template,status,reason
 1246,Duo of Death,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1247,Duo of Death,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1254,Duo of Death,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-1256,The Small Armory,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1256,The Small Armory,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1258,The Space Telescope,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1259,Kidnappers Strike - Ambush in the Dark (1 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1273,Secret Project X (1 of 3),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -237,7 +237,7 @@ missionId,name,template,status,reason
 1394,The Sukuuvestaa Incident - In Defense (4 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1395,The Sukuuvestaa Incident - The Caldari Agent (5 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1397,The Sukuuvestaa Incident - The Constellation Scanner (6 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1398,Ritualist Raids,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1398,Ritualist Raids,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1400,Nomads - Unwanted Settlers (1 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1401,Nomads - Request From The Republic (2 of 5),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1402,Nomads - Secret Military Supplies (3 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -917,14 +917,14 @@ missionId,name,template,status,reason
 2247,Intercept The Pirate Smugglers,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2248,Eliminate the Pirate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2249,Eliminate the Pirate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-2250,Eliminate the Stargate Campers,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2251,Eliminate the Stargate Campers,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2250,Eliminate the Stargate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2251,Eliminate the Stargate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2252,Eliminate the Pirate Campers,BasicKillMission,blocked,Report and pinned dungeon level disagree
 2253,Eliminate the Pirate Campers,BasicKillMission,blocked,Requires a verified reinforcement trigger
 2254,Eliminate the Pirate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2255,Eliminate the Pirate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-2256,Eliminate the Stargate Campers,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2257,Eliminate the Stargate Campers,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2256,Eliminate the Stargate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2257,Eliminate the Stargate Campers,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2258,Foil The Military Preparations,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2259,Foil The Military Preparations,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2260,Foil The Military Preparations,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

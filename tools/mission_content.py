@@ -284,6 +284,78 @@ def extend(db, missions, group):
                group('Seven Assassin/Seven Thug', 1, 55000),
                group('Olufami/Elena Gazky/Schmidt', 1, 55000)], deadspace=False)
 
+    # Each pair shares the full native kill objective and the same reported DED roster.
+    for ids, dungeon_id, level, revision, roster in [
+        ((2256, 2257), 785, 2, 191678,
+         [('DED Soldier 3rd Class', 3), ('DED Special Ops Piranha', 3), ('DED Special Ops Panther', 1)]),
+        ((2250, 2251), 780, 3, 191679,
+         [('DED Soldier 1st Class/DED Special Ops Piranha', 5), ('DED Officer 1st Class/DED Special Ops Raptor', 3)]),
+    ]:
+        for mid in ids:
+            objective = source(db, 'client/missions', mid)['killMission']
+            if objective != dict(dungeonID=dungeon_id, objectiveQuantity=0):
+                raise ValueError(f'Unreviewed Eliminate the Stargate Campers objective for mission {mid}')
+            encounter(mid, 500006, f'Eliminate_the_Stargate_Campers_(Level_{level})', revision,
+                      [group(name, count, UNREPORTED_GROUP_RANGE) for name, count in roster], deadspace=False)
+
+    def guarded_structure(mid, faction, title, revision, rooms, gates, objective, first, second):
+        mission = source(db, 'client/missions', mid)
+        kill = mission['killMission']
+        dungeon = source(db, 'client/dungeons', kill['dungeonID'])
+        native_rooms = dungeon['rooms']
+        if (dungeon['factionID'] != faction or kill['objectiveQuantity'] != 0 or kill.get('objectiveTypeID')
+                or len(native_rooms) != len(rooms) or dungeon['entryObjectID'] != rooms[0][1]
+                or [g['fromObjectID'] for g in dungeon['connections']] != list(gates)
+                or any(str(entry) not in native_rooms[str(rid)]['objects'] for rid, entry in rooms)
+                or any(str(gate) not in native_rooms[str(rid)]['objects'] for (rid, _), gate in zip(rooms, gates))):
+            raise ValueError(f'Unreviewed guarded mission topology for mission {mid}')
+        room_id, _ = rooms[2]
+        object_id, type_id = objective
+        target = native_rooms[str(room_id)]['objects'].get(str(object_id), {})
+        if target.get('typeID') != type_id:
+            raise ValueError(f'Unreviewed structure objective for mission {mid}')
+        missions.append(dict(
+            missionId=mid, level=dungeon['difficulty'], difficulty=500, storyline=False, offerOrder=1,
+            source='https://wiki.eveuniversity.org/' + title, sourceRevision=f'oldid={revision}',
+            rooms=[dict(roomId=rid, entryObjectId=entry) for rid, entry in rooms],
+            gates=[dict(fromObjectId=gates[0], destinationRoomId=rooms[1][0]),
+                   dict(fromObjectId=gates[1], destinationRoomId=room_id, requiresClear=True)],
+            structures=[dict(objectId=object_id, required=True)],
+            waves=[dict(roomId=rooms[1][0], groups=first), dict(roomId=room_id, groups=second)]))
+
+    guarded_structure(
+        1256, 500011, 'The_Small_Armory', 203906,
+        [(3330, 63951), (3331, 63953), (3332, 63973)], (63950, 63952), (63988, 16215),
+        [group('Gistatis Legionnaire/Gistatis Primus', 2, 42500),
+         group('Angel Heavy Missile Battery', 2, 42500, required=False),
+         group('Tower Sentry Angel II', 2, 42500, required=False),
+         group('Gistii Hunter/Gistii Impaler', 3, 30000),
+         group('Gistior Shatterer/Gistior Defacer', 2, 30000),
+         group('Gistum Marauder/Gistum Liquidator/Gistum Phalanx', 2, 30000),
+         group('Gistii Hunter/Gistii Impaler', 3, 77500),
+         group('Gistum Marauder/Gistum Liquidator', 1, 77500),
+         group('Gistatis Primus/Gistatis Tribuni', 1, 77500)],
+        [group('Gistior Shatterer/Gistior Defacer', 4, 65000, required=False),
+         group('Gistum Breaker/Gistum Defeater', 2, 65000, required=False),
+         group('Angel Webifier/Angel Viper', 2, 115000, required=False),
+         group('Gistum Breaker/Gistum Defeater/Gistum Centurion', 2, 115000, required=False)])
+
+    # The dated player report confirms that the first-pocket batteries may survive the gate passage.
+    guarded_structure(
+        1398, 500012, 'Ritualist_Raids', 222184,
+        [(19092, 845142), (19093, 845143), (19094, 845166)], (845141, 845144), (845167, 16727),
+        [group('Corpii Collector/Corpii Seeker', 3, 32500),
+         group('Corpior Cleric/Corpior Devoter/Corpior Friar/Corpior Templar', 9, 32500),
+         group('Corpatis Bishop/Corpatis Shade/Corpatis Fanatic/Corpatis Seer', 4, 32500),
+         group('Corpus Monsignor/Corpus Harbinger/Corpus Oracle', 2, 32500),
+         group('Blood Cruise Missile Battery', 2, 32500, required=False)],
+        [group('Corpii Engraver/Corpii Reaver', 3, 27500, required=False),
+         group('Corpior Devoter/Corpior Cleric/Corpior Friar', 6, 27500),
+         group('Corpatis Bishop/Corpatis Seer/Corpatis Shade', 9, 27500, required=False),
+         group('Corpus Patriarch/Corpus Pope', 2, 27500),
+         group('Blood Raider Sentry Gun', 6, 27500, required=False),
+         group('Blood Heavy Missile Battery', 6, 27500, required=False)])
+
     hidden = [
         (1227, 500020, 'Serpentis', 1, 192024, 590136, [('Coreli Initiate', 12, 15000)]),
         (1228, 500010, 'Guristas_Pirates', 1, 192019, 590184, [('Pithi Arrogator/Pithi Imputor', 5, 20000)]),
