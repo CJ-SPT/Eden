@@ -30,6 +30,51 @@ public sealed class StructureTetherTests
     private static readonly TetherFlightState s_flight = new(true, false, false, false, false);
 
     [Fact]
+    public async Task MovingWithoutLocalStructuresOrSavedTetherDoesNotWaitForSharedOwnership()
+    {
+        using var f = StructureAttackTests.Prepare();
+        var structure = f.Online();
+        const int remote = 30000142;
+        long ship = f.ShipId;
+        var tethering = f.Db.Services.GetRequiredService<IPilotTethering>();
+        f.Db.Store.SetPosition(ship, structure.Position, remote);
+        var live = f.Db.Services.GetRequiredService<LiveWorld>();
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var paused = Task.Run(() =>
+        {
+            using var shared = live.EnterShared("paused tether coordination");
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(15)));
+            await Task.Run(() =>
+                {
+                    Assert.Null(tethering.Advance(f.PilotId, s_flight));
+                    Assert.False(tethering.Protected(ship));
+                })
+                .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            await paused;
+        }
+
+        f.Db.Store.SetPosition(ship, structure.Position, structure.SystemId);
+        Assert.Equal(structure.Id, tethering.Advance(f.PilotId, s_flight)!.StructureId);
+        Assert.True(tethering.Protected(ship));
+
+        f.Db.Store.SetPosition(ship, structure.Position, remote);
+        Assert.Null(tethering.Advance(f.PilotId, s_flight));
+        Assert.False(tethering.Protected(ship));
+        using var check = StructureAttackTests.Scope(f);
+        Assert.Null(check.World.Set<SavedPilotTether>().Find(ship));
+    }
+
+    [Fact]
     public void LegacySpacePositionsResolveTheirSystemFromTheLastStation()
     {
         using var f = StructureAttackTests.Prepare();

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
@@ -9,7 +11,6 @@ namespace Eden.World.Planetary;
 
 internal static class PlanetaryCatalogReader
 {
-    private const int PlanetGroup = 7;
     private static readonly HashSet<string> s_restrictedSystems = new(StringComparer.OrdinalIgnoreCase)
     {
         "Amarr",
@@ -32,34 +33,58 @@ internal static class PlanetaryCatalogReader
         "Umokka",
     };
     private static readonly CatalogDefinition<PlanetaryCatalog> s_catalog = new("planetary/industry", (c, _) => Load(c));
+    private static readonly CatalogDefinition<ConcurrentDictionary<int, ImmutableArray<PlanetaryPlanet>>> s_productionSites = new(
+        "planetary/production-sites",
+        (_, _) => new()
+    );
 
     internal static PlanetaryCatalog Read(CatalogDbContext catalog) => catalog.Definition(s_catalog, 0);
 
-    internal static IEnumerable<PlanetaryPlanet> ProductionSites(CatalogDbContext catalog, int system) =>
-        catalog
-            .CelestialsInSystem(system)
-            .Where(body =>
-                body.GroupId == PlanetGroup
-                && body.Radius is > 0
-                && PlanetaryResources.Types(body.TypeId).Count > 0
-                && catalog.Read(CatalogData.Sde.MapPlanets, (long)body.Id) is not null
-            )
-            .Select(body => Planet(catalog, body.Id))
-            .Where(planet => planet.Colonizable);
+    internal static IReadOnlyDictionary<int, ImmutableArray<PlanetaryPlanet>> ProductionSites(
+        CatalogDbContext catalog,
+        IReadOnlyCollection<int> systems
+    )
+    {
+        var sites = catalog.Definitions.GlobalDefinition(s_productionSites);
+        int[] requested = systems.Distinct().ToArray();
+        int[] missing = requested.Where(system => !sites.ContainsKey(system)).ToArray();
+        if (missing.Length > 0)
+        {
+            // Keep compact, generation-scoped site lists. The wider catalog cache can evict the source
+            // records without sending every new supplier search back through the planetary catalog.
+            var bodies = catalog.PlanetBodies(missing).Where(body => PlanetaryResources.Types(body.TypeId).Count > 0).ToArray();
+            var definitions = catalog.ReadMany(CatalogData.Sde.MapPlanets, bodies.Select(body => (long)body.Id));
+            var bySystem = bodies
+                .Where(body => definitions.ContainsKey(body.Id))
+                .Select(body => ReadPlanet(catalog, body, definitions[body.Id]))
+                .Where(planet => planet.Colonizable)
+                .ToLookup(planet => planet.SystemId);
+            foreach (int system in missing)
+            {
+                sites.TryAdd(system, bySystem[system].ToImmutableArray());
+            }
+        }
+        return requested.ToDictionary(system => system, system => sites[system]);
+    }
 
     internal static PlanetaryPlanet Planet(CatalogDbContext catalog, int planetId)
     {
         var celestial = catalog.FindCelestial(planetId);
-        if (celestial is null || celestial.GroupId != PlanetGroup)
+        if (celestial is null || celestial.GroupId != CatalogDbContext.PlanetCelestialGroup)
         {
             throw new InvalidDataException("Choose a known planet.");
         }
         var definition =
             catalog.Read(CatalogData.Sde.MapPlanets, (long)planetId)
             ?? throw new InvalidDataException("This planet has no pinned planetary definition.");
+        return ReadPlanet(catalog, celestial, definition);
+    }
+
+    private static PlanetaryPlanet ReadPlanet(CatalogDbContext catalog, CatalogCelestialDefinition celestial, SdeMapPlanets definition)
+    {
         string systemName = catalog.RequireSystem(celestial.SolarSystemId).Name;
         return new(
-            planetId,
+            celestial.Id,
             celestial.SolarSystemId,
             celestial.TypeId,
             checked((int)(definition.CelestialIndex ?? 0)),

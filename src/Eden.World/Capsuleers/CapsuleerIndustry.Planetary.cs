@@ -9,6 +9,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Planetary;
 using Eden.Gameplay.Ships;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
@@ -131,7 +132,7 @@ internal sealed partial class CapsuleerIndustry
         }
     }
 
-    private sealed record PlanetarySiteChoice(PlanetaryPlanet Planet, int Station, int Center, int Machine, bool Owned);
+    private sealed record PlanetarySiteChoice(PlanetaryPlanet Planet, int Station, int Center, int Machine);
 
     private static PlanetarySiteChoice? PlanetarySite(
         EconomyTransaction world,
@@ -147,76 +148,94 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
+        using var phase = SessionPerformance.Phase("traffic.findPlanetarySite");
         var owned = world.Filter<SavedPlanetaryColony>(row => row.PilotId == courier.PilotId).Select(row => row.PlanetId).ToHashSet();
         bool room = owned.Count < PlanetaryRules.PlanetLimit(world.Settings.PlanetaryIndustry, PlanetaryCommandCenterSkillLevel);
         int home = catalog.RequireStation(warehouse).SolarSystemId;
-        var systems = NearbySystems(catalog, home, CapsuleerIndustryRules.MaximumPlanetarySupplyJumps);
-        var machines = step.SchematicId is int schematic ? definitions.Schematics[schematic].PinTypes.ToHashSet() : null;
-        var sites = new List<PlanetarySiteChoice>();
-        foreach (int system in systems.Where(system => !avoided.Contains(system)))
+        var policy = world.Settings.Capsuleers;
+        var geography = catalog.Definitions;
+        if (!policy.CanWork(geography, home))
         {
-            var station = catalog
-                .Definitions.StationsInSystem(system)
+            return null;
+        }
+        var machines = step.SchematicId is int schematic ? definitions.Schematics[schematic].PinTypes.ToHashSet() : null;
+        var groups = definitions.Pins.Values.OrderBy(pin => pin.TypeId).ToLookup(pin => pin.PlanetTypeId);
+        Dictionary<int, (int Center, int Machine)> equipment = [];
+        foreach (var pins in groups)
+        {
+            if (machines is null && !PlanetaryResources.Types(pins.Key).Contains(step.TypeId))
+            {
+                continue;
+            }
+            var center = pins.FirstOrDefault(pin => pin.Kind == PlanetaryPinKind.Command);
+            var machine = pins.FirstOrDefault(pin =>
+                machines is null ? pin.Kind == PlanetaryPinKind.Extractor : machines.Contains(pin.TypeId)
+            );
+            if (center is not null && machine is not null && pins.Any(pin => pin.Kind == PlanetaryPinKind.Spaceport))
+            {
+                equipment.Add(pins.Key, (center.TypeId, machine.TypeId));
+            }
+        }
+        if (equipment.Count == 0)
+        {
+            return null;
+        }
+
+        // All staging stations share the same warehouse, hull and avoidance rules.
+        var nearby = CapsuleerTrafficRoutes.Nearby(
+            catalog,
+            home,
+            HullClass.Hauler,
+            CapsuleerIndustryRules.MaximumPlanetarySupplyJumps,
+            avoided
+        );
+        List<(int System, int Jumps, int Station)> staging = [];
+        foreach (var (system, jumps) in nearby.Systems)
+        {
+            if (avoided.Contains(system) || !policy.CanWork(geography, system))
+            {
+                continue;
+            }
+            var station = geography
+                .StationsInSystem(system)
                 .Where(station => StationCapabilities.Has(catalog, station.OperationId, StationService.Market))
                 .OrderByDescending(station => station.Id == warehouse)
                 .ThenBy(station => station.Id)
                 .FirstOrDefault();
-            if (station is null)
+            if (station is not null)
             {
-                continue;
+                staging.Add((system, jumps, station.Id));
             }
-            foreach (var planet in PlanetaryCatalogReader.ProductionSites(catalog, system))
+        }
+
+        var sites = PlanetaryCatalogReader.ProductionSites(catalog, staging.Select(stop => stop.System).ToArray());
+        PlanetarySiteChoice? best = null;
+        (bool NewColony, bool OtherPlanetType, int Jumps, int PlanetId) bestPriority = default;
+        foreach (var (system, jumps, station) in staging)
+        {
+            foreach (var planet in sites[system])
             {
-                if (
-                    !room && !owned.Contains(planet.Id)
-                    || machines is null && !PlanetaryResources.Types(planet.TypeId).Contains(step.TypeId)
-                )
+                bool existing = owned.Contains(planet.Id);
+                if ((!room && !existing) || !equipment.TryGetValue(planet.TypeId, out var pins))
                 {
                     continue;
                 }
-                var pins = definitions.Pins.Values.Where(pin => pin.PlanetTypeId == planet.TypeId).OrderBy(pin => pin.TypeId).ToArray();
-                var center = pins.FirstOrDefault(pin => pin.Kind == PlanetaryPinKind.Command);
-                var machine = pins.FirstOrDefault(pin =>
-                    machines is null ? pin.Kind == PlanetaryPinKind.Extractor : machines.Contains(pin.TypeId)
-                );
-                if (center is not null && machine is not null && pins.Any(pin => pin.Kind == PlanetaryPinKind.Spaceport))
-                {
-                    sites.Add(new(planet, station.Id, center.TypeId, machine.TypeId, owned.Contains(planet.Id)));
-                }
-            }
-        }
-        var routes = sites
-            .Select(site => site.Station)
-            .Distinct()
-            .ToDictionary(
-                station => station,
-                station =>
-                    CapsuleerTrafficRoutes.ToStation(
-                        catalog,
-                        warehouse,
-                        station,
-                        HullClass.Hauler,
-                        avoided,
-                        CapsuleerIndustryRules.MaximumPlanetarySupplyJumps,
-                        policy: world.Settings.Capsuleers
-                    )
-            );
-        return sites
-            .Select(site => (Site: site, Route: routes[site.Station]))
-            .Where(candidate => candidate.Route is not null)
-            .OrderByDescending(candidate => candidate.Site.Owned)
-            .ThenByDescending(candidate =>
-                candidate.Site.Planet.TypeId
+                bool preferred =
+                    planet.TypeId
                     is PlanetaryResources.Barren
                         or PlanetaryResources.Lava
                         or PlanetaryResources.Gas
                         or PlanetaryResources.Oceanic
-                        or PlanetaryResources.Temperate
-            )
-            .ThenBy(candidate => candidate.Route!.Systems.Length)
-            .ThenBy(candidate => candidate.Site.Planet.Id)
-            .Select(candidate => candidate.Site)
-            .FirstOrDefault();
+                        or PlanetaryResources.Temperate;
+                var priority = (!existing, !preferred, jumps, planet.Id);
+                if (best is null || priority.CompareTo(bestPriority) < 0)
+                {
+                    best = new(planet, station, pins.Center, pins.Machine);
+                    bestPriority = priority;
+                }
+            }
+        }
+        return best;
     }
 
     internal FreightStack[]? LoadPlanetaryInputs(

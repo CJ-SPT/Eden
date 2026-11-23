@@ -352,6 +352,7 @@ internal sealed partial class ResidentEconomy
             _sequences[reader.GetString(0)] = reader.GetInt64(1);
         }
         ReindexLoadedTimedModules();
+        LoadTetherAvailability();
         _loaded = true;
     }
 
@@ -409,6 +410,7 @@ internal sealed partial class ResidentEconomy
     )
     {
         InvalidateFits(changes);
+        ObserveTetherAvailability(changes, resident: true);
         ReindexTimedModules(changes);
         foreach (var sequence in sequences)
         {
@@ -541,6 +543,7 @@ internal sealed partial class ResidentEconomy
                 table.Observe(world, affected[table.Name]);
             }
         }
+        ObserveTetherAvailability(changes, resident: false);
         ReindexTimedModules(changes);
         // External insertions share the same high-water domain, including deletions
         // of the last row and item-to-ship/implant conversions.

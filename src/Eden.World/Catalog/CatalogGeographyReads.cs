@@ -7,6 +7,8 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
+    internal const int PlanetCelestialGroup = 7;
+
     internal double? SystemContentSecurity(int systemId) =>
         writable ? Read(CatalogData.Client.Solarsystemcontent, (long)systemId)?.Security : Definitions.SystemContentSecurity(systemId);
 
@@ -126,4 +128,15 @@ public sealed partial class CatalogDbContext
                 .CelestialRows(Set<Celestial>().Where(body => body.SolarSystemId == id).OrderBy(body => body.Id))
                 .ToImmutableArray()
             : Definitions.CelestialsInSystem(id);
+
+    internal IEnumerable<CatalogCelestialDefinition> PlanetBodies(int[] systems) =>
+        CatalogProvider
+            .CelestialRows(
+                Set<Celestial>()
+                    .Where(body =>
+                        body.GroupId == PlanetCelestialGroup && body.Radius > 0 && EF.Parameter(systems).Contains(body.SolarSystemId)
+                    )
+                    .OrderBy(body => body.Id)
+            )
+            .AsEnumerable();
 }

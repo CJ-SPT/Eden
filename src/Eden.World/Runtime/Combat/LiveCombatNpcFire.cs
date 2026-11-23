@@ -69,7 +69,7 @@ internal sealed partial class LiveCombatRuntime
         {
             return false;
         }
-        if (owner.Economy.Inspect(world => world.TetherProtected(shipId, now)))
+        if (owner.Economy.TetherProtected(shipId, now))
         {
             return true;
         }

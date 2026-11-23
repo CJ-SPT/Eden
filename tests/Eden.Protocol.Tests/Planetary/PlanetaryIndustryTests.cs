@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
@@ -70,6 +72,78 @@ public sealed class PlanetaryIndustryTests
     {
         using CatalogDbContext catalog = new(f.CatalogPath);
         return PlanetaryCatalogReader.Read(catalog);
+    }
+
+    [Fact]
+    public void BotProductionSitesBatchPlanetRecordsAndRetainTheCatalogResults()
+    {
+        const int Source = 30000144;
+        const int Restricted = 30000142;
+        const int Nearby = 30000145;
+        const int FirstPlanet = 45001000;
+        const int PlanetsPerSystem = 12;
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        using (CatalogDbContext edit = new(path, writable: true))
+        {
+            edit.Add(
+                new SolarSystem
+                {
+                    Id = Nearby,
+                    ConstellationId = 20000020,
+                    Name = "Factory test system",
+                }
+            );
+            foreach (int system in new[] { Source, Restricted, Nearby })
+            {
+                for (int index = 0; index < PlanetsPerSystem; index++)
+                {
+                    int id = FirstPlanet + (system - Source) * PlanetsPerSystem + index;
+                    edit.Add(
+                        new Celestial
+                        {
+                            Id = id,
+                            SolarSystemId = system,
+                            TypeId = PlanetaryResources.Barren,
+                            GroupId = 7,
+                            Radius = index == 0 ? 0 : 5_000_000,
+                            X = index + 100,
+                        }
+                    );
+                    if (index != 1)
+                    {
+                        edit.Add(
+                            new SourceRecord
+                            {
+                                Dataset = CatalogData.Sde.MapPlanets.Name,
+                                Key = id.ToString(CultureInfo.InvariantCulture),
+                                Data = JsonSerializer.Serialize(new SdeMapPlanets { CelestialIndex = index, Radius = 6_000_000 }),
+                            }
+                        );
+                    }
+                }
+            }
+            edit.SaveChanges();
+        }
+
+        using var operation = new CatalogReadScope().Begin();
+        using CatalogDbContext catalog = new(path);
+        _ = catalog.Definitions.Systems;
+        using (var cold = SessionPerformance.Capture("cold production sites", _ => { }))
+        {
+            var sites = PlanetaryCatalogReader.ProductionSites(catalog, [Source, Restricted, Nearby]);
+            Assert.Equal(2, cold.Commands);
+            Assert.Equal(PlanetsPerSystem - 2, sites[Source].Length);
+            Assert.Equal(PlanetsPerSystem - 2, sites[Nearby].Length);
+            Assert.Empty(sites[Restricted]);
+            Assert.Equal(new(FirstPlanet + 2, Source, PlanetaryResources.Barren, 2, 5_000_000, new(102, 0, 0), true), sites[Source][0]);
+        }
+
+        using var warm = SessionPerformance.Capture("warm production sites", _ => { });
+        var repeated = PlanetaryCatalogReader.ProductionSites(catalog, [Nearby, Source, Restricted]);
+        Assert.Equal(FirstPlanet + 2, repeated[Source][0].Id);
+        Assert.Equal(0, warm.Commands);
+        Assert.Equal(0, warm.Connections);
     }
 
     [Fact]

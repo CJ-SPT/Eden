@@ -6,6 +6,88 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Planetary sourcing and tether waits during bot trades
+
+A read-only November 23 HostCram capture verified the running revision as `1547ae5f`. At 04:55:54 UTC a Trade
+held the shared world owner for 19,063.43 ms and counted 8,153 SQL commands. A concurrent player tick spent
+18,329.80 of its 18,333.00 ms waiting for the world. At 05:09:56 UTC another courier's Trade held the owner for
+5,635.05 ms and counted 3,313 commands. Neither trade reported a checkpoint copy overlap. The capture used published
+logs and the atomic 05:08:35 UTC checkpoint. Automated workloads ran against private copies.
+
+The 05:08:35 checkpoint contained pilot `90003982` docked at the supplier in E02-IK with a due Trade. A private
+copy replay on `eeb96063` processed the courier's research assignment, then followed the retry to a third Trade that
+held the owner for 1,797.17 ms. Factory supply planning considered planetary production before choosing another
+supplier. Its planet search used 1,779 of the action's 1,836 commands and took 1,479.06 ms. It looked up
+1,533 individual `sde/mapPlanets` records and performed 173 per-system celestial queries. This reproduces the
+recurring query pattern after the cold PvP fit build has left world ownership.
+
+The planner now batch-loads the eligible planet bodies and definitions for reachable market systems. It caches the
+compact results by catalog generation, including systems without usable planets, and uses one shortest-distance
+search for the common warehouse and avoidance policy. It evaluates installation choices once per planet type and
+keeps the existing order of preference for owned colonies, planet types, jump count and planet ID. Factory stock,
+pilot colony limits, travel policy and the selected courier job still use the current resident action.
+
+An independent warm-frame stack showed tether availability checks entering shared persistence even when the pilot's
+system had no structure. NPC and drone protection checks could enter the same owner before finding no active tether.
+These checks now use one atomically published resident view of active ships, flight membership, structure systems and
+persisted tethers to prove when there is nothing to check. Existing tether records and possible engagements still use
+the authoritative eligibility, repair and cleanup paths. System membership changes publish with the resident generation.
+
+EVE.js `planetStaticData.js` and `structureTethering.js` were checked for planet-type resource availability and local
+structure candidates. Their SHA-256 hashes are `3CCA293B7A98BFE4C4A9559EC3B109D0A661652AB441D8B005CEF3751B3EBBC9`
+and `E1655DBF2ED0D23729126713E324E386C8CBA75678081633B38B62612C3EE143` respectively.
+[EVE University Planetary Industry](https://wiki.eveuniversity.org/Planetary_Industry) · [EVE University Tethering](https://wiki.eveuniversity.org/Tethering)
+
+### Automated validation
+
+The matched courier replay held the frozen save, clock, adjusted queue and observer constant. The control and
+candidate each passed in Release on Windows, in 87.47 and 57.59 seconds including setup and shutdown. The
+courier chose Mercoxit supplier `60006511` over the same six-system route, and the exported final job and progress
+matched byte for byte.
+
+| Third Trade for pilot 90003982 | `eeb96063` | Candidate |
+| --- | ---: | ---: |
+| Shared owner hold | 1,797.17 ms | 961.60 ms |
+| Trade SQL commands | 1,836 | 101 |
+| Planet search | 1,479.06 ms | 244.99 ms |
+| Planet search SQL commands | 1,779 | 44 |
+
+The planet search used one query for the bodies and one for their definitions. The other 42 queries looked up
+station operations on this cold pass. The elapsed results are individual Windows samples under varying local
+load. A separate matched run used the saved factory requests of three couriers. All three planning results and six
+individual site choices matched. The largest factory request, for pilot `90002798`, fell from 6,879 to 108 SQL
+commands and from 3,726.09 to 439.20 ms while holding the owner. Both variants declined the full planetary trip and
+selected the same eligible site when asked about Mechanical Parts in isolation. The direct test ran in 37.15 seconds
+on the control and 33.30 seconds on the candidate.
+
+The new availability view was tested separately. Both complete warm-frame cases passed in 16 seconds with
+zero SQL, connections and fitting calculations, including the same paused shared owner that blocked the control.
+A regression with a structure in another system also checks immediate engagement and cleanup when a pilot travels
+between systems. It passed in 17.65 seconds.
+
+The broader tether, combat and checkpoint selection passed 101 of 102 cases in 204.84 seconds. The paid-shot
+checkpoint-copy case timed out at the same point in the unchanged `eeb96063` control. Raw diagnostics and the
+replay harness are recorded under `artifacts/trade-frame-followup-20261123`.
+
+The batched catalog regression passed in 11.37 seconds including runner startup. It verifies two cold SQL commands,
+zero warm commands or connections, and filtering of restricted systems, missing definitions and nonpositive radii.
+The integrated feature selection passed all 137 cases in 161.95 seconds after a 29.21-second solution build with zero
+warnings or errors. The selection included `PlanetaryIndustryTests`, `CapsuleerTrafficRoutesTests`, the planetary,
+Mercoxit and research courier restart flows, structure and combat tether tests, `NpcEwarTests`,
+`PausedSystemCannotBlockAnotherSystemsCompleteWarmFrame`, and `PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait`.
+The catalog policy check required the new geometry query to use the shared catalog boundary. After relocating the query,
+the rebuilt `df025e36` integration passed 34 targeted planetary, courier, tether and complete warm-frame cases in 18.79 seconds.
+The final solution build took 26.36 seconds with zero warnings or errors. Both Python policy suites passed all 17 cases,
+and formatting, line-width and documentation anchor checks passed. The full .NET suite was outside this selection.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After deploying, compare `traffic.findPlanetarySite` and Trade ownership with session `WorldWait` on a populated system.
+
 ## Session frames blocked by docked bot trades
 
 The maintainer's server log on `1547ae5f` records four long ticks where a capsuleer Trade held the shared world owner.
