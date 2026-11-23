@@ -978,6 +978,64 @@ No full .NET suite was requested or run. Native rendering, input and gameplay fe
 **Optional maintainer checks:** Inspect native spy hull names and objective progress; complete a level-four Sansha
 group-3 blitz with the other groups alive.
 
+## Higher-level Guristas and Serpentis Spies — November 23, 2026
+
+Two previously blocked security missions now use the existing resident encounter and checkpoint paths.
+Both retain an empty gate lobby, then populate the combat pocket on arrival. Both use generic encounter aggro and display
+the catalog ship names in the overview.
+
+| Mission | Dungeon and room bindings | Completion |
+| --- | --- | --- |
+| Level-three Guristas Spies, 893 | Dungeon 215, lobby 2715, gate 53039, pocket 2714, entry 53027 | Three Pithatis Enforcers. Three Pithior Anarchists and one Pithatis Assaulter are optional. |
+| Level-four Serpentis Spies, 899 | Dungeon 224, lobby 3534, gate 70431, pocket 3533, entry 70406 | Four Corelior destroyers, two Corelatis Captains, one Corelatis Captain Sentry and one Core Port Admiral. All seven fixed towers are optional. |
+
+The [Guristas University report, revision 192011](https://wiki.eveuniversity.org/index.php?title=The_Guristas_Spies_(Level_3)&oldid=192011)
+and [EVE-Survival report, July 14, 2012](https://eve-survival.org/wikka.php?wakka=GuristaSpies3) agree that the three
+first-group spies are required. [EVE Info's player reports](https://eveinfo.com/missions/125/the-guristas-spies) describe
+Ferox variants with 135,000 ISK bounties, matching the pinned Pithatis Enforcer (24014), and identify the second group's
+Pithatis Assaulter. The pinned dungeon retains its entry gate even though EVE-Survival describes a direct warp.
+
+The [Serpentis EVE-Survival report, October 16, 2017](https://eve-survival.org/wikka.php?wakka=SerpentisSpies4) places one
+ship group about 135–140 km from the beacon. The pinned tower anchor puts that group at about 137 km and the pinned pocket
+contains seven sentries matching the report. [EVE Info's player reports](https://eveinfo.com/missions/282/serpentis-spies)
+identify the Corelatis Captain (24026) and Captain Sentry (24027) behind the battlecruiser display labels.
+The [University report, revision 192060](https://wiki.eveuniversity.org/index.php?title=The_Serpentis_Spies_(Level_4)&oldid=192060)
+includes an extra Mordu group and places the Serpentis group at a Minmatar station ruin. Dungeon 224 has one ship anchor and
+no such ruin, so the placement and roster follow the single-group EVE-Survival report.
+
+The corresponding local EVE.js level-three and level-four packs agree on the dungeon IDs and leave these custom names
+unresolved. The comparison used the local packs and input builds recorded in
+[mission layout corrections](#mission-layout-corrections--november-9-2026).
+Level-four Guristas and level-one Serpentis stay blocked on timed reinforcements. Level-one Sansha still needs the spy type
+and exact completion objective.
+
+### Automated validation
+
+The initial exact spy completion filter passed 14 cases in 30.55 seconds. Tool and solution restore and the full solution
+build passed with zero warnings in 17.77 seconds. The expanded focused run passed 23 cases in 51.88 seconds. It covered
+each new mission with optional guards untouched and cleared, objective and reward consistency after resident reopen,
+complete combat profiles, native scenery and the seven fixed tower positions. The selected methods under
+`Eden.Protocol.Tests.Agents` were:
+
+- `MissionContentTests.SpyBlitzRequiresEveryReportedTargetAndPreservesOptionalGuardsAcrossCheckpoint`
+- `MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters`
+- `MissionEncounterTests.EveryAuthoredNpcAlternativeHasACompletePinnedCombatProfile`
+- `MissionLayoutTests.FixedBatteriesUseTheirOwnRoomCatalogPositions`
+- `MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors`
+
+The regenerated audit contains 917 admitted records. The first mission admission check still expected both new IDs to be
+blocked. After updating those assertions, the catalog setup, formatting policy and mission admission Python suites passed
+8, 9 and 19 tests respectively in 2.71, 0.07 and 1.57 seconds. Formatting verification and `git diff --check` passed.
+The full .NET test suite was outside this check.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Run the two Eden encounters and verify the mission tracker completes while the optional guards are alive.
+
 ## Level-three combat content and Sansha outposts — November 15, 2026
 
 Combat-content milestone two admits six more definitions after the first milestone was verified on the remote branch.

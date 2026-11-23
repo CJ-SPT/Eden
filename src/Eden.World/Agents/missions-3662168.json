@@ -3232,6 +3232,62 @@
       ]
     },
     {
+      "missionId": 893,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Guristas_Spies_(Level_3)",
+      "sourceRevision": "oldid=192011",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24014
+              ],
+              "count": 3,
+              "range": 30000
+            },
+            {
+              "types": [
+                23984
+              ],
+              "count": 3,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                24015
+              ],
+              "count": 1,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 2714
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2715,
+          "entryObjectId": 53040
+        },
+        {
+          "roomId": 2714,
+          "entryObjectId": 53027
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53039,
+          "destinationRoomId": 2714
+        }
+      ]
+    },
+    {
       "missionId": 898,
       "level": 3,
       "difficulty": 500,
@@ -3302,6 +3358,92 @@
         {
           "fromObjectId": 53201,
           "destinationRoomId": 2746
+        }
+      ]
+    },
+    {
+      "missionId": 899,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Serpentis_Spies_(Level_4)",
+      "sourceRevision": "oldid=192060",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17159
+              ],
+              "count": 3,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                17158
+              ],
+              "count": 2,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                16747
+              ],
+              "count": 2,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                23994,
+                23995
+              ],
+              "count": 4,
+              "range": 137000
+            },
+            {
+              "types": [
+                24026
+              ],
+              "count": 2,
+              "range": 137000
+            },
+            {
+              "types": [
+                24027
+              ],
+              "count": 1,
+              "range": 137000
+            },
+            {
+              "types": [
+                17036
+              ],
+              "count": 1,
+              "range": 137000
+            }
+          ],
+          "roomId": 3533
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3534,
+          "entryObjectId": 70432
+        },
+        {
+          "roomId": 3533,
+          "entryObjectId": 70406
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 70431,
+          "destinationRoomId": 3533
         }
       ]
     },

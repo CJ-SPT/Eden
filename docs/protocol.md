@@ -79,6 +79,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Mission spawn clearance and storyline settlement](protocol/agents.md#mission-spawn-clearance-and-storyline-settlement--november-15-2026)
 - [Resident mission-chain progression](protocol/agents.md#resident-mission-chain-progression--november-15-2026)
 - [Verified spy objectives](protocol/agents.md#verified-spy-objectives--november-15-2026)
+- [Higher-level Guristas and Serpentis Spies](protocol/agents.md#higher-level-guristas-and-serpentis-spies--november-23-2026)
 - [Level-three combat content and Sansha outposts](protocol/agents.md#level-three-combat-content-and-sansha-outposts--november-15-2026)
 - [Retribution outpost missions](protocol/agents.md#retribution-outpost-missions--november-15-2026)
 - [Singleton mission cargo](protocol/agents.md#singleton-mission-cargo--november-14-2026)

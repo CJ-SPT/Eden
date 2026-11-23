@@ -66709,6 +66709,222 @@
       ]
     },
     {
+      "id": 17158,
+      "name": "Tower Sentry Serpentis II",
+      "groupId": 383,
+      "groupName": "Destructible Sentry Gun",
+      "categoryId": 11,
+      "mass": 1000.0,
+      "radius": 371.0,
+      "capacity": 1000.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 1600.0
+        },
+        {
+          "id": 51,
+          "value": 2500.0
+        },
+        {
+          "id": 54,
+          "value": 250000.0
+        },
+        {
+          "id": 55,
+          "value": 500000.0
+        },
+        {
+          "id": 64,
+          "value": 4.0
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 1.0
+        },
+        {
+          "id": 117,
+          "value": 8.0
+        },
+        {
+          "id": 118,
+          "value": 6.0
+        },
+        {
+          "id": 154,
+          "value": 250000.0
+        },
+        {
+          "id": 158,
+          "value": 50000.0
+        },
+        {
+          "id": 160,
+          "value": 0.02
+        },
+        {
+          "id": 192,
+          "value": 8.0
+        },
+        {
+          "id": 193,
+          "value": 1.0
+        },
+        {
+          "id": 208,
+          "value": 100.0
+        },
+        {
+          "id": 209,
+          "value": 100.0
+        },
+        {
+          "id": 210,
+          "value": 100.0
+        },
+        {
+          "id": 211,
+          "value": 100.0
+        },
+        {
+          "id": 245,
+          "value": 365.0
+        },
+        {
+          "id": 247,
+          "value": 250000.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 500.0
+        },
+        {
+          "id": 265,
+          "value": 1600.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 272,
+          "value": 0.4
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 479,
+          "value": 500000.0
+        },
+        {
+          "id": 481,
+          "value": 50000.0
+        },
+        {
+          "id": 482,
+          "value": 1000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.05
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 200.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 620,
+          "value": 100.0
+        },
+        {
+          "id": 645,
+          "value": 1.5
+        },
+        {
+          "id": 646,
+          "value": 1.5
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.5
+        }
+      ]
+    },
+    {
       "id": 17159,
       "name": "Tower Sentry Serpentis I",
       "groupId": 383,
@@ -73218,6 +73434,94 @@
       "categoryId": 11,
       "mass": 100000.0,
       "radius": 3275.0,
+      "capacity": 8850.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 2000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 5.0
+        },
+        {
+          "id": 251,
+          "value": 10.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 600.0
+        },
+        {
+          "id": 265,
+          "value": 2000.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 17779,
+      "name": "Gallente Starbase Control Tower",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 3666.0,
       "capacity": 8850.0,
       "attributes": [
         {
@@ -97894,6 +98198,282 @@
         {
           "id": 665,
           "value": 34500.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 1007,
+          "value": 0.65
+        },
+        {
+          "id": 1010,
+          "value": 0.65
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.7
+        },
+        {
+          "id": 1766,
+          "value": 26.0
+        },
+        {
+          "id": 1855,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 24027,
+      "name": "Corelatis Captain Sentry",
+      "groupId": 629,
+      "groupName": "Deadspace Serpentis BattleCruiser",
+      "categoryId": 11,
+      "mass": 11200000.0,
+      "radius": 150.0,
+      "capacity": 480.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 1800.0
+        },
+        {
+          "id": 37,
+          "value": 320.0
+        },
+        {
+          "id": 51,
+          "value": 3000.0
+        },
+        {
+          "id": 54,
+          "value": 5250.0
+        },
+        {
+          "id": 55,
+          "value": 1000000.0
+        },
+        {
+          "id": 64,
+          "value": 7.825
+        },
+        {
+          "id": 117,
+          "value": 8.0
+        },
+        {
+          "id": 118,
+          "value": 14.0
+        },
+        {
+          "id": 158,
+          "value": 3000.0
+        },
+        {
+          "id": 160,
+          "value": 0.1
+        },
+        {
+          "id": 192,
+          "value": 1.0
+        },
+        {
+          "id": 193,
+          "value": 1.0
+        },
+        {
+          "id": 210,
+          "value": 21.0
+        },
+        {
+          "id": 217,
+          "value": 394.0
+        },
+        {
+          "id": 245,
+          "value": 568.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 247,
+          "value": 18000.0
+        },
+        {
+          "id": 250,
+          "value": 1.0
+        },
+        {
+          "id": 252,
+          "value": 0.08
+        },
+        {
+          "id": 263,
+          "value": 1200.0
+        },
+        {
+          "id": 265,
+          "value": 1500.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.4
+        },
+        {
+          "id": 269,
+          "value": 0.7
+        },
+        {
+          "id": 270,
+          "value": 0.6
+        },
+        {
+          "id": 271,
+          "value": 0.5
+        },
+        {
+          "id": 272,
+          "value": 0.4
+        },
+        {
+          "id": 273,
+          "value": 0.7
+        },
+        {
+          "id": 274,
+          "value": 0.6
+        },
+        {
+          "id": 416,
+          "value": 6000.0
+        },
+        {
+          "id": 456,
+          "value": -5.0
+        },
+        {
+          "id": 457,
+          "value": 5.0
+        },
+        {
+          "id": 466,
+          "value": 0.65
+        },
+        {
+          "id": 475,
+          "value": 4500.0
+        },
+        {
+          "id": 476,
+          "value": 18000.0
+        },
+        {
+          "id": 479,
+          "value": 1000000.0
+        },
+        {
+          "id": 481,
+          "value": 146250.0
+        },
+        {
+          "id": 482,
+          "value": 950.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.095
+        },
+        {
+          "id": 508,
+          "value": 160.0
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 270.0
+        },
+        {
+          "id": 562,
+          "value": 0.009
+        },
+        {
+          "id": 563,
+          "value": 5.0
+        },
+        {
+          "id": 564,
+          "value": 200.0
+        },
+        {
+          "id": 580,
+          "value": 10000.0
+        },
+        {
+          "id": 581,
+          "value": 0.25
+        },
+        {
+          "id": 582,
+          "value": 10000.0
+        },
+        {
+          "id": 583,
+          "value": 1.0
+        },
+        {
+          "id": 620,
+          "value": 125.0
+        },
+        {
+          "id": 630,
+          "value": 10000.0
+        },
+        {
+          "id": 631,
+          "value": 300.0
+        },
+        {
+          "id": 665,
+          "value": 12000.0
         },
         {
           "id": 798,
@@ -135058,6 +135638,285 @@
     },
     {
       "dataset": "client/dungeons",
+      "key": 215,
+      "data": {
+        "entryTypeID": 10124,
+        "entryObjectID": 53040,
+        "archetypeID": 20,
+        "connections": [
+          {
+            "fromObjectID": 53039
+          }
+        ],
+        "difficulty": 3,
+        "missionBriefingID": 114903,
+        "rooms": {
+          "2714": {
+            "messageIcon": "",
+            "roomName": "﻿The Guristas Spies",
+            "objects": {
+              "53027": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -39466.0,
+                  "x": -42875.0,
+                  "n_fields": 3,
+                  "z": -889.0
+                },
+                "roomID": 2714,
+                "objectID": 53027,
+                "typeID": 10124
+              },
+              "53028": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -20507.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": -179.0
+                },
+                "roomID": 2714,
+                "typeID": 11209,
+                "objectID": 53028,
+                "objectNameID": 148473
+              },
+              "53029": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -10681.0,
+                  "x": 6005.0,
+                  "n_fields": 3,
+                  "z": -358.0
+                },
+                "roomID": 2714,
+                "typeID": 13835,
+                "objectID": 53029,
+                "objectNameID": 148474
+              },
+              "53030": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -7726.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": -537.0
+                },
+                "roomID": 2714,
+                "objectID": 53030,
+                "typeID": 14477
+              },
+              "53031": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -34284.0,
+                  "x": 5441.0,
+                  "n_fields": 3,
+                  "z": -1222.0
+                },
+                "roomID": 2714,
+                "objectID": 53031,
+                "typeID": 10135
+              },
+              "53032": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -22602.0,
+                  "x": 22060.0,
+                  "n_fields": 3,
+                  "z": -358.0
+                },
+                "roomID": 2714,
+                "typeID": 10305,
+                "objectID": 53032,
+                "objectNameID": 148475
+              },
+              "53033": {
+                "typeID": 17382,
+                "objectID": 53033,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 40000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 148476,
+                "entities": {
+                  "14079": {
+                    "npcGroupingID": 28579,
+                    "entityID": 14079,
+                    "entityNameID": 115996,
+                    "triggerSpawn": 0,
+                    "objectID": 53033
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -48148.0,
+                  "x": -12911.0,
+                  "n_fields": 3,
+                  "z": -413.0
+                },
+                "roomID": 2714
+              },
+              "53034": {
+                "typeID": 16738,
+                "objectID": 53034,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 1500,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 15000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "entities": {
+                  "14080": {
+                    "npcGroupingID": 28199,
+                    "entityID": 14080,
+                    "triggerSpawn": 0,
+                    "objectID": 53034
+                  },
+                  "14081": {
+                    "npcGroupingID": 30452,
+                    "entityID": 14081,
+                    "triggerSpawn": 0,
+                    "objectID": 53034
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -58974.0,
+                  "x": 33336.0,
+                  "n_fields": 3,
+                  "z": -2014.0
+                },
+                "roomID": 2714
+              },
+              "53035": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -48516.0,
+                  "x": 2489.0,
+                  "n_fields": 3,
+                  "z": 281.0
+                },
+                "roomID": 2714,
+                "typeID": 16800,
+                "objectID": 53035,
+                "objectNameID": 148477
+              },
+              "53036": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -48516.0,
+                  "x": 2989.0,
+                  "n_fields": 3,
+                  "z": 281.0
+                },
+                "roomID": 2714,
+                "typeID": 16800,
+                "objectID": 53036,
+                "objectNameID": 148478
+              },
+              "53037": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -48516.0,
+                  "x": 3489.0,
+                  "n_fields": 3,
+                  "z": 281.0
+                },
+                "roomID": 2714,
+                "typeID": 16800,
+                "objectID": 53037,
+                "objectNameID": 148479
+              },
+              "53038": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -48516.0,
+                  "x": 3989.0,
+                  "n_fields": 3,
+                  "z": 281.0
+                },
+                "roomID": 2714,
+                "typeID": 16800,
+                "objectID": 53038,
+                "objectNameID": 148480
+              }
+            },
+            "y": 0,
+            "x": 2,
+            "shortName": "Spies",
+            "z": 0
+          },
+          "2715": {
+            "messageIcon": "",
+            "roomName": "﻿Forward point",
+            "objects": {
+              "53040": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 2715,
+                "objectID": 53040,
+                "typeID": 10124
+              },
+              "53039": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 2715,
+                "objectID": 53039,
+                "typeID": 17831
+              }
+            },
+            "y": 0,
+            "x": 0,
+            "shortName": "Entrance",
+            "z": 0
+          }
+        },
+        "factionID": 500010,
+        "useDefaultSpaceMusic": 0,
+        "dungeonNameID": 113264,
+        "dungeonID": 215
+      }
+    },
+    {
+      "dataset": "client/dungeons",
       "key": 218,
       "data": {
         "entryTypeID": 10124,
@@ -136707,6 +137566,522 @@
         "useDefaultSpaceMusic": 0,
         "dungeonNameID": 113284,
         "dungeonID": 223
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 224,
+      "data": {
+        "entryTypeID": 10124,
+        "entryObjectID": 70432,
+        "archetypeID": 20,
+        "connections": [
+          {
+            "fromObjectID": 70431
+          }
+        ],
+        "difficulty": 4,
+        "missionBriefingID": 114922,
+        "rooms": {
+          "3533": {
+            "messageIcon": "",
+            "roomName": "﻿The Serpentis Spies",
+            "objects": {
+              "70406": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -162.0,
+                  "x": 100851.0,
+                  "n_fields": 3,
+                  "z": 66.0
+                },
+                "roomID": 3533,
+                "objectID": 70406,
+                "typeID": 10124
+              },
+              "70407": {
+                "typeID": 17779,
+                "objectID": 70407,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 30000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 148520,
+                "entities": {
+                  "18240": {
+                    "npcGroupingID": 31110,
+                    "entityID": 18240,
+                    "triggerSpawn": 0,
+                    "objectID": 70407
+                  },
+                  "18241": {
+                    "npcGroupingID": 31446,
+                    "entityID": 18241,
+                    "triggerSpawn": 0,
+                    "objectID": 70407
+                  },
+                  "18239": {
+                    "npcGroupingID": 31572,
+                    "entityID": 18239,
+                    "entityNameID": 116003,
+                    "triggerSpawn": 0,
+                    "objectID": 70407
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -21832.0,
+                  "x": -34648.0,
+                  "n_fields": 3,
+                  "z": 130.0
+                },
+                "roomID": 3533
+              },
+              "70408": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -16.4947566986084,
+                  "x": -938.2715454101562,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70408,
+                "typeID": 16822
+              },
+              "70409": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 4500.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "typeID": 17400,
+                "objectID": 70409,
+                "objectNameID": 148521
+              },
+              "70410": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 11412.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": -757.0
+                },
+                "roomID": 3533,
+                "typeID": 17396,
+                "objectID": 70410,
+                "objectNameID": 148522
+              },
+              "70411": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 11795.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "typeID": 10782,
+                "objectID": 70411,
+                "objectNameID": 148523
+              },
+              "70412": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -16154.0,
+                  "x": -13174.0,
+                  "n_fields": 3,
+                  "z": 68.0
+                },
+                "roomID": 3533,
+                "objectID": 70412,
+                "typeID": 3881
+              },
+              "70413": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -2123.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": -13639.0
+                },
+                "roomID": 3533,
+                "typeID": 10784,
+                "objectID": 70413,
+                "objectNameID": 148524
+              },
+              "70414": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70414,
+                "typeID": 16827
+              },
+              "70415": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -322.0,
+                  "x": 46633.0,
+                  "n_fields": 3,
+                  "z": 16984.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70415,
+                "typeID": 17159
+              },
+              "70416": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -4379.0,
+                  "x": 195.0,
+                  "n_fields": 3,
+                  "z": 198.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70416,
+                "typeID": 17158
+              },
+              "70417": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 189066.0,
+                  "x": -178824.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "radius": 180000.0,
+                "objectID": 70417,
+                "typeID": 10761
+              },
+              "70418": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 500.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70418,
+                "typeID": 16827
+              },
+              "70419": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 1000.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70419,
+                "typeID": 16827
+              },
+              "70420": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 1500.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70420,
+                "typeID": 16827
+              },
+              "70421": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 2000.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70421,
+                "typeID": 16827
+              },
+              "70422": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 2500.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70422,
+                "typeID": 16827
+              },
+              "70423": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 3000.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70423,
+                "typeID": 16827
+              },
+              "70424": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 3500.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70424,
+                "typeID": 16827
+              },
+              "70425": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 4000.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3533,
+                "objectID": 70425,
+                "typeID": 16827
+              },
+              "70426": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -23405.0,
+                  "x": 65.0,
+                  "n_fields": 3,
+                  "z": 66.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70426,
+                "typeID": 17158
+              },
+              "70427": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 25208.0,
+                  "x": 55054.0,
+                  "n_fields": 3,
+                  "z": 17113.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70427,
+                "typeID": 17159
+              },
+              "70428": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -48188.0,
+                  "x": 46763.0,
+                  "n_fields": 3,
+                  "z": 17116.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70428,
+                "typeID": 17159
+              },
+              "70429": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -809.0,
+                  "x": 46827.0,
+                  "n_fields": 3,
+                  "z": -59063.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70429,
+                "typeID": 16747
+              },
+              "70430": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 9575.0,
+                  "x": 32708.0,
+                  "n_fields": 3,
+                  "z": 17245.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 3533,
+                "objectID": 70430,
+                "typeID": 16747
+              }
+            },
+            "y": 0,
+            "x": 0,
+            "shortName": "Spies",
+            "z": 0
+          },
+          "3534": {
+            "messageIcon": "",
+            "roomName": "﻿Forward point",
+            "objects": {
+              "70432": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3534,
+                "objectID": 70432,
+                "typeID": 10124
+              },
+              "70431": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3534,
+                "objectID": 70431,
+                "typeID": 17831
+              }
+            },
+            "y": 0,
+            "x": 2,
+            "shortName": "Entrance",
+            "z": 0
+          }
+        },
+        "factionID": 500020,
+        "useDefaultSpaceMusic": 0,
+        "dungeonNameID": 113283,
+        "dungeonID": 224
       }
     },
     {
@@ -195780,6 +197155,16 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 54265,
+      "data": {
+        "language": "en-us",
+        "text": "The Guristas Spies",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 54266,
       "data": {
         "language": "en-us",
@@ -195811,6 +197196,16 @@
     {
       "dataset": "client/localization_fsd_en-us",
       "key": 54270,
+      "data": {
+        "language": "en-us",
+        "text": "The Serpentis Spies",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 54271,
       "data": {
         "language": "en-us",
         "text": "The Serpentis Spies",
@@ -200626,6 +202021,25 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 127455,
+      "data": {
+        "language": "en-us",
+        "text": "Agents working for Guristas recently managed to infiltrate one of our outposts in a nearby system.  We have reliable information that they did manage to find classified information about our various operations in the area.  Fortunately one of the officers at the outpost managed to slip a tracking device into one of their ships before they escaped.  We know they are located in {[location]dungeonLocationID.name} at this very moment.  I would like you to fly over there and ambush them immediately.  Return to me once their ships have been turned to dust.  But be careful, they are armed and dangerous.",
+        "metadata": null,
+        "tokens": {
+          "{[location]dungeonLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "dungeonLocationID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 127456,
       "data": {
         "language": "en-us",
@@ -200684,6 +202098,25 @@
     {
       "dataset": "client/localization_fsd_en-us",
       "key": 127460,
+      "data": {
+        "language": "en-us",
+        "text": "Agents working for the Serpentis recently managed to infiltrate one of our outposts in a nearby system. We have reliable information that they did manage to find classified information about our various operations in the area. Fortunately one of the officers at the outpost managed to slip a tracking device into one of their ships before they escaped. We know they are located in {[location]dungeonLocationID.name} at this very moment. I would like you to fly over there and ambush them immediately. Return to me once their ships have been turned to dust. But be careful, they are armed and dangerous. ",
+        "metadata": null,
+        "tokens": {
+          "{[location]dungeonLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "dungeonLocationID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 127461,
       "data": {
         "language": "en-us",
         "text": "Agents working for the Serpentis recently managed to infiltrate one of our outposts in a nearby system. We have reliable information that they did manage to find classified information about our various operations in the area. Fortunately one of the officers at the outpost managed to slip a tracking device into one of their ships before they escaped. We know they are located in {[location]dungeonLocationID.name} at this very moment. I would like you to fly over there and ambush them immediately. Return to me once their ships have been turned to dust. But be careful, they are armed and dangerous. ",
@@ -234229,6 +235662,24 @@
     },
     {
       "dataset": "client/missions",
+      "key": 893,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicKillMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.briefing": 127455
+        },
+        "fixedLpRewardOmega": 0,
+        "killMission": {
+          "dungeonID": 215,
+          "objectiveQuantity": 0
+        },
+        "nameID": 54265
+      }
+    },
+    {
+      "dataset": "client/missions",
       "key": 894,
       "data": {
         "contentTemplate": "agent.missionTemplatizedContent_BasicKillMission",
@@ -234297,6 +235748,24 @@
           "objectiveQuantity": 0
         },
         "nameID": 54270
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 899,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicKillMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.briefing": 127461
+        },
+        "fixedLpRewardOmega": 0,
+        "killMission": {
+          "dungeonID": 224,
+          "objectiveQuantity": 0
+        },
+        "nameID": 54271
       }
     },
     {
@@ -255114,6 +256583,16 @@
     },
     {
       "dataset": "client/spacecomponentsbytype",
+      "key": 17158,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
       "key": 17159,
       "data": {
         "entityStandings": {
@@ -255365,6 +256844,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 17778,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17779,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": -11.0,
@@ -256195,6 +257684,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 24026,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24027,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": 11.0,
@@ -322419,6 +323918,224 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 17158,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 1600.0
+          },
+          {
+            "attributeID": 51,
+            "value": 2500.0
+          },
+          {
+            "attributeID": 54,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 4.0
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 1.0
+          },
+          {
+            "attributeID": 117,
+            "value": 8.0
+          },
+          {
+            "attributeID": 118,
+            "value": 6.0
+          },
+          {
+            "attributeID": 154,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 158,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.02
+          },
+          {
+            "attributeID": 192,
+            "value": 8.0
+          },
+          {
+            "attributeID": 193,
+            "value": 1.0
+          },
+          {
+            "attributeID": 208,
+            "value": 100.0
+          },
+          {
+            "attributeID": 209,
+            "value": 100.0
+          },
+          {
+            "attributeID": 210,
+            "value": 100.0
+          },
+          {
+            "attributeID": 211,
+            "value": 100.0
+          },
+          {
+            "attributeID": 245,
+            "value": 365.0
+          },
+          {
+            "attributeID": 247,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 500.0
+          },
+          {
+            "attributeID": 265,
+            "value": 1600.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 479,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.05
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 200.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 620,
+            "value": 100.0
+          },
+          {
+            "attributeID": 645,
+            "value": 1.5
+          },
+          {
+            "attributeID": 646,
+            "value": 1.5
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.5
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 17159,
       "data": {
         "dogmaAttributes": [
@@ -328700,6 +330417,91 @@
     {
       "dataset": "client/typedogma",
       "key": 17778,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 5.0
+          },
+          {
+            "attributeID": 251,
+            "value": 10.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 600.0
+          },
+          {
+            "attributeID": 265,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 17779,
       "data": {
         "dogmaAttributes": [
           {
@@ -353688,6 +355490,288 @@
           {
             "attributeID": 665,
             "value": 34500.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1007,
+            "value": 0.65
+          },
+          {
+            "attributeID": 1010,
+            "value": 0.65
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.7
+          },
+          {
+            "attributeID": 1766,
+            "value": 26.0
+          },
+          {
+            "attributeID": 1855,
+            "value": 50.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 1
+          },
+          {
+            "effectID": 2196,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 24027,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 1800.0
+          },
+          {
+            "attributeID": 37,
+            "value": 320.0
+          },
+          {
+            "attributeID": 51,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 5250.0
+          },
+          {
+            "attributeID": 55,
+            "value": 1000000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 7.825
+          },
+          {
+            "attributeID": 117,
+            "value": 8.0
+          },
+          {
+            "attributeID": 118,
+            "value": 14.0
+          },
+          {
+            "attributeID": 158,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.1
+          },
+          {
+            "attributeID": 192,
+            "value": 1.0
+          },
+          {
+            "attributeID": 193,
+            "value": 1.0
+          },
+          {
+            "attributeID": 210,
+            "value": 21.0
+          },
+          {
+            "attributeID": 217,
+            "value": 394.0
+          },
+          {
+            "attributeID": 245,
+            "value": 568.0
+          },
+          {
+            "attributeID": 246,
+            "value": 394.0
+          },
+          {
+            "attributeID": 247,
+            "value": 18000.0
+          },
+          {
+            "attributeID": 250,
+            "value": 1.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.08
+          },
+          {
+            "attributeID": 263,
+            "value": 1200.0
+          },
+          {
+            "attributeID": 265,
+            "value": 1500.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.5
+          },
+          {
+            "attributeID": 268,
+            "value": 0.4
+          },
+          {
+            "attributeID": 269,
+            "value": 0.7
+          },
+          {
+            "attributeID": 270,
+            "value": 0.6
+          },
+          {
+            "attributeID": 271,
+            "value": 0.5
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4
+          },
+          {
+            "attributeID": 273,
+            "value": 0.7
+          },
+          {
+            "attributeID": 274,
+            "value": 0.6
+          },
+          {
+            "attributeID": 416,
+            "value": 6000.0
+          },
+          {
+            "attributeID": 456,
+            "value": -5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 5.0
+          },
+          {
+            "attributeID": 466,
+            "value": 0.65
+          },
+          {
+            "attributeID": 475,
+            "value": 4500.0
+          },
+          {
+            "attributeID": 476,
+            "value": 18000.0
+          },
+          {
+            "attributeID": 479,
+            "value": 1000000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 146250.0
+          },
+          {
+            "attributeID": 482,
+            "value": 950.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.095
+          },
+          {
+            "attributeID": 508,
+            "value": 160.0
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 270.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.009
+          },
+          {
+            "attributeID": 563,
+            "value": 5.0
+          },
+          {
+            "attributeID": 564,
+            "value": 200.0
+          },
+          {
+            "attributeID": 580,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 581,
+            "value": 0.25
+          },
+          {
+            "attributeID": 582,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 583,
+            "value": 1.0
+          },
+          {
+            "attributeID": 620,
+            "value": 125.0
+          },
+          {
+            "attributeID": 630,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 631,
+            "value": 300.0
+          },
+          {
+            "attributeID": 665,
+            "value": 12000.0
           },
           {
             "attributeID": 798,
@@ -390257,6 +392341,24 @@
     },
     {
       "dataset": "client/types",
+      "key": 17158,
+      "data": {
+        "descriptionID": 80677,
+        "typeID": 17158,
+        "graphicID": 2421,
+        "capacity": 1000.0,
+        "typeNameID": 69145,
+        "published": 0,
+        "radius": 371.0,
+        "volume": 1000.0,
+        "mass": 1000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 383
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 17159,
       "data": {
         "descriptionID": 80678,
@@ -391465,6 +393567,25 @@
         "typeNameID": 69313,
         "published": 0,
         "radius": 3275.0,
+        "volume": 1150.0,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17779,
+      "data": {
+        "descriptionID": 80793,
+        "typeID": 17779,
+        "graphicID": 2594,
+        "capacity": 8850.0,
+        "raceID": 8,
+        "typeNameID": 69314,
+        "published": 0,
+        "radius": 3666.0,
         "volume": 1150.0,
         "mass": 100000.0,
         "basePrice": 0.0,
@@ -393906,6 +396027,27 @@
         "capacity": 480.0,
         "raceID": 8,
         "typeNameID": 75052,
+        "published": 0,
+        "radius": 150.0,
+        "volume": 112000.0,
+        "soundID": 20903,
+        "wreckTypeID": 26586,
+        "mass": 11200000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 629
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 24027,
+      "data": {
+        "descriptionID": 85885,
+        "typeID": 24027,
+        "graphicID": 2917,
+        "capacity": 480.0,
+        "raceID": 8,
+        "typeNameID": 75053,
         "published": 0,
         "radius": 150.0,
         "volume": 112000.0,
@@ -400375,6 +402517,15 @@
     },
     {
       "dataset": "sde/missions",
+      "key": 893,
+      "data": {
+        "name": {
+          "en": "The Guristas Spies"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
       "key": 894,
       "data": {
         "name": {
@@ -400403,6 +402554,15 @@
     {
       "dataset": "sde/missions",
       "key": 898,
+      "data": {
+        "name": {
+          "en": "The Serpentis Spies"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 899,
       "data": {
         "name": {
           "en": "The Serpentis Spies"

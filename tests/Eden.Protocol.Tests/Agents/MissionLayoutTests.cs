@@ -248,6 +248,7 @@ public sealed class MissionLayoutTests
 
     [Theory]
     [InlineData(892, 4)]
+    [InlineData(899, 4)]
     [InlineData(1239, 4)]
     [InlineData(1241, 4)]
     [InlineData(1245, 3)]
@@ -302,7 +303,7 @@ public sealed class MissionLayoutTests
         using MissionFixture f = new();
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var profiles = MissionCatalog.Read(catalog).Where(p => p.Kind == MissionKind.Combat).ToArray();
-        Assert.Equal(101, profiles.Length);
+        Assert.Equal(103, profiles.Length);
         int restoredScenery = 0;
         FlightProperties hull = new(0, 500, 100_000_000, 0.1f, 100, 3);
         foreach (var profile in profiles)

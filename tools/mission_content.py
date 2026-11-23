@@ -19,7 +19,9 @@ ATTRIBUTE_ENHANCER_GROUP = 745
 UNREPORTED_GROUP_RANGE = 25000
 
 KNOWN_BLOCKERS = {
+    891: 'Requires timed reinforcements',
     895: 'Requires timed reinforcements',
+    903: 'Requires a verified Sansha Spy type and completion objective',
     1062: 'Requires pinned hull identity for the Blood Raider Spy frigates',
     1063: 'Requires pinned hull identity for the Blood Raider Spy destroyers',
     1064: 'Requires pinned hull identity for the Blood Raider Spy battlecruisers',
@@ -339,12 +341,23 @@ def extend(db, missions, group):
                group('Pithior Guerilla', 1, 30000, required=False),
                group('Pithi Demolisher/Pithi Destructor', 2, 57000),
                group('Pithior Renegade/Pithior Anarchist', 2, 57000)], 53018)
+    # Three Ferox spies pay the pinned Pithatis Enforcer bounty in EVEInfo's level-three run reports.
+    encounter(893, 500010, 'The_Guristas_Spies_(Level_3)', 192011,
+              [group('Pithatis Enforcer', 3, 30000), group('Pithior Anarchist', 3, 60000, required=False),
+               group('Pithatis Assaulter', 1, 60000, required=False)], 53027)
     # The report's "Infanty" is a typo for the pinned Corelior Infantry type.
     encounter(898, 500020, 'The_Serpentis_Spies_(Level_3)', 223606,
               [group('Corelior Infantry/Corelior Soldier', 3, 30000, required=False),
                group('Corelum Chief Infantry/Corelum Chief Sentinel', 1, 30000, required=False),
                group('Tower Sentry Serpentis I', 2, 62000, required=False),
                group('Coreli Agent/Coreli Spy', 5, 71000), group('Serpentis Spy', 3, 71000)], 53182)
+    # EVE-Survival's single ship group matches the native 137 km anchor and EVEInfo identifies the Brutix hulls.
+    encounter(899, 500020, 'The_Serpentis_Spies_(Level_4)', 192060,
+              [group('Tower Sentry Serpentis I', 3, 60000, required=False),
+               group('Tower Sentry Serpentis II', 2, 60000, required=False),
+               group('Tower Sentry Serpentis III', 2, 60000, required=False),
+               group('Corelior Soldier/Corelior Infantry', 4, 137000), group('Corelatis Captain', 2, 137000),
+               group('Corelatis Captain Sentry', 1, 137000), group('Core Port Admiral', 1, 137000)], 70406)
     # University reports give the spy display names. The corresponding EVE-Survival
     # SanshaSpies2/3/4 reports explicitly identify their underlying catalog hulls:
     # Centior Cannibal; Centatis Specter; and Centatis Devil/Wraith, respectively.

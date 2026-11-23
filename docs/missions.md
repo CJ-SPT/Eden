@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **933 definitions**. That includes **101 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **935 definitions**. That includes **103 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,959** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,957** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -76,8 +76,8 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Avenge a Fallen Comrade | Angel level 1 (two templates), Guristas level 2, Serpentis level 2 (two templates), DED levels 1–2 (two templates each) | 9 |
 | Retribution | Angel, Guristas, Sansha (two templates) and Serpentis (two templates); level 3 | 6 |
 | Angel Cartel Spies | Levels 1–4 | 4 |
-| Guristas Spies | Levels 1–2 | 2 |
-| Serpentis Spies | Levels 2–3 | 2 |
+| Guristas Spies | Levels 1–3 | 3 |
+| Serpentis Spies | Levels 2–4 | 3 |
 | Sansha Spies | Levels 2–4 | 3 |
 | Blood Raider Spies | Level 4 | 1 |
 | Attack the Angel Hideout | Level 2 | 1 |
@@ -104,6 +104,9 @@ The [spy-content milestone](protocol/agents.md#verified-spy-objectives--november
 Sansha levels two and three require the spy hulls; level four requires the entire third group, including its battleship.
 Other guards and sentries are optional. Sansha spies display their pinned hull names: Centior Cannibal, Centatis Specter,
 and Centatis Devil/Wraith, respectively. Report-specific group aggro and custom spy labels are not reconstructed.
+Level-three Guristas Spies requires the three spies in its first group. Level-four Serpentis Spies requires all eight
+ships in its combat pocket and permits all seven sentries to survive. Both retain the catalog's empty entrance gate.
+[Higher-level spy reports and bindings](protocol/agents.md#higher-level-guristas-and-serpentis-spies--november-23-2026)
 
 Retribution completes when the **outpost** is destroyed; clearing its guards alone does not complete the mission.
 The empty entrance and acceleration gate remain present. Optional armory loot and report-specific group aggro are

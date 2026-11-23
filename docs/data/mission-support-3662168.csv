@@ -2,19 +2,19 @@ missionId,name,template,status,reason
 875,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 888,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 890,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-891,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+891,The Guristas Spies,BasicKillMission,blocked,Requires timed reinforcements
 892,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-893,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+893,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 894,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 895,The Serpentis Spies,BasicKillMission,blocked,Requires timed reinforcements
 896,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 897,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 898,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-899,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+899,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 900,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 901,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 902,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-903,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+903,The Sansha Spies,BasicKillMission,blocked,Requires a verified Sansha Spy type and completion objective
 909,The Seven's Brothel,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 910,The Seven's Prison Facility,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 911,The Right Hand Of Zazzmatazz,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
