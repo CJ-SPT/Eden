@@ -202,3 +202,24 @@ FullyQualifiedName~Eden.Protocol.Tests.Propulsion.InterdictionTests.|FullyQualif
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect nullifier cycle/cooldown indicators while cloaked; verify the native alignment stop at expiry.
+
+## Interdiction cleanup during session ticks
+
+On November 23, 2026, HostCram logged `PersistenceRequiredException` while ending an interdiction effect during a player
+tick on revision `2fefe2156`. The tick supplied the pilot's system context. Cleanup took that system's owner before asking
+for the shared resident transaction, which rejected the acquisition order and disconnected the session. The container
+reported zero restarts and continued writing checkpoints after the incident.
+
+Cleanup now acquires shared ownership before reading the focused tackle edge. The resident transaction then resolves the
+source and any ship target to their owning systems and settles the active module, tackle, field and heat together. The
+session clears the effect after resident cleanup succeeds. Paid deadlines and cooldowns retain the behavior covered by the
+pinned catalog and the [focused HIC](#hic-fields-and-focused-scripts--november-16-2026) and
+[nullifier](#interdiction-nullifiers--november-16-2026) records above.
+
+**Automated validation.** Both native expiry flows reproduced the exception with the pilot's system context before the
+fix. The focused `HicInterdictionTests`, `NullifierTests` and `InterdictionTests` selection passed all 37 cases after the
+fix. The isolated build took 12.15 seconds and reported no warnings. The test runner reported 20 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.

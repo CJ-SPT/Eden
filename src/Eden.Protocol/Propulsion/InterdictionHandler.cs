@@ -50,7 +50,7 @@ internal sealed class InterdictionHandler(
 
     public void CancelModule(PilotCallContext context, long module)
     {
-        if (_cycles.Remove(module, out var cycle))
+        if (_cycles.TryGetValue(module, out var cycle))
         {
             if (cycle.Contact is not null)
             {
@@ -58,6 +58,7 @@ internal sealed class InterdictionHandler(
                 context.Flight.SetWeaponEffect(cycle.Contact, false);
                 NotifyAttributes(context);
             }
+            _cycles.Remove(module);
             context.Notifications.Add(new ShipEffectChanged(cycle.Effect, Now, false, false, Now));
         }
     }

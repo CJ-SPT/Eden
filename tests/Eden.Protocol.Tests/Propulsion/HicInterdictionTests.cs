@@ -310,7 +310,10 @@ public sealed class HicInterdictionTests
         Assert.Contains(recipient.Notifications, notification => notification is TackleEwarChanged { Active: true });
         Assert.IsType<PilotCallResult.Failure>(recipient.Flight.Execute(new FlightCommand.WarpToPoint(1, new(1_000_000, 0, 0), 0)));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(6));
-        scope.ServiceProvider.GetRequiredService<InterdictionHandler>().Advance(source);
+        using (live.UseSystem(source.Pilot.SystemId))
+        {
+            scope.ServiceProvider.GetRequiredService<InterdictionHandler>().Advance(source);
+        }
         recipientScope.ServiceProvider.GetRequiredService<TackleHandler>().Advance(recipient);
         Assert.Contains(recipient.Notifications, notification => notification is TackleEwarChanged { Active: false });
     }

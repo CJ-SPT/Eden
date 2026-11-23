@@ -314,7 +314,10 @@ public sealed class NullifierTests
         );
         Assert.NotNull(handler.ActiveEffect(pilot, module));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(10));
-        handler.Advance(context);
+        using (live.UseSystem(system))
+        {
+            handler.Advance(context);
+        }
         Assert.Null(handler.ActiveEffect(pilot, module));
         Assert.Contains(context.Flight.Updates, update => update.Command is DestinyCommand.Stop);
         Assert.True(context.Flight.Cloaked);

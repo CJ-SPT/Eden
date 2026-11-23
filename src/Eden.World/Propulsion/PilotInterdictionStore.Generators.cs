@@ -251,7 +251,7 @@ internal sealed partial class PilotInterdictionStore
 
     public void Stop(long pilotId, long shipId, long moduleId, long now)
     {
-        using var ownership = Live.Enter();
+        using var ownership = Live.EnterShared("interdiction stop");
         var edge = Live.Economy.Peek<WorldTackle>(moduleId);
         using var transaction = Live.Economy.Begin(
             new(pilots: [pilotId], ships: edge?.TargetKind == TackleTargetKind.Ship ? [shipId, edge.TargetId] : [shipId])
