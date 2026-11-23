@@ -9,6 +9,12 @@
                       Help="Turning this off pauses all simulated capsuleers and hides them from players.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.SimulatedPilots" aria-describedby="@field.Help" /></Control>
         </SettingField>
+        <SettingField Label="Run bots without players"
+                      Help="Keep background bot work and travel active while the server is running, even with nobody logged in.">
+            <Control Context="field">
+                <InputCheckbox id="@field.Input" @bind-Value="Form.RunBotsWithoutPlayers" aria-describedby="@field.Help" />
+            </Control>
+        </SettingField>
         <SettingField Label="Active bot cap"
                       Help="0 allows unlimited pilots. Admitted pilots retain a slot while offscreen or idle. Eden pauses excess pilots and reuses them when slots reopen.">
             <Control Context="field">
@@ -17,7 +23,7 @@
             </Control>
         </SettingField>
         <SettingField Label="Prepare bots in unvisited systems"
-                      Help="Prepare eligible high-security systems with stations while anyone is playing. Occupied systems get priority.">
+                      Help="Prepare eligible high-security systems with stations while bot work is active. Occupied systems get priority.">
             <Control Context="field">
                 <InputCheckbox id="@field.Input" @bind-Value="Form.PrepareUnvisitedSystems" aria-describedby="@field.Help" />
             </Control>

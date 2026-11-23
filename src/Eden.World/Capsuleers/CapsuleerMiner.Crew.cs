@@ -36,6 +36,12 @@ internal sealed partial class CapsuleerMiner
         && Work.WorkingBelt > 0
         && Crewmates().Any(work => work.AvoidedBelts.Any(belt => belt.BeltId == Work.WorkingBelt && belt.Until > elapsed));
 
+    private (BeltMemory[] Stripped, BeltMemory[] Avoided) BeltMemories(IReadOnlyList<MinerProgress> peers) =>
+        (
+            [.. Work.StrippedBelts, .. peers.SelectMany(work => work.StrippedBelts)],
+            database.Settings.Capsuleers.SituationalAwareness ? [.. Work.AvoidedBelts, .. peers.SelectMany(work => work.AvoidedBelts)] : []
+        );
+
     private StaticSpaceObject? SelectRock(IReadOnlyList<StaticSpaceObject> available)
     {
         var claimed = Crewmates().Where(CapsuleerMiningRules.ClaimsRock).Select(work => work.TargetId).ToHashSet();

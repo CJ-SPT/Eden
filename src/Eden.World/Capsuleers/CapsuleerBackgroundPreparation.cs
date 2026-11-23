@@ -38,7 +38,7 @@ internal sealed class CapsuleerBackgroundPreparation(
             var human = activity.Read();
             var occupied = human.ActiveSystems;
             var policy = database.Settings.Capsuleers;
-            if (occupied.Count == 0)
+            if (!human.Active)
             {
                 _inboundRetries.Clear();
                 if (_unvisitedSystems is null)

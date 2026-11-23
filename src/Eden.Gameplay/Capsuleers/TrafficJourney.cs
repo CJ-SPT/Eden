@@ -35,12 +35,14 @@ public static class NullsecExpeditionRules
 {
     public const int MinimumJumps = 1;
     public const int MaximumJumps = 8;
-    private const int DeparturePercent = 10;
+    private const int RattingDeparturePercent = 10;
 
     public static ulong Draw(long worldSeed, long pilotId, long sequence) =>
         TravelerRoutineRules.Mix((ulong)worldSeed ^ TravelerRoutineRules.Mix((ulong)pilotId) ^ (ulong)sequence);
 
-    public static bool ShouldDepart(ulong draw) => draw % 100 < DeparturePercent;
+    public static bool ShouldRat(ulong draw) => draw % 100 < RattingDeparturePercent;
+
+    public static bool ShouldRoam(ulong draw, int percent) => draw / 100 % 100 < (ulong)percent;
 }
 
 public static class TrafficJourneyRules

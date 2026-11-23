@@ -17,8 +17,9 @@
   contest shared complexes. [Faction Warfare](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. On new established worlds, eligible
   bots buy and fit separate PvP ships with spendable ISK from ordinary work. Corporate pilots can take paid production work,
-  replace lost ships and fund first sovereignty claims. With background preparation enabled, eligible high-security systems
-  gain bots ahead of player visits. Independent pilots can plan round trips into nullsec. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
+  replace lost ships and fund first sovereignty claims. Bot work continues with nobody logged in by default. With background
+  preparation enabled, eligible high-security systems gain bots ahead of player visits. The default departure policy favors
+  PvP roams for eligible independent pilots heading into nullsec. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
   [Independent nullsec expeditions](capsuleer-population.md#independent-nullsec-expeditions) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
   [First claims](protocol/sovereignty.md#autonomous-first-claims) · [Population inspector](capsuleer-population.md#inspecting-bots-and-organizations)

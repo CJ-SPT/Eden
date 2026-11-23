@@ -603,7 +603,8 @@ Open **Player bots**, make changes, and select **Save for restart**. The **Popul
 settings, occupied slots, saved/paused totals, individual system access and waiting reasons.
 
 - **Bot population** contains the master switch, the world-wide **Active bot cap**
-  (`settings.capsuleers.activePilotCap`) and **Prepare bots in unvisited systems**
+  (`settings.capsuleers.activePilotCap`), **Run bots without players** (`settings.capsuleers.runWithoutPlayers`, default on),
+  and **Prepare bots in unvisited systems**
   (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
   **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
 - **Where bots work** applies the default, then the region override, then the solar-system override
@@ -654,10 +655,11 @@ equipment, wallet, loss, grant record or saved activity is deleted. Raising a li
 before missing station-traffic/miner slots are prepared in entered regions. New gate visitors are prepared on gate watches. A lost ship remains lost.
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
-Normal startup retains saved pilots and starts preparation when a human selects a character. Occupied systems get priority.
+Normal startup retains saved pilots and starts eligible background jobs before the first character selection.
+Turn off **Run bots without players** to pause bot work and preparation whenever nobody has selected a character.
 With **Prepare bots in unvisited systems** enabled, Eden also prepares eligible unvisited high-security systems with
-stations in bounded batches. It respects the active bot cap and work access rules, and preparation stops when the last
-player leaves. Turning the setting off limits new community preparation to occupied systems.
+stations in bounded batches while bot simulation runs. Occupied systems get priority. The active bot cap and work access rules still
+apply. Turning off unvisited preparation limits new communities to occupied systems.
 Saved identities and possessions are reused, and dormant time produces no catch-up rewards. Completed catalog/settings/snapshot
 fingerprints are reused; interrupted preparation retries missing communities
 without replacing completed pilots. Unsupported or temporarily depleted communities are recorded

@@ -51,9 +51,11 @@ internal sealed partial class CapsuleerHauler
         using var phase = SessionPerformance.Phase("traffic.nullsecDeparture");
         long worldSeed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
         ulong draw = NullsecExpeditionRules.Draw(worldSeed, pilotId, Work.DwellSequence);
+        ratting &= NullsecExpeditionRules.ShouldRat(draw);
+        roaming &= NullsecExpeditionRules.ShouldRoam(draw, policy.RoamPercent);
         var catalog = _operation.Catalog;
         if (
-            !NullsecExpeditionRules.ShouldDepart(draw)
+            !(ratting || roaming)
             || !StationCapabilities.Has(catalog, Pilot.OperationId, StationService.Market)
             || !MilitiaEnlistmentStore.CanUseDocking(world, world.Pilots.Find(pilotId)!, Pilot.SystemId, Pilot.ShipGroupId)
             || !CapsuleerWorkHulls.CanLeaveShip(world, catalog, Pilot)
@@ -68,7 +70,6 @@ internal sealed partial class CapsuleerHauler
         if (
             roaming
             && !HasPvpShip
-            && (!ratting || (draw & 1) == 0)
             && CapsuleerTrafficRoutes.NullsecExpedition(catalog, Pilot.SystemId, hull, policy, avoided, false, true, draw, population)
                 is { } potentialRoam
         )

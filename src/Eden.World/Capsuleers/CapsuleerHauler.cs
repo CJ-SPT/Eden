@@ -1180,11 +1180,7 @@ internal sealed partial class CapsuleerHauler(
         var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now, out var resupplyFit);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
-        if (TryLaunchNullsecExpedition(supplies, resupplyFit))
-        {
-            return;
-        }
-        if (TryGangDeparture())
+        if (TryGangDeparture() || TryLaunchNullsecExpedition(supplies, resupplyFit))
         {
             return;
         }

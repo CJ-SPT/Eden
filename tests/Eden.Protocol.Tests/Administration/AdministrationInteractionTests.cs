@@ -95,6 +95,7 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.BotExploration), false);
             await renderer.Change(nameof(SettingsForm.ActivePilotCap), "250");
             await renderer.Change(nameof(SettingsForm.PrepareUnvisitedSystems), false);
+            await renderer.Change(nameof(SettingsForm.RunBotsWithoutPlayers), false);
             await renderer.Change(nameof(SettingsForm.TradeGoodsFreight), false);
             await renderer.Change(nameof(SettingsForm.AutomaticRecruitment), false);
             await renderer.Change(nameof(SettingsForm.AutomaticAlliances), false);
@@ -128,6 +129,7 @@ public sealed partial class AdministrationTests
             Assert.Equal(CapsuleerRegionAccess.WorkAndTransit, saved.Pending.Draft.Settings.Capsuleers.SystemAccess[30000142]);
             var botPolicy = saved.Pending.Draft.Settings.Capsuleers;
             Assert.False(botPolicy.PrepareUnvisitedSystems);
+            Assert.False(botPolicy.RunWithoutPlayers);
             Assert.False(botPolicy.TradeGoodsFreight);
             Assert.False(botPolicy.AutomaticRecruitment);
             Assert.False(botPolicy.AutomaticAlliances);

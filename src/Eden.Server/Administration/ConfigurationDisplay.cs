@@ -75,6 +75,7 @@ internal static class ConfigurationDisplay
         ["capsuleers.enabled"] = "Player bots",
         ["capsuleers.activePilotCap"] = "Active bot cap",
         ["capsuleers.prepareUnvisitedSystems"] = "Prepare bots in unvisited systems",
+        ["capsuleers.runWithoutPlayers"] = "Run bots without players",
         ["capsuleers.tradeGoodsFreight"] = "Carry trade goods on civilian routes",
         ["capsuleers.defaultRegionAccess"] = "Default region access",
         ["capsuleers.regionAccess"] = "Region overrides",

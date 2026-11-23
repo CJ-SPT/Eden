@@ -589,9 +589,18 @@ public sealed class RoamingGangTests
                 PassiveCatalogFixture.LoadActiveTiers(Database.CatalogPath, new HashSet<int> { 12056, 3528, 10836, 12066, 3538, 10838 });
                 using var setup = new WorldDbContext(Database.Path);
                 setup.Database.ExecuteSql($"UPDATE WorldCapsuleerProvisioning SET WorldSeed={seed}");
+                using var catalog = new CatalogDbContext(Database.CatalogPath);
+                var combat = CapsuleerPatrolFit.Starter(catalog)!;
                 var imported = Enumerable
                     .Range(1, 32)
-                    .Select(index => TrafficSnapshotTests.Profile(900000100 + index, $"Snapshot Pilot {index}") with { KillId = index })
+                    .Select(index =>
+                        TrafficSnapshotTests.Profile(900000100 + index, $"Snapshot Pilot {index}") with
+                        {
+                            KillId = index,
+                            HullTypeId = combat.HullTypeId,
+                            Equipment = combat.Equipment,
+                        }
+                    )
                     .ToArray();
                 TrafficSnapshotTests.Install(Database, imported);
             }
@@ -663,6 +672,7 @@ public sealed class RoamingGangTests
                     TrafficMultiplier = 10,
                     RoamingGangSize = gangSize,
                     RoamingGangs = soloHull is null,
+                    NullsecExpeditions = soloHull is null,
                     GateVisitors = 0,
                     Miners = false,
                     GeneratedCombatPercent = 100,

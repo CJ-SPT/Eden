@@ -1012,7 +1012,7 @@ internal sealed partial class CapsuleerMiner(
                 && (
                     Work.Mercoxit is null
                         ? database.Catalog.Definition(s_miningBelt, checked((int)o.Id))
-                        : CapsuleerTrafficRoutes.MercoxitBelt(_operation.Catalog, o.Id)
+                        : CapsuleerTrafficRoutes.MercoxitBelt(_operation.Catalog, checked((int)o.Id))
                 )
             )
             .OrderBy(o => o.Id)
@@ -1026,10 +1026,7 @@ internal sealed partial class CapsuleerMiner(
         }
         var peers = Crewmates().ToArray();
         long elapsed = Work.ActiveTicks;
-        BeltMemory[] stripped = [.. Work.StrippedBelts, .. peers.SelectMany(work => work.StrippedBelts)];
-        BeltMemory[] avoided = database.Settings.Capsuleers.SituationalAwareness
-            ? [.. Work.AvoidedBelts, .. peers.SelectMany(work => work.AvoidedBelts)]
-            : [];
+        var (stripped, avoided) = BeltMemories(peers);
         var occupied = peers
             .Where(CapsuleerMiningRules.WorkingField)
             .Select(work => (long?)work.WorkingBelt)

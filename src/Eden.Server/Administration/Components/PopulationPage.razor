@@ -7,8 +7,7 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">Bots can work in unobserved systems while anyone is playing.
-    All pilots pause when the last player leaves, retaining their ships, possessions and pending work.</p>
+<p class="muted">Bots can work in systems with no players. Their ships, possessions and pending work are saved at checkpoints.</p>
 @if (Error is not null)
 {
     <p class="error" role="alert">@Error</p>
@@ -23,7 +22,8 @@
         <p>Player bots: @(snapshot.Policy.Enabled ? "On" : "Off") · Mining fleets: @(snapshot.Policy.Miners ? "On" : "Off") ·
             Trade-good shipments: @(snapshot.Policy.TradeGoodsFreight ? "On" : "Off") ·
             Data and relic exploration: @(snapshot.Policy.Exploration ? "On" : "Off")</p>
-        <p>Prepare bots in unvisited systems: @(snapshot.Policy.PrepareUnvisitedSystems ? "On" : "Off")</p>
+        <p>Prepare bots in unvisited systems: @(snapshot.Policy.PrepareUnvisitedSystems ? "On" : "Off") ·
+            Run bots without players: @(snapshot.Policy.RunWithoutPlayers ? "On" : "Off")</p>
         <p>Corporation formation and recruitment: @(snapshot.Policy.AutomaticRecruitment ? "On" : "Off") ·
             Form and grow alliances: @(snapshot.Policy.AutomaticAlliances ? "On" : "Off") ·
             Start new sovereignty claims: @(snapshot.Policy.NewSovereigntyClaims ? "On" : "Off")</p>

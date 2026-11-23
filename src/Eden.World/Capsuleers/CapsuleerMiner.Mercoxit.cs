@@ -38,6 +38,10 @@ internal sealed partial class CapsuleerMiner
             // Existing stock or an open sale supplies this station. Resume ordinary belt work in the meantime.
             return null;
         }
+        if (!CanMineMercoxit(world, route[^1]))
+        {
+            return null;
+        }
         int laser = (int)MiningLaserType.DeepCoreMiningLaserI;
         bool equipped =
             aboard.Any(item => item.TypeId == laser && InventoryDefinitions.IsHighSlot(item.FlagId))
@@ -56,6 +60,41 @@ internal sealed partial class CapsuleerMiner
         }
         _work = Work with { DeepCoreProvisioned = true };
         return new(Pilot.StationId, route);
+    }
+
+    private bool CanMineMercoxit(EconomyTransaction world, int destination)
+    {
+        var catalog = _operation.Catalog;
+        var (stripped, avoided) = BeltMemories(Crewmates().ToArray());
+        long elapsed = Work.ActiveTicks;
+        var candidates = catalog
+            .Definitions.BeltAnchors(destination)
+            .Where(belt =>
+                CapsuleerTrafficRoutes.MercoxitBelt(catalog, belt.Id)
+                && !stripped.Any(memory => memory.BeltId == belt.Id && memory.Until > elapsed)
+                && !avoided.Any(memory => memory.BeltId == belt.Id && memory.Until > elapsed)
+            )
+            .Select(belt => belt.Id)
+            .ToHashSet();
+        if (candidates.Count == 0)
+        {
+            return false;
+        }
+        HashSet<int> populated = [];
+        foreach (var rock in world.AsteroidsInSystem(destination))
+        {
+            if (!candidates.Contains(rock.BeltId))
+            {
+                continue;
+            }
+            if (rock.Quantity > 0 && catalog.FittingType(rock.TypeId)?.GroupId == MiningDefinitions.MercoxitGroup)
+            {
+                return true;
+            }
+            populated.Add(rock.BeltId);
+        }
+        // A never-visited belt can still be populated on arrival. A saved belt needs unmined Mercoxit.
+        return !candidates.IsSubsetOf(populated);
     }
 
     private void ContinueExpedition(MercoxitExpedition expedition)

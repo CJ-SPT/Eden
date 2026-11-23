@@ -66,6 +66,13 @@ internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clo
         _ = Read();
     }
 
+    internal void StartUnattended()
+    {
+        Activity.StartUnattended(clock.GetTimestamp(), clock.TimestampFrequency);
+        _ = Read();
+        Wake();
+    }
+
     internal HumanActivitySnapshot Read()
     {
         var activity = Activity;
@@ -96,6 +103,17 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
     internal Task Changed => (LiveWorld.Find(database.Path)?.CapsuleerActivity ?? _standalone).Changed;
 
     internal void Wake() => (LiveWorld.Find(database.Path)?.CapsuleerActivity ?? _standalone).Wake();
+
+    internal void StartUnattended()
+    {
+        var policy = database.Settings.Capsuleers;
+        if (policy is { Enabled: true, RunWithoutPlayers: true } && LiveWorld.Find(database.Path) is { } live)
+        {
+            using var owner = synchronization.Enter("start background capsuleer simulation");
+            live.CapsuleerActivity.StartUnattended();
+            RequestPreparation();
+        }
+    }
 
     public HumanActivitySnapshot Read()
     {
@@ -264,8 +282,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
             }
             catch
             {
-                // A failed due action must not retain a disconnected human and
-                // leave the economic clock running without a selected session.
+                // Release a disconnected observer even when a due action fails during the handoff.
                 presence.Forget(session, () => _disposed = true);
                 throw;
             }

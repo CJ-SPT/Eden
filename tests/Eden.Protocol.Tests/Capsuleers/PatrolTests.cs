@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Server;
 using Eden.Server.Administration;
 using Eden.Server.Maintenance;
@@ -67,6 +68,19 @@ public sealed class PatrolTests
         Assert.Null(CapsuleerPatrolFit.Select(catalog, settings.Capsuleers, 1, 30000142, 0));
         Assert.Null(CapsuleerPatrolFit.Select(catalog, settings.Capsuleers with { GeneratedCombatPercent = 0 }, 1, 30000141, 0));
         Assert.Throws<InvalidDataException>(() => CapsuleerPopulationRules.Validate(settings.Capsuleers with { RoamPercent = 101 }));
+
+        var armed = CapsuleerPatrolFit.Starter(catalog)! with { CharacterId = 900000001 };
+        var mining = armed with
+        {
+            HullTypeId = (int)CapsuleerMiningHull.Venture,
+            Equipment = [new((int)MiningLaserType.MinerI, (int)InventoryFlag.HighSlot0, 1), .. armed.Equipment.Skip(2)],
+        };
+        Assert.Contains(
+            Enumerable.Range(1, 40),
+            seed =>
+                CapsuleerPatrolFit.Select(catalog, settings.Capsuleers, seed, 30000141, 0, () => armed) == armed
+                && CapsuleerPatrolFit.Select(catalog, settings.Capsuleers, seed, 30000141, 0, () => mining) is { CharacterId: 0 }
+        );
     }
 
     [Theory]

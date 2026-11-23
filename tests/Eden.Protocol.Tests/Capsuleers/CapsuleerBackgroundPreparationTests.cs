@@ -440,6 +440,38 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
+    public void UnattendedRuntimePreparesUnvisitedRostersWithoutAnObserver()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerProvisioningTests.AddSystem(f.Database, Third);
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            const string politics = """{"securityStatus":1.0}""";
+            catalog.Database.ExecuteSql($"INSERT INTO SourceRecord VALUES ('client/systems', {Third.ToString()}, {politics})");
+        }
+        PrepareStartup(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var activity = host.GetRequiredService<CapsuleerActivitySource>();
+        var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+        Assert.True(preparation.PrepareNext().Complete);
+
+        activity.StartUnattended();
+        var turn = preparation.PrepareNext();
+        for (int i = 0; i < 64 && !turn.Complete; i++)
+        {
+            Assert.Null(turn.Failure);
+            Assert.False(turn.RetryLater);
+            turn = preparation.PrepareNext();
+        }
+        Assert.Null(turn.Failure);
+        Assert.True(turn.Complete);
+        var live = host.GetRequiredService<LiveWorld>();
+        var agents = live.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().ToArray());
+        Assert.Contains(agents, agent => agent.CommunitySystemId == Third);
+        Assert.Empty(activity.Read().ActiveSystems);
+    }
+
+    [Fact]
     public void LoginsDoNotWaitForGlobalCreationAndOccupiedSystemsArePreparedFirst()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);

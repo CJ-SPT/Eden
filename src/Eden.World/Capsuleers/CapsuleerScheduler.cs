@@ -1007,10 +1007,13 @@ internal sealed partial class CapsuleerScheduler(
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             var activity = presence.Read();
-            return new(
-                activity.Active ? CapsuleerScheduleRules.WakeDelay(NextWorkTicks(), activity.ElapsedTicks, true) : null,
-                presence.Changed
-            );
+            if (!activity.Active)
+            {
+                return new(null, presence.Changed);
+            }
+            bool loadBackground = !_backgroundPilotsLoaded && Live is not null && _populationSettings.Settings.Capsuleers.Enabled;
+            var delay = loadBackground ? TimeSpan.Zero : CapsuleerScheduleRules.WakeDelay(NextWorkTicks(), activity.ElapsedTicks, true);
+            return new(delay, presence.Changed);
         }
     }
 

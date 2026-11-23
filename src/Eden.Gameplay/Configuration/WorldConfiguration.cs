@@ -118,8 +118,8 @@ public sealed record CapsuleerPopulationPolicy(
     public int RoamingGangSize { get; init; } = 4;
     public bool RegionalConflicts { get; init; } = true;
     public int RegionalOperationsPerGroup { get; init; } = 1;
-    public int RoamPercent { get; init; } = 30;
-    public int GeneratedCombatPercent { get; init; } = 35;
+    public int RoamPercent { get; init; } = 75;
+    public int GeneratedCombatPercent { get; init; } = 80;
     public bool SituationalAwareness { get; init; } = true;
     public bool BeltRatting { get; init; } = true;
     public int RatDamageReductionPercent { get; init; } = 25;
@@ -127,6 +127,7 @@ public sealed record CapsuleerPopulationPolicy(
     public bool Exploration { get; init; } = true;
     public bool WreckSalvage { get; init; } = true;
     public int ActivePilotCap { get; init; }
+    public bool RunWithoutPlayers { get; init; } = true;
     public bool PrepareUnvisitedSystems { get; init; } = true;
     public bool TradeGoodsFreight { get; init; } = true;
     public CapsuleerRegionAccess DefaultRegionAccess { get; init; }

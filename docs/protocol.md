@@ -154,6 +154,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Autonomous capsuleers
 
+- [Unattended capsuleer simulation](protocol/capsuleers.md#unattended-capsuleer-simulation--november-23-2026)
 - [Ship state after gate transfers](protocol/capsuleers.md#ship-state-after-gate-transfers)
 - [Population inspector](protocol/capsuleers.md#population-inspector)
 - [Pilot creation and offscreen admission under load](protocol/capsuleers.md#pilot-creation-and-offscreen-admission-under-load)

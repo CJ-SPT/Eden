@@ -1,9 +1,12 @@
 using Eden.Data.Catalog.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Propulsion;
 using Eden.World.Catalog;
+using Eden.World.Fittings;
 
 namespace Eden.World.Capsuleers;
 
@@ -253,6 +256,27 @@ internal static partial class CapsuleerPatrolFit
                 return patrol;
             }
         }
-        return imported?.Invoke() ?? interdictor ?? Starter(catalog);
+        return imported?.Invoke() is { } profile && ArmedRoamingFit(catalog, profile) ? profile : interdictor ?? Starter(catalog);
+    }
+
+    private static bool ArmedRoamingFit(CatalogDbContext catalog, TrafficProfile profile)
+    {
+        if (!CombatHull(catalog, profile.HullTypeId))
+        {
+            return false;
+        }
+        bool weapon = false;
+        foreach (var item in profile.Equipment.Where(item => InventoryDefinitions.IsHighSlot(item.Flag)))
+        {
+            var effect = FittingCatalog.DefaultEffect(catalog, item.TypeId);
+            if (effect is DogmaEffect.MiningLaser or DogmaEffect.MiningClouds)
+            {
+                return false;
+            }
+            weapon |=
+                effect is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles
+                && catalog.FittingType(item.TypeId)?.GroupId != InterdictionRules.LauncherGroup;
+        }
+        return weapon;
     }
 }

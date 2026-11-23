@@ -11,8 +11,8 @@ public sealed record HumanActivityClock(long ElapsedTicks, long Timestamp, long 
     }
 }
 
-// The world owner serializes this state. Elapsed time is monotonic human-online time,
-// never wall time, and is counted once regardless of the number of selected pilots.
+// The world owner serializes this state. Monotonic simulation time is counted once
+// regardless of how many pilots observe the world.
 public sealed class HumanActivity
 {
     private readonly Dictionary<Guid, SelectedHumanPilot> _sessions = [];
@@ -21,15 +21,27 @@ public sealed class HumanActivity
     private long _frequency;
     private Int128 _remainder;
     private long _resumes;
+    private bool _runsWithoutPlayers;
     private IReadOnlyList<int> _activeSystems = [];
 
     private IReadOnlyList<SelectedHumanPilot> _pilots = [];
+    private bool Active => _runsWithoutPlayers || _sessions.Count > 0;
 
     public HumanActivity(long elapsedTicks, long timestamp)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(elapsedTicks);
         _elapsedTicks = elapsedTicks;
         _observedAt = timestamp;
+    }
+
+    public void StartUnattended(long timestamp, long frequency)
+    {
+        Advance(timestamp, frequency);
+        if (!Active)
+        {
+            _resumes = checked(_resumes + 1);
+        }
+        _runsWithoutPlayers = true;
     }
 
     public void Update(Guid session, int? systemId, long timestamp, long frequency, long pilotId = 0)
@@ -46,7 +58,7 @@ public sealed class HumanActivity
             {
                 return;
             }
-            if (_sessions.Count == 0)
+            if (!Active)
             {
                 _resumes = checked(_resumes + 1);
             }
@@ -63,10 +75,10 @@ public sealed class HumanActivity
     public HumanActivitySnapshot Read(long timestamp, long frequency)
     {
         Advance(timestamp, frequency);
-        return new(_elapsedTicks, _sessions.Count, _activeSystems, _resumes) { Pilots = _pilots };
+        return new(_elapsedTicks, _sessions.Count, _activeSystems, _resumes) { Pilots = _pilots, RunsWithoutPlayers = _runsWithoutPlayers };
     }
 
-    public HumanActivityClock CaptureClock() => new(_elapsedTicks, _observedAt, _frequency, (long)_remainder, _sessions.Count > 0);
+    public HumanActivityClock CaptureClock() => new(_elapsedTicks, _observedAt, _frequency, (long)_remainder, Active);
 
     private void Advance(long timestamp, long frequency)
     {
@@ -79,7 +91,7 @@ public sealed class HumanActivity
         {
             throw new ArgumentOutOfRangeException(nameof(timestamp), "The activity clock cannot move backwards.");
         }
-        if (_sessions.Count > 0)
+        if (Active)
         {
             Int128 scaled = ((Int128)timestamp - _observedAt) * TimeSpan.TicksPerSecond + _remainder;
             _elapsedTicks = checked(_elapsedTicks + (long)(scaled / frequency));

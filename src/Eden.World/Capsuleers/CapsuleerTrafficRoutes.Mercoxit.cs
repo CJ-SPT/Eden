@@ -15,11 +15,14 @@ internal static partial class CapsuleerTrafficRoutes
         "capsuleers/mercoxit-routes",
         (catalog, _) => LoadMercoxitRoutes(catalog)
     );
+    private static readonly CatalogDefinition<bool> s_mercoxitBelt = new(
+        "capsuleers/mercoxit-belt",
+        (catalog, belt) => catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, belt) is { } counts && HasMercoxit(catalog, counts)
+    );
 
     internal static IReadOnlyDictionary<int, int[]> MercoxitRoutes(CatalogProvider catalog) => catalog.GlobalDefinition(s_mercoxitRoutes);
 
-    internal static bool MercoxitBelt(CatalogDbContext catalog, long belt) =>
-        catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, belt) is { } counts && HasMercoxit(catalog, counts);
+    internal static bool MercoxitBelt(CatalogDbContext catalog, int belt) => catalog.Definition(s_mercoxitBelt, belt);
 
     private static bool HasMercoxit(CatalogDbContext catalog, IReadOnlyDictionary<string, long> counts) =>
         counts.Any(entry =>

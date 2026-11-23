@@ -44,6 +44,7 @@ using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Mining;
 using Eden.World.Planetary;
 using Eden.World.Reprocessing;
 using Eden.World.Runtime;
@@ -1839,6 +1840,78 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             host.GetRequiredService<CapsuleerIndustry>().Produce(world, catalog, pilot, fixture.Clock.Now);
             world.Commit();
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void VentureLaunchesForMercoxitOnlyWhenSavedDepositsContainOre(bool depleted)
+    {
+        const int beltSystem = 30000144;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadMining(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        PrepareMinerTwoCatalog(fixture);
+        PrepareMercoxitRoute(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        Assert.Equal(new[] { Home, beltSystem }, CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions)[Home]);
+        long extractor;
+        using (var setup = live.Economy.Begin())
+        {
+            var agents = setup.Set<SavedCapsuleerAgent>().ToArray();
+            extractor = agents
+                .Single(agent => agent.Career == CapsuleerCareer.Mining && agent.CommunitySystemId == Home && agent.Slot == 0)
+                .PilotId;
+            setup.Filter<SavedCapsuleerCommunity>(row => row.PilotId == extractor).Single().Progress = null;
+            foreach (var agent in agents.Where(agent => agent.PilotId != extractor))
+            {
+                setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+            }
+            AsteroidFieldStore.Populate(setup, catalog, beltSystem, fixture.Clock.Now);
+            var deposits = setup.Filter<WorldAsteroid>(rock => rock.SystemId == beltSystem).ToArray();
+            Assert.Contains(
+                deposits,
+                rock => rock.Quantity > 0 && catalog.FittingType(rock.TypeId)?.GroupId == MiningDefinitions.MercoxitGroup
+            );
+            if (depleted)
+            {
+                foreach (var rock in deposits)
+                {
+                    rock.Quantity = 0;
+                }
+            }
+            setup.Commit();
+        }
+
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+        scheduler.PopulationPrepared(Home);
+        var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
+        for (int step = 0; step < 90; step++)
+        {
+            fixture.Clock.Seconds++;
+            maintenance.Tick();
+            if (
+                live.MinerCheckpoints.GetValueOrDefault(extractor)?.Work is { } saved
+                && (saved.Trips > 0 || saved.Activity == MinerActivity.Waiting)
+            )
+            {
+                break;
+            }
+        }
+        var work = live.MinerCheckpoints[extractor].Work;
+        Assert.True(work.Trips > 0 || work.Activity == MinerActivity.Waiting);
+        Assert.True(
+            (work.Mercoxit is not null) == !depleted,
+            $"Unexpected Mercoxit route from {scheduler.Miner(extractor)?.Pilot.SystemId} in activity {work.Activity}: {work.WaitingReason}"
+        );
+        Assert.Equal(!depleted, work.Activity == MinerActivity.FlyingToGate);
+        Assert.Equal(0, scheduler.Read().Failures);
     }
 
     [Fact]

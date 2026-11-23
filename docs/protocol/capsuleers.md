@@ -2,6 +2,35 @@
 
 [Protocol index](../protocol.md)
 
+## Unattended capsuleer simulation — November 23, 2026
+
+A production log from the November 23 incident showed active background jobs before the last player disconnected and almost
+no checkpoint generation change between 10:02 and 10:07 UTC. The world clock previously froze when the last selection lease
+ended. The live server now starts the resident bot clock from the saved elapsed time when its listeners come up. The scheduler
+wakes to admit existing jobs even with no selections, and eligible unvisited rosters can prepare in their existing bounded turns.
+Entering or leaving a system still changes only which grids need native scene presentation. The existing checkpoint cadence
+persists clock and job progress during unattended operation. Enable or disable this through **Run bots without players**.
+
+Unattended scheduling is Eden policy. The local EVE.js reference advances NPC work from its scene simulation tick in
+`server/src/space/runtime/scene/tick.js`. Eden continues to use the resident deadlines and catalog gate geometry for unobserved
+flights. [EVE University stargates](https://wiki.eveuniversity.org/Stargates)
+
+**Automated validation**
+
+The exact `Test-Feature.ps1` filter matched `SavedTrafficRunsBeforeTheFirstPlayerAndAfterTheLastLeavesAcrossRestart`,
+`SavedTrafficCrossesUnobservedSystemsAndResumesAfterRestart`, `UnattendedRuntimePreparesUnvisitedRostersWithoutAnObserver`,
+and both cases of `SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves`. All five passed in 16.03 seconds
+after an 8.07-second build. The replay checked a reciprocal route, zero native pilot contacts with no observers, and a resume
+from the saved clock and job across one simulated hour of downtime.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+While nobody is logged in, refresh Population and compare one bot's location or progress across two checkpoints.
+
 ## Ship state after gate transfers
 
 An incident reported a capsuleer `GateTransfer` with “The ship's system membership changed,” followed by
@@ -33,6 +62,11 @@ Eligible armed travelers can choose an independent expedition from a station usi
 reciprocal stargates, the world seed and the resident pilot's ship and work settings. The departure draw combines
 the seed, pilot and saved station visit. The picker favors multi-system nullsec routes and gives quieter eligible
 destinations more weight.
+
+Independent roams use the configured roam chance at the station departure. The existing 10% belt-ratting draw is
+independent and can provide belt work when a roam cannot launch. A ready roaming gang departs before the solo
+expedition check. Eden's default chances favor combat traffic, while existing saved preferences still apply.
+[EVE University small-gang fleet roles](https://wiki.eveuniversity.org/Fleet_and_Gang_Types)
 Belt expeditions need an actual belt. Roaming expeditions need an eligible PvP fit and use ordinary patrol grids.
 The return dock can be the starting station or a reachable refuge if work policy, docking access or local danger
 changes. Transit-only systems can be crossed. The active route and direction use the existing travel checkpoint.
@@ -50,6 +84,16 @@ EVE.js 261108.1 separates ordinary gate travel (`spaceRuntime/stargateJump.js`) 
 with a 6.03-second cached build. Each case launched two saved world seeds on the same graph and observed different
 destinations. In each mode one pilot resumed from the checkpoint, did its chosen work and returned in the same hull.
 The PvP case had no belts, and both crossed a transit-only system while the human remained elsewhere.
+
+The extended replay exercises a roaming departure outside the belt-ratting draw and a departure where both draws
+select work and reachable belts exist. The deterministic policy case sampled 1,000 eligible departures and selected
+743 roaming expeditions and 25 belt-ratting expeditions. The combat provisioning case verified that a snapshot fit
+with a mining laser yields to a generated combat fit. These cases and the route diversity check passed in 15.37
+seconds after a 4.52-second cached build.
+
+The legacy configuration restart test passed in 6.34 seconds after a 7.40-second build. It verified that saved
+roaming and combat-fit percentages survive import and that an absent unattended setting takes the enabled default.
+The shopping price and pirate reward assertions exposed by the wider selection reproduced on baseline `89d77c15`.
 `ExpeditionPathsDiversifyAcrossSeedsAndReplanAroundObservedThreats` covered three real gate branches across 32 draws
 and verified that the path picker avoids the reported threat.
 
@@ -1151,6 +1195,15 @@ The specialist uses a Deep Core Mining Laser I and the ordinary mining cycle, fi
 and new founder Ventures can receive a single starter laser while on their original hull. Subsequent trips use the owned
 fit. As with other mining in Eden, deep-core pollution clouds are outside the native simulation's current support.
 
+Before departing, the specialist checks the destination's catalog belts against the resident asteroid index and its
+crew's belt memory. A previously populated belt must still contain Mercoxit, and a recently stripped or threatened
+belt is skipped while the corresponding memory is active. The specialist can try local work until a destination belt
+is eligible. An unpopulated belt can still generate its deposits on arrival.
+
+In a read-only host checkpoint spot sample on November 23, 2026, running revision `2fefe2156`, six of 20 queued
+gate-transfer jobs belonged to Venture pilots. All six had the Mining career and an active Mercoxit expedition.
+The sample describes the queued jobs at that checkpoint. It provides no count of completed jumps or repeated crossings.
+
 The miner unloads at the staging station and lists one reprocessing portion from its mined inventory. The miner pays
 the normal broker fee and can post a lower ask if its wallet cannot fund the reference price. While that listing is
 open it can resume ordinary mining. A Miner II factory's Morphite shortfall can trigger a normal corporate purchase
@@ -1166,6 +1219,10 @@ reference identifies the same three grades (SHA-256 `8CA75BC0E2CA005F2E719D7ED9C
 [CCP Introduction to Mining](https://support.eveonline.com/hc/en-us/articles/23655785488668-Introduction-to-Mining)
 
 ### Automated validation
+
+`VentureLaunchesForMercoxitOnlyWhenSavedDepositsContainOre` runs the docked founder's departure with a viable and
+a depleted resident belt. The viable case starts its gate leg, while the depleted case skips the Mercoxit trip.
+Both cases and the existing restart and freight replay passed together in 19.55 seconds including the build.
 
 `BotsMineAndHaulMercoxitToTheMinerTwoFactoryAcrossRestarts` starts with no Mercoxit or Morphite sellers, reopens the
 world with the miner operating in a stationless system and again after a hauler buys the first half of a refining

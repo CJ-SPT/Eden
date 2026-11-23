@@ -16,10 +16,25 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class PilotSpaceActivitiesTests
 {
+    [Fact]
+    public void DefaultExpeditionDrawsFavorRoamingAndRetainBeltRatting()
+    {
+        const int departures = 1000;
+        CapsuleerPopulationPolicy policy = new();
+        var draws = Enumerable.Range(0, departures).Select(sequence => NullsecExpeditionRules.Draw(41, 90000123, sequence)).ToArray();
+        int roams = draws.Count(draw => NullsecExpeditionRules.ShouldRoam(draw, policy.RoamPercent));
+        int ratting = draws.Count(draw =>
+            !NullsecExpeditionRules.ShouldRoam(draw, policy.RoamPercent) && NullsecExpeditionRules.ShouldRat(draw)
+        );
+        Assert.True(roams > departures / 2);
+        Assert.InRange(ratting, 1, departures - roams - 1);
+    }
+
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task IndependentTravelerResumesSeededStationlessNullsecExpeditionOffscreen(bool roaming)
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task IndependentTravelerResumesSeededStationlessNullsecExpeditionOffscreen(bool roaming, bool rattingDraw)
     {
         const int corridor = 30001970;
         const int first = corridor + 1;
@@ -32,12 +47,14 @@ public sealed partial class PilotSpaceActivitiesTests
 
         async Task<(int System, long Seed)> Launch((int System, long Seed)? previous, bool reopen)
         {
-            using CapsuleerHaulerTests.Fixture fixture = new(additionalCatalogData: path => AddNullsecBranches(path, addBelts: !roaming));
+            using CapsuleerHaulerTests.Fixture fixture = new(additionalCatalogData: path =>
+                AddNullsecBranches(path, addBelts: rattingDraw)
+            );
             long pilot = PrepareDockedRatter(fixture);
             var policy = fixture.Database.Settings.Capsuleers with
             {
                 NullsecExpeditions = true,
-                BeltRatting = !roaming,
+                BeltRatting = true,
                 RoamingPvp = roaming,
                 RoamPercent = 100,
                 RoamingGangs = false,
@@ -61,7 +78,12 @@ public sealed partial class PilotSpaceActivitiesTests
                 for (long seed = 1; seed < 1000 && worldSeed == 0; seed++)
                 {
                     ulong draw = NullsecExpeditionRules.Draw(seed, pilot, 0);
-                    if (seed == previous?.Seed || !NullsecExpeditionRules.ShouldDepart(draw))
+                    // The old tie breaker sent odd draws to belts when both activities were available.
+                    if (
+                        seed == previous?.Seed
+                        || NullsecExpeditionRules.ShouldRat(draw) != rattingDraw
+                        || roaming && rattingDraw && (draw & 1) == 0
+                    )
                     {
                         continue;
                     }
@@ -71,7 +93,7 @@ public sealed partial class PilotSpaceActivitiesTests
                         HullClass.Frigate,
                         policy,
                         new HashSet<int>(),
-                        !roaming,
+                        rattingDraw,
                         roaming,
                         draw
                     );

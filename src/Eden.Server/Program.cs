@@ -14,6 +14,7 @@ using Eden.Server.Gateway;
 using Eden.Server.Launcher;
 using Eden.Server.Logging;
 using Eden.Server.Maintenance;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Storage;
@@ -452,6 +453,7 @@ internal static class Program
             );
             if (!server.IsCompleted && !shutdown.IsCancellationRequested)
             {
+                services.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
                 population.Start(shutdown.Token);
                 readiness.Open(
                     new(

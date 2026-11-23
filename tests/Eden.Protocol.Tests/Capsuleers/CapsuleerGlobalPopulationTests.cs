@@ -411,13 +411,87 @@ public sealed class CapsuleerGlobalPopulationTests
     }
 
     [Fact]
+    public async Task SavedTrafficRunsBeforeTheFirstPlayerAndAfterTheLastLeavesAcrossRestart()
+    {
+        const int destination = 30000142;
+        const int elsewhere = 30000144;
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0) { PrepareUnvisitedSystems = false });
+        long pilot;
+        using (WorldDbContext saved = new(f.Database.Path))
+        {
+            pilot = saved.Set<SavedCapsuleerAgent>().First(agent => agent.CommunitySystemId == Source && agent.Slot == 0).PilotId;
+        }
+        long savedElapsed;
+        CapsuleerJob savedJob;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            var activity = host.GetRequiredService<CapsuleerActivitySource>();
+            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+            var worker = host.GetRequiredService<CapsuleerMaintenance>();
+            Assert.Null(scheduler.NextWake().Delay);
+            activity.StartUnattended();
+            Assert.Equal(TimeSpan.Zero, scheduler.NextWake().Delay);
+            Assert.Empty(activity.Read().ActiveSystems);
+            FlyTo(f, worker, scheduler, pilot, destination);
+            Assert.Equal(0, host.GetRequiredService<ICapsuleerScene>().MaterializedPilots);
+
+            long resumes = activity.Read().Resumes;
+            host.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere).Dispose();
+            Assert.Empty(activity.Read().ActiveSystems);
+            Assert.Equal(resumes, activity.Read().Resumes);
+            FlyTo(f, worker, scheduler, pilot, Source);
+            Assert.Equal(0, host.GetRequiredService<ICapsuleerScene>().MaterializedPilots);
+            savedElapsed = activity.Read().ElapsedTicks;
+            savedJob = scheduler.Jobs().Single(job => job.PilotId == pilot);
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+        }
+
+        f.Clock.Seconds += 3600;
+        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var resumed = reopened.GetRequiredService<CapsuleerActivitySource>();
+        resumed.StartUnattended();
+        Assert.Equal(savedElapsed, resumed.Read().ElapsedTicks);
+        Assert.Empty(resumed.Read().ActiveSystems);
+        var reopenedWorld = reopened.GetRequiredService<LiveWorld>();
+        var restoredJob = reopenedWorld.Economy.Inspect(world => world.Set<SavedCapsuleerJob>().Find(pilot)!);
+        Assert.Equal(
+            savedJob,
+            new CapsuleerJob(restoredJob.PilotId, restoredJob.Revision, restoredJob.Sequence, restoredJob.DueTicks, restoredJob.Action)
+        );
+        var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
+        var maintenance = reopened.GetRequiredService<CapsuleerMaintenance>();
+        FlyTo(f, maintenance, restored, pilot, destination);
+
+        static void FlyTo(
+            CapsuleerHaulerTests.Fixture fixture,
+            CapsuleerMaintenance worker,
+            ICapsuleerScheduler scheduler,
+            long pilot,
+            int destination
+        )
+        {
+            for (int i = 0; i < 3000; i++)
+            {
+                if (scheduler.Hauler(pilot)!.Pilot.SystemId == destination)
+                {
+                    return;
+                }
+                fixture.Clock.Seconds++;
+                worker.Tick();
+            }
+            Assert.Equal(destination, scheduler.Hauler(pilot)!.Pilot.SystemId);
+        }
+    }
+
+    [Fact]
     public async Task SavedTrafficCrossesUnobservedSystemsAndResumesAfterRestart()
     {
         const int home = 30000141;
         const int destination = 30000142;
         const int elsewhere = 30000144;
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
-        Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
+        Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0) { RunWithoutPlayers = false });
         long pilot;
         long ship;
         using (WorldDbContext saved = new(f.Database.Path))
@@ -428,6 +502,7 @@ public sealed class CapsuleerGlobalPopulationTests
         CapsuleerJob checkpoint;
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
         {
+            host.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
             using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere);
             var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
             var initial = scheduler.Jobs().Single(job => job.PilotId == pilot);
@@ -448,6 +523,7 @@ public sealed class CapsuleerGlobalPopulationTests
         f.Clock.Seconds += 3600;
         WorldInitialization.Initialize(f.Database, f.Clock);
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        reopened.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
         var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
         Assert.Equal(0, restored.Run(0).Turn.Completed);
         using var selected = reopened.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere);

@@ -25,9 +25,9 @@ internal static partial class CapsuleerTrafficRoutes
     {
         var definitions = catalog.Definitions;
         var nearby = Nearby(catalog, source, hull, NullsecExpeditionRules.MaximumJumps, avoided);
-        var preferredWork = roaming && (!ratting || (draw & 1) == 0) ? NullsecExpeditionWork.Roaming : NullsecExpeditionWork.Ratting;
-        (bool MultipleNullSystems, bool MultipleJumps, bool PreferredWork, ulong Rank) best = default;
-        NullsecDestination? result = null;
+        var work = roaming ? NullsecExpeditionWork.Roaming : NullsecExpeditionWork.Ratting;
+        (bool MultipleNullSystems, bool MultipleJumps, ulong Rank) best = default;
+        int[]? selected = null;
         foreach (var (system, jumps) in nearby.Systems)
         {
             if (jumps < NullsecExpeditionRules.MinimumJumps || !IsNullsec(definitions, system) || !policy.CanWork(definitions, system))
@@ -35,34 +35,29 @@ internal static partial class CapsuleerTrafficRoutes
                 continue;
             }
 
-            bool canRat = ratting && definitions.BeltAnchors(system).Length > 0;
-            if (!canRat && !roaming)
+            if (!roaming && (!ratting || definitions.BeltAnchors(system).Length == 0))
             {
                 continue;
             }
             ulong destinationDraw = TravelerRoutineRules.Mix(draw ^ (uint)system);
-            if (nearby.PathTo(system, destinationDraw) is not { } systems)
+            ulong rank = destinationDraw / (1UL + (ulong)(population?.Invoke(system) ?? 0));
+            bool multipleJumps = jumps > NullsecExpeditionRules.MinimumJumps;
+            // A path can only match the winner's first priority once it crosses multiple nullsec systems.
+            if (
+                best.MultipleNullSystems && (multipleJumps, rank).CompareTo((best.MultipleJumps, best.Rank)) <= 0
+                || nearby.PathTo(system, destinationDraw) is not { } systems
+            )
             {
                 continue;
             }
-            var work =
-                canRat && (preferredWork == NullsecExpeditionWork.Ratting || !roaming)
-                    ? NullsecExpeditionWork.Ratting
-                    : NullsecExpeditionWork.Roaming;
-            ulong rank = destinationDraw / (1UL + (ulong)(population?.Invoke(system) ?? 0));
-            var priority = (
-                systems.Skip(1).Count(next => IsNullsec(definitions, next)) >= 2,
-                jumps > NullsecExpeditionRules.MinimumJumps,
-                work == preferredWork,
-                rank
-            );
-            if (result is null || priority.CompareTo(best) > 0)
+            var priority = (systems.Skip(1).Count(next => IsNullsec(definitions, next)) >= 2, multipleJumps, rank);
+            if (selected is null || priority.CompareTo(best) > 0)
             {
                 best = priority;
-                result = new(systems, work);
+                selected = systems;
             }
         }
-        return result;
+        return selected is null ? null : new(selected, work);
     }
 
     internal static CapsuleerTrafficRoute? NullsecRefuge(

@@ -88,6 +88,7 @@ public sealed class SettingsForm
     [Range(0, CapsuleerPopulationRules.MaximumActivePilotCap)]
     [Display(Name = "Active bot cap")]
     public int ActivePilotCap { get; set; }
+    public bool RunBotsWithoutPlayers { get; set; }
     public bool PrepareUnvisitedSystems { get; set; }
 
     public bool TradeGoodsFreight { get; set; }
@@ -381,6 +382,7 @@ public sealed class SettingsForm
             BotExploration = settings.Capsuleers.Exploration,
             BotWreckSalvage = settings.Capsuleers.WreckSalvage,
             ActivePilotCap = settings.Capsuleers.ActivePilotCap,
+            RunBotsWithoutPlayers = settings.Capsuleers.RunWithoutPlayers,
             PrepareUnvisitedSystems = settings.Capsuleers.PrepareUnvisitedSystems,
             TradeGoodsFreight = settings.Capsuleers.TradeGoodsFreight,
             DefaultRegionAccess = settings.Capsuleers.DefaultRegionAccess,
@@ -475,6 +477,7 @@ public sealed class SettingsForm
                 Exploration = BotExploration,
                 WreckSalvage = BotWreckSalvage,
                 ActivePilotCap = ActivePilotCap,
+                RunWithoutPlayers = RunBotsWithoutPlayers,
                 PrepareUnvisitedSystems = PrepareUnvisitedSystems,
                 TradeGoodsFreight = TradeGoodsFreight,
                 DefaultRegionAccess = DefaultRegionAccess,

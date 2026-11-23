@@ -32,7 +32,8 @@ public interface ICapsuleerGateWatch
 public sealed record HumanActivitySnapshot(long ElapsedTicks, int SelectedSessions, IReadOnlyList<int> ActiveSystems, long Resumes = 0)
 {
     public IReadOnlyList<SelectedHumanPilot> Pilots { get; init; } = [];
-    public bool Active => SelectedSessions > 0;
+    public bool RunsWithoutPlayers { get; init; }
+    public bool Active => RunsWithoutPlayers || SelectedSessions > 0;
 }
 
 public interface IHumanPresence
