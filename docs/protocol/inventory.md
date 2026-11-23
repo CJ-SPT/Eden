@@ -31,6 +31,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Personal ship insurance](#personal-ship-insurance)
 - [Native inventory stack division](#native-inventory-stack-division)
 - [Persistent ship dirt and native cleaning](#persistent-ship-dirt-and-native-cleaning)
+- [First-party ship SKIN licenses](#first-party-ship-skin-licenses)
 - [Persistent cargo and hangar items, November 2, 2026](#persistent-cargo-and-hangar-items-november-2-2026)
 - [Partial-stack capacity recovery, November 2, 2026](#partial-stack-capacity-recovery-november-2-2026)
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
@@ -632,6 +633,40 @@ References: inert inspection of build **3662168** `code.ccp`, with the same SHA-
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Revisit a hull after aging and reconnecting, then use native Clean Ship and inspect the hangar model. Clean a visible hull in space and compare owner/observer models. Native rendering and the perceived aging/cleaning effect remain unverified.
+
+## First-party ship SKIN licenses
+
+In build **3662168**, `cosmetics/client/cosmeticsSvc.pyj` sends `shipCosmeticsMgr.ActivateSkinLicense(itemIDs)` and reads
+`GetLicencedSkins`, `GetLicencedSkinsForShipType`, and `GetFirstPartySkinData`. License rows contain `skinID`, `expires`,
+and `isSingleUse`. A permanent license uses Python `None` for expiration. Timed licenses use an absolute FILETIME.
+`OnSkinLicenseActivated(skinID, licenseeID)` refreshes the character's native license views. The original client archive
+has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**, build **3396210**, implements activation in
+`shipCosmeticsMgrService.js` (`9a76cdd2114f`) and saved grants in `shipCosmeticsState.js` (`4fb9ae689234`).
+[CCP ship SKINs](https://support.eveonline.com/hc/en-us/articles/203280701-Ship-SKINs) ·
+[EVE University New Eden Store](https://wiki.eveuniversity.org/New_Eden_Store)
+
+Activation consumes one unit of each selected license stack and saves the character's entitlements in the same
+resident transaction. Pilots can use licenses from their accessible personal hangar or ship holds. An invalid item or
+a duplicate active SKIN rejects the batch. Timed licenses expire at their saved deadline and can be activated again with
+a fresh item. Ship application and custom SKINR remain separate milestones.
+
+**Automated validation.** The exact filter
+`Eden.Protocol.Tests.PilotSessions.ShipSkinLicenseTests.NativeActivationCommitsInventoryAndLicensesTogetherAndRenewsAtExpiryAfterRestart`
+passed in 9.84 s after a 6.90 s build. It verifies permanent, timed, and single-use license fields, native character
+notification routing, mixed-batch rollback, isolated inventory custody, and renewal at the exact deadline after restart.
+The same case passed in 9.71 s after wrapping a long test fixture line.
+
+The solution built in 13.87 s with no warnings or errors. The following filter passed all 56 tests in 31.78 s. The
+catalog and formatting policy suites passed all 17 Python tests.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipSkinLicenseTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipCosmeticsServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipAppearanceServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipAppearanceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryOwnershipTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackSplitTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~BiomassPreparationCancellationAndFinalDeletionUseNativeRepliesAcrossSessions
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Activate a first-party license from inventory, then open the character's SKIN collection
+and reconnect to verify the unlocked entry.
 
 ## Persistent cargo and hangar items, November 2, 2026
 

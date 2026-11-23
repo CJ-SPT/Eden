@@ -223,6 +223,7 @@ internal static class WorldMigration
         LauncherSchema.Upgrade(world);
         Eden.World.Characters.PersonalSettingsSchema.Upgrade(world);
         Eden.World.Skills.PersonalSkillPlanSchema.Upgrade(world);
+        Eden.World.Docking.ShipSkinLicenseSchema.Upgrade(world);
         if (version < 155)
         {
             world.Database.ExecuteSqlRaw(

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -5,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class ShipCosmeticsHandler : ISelectedPilotCallHandler
+internal sealed class ShipCosmeticsHandler(IPilotShipSkinLicenses licenses) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -15,29 +16,60 @@ internal sealed class ShipCosmeticsHandler : ISelectedPilotCallHandler
         Dictionary<string, object?>? keywords = null
     )
     {
-        // The remote API spells these two methods "Licenced" in build 3662168;
-        // the local cosmetics service exposes GetLicensedSkins instead.
-        if (service != "shipCosmeticsMgr" || method is not ("GetLicencedSkins" or "GetLicencedSkinsForShipType" or "GetFirstPartySkinData"))
+        // Build 3662168's two remote collection reads use "Licenced".
+        if (
+            service != "shipCosmeticsMgr"
+            || method is not ("GetLicencedSkins" or "GetLicencedSkinsForShipType" or "GetFirstPartySkinData" or "ActivateSkinLicense")
+        )
         {
             return PilotCallResult.Unsupported;
         }
-        bool validArguments = method switch
-        {
-            "GetLicencedSkins" => args.Length == 0,
-            "GetLicencedSkinsForShipType" => args is [long pilotId, long typeId]
-                && pilotId == context.Pilot.PilotId
-                && typeId is > 0 and <= int.MaxValue,
-            // Applied-skin previews can ask about another licensee. There is no
-            // licensed/applied skin to return for any licensee in the current world.
-            _ => args is [long licenseeId, long skinId] && licenseeId > 0 && skinId is > 0 and <= int.MaxValue,
-        };
-        if (!validArguments || keywords is { Count: > 0 })
+        if (keywords is { Count: > 0 })
         {
             return new PilotCallResult.Failure("Choose valid pilot and skin information.");
         }
 
-        // No saved SKIN entitlements exist yet. The panel still builds its
-        // unlicensed catalog from static client data when the license list is empty.
-        return method == "GetFirstPartySkinData" ? PilotCallResult.None : BlueEmpty.List;
+        long pilotId = context.Pilot.PilotId;
+        try
+        {
+            return (method, args) switch
+            {
+                ("GetLicencedSkins", []) => List(pilotId),
+                ("GetLicencedSkinsForShipType", [long licenseeId, long typeId])
+                    when licenseeId == pilotId && typeId is > 0 and <= int.MaxValue => List(pilotId, (int)typeId),
+                // Applied skins may be previewed by another pilot.
+                ("GetFirstPartySkinData", [long licenseeId, long skinId]) when licenseeId > 0 && skinId is > 0 and <= int.MaxValue => Read(
+                    licenseeId,
+                    (int)skinId
+                ),
+                ("ActivateSkinLicense", [List<object?> items]) => Activate(context, items),
+                _ => new PilotCallResult.Failure("Choose valid pilot and skin information."),
+            };
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private BlueList<ShipSkinLicenseReply> List(long pilotId, int? hullTypeId = null) =>
+        new(licenses.List(pilotId, hullTypeId).Select(license => new ShipSkinLicenseReply(license)).ToArray());
+
+    private PilotCallResult Read(long licenseeId, int skinId) =>
+        licenses.Read(licenseeId, skinId) is { } license ? new ShipSkinLicenseReply(license) : PilotCallResult.None;
+
+    private PilotCallResult Activate(PilotCallContext context, List<object?> items)
+    {
+        if (items.Count == 0)
+        {
+            return PilotCallResult.None;
+        }
+        long pilotId = context.Pilot.PilotId;
+        foreach (var activation in licenses.Activate(pilotId, BlueRead.PositiveIds(items, "SKIN license item IDs")))
+        {
+            InventoryChangesWire.NotifyOwnedItemChange(context, activation.ItemChange);
+            context.Notifications.Add(new ShipSkinLicenseActivated(activation.License.SkinId, pilotId));
+        }
+        return PilotCallResult.None;
     }
 }

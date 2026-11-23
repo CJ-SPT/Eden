@@ -1,5 +1,6 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Docking;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
@@ -26,6 +27,7 @@ internal static class EconomyOwnership
             SavedCharacterSetting setting => setting.PilotId,
             SavedPilotActivity activity => activity.PilotId,
             SavedPersonalSkillPlans plans => plans.PilotId,
+            SavedShipSkinLicense license => license.PilotId,
             SavedCorporationChange change => change.PilotId,
             SavedCorporationMemberAccess access => access.PilotId,
             SavedJetcan can => can.OwnerId,

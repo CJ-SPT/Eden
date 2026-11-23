@@ -77,6 +77,7 @@ internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvide
         var hulls = world.Filter<Ship>(ship => ship.OwnerId == pilotId).Select(ship => ship.Id).ToArray();
         world.RemoveRange(world.Filter<FlightPosition>(position => Enumerable.Contains(hulls, position.ShipId)).ToArray());
         PersonalSkillPlanStore.RemoveForPilot(world, pilotId);
+        world.RemoveRange(world.Filter<SavedShipSkinLicense>(license => license.PilotId == pilotId).ToArray());
         MapStatisticsStore.ClearVisitsOnCommit(world, pilotId);
         transaction.Commit();
     }

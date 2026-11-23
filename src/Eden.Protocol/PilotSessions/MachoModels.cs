@@ -17,9 +17,9 @@ internal abstract record MachoAddress : BlueModel
         public override object ToBlue() => Address(2, Id, null, null);
     }
 
-    internal sealed record Broadcast(string Event, long ClientId) : MachoAddress
+    internal sealed record Broadcast(string Event, long RecipientId, bool ByCharacter = false) : MachoAddress
     {
-        public override object ToBlue() => Address(4, Event, new List<object?> { ClientId }, "clientID");
+        public override object ToBlue() => Address(4, Event, new List<object?> { RecipientId }, ByCharacter ? "charid" : "clientID");
     }
 
     private static BlueInstance Address(params object?[] fields) => new("carbon.common.script.net.machoNetAddress.MachoAddress", fields);

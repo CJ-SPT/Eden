@@ -613,6 +613,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - <a id="personal-ship-insurance"></a>[Personal ship insurance](protocol/inventory.md#personal-ship-insurance)
 - <a id="native-inventory-stack-division"></a>[Native inventory stack division](protocol/inventory.md#native-inventory-stack-division)
 - <a id="persistent-ship-dirt-and-native-cleaning"></a>[Persistent ship dirt and native cleaning](protocol/inventory.md#persistent-ship-dirt-and-native-cleaning)
+- [First-party ship SKIN licenses](protocol/inventory.md#first-party-ship-skin-licenses)
 - <a id="persistent-cargo-and-hangar-items-november-2-2026"></a>[Persistent cargo and hangar items, November 2, 2026](protocol/inventory.md#persistent-cargo-and-hangar-items-november-2-2026)
 - <a id="partial-stack-capacity-recovery-november-2-2026"></a>[Partial-stack capacity recovery, November 2, 2026](protocol/inventory.md#partial-stack-capacity-recovery-november-2-2026)
 - <a id="venture-ownership-boarding-and-mining-holds"></a>[Venture ownership, boarding and mining holds](protocol/inventory.md#venture-ownership-boarding-and-mining-holds)

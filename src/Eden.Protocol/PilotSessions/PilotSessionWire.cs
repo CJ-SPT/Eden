@@ -136,6 +136,9 @@ internal static class PilotSessionWire
     internal static BlueInstance Notification(long accountId, long clientId, PilotNotification notification)
     {
         // Broadcast -> service -> object-call layers each wrap the payload.
+        var destination = notification.BroadcastCharacterId is long pilotId
+            ? new MachoAddress.Broadcast(notification.Name, pilotId, ByCharacter: true)
+            : new MachoAddress.Broadcast(notification.Name, clientId);
         object?[] update = [1, notification.Arguments];
         object?[] payload = [0, BlueMarshal.Encode(new object?[] { 0, update })];
         return new BlueInstance(
@@ -144,7 +147,7 @@ internal static class PilotSessionWire
             {
                 12,
                 new MachoAddress.Node(PilotLogin.NodeId).ToBlue(),
-                new MachoAddress.Broadcast(notification.Name, clientId).ToBlue(),
+                destination.ToBlue(),
                 accountId,
                 new object?[] { payload },
                 new Dictionary<string, object?>(),
