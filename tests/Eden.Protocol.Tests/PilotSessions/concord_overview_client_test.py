@@ -1,4 +1,4 @@
-"""Headless Python 2 test of the signed login adapter and inert native color helper.
+"""Headless Python 2 test of signed login adapters and isolated native helpers.
 
 No game module bodies, UI, renderer, service, or game session are started.
 """
@@ -28,11 +28,13 @@ with zipfile.ZipFile(archive) as source:
     user_license = zlib.decompress(source.read('user_licenses/client/user_license.pyj'))
     license_service = zlib.decompress(source.read('user_licenses/client/user_license_svc.pyj'))
     clone_service = zlib.decompress(source.read('omega/client/clone_grade_svc.pyj'))
+    station_agents = zlib.decompress(source.read('eve/client/script/ui/shared/dockedUI/agents.pyj'))
 
 worker = 'NATIVE = %r\nEXPRESSION = %r\nACTIVE_ITEM = %r\nSELECTED_ITEM = %r\n' % (
     native, expression, active_item, selected_item)
 worker += 'USER_LICENSE = %r\nLICENSE_SERVICE = %r\nCLONE_SERVICE = %r\n' % (
     user_license, license_service, clone_service)
+worker += 'STATION_AGENTS = %r\n' % station_agents
 worker += r'''
 import marshal, sys
 names = ['eve', 'eve.client', 'eve.client.script', 'eve.client.script.ui',
@@ -56,6 +58,7 @@ names += ['eve.client.script.ui.shared.neocom', 'eve.client.script.ui.shared.neo
           'eve.client.script.ui.services.corporation',
           'eve.client.script.ui.services.corporation.base_corporation']
 names += ['eve.client.script.ui.shared.planet', 'eve.client.script.ui.shared.planet.importExportUI']
+names += ['eve.common', 'eve.common.lib', 'eve.common.lib.appConst', 'eve.client.script.ui.shared.dockedUI.agents']
 names += ['user_licenses', 'user_licenses.client', 'user_licenses.client.messenger',
           'user_licenses.client.messenger.request_messenger', 'user_licenses.client.user_license',
           'user_licenses.client.user_license_type']
@@ -140,6 +143,26 @@ license_model = sys.modules['user_licenses.client.user_license']
 license_model.UserLicense.__init__ = native_method(USER_LICENSE, '__init__', license_model)
 license_model.UserLicense.expiry_date = property(native_method(USER_LICENSE, 'expiry_date', license_model))
 
+agents = sys.modules['eve.client.script.ui.shared.dockedUI.agents']
+app_const = sys.modules['eve.common.lib.appConst']
+app_const.agentTypeEventMissionAgent = 8
+agents.NORMAL_AGENTS = (2, app_const.agentTypeEventMissionAgent)
+agents.STORYLINE_AGENTS = (6, 7)
+agents.agentTypeAura = 11
+agents.agentTypeEpicArcAgent = 10
+agents.rookieAgentList = {5}
+agents.is_limited_to_factional_warfare = lambda *args: False
+agents.check_can_use_agent = lambda agent, service: agent.standing
+class Agent(object):
+    corporationID = 1
+    def __init__(self, agent_id, agent_type, standing):
+        self.agentID = agent_id
+        self.agentTypeID = agent_type
+        self.standing = standing
+
+agents.find_available_and_unavailable_agents = native_method(
+    STATION_AGENTS, 'find_available_and_unavailable_agents', agents)
+
 class State(object):
     attacking = False
     threatAttackingMe = 99
@@ -174,9 +197,11 @@ import __builtin__
 items = {}
 michelle = type('Michelle', (), {'GetItem': staticmethod(items.get)})()
 __builtin__.sm = type('Services', (), {'GetService': staticmethod(lambda name: {'michelle': michelle}[name])})()
+agents.sm = __builtin__.sm
 assert eval(expression, {}) == {}
 installed = entity._get_icon_color_and_hint_from_entity_standing_response
 bounty_lookup = bounty.get_entity_bounty
+event_classifier = agents.find_available_and_unavailable_agents
 assert callable(photo.EvePhoto.GetPortrait)
 for attacking in [False, True]:
     state.attacking = attacking
@@ -192,6 +217,23 @@ for attacking in [False, True]:
 assert eval(expression, {}) == {}
 assert entity._get_icon_color_and_hint_from_entity_standing_response is installed
 assert bounty.get_entity_bounty is bounty_lookup
+assert agents.find_available_and_unavailable_agents is event_classifier
+event_calls = []
+def available_events(ids):
+    event_calls.append(ids)
+    return [2]
+def agent_remote_service(name):
+    if name == 'epicArcStatus':
+        return None
+    assert name == 'agentMgr'
+    return type('AgentMgr', (), {'GetAvailableEventAgents': staticmethod(available_events)})()
+__builtin__.sm.RemoteSvc = agent_remote_service
+__builtin__.sm.GetService = lambda name: {'michelle': michelle, 'standing': None}[name]
+station_rows = [Agent(1, 8, True), Agent(2, 8, False), Agent(3, 2, True), Agent(4, 7, True), Agent(5, 8, True)]
+assert event_classifier(station_rows, [], []) == ([3, 2], [4, 1])
+assert event_classifier(station_rows[2:4], [], []) == ([3], [4])
+assert event_calls == [[1, 2]]
+print('Station Event-agent availability assertions passed in the pinned Python 2 runtime')
 saved_grade = [0]
 license_calls = []
 def clone_grade_request():

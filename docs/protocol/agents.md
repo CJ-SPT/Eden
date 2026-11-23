@@ -2,6 +2,48 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Station Event agent availability — November 23, 2026
+
+Build 3662168's station Agents panel puts Event agents through its usual standings check. The selected pilot's
+mission journal can also mark an agent available. Neither input conveys whether Eden supports the assigned content.
+The reported Perimeter 2 - Moon 1 - Caldari Navy Assembly Plant list showed Furas Vaupero (3018583), Ichoro Hinalairos
+(3018667), Mika Etsuya (3018367), and Jali Tanaka (3018372) as available. The pinned catalog identifies all four as
+type 8 Event agents at station 60003754. Ichoro has no mission assignment and the other three have unsupported chains.
+
+The signed login adapter wraps `dockedUI.agents.find_available_and_unavailable_agents` and asks
+`agentMgr.GetAvailableEventAgents(agentIDs)` once per station-list refresh with Event rows. The selected-pilot route
+returns the integer IDs with an unexpired offer or accepted mission, or an eligible new assignment. Eden reads
+the resident mission and access state under its owner, using the same standing, supported-content and one-time
+lifecycle gates as requests. At exact expiry, availability reads return unavailable without closing the mission.
+Conversations hide the request action when an Event agent cannot issue an assignment. The station panel keeps its
+native row rendering, sorting and replay countdowns.
+
+Inspected `dockedUI/agents.pyj`, `agents/agents.pyj`, and `userentry.pyj` in the original build-3662168 archive,
+SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The staged station module matches
+the original byte-for-byte. EVE.js 261108.1's `agentMissionRuntime.js`, SHA-256
+`f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`, documents how replay timers affect
+station availability. The [UniWiki agent guide](https://wiki.eveuniversity.org/Agent#COSMOS_agents) describes the
+one-time COSMOS lifecycle.
+
+### Automated validation
+
+The exact `DataCenterMissionTests.EventAgentAvailabilityRequiresPlayableContentAndUsesThePilotsOneTimeAssignment`
+filter passed after the fix. The regression covers unsupported and standing-gated agents, active offers, exact
+expiry without mutation, terminal conversations and per-pilot isolation. The focused run passed **30/30** in
+**41.50 seconds** with an **8.50-second** build. It covered Data Center lifecycle, agent info and directory reads,
+Agency Storyline offers, login, and the signed station hook against the isolated native classifier in the pinned
+Python 2 runtime. Solution build, formatting, documentation and whitespace checks passed. The TRX and exact filters
+are saved in `artifacts/event-agent-availability-20261123/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After reconnecting, open the Agents tab at Perimeter 2 - Moon 1 - Caldari Navy Assembly Plant and check that the
+four reported Event agents appear under **Not available to you** and offer no mission request in conversation.
+
 ## Epic arc chains — November 22, 2026
 
 Build 3662168 contains **227 stages** in the **nine epic arcs** displayed by the native Epic Journal. The arcs use

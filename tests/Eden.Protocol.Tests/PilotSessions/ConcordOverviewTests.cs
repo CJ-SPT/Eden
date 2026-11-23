@@ -22,6 +22,7 @@ public sealed class ConcordOverviewTests
         Assert.Contains("install_concord_overview()", expression);
         Assert.Contains("install_npc_bounty_display()", expression);
         Assert.Contains("install_presence_lists()", expression);
+        Assert.Contains("install_event_agent_availability()", expression);
         Assert.Contains("install_free_point_preview()", expression);
         Assert.Contains("install_training_speed(eden_training_speed)", expression);
     }
@@ -45,6 +46,7 @@ public sealed class ConcordOverviewTests
             Assert.True(process.ExitCode == 0, await output + await error);
             Assert.Contains("CONCORD overview adapter assertions passed", await output);
             Assert.Contains("NPC bounty display assertions passed", await output);
+            Assert.Contains("Station Event-agent availability assertions passed", await output);
         }
         finally
         {

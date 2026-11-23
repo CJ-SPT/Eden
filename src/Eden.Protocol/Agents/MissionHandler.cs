@@ -342,7 +342,9 @@ internal sealed partial class MissionHandler(
     private MissionConversation Conversation(long pilotId, CatalogAgent agent, MissionOffer? offer, string action, string? greeting = null)
     {
         bool epic = agent.Type == AgentType.EpicArc;
-        bool gated = epic || agent.Type == AgentType.Career;
+        bool eventWithoutActiveMission =
+            agent.Type == AgentType.Event && offer?.State is not (MissionState.Offered or MissionState.Accepted);
+        bool gated = epic || agent.Type == AgentType.Career || eventWithoutActiveMission;
         var access = gated || greeting is null ? missions.Access(pilotId, agent.Id) : null;
         long? replayDelay =
             epic && missions.EpicArcReplayAt(pilotId, agent.Id) is long replay

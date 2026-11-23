@@ -195,6 +195,7 @@ public sealed record MissionGate(long Id, SpacePosition Position, float Radius, 
 public interface IPilotMissions
 {
     IReadOnlySet<long> CompletedCareerAgents(long pilotId, IReadOnlySet<long> agentIds);
+    IReadOnlyList<long> AvailableEventAgents(long pilotId, IReadOnlySet<long> agentIds);
     IReadOnlyList<EpicArcProgress> ArcStatus(long pilotId) => [];
     bool EpicArcAgentAvailable(long pilotId, long agentId) => false;
     IReadOnlyList<EpicArcMessage> EpicArcMessages() => [];

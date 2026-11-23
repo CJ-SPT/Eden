@@ -9,7 +9,7 @@ namespace Eden.Protocol.Agents;
 [Injectable]
 internal sealed class AgentDirectoryHandler(INpcDirectory directory, IPilotMissions missions) : ISelectedPilotCallHandler
 {
-    private const int MaximumCareerAgentIds = 1000;
+    private const int MaximumAgentIds = 1000;
 
     public PilotCallResult Call(
         PilotCallContext context,
@@ -29,6 +29,7 @@ internal sealed class AgentDirectoryHandler(INpcDirectory directory, IPilotMissi
                     or "GetAgentByID"
                     or "GetSolarSystemOfAgent"
                     or "GetCompletedCareerAgentIDs"
+                    or "GetAvailableEventAgents"
                     or "GetMyEpicArcStatus"
                     or "GetMessagesForEpicArcMissions"
             ) => true,
@@ -67,7 +68,13 @@ internal sealed class AgentDirectoryHandler(INpcDirectory directory, IPilotMissi
                     return agent.SystemId is int system ? system : PilotCallResult.None;
                 }
                 return new AgentStaticInfoReply(agent);
-            case ("GetCompletedCareerAgentIDs", [List<object?> ids]) when ids.Count <= MaximumCareerAgentIds:
+            case ("GetAvailableEventAgents", [List<object?> eventIds]) when eventIds.Count <= MaximumAgentIds:
+                if (eventIds.Any(value => value is not long id || !NpcCharacterIds.Contains(id)))
+                {
+                    return new PilotCallResult.Failure("Choose valid NPC agent IDs.");
+                }
+                return new BlueList<long>(missions.AvailableEventAgents(context.Pilot.PilotId, eventIds.Cast<long>().ToHashSet()));
+            case ("GetCompletedCareerAgentIDs", [List<object?> ids]) when ids.Count <= MaximumAgentIds:
                 if (ids.Any(value => value is not long id || !NpcCharacterIds.Contains(id)))
                 {
                     return new PilotCallResult.Failure("Choose valid NPC agent IDs.");
