@@ -1,15 +1,18 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Propulsion;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -24,6 +27,7 @@ public sealed class HicInterdictionTests
 {
     private const int Broadsword = 12013;
     private const int Generator = 28654;
+    private const int HeavyInterdictionCruisers = 28609;
     private const int Revelation = 19720;
     private const int Rhea = 28844;
     private const int Ibis = 601;
@@ -261,12 +265,14 @@ public sealed class HicInterdictionTests
         PilotCallResult Jump() => flight.StartJump([gate.Id, (long)gate.DestinationGateId!.Value, victim.ShipId], systems);
     }
 
-    [Fact]
-    public void NativeFocusedRouteSendsIncomingEwarAndClearsAtExpiry()
+    [Theory]
+    [InlineData(InterdictionRules.FocusedDisruptionScript, "effects.WarpDisrupt", "warpScrambler")]
+    [InlineData(InterdictionRules.FocusedScramblingScript, "effects.WarpScramble", "warpScramblerMWD")]
+    public void NativeFocusedRouteSendsIncomingEwarAndClearsAtExpiry(int script, string graphic, string ewar)
     {
         using var fixture = InterdictionTests.Prepare(hull: Broadsword);
         long module = fixture.Fit(Generator);
-        InterdictionTests.Load(fixture, module, InterdictionRules.FocusedDisruptionScript);
+        long stack = fixture.Grant(script, 3, cargo: true);
         var victim = fixture.Db.Store.FindPilot(1000002)!;
         fixture.Db.Store.SetPosition(fixture.ShipId, SpacePosition.Zero, victim.SystemId);
         fixture.Db.Store.SetPosition(victim.ShipId, new(1000, 0, 0), victim.SystemId);
@@ -296,26 +302,58 @@ public sealed class HicInterdictionTests
         source.Flight.Snapshot();
         recipient.Flight.Snapshot();
         source.Flight.RefreshPeers();
+        var ammo = scope.ServiceProvider.GetRequiredService<AmmunitionHandler>();
+        Assert.Same(
+            PilotCallResult.None,
+            ammo.Call(source, "dogmaIM", "LoadAmmo", [pilot.ShipId, module, new List<object?> { stack }, pilot.ShipId])
+        );
+        Assert.Contains(
+            source.Notifications,
+            notification => notification is GodmaItemPrimed { Item.Key: DogmaItemKey.Charge key } && key.TypeId == script
+        );
         var targeting = scope.ServiceProvider.GetRequiredService<Eden.Protocol.Targeting.TargetingHandler>();
         _ = targeting.CallWire(source, "dogmaIM", "AddTarget", [victim.ShipId]);
         fixture.Clock.Seconds += 30;
         targeting.Advance(source);
         Assert.True(targeting.IsLocked(victim.ShipId));
         var route = scope.ServiceProvider.GetRequiredService<ModuleActivationHandler>();
-        Assert.Same(
-            PilotCallResult.None,
-            route.Call(source, "dogmaIM", "Activate", [module, "shipModuleFocusedWarpDisruptionScript", victim.ShipId, 0L])
+        Assert.IsType<PilotCallResult.Failure>(route.Call(source, "dogmaIM", "Activate", [module, "warpDisruptSphere", null, 0L]));
+        Assert.Same(PilotCallResult.None, route.Call(source, "dogmaIM", "Activate", [module, "warpDisruptSphere", victim.ShipId, 0L]));
+        var paid = Assert.Single(
+            source.Notifications.OfType<ShipEffectChanged>(),
+            notification => notification.Start && notification.Effect.ModuleId == module
+        );
+        Assert.Equal(DogmaEffect.WarpDisruptSphere, paid.Effect.Effect);
+        Assert.Equal(victim.ShipId, paid.Effect.TargetId);
+        double duration = Assert.IsType<double>(paid.Effect.DurationMilliseconds);
+        Assert.Equal(6000, duration, 6);
+        var beam = Assert.Single(
+            source.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>(),
+            effect => effect.ModuleId == module && effect.Start
+        );
+        Assert.Equal(graphic, beam.Graphic);
+        Assert.Equal(victim.ShipId, beam.TargetId);
+        Assert.Equal(
+            1,
+            Assert.Single(scope.ServiceProvider.GetRequiredService<IPilotAmmunition>().Read(pilot.PilotId, pilot.ShipId)).Quantity
         );
         recipientScope.ServiceProvider.GetRequiredService<TackleHandler>().Advance(recipient);
-        Assert.Contains(recipient.Notifications, notification => notification is TackleEwarChanged { Active: true });
+        Assert.Contains(
+            recipient.Notifications,
+            notification => notification is TackleEwarChanged { Active: true } && Equals(ewar, notification.Arguments[3])
+        );
         Assert.IsType<PilotCallResult.Failure>(recipient.Flight.Execute(new FlightCommand.WarpToPoint(1, new(1_000_000, 0, 0), 0)));
-        fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(6));
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(InterdictionRules.Deadline(paid.Effect.StartTime, duration) - fixture.Clock.Now));
         using (live.UseSystem(source.Pilot.SystemId))
         {
             scope.ServiceProvider.GetRequiredService<InterdictionHandler>().Advance(source);
         }
         recipientScope.ServiceProvider.GetRequiredService<TackleHandler>().Advance(recipient);
         Assert.Contains(recipient.Notifications, notification => notification is TackleEwarChanged { Active: false });
+        Assert.Contains(
+            source.Notifications,
+            notification => notification is ShipEffectChanged { Active: false, Effect.Effect: DogmaEffect.WarpDisruptSphere }
+        );
     }
 
     [Fact]
@@ -356,10 +394,14 @@ public sealed class HicInterdictionTests
     public void NativeFieldDeactivateFinishesThePaidCycleAndPublishesRange()
     {
         using var fixture = InterdictionTests.Prepare(hull: Broadsword);
+        fixture.Train(HeavyInterdictionCruisers, 4);
         long ship = fixture.ShipId;
         long module = fixture.Fit(Generator);
         int system = fixture.Db.Store.FindPilot(1000001)!.SystemId;
         fixture.Db.Store.SetPosition(ship, SpacePosition.Zero, system);
+        var observer = fixture.Db.Store.FindPilot(1000002)!;
+        fixture.Db.Store.SetPosition(observer.ShipId, new(1000, 0, 0), system);
+        observer = fixture.Db.Store.FindPilot(1000002)!;
         var pilot = fixture.Db.Store.FindPilot(1000001)!;
         using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
         using var scope = fixture.Db.Services.CreateScope();
@@ -376,18 +418,23 @@ public sealed class HicInterdictionTests
         var route = scope.ServiceProvider.GetRequiredService<ModuleActivationHandler>();
         var handler = scope.ServiceProvider.GetRequiredService<InterdictionHandler>();
         Assert.Same(PilotCallResult.None, route.Call(context, "dogmaIM", "Activate", [module, "warpDisruptSphere", null, 1L]));
-        Assert.Contains(
-            context.Flight.Updates,
-            update =>
-                update.Command
-                    is DestinyCommand.TimedSpecialEffect
-                    {
-                        Graphic: "effects.WarpDisruptFieldGenerating",
-                        Start: true,
-                        GraphicInfo: { } info
-                    }
-                && Equals(info["range"], 16000d)
+        var field = Assert.Single(
+            context.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>(),
+            effect => effect is { ModuleId: var id, Graphic: "effects.WarpDisruptFieldGenerating", Start: true } && id == module
         );
+        var command = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(field)), 2);
+        var arguments = BlueRead.Tuple(command[1], 14);
+        var graphic = Assert.IsType<BlueInstance>(arguments[13]);
+        Assert.Equal("utillib.KeyVal", graphic.Name);
+        Assert.Equal(19200d, Assert.IsType<double>(Assert.IsType<Dictionary<string, object?>>(graphic.State)["range"]), 6);
+        using var observerScope = fixture.Db.Services.CreateScope();
+        using var observerFlight = observerScope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create(observer);
+        observerFlight.Snapshot();
+        var replay = Assert.Single(
+            observerFlight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>(),
+            effect => effect.ModuleId == module && effect.Start
+        );
+        Assert.Equal(BlueMarshal.Encode(field), BlueMarshal.Encode(replay));
         Assert.Same(PilotCallResult.None, route.Call(context, "dogmaIM", "Deactivate", [module, "warpDisruptSphere"]));
         Assert.NotNull(handler.ActiveEffect(pilot, module));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(30));

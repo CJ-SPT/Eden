@@ -68,19 +68,23 @@ internal sealed partial class PilotInterdictionStore
             throw new InvalidDataException("The field generator is still cycling or reloading.");
         }
         var charge = PilotAmmunitionStore.Contents(world, moduleId);
-        DogmaEffect expected =
+        DogmaEffect appliedEffect =
             charge is null ? DogmaEffect.WarpDisruptSphere
             : InterdictionCatalog.Script(catalog, charge.TypeId, catalog.RequireItem(charge.TypeId).GroupId)
             && charge.Quantity == 1
             && charge.OwnerId == pilotId
                 ? FittingCatalog.DefaultEffect(catalog, charge.TypeId)!.Value
             : throw new InvalidDataException("Invalid focused script.");
-        if (effect != expected || InterdictionRules.Focused(effect) != (target is not null))
+        // Build 3662168 picks the target using the script, then activates the generator's default effect.
+        if (
+            (effect != DogmaEffect.WarpDisruptSphere && effect != appliedEffect)
+            || InterdictionRules.Focused(appliedEffect) != (target is not null)
+        )
         {
-            throw new InvalidDataException("Use the loaded script's effect and a locked target, or activate an unscripted field.");
+            throw new InvalidDataException("Use an unscripted field without a target or the loaded focused script with a locked target.");
         }
         int system = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
-        if (effect == DogmaEffect.WarpDisruptSphere)
+        if (appliedEffect == DogmaEffect.WarpDisruptSphere)
         {
             InterdictionRules.CheckSystem(system, CrimewatchPersistence.Security(catalog, system));
         }
@@ -204,13 +208,13 @@ internal sealed partial class PilotInterdictionStore
             row.SystemId = system;
             row.TargetId = target.Id;
             row.TargetKind = target.Kind;
-            row.Effect = effect;
+            row.Effect = appliedEffect;
             row.DurationMilliseconds = module.Duration;
             row.CapacitorNeed = module.Capacitor;
             row.Range = module.Range;
             row.Strength = module.Strength;
             row.MwdBlock =
-                effect == DogmaEffect.FocusedWarpScrambling
+                appliedEffect == DogmaEffect.FocusedWarpScrambling
                     ? calculation.Graph.Read(moduleId, DogmaAttributeId.ActivationBlockStrength)
                     : 0;
             row.StartedAt = now;
@@ -235,7 +239,17 @@ internal sealed partial class PilotInterdictionStore
         {
             WorldConnections.PublishHeat(world, pilotId, shipId, heat);
         }
-        return new(moduleId, item.TypeId, effect, module.Duration, expires, expires, capacitor, TargetId: target?.Id, Range: module.Range);
+        return new(
+            moduleId,
+            item.TypeId,
+            appliedEffect,
+            module.Duration,
+            expires,
+            expires,
+            capacitor,
+            TargetId: target?.Id,
+            Range: module.Range
+        );
     }
 
     public bool Active(long shipId, long moduleId, long now) =>

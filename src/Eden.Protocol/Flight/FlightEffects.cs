@@ -235,6 +235,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         }
     }
 
+    // WarpDisruptFieldGenerating reads graphicInfo.range as an attribute in build 3662168.
     internal void WeaponEffect(long shipId, WeaponContact effect, bool active) =>
         emit(
             new DestinyCommand.TimedSpecialEffect(
@@ -249,10 +250,15 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 active,
                 effect.Duration,
                 effect.StartedAt,
-                effect.FieldRange is double radius ? new() { ["range"] = radius }
-                    : effect.ArcTargets is { } targets ? new() { ["targets"] = new BlueList<long>(targets) }
+                effect.FieldRange is double radius
+                        ? new BlueInstance("utillib.KeyVal", new Dictionary<string, object?> { ["range"] = radius })
+                    : effect.ArcTargets is { } targets ? new Dictionary<string, object?> { ["targets"] = new BlueList<long>(targets) }
                     : effect.Spool is { } spool
-                        ? new() { ["mulitplierBonusPerCycle"] = spool.PerCycle, ["multiplierBonusMax"] = spool.Maximum }
+                        ? new Dictionary<string, object?>
+                        {
+                            ["mulitplierBonusPerCycle"] = spool.PerCycle,
+                            ["multiplierBonusMax"] = spool.Maximum,
+                        }
                     : null
             )
         );

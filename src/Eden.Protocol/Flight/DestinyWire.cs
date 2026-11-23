@@ -217,7 +217,7 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         bool Active,
         double Duration,
         long StartedAt,
-        Dictionary<string, object?>? GraphicInfo = null
+        object? GraphicInfo = null
     ) : DestinyCommand("OnSpecialFX")
     {
         protected override object?[] Arguments =>
