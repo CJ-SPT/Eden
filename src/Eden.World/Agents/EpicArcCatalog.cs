@@ -44,9 +44,9 @@ internal static class EpicArcCatalog
     internal static bool IsSimulation(int missionId) => Find(missionId)?.EpicArcId == VisionsOfGreatness;
 
     internal static IEnumerable<EpicArc> ForAgent(CatalogDbContext catalog, long agentId) =>
-        s_agents.Value[agentId].Select(id => Get(catalog, id));
+        s_agents.Value[agentId].Select(id => RequireArc(catalog, id));
 
-    internal static EpicArc Get(CatalogDbContext catalog, int id) => catalog.Definition(s_arc, id);
+    internal static EpicArc RequireArc(CatalogDbContext catalog, int id) => catalog.Definition(s_arc, id);
 
     internal static IReadOnlyList<EpicArcMessage> Messages(CatalogDbContext catalog) => catalog.Definition(s_messages, 0);
 

@@ -618,7 +618,7 @@ internal sealed partial class PilotMissionStore(
                 var mission = MissionCatalog.Find(catalog, row!.MissionId);
                 if (mission.Kind == MissionKind.Choice)
                 {
-                    var branch = EpicArcCatalog.Get(catalog, mission.Definition.EpicArcId!.Value).Nodes[row.MissionId];
+                    var branch = EpicArcCatalog.RequireArc(catalog, mission.Definition.EpicArcId!.Value).Nodes[row.MissionId];
                     if (epicChoice is not int followed || !branch.Successors.Contains(followed))
                     {
                         throw new InvalidDataException("Choose one of the offered epic arc branches.");

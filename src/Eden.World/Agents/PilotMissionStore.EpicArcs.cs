@@ -121,7 +121,8 @@ internal sealed partial class PilotMissionStore
             : null;
 
     private CatalogAgent EpicArcHandoff(CatalogDbContext catalog, MissionProfile mission, CatalogAgent agent) =>
-        HandoffTarget(catalog, EpicArcCatalog.Get(catalog, mission.Definition.EpicArcId!.Value), mission.Definition.MissionId) is { } target
+        HandoffTarget(catalog, EpicArcCatalog.RequireArc(catalog, mission.Definition.EpicArcId!.Value), mission.Definition.MissionId)
+            is { } target
             ? Agent(target.AgentId)
             : agent;
 
@@ -135,7 +136,7 @@ internal sealed partial class PilotMissionStore
         long now
     )
     {
-        var arc = EpicArcCatalog.Get(catalog, arcId);
+        var arc = EpicArcCatalog.RequireArc(catalog, arcId);
         var source = arc.Nodes[row.MissionId];
         if (source.Successors.IsEmpty)
         {
@@ -169,7 +170,7 @@ internal sealed partial class PilotMissionStore
             var content = catalog.ReadMany(CatalogData.Client.Missions, rows.Select(row => (long)row.MissionId).Distinct());
             foreach (var run in rows.GroupBy(row => EpicArcCatalog.Find(row.MissionId)!.EpicArcId!.Value))
             {
-                var arc = EpicArcCatalog.Get(catalog, run.Key);
+                var arc = EpicArcCatalog.RequireArc(catalog, run.Key);
                 HashSet<int> emitted = [];
                 foreach (var row in run)
                 {
@@ -249,7 +250,7 @@ internal sealed partial class PilotMissionStore
                 return [];
             }
             return EpicArcCatalog
-                .Get(catalog, arcId)
+                .RequireArc(catalog, arcId)
                 .Nodes[row.MissionId]
                 .Successors.Select(id =>
                 {
@@ -279,7 +280,7 @@ internal sealed partial class PilotMissionStore
                     row.State == MissionState.Accepted
                     && row.AgentId != agentId
                     && EpicArcCatalog.Find(row.MissionId)?.EpicArcId is int arcId
-                    && HandoffTarget(catalog, EpicArcCatalog.Get(catalog, arcId), row.MissionId)?.AgentId == agentId
+                    && HandoffTarget(catalog, EpicArcCatalog.RequireArc(catalog, arcId), row.MissionId)?.AgentId == agentId
                     && AtEpicAgent(ResidentPilot(world, pilotId), agent)
                 )
         );
