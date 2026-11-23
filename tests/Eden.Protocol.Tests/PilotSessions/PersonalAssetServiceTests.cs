@@ -304,8 +304,8 @@ public sealed class PersonalAssetServiceTests
         Assert.IsType<PilotCallResult.Failure>(
             f.Call("GetItemsInSafetyForCharacter", [ContractAssetTestData.Other], "structureAssetSafety")
         );
-        Assert.Same(PilotCallResult.Unsupported, f.Call("MovePersonalAssetsToSafety", [], "structureAssetSafety"));
-        Assert.Same(PilotCallResult.Unsupported, f.Call("GetItemsInSafetyForCorp", [], "structureAssetSafety"));
+        Assert.IsType<PilotCallResult.Failure>(f.Call("MovePersonalAssetsToSafety", [], "structureAssetSafety"));
+        Assert.IsType<PilotCallResult.Failure>(f.Call("GetItemsInSafetyForCorp", [ContractAssetTestData.Other], "structureAssetSafety"));
         Assert.Equal(before, f.Db.Services.GetRequiredService<IPilotAssets>().Items(ContractAssetTestData.Pilot, new()));
         Assert.Empty(f.Context.Notifications);
     }
