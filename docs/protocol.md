@@ -799,6 +799,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
+- [Session frames blocked by docked bot trades](protocol/performance.md#session-frames-blocked-by-docked-bot-trades)
 - [Bot CPU and the historical population ceiling](protocol/performance.md#bot-cpu-and-the-historical-population-ceiling)
 - [Bot backlog during starter ore sales](protocol/performance.md#bot-backlog-during-starter-ore-sales)
 - [Sustaining expanded bot populations](protocol/performance.md#sustaining-expanded-bot-populations)

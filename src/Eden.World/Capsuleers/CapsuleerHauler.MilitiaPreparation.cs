@@ -3,6 +3,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Ships;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.FactionWarfare;
@@ -31,6 +32,7 @@ internal sealed partial class CapsuleerHauler
 
     private bool TryAssignMilitiaPatrol(LiveWorld live, EconomyTransaction world)
     {
+        using var phase = SessionPerformance.Phase("traffic.assignMilitiaPatrol");
         var catalog = _operation.Catalog;
         var factions = MilitiaEnlistmentStore.BotMilitiaFactions(world, catalog, pilotId, Now);
         if (factions.Length == 0)

@@ -6,11 +6,14 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -29,10 +32,37 @@ internal sealed partial class CapsuleerIndustry
         (int Stage, int AdvancedModules, int Modules) Progress
     );
 
-    private sealed record SnapshotPvpFits(int[] HullTypes, IReadOnlyDictionary<int, SnapshotPvpFit[]> ByHull);
+    private sealed record SnapshotPvpFits(
+        int[] HullTypes,
+        IReadOnlyDictionary<int, SnapshotPvpFit[]> ByHull,
+        IReadOnlyDictionary<int, (int Skill, double Level)[]> Requirements,
+        IReadOnlyDictionary<int, double> SkillRanks
+    );
 
     private static readonly ConditionalWeakTable<TrafficSnapshot, ConcurrentDictionary<long, Lazy<SnapshotPvpFits>>> s_snapshotPvpFits =
         new();
+
+    internal static void PrepareSnapshotPvpFits(CatalogDbContext catalog, TrafficSnapshot snapshot)
+    {
+        if (snapshot.Profiles.Count == 0)
+        {
+            return;
+        }
+        try
+        {
+            _ = ReadSnapshotPvpFits(catalog, snapshot);
+        }
+        catch (InvalidDataException)
+        {
+            // A bad fit index should only affect jobs that actually need it.
+        }
+    }
+
+    private static SnapshotPvpFits ReadSnapshotPvpFits(CatalogDbContext catalog, TrafficSnapshot snapshot) =>
+        s_snapshotPvpFits
+            .GetOrCreateValue(snapshot)
+            .GetOrAdd(catalog.Definitions.Identity.Generation, _ => new(() => LoadSnapshotPvpFits(catalog, snapshot)))
+            .Value;
 
     private CapsuleerPvpFitGoal? SelectSnapshotPvpGoal(
         EconomyTransaction world,
@@ -51,10 +81,8 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        var fits = s_snapshotPvpFits
-            .GetOrCreateValue(snapshot)
-            .GetOrAdd(catalog.Definitions.Identity.Generation, _ => new(() => LoadSnapshotPvpFits(catalog, snapshot)))
-            .Value;
+        using var phase = SessionPerformance.Phase("traffic.selectSnapshotPvpGoal");
+        var fits = ReadSnapshotPvpFits(catalog, snapshot);
         long id = pilot.PilotId;
         var policy = world.Settings.Capsuleers;
         bool canFlySupport =
@@ -82,7 +110,8 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var types = candidates.SelectMany(fit => fit.Parts).Select(part => part.TypeId).Distinct().ToArray();
-        var usable = PilotSkillReader.UsableTypes(world, catalog, id, types);
+        // Upgrades with no ready-fit requirement sort by progress regardless of current skill levels.
+        var usable = current is null || affordableReadyBudget.HasValue ? UsableSnapshotTypes(world, id, fits, types) : null;
         var offers = hullOffers
             .Concat(market.SupplyOrders(world, catalog, station, types.Where(type => !fits.ByHull.ContainsKey(type)).ToArray(), id))
             .ToLookup(ask => ask.TypeId);
@@ -90,7 +119,7 @@ internal sealed partial class CapsuleerIndustry
         foreach (
             var fit in candidates
                 .OrderByDescending(fit => fit.DealsDamage)
-                .ThenByDescending(fit => current is null && fit.Parts.All(part => usable.Contains(part.TypeId)))
+                .ThenByDescending(fit => current is null && fit.Parts.All(part => usable!.Contains(part.TypeId)))
                 .ThenBy(fit => fit.Progress)
                 .ThenBy(fit => TravelerRoutineRules.Mix((ulong)id ^ TravelerRoutineRules.Mix((ulong)fit.KillId)))
         )
@@ -100,7 +129,7 @@ internal sealed partial class CapsuleerIndustry
                 && (
                     affordableReadyBudget is not long budget
                     || fit.Parts.Sum(part => (decimal)quotes[part]!.LimitPriceCents * part.Quantity) <= budget
-                        && fit.Parts.All(part => usable.Contains(part.TypeId))
+                        && fit.Parts.All(part => usable!.Contains(part.TypeId))
                         && PvpFitQualified(world, catalog, pilot, fit.Kit, fit.Parts, out _)
                 )
             )
@@ -117,6 +146,22 @@ internal sealed partial class CapsuleerIndustry
                 quotes[part] = quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity);
             }
             return quote?.Quantity == part.Quantity;
+        }
+    }
+
+    private static HashSet<int> UsableSnapshotTypes(EconomyTransaction world, long pilot, SnapshotPvpFits fits, int[] types)
+    {
+        Dictionary<int, int> levels = [];
+        return types.Where(type => !fits.Requirements[type].Any(requirement => Level(requirement.Skill) < requirement.Level)).ToHashSet();
+
+        int Level(int skill)
+        {
+            if (!levels.TryGetValue(skill, out int level))
+            {
+                level = new TrainedSkill(skill, world.SkillPoints(pilot, skill) ?? 0, fits.SkillRanks[skill]).Level;
+                levels.Add(skill, level);
+            }
+            return level;
         }
     }
 
@@ -174,29 +219,69 @@ internal sealed partial class CapsuleerIndustry
 
     private static SnapshotPvpFits LoadSnapshotPvpFits(CatalogDbContext catalog, TrafficSnapshot snapshot)
     {
-        var byHull = snapshot
-            .Profiles.DistinctBy(TrafficSnapshot.Signature)
-            .Select(profile => (Fit: SnapshotPvpKit(catalog, profile), Profile: profile))
-            .Where(candidate => candidate.Fit is not null)
-            // A fit stays the same when only its remaining ammunition differed at the time of loss.
-            .DistinctBy(candidate => TrafficSnapshot.ValidationSignature(candidate.Profile))
-            .Select(candidate => candidate.Fit!)
-            .GroupBy(fit => fit.Kit.HullTypeId)
-            .ToDictionary(group => group.Key, group => group.ToArray());
-        return new(byHull.Keys.ToArray(), byHull);
+        using var phase = SessionPerformance.Phase("traffic.loadSnapshotPvpFits");
+        var hulls = snapshot
+            .Profiles.Where(profile => profile.Equipment.Length != 0)
+            .Select(profile => profile.HullTypeId)
+            .Distinct()
+            .Where(hull => SnapshotPvpHull(catalog, hull))
+            .ToHashSet();
+        var profiles = snapshot.Profiles.Where(profile => profile.Equipment.Length != 0 && hulls.Contains(profile.HullTypeId)).ToArray();
+        int[] typeIds = profiles.SelectMany(profile => profile.Equipment.Select(item => item.TypeId)).Concat(hulls).Distinct().ToArray();
+        long[] catalogKeys = Array.ConvertAll(typeIds, type => (long)type);
+        var definitions = catalog.Definitions;
+        _ = definitions.FindMany(CatalogData.Client.Types, catalogKeys);
+        _ = definitions.FindMany(CatalogData.Client.Typedogma, catalogKeys);
+        _ = definitions.AttributeSets(typeIds);
+
+        HashSet<string> validated = [];
+        List<SnapshotPvpFit> fits = [];
+        foreach (var profile in profiles.DistinctBy(TrafficSnapshot.Signature))
+        {
+            // Keep the first valid loadout when only the quantity of remaining ammunition differs.
+            string signature = TrafficSnapshot.ValidationSignature(profile);
+            if (!validated.Contains(signature) && SnapshotPvpKit(catalog, profile) is { } fit)
+            {
+                validated.Add(signature);
+                fits.Add(fit);
+            }
+        }
+        var byHull = fits.GroupBy(fit => fit.Kit.HullTypeId).ToDictionary(group => group.Key, group => group.ToArray());
+        var requirements = byHull
+            .Values.SelectMany(fits => fits)
+            .SelectMany(fit => fit.Parts)
+            .Select(part => part.TypeId)
+            .Distinct()
+            .ToDictionary(type => type, type => SnapshotSkillRequirements(catalog, type));
+        var ranks = requirements
+            .Values.SelectMany(requirements => requirements)
+            .Select(requirement => requirement.Skill)
+            .Distinct()
+            .ToDictionary(
+                skill => skill,
+                skill => catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1)
+            );
+        return new(byHull.Keys.ToArray(), byHull, requirements, ranks);
     }
+
+    private static (int Skill, double Level)[] SnapshotSkillRequirements(CatalogDbContext catalog, int type)
+    {
+        var attributes = catalog.FittingAttributes(type);
+        return InventoryDefinitions
+            .RequiredSkills.Select(pair =>
+                (Skill: checked((int)attributes.GetValueOrDefault(pair.Skill)), Level: attributes.GetValueOrDefault(pair.Level))
+            )
+            .Where(requirement => requirement.Skill != 0)
+            .ToArray();
+    }
+
+    private static bool SnapshotPvpHull(CatalogDbContext catalog, int type) =>
+        catalog.FittingType(type) is { } hull
+        && !TrafficRules.LightHull((HullClass)hull.GroupId)
+        && CapsuleerPatrolFit.CombatHull(catalog, type);
 
     private static SnapshotPvpFit? SnapshotPvpKit(CatalogDbContext catalog, TrafficProfile profile)
     {
-        if (
-            profile.Equipment.Length == 0
-            || catalog.FittingType(profile.HullTypeId) is not { } hull
-            || TrafficRules.LightHull((HullClass)hull.GroupId)
-            || !CapsuleerPatrolFit.CombatHull(catalog, profile.HullTypeId)
-        )
-        {
-            return null;
-        }
         try
         {
             TrafficFitting.CheckTypes(catalog, profile);

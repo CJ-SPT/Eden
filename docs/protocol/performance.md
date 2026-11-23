@@ -6,6 +6,74 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Session frames blocked by docked bot trades
+
+The maintainer's server log on `1547ae5f` records four long ticks where a capsuleer Trade held the shared world owner.
+The tick's `Motion` timer includes the wait to acquire that owner. The work performed by the tick after acquisition
+took only 0.60–10.31 ms of ownership across the four samples. No overlapping checkpoint copy was reported for these
+trades. At 04:42:58, an agent call also queued for 18.11 seconds before processing in 13.80 ms.
+
+| Server log time | Tick | Tick world wait | Trade owner hold | Trade SQL commands |
+| --- | ---: | ---: | ---: | ---: |
+| 04:29:47 | 4,412.67 ms | 4,402.68 ms | 4,517.11 ms | 53,954 |
+| 04:34:28 | 14,281.42 ms | 14,269.93 ms | 14,971.81 ms | 8,004 |
+| 04:36:22 | 9,152.19 ms | 9,150.83 ms | 9,850.99 ms | 2,854 |
+| 04:42:58 | 20,772.58 ms | 20,769.60 ms | 21,491.42 ms | 8,448 |
+
+The pre-change fit selector built the immutable traffic snapshot's PvP loadout index on its first request. A local
+Release probe on the build-3662168 catalog and 44,719 loaded traffic profiles reproduced a 14.37-second cold
+index build with 7,106 catalog commands and zero fitting rebuilds. The production trace ties the blocked frames to
+Trade ownership. It does not attribute every recurring hold to the cold index. The index loads once per traffic snapshot
+and catalog generation, and the old warnings did not time several dock operations individually.
+
+The scheduler now prepares the index outside world ownership when docked work may need it. Preparation captures the
+traffic snapshot and checks the captured catalog and snapshot before running the job. Index construction batches
+immutable catalog reads and retains the first valid loadout when only ammunition quantities differ. Candidate ranking
+reuses the catalog requirements and skill ranks from the index and reads skill points from the current resident action.
+The same action still checks stock, budget, fitting and access before a purchase or dispatch. The slow-action detail
+now includes SQL elapsed time and timings for career work, supply, replacement, departure scouting and patrol decisions.
+
+The reference review covered station order matching in EVE.js `server/src/services/market/marketProxyService.js`,
+SHA-256 `F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`, and the published Scout/Small complex gate rules.
+[EVE University trading](https://wiki.eveuniversity.org/Market) · [EVE University faction warfare](https://wiki.eveuniversity.org/Faction_warfare)
+
+### Automated validation
+
+The exact `Eden.Protocol.Tests.Capsuleers.TrafficPreparationTests.ResidentTradeLoadsSnapshotPvpFitsOutsideWorldOwnership`
+regression passed in 25.84 seconds including runner startup. It observes the cold index build outside the world owner
+and the cached read under ownership.
+
+Matched single Release samples used the same frozen traffic snapshot, a prewarmed core catalog and a reused catalog
+connection. The direct cold build took 14,365.44 ms and 7,106 catalog commands before the change, versus 12,215.19 ms
+and 3,949 commands after it. Point reads of `TypeAttribute` fell from 2,785 to 471.
+
+A separate Release run advanced the production scheduler's next due Trade on a private copy of the mature Standard market
+save. The fit index took 8,574.13 ms and 2,927 catalog commands during preparation. While reporting the end of that phase,
+an independent worker acquired shared ownership in 0.01 ms. An owned read of the completed index then took 1.13 ms with
+zero SQL commands, connection opens or fitting rebuilds. These are single Windows samples. The save has different bot
+locations from the production capture. Probe inputs and reports are recorded under `artifacts/session-frame-latency-20261122/fit-probe`.
+
+The wider initial selection passed 61 of 62 cases in 29.77 seconds. The `sharedCoordination: true` warm-frame isolation
+case timed out while its fixture deliberately held the shared world owner. The same parameterized case timed out on
+unchanged `d602ba98` in a separate two-case run. The independent-system variant passed both times. A stack capture in
+the failing fixture shows `FlightSession.Checkpoint` waiting for a resident inspection from `PilotTetherStore.Advance`.
+This still requires shared ownership. The fixture establishes one way Motion can wait, while the deployed tick warnings
+only give the aggregate phase timing.
+
+The final focused filter passed 60 cases in 27.29 seconds. It selected `TrafficPreparationTests`, `CapsuleerMilitiaPatrolTests`,
+`CapsuleerTrafficRoutesTests`, `EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen`, and
+`IndependentTravelerResumesSeededStationlessNullsecExpeditionOffscreen`. The solution built in 14.20 seconds with no warnings
+or errors. The Python catalog and formatting policy suites passed all 17 cases. The full .NET suite was outside this selection.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare Trade owner holds and session `WorldWait` after deployment. Keep warnings from both the traffic job and the tick
+for any recurring multi-second frame.
+
 ## Site history discovery and identity maxima, November 15, 2026
 
 Read-only container logs from 7:12–7:50 p.m. ET identify running revision

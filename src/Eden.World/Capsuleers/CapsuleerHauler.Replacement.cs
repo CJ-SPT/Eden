@@ -2,6 +2,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -10,6 +11,7 @@ internal sealed partial class CapsuleerHauler
 {
     private void AttemptShipReplacement()
     {
+        using var phase = SessionPerformance.Phase("traffic.shipReplacement");
         if (_operation.World is EconomyTransaction world)
         {
             long now = Now;

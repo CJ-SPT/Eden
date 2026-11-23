@@ -540,8 +540,13 @@ internal sealed partial class CapsuleerHauler(
                 return Commit(job);
             }
             // Scouting can populate the system's public sites. Finish that work before opening the station transaction.
-            var scoutedAnomaly = capsule || !canWork ? null : ScoutDepartureAnomaly();
-            var signatures = canWork ? ExplorationSignatures() : [];
+            CombatAnomaly? scoutedAnomaly;
+            IReadOnlyList<CombatAnomaly> signatures;
+            using (SessionPerformance.Phase("traffic.departureSites"))
+            {
+                scoutedAnomaly = capsule || !canWork ? null : ScoutDepartureAnomaly();
+                signatures = canWork ? ExplorationSignatures() : [];
+            }
             if (canWork)
             {
                 SynchronizeGang(reconcile: true);
@@ -1093,6 +1098,7 @@ internal sealed partial class CapsuleerHauler(
         }
         if (_operation.World is EconomyTransaction resident)
         {
+            using var trainingPhase = SessionPerformance.Phase("traffic.haulerCareer");
             var profession =
                 CapsuleerCareerTraining.Profession(_operation.Catalog, Pilot.ShipTypeId, (HullClass)Pilot.ShipGroupId)
                 ?? Work.CareerPlan?.Profession

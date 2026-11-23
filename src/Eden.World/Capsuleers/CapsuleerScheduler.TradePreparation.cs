@@ -118,6 +118,7 @@ internal sealed partial class CapsuleerScheduler
                 || old.TrainingHull != current.TrainingHull
                 || old.DefaultProfession != current.DefaultProfession
                 || old.TrainingPlan != current.TrainingPlan
+                || old.PvpSnapshot != current.PvpSnapshot
                 || old.PrepareMarketOffers != current.PrepareMarketOffers
                 || old.Journey != current.Journey
                 || !SameTemplate(old.Template, current.Template)

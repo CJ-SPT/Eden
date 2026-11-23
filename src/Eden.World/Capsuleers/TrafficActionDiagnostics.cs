@@ -81,13 +81,7 @@ internal sealed class TrafficActionDiagnostics
                     ", ",
                     timing
                         .Phases.Where(p =>
-                            p.Name
-                                is not (
-                                    "traffic.queueExecution"
-                                    or "traffic.haulerAction"
-                                    or "traffic.minerAction"
-                                    or "traffic.tradeAndLaunch"
-                                )
+                            p.Name is not ("traffic.queueExecution" or "traffic.haulerAction" or "traffic.minerAction")
                             && !p.Name.StartsWith("traffic.action.", StringComparison.Ordinal)
                         )
                         .OrderByDescending(p => p.Elapsed)
@@ -101,7 +95,8 @@ internal sealed class TrafficActionDiagnostics
                     $"Slow traffic action {job.Action} pilot={job.PilotId}: "
                         + $"total={sample.Elapsed.TotalMilliseconds:F2} ms, SQL={sample.Commands}, connections={sample.Connections}, "
                         + $"fits={sample.Fittings}, allocated={sample.AllocatedBytes}, "
-                        + $"{wait}gcPause={gcPause:F2} ms, checkpointOverlap={timing.CheckpointOverlap}. {breakdown}"
+                        + $"{wait}gcPause={gcPause:F2} ms, checkpointOverlap={timing.CheckpointOverlap}, "
+                        + $"sqlElapsed={sample.SqlMilliseconds:F2} ms. {breakdown}"
                 );
             },
             includePhases: detail

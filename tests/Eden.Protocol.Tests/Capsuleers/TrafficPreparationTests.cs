@@ -201,6 +201,59 @@ public sealed class TrafficPreparationTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void ResidentTradeLoadsSnapshotPvpFitsOutsideWorldOwnership()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        TrafficSnapshotTests.Install(fixture.Database, TrafficSnapshotTests.Profile());
+        Assert.Single(fixture.Database.Traffic.Profiles);
+
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var config = fixture.Database.Configuration.Active!;
+        var settings = config.Draft.Settings;
+        fixture.Database.Configuration.Install(
+            config with
+            {
+                Draft = config.Draft with { Settings = settings with { Capsuleers = settings.Capsuleers with { EarnedPvpShips = true } } },
+            }
+        );
+        var live = host.GetRequiredService<LiveWorld>();
+        using (var world = live.Economy.Begin())
+        {
+            long miner = world.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+            world.Add(new SavedCapsuleerSuspension { PilotId = miner });
+            world.Add(new SavedCapsuleerProvisioning { Id = 1, WorldSeed = 1 });
+            world.Commit();
+        }
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        _ = scheduler.CapturePreparation();
+        fixture.Clock.Seconds++;
+        var input = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
+        Assert.Equal(CapsuleerAction.Trade, input.Job.Action);
+        Assert.Same(fixture.Database.Traffic, input.PvpSnapshot);
+
+        List<bool> owners = [];
+        using var trace = SessionPerformance.Begin(
+            "snapshot PvP fit preparation",
+            line =>
+            {
+                if (line.StartsWith("Performance traffic.loadSnapshotPvpFits:", StringComparison.Ordinal))
+                {
+                    owners.Add(live.IsEntered);
+                }
+            },
+            force: true
+        );
+        Assert.Equal(1, scheduler.RunMaintenance(1, 1, CancellationToken.None).Turn.Completed);
+        using (live.EnterShared())
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
+        {
+            CapsuleerIndustry.PrepareSnapshotPvpFits(catalog, fixture.Database.Traffic);
+        }
+        Assert.Equal([false], owners);
+    }
+
+    [Fact]
     public void CancelledPreparationLeavesItsJobDueWithoutRecordingAFailure()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();

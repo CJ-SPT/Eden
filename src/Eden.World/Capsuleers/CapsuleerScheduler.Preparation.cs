@@ -42,6 +42,7 @@ internal sealed partial class CapsuleerScheduler
         int TrainingHull,
         CapsuleerProfession DefaultProfession,
         CapsuleerCareerPlan? TrainingPlan,
+        TrafficSnapshot? PvpSnapshot,
         bool PrepareMercoxit,
         bool PrepareMarketOffers
     );
@@ -194,6 +195,11 @@ internal sealed partial class CapsuleerScheduler
         var trainingPlan = job.Action == CapsuleerAction.Prepare ? expedition?.CareerPlan : work?.CareerPlan;
         var profession =
             job.Action == CapsuleerAction.Prepare ? CapsuleerProfession.Mining : trainingPlan?.Profession ?? CapsuleerProfession.Hauling;
+        var policy = world.Settings.Capsuleers;
+        bool preparePvpFits =
+            world is EconomyTransaction
+            && dockedWork
+            && (policy.EarnedPvpShips || job.Action == CapsuleerAction.Trade && policy.MilitiaPatrols);
         return new(
             job,
             system,
@@ -221,6 +227,7 @@ internal sealed partial class CapsuleerScheduler
             dockedWork ? resident?.ShipTypeId ?? world.Ships.Find(shipId)?.TypeId ?? 0 : 0,
             profession,
             trainingPlan,
+            preparePvpFits ? database.Traffic : null,
             mercoxit,
             dockedWork && (world.Settings.Economy.StandardMarket || PilotMarketStore.UsesInstitutionalOffers(world))
         );
@@ -238,11 +245,16 @@ internal sealed partial class CapsuleerScheduler
             && (Live?.PreparationRevision ?? 0) == input.Revision
             && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
             && (input.Template is null || input.Template.Revision == (Live?.TrafficTemplateRevision ?? 0))
+            && (input.PvpSnapshot is null || ReferenceEquals(input.PvpSnapshot, database.Traffic))
             && database.Catalog.Identity.Generation == input.Catalog;
     }
 
     private void PrepareStationInputs(CatalogDbContext catalog, PreparationInput input)
     {
+        if (input.PvpSnapshot is { } snapshot)
+        {
+            CapsuleerIndustry.PrepareSnapshotPvpFits(catalog, snapshot);
+        }
         if (input.Template is not null)
         {
             TrafficTemplatePreparation.Prepare(database, catalog, input.Template);

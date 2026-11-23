@@ -1,4 +1,5 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -11,6 +12,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        using var phase = SessionPerformance.Phase("traffic.corporationSupply");
         var catalog = _operation.Catalog;
         if (Work.CorporationSupply is null && Work.PlanetaryProduction is { } pending && pending.CorporationId != Pilot.CorpId)
         {

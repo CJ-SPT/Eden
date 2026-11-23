@@ -5,6 +5,7 @@ using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.FactionWarfare;
@@ -47,6 +48,7 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
 
+        using var phase = SessionPerformance.Phase("traffic.nullsecDeparture");
         long worldSeed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
         ulong draw = NullsecExpeditionRules.Draw(worldSeed, pilotId, Work.DwellSequence);
         var catalog = _operation.Catalog;

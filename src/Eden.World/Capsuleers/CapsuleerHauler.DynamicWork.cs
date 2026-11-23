@@ -2,6 +2,7 @@ using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Ships;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -51,6 +52,7 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
 
+        using var phase = SessionPerformance.Phase("traffic.dynamicDockWork");
         var catalog = _operation.Catalog;
         long now = Now;
         bool earnedPvp = CapsuleerIndustry.RequiresEarnedPvp(world);
