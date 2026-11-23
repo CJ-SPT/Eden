@@ -22,7 +22,8 @@ public sealed class GatewayRequests(
     Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null,
     Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyUpdates = null,
     IFactionWarzones? factionWarzones = null,
-    IPersonalSkillPlans? personalSkillPlans = null
+    IPersonalSkillPlans? personalSkillPlans = null,
+    ShipSkinGateway? shipSkins = null
 )
 {
     private readonly ConcurrentDictionary<long, ConcurrentDictionary<int, MilitiaAdvantageState>> _factionObservations = new();
@@ -64,6 +65,7 @@ public sealed class GatewayRequests(
                     ? null
                     : PersonalSkillPlanRequests.Read(type, payload, request.AuthoritativeContext, authenticatedAccount, personalSkillPlans)
             )
+            ?? shipSkins?.Read(type, payload, request.AuthoritativeContext, authenticatedAccount)
             ?? CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
             ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =
@@ -124,6 +126,9 @@ public sealed class GatewayRequests(
     }
 
     public IReadOnlyList<Notice> SovereigntyNotices(long accountId) => sovereigntyUpdates?.Notices(accountId) ?? [];
+
+    public IReadOnlyList<Notice> ShipSkinNotices(long accountId, ShipSkinNoticeCursor cursor) =>
+        shipSkins?.Notices(accountId, cursor) ?? [];
 
     public IReadOnlyList<Notice> FactionActivityNotices(long accountId)
     {

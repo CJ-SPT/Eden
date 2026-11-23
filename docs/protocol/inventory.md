@@ -32,6 +32,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Native inventory stack division](#native-inventory-stack-division)
 - [Persistent ship dirt and native cleaning](#persistent-ship-dirt-and-native-cleaning)
 - [First-party ship SKIN licenses](#first-party-ship-skin-licenses)
+- [First-party ship SKIN application](#first-party-ship-skin-application)
 - [Persistent cargo and hangar items, November 2, 2026](#persistent-cargo-and-hangar-items-november-2-2026)
 - [Partial-stack capacity recovery, November 2, 2026](#partial-stack-capacity-recovery-november-2-2026)
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
@@ -648,7 +649,7 @@ has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**, build **3396210**, imple
 Activation consumes one unit of each selected license stack and saves the character's entitlements in the same
 resident transaction. Pilots can use licenses from their accessible personal hangar or ship holds. An invalid item or
 a duplicate active SKIN rejects the batch. Timed licenses expire at their saved deadline and can be activated again with
-a fresh item. Ship application and custom SKINR remain separate milestones.
+a fresh item. The fitting window uses the [ship SKIN application](#first-party-ship-skin-application) routes.
 
 **Automated validation.** The exact filter
 `Eden.Protocol.Tests.PilotSessions.ShipSkinLicenseTests.NativeActivationCommitsInventoryAndLicensesTogetherAndRenewsAtExpiryAfterRestart`
@@ -667,6 +668,41 @@ FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipSkinLicenseTests|FullyQ
 
 **Optional maintainer checks.** Activate a first-party license from inventory, then open the character's SKIN collection
 and reconnect to verify the unlocked entry.
+
+## First-party ship SKIN application
+
+Build **3662168** `cosmeticsSvc.pyj` sends `shipCosmeticsMgr.ApplySkinToShip(shipID, skinID)` and sends `None` to clear.
+`shipSkinStateRequestMessenger.pyj` reads `eve_public.cosmetic.ship.api.Get` and `GetAllInBubble`. The state holds
+the physical ship identifier, the character identifier, and either a first-party SKIN identifier or `no_skin`.
+`shipSkinStateNoticeMessenger.pyj` listens for `SetNotice`. The pinned client resolves the material from its own SKIN
+catalog. EVE.js **261108.1**, build **3396210**, writes the ship state in `shipCosmeticsState.js` (`4fb9ae689234`)
+and publishes it through `publicGatewayLocal.js` (`2af418ccfcdf`).
+[CCP ship SKINs](https://support.eveonline.com/hc/en-us/articles/203280701-Ship-SKINs)
+
+Pilots can apply a matching active license to an owned, accessible assembled ship. The selected SKIN is saved on the
+physical hull for that owner. Its appearance clears on repackaging or on expiry of the license used to apply it.
+Repeating an application returns `SkinAlreadyApplied`, which the pinned fitting client uses to refresh its selection.
+
+The gateway authorizes the current pilot through the authenticated account. In space, the initial bubble response and
+subsequent character-targeted notices follow the same ship visibility as Destiny. A hull's new owner sees its default
+appearance. Custom SKINR and structure SKINs remain open.
+
+**Automated validation.** The exact filter
+`Eden.Protocol.Tests.PilotSessions.ShipSkinLicenseTests.NativeApplicationAndGatewayReflectOwnershipVisibilityAndExpiryAcrossCheckpoint`
+passed in 20.90 s after a 20.48 s build. It covers apply, clear, replay, authenticated read and notice shapes, off-grid
+isolation, ownership transfer, restart, exact expiry, and renewal without reinstating the expired appearance.
+
+The solution built in 1.05 s with no warnings or errors. The following filter passed all 100 tests in 111.70 s. The
+catalog and formatting policy suites passed all 17 Python tests.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipSkinLicenseTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipCosmeticsServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipAppearanceServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipAppearanceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipStorageTests|FullyQualifiedName~Eden.Protocol.Tests.Gateway|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~BiomassPreparationCancellationAndFinalDeletionUseNativeRepliesAcrossSessions
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** In fitting, apply a compatible first-party SKIN. Undock with a nearby observer, then
+clear the SKIN and verify both views return to the default appearance.
 
 ## Persistent cargo and hangar items, November 2, 2026
 

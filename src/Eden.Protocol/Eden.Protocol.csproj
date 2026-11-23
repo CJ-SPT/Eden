@@ -35,6 +35,7 @@
     <Protobuf Include="Gateway/militia_faction.proto;Gateway/faction_activity.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/public_character.proto;Gateway/faction_activity.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/corporation_palette.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/ship_skin_*.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/semanticversion.proto;Gateway/celestial_resource_values.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf
       Include="Gateway/celestial_planet_requests.proto;Gateway/celestial_star_requests.proto"

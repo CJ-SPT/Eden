@@ -1001,6 +1001,7 @@ internal sealed partial class ResidentEconomy
         RegisterSkillTrading();
         RegisterPersonalSkillPlans();
         RegisterShipSkinLicenses();
+        RegisterAppliedShipSkins();
         RegisterRedemption();
         RegisterSavedFittings();
         RegisterCharacterSettings();

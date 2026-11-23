@@ -109,6 +109,7 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
         await context.WriteResponseHeadersAsync(new Metadata());
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
         using PeriodicTimer timer = new(TimeSpan.FromSeconds(1));
+        ShipSkinNoticeCursor skinNotices = new();
         string authorization = context.RequestHeaders.GetValue("authorization") ?? "";
         async Task Receive()
         {
@@ -120,9 +121,15 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
             {
                 if (authentication.Account(authorization) is not long account)
                 {
+                    skinNotices = new();
                     continue;
                 }
-                foreach (var notice in requests.SovereigntyNotices(account).Concat(requests.FactionActivityNotices(account)))
+                foreach (
+                    var notice in requests
+                        .SovereigntyNotices(account)
+                        .Concat(requests.FactionActivityNotices(account))
+                        .Concat(requests.ShipSkinNotices(account, skinNotices))
+                )
                 {
                     await output.WriteAsync(notice, stopping.Token);
                 }

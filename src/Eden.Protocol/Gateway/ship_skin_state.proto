@@ -1,0 +1,25 @@
+syntax = "proto3";
+package eve_public.cosmetic.ship;
+option csharp_namespace = "Eden.Protocol.Gateway.ShipSkins";
+
+import "public_character.proto";
+import "ship_skin_first_party_id.proto";
+import "ship_skin_ship_id.proto";
+
+// First-party projection of build 3662168 eve_public/cosmetic/ship/ship.proto.
+message State {
+  message Skin {
+    message FirstParty {
+      .eve_public.cosmetic.ship.skin.firstparty.Identifier identifier = 1;
+    }
+
+    oneof skin {
+      FirstParty firstparty = 1;
+      bool no_skin = 3;
+    }
+  }
+
+  .eve_public.character.Identifier character = 1;
+  .eve_public.ship.Identifier ship = 2;
+  Skin skin = 3;
+}

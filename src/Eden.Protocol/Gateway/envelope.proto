@@ -50,4 +50,11 @@ message Notice {
   string internal_origin = 3;
   string tenant = 4;
   google.protobuf.Any payload = 5;
+  TargetGroup target_group = 6;
+
+  message TargetGroup {
+    oneof group {
+      uint32 character = 4;
+    }
+  }
 }

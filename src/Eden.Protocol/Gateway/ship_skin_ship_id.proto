@@ -1,0 +1,7 @@
+syntax = "proto3";
+package eve_public.ship;
+option csharp_namespace = "Eden.Protocol.Gateway.ShipSkins.Ships";
+
+message Identifier {
+  uint64 sequential = 1;
+}

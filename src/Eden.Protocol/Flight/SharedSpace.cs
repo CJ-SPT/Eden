@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
@@ -165,7 +166,7 @@ internal sealed class SharedSpace(
     IPilotGateCloak? gateCloaks = null,
     Eden.Gameplay.Structures.IPilotTethering? tethering = null,
     IMilitiaFlightPresence? militiaPresence = null
-) : IPilotCombatPresence, IConduitArrivalEvents
+) : IPilotCombatPresence, IConduitArrivalEvents, Eden.Protocol.Gateway.IShipSkinVisibility
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
@@ -663,6 +664,35 @@ internal sealed class SharedSpace(
         && ship.AlignTo is null
         && ship.DepartureGate is null
         && ship.Health?.Remaining.Destroyed != true;
+
+    IReadOnlySet<long> Eden.Protocol.Gateway.IShipSkinVisibility.VisibleShipIds(ShipSkinViewer viewer)
+    {
+        if (viewer.Position is null || viewer.SystemId <= 0)
+        {
+            return ImmutableHashSet<long>.Empty;
+        }
+
+        return RunMotion<IReadOnlySet<long>>(
+            viewer.SystemId,
+            () =>
+            {
+                if (
+                    !_ships.TryGetValue(viewer.ShipId, out var contact)
+                    || contact.Pilot.PilotId != viewer.PilotId
+                    || contact.Pilot.SystemId != viewer.SystemId
+                    || contact.Pilot.Position is not { } position
+                )
+                {
+                    return ImmutableHashSet<long>.Empty;
+                }
+
+                var ids = PeersOwned(viewer.SystemId, viewer.ShipId, position).Select(peer => peer.Pilot.ShipId).ToHashSet();
+                ids.Add(viewer.ShipId);
+                return ids;
+            },
+            nameof(Eden.Protocol.Gateway.IShipSkinVisibility.VisibleShipIds)
+        );
+    }
 
     public ShipContact[] Peers(DockedPilot pilot) => Peers(pilot.SystemId, pilot.ShipId, pilot.Position);
 

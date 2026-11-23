@@ -18,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class ShipSkinLicenseTests
+public sealed partial class ShipSkinLicenseTests
 {
     private const long OwnerAccount = 1000001;
     private const long OtherAccount = 1000002;
@@ -272,6 +272,10 @@ public sealed class ShipSkinLicenseTests
         public DockedPilot Pilot => _context.Pilot;
 
         public PilotCallResult Activate(params long[] items) => Call("ActivateSkinLicense", [items.Select(item => (object?)item).ToList()]);
+
+        public PilotCallResult Apply(long ship, int? skin) => Call("ApplySkinToShip", [ship, (long?)skin]);
+
+        public void EnterGrid() => _context.Flight.Snapshot();
 
         public IEnumerable<ShipSkinLicense> List(int? hull = null) =>
             Assert

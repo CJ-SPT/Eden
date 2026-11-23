@@ -40,6 +40,7 @@ public sealed class ShipCosmeticsServiceTests
             Assert.Same(PilotCallResult.Unsupported, Call(call));
         }
         Assert.Same(PilotCallResult.Unsupported, Call(new("ActivateSkinLicense", [new List<object?> { 1L }])));
+        Assert.Same(PilotCallResult.Unsupported, Call(new("ApplySkinToShip", [pilot.ShipId, 1L])));
         context.Select(pilot);
         for (int cycle = 0; cycle < 2; cycle++)
         {
@@ -86,7 +87,7 @@ public sealed class ShipCosmeticsServiceTests
             Assert.IsType<PilotCallResult.Failure>(Call(call, new() { ["characterID"] = otherPilot.PilotId }));
         }
         Assert.IsType<PilotCallResult.Failure>(Call(new("ActivateSkinLicense", [1L])));
-        Assert.Same(PilotCallResult.Unsupported, Call(new("ApplySkinToShip", [pilot.ShipId, 1L])));
+        Assert.IsType<PilotCallResult.Failure>(Call(new("ApplySkinToShip", [pilot.ShipId, "invalid"])));
         Assert.Same(PilotCallResult.Unsupported, Call(new("UnknownCosmeticsMethod", [])));
         Assert.Equal(pilot, context.Pilot);
         Assert.Equal(savedPilot, world.Store.FindPilot(1000001));

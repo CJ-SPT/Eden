@@ -202,6 +202,10 @@ Ship dirt now uses a saved timestamp for each assembled hull, and the native **C
 Pilots can activate eligible permanent and timed first-party **SKIN licenses** from inventory. Activated licenses
 appear in their collection and persist across restarts. [First-party ship SKIN licenses](protocol/inventory.md#first-party-ship-skin-licenses)
 
+Pilots can apply a licensed first-party SKIN in fitting and clear it to return to the default appearance. The selected
+SKIN persists per hull for its owner and is visible to nearby ships in space.
+[First-party ship SKIN application](protocol/inventory.md#first-party-ship-skin-application)
+
 Newly created pilots start with an online Civilian Miner and Civilian Gatling Railgun in their corvette's two high slots when the starting-equipment setting is enabled. [Initial corvette fitting](protocol/characters.md#initial-corvette-fitting)
 
 Drag equipment into the active ship's cargo and back while docked. Owned item stacks and cargo locations survive restarts; the server checks ownership, quantity and the hull's cargo capacity. A stack too large for the hold opens the client's quantity picker so you can load only what fits. Open Fitting with the station panel's circled ship button to fit mining lasers or the civilian railgun, take them offline or online, and unfit them. Drag an already fitted module to another compatible slot to move it, or onto a fitted module in the same rack to exchange their slots. Loaded rounds and paid cycle/reload deadlines stay with their module. Fitted modules and online state survive restarts. The server checks catalog rack requirements, independent hardpoint counts, module limits, required skills, CPU and power grid. Bring mined ore back to a station and drag it into Item Hangar to unload.

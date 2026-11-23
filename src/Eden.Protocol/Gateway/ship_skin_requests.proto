@@ -1,0 +1,24 @@
+syntax = "proto3";
+package eve_public.cosmetic.ship.api;
+option csharp_namespace = "Eden.Protocol.Gateway.ShipSkins.Api";
+
+import "ship_skin_ship_id.proto";
+import "ship_skin_state.proto";
+
+message GetRequest {
+  .eve_public.ship.Identifier ship = 1;
+}
+
+message GetResponse {
+  .eve_public.cosmetic.ship.State state = 1;
+}
+
+message GetAllInBubbleRequest {}
+
+message GetAllInBubbleResponse {
+  repeated .eve_public.cosmetic.ship.State states = 1;
+}
+
+message SetNotice {
+  .eve_public.cosmetic.ship.State state = 1;
+}

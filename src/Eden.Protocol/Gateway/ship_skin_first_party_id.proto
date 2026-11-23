@@ -1,0 +1,7 @@
+syntax = "proto3";
+package eve_public.cosmetic.ship.skin.firstparty;
+option csharp_namespace = "Eden.Protocol.Gateway.ShipSkins.FirstParty";
+
+message Identifier {
+  uint64 sequential = 1;
+}

@@ -36,7 +36,7 @@ internal sealed class PilotShipSkinLicenseStore(WorldDatabase database, TimeProv
                     .AsEnumerable()
                     .Where(license =>
                         ShipSkinLicenseRules.IsActive(license.Expires, now)
-                        && (hullTypeId is not int hull || catalog!.Definition(s_skin, license.SkinId)?.Types?.Contains(hull) == true)
+                        && (hullTypeId is not int hull || SupportsHull(catalog!, license.SkinId, hull))
                     )
                     .OrderBy(license => license.SkinId)
                     .Select(Snapshot)
@@ -127,6 +127,9 @@ internal sealed class PilotShipSkinLicenseStore(WorldDatabase database, TimeProv
 
     private LiveWorld Resident =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Ship SKIN licenses require the resident world.");
+
+    internal static bool SupportsHull(CatalogDbContext catalog, int skinId, int hullTypeId) =>
+        catalog.Definition(s_skin, skinId)?.Types?.Contains(hullTypeId) == true;
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

@@ -1,12 +1,14 @@
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Gateway;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class ShipCosmeticsHandler(IPilotShipSkinLicenses licenses) : ISelectedPilotCallHandler
+internal sealed class ShipCosmeticsHandler(IPilotShipSkinLicenses licenses, IPilotShipSkins skins, ShipSkinGateway gateway)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -19,7 +21,14 @@ internal sealed class ShipCosmeticsHandler(IPilotShipSkinLicenses licenses) : IS
         // Build 3662168's two remote collection reads use "Licenced".
         if (
             service != "shipCosmeticsMgr"
-            || method is not ("GetLicencedSkins" or "GetLicencedSkinsForShipType" or "GetFirstPartySkinData" or "ActivateSkinLicense")
+            || method
+                is not (
+                    "GetLicencedSkins"
+                    or "GetLicencedSkinsForShipType"
+                    or "GetFirstPartySkinData"
+                    or "ActivateSkinLicense"
+                    or "ApplySkinToShip"
+                )
         )
         {
             return PilotCallResult.Unsupported;
@@ -43,6 +52,12 @@ internal sealed class ShipCosmeticsHandler(IPilotShipSkinLicenses licenses) : IS
                     (int)skinId
                 ),
                 ("ActivateSkinLicense", [List<object?> items]) => Activate(context, items),
+                ("ApplySkinToShip", [long shipId, null]) when shipId > 0 => Apply(context, shipId, null),
+                ("ApplySkinToShip", [long shipId, long skinId]) when shipId > 0 && skinId is > 0 and <= int.MaxValue => Apply(
+                    context,
+                    shipId,
+                    (int)skinId
+                ),
                 _ => new PilotCallResult.Failure("Choose valid pilot and skin information."),
             };
         }
@@ -57,6 +72,19 @@ internal sealed class ShipCosmeticsHandler(IPilotShipSkinLicenses licenses) : IS
 
     private PilotCallResult Read(long licenseeId, int skinId) =>
         licenses.Read(licenseeId, skinId) is { } license ? new ShipSkinLicenseReply(license) : PilotCallResult.None;
+
+    private PilotCallResult Apply(PilotCallContext context, long shipId, int? skinId)
+    {
+        long pilotId = context.Pilot.PilotId;
+        var application = skins.Apply(pilotId, shipId, skinId);
+        if (!application.Changed)
+        {
+            return new PilotCallResult.NamedFailure("SkinAlreadyApplied", BlueEmpty.Dictionary);
+        }
+
+        gateway.Applied(context.AccountId, pilotId, context.Pilot.ShipId, application.State.ShipId);
+        return PilotCallResult.None;
+    }
 
     private PilotCallResult Activate(PilotCallContext context, List<object?> items)
     {

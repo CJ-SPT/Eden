@@ -265,6 +265,10 @@ internal sealed partial class EconomyTransaction
                 Eden.World.Repair.PilotRemoteAssistanceStore.ClearForTravel(this, removed.ShipId);
                 break;
             case Eden.Data.World.Inventory.Ship removed:
+                if (Set<Eden.Data.World.Docking.SavedAppliedShipSkin>().Find(removed.Id) is { } skin)
+                {
+                    Remove(skin);
+                }
                 RemoveRange(Filter<Eden.Data.World.Characters.SavedJumpClone>(clone => clone.InShip && clone.LocationId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.SavedLanceDisruption>().Where(row => row.ShipId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.ShipId == removed.Id));
