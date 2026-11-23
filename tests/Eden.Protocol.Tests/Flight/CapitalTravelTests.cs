@@ -607,12 +607,14 @@ public sealed partial class CapitalTravelTests
             bool structures = false,
             bool armed = false,
             int driveFuel = 60_000,
-            bool fittedPortal = false
+            bool fittedPortal = false,
+            Action<string>? extendCatalog = null
         )
         {
             Db = new(clock: Clock);
             var database = new WorldDatabase(Db.Path);
             PassiveCatalogFixture.LoadCapitalTravel(database.CatalogPath);
+            extendCatalog?.Invoke(database.CatalogPath);
             if (structures)
             {
                 PassiveCatalogFixture.LoadStructures(database.CatalogPath);
@@ -664,9 +666,12 @@ public sealed partial class CapitalTravelTests
                 fitting.SetOnline(second.PilotId, venture, Gun.Value, true);
             }
             Grant(second.PilotId, venture, InventoryFlag.Cargo, LiquidOzone, 1000);
-            int firstStack = Math.Min(14_000, driveFuel / 2);
-            Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, firstStack);
-            Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, driveFuel - firstStack);
+            if (driveFuel > 0)
+            {
+                int firstStack = Math.Min(14_000, driveFuel / 2);
+                Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, firstStack);
+                Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, driveFuel - firstStack);
+            }
             CargoId = Grant(first.PilotId, FreighterId, InventoryFlag.Cargo, Cargo, 14);
             Db.Store.SetPosition(FreighterId, new(10_000_000, 0, 0), Jita);
             Db.Store.SetPosition(venture, s_station + new SpacePosition(-40_213, 0, 0), Jan);

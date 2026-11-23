@@ -65,6 +65,16 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
         }
     }
 
+    internal void ClearStoppedCycle(PilotCallContext context)
+    {
+        if (_cycle is { } cycle && cycle.PilotId == context.Pilot.PilotId && cycle.ShipId == context.Pilot.ShipId)
+        {
+            _cycle = null;
+            context.Flight.SetPropulsionEffect(null);
+            Effect(context, cycle, false);
+        }
+    }
+
     public void Advance(PilotCallContext context)
     {
         if (!context.Selected || _cycle is not { } cycle)

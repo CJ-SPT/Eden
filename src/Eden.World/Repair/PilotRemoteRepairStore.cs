@@ -309,7 +309,7 @@ internal sealed partial class PilotRemoteRepairStore(WorldDatabase database, IRe
         Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, targetId, now);
         if (Eden.World.Flight.PilotCapitalTravelStore.ActiveMode(world, targetId, now) is not null)
         {
-            throw new InvalidDataException("A ship in siege or triage cannot receive remote repairs.");
+            throw new InvalidDataException("The target's active ship mode prevents remote repairs.");
         }
         var pilot = world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault();
         if (

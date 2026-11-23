@@ -13,6 +13,7 @@ using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -28,6 +29,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Defenses;
 using Eden.World.Fleets;
+using Eden.World.Flight;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
@@ -307,13 +309,20 @@ internal sealed partial record FittingCalculation
         {
             if (
                 module.Item.Online
-                && module.GroupId is Eden.Gameplay.Flight.CapitalModeRules.Group or Eden.Gameplay.Flight.CapitalModeRules.CloneVatGroup
+                && module.GroupId is CapitalModeRules.Group or CapitalModeRules.CloneVatGroup
                 && activeModules.ContainsKey(module.Item.Id)
             )
             {
-                foreach (var modifier in Eden.World.Flight.CapitalModeCatalog.Modifiers(catalog, module.Item.TypeId))
+                int type = module.Item.TypeId;
+                bool bastion = CapitalModeRules.Effect(type) == DogmaEffect.Bastion;
+                foreach (var modifier in CapitalModeCatalog.Modifiers(catalog, type))
                 {
-                    Add(module.Item.Id, modifier, true);
+                    Add(
+                        module.Item.Id,
+                        modifier,
+                        !CapitalModeCatalog.SharesStackingPenalty(type, modifier),
+                        bastion && CapitalModeCatalog.ModifiesMissileVelocity(modifier) ? IsNotRapidHeavyCharge : null
+                    );
                 }
             }
             if (SpatialModuleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
@@ -752,13 +761,17 @@ internal sealed partial record FittingCalculation
             OverloadedModules = overloads,
         };
 
-        void Add(long source, PassiveModifier modifier, bool exempt)
+        // Build 3662168's Bastion description excludes rapid heavy launchers. The loaded charge also misses the range bonus.
+        bool IsNotRapidHeavyCharge(FittingLocation target) =>
+            !modules.Any(module => module.GroupId == (int)MissileLauncherGroup.RapidHeavy && module.Item.Id == target.Item.LocationId);
+
+        void Add(long source, PassiveModifier modifier, bool exempt, Predicate<FittingLocation>? applies = null)
         {
             IEnumerable<long> targets = modifier.Selector switch
             {
                 ModifierSelector.Group => locations.Where(m => m.GroupId == modifier.SelectionId).Select(m => m.Item.Id),
                 ModifierSelector.RequiredSkill => locations
-                    .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value))
+                    .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value) && (applies is null || applies(m)))
                     .Select(m => m.Item.Id),
                 ModifierSelector.OwnerRequiredSkill => ownerTargets
                     .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value))

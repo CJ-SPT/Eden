@@ -2,6 +2,55 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Marauder Bastion modules
+
+The pinned build **3662168** catalog gives Bastion Module I type **33400**, group **515**, and default effect **6658**
+(`moduleBonusBastionModule`, `effects.SiegeMode`). The four Navy and Fleet variants share the effect and use their own
+catalog values (types **93999**, **94008**, **94009**, and **94010**). Each fits one module per Marauder, requires Advanced
+Weapon Upgrades V and Energy Grid Upgrades V, and has a **60-second** cycle without fuel or capacitor cost. The 50 catalog
+modifiers cover mobility, weapon cadence and range, local repairs, damage resistance and remote assistance. Rate of fire is
+exempt from stacking penalties. Bastion's range, repair amount and resistance bonuses share the corresponding stacking
+groups. Rapid Heavy Missile Launchers receive neither Bastion's cadence bonus nor its missile range bonus.
+
+EVE.js **261108.1**, build **3396210**, identifies the effect and enforces movement restrictions in `shipActionRestrictions.js`
+(`d394bb2c65f1`) and stops propulsion on activation in `scene/modules.js` (`9dece322a041`).
+[Bastion behavior](https://wiki.eveuniversity.org/Marauders#Bastion_Module) ·
+[CCP balance notes](https://www.eveonline.com/news/view/patch-notes-version-23-01)
+
+Eden activates Bastion through the native dogma call. An active cycle stops propulsion and locks movement, warp, docking and
+tethering. The weapons timer ends 60 seconds after the last active cycle. Deactivating the module cancels repeats and lets
+the current cycle finish. Repeats are scheduled while the pilot stays connected. The world checkpoint preserves the active
+cycle and weapons timer, and the ship resumes its native Bastion effect on reconnect while the cycle is active.
+[Ship content inventory](../ship-content-coverage.json)
+
+**Automated validation.** The exact method `MarauderBastionRunsWithoutFuelAndRestoresItsDeadlineAfterCheckpoint` passed
+through `Test-Feature.ps1` in 8.67 seconds after a 10.00-second build. It covers activation without fuel, interruption of
+active propulsion, the native effect and 60-second cycle, weapon cadence and shield resistance, checkpoint reopen,
+the weapons timer, timed repeats and deactivation. The pinned-catalog export verified fitting and operation admission for
+all five module types and the Bastion role on all five Marauder hulls.
+
+Before rebasing, the following focused filter passed **209 tests** in 242.28 seconds.
+
+```text
+FullyQualifiedName~TechTwoHullTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~PropulsionTests|FullyQualifiedName~StructureTetherTests|FullyQualifiedName~CrimewatchTests|FullyQualifiedName~CapitalTravelTests.MarauderBastionRunsWithoutFuelAndRestoresItsDeadlineAfterCheckpoint|FullyQualifiedName~CapitalTravelTests.RevelationJumpsAndPaysForSiegeThroughCheckpointReopen|FullyQualifiedName~CapitalTravelTests.ApostleJumpsAndAppliesPaidTriageArmorRepair|FullyQualifiedName~CapitalTravelTests.CombatCapitalCannotTakeStargateIntoHighSecurityOrWhileInSiege
+```
+
+After rebasing onto `3cdda38f`, the solution built in 15.70 seconds with zero warnings or errors. The overlap filter passed
+**15 tests** in 16.64 seconds, including the career-agent repair lesson and the resident remote-repair path.
+
+```text
+FullyQualifiedName~CapitalTravelTests.MarauderBastionRunsWithoutFuelAndRestoresItsDeadlineAfterCheckpoint|FullyQualifiedName~CapitalTravelTests.RevelationJumpsAndPaysForSiegeThroughCheckpointReopen|FullyQualifiedName~CapitalTravelTests.ApostleJumpsAndAppliesPaidTriageArmorRepair|FullyQualifiedName~CapitalTravelTests.CombatCapitalCannotTakeStargateIntoHighSecurityOrWhileInSiege|FullyQualifiedName~CareerMissionTests.SoldierModuleLessonsRequireTheMatchingTargetAndPaidRepairCycle|FullyQualifiedName~RemoteRepairTests.WarmRemoteRepairPaysAndSettlesOnceOnResidentWorld|FullyQualifiedName~ShipContentCoverageTests
+```
+
+The final exact-method replay on `1547ae5f` passed in 8.39 seconds after an 11.58-second build. The catalog setup and
+formatting policy suites passed 8 and 9 cases. `Format.ps1 -Check` and the whitespace check passed. The full .NET suite
+was outside the scope of this run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Activate Bastion in a Marauder with a running afterburner. Confirm the transformation,
+immobilization, module timer and remaining weapons timer when the cycle finishes.
+
 ## Configurable ship fitting budgets
 
 World configuration scales final CPU output, power output, calibration capacity and drone

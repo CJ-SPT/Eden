@@ -6,6 +6,7 @@ using Eden.Gameplay.Content;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -15,6 +16,7 @@ using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Defenses;
 using Eden.World.Drones;
+using Eden.World.Flight;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
@@ -236,6 +238,9 @@ internal static class ShipContentAudit
                     role is HullCapability.BreacherPods or HullCapability.Bombs
                     || role == HullCapability.Interdiction && hullClass is HullClass.Interdictor or HullClass.HeavyInterdictionCruiser
                     || role == HullCapability.CommandBursts && roles.GetValueOrDefault(role)
+                    || role == HullCapability.ShipModes
+                        && hullClass == HullClass.Marauder
+                        && CapitalModeCatalog.Supported(catalog, CapitalModeRules.BastionOne)
                 );
         }
         var attributes = catalog.FittingAttributes(type.Id);

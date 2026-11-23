@@ -55,7 +55,7 @@ public sealed class TechTwoHullTests
         Assert.True(AssaultDamageControlCatalog.ConsumersAdmitted(catalog));
         Assert.NotNull(FittingCatalog.Definition(catalog, 580));
         Assert.NotNull(FittingCatalog.Definition(catalog, CapitalModeRules.SiegeOne));
-        Assert.Null(FittingCatalog.Definition(catalog, 33400));
+        Assert.NotNull(FittingCatalog.Definition(catalog, CapitalModeRules.BastionOne));
         var entries = ShipContentAudit.Read(catalog).Entries;
         foreach (int type in Hulls().Select(h => (int)h[0]))
         {

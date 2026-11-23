@@ -1,5 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 
 namespace Eden.Protocol.Flight;
 
@@ -12,14 +14,17 @@ internal sealed partial class FlightSession
     internal bool CapitalModuleActive =>
         capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId
         || capitalTravel?.Portal(Pilot.PilotId)?.ShipId == Pilot.ShipId
-        || Pilot.ShipGroupId is (int)Eden.Gameplay.Ships.HullClass.Titan or (int)Eden.Gameplay.Ships.HullClass.LancerDreadnought
+        || Pilot.ShipGroupId is (int)HullClass.Titan or (int)HullClass.LancerDreadnought
             && capitalTravel?.DoomsdayMovementLocked(Pilot.ShipId) == true
-        || CapitalTravelRules.RestrictedCapital(Pilot.ShipGroupId) && capitalTravel?.Mode(Pilot.ShipId) is not null;
+        || CapitalModeRules.CanUseMode(Pilot.ShipGroupId) && capitalTravel?.Mode(Pilot.ShipId) is not null;
+
+    private bool BastionActive =>
+        Pilot.ShipGroupId == (int)HullClass.Marauder && capitalTravel?.Mode(Pilot.ShipId)?.Effect == DogmaEffect.Bastion;
 
     internal bool MobileSiege =>
         Pilot.ShipTypeId == CapitalModeRules.Sarathiel
         && capitalTravel?.Field(Pilot.PilotId)?.ShipId != Pilot.ShipId
-        && capitalTravel?.Mode(Pilot.ShipId)?.Effect == Eden.Gameplay.Inventory.DogmaEffect.CapitalSiege;
+        && capitalTravel?.Mode(Pilot.ShipId)?.Effect == DogmaEffect.CapitalSiege;
 
     private bool CanNavigateInSiege(FlightCommand command) =>
         command
@@ -64,6 +69,12 @@ internal sealed partial class FlightSession
         Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0, 0, 0));
         PublishMotion();
         space.Publish(CreateContact());
+    }
+
+    internal void StopForBastion()
+    {
+        ReleaseTether();
+        StopForCapitalModule();
     }
 
     internal void StartCapitalJump(IPilotCapitalTravel travel, CapitalJumpRequest request, ISystemObjects systems)

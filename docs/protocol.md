@@ -501,6 +501,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Multifit exhausted-stack notifications](protocol/fitting.md#multifit-exhausted-stack-notifications-november-17-2026)
 - [heat during resident ship transitions](protocol/fitting.md#heat-during-resident-ship-transitions)
 - [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)
+- [Marauder Bastion modules](protocol/fitting.md#marauder-bastion-modules)
 - [Multifit item-creation capability, November 9, 2026](protocol/fitting.md#multifit-item-creation-capability-november-9-2026)
 - [Native MultiFit Create Missing](protocol/fitting.md#native-multifit-create-missing)
 - [CPU and power-grid skill budgets, November 9, 2026](protocol/fitting.md#cpu-and-power-grid-skill-budgets-november-9-2026)

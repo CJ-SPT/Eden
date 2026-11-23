@@ -111,6 +111,7 @@ public enum DogmaEffect
     IndustrialItemCompression = 8364,
     CapitalTriage = 6581,
     CapitalSiege = 6582,
+    Bastion = 6658,
     TitanJumpPortalGeneration = 2152,
     SuperWeaponAmarr = 4489,
     SuperWeaponCaldari = 4490,

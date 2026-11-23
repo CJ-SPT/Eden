@@ -10,6 +10,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
+using Eden.World.Flight;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
@@ -126,6 +127,10 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        if (PilotCapitalTravelStore.ActiveMode(world, pilot.ActiveShipId, now)?.Effect == DogmaEffect.Bastion)
+        {
+            throw new InvalidDataException("Bastion prevents activating propulsion modules.");
+        }
         var module = world.Set<OwnedItem>().Find(moduleId);
         IReadOnlySet<DogmaEffect> effects = module is null ? new HashSet<DogmaEffect>() : FittingCatalog.Effects(catalog, module.TypeId);
         var activation = effects.Contains(DogmaEffect.Microwarpdrive) ? DogmaEffect.Microwarpdrive : DogmaEffect.Afterburner;
@@ -222,11 +227,8 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
         {
             return 0;
         }
-        var active = world.Set<ActiveFittedModule>().SingleOrDefault(a => a.ModuleId == moduleId && a.ShipId == shipId);
-        if (active is not null)
+        if (StopActiveCycle(world, pilotId, shipId, moduleId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
         {
-            ShipHeatPersistence.CancelSource(world, pilotId, shipId, moduleId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            world.Remove(active);
             world.SaveChanges();
         }
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
@@ -235,5 +237,16 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
             .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
         transaction.Commit();
         return signature;
+    }
+
+    internal static bool StopActiveCycle(WorldAction world, long pilotId, long shipId, long moduleId, long now)
+    {
+        if (world.Set<ActiveFittedModule>().Find(moduleId) is not { } active || active.ShipId != shipId)
+        {
+            return false;
+        }
+        ShipHeatPersistence.CancelSource(world, pilotId, shipId, moduleId, now);
+        world.Remove(active);
+        return true;
     }
 }

@@ -7,6 +7,7 @@ using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
@@ -19,13 +20,15 @@ internal sealed partial class CapitalTravelHandler(
     CapitalInventorySignal fuelSignal,
     IPilotFitting? fitting = null,
     IPilotShipCompression? compression = null,
-    Eden.Protocol.Targeting.TargetingHandler? targeting = null
+    Eden.Protocol.Targeting.TargetingHandler? targeting = null,
+    PropulsionHandler? propulsion = null
 ) : ISelectedPilotCallHandler, IModuleEffectSource, IDisposable
 {
     internal const string CynoEffectName = "cynosuralGeneration";
     internal const string TitanPortalEffectName = "jumpPortalGeneration";
     internal const string PortalEffectName = "jumpPortalGenerationBO";
     private DogmaActiveEffect? _lastEffect;
+    private int _lastModeTypeId;
     private readonly ConcurrentQueue<(long Pilot, InventoryChange Change)> _fuelChanges = new();
     private long _recipient;
     private bool _subscribed;
@@ -307,12 +310,14 @@ internal sealed partial class CapitalTravelHandler(
         }
         AdvanceCompressors(context);
         AdvanceProtection(context);
+        var mode = pilot != 0 && CapitalModeRules.CanUseMode(context.Pilot.ShipGroupId) ? travel.Mode(context.Pilot.ShipId) : null;
+        var repeat = RepeatBastion(context, mode);
+        mode = repeat ?? mode;
         var current =
             pilot == 0 ? null
             : travel.Field(pilot) is { } field ? Effect(field)
             : travel.Portal(pilot) is { } portal ? Effect(portal)
-            : CapitalTravelRules.RestrictedCapital(context.Pilot.ShipGroupId) && travel.Mode(context.Pilot.ShipId) is { } mode
-                ? Effect(mode)
+            : mode is not null ? Effect(mode)
             : null;
         if (_lastEffect == current)
         {
@@ -320,36 +325,46 @@ internal sealed partial class CapitalTravelHandler(
         }
         if (_lastEffect is { } ended && context.Selected && ended.PilotId == context.Pilot.PilotId)
         {
-            context.NotificationsBeforeFlight.Add(new ShipEffectChanged(ended, Now, false, false, Now));
-            CapitalVisual(context.Flight, ended, false);
+            if (repeat is null)
+            {
+                context.NotificationsBeforeFlight.Add(new ShipEffectChanged(ended, Now, false, false, Now));
+            }
+            CapitalVisual(context.Flight, ended, false, _lastModeTypeId);
             if (
-                ended.ShipId == context.Pilot.ShipId
+                repeat is null
+                && ended.ShipId == context.Pilot.ShipId
                 && ended.Effect
                     is DogmaEffect.CapitalSiege
                         or DogmaEffect.CapitalTriage
+                        or DogmaEffect.Bastion
                         or DogmaEffect.CapitalIndustrialCore
                         or DogmaEffect.CloneJumpAccepting
                 && fitting is not null
             )
             {
-                context.Flight.RefreshFitting(fitting.ShipAttributes(pilot));
+                RefreshModeFitting(context, fitting.ShipAttributes(pilot), ended.Effect);
             }
         }
         _lastEffect = current;
+        _lastModeTypeId = mode?.TypeId ?? 0;
         if (current is { } active)
         {
-            context.NotificationsBeforeFlight.Add(new ShipEffectChanged(active, Now, true, true));
-            CapitalVisual(context.Flight, active, true);
+            // The native ramp continues uninterrupted when the next paid cycle begins.
+            if (repeat is null)
+            {
+                context.NotificationsBeforeFlight.Add(new ShipEffectChanged(active, Now, true, true));
+            }
+            CapitalVisual(context.Flight, active, true, _lastModeTypeId);
         }
     }
 
-    private static void CapitalVisual(FlightSession flight, DogmaActiveEffect effect, bool active)
+    private static void CapitalVisual(FlightSession flight, DogmaActiveEffect effect, bool active, int modeTypeId)
     {
         var graphic = effect.Effect switch
         {
             DogmaEffect.TitanJumpPortalGeneration => "effects.JumpPortal",
             DogmaEffect.CovertJumpPortalGeneration => "effects.JumpPortalBO",
-            DogmaEffect.CapitalSiege or DogmaEffect.CapitalIndustrialCore => "effects.SiegeMode",
+            DogmaEffect.CapitalSiege or DogmaEffect.Bastion or DogmaEffect.CapitalIndustrialCore => "effects.SiegeMode",
             DogmaEffect.CapitalTriage => "effects.TriageMode",
             _ => null,
         };
@@ -364,6 +379,7 @@ internal sealed partial class CapitalTravelHandler(
                             ? CapitalTravelRules.IndustrialPortalGenerator
                             : CapitalTravelRules.TitanPortalGenerator,
                         DogmaEffect.CovertJumpPortalGeneration => CapitalTravelRules.CovertPortalGenerator,
+                        DogmaEffect.Bastion => modeTypeId,
                         _ => 0,
                     },
                     0,
@@ -371,7 +387,7 @@ internal sealed partial class CapitalTravelHandler(
                     effect.StartTime,
                     effect.DurationMilliseconds ?? 0,
                     graphic,
-                    Offensive: false
+                    Offensive: effect.Effect == DogmaEffect.Bastion
                 ),
                 active
             );
@@ -406,7 +422,11 @@ internal sealed partial class CapitalTravelHandler(
 
     public void CancelModule(PilotCallContext context, long module)
     {
-        // A paid cyno is tied to its resident deadline and survives connection cleanup.
+        if (context.Selected)
+        {
+            CancelBastionRepeat(context.Pilot, module);
+        }
+        // Resident paid effects survive connection cleanup and end at their deadlines.
     }
 
     private static DogmaActiveEffect Effect(CynosuralField field) =>

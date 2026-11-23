@@ -80,7 +80,7 @@ internal sealed partial class FlightSession(
                 InWarp || PreparingWarp,
                 Cloaked,
                 ModuleEffects.WarpBlocked,
-                false
+                BastionActive
             )
         );
         Effects.Tether(Pilot.ShipId, next, _tether);

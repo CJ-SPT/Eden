@@ -15,10 +15,26 @@ internal static class CapitalModeCatalog
         CapitalModeRules.Effect(type) is { } effect
         && catalog.Read(CatalogData.Client.Types, (long)type)?.Published == 1
         && FittingCatalog.DefaultEffect(catalog, type) == effect
-        && catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.Duration) == CapitalModeRules.CycleMilliseconds
+        && catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.Duration) == CapitalModeRules.DurationMilliseconds(effect)
         && !Modifiers(catalog, type).IsDefaultOrEmpty;
 
     internal static ImmutableArray<PassiveModifier> Modifiers(CatalogDbContext catalog, int type) => catalog.Definition(s_modifiers, type);
+
+    internal static bool SharesStackingPenalty(int type, PassiveModifier modifier) =>
+        CapitalModeRules.Effect(type) == DogmaEffect.Bastion
+        && (
+            // Bastion's pre-multipliers share the damage control resonance buckets.
+            modifier.Operation == DogmaOperation.PreMultiply
+            || modifier.Attribute
+                is DogmaAttributeId.MaxRange
+                    or DogmaAttributeId.AccuracyFalloff
+                    or DogmaAttributeId.ShieldBonus
+                    or DogmaAttributeId.ArmorRepairAmount
+            || ModifiesMissileVelocity(modifier)
+        );
+
+    internal static bool ModifiesMissileVelocity(PassiveModifier modifier) =>
+        modifier is { Attribute: DogmaAttributeId.MaxVelocity, Selector: ModifierSelector.RequiredSkill };
 
     private static ImmutableArray<PassiveModifier> Load(CatalogDbContext catalog, int type)
     {

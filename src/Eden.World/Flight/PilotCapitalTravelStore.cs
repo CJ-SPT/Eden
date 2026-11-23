@@ -345,7 +345,11 @@ internal sealed partial class PilotCapitalTravelStore(
         }
         if (ActiveMode(world, shipId, now) is { } mode && !(allowSiegeMicroJump && mode.Effect == DogmaEffect.CapitalSiege))
         {
-            throw new InvalidDataException("Wait for the active capital mode to finish before moving the ship.");
+            throw new InvalidDataException(
+                mode.Effect == DogmaEffect.Bastion
+                    ? "Wait for Bastion to finish before moving the ship."
+                    : "Wait for the active capital mode to finish before moving the ship."
+            );
         }
         var field = world.Set<SavedCynosuralField>().Find(pilotId);
         if (field?.ShipId == shipId && Active(world, field, now))

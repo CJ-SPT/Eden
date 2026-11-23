@@ -31,6 +31,13 @@ public static class CapitalModeRules
     public const int IndustrialCoreOne = 28583;
     public const int IndustrialCoreTwo = 42890;
 
+    // Build 3662168 published Bastion modules, group 515 and effect 6658.
+    public const int BastionOne = 33400;
+    public const int ImperialNavyBastion = 93999;
+    public const int RepublicFleetBastion = 94008;
+    public const int FederationNavyBastion = 94009;
+    public const int CaldariNavyBastion = 94010;
+
     // Build 3662168 Clone Vat Bay I and its Cloning Facility Operation prerequisite.
     public const int CloneVatGroup = 815;
     public const int CloneVat = 23735;
@@ -38,11 +45,31 @@ public static class CapitalModeRules
     public const int CapitalIndustrialReconfiguration = 28585;
     public const int CapitalIndustrialShips = 28374;
     public const int CycleMilliseconds = 300_000;
+    private const int BastionCycleMilliseconds = 60_000;
     public const int Sarathiel = 87381;
     public const int SiegeSkill = 22043;
     public const int TriageSkill = 27906;
 
-    public static ReadOnlySpan<int> Types => [SiegeOne, SiegeTwo, TriageOne, TriageTwo, IndustrialCoreOne, IndustrialCoreTwo, CloneVat];
+    public static ReadOnlySpan<int> Types =>
+        [
+            SiegeOne,
+            SiegeTwo,
+            TriageOne,
+            TriageTwo,
+            IndustrialCoreOne,
+            IndustrialCoreTwo,
+            CloneVat,
+            BastionOne,
+            ImperialNavyBastion,
+            RepublicFleetBastion,
+            FederationNavyBastion,
+            CaldariNavyBastion,
+        ];
+
+    public static int DurationMilliseconds(DogmaEffect effect) =>
+        effect == DogmaEffect.Bastion ? BastionCycleMilliseconds : CycleMilliseconds;
+
+    public static bool CanUseMode(int group) => CapitalTravelRules.RestrictedCapital(group) || group == (int)HullClass.Marauder;
 
     public static DogmaEffect? Effect(int type) =>
         type switch
@@ -51,6 +78,7 @@ public static class CapitalModeRules
             TriageOne or TriageTwo => DogmaEffect.CapitalTriage,
             IndustrialCoreOne or IndustrialCoreTwo => DogmaEffect.CapitalIndustrialCore,
             CloneVat => DogmaEffect.CloneJumpAccepting,
+            BastionOne or ImperialNavyBastion or RepublicFleetBastion or FederationNavyBastion or CaldariNavyBastion => DogmaEffect.Bastion,
             _ => null,
         };
 
@@ -65,6 +93,7 @@ public static class CapitalModeRules
             DogmaEffect.CapitalSiege => HullClass.Dreadnought,
             DogmaEffect.CapitalTriage => HullClass.ForceAuxiliary,
             DogmaEffect.CapitalIndustrialCore => HullClass.CapitalIndustrial,
+            DogmaEffect.Bastion => HullClass.Marauder,
             _ => HullClass.Unclassified,
         };
 

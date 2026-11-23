@@ -259,6 +259,9 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
   apply paid heat and module damage. Nanite paste repairs supported module damage.
   [Weapon and module records](protocol/fitting.md) ·
   [Overheating](protocol/fitting.md#complete-overheating-and-native-controls-november-8-2026)
+- **Marauders.** Bastion Module I and its faction variants stop propulsion and apply the catalog's weapon, repair and resistance
+  modifiers during their 60-second cycles. The weapons timer continues for 60 seconds after the cycle ends.
+  [Marauder Bastion modules](protocol/fitting.md#marauder-bastion-modules)
 - **Mobility and electronic warfare.** Use supported propulsion, cloaks, micro jumps, tackle, capacitor warfare and remote
   assistance. Interdictors, focused HIC scripts and nullifiers have their own fitting and activation rules.
   [Travel](protocol/navigation.md) · [Interdiction](protocol/interdiction.md) · [Area weapons](protocol/area-weapons.md)

@@ -21,6 +21,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
+using Eden.World.Flight;
 using Eden.World.Information;
 using Eden.World.Inventory;
 using Eden.World.Mining;
@@ -274,7 +275,11 @@ internal sealed partial class PilotDroneStore
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot!);
         if (
             PilotHealthStore.Read(world, id, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed
-            || profile.Repair && attributes.GetValueOrDefault(DogmaAttributeId.DisallowAssistance) != 0
+            || profile.Repair
+                && (
+                    attributes.GetValueOrDefault(DogmaAttributeId.DisallowAssistance) != 0
+                    || PilotCapitalTravelStore.ActiveMode(world, id, now)?.Effect == DogmaEffect.Bastion
+                )
         )
         {
             return null;
