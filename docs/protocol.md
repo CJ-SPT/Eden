@@ -782,6 +782,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Warp disruption and Upwell docking](protocol/structures.md#warp-disruption-and-upwell-docking)
 - [Structures gap audit](protocol/structures.md#structures-gap-audit)
 - [Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)
 - [Cargo Deposit at FLEX navigation structures](protocol/structures.md#cargo-deposit-at-flex-navigation-structures)

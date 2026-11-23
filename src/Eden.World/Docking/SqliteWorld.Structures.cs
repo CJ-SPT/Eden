@@ -1,12 +1,12 @@
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
-using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Propulsion;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Structures;
@@ -40,19 +40,9 @@ public sealed partial class SqliteWorld
         {
             throw new InvalidDataException("Docking access, structure state or ship size prevents docking here.");
         }
-        if (
-            world
-                .Filter<Eden.Data.World.Propulsion.WorldTackle>(row =>
-                    row.TargetId == shipId && row.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship && row.ExpiresAt > now
-                )
-                .AsEnumerable()
-                .Any(row =>
-                    Eden.Gameplay.Propulsion.InterdictionRules.Focused(row.Effect) || row.Effect == DogmaEffect.StructureWarpDisruptor
-                )
-            && world.Attributes(pilotId).GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0
-        )
+        if (PilotTackleStore.BlocksUpwellDocking(world, catalog, pilotId, shipId, structure.SystemId, now))
         {
-            throw new InvalidDataException("Focused warp disruption prevents docking at a player structure.");
+            throw new InvalidDataException("Active warp disruption prevents docking at a player structure.");
         }
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Dock, now);
         Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(world, pilot, structure.SystemId, type.GroupId);
