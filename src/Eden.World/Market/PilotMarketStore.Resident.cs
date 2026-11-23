@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -22,16 +23,14 @@ internal sealed partial class PilotMarketStore
 {
     private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
+    private static int MarketSystem(WorldAction world, CatalogDbContext catalog, Ship ship) =>
+        ship.Position?.SystemId
+        ?? (ship.StructureId is long structure ? world.StructureSystemId(structure) : Station(catalog, ship.StationId).SolarSystemId);
+
     private static CatalogStationDefinition PurchaseStation(WorldAction world, CatalogDbContext catalog, Pilot pilot, int stationId)
     {
         var station = Station(catalog, stationId);
-        int systemId =
-            pilot.ActiveShip.Position?.SystemId
-            ?? (
-                pilot.ActiveShip.StructureId is long structureId
-                    ? world.StructureSystemId(structureId)
-                    : Station(catalog, pilot.ActiveShip.StationId).SolarSystemId
-            );
+        int systemId = MarketSystem(world, catalog, pilot.ActiveShip);
         if (catalog.RequireSystem(systemId).RegionId != station.RegionId)
         {
             throw new InvalidDataException("Buy from a station in your current region.");

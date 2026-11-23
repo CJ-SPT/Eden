@@ -7,6 +7,39 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Regional market location while docked at Upwell structures
+
+Resident order books, system and region best asks, and regional price history now use the docked structure's actual
+system and region. Immediate purchase validation uses the same location. Station best asks return an empty summary
+when the pilot is docked at an Upwell structure because Eden currently stores orders at NPC stations. This prevents
+old NPC station asks from resurfacing through the summary cache even for a structure in the same system.
+
+Inert inspection of build 3662168 `code.ccp` (SHA-256 `849e408861af5d85bd09d69e440d97fe06d021f306530b4abbe328180df57e31`)
+confirmed the related market calls and location fields in `eve/client/script/ui/services/marketsvc.pyj`.
+Local EVE.js 261108.1 `marketProxyService.js` (SHA-256 `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`)
+uses the session region for type books and region bests, the current system for system asks, and the station or structure
+for location-scoped asks. The native regional context and activity are also described by
+[CCP's Trading for Profit guide](https://www.eveonline.com/news/view/eve-academy-trading-for-profit) and
+[EVE University’s Upwell structure guide](https://wiki.eveuniversity.org/Upwell_structure).
+
+### Automated validation
+
+The exact `StandardMarketTests.StructureDockingUsesCurrentMarketRegionSystemAndHistory` filter reproduced the wrong
+book in both market paths before the fix. The final two cases passed in 16.95 seconds of test command time. The
+`StandardMarketTests`, `RemoteMarketTests`, `ResidentMarketHistoryTests` and `MarketSummaryPerformanceTests` filters
+passed 59 cases in 26.30 seconds, including warmed cache behavior. A broader run passed 83 of 84 cases. The
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` fixture failed while removing its
+locked `world.sqlite.owner` file on both this change and the unchanged `89065bd6` baseline.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Open the market after docking at an Upwell structure in another region and compare regional orders and price history
+with the NPC station market in that region.
+
 ## Star map Industry filters, November 20, 2026
 
 The native Industry menu shows starts over the last 24 hours for all jobs and for manufacturing,

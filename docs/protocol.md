@@ -628,6 +628,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Regional market location while docked at Upwell structures](protocol/industry.md#regional-market-location-while-docked-at-upwell-structures)
 - [Market preset changes and demand batching](protocol/industry.md#market-preset-changes-and-demand-batching)
 - [Development market supply for bots](protocol/industry.md#development-market-supply-for-bots)
 - [Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
