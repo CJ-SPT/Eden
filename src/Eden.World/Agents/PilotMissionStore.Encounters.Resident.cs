@@ -18,6 +18,60 @@ namespace Eden.World.Agents;
 
 internal sealed partial class PilotMissionStore
 {
+    internal static bool RequiresHealthWaveSettlement(WorldAction world, CatalogDbContext catalog, WorldNpc npc)
+    {
+        if (
+            npc.AnchorKind != NpcAnchorKind.Mission
+            || npc.Role == NpcRole.MissionStructure
+            || world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId) is not { State: MissionState.Accepted } mission
+        )
+        {
+            return false;
+        }
+        var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        return profile.HealthWaves.Contains(npc.TypeId)
+            && world.Set<SavedMissionMember>().Find(npc.Id) is { } member
+            && profile
+                .HealthWaves[npc.TypeId]
+                .Any(entry => entry.Trigger.SourceWave == member.Wave && !WaveStarted(world, mission, profile, entry.Wave));
+    }
+
+    internal static void NpcHealthChanged(
+        WorldAction world,
+        CatalogDbContext catalog,
+        WorldNpc npc,
+        HullDamage before,
+        HullDamage after,
+        HullDefense defense,
+        long now
+    )
+    {
+        if (
+            world is not EconomyTransaction
+            || world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId) is not { State: MissionState.Accepted } mission
+            || mission.ExpiresAt <= now
+        )
+        {
+            return;
+        }
+        var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        if (!profile.HealthWaves.Contains(npc.TypeId) || world.Set<SavedMissionMember>().Find(npc.Id) is not { } member)
+        {
+            return;
+        }
+        foreach (var (wave, trigger) in profile.HealthWaves[npc.TypeId])
+        {
+            if (
+                member.Wave == trigger.SourceWave
+                && MissionEncounterRules.CrossesHealthThreshold(before, after, defense, trigger.Layer, trigger.RemainingFraction)
+                && !WaveStarted(world, mission, profile, wave)
+            )
+            {
+                Spawn(world, catalog, mission, profile, wave, now);
+            }
+        }
+    }
+
     internal static void Killed(WorldAction world, CatalogDbContext catalog, WorldNpc npc, long now)
     {
         if (npc.AnchorKind != NpcAnchorKind.Mission)
@@ -285,7 +339,7 @@ internal sealed partial class PilotMissionStore
                 }
             );
         }
-        if (profile.Definition.Waves[wave].Trigger != MissionWaveTrigger.RoomArrivalDelay)
+        if (!IsIndependentWave(profile.Definition.Waves[wave]))
         {
             var progress =
                 world.Set<SavedMissionRoom>().Find(mission.Id, roomId)

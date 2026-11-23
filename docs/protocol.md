@@ -65,6 +65,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Agent missions and research
 
+- [NPC health reinforcement triggers](protocol/agents.md#npc-health-reinforcement-triggers--november-23-2026)
 - [Timed mission reinforcements](protocol/agents.md#timed-mission-reinforcements--november-23-2026)
 - [Rogue Drone Harassment](protocol/agents.md#rogue-drone-harassment--november-23-2026)
 - [Level-four Mordus Headhunters](protocol/agents.md#level-four-mordus-headhunters--november-23-2026)

@@ -32,14 +32,18 @@ public enum MissionWaveTrigger
     HackResolved,
     Delivery,
     RoomArrivalDelay,
+    NpcHealthThreshold,
 }
+
+public sealed record MissionNpcHealthTrigger(int SourceWave, int NpcTypeId, MissionHealthLayer Layer, double RemainingFraction);
 
 public sealed record MissionWave(
     ImmutableArray<MissionSpawnGroup> Groups,
     int RoomId = 0,
     MissionWaveTrigger Trigger = MissionWaveTrigger.PreviousWaveCleared,
     long TriggerObjectId = 0,
-    long DelayTicks = 0
+    long DelayTicks = 0,
+    MissionNpcHealthTrigger? HealthTrigger = null
 );
 
 public sealed record MissionCareerVisitDefinition(long ObjectId, double Range, bool RemoveObject = false, double ThermalDamage = 0)

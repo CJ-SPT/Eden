@@ -2,6 +2,36 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## NPC health reinforcement triggers — November 23, 2026
+
+A mission definition can start an independent wave when applied damage reduces a specific earlier NPC's shield, armor,
+or hull across an authored remaining-health fraction. The target must be a guaranteed singleton of the declared type in
+the declared source wave and room. A fraction of one means first damage to that layer. A fraction of zero means depletion.
+One hit can cross several thresholds, including a fatal hit. The authored wave order controls settlement when several
+thresholds cross on the same hit.
+
+The resident damage action spawns the reinforcement and records its members before kill settlement. Turrets and drones
+use that action for targets with pending health triggers. The members persist through checkpoints and prevent a repaired
+NPC from starting the same wave again. Health-triggered waves preserve the
+kill-triggered progression cursor and must spawn before they can satisfy a required clear. The mechanic is exercised in
+an original synthetic encounter. Player mission reports establish the use of health-based reinforcement in this class of
+encounter. [EVE University report](https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_4))
+
+**Automated validation**
+
+Both `MissionHealthWaveTests` cases passed in 12 seconds. The combined filter included `MissionReinforcementTests`,
+`MissionStructureTests`, `MissionGateTests`, `LiveCombatObjectTests`, and `ResidentDroneTests`. All 73 cases passed in
+64.16 seconds after an 8.19-second warning-free solution build. The mission content, catalog, and formatting Python
+suites passed 19, eight, and nine checks. Formatting and whitespace checks passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ## Timed mission reinforcements — November 23, 2026
 
 Mission definitions can schedule a wave after a positive delay from the first arrival in its room. The resident mission

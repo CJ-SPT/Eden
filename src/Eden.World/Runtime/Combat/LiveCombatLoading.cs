@@ -17,6 +17,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
+using Eden.World.Agents;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -176,6 +177,7 @@ internal sealed partial class LiveCombatRuntime
             Name = npc.Name ?? type.Name,
             AnchorKind = npc.AnchorKind,
             AnchorId = npc.AnchorKind == NpcAnchorKind.Anomaly ? npc.EncounterId : npc.BeltId,
+            RequiresMissionDamageSettlement = PilotMissionStore.RequiresHealthWaveSettlement(world, catalog, npc),
             StandingThresholds = profile.StandingThresholds,
             MissileRange = missileRange,
             RepairProfile = NpcRepairRules.Profile(attributes),

@@ -270,11 +270,12 @@ internal sealed partial class LiveCombatRuntime
             {
                 npc = null;
             }
-            // Mining alerts and inventory return retain the existing transaction boundary.
+            // Mission waves, mining alerts and inventory return retain the existing transaction boundary.
             if (
                 npc is not null
                 && (
-                    NpcPopulationRules.IsMining(npc.Role)
+                    npc.RequiresMissionDamageSettlement
+                    || NpcPopulationRules.IsMining(npc.Role)
                     || npc.Role is NpcRole.Concord or NpcRole.Sentry or NpcRole.MilitiaHub or NpcRole.MilitiaObjective
                 )
             )

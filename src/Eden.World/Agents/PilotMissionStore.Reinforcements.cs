@@ -111,8 +111,11 @@ internal sealed partial class PilotMissionStore
     private static bool IsArrivalTimer(MissionProfile profile, int wave) =>
         profile.Definition.Waves[wave].Trigger == MissionWaveTrigger.RoomArrivalDelay;
 
+    private static bool IsIndependentWave(MissionWave wave) =>
+        wave.Trigger is MissionWaveTrigger.RoomArrivalDelay or MissionWaveTrigger.NpcHealthThreshold;
+
     internal static bool WaveStarted(WorldAction world, SavedMission mission, MissionProfile profile, int wave) =>
-        IsArrivalTimer(profile, wave)
+        IsIndependentWave(profile.Definition.Waves[wave])
             ? world.Filter<SavedMissionMember>(m => m.MissionId == mission.Id && m.Wave == wave).Any()
             : (
                 world.Set<SavedMissionRoom>().Find(mission.Id, profile.WaveRoom(wave))?.Wave

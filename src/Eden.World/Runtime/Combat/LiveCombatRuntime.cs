@@ -155,8 +155,12 @@ internal sealed partial class LiveCombatRuntime(
         {
             throw new InvalidDataException("Sentry guns cannot be targeted.");
         }
-        // Mining alerts and cargo state share the paid shot's world action.
-        if (NpcPopulationRules.IsMining(target.Role) || target.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
+        // Mission waves and NPC side effects share the paid shot's world action.
+        if (
+            target.RequiresMissionDamageSettlement
+            || NpcPopulationRules.IsMining(target.Role)
+            || target.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective
+        )
         {
             return null;
         }

@@ -30,6 +30,12 @@ internal sealed record MissionProfile(
 {
     internal int WaveRoom(int wave) => Definition.Waves[wave].RoomId == 0 ? Rooms[0].Id : Definition.Waves[wave].RoomId;
 
+    internal ILookup<int, (int Wave, MissionNpcHealthTrigger Trigger)> HealthWaves { get; } =
+        Definition
+            .Waves.Select((wave, index) => (Wave: index, Trigger: wave.HealthTrigger))
+            .Where(entry => entry.Trigger is not null)
+            .ToLookup(entry => entry.Trigger!.NpcTypeId, entry => (entry.Wave, entry.Trigger!));
+
     internal MissionKind Kind =>
         ArcInteraction
         ?? (
@@ -779,8 +785,18 @@ internal static class MissionCatalog
         {
             throw new InvalidDataException("The career wreck's reserved slot is occupied.");
         }
-        foreach (var wave in definition.Waves)
+        for (int i = 0; i < definition.Waves.Length; i++)
         {
+            var wave = definition.Waves[i];
+            if (wave.Trigger == MissionWaveTrigger.NpcHealthThreshold)
+            {
+                ValidateHealthWave(catalog, definition, i, rooms[0].Id);
+                continue;
+            }
+            if (wave.HealthTrigger is not null)
+            {
+                throw new InvalidDataException("Mission wave health thresholds require an NPC health trigger.");
+            }
             if (wave.Trigger == MissionWaveTrigger.RoomArrivalDelay)
             {
                 if (wave.DelayTicks <= 0 || wave.TriggerObjectId != 0 || wave.Groups.IsDefaultOrEmpty || wave.Groups.Any(g => g.Count <= 0))
@@ -818,6 +834,38 @@ internal static class MissionCatalog
             }
         }
         return rooms.ToImmutableArray();
+    }
+
+    private static void ValidateHealthWave(CatalogDbContext catalog, MissionDefinition definition, int index, int firstRoom)
+    {
+        var wave = definition.Waves[index];
+        if (
+            wave.HealthTrigger is not { } trigger
+            || trigger.SourceWave < 0
+            || trigger.SourceWave >= index
+            || trigger.NpcTypeId <= 0
+            || !double.IsFinite(trigger.RemainingFraction)
+            || trigger.RemainingFraction is < 0 or > 1
+            || !Enum.IsDefined(trigger.Layer)
+            || wave.TriggerObjectId != 0
+            || wave.DelayTicks != 0
+            || wave.Groups.IsDefaultOrEmpty
+            || wave.Groups.Any(g => g.Count <= 0)
+        )
+        {
+            throw new InvalidDataException("Invalid NPC health wave threshold or roster.");
+        }
+        var source = definition.Waves[trigger.SourceWave];
+        var candidates = source.Groups.Where(g => g.Types.Contains(trigger.NpcTypeId)).ToArray();
+        if (
+            candidates is not [{ Count: 1, Types.Length: 1 }]
+            || (wave.RoomId == 0 ? firstRoom : wave.RoomId) != (source.RoomId == 0 ? firstRoom : source.RoomId)
+            || MissionEncounterRules.LayerHealth(new NpcProfileCatalog().Read(catalog, trigger.NpcTypeId).Defense.Undamaged, trigger.Layer)
+                <= 0
+        )
+        {
+            throw new InvalidDataException("An NPC health wave needs one guaranteed NPC with that health layer in the same room.");
+        }
     }
 
     private static SpacePosition Position(ClientAtomsParametersInputsItemDefaultValueObject position) =>

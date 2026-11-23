@@ -132,7 +132,7 @@ internal sealed partial class PilotMissionStore
                 .ToArray();
             cleared =
                 waves.All(w =>
-                    IsArrivalTimer(profile, w) && !profile.Definition.Waves[w].Groups.Any(g => g.Required)
+                    IsIndependentWave(profile.Definition.Waves[w]) && !profile.Definition.Waves[w].Groups.Any(g => g.Required)
                     || WaveStarted(world, mission, profile, w)
                 ) && !required.Select(id => world.Set<WorldNpc>().Find(id)).Any(n => n is { DestroyedAt: null, RetiredAt: null });
         }

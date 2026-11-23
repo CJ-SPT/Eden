@@ -88,10 +88,6 @@ internal static partial class NpcDamagePersistence
             npc.Id,
             now
         );
-        if (npc.Role == NpcRole.MissionStructure && npc.AnchorKind == NpcAnchorKind.Mission && result.Applied > 0)
-        {
-            Eden.World.Agents.PilotMissionStore.CareerStructureDamaged(world, catalog, npc, now);
-        }
         var attacker =
             sourceParty ?? PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
         if (sourceType is > 0)
@@ -103,6 +99,17 @@ internal static partial class NpcDamagePersistence
         npc.ArmorDamage = defense.Armor - result.Remaining.Armor;
         npc.StructureDamage = defense.Structure - result.Remaining.Structure;
         npc.UpdatedAt = Math.Max(now, npc.UpdatedAt);
+        if (npc.AnchorKind == NpcAnchorKind.Mission && result.Applied > 0)
+        {
+            if (npc.Role == NpcRole.MissionStructure)
+            {
+                PilotMissionStore.CareerStructureDamaged(world, catalog, npc, now);
+            }
+            else
+            {
+                PilotMissionStore.NpcHealthChanged(world, catalog, npc, health, result.Remaining, defense, now);
+            }
+        }
         NpcRepairPersistence.Advance(npc, attributes, now);
         NpcBounty? reward = null;
         var aggression = world.Set<NpcAggression>().Find(npc.Id);
