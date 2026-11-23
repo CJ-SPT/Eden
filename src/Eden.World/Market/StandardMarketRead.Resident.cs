@@ -52,8 +52,8 @@ internal sealed partial class PilotMarketStore
         using var world = live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        int station = pilot.ActiveShip.StationId;
-        int system = pilot.ActiveShip.Position?.SystemId ?? Station(catalog, station).SolarSystemId;
+        int station = pilot.ActiveShip.StructureId is null ? pilot.ActiveShip.StationId : 0;
+        int system = MarketSystem(world, catalog, pilot.ActiveShip);
         int region = catalog.RequireSystem(system).RegionId;
         if (typeId is int selected)
         {

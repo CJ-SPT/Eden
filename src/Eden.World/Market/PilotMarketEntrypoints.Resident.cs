@@ -253,13 +253,15 @@ internal sealed partial class PilotMarketStore
         using var world = live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        var station = Station(catalog, pilot.ActiveShip.StationId);
-        if (pilot.ActiveShip.Position is null && HasMarket(catalog, station))
+        // Ship.StationId still identifies the last NPC station while docked at an Upwell structure.
+        var localStation = pilot.ActiveShip.StructureId is null ? Station(catalog, pilot.ActiveShip.StationId) : null;
+        int stationId = localStation?.Id ?? 0;
+        if (pilot.ActiveShip.Position is null && localStation is not null && HasMarket(catalog, localStation))
         {
             using var seed = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.seedLocal");
-            Seed(world, catalog, station, typeId, includeDemand: scope is null);
+            Seed(world, catalog, localStation, typeId, includeDemand: scope is null);
         }
-        int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
+        int system = MarketSystem(world, catalog, pilot.ActiveShip);
         int region = catalog.RequireSystem(system).RegionId;
         var kind = MarketKind(world);
         if (world.Settings.Economy.StandardMarket)
@@ -278,7 +280,7 @@ internal sealed partial class PilotMarketStore
                 .Distinct()
                 .ToArray();
             var hub = RegionalMarketCatalog.Read(catalog).Hubs.GetValueOrDefault(region);
-            foreach (int known in knownStations.Append(hub?.Station.Id ?? station.Id).Distinct().Where(id => id != station.Id))
+            foreach (int known in knownStations.Append(hub?.Station.Id ?? stationId).Distinct().Where(id => id != 0 && id != stationId))
             {
                 SeedInstitutional(world, catalog, catalog.RequireStation(known));
                 regional.Advance(world, catalog, region, known, Now, typeId, includeDemand: scope is null);
@@ -294,7 +296,7 @@ internal sealed partial class PilotMarketStore
         }
         query = scope switch
         {
-            MarketScope.Station => query.Where(o => o.StationId == station.Id && !o.Bid),
+            MarketScope.Station => query.Where(o => o.StationId == stationId && !o.Bid),
             MarketScope.System => query.Where(o => o.SystemId == system && !o.Bid),
             MarketScope.Region => query.Where(o => !o.Bid),
             null => query,
@@ -344,7 +346,7 @@ internal sealed partial class PilotMarketStore
         }
         personal = scope switch
         {
-            MarketScope.Station => personal.Where(o => o.StationId == station.Id && !o.Bid),
+            MarketScope.Station => personal.Where(o => o.StationId == stationId && !o.Bid),
             MarketScope.System => personal.Where(o => o.SystemId == system && !o.Bid),
             MarketScope.Region => personal.Where(o => !o.Bid),
             _ => personal,
@@ -376,12 +378,12 @@ internal sealed partial class PilotMarketStore
             }
         }
         world.Commit();
-        return new(pilotId, pilot.ActiveShipId, station.Id, system, region, Array.AsReadOnly(book), expires, activeUntil);
+        return new(pilotId, pilot.ActiveShipId, stationId, system, region, Array.AsReadOnly(book), expires, activeUntil);
 
         bool InScope(EconomyNpcMarketOrder order) =>
             scope switch
             {
-                MarketScope.Station => order.StationId == station.Id && !order.Bid,
+                MarketScope.Station => order.StationId == stationId && !order.Bid,
                 MarketScope.System => order.SystemId == system && !order.Bid,
                 MarketScope.Region => !order.Bid,
                 null => true,
@@ -429,7 +431,7 @@ internal sealed partial class PilotMarketStore
         using var world = live.Economy.Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        int system = pilot.ActiveShip.Position?.SystemId ?? Station(catalog, pilot.ActiveShip.StationId).SolarSystemId;
+        int system = MarketSystem(world, catalog, pilot.ActiveShip);
         int region = catalog.RequireSystem(system).RegionId;
         var now = clock.GetUtcNow().UtcDateTime;
         long end = now.ToFileTimeUtc();

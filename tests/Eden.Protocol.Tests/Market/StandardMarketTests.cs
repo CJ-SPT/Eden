@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Eden.Data.Catalog.Market;
 using Eden.Data.World.Market;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
@@ -32,6 +33,109 @@ public sealed class StandardMarketTests
     private const int Tritanium = 34;
     private const int Pyerite = 35;
     private const long StartingBalance = 10_000_000;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StructureDockingUsesCurrentMarketRegionSystemAndHistory(bool standard)
+    {
+        const int foreignStation = 60000001;
+        const int foreignSystem = 30000001;
+        const int foreignRegion = 10000003;
+        const long homeStructureId = 1100000000000;
+        const long foreignStructureId = 1100000000001;
+        TestClock clock = new();
+        using TestWorld fixture = standard ? Create(clock) : new(clock: clock);
+        WorldDatabase database = new(fixture.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO Region(Id,Name) VALUES (10000003,'Other region');
+                INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000021,10000003,'Other constellation');
+                INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000001,20000021,'Other system');
+                INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
+                    SELECT 60000001,TypeId,OwnerId,30000001,OperationId,OrbitId,X,Y,Z FROM Station WHERE Id=60003760;
+                """
+            );
+        }
+        using var host = ServerServices.Build(database, clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        var market = host.GetRequiredService<IPilotMarket>();
+        long ship = fixture.Store.FindPilot(1000001)!.ShipId;
+        using (var setup = live.Economy.Begin())
+        {
+            SeedMarket(Hub, SystemId, Region, 20);
+            SeedMarket(foreignStation, foreignSystem, foreignRegion, 30);
+            setup.Add(new SavedStructure { Id = homeStructureId, SystemId = SystemId });
+            setup.Add(new SavedStructure { Id = foreignStructureId, SystemId = foreignSystem });
+            setup.Commit();
+
+            void SeedMarket(int station, int system, int region, int quantity)
+            {
+                long order = setup.Next("WorldPersonalOrder", PersonalMarketRules.FirstOrderId);
+                setup.Add(
+                    new SavedPersonalOrder
+                    {
+                        Id = order,
+                        PilotId = Pilot,
+                        StationId = station,
+                        SystemId = system,
+                        RegionId = region,
+                        TypeId = Tritanium,
+                        PriceCents = 50,
+                        Entered = quantity,
+                        Remaining = quantity,
+                        Issued = clock.Now,
+                        Modified = clock.Now,
+                        Expires = clock.Now + TimeSpan.TicksPerDay,
+                        DurationDays = 1,
+                    }
+                );
+                setup.Add(
+                    new MarketExecution
+                    {
+                        PilotId = Pilot,
+                        OrderId = order,
+                        StationId = station,
+                        TypeId = Tritanium,
+                        Quantity = quantity,
+                        PriceCents = 50,
+                        Time = clock.Now,
+                    }
+                );
+            }
+        }
+        foreach (var scope in Enum.GetValues<MarketScope>())
+        {
+            Assert.Equal(Hub, Assert.Single(market.BestAsks(Pilot, scope), order => order.TypeId == Tritanium).StationId);
+        }
+
+        DockAtStructure(homeStructureId);
+        Assert.Empty(market.BestAsks(Pilot, MarketScope.Station));
+        Assert.Equal(Hub, Assert.Single(market.BestAsks(Pilot, MarketScope.System), order => order.TypeId == Tritanium).StationId);
+
+        DockAtStructure(foreignStructureId);
+        Assert.Equal(foreignStation, Assert.Single(market.Orders(Pilot, Tritanium)).StationId);
+        Assert.Empty(market.BestAsks(Pilot, MarketScope.Station));
+        foreach (var scope in new[] { MarketScope.System, MarketScope.Region })
+        {
+            var asks = market.BestAsks(Pilot, scope);
+            Assert.Equal(foreignStation, Assert.Single(asks, order => order.TypeId == Tritanium).StationId);
+            Assert.Same(asks, market.BestAsks(Pilot, scope));
+        }
+        long today = clock.UtcNow.UtcDateTime.Date.ToFileTimeUtc();
+        Assert.Equal(30, Assert.Single(market.History(Pilot, [Tritanium]), day => day.Date == today).Volume);
+
+        void DockAtStructure(long structure)
+        {
+            using var travel = live.Economy.Begin();
+            var active = travel.Ships.Find(ship)!;
+            Assert.Equal(Hub, active.StationId);
+            active.StructureId = structure;
+            travel.Commit();
+        }
+    }
 
     [Fact]
     public async Task StandardReadinessKeepsFirstRegionalSummaryAndSettlementOffColdLoad()
