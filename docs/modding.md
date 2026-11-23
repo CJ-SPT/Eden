@@ -6,6 +6,10 @@ and client archive; the launcher verifies and installs that required set before 
 The SDK solution is directly at `F:/Git Repos/Eden Modding Tools/Eden.Modding.Tools.slnx`.
 Eden also supplies an optional [Regional Express](#regional-express) travel-route package.
 
+Administrators can upload a `.edenmod` file from their computer on the **Mods** page and install it into the current world.
+Packages staged on the server can also be installed by path. See [Docker package installation](docker.md#install-a-mod-package-on-a-docker-host)
+for the container paths and activation steps.
+
 ## Host commands
 
 Run from the repository root; append `--world PATH` when using a nondefault world. Commands exit without starting listeners.

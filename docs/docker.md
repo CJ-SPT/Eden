@@ -129,6 +129,17 @@ Not performed; agent client testing is disabled.
 Run the timing command on the Docker host for a source update after warming the cache and compare its publish time
 with the previous build. Build the replacement image while Eden is running, then recreate the service after it succeeds.
 
+## Install a mod package on a Docker host
+
+On the administration **Mods** page, choose the `.edenmod` file from your computer and select **Upload and install package**.
+To use **Install from a server path**, copy the package to the host data directory (`EDEN_HOST_DATA_DIR`, which defaults to
+`./src/Eden.Server/data`), make it readable by UID 1654, and enter `/data/<filename>.edenmod`. Eden runs inside the container
+as a non-root user and cannot read packages under `/root`.
+
+Installation fills in the package hash. Enable that hash to select the package, build the selected mod set, then restart Eden
+to activate it. For Docker builds, put the pinned original client archive in the configuration mount and enter `/config` as the
+source folder. The archive location and a CLI example are below.
+
 ## Enable AutoMining on a Docker host
 
 Copy the original **build 3662168** archive to `./deploy/.eden-original-code.ccp` on the Docker host. If you use

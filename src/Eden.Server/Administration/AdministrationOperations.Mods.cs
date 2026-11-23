@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Eden.Modding;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace Eden.Server.Administration;
 
@@ -21,6 +22,25 @@ internal sealed partial class AdministrationOperations
     {
         await Authorize(user);
         return mods.Install(request.Path);
+    }
+
+    internal async Task<string> UploadMod(ClaimsPrincipal user, IBrowserFile archive)
+    {
+        await Authorize(user);
+        await using var source = archive.OpenReadStream(ModPackages.MaximumBytes);
+        string path = Path.GetTempFileName();
+        try
+        {
+            await using (var staged = File.Create(path))
+            {
+                await source.CopyToAsync(staged);
+            }
+            return await InstallMod(user, new(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     internal async Task<ModSetStatus> SelectMod(ClaimsPrincipal user, AdminModSelection request)

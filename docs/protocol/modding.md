@@ -1,5 +1,34 @@
 # Modding protocol and activation
 
+## Administration package uploads
+
+Eden’s Docker image runs as UID 1654. The Mods page resolves server paths inside the container, where the Compose data
+mount is `/data` and `/root` is inaccessible to Eden. Browser uploads stream to a temporary server file with the existing
+128 MiB archive limit. The operation checks current administrator credentials before transfer and again before calling the
+existing installer, which validates the package and saves it by hash. Both the file picker and server path install return the
+hash to the same Enable control. Activation still requires a selected-set build and server restart.
+
+### Automated validation
+
+The exact upload regression passed in 9.72 seconds after a 26.34-second build. The solution built with zero warnings and
+errors. The final combined filter passed all 32 tests in 26.51 seconds after a 7.27-second build, using the pinned
+build-3662168 client directory for headless composition checks. The Python catalog and formatting policy suites passed
+8 and 9 tests, respectively.
+The root CSharpier scan included ignored worktree-recovery files. Formatting validation used the project source,
+tests, tools and repository configuration, along with the .NET style and line-width checks.
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.BrowserUploadInstallsValidatedModForCurrentAdministrator|FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.ModManagementRequiresCurrentAdministratorAndAntiforgeryAndRemovesWebSkillAuthoring|FullyQualifiedName~ModFoundationTests|FullyQualifiedName~TravelRouteModTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+On the Docker administration page, upload a local `.edenmod` file and verify that the installed package hash appears.
+
 ## Blank system information: integral gate coordinates — November 15, 2026
 
 The user's composition-8 trace identifies `InfoWindow._ReconstructInfoWindow` →

@@ -14,8 +14,19 @@
     <p role="status">@Message</p>
 }
 <fieldset disabled="@Busy">
-    <label>Package path on this host <input @bind="Archive" placeholder="C:\Mods\example.edenmod" /></label>
-    <button @onclick="Install">Install package</button>
+    <label>Mod package from your computer
+        <InputFile accept=".edenmod" OnChange="args => SelectedArchive = args.FileCount == 1 ? args.File : null" />
+    </label>
+    <button @onclick="InstallUpload" disabled="@(SelectedArchive is null)">Upload and install package</button>
+    <details>
+        <summary>Install from a server path</summary>
+        <label>Package path visible to Eden <input @bind="Archive" placeholder="@ArchiveExample" /></label>
+        @if (OperatingSystem.IsLinux())
+        {
+            <p>In Docker, use a readable path inside the container, such as a file in the mounted <code>/data</code> directory.</p>
+        }
+        <button @onclick="() => Install(user => Operations.InstallMod(user, new(Archive)))">Install package from path</button>
+    </details>
     <label>Installed package hash <input @bind="Hash" /></label>
     <button @onclick="() => Select(true)">Enable package</button>
     <button class="secondary" @onclick="() => Select(false)">Disable package</button>
@@ -39,9 +50,11 @@
 
 @code {
     private Eden.Modding.ModSetStatus? Status;
+    private IBrowserFile? SelectedArchive;
     private string Archive = "";
     private string Hash = "";
     private string ClientRoot = "";
+    private static string ArchiveExample => OperatingSystem.IsWindows() ? @"C:\Mods\example.edenmod" : "/data/example.edenmod";
     private static string ClientRootExample => OperatingSystem.IsWindows() ? @"E:\EdenDev\3662168" : "/config";
     private string? Message;
     private string? Error;
@@ -51,6 +64,10 @@
     private async Task<ClaimsPrincipal> User() => (await Authentication.GetAuthenticationStateAsync()).User;
     private async Task Act(Func<Task> action)
     {
+        if (Busy)
+        {
+            return;
+        }
         Busy = true;
         try
         {
@@ -58,7 +75,7 @@
             Error = null;
         }
         catch (Exception error) when (error is IOException or InvalidDataException or InvalidOperationException
-            or UnauthorizedAccessException or ArgumentException)
+            or UnauthorizedAccessException or ArgumentException or JsonException)
         {
             Error = error.Message;
         }
@@ -68,10 +85,13 @@
         }
     }
     private Task Load() => Act(async () => Status = await Operations.Mods(await User()));
-    private Task Install() => Act(async () =>
+    private Task InstallUpload() => SelectedArchive is { } archive ? Install(user => Operations.UploadMod(user, archive)) : Task.CompletedTask;
+    private Task Install(Func<ClaimsPrincipal, Task<string>> install) => Act(async () =>
     {
-        Hash = await Operations.InstallMod(await User(), new(Archive));
-        Status = await Operations.Mods(await User());
+        Message = null;
+        var user = await User();
+        Hash = await install(user);
+        Status = await Operations.Mods(user);
         Message = "Installed package. Enable its hash to add it to the selected set.";
     });
     private Task Select(bool enabled) => Act(async () =>

@@ -671,6 +671,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Modding
 
+- [Administration package uploads](protocol/modding.md#administration-package-uploads)
 - [Regional Express](protocol/modding.md#regional-express--november-15-2026)
 - [Client package retention](protocol/modding.md#client-package-retention--november-15-2026)
 
