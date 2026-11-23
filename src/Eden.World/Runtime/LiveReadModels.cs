@@ -10,7 +10,6 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
-using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
 using Eden.Gameplay.Thermal;
@@ -70,11 +69,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldFreeSkillPoints"
     );
     private readonly ResidentSnapshot<long, long> _extraction = new("resident.extraction", "WorldSkillExtraction");
-    private readonly ResidentSnapshot<long, IReadOnlyList<LoyaltyBalance>> _loyalty = new(
-        "resident.loyalty",
-        "WorldPilot",
-        "WorldLoyaltyWallet"
-    );
     private readonly ResidentSnapshot<long, FrozenDictionary<DogmaAttributeId, double>> _fits = new(
         "resident.fit",
         "WorldFitRevision",
@@ -248,9 +242,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     internal long Extraction(long pilot, Func<long> load) => Read(_extraction, pilot, load);
 
-    internal IReadOnlyList<LoyaltyBalance> Loyalty(long pilot, Func<IReadOnlyList<LoyaltyBalance>> load) =>
-        Read(_loyalty, pilot, () => Array.AsReadOnly(load().ToArray()));
-
     internal IReadOnlyDictionary<DogmaAttributeId, double> Fit(long pilot, Func<IReadOnlyDictionary<DogmaAttributeId, double>> load) =>
         ReadSkillDependent(_fits, pilot, pilot, () => load().ToFrozenDictionary());
 
@@ -378,7 +369,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _points.Observe(changes, (pilot, change) => pilot == change.Id);
         _extraction.Observe(changes, (pilot, change) => pilot == change.Id);
-        _loyalty.Observe(changes, (pilot, change) => !change.Resident || pilot == change.Id);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         _autoMiningModules.Observe(changes, (key, change) => change.Table != "WorldFitRevision" || key.Pilot == change.Id);
         _autoMiningHolds.Observe(
@@ -429,7 +419,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _learning.Clear();
         _points.Clear();
         _extraction.Clear();
-        _loyalty.Clear();
         _fits.Clear();
         _defenseProfiles.Clear();
         _asteroids.Clear();

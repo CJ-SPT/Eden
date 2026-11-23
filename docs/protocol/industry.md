@@ -1458,6 +1458,41 @@ This run covered the integration on `563f0766`, before the incoming skill-bonus 
 
 **Optional maintainer checks:** Inspect research, copying and invention in the native Industry window after upgrading a copied save.
 
+## Personal LP balances across system jumps
+
+The reported Wallet Overview showed 160,000 Caldari Navy LP in Jita. A resident regression warmed Jita's wallet view, doubled
+the balance in Perimeter, and reproduced the 160,000 LP reply on returning to Jita. Wallet commits invalidated the current system's
+cache, leaving older balances in systems the pilot had visited.
+
+Eden now caches personal LP by pilot across all systems. The resident world invalidates that pilot's view on a committed balance change,
+and the Wallet read and notification poll use the same snapshot. Travel preserves the issuer balances and emits no LP change by itself.
+
+In pinned client build **3662168** (archive SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**),
+`LoyaltyPointsWalletSvc._LoadCharacterLPData` reads the per-issuer tuples from `LPSvc.GetAllMyCharacterWalletLPBalances`.
+`LPBalancePanel.GetScrollEntries` uses those amounts and resolves the nearest store independently. The local EVE.js **261108.1**
+reference's `GetAllMyCharacterWalletLPBalances` also reads character-owned issuer balances without using system membership.
+[EVE University Wallet and LP behavior](https://wiki.eveuniversity.org/Loyalty_Points)
+
+### Automated validation
+
+The exact `PersonalLpCreditStaysVisibleWhenReturningToJita` test reproduced the stale balance before the fix and passed
+afterward in 18.77 seconds. It verifies both sides of the Jita–Perimeter gate, an LP credit notification, a second issuer's
+unchanged points, and no travel-induced notification. The solution built in 10.59 seconds with zero warnings or errors.
+The focused filter below passed 61 cases in 33.65 seconds. The catalog and formatting policy suites passed 8 and 9 cases,
+respectively. Formatting verification and the line-width check also passed.
+
+```text
+FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~LoyaltyStoreTests|FullyQualifiedName~CorporationLoyaltyTests|FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~GateActivityProtocolTests|FullyQualifiedName~PilotBindingsTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Keep Wallet Overview open and compare the same issuer's LP before and after a gate jump into Jita.
+
 ## LP-wallet nearest-station lookup (November 9, 2026)
 
 The maintainer supplied an LP-wallet screenshot showing `Unsupported local call stationSvc.GetStationsForOwner`. Inert inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) confirmed that `LPStoreSvc.GetNearestDockableWithLPStoreForCorp(corpID)` calls this method with one corporation ID, iterates attribute-bearing rows, groups `stationID` values by `solarSystemID`, and chooses a destination through the client's existing jump-count logic. The [EVE University LP guide](https://wiki.eveuniversity.org/Loyalty_Points) also describes the wallet's nearest-station display. Consulted [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) for native value preservation; no codec changed.

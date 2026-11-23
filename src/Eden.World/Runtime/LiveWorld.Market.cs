@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime.Combat;
 
@@ -13,6 +14,8 @@ internal sealed partial class LiveWorld
     private const int CachedWalletLimit = 512;
     private readonly Lock _walletBalanceGate = new();
     private readonly Dictionary<long, long> _walletBalances = [];
+    private readonly Lock _loyaltyBalanceGate = new();
+    private readonly Dictionary<long, IReadOnlyList<LoyaltyBalance>> _loyaltyBalances = [];
 
     internal long WalletBalance(long pilotId)
     {
@@ -60,6 +63,77 @@ internal sealed partial class LiveWorld
                 if (change.Table == "WorldWallet" && _walletBalances.ContainsKey(change.Id))
                 {
                     _walletBalances[change.Id] = Economy.Peek<PilotWallet>(change.Id)?.Cents ?? 0;
+                }
+            }
+        }
+    }
+
+    internal IReadOnlyList<LoyaltyBalance> LoyaltyBalances(long pilotId)
+    {
+        if (_shared.Reads is null || HasOpenSqlTransaction || HasPersistenceOwnership && Economy.HasActiveAction)
+        {
+            return Run(Load);
+        }
+        lock (_loyaltyBalanceGate)
+        {
+            if (_loyaltyBalances.TryGetValue(pilotId, out var cached))
+            {
+                return cached;
+            }
+        }
+
+        return Run(() =>
+        {
+            // Personal balances travel with the pilot. Load and publish under the owner that observes their writes.
+            using var ownership = EnterShared("loyalty balance");
+            var balances = Load();
+            lock (_loyaltyBalanceGate)
+            {
+                if (_loyaltyBalances.Count >= CachedWalletLimit + CapsuleerJobs.Count)
+                {
+                    _loyaltyBalances.Clear();
+                }
+                _loyaltyBalances[pilotId] = balances;
+            }
+            return balances;
+        });
+
+        IReadOnlyList<LoyaltyBalance> Load() =>
+            Economy.Inspect(world =>
+            {
+                if (!world.PilotExists(pilotId))
+                {
+                    throw new InvalidDataException("Unknown loyalty wallet owner.");
+                }
+                return Array.AsReadOnly(
+                    world
+                        .Filter<SavedLoyaltyBalance>(b => b.PilotId == pilotId && b.Points > 0)
+                        .OrderBy(b => b.IssuerCorporationId)
+                        .Select(b => new LoyaltyBalance(b.IssuerCorporationId, b.Points))
+                        .ToArray()
+                );
+            });
+    }
+
+    private void ObserveLoyaltyBalances(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        if (!changes.Any(change => change.Table is "WorldPilot" or "WorldLoyaltyWallet" or "schema"))
+        {
+            return;
+        }
+        lock (_loyaltyBalanceGate)
+        {
+            foreach (var change in changes)
+            {
+                if (change.Table == "schema" || change.Table == "WorldLoyaltyWallet" && !change.Resident)
+                {
+                    // SQL change notifications carry row IDs for the composite wallet key.
+                    _loyaltyBalances.Clear();
+                    return;
+                }
+                if (change.Table is "WorldPilot" or "WorldLoyaltyWallet")
+                {
+                    _loyaltyBalances.Remove(change.Id);
                 }
             }
         }
