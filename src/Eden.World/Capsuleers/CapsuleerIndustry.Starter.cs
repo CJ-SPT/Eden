@@ -1,5 +1,6 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Contracts;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -22,6 +23,8 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
+    private readonly record struct OreSaleStock(long Id, int TypeId, int Quantity);
+
     internal static bool StarterTradeSettled(WorldAction world, long pilot) =>
         world.Filter<MarketExecution>(trade => trade.PilotId == pilot).Any(trade => trade.TypeId == (int)MiningLaserType.MinerI);
 
@@ -387,18 +390,59 @@ internal sealed partial class CapsuleerIndustry
             .Where(material => material.Quantity > 0)
             .ToDictionary(material => material.Key, material => checked((int)material.Quantity));
 
-    internal bool SellMiningSurplus(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, long now) =>
-        StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)
-        && !HasStationFactoryJob(world, pilot.PilotId, pilot.StationId)
-        && !HasWorkDemand(world, catalog, pilot, now)
-        && SellOre(world, catalog, pilot, Hangar(world, pilot.PilotId, pilot.StationId));
+    internal bool SellMiningSurplus(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, long now)
+    {
+        if (
+            !StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)
+            || HasStationFactoryJob(world, pilot.PilotId, pilot.StationId)
+            || HasWorkDemand(world, catalog, pilot, now)
+        )
+        {
+            return false;
+        }
+        return SellHangarOre(world, catalog, pilot);
+    }
 
-    private bool SellOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, OwnedItem[] hangar)
+    private bool SellHangarOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot)
+    {
+        long owner = pilot.PilotId;
+        int station = pilot.StationId;
+        var items = (EconomySet<OwnedItem, EconomyOwnedItem>)world.Set<OwnedItem>();
+        var escrow = world.Set<SavedContractEscrow>();
+        var stock = items
+            .IndexedSnapshots(nameof(OwnedItem.OwnerId), owner)
+            .Where(item =>
+                item.OwnerId == owner
+                && item.LocationId == station
+                && item.FlagId == (int)InventoryFlag.Hangar
+                && catalog.FittingType(item.TypeId)?.CategoryId == AsteroidDefinitions.Category
+                && escrow.Find(item.Id) is null
+            )
+            .Select(item => new OreSaleStock(item.Id, item.TypeId, item.Quantity))
+            .OrderBy(item => item.Id)
+            .ToArray();
+        return SellOre(world, catalog, pilot, stock);
+    }
+
+    private bool SellOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, OwnedItem[] hangar) =>
+        SellOre(world, catalog, pilot, hangar.Select(item => new OreSaleStock(item.Id, item.TypeId, item.Quantity)));
+
+    private bool SellOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, IEnumerable<OreSaleStock> stock)
     {
         int station = pilot.StationId;
         bool starterMarket = world.Settings.UsesFreshUniverseMarket();
-        foreach (var item in hangar.Where(item => CapsuleerProvisioningCatalog.SupportedOre(catalog, item.TypeId)))
+        Dictionary<int, bool> supportedTypes = [];
+        foreach (var item in stock)
         {
+            if (!supportedTypes.TryGetValue(item.TypeId, out bool supported))
+            {
+                supported = CapsuleerProvisioningCatalog.SupportedOre(catalog, item.TypeId);
+                supportedTypes.Add(item.TypeId, supported);
+            }
+            if (!supported)
+            {
+                continue;
+            }
             var bid = starterMarket ? market.StarterOreBid(world, catalog, station, item.TypeId) : null;
             if (starterMarket && bid is null)
             {

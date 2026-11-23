@@ -9,6 +9,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -156,12 +157,52 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 Assert.Equal(before, saved.Set<WorldAsteroid>().AsNoTracking().Single(a => a.Id == deposit).Quantity);
                 var docked = Until(MinerActivity.Docked, worker, clock);
                 Assert.Null(docked.Pilot.Position);
+                var inventory = host.GetRequiredService<IPilotInventory>();
+                var cargo = Assert.Single(inventory.List(actor, docked.Pilot.ShipId), item => item.TypeId == 1230);
+                var live = host.GetRequiredService<LiveWorld>();
+                long escrowedId;
+                long retainedId;
+                long separateId;
+                using (var transaction = live.Economy.Begin(new(pilots: [actor])))
+                using (CatalogDbContext catalog = new(database.CatalogPath))
+                {
+                    const int hangar = (int)InventoryFlag.Hangar;
+                    escrowedId = InventoryPersistence
+                        .MergeOutput(transaction, catalog, actor, SchoolStation, hangar, cargo.TypeId, 2)
+                        .Item.Id;
+                    retainedId = AddStack(7);
+                    separateId = AddStack(3);
+                    var wallet = transaction.Set<PilotWallet>().Find(actor) ?? transaction.Add(new PilotWallet { PilotId = actor }).Entity;
+                    wallet.Cents = Math.Max(wallet.Cents, 1_000_000);
+                    transaction.Commit();
+
+                    long AddStack(int quantity)
+                    {
+                        long id = InventoryPersistence.NextId(transaction);
+                        transaction.Add(
+                            new OwnedItem
+                            {
+                                Id = id,
+                                OwnerId = actor,
+                                LocationId = SchoolStation,
+                                FlagId = hangar,
+                                TypeId = cargo.TypeId,
+                                Quantity = quantity,
+                            }
+                        );
+                        return id;
+                    }
+                }
+                var contracts = host.GetRequiredService<IPilotContracts>();
+                contracts.Create(actor, new(90000001, SchoolStation, 1440, 100, 0, "Ore sale", "", [new(escrowedId, 2)], []));
                 clock.Seconds++;
                 worker.Tick();
-                var ore = host.GetRequiredService<IPilotInventory>().List(actor, SchoolStation).Single(i => i.TypeId == 1230);
-                Assert.True(ore.Quantity > 0);
+                var ore = inventory.List(actor, SchoolStation).Where(item => item.TypeId == 1230).ToArray();
+                Assert.Equal([(retainedId, cargo.Quantity + 7), (separateId, 3)], ore.Select(item => (item.Id, item.Quantity)));
+                Assert.DoesNotContain(inventory.List(actor, docked.Pilot.ShipId), item => item.Id == cargo.Id);
+                Assert.Equal(2, live.Economy.Inspect(world => world.Set<OwnedItem>().FindUnfiltered(new(escrowedId))!.Quantity));
                 long after = saved.Set<WorldAsteroid>().AsNoTracking().Single(a => a.Id == deposit).Quantity;
-                Assert.True(before - after <= ore.Quantity);
+                Assert.True(before - after <= cargo.Quantity);
             }
         }
         finally

@@ -79,14 +79,26 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
         var orders =
             JsonSerializer.Deserialize<LiveMarketOrder[]>(zipped, JsonSerializerOptions.Web)
             ?? throw new InvalidDataException("Invalid live market region.");
-        if (orders.Length != descriptor.Orders || orders.Select(order => order.SourceOrderId).Distinct().Count() != orders.Length)
+        if (orders.Length != descriptor.Orders)
         {
-            throw new InvalidDataException("Live market region has an invalid order count or duplicate identity.");
+            throw new InvalidDataException("Live market region has an invalid order count.");
+        }
+        HashSet<long> identities = new(orders.Length);
+        Dictionary<int, int> counts = [];
+        foreach (var order in orders)
+        {
+            if (!identities.Add(order.SourceOrderId))
+            {
+                throw new InvalidDataException("Live market region has a duplicate order identity.");
+            }
+            counts[order.TypeId] = counts.GetValueOrDefault(order.TypeId) + 1;
         }
         var catalog = database.Catalog;
-        var types = catalog.FindMany(CatalogData.Client.Types, orders.Select(order => (long)order.TypeId).Distinct());
+        var types = catalog.FindMany(CatalogData.Client.Types, counts.Keys.Select(type => (long)type));
         var stations = catalog.Stations;
         var items = catalog.Items;
+        var grouped = counts.ToDictionary(pair => pair.Key, pair => new LiveMarketOrder[pair.Value]);
+        counts.Clear();
         foreach (var order in orders)
         {
             var station = stations.GetValueOrDefault(order.StationId);
@@ -113,7 +125,10 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
             {
                 throw new InvalidDataException("Live market order is invalid or incompatible with the installed catalog.");
             }
+            int index = counts.GetValueOrDefault(order.TypeId);
+            grouped[order.TypeId][index] = order;
+            counts[order.TypeId] = index + 1;
         }
-        return orders.GroupBy(order => order.TypeId).ToDictionary(group => group.Key, group => group.ToArray());
+        return grouped;
     }
 }

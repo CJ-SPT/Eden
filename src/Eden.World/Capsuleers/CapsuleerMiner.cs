@@ -817,14 +817,19 @@ internal sealed partial class CapsuleerMiner(
         var ore = aboard.Where(i => i.CategoryId == AsteroidDefinitions.Category && ShipHoldRules.IsHold(i.FlagId)).ToArray();
         if (ore.Length > 0)
         {
-            PilotInventoryStore.Move(
-                _operation.World,
+            var world = _operation.World;
+            var deposits = PilotInventoryStore.Move(
+                world,
                 _operation.Catalog,
                 Pilot.PilotId,
                 Pilot.DockedLocationId,
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
+            if (world is EconomyTransaction depositWorld)
+            {
+                InventoryPersistence.StackDepositedOre(depositWorld, _operation.Catalog, deposits);
+            }
         }
         FactorySupplyRequest? supply = null;
         CapsuleerIndustry.MoonMiningTrip? moon = null;

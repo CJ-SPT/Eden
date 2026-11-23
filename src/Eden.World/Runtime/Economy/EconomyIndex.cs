@@ -10,7 +10,7 @@ internal enum EconomyIndexMember
     RowId,
 }
 
-internal sealed class EconomyIndex<T>(
+internal class EconomyIndex<T>(
     string name,
     Func<T, object?> value,
     IEqualityComparer<object>? comparer = null,
@@ -22,11 +22,11 @@ internal sealed class EconomyIndex<T>(
     private readonly Dictionary<object, IBucket> _keys = new(comparer);
     internal string Name => name;
 
-    internal IReadOnlyCollection<EconomyKey> Find(object? key) => _keys.TryGetValue(key ?? NullKey, out var found) ? found : [];
+    internal virtual IReadOnlyCollection<EconomyKey> Find(object? key) => _keys.TryGetValue(key ?? NullKey, out var found) ? found : [];
 
-    internal void Clear() => _keys.Clear();
+    internal virtual void Clear() => _keys.Clear();
 
-    internal void Add(EconomyKey id, T row) => Add(id, value(row) ?? NullKey);
+    internal virtual void Add(EconomyKey id, T row) => Add(id, value(row) ?? NullKey);
 
     private void Add(EconomyKey id, object key)
     {
@@ -45,7 +45,7 @@ internal sealed class EconomyIndex<T>(
         keys.Add(id);
     }
 
-    internal void Remove(EconomyKey id, T row) => Remove(id, value(row) ?? NullKey);
+    internal virtual void Remove(EconomyKey id, T row) => Remove(id, value(row) ?? NullKey);
 
     private void Remove(EconomyKey id, object key)
     {
@@ -55,7 +55,7 @@ internal sealed class EconomyIndex<T>(
         }
     }
 
-    internal void Replace(EconomyKey id, T before, T after)
+    internal virtual void Replace(EconomyKey id, T before, T after)
     {
         object old = value(before) ?? NullKey;
         object next = value(after) ?? NullKey;

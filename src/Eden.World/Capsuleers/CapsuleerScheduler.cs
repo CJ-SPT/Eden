@@ -47,6 +47,7 @@ internal sealed partial class CapsuleerScheduler(
     private CapsuleerRuntimeSummary _diagnostics = CapsuleerRuntimeSummary.Empty;
     private CapsuleerPopulationSummary _population = new(0, 0, 0, 0, 0);
     private readonly Dictionary<long, string> _blocked = [];
+    private readonly Dictionary<string, int> _blockedByReason = new(StringComparer.Ordinal);
     private IReadOnlyList<CapsuleerBlockingReason> _blockingReasons = [];
     private bool _blockingChanged;
     private bool _membershipDirty = true;
@@ -80,9 +81,22 @@ internal sealed partial class CapsuleerScheduler(
 
     private void Blocking(long pilot, string? reason)
     {
-        if (_blocked.GetValueOrDefault(pilot) == reason)
+        string? previous = _blocked.GetValueOrDefault(pilot);
+        if (previous == reason)
         {
             return;
+        }
+        if (previous is not null)
+        {
+            int remaining = _blockedByReason[previous] - 1;
+            if (remaining == 0)
+            {
+                _blockedByReason.Remove(previous);
+            }
+            else
+            {
+                _blockedByReason[previous] = remaining;
+            }
         }
         if (reason is null)
         {
@@ -91,21 +105,49 @@ internal sealed partial class CapsuleerScheduler(
         else
         {
             _blocked[pilot] = reason;
+            _blockedByReason[reason] = _blockedByReason.GetValueOrDefault(reason) + 1;
         }
         _blockingChanged = true;
+    }
+
+    private IReadOnlyList<CapsuleerBlockingReason> ReadBlockingReasons()
+    {
+        var reasons = _blockedByReason.Select(pair => new CapsuleerBlockingReason(pair.Key, pair.Value)).ToArray();
+        Array.Sort(reasons, static (left, right) => right.Agents.CompareTo(left.Agents));
+        for (int index = 1; index < reasons.Length; index++)
+        {
+            if (reasons[index - 1].Agents != reasons[index].Agents)
+            {
+                continue;
+            }
+            // Resolve equal counts in the same order as grouping the per-pilot reasons.
+            Dictionary<string, int> firstOccurrences = new(reasons.Length, StringComparer.Ordinal);
+            foreach (string reason in _blocked.Values)
+            {
+                firstOccurrences.TryAdd(reason, firstOccurrences.Count);
+                if (firstOccurrences.Count == reasons.Length)
+                {
+                    break;
+                }
+            }
+            Array.Sort(
+                reasons,
+                (left, right) =>
+                {
+                    int count = right.Agents.CompareTo(left.Agents);
+                    return count != 0 ? count : firstOccurrences[left.Reason].CompareTo(firstOccurrences[right.Reason]);
+                }
+            );
+            break;
+        }
+        return Array.AsReadOnly(reasons);
     }
 
     private void PublishDiagnostics(HumanActivitySnapshot activity, long started)
     {
         if (_blockingChanged)
         {
-            _blockingReasons = Array.AsReadOnly(
-                _blocked
-                    .Values.GroupBy(r => r)
-                    .Select(g => new CapsuleerBlockingReason(g.Key, g.Count()))
-                    .OrderByDescending(g => g.Agents)
-                    .ToArray()
-            );
+            _blockingReasons = ReadBlockingReasons();
             _blockingChanged = false;
         }
         // Counting a large overdue prefix for every single action makes backlog recovery quadratic.

@@ -37,6 +37,8 @@ public sealed partial class ServerPerformanceReplayTests
                 "world.sqlite.skills.sqlite",
                 "world.sqlite.skills-active",
                 "world.sqlite.skill-packages/test-package/manifest.json",
+                "market-orders/manifest.json",
+                "market-orders/test-generation/10000002.json.gz",
             ];
             RunFrozenReplaySql(Path.Combine(source, "world.sqlite"), "PRAGMA user_version=1", SqliteOpenMode.ReadWriteCreate);
             foreach (string catalog in new[] { baseCatalog, packageCatalog })
@@ -47,7 +49,9 @@ public sealed partial class ServerPerformanceReplayTests
             }
             foreach (string file in privateFiles)
             {
-                File.WriteAllText(Path.Combine(source, file), file);
+                string path = Path.Combine(source, file);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, file);
             }
             WriteFrozenReplayManifest(source, [baseCatalog, packageCatalog]);
 

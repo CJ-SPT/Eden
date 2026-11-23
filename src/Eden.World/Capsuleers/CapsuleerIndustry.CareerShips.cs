@@ -177,7 +177,7 @@ internal sealed partial class CapsuleerIndustry
         }
         if (plan is not { ShipTypeId: > 0 } || plan.ShipTypeId == pilot.ShipTypeId || CareerKit(catalog, plan.ShipTypeId) is not { } kit)
         {
-            return new(MarketChanged: starterWorkshop && SellOre(world, catalog, pilot, Hangar(world, id, station)));
+            return new(MarketChanged: starterWorkshop && SellHangarOre(world, catalog, pilot));
         }
         var parts = kit.Parts();
         bool coverProduction = plan.Profession == CapsuleerProfession.Combat && UsesPatrolSupport(catalog, kit.HullTypeId);
@@ -192,7 +192,7 @@ internal sealed partial class CapsuleerIndustry
             )
         )
         {
-            return new(MarketChanged: starterWorkshop && SellOre(world, catalog, pilot, Hangar(world, id, station)));
+            return new(MarketChanged: starterWorkshop && SellHangarOre(world, catalog, pilot));
         }
 
         var hangar = Hangar(world, id, station);

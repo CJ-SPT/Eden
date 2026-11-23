@@ -249,8 +249,9 @@ internal sealed partial class ResidentEconomy
                     ),
                 state => new(state.Id),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId)],
-                primaryColumn: "Id"
+                indexes: [new("PilotId", row => row.PilotId, member: EconomyIndexMember.RowId)],
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(

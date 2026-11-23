@@ -530,6 +530,9 @@ internal sealed partial class LiveCombatRuntime
             var active = aggression.GetValueOrDefault(npc.Id);
             if (effective is not null)
             {
+                // With no client motion owner, mining ships still have to reach their work site.
+                bool workingApproach =
+                    npc.Navigation == NpcNavigationState.Travelling && npc.Role is NpcRole.MiningMiner or NpcRole.MiningHauler;
                 npc = LiveSystemMotionRules.Move(
                     npc,
                     effective[npc.Id],
@@ -537,7 +540,7 @@ internal sealed partial class LiveCombatRuntime
                     active?.ReadyAt ?? long.MaxValue,
                     now,
                     0,
-                    contactsOnly: true
+                    contactsOnly: !workingApproach
                 );
             }
             else if (active is null && npc.Navigation is NpcNavigationState.Pursuing or NpcNavigationState.Orbiting)

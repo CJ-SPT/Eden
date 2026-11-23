@@ -87,12 +87,29 @@ internal sealed partial class CapsuleerIndustry(
             .Where(item => item.LocationId == station && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag && !item.Singleton)
             .AsEnumerable();
 
-    private static OwnedItem[] Hangar(WorldAction world, long pilot, long station) =>
-        world
-            .Filter<OwnedItem>(item => item.OwnerId == pilot)
-            .Where(item => item.LocationId == station && item.FlagId == (int)InventoryFlag.Hangar)
-            .OrderBy(item => item.Id)
-            .ToArray();
+    private static OwnedItem[] Hangar(WorldAction world, long pilot, long station)
+    {
+        if (world is not EconomyTransaction resident)
+        {
+            return world
+                .Filter<OwnedItem>(item => item.OwnerId == pilot)
+                .Where(item => item.LocationId == station && item.FlagId == (int)InventoryFlag.Hangar)
+                .OrderBy(item => item.Id)
+                .ToArray();
+        }
+        var items = (EconomySet<OwnedItem, EconomyOwnedItem>)resident.Set<OwnedItem>();
+        var owned = items.IndexedKeys(nameof(OwnedItem.OwnerId), pilot);
+        var located = items.IndexedKeys(nameof(OwnedItem.LocationId), station);
+        var stacks = items.SelectIndexedRows(
+            owned.Count <= located.Count ? owned : located,
+            item => Matches(item.OwnerId, item.LocationId, item.FlagId),
+            item => Matches(item.OwnerId, item.LocationId, item.FlagId)
+        );
+        Array.Sort(stacks, static (left, right) => left.Id.CompareTo(right.Id));
+        return stacks;
+
+        bool Matches(long owner, long location, int flag) => owner == pilot && location == station && flag == (int)InventoryFlag.Hangar;
+    }
 
     // The operator contributes already-owned ISK only for the immediate shortfall. The corporate
     // and personal ledgers commit with the purchase or expense under the same resident owner.

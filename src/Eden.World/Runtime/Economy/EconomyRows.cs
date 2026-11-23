@@ -1254,7 +1254,6 @@ internal sealed partial class ResidentEconomy
                 indexes:
                 [
                     new("OwnerId", row => row.OwnerId, member: EconomyIndexMember.RowId),
-                    new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
                     new("LocationId", row => row.LocationId, member: EconomyIndexMember.RowId),
                 ],
                 primaryColumn: "Id",
@@ -1369,10 +1368,7 @@ internal sealed partial class ResidentEconomy
                     new("RegionId", row => row.RegionId, member: EconomyIndexMember.RowId),
                     new("OwnerId", row => row.OwnerId, member: EconomyIndexMember.RowId),
                     new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
-                    new(
-                        nameof(NpcMarketAssortment),
-                        row => NpcMarketAssortment.For(row.StationId, row.TypeId, row.Bid, row.Kind, row.SourceOrderId)
-                    ),
+                    new NpcMarketAssortmentIndex(),
                 ],
                 primaryColumn: "Id",
                 rowIdIsKey: true

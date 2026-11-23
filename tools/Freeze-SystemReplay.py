@@ -46,6 +46,26 @@ def freeze(source: Path, destination: Path) -> None:
                 with asset.open("rb") as data:
                     digest = hashlib.file_digest(data, "sha256").hexdigest()
                 files[asset.relative_to(destination).as_posix()] = {"bytes": asset.stat().st_size, "sha256": digest}
+    market = Path("market-orders")
+    market_manifest = market / "manifest.json"
+    if (source / market_manifest).exists():
+        payload = (source / market_manifest).read_bytes()
+        snapshot = json.loads(payload)
+        generation = snapshot["generation"]
+        if len(generation) != 32 or any(c not in "0123456789abcdefABCDEF" for c in generation):
+            raise ValueError("Invalid market order snapshot generation")
+        (destination / market / generation).mkdir(parents=True)
+        (destination / market_manifest).write_bytes(payload)
+        files[market_manifest.as_posix()] = {"bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
+        for region in snapshot["regions"]:
+            relative = market / generation / f"{int(region['regionId'])}.json.gz"
+            target = destination / relative
+            shutil.copy2(source / relative, target)
+            with target.open("rb") as data:
+                digest = hashlib.file_digest(data, "sha256").hexdigest()
+            if digest.lower() != region["sha256"].lower():
+                raise ValueError(f"Market order snapshot checksum mismatch for {relative}")
+            files[relative.as_posix()] = {"bytes": target.stat().st_size, "sha256": digest}
     manifest = {
         "baselineRevision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "clock": "2026-11-10T12:00:00Z",

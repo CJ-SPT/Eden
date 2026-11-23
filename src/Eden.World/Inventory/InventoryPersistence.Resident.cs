@@ -1,6 +1,8 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Contracts;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
@@ -83,6 +85,51 @@ internal static partial class InventoryPersistence
             .Entity;
         stack.Quantity = checked(stack.Quantity + quantity);
         return new(PilotInventoryStore.Read(catalog, stack), previous);
+    }
+
+    internal static void StackDepositedOre(EconomyTransaction world, CatalogDbContext catalog, IReadOnlyList<InventoryChange> deposits)
+    {
+        var items = (EconomySet<OwnedItem, EconomyOwnedItem>)world.Set<OwnedItem>();
+        var escrow = world.Set<SavedContractEscrow>();
+        var depositedIds = deposits.Select(deposit => deposit.Item.Id).ToHashSet();
+        foreach (var deposit in deposits)
+        {
+            var ore = deposit.Item;
+            if (
+                ore is not { CategoryId: AsteroidDefinitions.Category, FlagId: (int)InventoryFlag.Hangar, Quantity: > 0 }
+                || items.Find(ore.Id) is not { Singleton: false, Online: false } incoming
+            )
+            {
+                continue;
+            }
+
+            // Keep existing hangar rows and materialize only the compatible stack that receives this deposit.
+            var target = items
+                .IndexedSnapshots(nameof(OwnedItem.OwnerId), ore.OwnerId)
+                .Where(stack =>
+                    stack.OwnerId == ore.OwnerId
+                    && stack.LocationId == ore.LocationId
+                    && stack.FlagId == ore.FlagId
+                    && stack.TypeId == ore.TypeId
+                    && !stack.Singleton
+                    && !stack.Online
+                    && stack.VolumeOverride == incoming.VolumeOverride
+                    && stack.CrystalDamage == incoming.CrystalDamage
+                    && stack.BlueprintRuns == incoming.BlueprintRuns
+                    && stack.MaterialEfficiency == incoming.MaterialEfficiency
+                    && stack.TimeEfficiency == incoming.TimeEfficiency
+                    && stack.Quantity > 0
+                    && stack.Quantity <= int.MaxValue - ore.Quantity
+                    && !depositedIds.Contains(stack.Id)
+                    && escrow.Find(stack.Id) is null
+                )
+                .MinBy(stack => stack.Id);
+            if (target is not null && items.Find(target.Id) is { } retained)
+            {
+                retained.Quantity = InventoryStackRules.Merge(ore, PilotInventoryStore.Read(catalog, retained), ore.Quantity).Target;
+                world.Remove(incoming);
+            }
+        }
     }
 
     internal static long NextId(WorldAction world) => world.NextItemId();

@@ -316,7 +316,12 @@ internal sealed partial class PilotMarketStore
                 && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > Now
                 && (progressive ? o.Kind is NpcMarketKind.Regional or NpcMarketKind.Institutional : o.Kind == kind)
                 && InScope(o)
-            )
+            );
+        if (scope.HasValue)
+        {
+            npcOrders = BestAskPerType(npcOrders, static order => (order.TypeId, order.PriceCents, order.Id));
+        }
+        var result = npcOrders
             .Select(o => new MarketOrder(
                 o.Id,
                 o.StationId,
@@ -332,8 +337,8 @@ internal sealed partial class PilotMarketStore
                 DurationDays: o.DurationDays,
                 Range: o.Range,
                 MinimumVolume: o.MinimumVolume
-            ));
-        var result = (scope.HasValue ? BestAskPerType(npcOrders) : npcOrders).ToArray();
+            ))
+            .ToArray();
         var personal = world
             .Set<SavedPersonalOrder>()
             .AsNoTracking()
@@ -353,7 +358,7 @@ internal sealed partial class PilotMarketStore
         IEnumerable<MarketOrder> combined = result.Concat(personalRows.Select(o => o.Snapshot()));
         if (scope.HasValue)
         {
-            combined = BestAskPerType(combined);
+            combined = BestAskPerType(combined, static order => (order.TypeId, order.PriceCents, order.Id));
         }
         var book = combined.OrderBy(o => o.Id).ToArray();
         long expires = Math.Min(
@@ -389,20 +394,18 @@ internal sealed partial class PilotMarketStore
             };
     }
 
-    private static IEnumerable<MarketOrder> BestAskPerType(IEnumerable<MarketOrder> orders)
+    private static IEnumerable<T> BestAskPerType<T>(IEnumerable<T> orders, Func<T, (int Type, long Price, long Id)> key)
     {
-        Dictionary<int, MarketOrder> best = [];
+        Dictionary<int, (T Order, long Price, long Id)> best = [];
         foreach (var order in orders)
         {
-            if (
-                !best.TryGetValue(order.TypeId, out var current)
-                || (order.PriceCents, order.Id).CompareTo((current.PriceCents, current.Id)) < 0
-            )
+            var (type, price, id) = key(order);
+            if (!best.TryGetValue(type, out var current) || (price, id).CompareTo((current.Price, current.Id)) < 0)
             {
-                best[order.TypeId] = order;
+                best[type] = (order, price, id);
             }
         }
-        return best.Values;
+        return best.Values.Select(static row => row.Order);
     }
 
     private void ResidentCheckStation(Eden.World.Runtime.LiveWorld live, long pilotId, int stationId)

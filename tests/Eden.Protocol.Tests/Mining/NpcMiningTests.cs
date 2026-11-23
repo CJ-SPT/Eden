@@ -288,11 +288,12 @@ public sealed partial class NpcMiningTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void HaulerWarpsInCollectsOnlyRealCargoAndDeliversWithoutDuplication(bool live, bool stationless)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, false, true)]
+    public void HaulerWarpsInCollectsOnlyRealCargoAndDeliversWithoutDuplication(bool live, bool stationless, bool offscreen)
     {
         var clock = Clock();
         using TestWorld db = new(clock: clock, regionalNpcs: true, liveWorld: live);
@@ -319,6 +320,14 @@ public sealed partial class NpcMiningTests
         {
             arrival = world.Set<WorldNpcMiningMember>().Find(hauler.Id)!.WarpArrivesAt!.Value;
         }
+        var simulation = offscreen ? db.Services.GetRequiredService<INpcSimulation>() : null;
+        if (offscreen)
+        {
+            // Land outside transfer range so collection requires subwarp motion.
+            using var action = db.Services.GetRequiredService<LiveWorld>().Economy.Begin(new(systems: [SystemId]));
+            action.Set<WorldNpc>().Find(hauler.Id)!.HomeY += NpcMiningRules.TransferRange / 2;
+            action.Commit();
+        }
         clock.AdvanceWallTime(TimeSpan.FromTicks(arrival - clock.Now));
         bool departing = false;
         for (int tick = 1; tick <= 60; tick++)
@@ -335,9 +344,20 @@ public sealed partial class NpcMiningTests
                 break;
             }
             clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
-            db.Store.Advance(SystemId, tick, clock.Now, [], []);
+            if (simulation is not null)
+            {
+                simulation.Advance(SystemId, clock.Now);
+            }
+            else
+            {
+                db.Store.Advance(SystemId, tick, clock.Now, [], []);
+            }
         }
         Assert.True(departing);
+        if (offscreen)
+        {
+            Assert.False(db.Services.GetRequiredService<WorldDatabase>().MotionStamps.ContainsKey(SystemId));
+        }
         db.Services.GetService<LiveWorld>()?.Dispose();
         WorldInitialization.Initialize(new(db.Path), clock);
         clock.AdvanceWallTime(TimeSpan.FromTicks(arrival - clock.Now));

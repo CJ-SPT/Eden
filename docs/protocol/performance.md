@@ -6927,3 +6927,47 @@ The production observation uses the live player workload and samples durable che
 ### Live acceptance
 
 Agent client testing is disabled.
+
+## Standard market bot throughput on HostCram
+
+The November 22 HostCram checkpoint had 10,000 saved capsuleers in 955 communities. Active configuration revision 22 limited
+the public world to 6,000 active pilots and used the Standard market and a 300-second checkpoint interval. The replay used its
+own world copy, the same catalogs and market snapshot, one simulated player, market and activity reward maintenance, and a
+10,000-pilot cap applied through the world configuration store. HostCram had four vCPUs and 7.76 GiB of RAM. The test container
+had a 7 GiB limit. The public container was restored after each isolated run.
+
+The `0517a2c0` control reached 10,000 scheduled with the deployment's 55% .NET heap limit. It stopped after 35.3 timed seconds
+with managed out-of-memory failures and an oldest due job of 20.65 seconds. The container reported no kernel OOM kill. With a
+70% private test heap limit, the control completed 180.7 measured seconds without a scheduler failure. It processed 314,390
+actions, reached 56.50 seconds p95 oldest job age in the latter half and ended with 6,308 due jobs and 56.96 seconds of delay.
+This control forced a checkpoint every 15 seconds. Some forced checkpoints spent 26–31 seconds syncing the roughly 800 MiB save.
+
+An allocation trace at the start of that second replay attributed 16.7% of sampled allocations to Standard region preparation
+and 23.6% to pilot ship-attribute reads. The mature save held about 1.5 million inventory rows, mostly individual ore stacks
+in bot hangars, and about 1.37 million Standard market orders. Standard order identities now use an inline station and source ID
+index. Owner and location indexes cover resident item selection. The regional order loader sizes its per-type arrays directly,
+and a best-ask request selects the winning resident rows before building market reply rows. Scheduler diagnostics maintain
+counts as pilots change blocking reasons.
+
+A miner now adds newly unloaded ore to the oldest compatible stack that can accept the deposit. The move and merge share the
+resident job transaction. Earlier stacks retain their identities and quantities unless selected to receive a deposit. Surplus
+sales select stock from indexed resident rows and keep item ID order and each stack's original quantity. The EVE.js `StackAll`
+reference at `server/src/services/inventory/invBrokerService.js:12085` was checked for owner, type, compartment, and ordering rules.
+
+The warm trace identified ongoing work in miner preparation and NPC population refresh. The frozen HostCram save held 845 active
+mining haulers in 845 systems that were collecting and travelling with zero velocity. The shared NPC simulation already settled
+warp arrivals, but its contact-only movement path stopped these ships short of their pickup. Travelling mining ships can now
+use the existing subwarp movement step when the system has no client motion stamp. The resident pose is visible to the next
+population refresh so it can collect and depart. The offscreen regression requires a subwarp approach, verifies a real cargo
+transfer and retirement after restart, and checks that no client motion stamp was created. The traffic behavior reference is
+[EVE University NPC Mining Operations](https://wiki.eveuniversity.org/NPC_Mining_Operations).
+
+The follow-up also removes redundant resident training-history keys, selects industrial hangar rows using the existing owner and
+location indexes, and keeps Standard market gate distances in compact arrays. Bid range still uses the same directed stargates
+and exact jump count. The frozen save held 2,031,393 training history rows.
+
+`tools/Freeze-SystemReplay.py` includes the active market snapshot generation and verifies the order file checksums.
+`ReplaySustainedBotThroughput` accepts `EDEN_BOT_REPLAY_ACTIVE_PILOT_CAP` for the copy and
+`EDEN_BOT_REPLAY_NATIVE_CHECKPOINTS=1` to use the saved world's checkpoint timer. The report tracks distinct bot job advances
+and distinguishes jobs already due from jobs whose deadline falls after the window. HostCram artifacts are under
+`artifacts/hostcram-10k-standard-20261122/`.

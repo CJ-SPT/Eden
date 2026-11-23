@@ -11,6 +11,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
+using Eden.World.Configuration;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,8 @@ public sealed partial class ServerPerformanceReplayTests
     private sealed record ThroughputRequest(int ArrivalSecond, double Queue, double Total, ReplaySample Result);
 
     private sealed record ThroughputVisit(int System, PerformanceSample Total, IReadOnlyList<PerformanceSample> Phases);
+
+    private sealed record ThroughputJobProgress(int Tracked, int Advanced, int UnchangedDue, int UnchangedFuture, int Missing);
 
     private static double ThroughputPercentile(IEnumerable<double> values, double fraction)
     {
@@ -135,6 +138,19 @@ public sealed partial class ServerPerformanceReplayTests
             ThroughputClock clock = new(startTime);
             File.AppendAllText(progress, "Initializing copied world.\n");
             WorldInitialization.Initialize(database, clock);
+            if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_ACTIVE_PILOT_CAP") is { } cap)
+            {
+                int activePilotCap = int.Parse(cap, CultureInfo.InvariantCulture);
+                WorldConfigurationStore store = new(database, clock);
+                var state = store.Read();
+                var draft = state.Active.Draft;
+                var settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { ActivePilotCap = activePilotCap } };
+                store.Save(state.Generation, draft with { Settings = settings }, "Throughput replay");
+                WorldConfigurationStore.Activate(database, clock);
+                CapsuleerPopulationActivation.Apply(database, clock);
+                Assert.Equal(activePilotCap, database.Settings.Capsuleers.ActivePilotCap);
+                File.AppendAllText(progress, $"Set copied world's active pilot cap to {activePilotCap}.\n");
+            }
             int[] communities;
             int[] explorationSystems;
             using (WorldDbContext world = new(database.Path))
@@ -268,6 +284,8 @@ public sealed partial class ServerPerformanceReplayTests
             );
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
             maintenance.Start();
+            var activityRewards = host.GetRequiredService<ActivityRewardMaintenance>();
+            activityRewards.Start();
             var marketMaintenance =
                 Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_MARKET_MAINTENANCE") == "1"
                     ? host.GetRequiredService<MarketMaintenance>()
@@ -284,6 +302,16 @@ public sealed partial class ServerPerformanceReplayTests
                 await WaitForThroughputPopulation(diagnostics, live, admissionTarget, admissionTimeout, progress);
             }
             admission.Stop();
+            Dictionary<long, long>? startingSequences = null;
+            if (requiredPilots is not null)
+            {
+                using var owner = live.EnterPersistence("replay job progress start");
+                startingSequences = live.ProjectedCapsuleerJobs.Values.ToDictionary(job => job.PilotId, job => job.Sequence);
+                foreach (var job in live.CapsuleerJobs.Values)
+                {
+                    startingSequences[job.PilotId] = job.Sequence;
+                }
+            }
             long completedAtStart = diagnostics.Read().CompletedActions;
             long paidAtStart = scheduler.PaidCollections;
             int generation2AtStart = GC.CollectionCount(2);
@@ -336,22 +364,11 @@ public sealed partial class ServerPerformanceReplayTests
                 await Task.WhenAll(pendingRequests);
             });
             ConcurrentQueue<WorldCheckpoint> checkpointReports = [];
-            var checkpoints = Task.Run(async () =>
-            {
-                for (int second = 15; second <= seconds; second += 15)
-                {
-                    double delay = second * 1000 - elapsed.Elapsed.TotalMilliseconds;
-                    if (delay > 0)
-                    {
-                        await Task.Delay(TimeSpan.FromMilliseconds(delay));
-                    }
-                    await live.FlushAsync();
-                    if (live.LastCheckpoint is { } checkpoint)
-                    {
-                        checkpointReports.Enqueue(checkpoint);
-                    }
-                }
-            });
+            bool nativeCheckpoints = Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_NATIVE_CHECKPOINTS") == "1";
+            var checkpoints = nativeCheckpoints
+                ? Task.CompletedTask
+                : FlushThroughputCheckpoints(live, elapsed, seconds, checkpointReports);
+            var previousCheckpoint = live.LastCheckpoint;
             int minimumScheduled = int.MaxValue;
             double? recovered = null;
             long previousCompleted = completedAtStart;
@@ -369,6 +386,12 @@ public sealed partial class ServerPerformanceReplayTests
                 var blockingCollection = GC.GetGCMemoryInfo(GCKind.FullBlocking);
                 var backgroundCollection = GC.GetGCMemoryInfo(GCKind.Background);
                 var fullCollection = blockingCollection.Index > backgroundCollection.Index ? blockingCollection : backgroundCollection;
+                var gc = GC.GetGCMemoryInfo();
+                if (nativeCheckpoints && live.LastCheckpoint is { } checkpoint && checkpoint != previousCheckpoint)
+                {
+                    checkpointReports.Enqueue(checkpoint);
+                    previousCheckpoint = checkpoint;
+                }
                 long sampleAllocations = GC.GetTotalAllocatedBytes(precise: true) - startedAllocations;
                 allocationSamplesMonotonic &= sampleAllocations >= timedAllocations;
                 timedAllocations = sampleAllocations;
@@ -417,6 +440,8 @@ public sealed partial class ServerPerformanceReplayTests
                         GcPauseMilliseconds = (GC.GetTotalPauseDuration() - pauseAtStart).TotalMilliseconds,
                         LastFullCollectionIndex = fullCollection.Index,
                         BytesAfterFullCollection = fullCollection.HeapSizeBytes - fullCollection.FragmentedBytes,
+                        GcCommittedBytes = gc.TotalCommittedBytes,
+                        GcHardLimitBytes = gc.TotalAvailableMemoryBytes,
                         WorkingSetBytes = process.WorkingSet64,
                         PeakWorkingSetBytes = process.PeakWorkingSet64,
                         Runtime = state,
@@ -433,24 +458,30 @@ public sealed partial class ServerPerformanceReplayTests
                 );
                 Assert.Equal(0, state.Failures);
             }
+            double cpuMilliseconds = (process.TotalProcessorTime - startedCpu).TotalMilliseconds;
+            long completedDuringReplay = previousCompleted - completedAtStart;
+            long paidDuringReplay = scheduler.PaidCollections - paidAtStart;
             await arrivals;
             foreach (var session in sessions)
             {
                 session.Dispose();
             }
-            await checkpoints;
             populationMaintenance.Dispose();
             maintenance.Dispose();
+            activityRewards.Dispose();
+            await checkpoints;
             if (marketMaintenance is not null)
             {
                 await marketMaintenance.DisposeAsync();
                 Assert.Null(marketMaintenance.LastFailure);
             }
+            long stoppedAt = startingSequences is null ? 0 : host.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
             await live.FlushAsync();
             if (live.LastCheckpoint is { } finalCheckpoint)
             {
                 checkpointReports.Enqueue(finalCheckpoint);
             }
+            var jobProgress = startingSequences is null ? null : ReadThroughputJobProgress(live, startingSequences, stoppedAt);
 
             File.WriteAllText(
                 Path.Combine(destination, name + ".json"),
@@ -464,8 +495,8 @@ public sealed partial class ServerPerformanceReplayTests
                         RecoveredSeconds = recovered,
                         SetupMilliseconds = setup.Elapsed.TotalMilliseconds,
                         AdmissionMilliseconds = admission.Elapsed.TotalMilliseconds,
-                        CompletedDuringReplay = diagnostics.Read().CompletedActions - completedAtStart,
-                        PaidCollectionsDuringReplay = scheduler.PaidCollections - paidAtStart,
+                        CompletedDuringReplay = completedDuringReplay,
+                        PaidCollectionsDuringReplay = paidDuringReplay,
                         ExplorationMilliseconds = exploration.Elapsed.TotalMilliseconds,
                         ExplorationAllocatedBytes = explorationBytes,
                         ColdSamples = cold,
@@ -477,7 +508,10 @@ public sealed partial class ServerPerformanceReplayTests
                         ServerGC = System.Runtime.GCSettings.IsServerGC,
                         TraceWorkerPhases = traceWorker,
                         MarketMaintenance = marketMaintenance is not null,
+                        NativeCheckpoints = nativeCheckpoints,
+                        CheckpointSeconds = database.Settings.Simulation.CheckpointSeconds,
                         MinimumScheduled = minimumScheduled,
+                        JobProgress = jobProgress,
                         scheduler.TradesStartedAhead,
                         scheduler.TradesUsedAhead,
                         scheduler.RoutineArrivals,
@@ -492,11 +526,11 @@ public sealed partial class ServerPerformanceReplayTests
                         WarmupSeconds = LatencyWarmupSeconds,
                         ReportedPilots = LatencyReportedPilots,
                         Communities = communities,
-                        CpuMilliseconds = (process.TotalProcessorTime - startedCpu).TotalMilliseconds,
-                        AllocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - startedAllocations,
+                        CpuMilliseconds = cpuMilliseconds,
+                        AllocatedBytes = timedAllocations,
                         AllocationSamplesMonotonic = allocationSamplesMonotonic,
                         BytesPerCompletedAction = allocationSamplesMonotonic
-                            ? timedAllocations / (double)Math.Max(1, previousCompleted - completedAtStart)
+                            ? timedAllocations / (double)Math.Max(1, completedDuringReplay)
                             : (double?)null,
                     }
                 )
@@ -564,6 +598,57 @@ public sealed partial class ServerPerformanceReplayTests
         }
     }
 
+    private static async Task FlushThroughputCheckpoints(
+        LiveWorld live,
+        Stopwatch elapsed,
+        int seconds,
+        ConcurrentQueue<WorldCheckpoint> reports
+    )
+    {
+        for (int second = 15; second <= seconds; second += 15)
+        {
+            double delay = second * 1000 - elapsed.Elapsed.TotalMilliseconds;
+            if (delay > 0)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(delay));
+            }
+            await live.FlushAsync();
+            if (live.LastCheckpoint is { } checkpoint)
+            {
+                reports.Enqueue(checkpoint);
+            }
+        }
+    }
+
+    private static ThroughputJobProgress ReadThroughputJobProgress(LiveWorld live, Dictionary<long, long> startingSequences, long stoppedAt)
+    {
+        int advanced = 0;
+        int unchangedDue = 0;
+        int unchangedFuture = 0;
+        int missing = 0;
+        using var owner = live.EnterPersistence("replay job progress end");
+        foreach (var (pilot, sequence) in startingSequences)
+        {
+            if (!live.CapsuleerJobs.TryGetValue(pilot, out var job) && !live.ProjectedCapsuleerJobs.TryGetValue(pilot, out job))
+            {
+                missing++;
+            }
+            else if (job.Sequence > sequence)
+            {
+                advanced++;
+            }
+            else if (job.DueTicks <= stoppedAt)
+            {
+                unchangedDue++;
+            }
+            else
+            {
+                unchangedFuture++;
+            }
+        }
+        return new(startingSequences.Count, advanced, unchangedDue, unchangedFuture, missing);
+    }
+
     private static IEnumerable<int> SavedCapsuleerSystems(WorldDatabase database, WorldDbContext world, int[] communities)
     {
         var locations = (
@@ -596,14 +681,22 @@ public sealed partial class ServerPerformanceReplayTests
                 File.Copy(Path.Combine(source, file), Path.Combine(destination, file));
             }
         }
-        string packages = Path.Combine(source, "world.sqlite.skill-packages");
-        if (Directory.Exists(packages))
+        foreach (string directory in new[] { "world.sqlite.skill-packages", "market-orders" })
         {
-            foreach (string file in Directory.EnumerateFiles(packages, "*", SearchOption.AllDirectories))
+            string sidecars = Path.Combine(source, directory);
+            if (!Directory.Exists(sidecars))
+            {
+                continue;
+            }
+            foreach (string file in Directory.EnumerateFiles(sidecars, "*", SearchOption.AllDirectories))
             {
                 string target = Path.Combine(destination, Path.GetRelativePath(source, file));
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                if (immutableCatalogs is not null && Path.GetFileName(file) == "catalog.sqlite")
+                if (
+                    immutableCatalogs is not null
+                    && directory == "world.sqlite.skill-packages"
+                    && Path.GetFileName(file) == "catalog.sqlite"
+                )
                 {
                     immutableCatalogs.Link(file, target);
                 }

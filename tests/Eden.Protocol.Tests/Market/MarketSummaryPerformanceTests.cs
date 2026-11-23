@@ -453,13 +453,23 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
         Assert.Empty(market.BestAsks(pilot.PilotId, MarketScope.Region));
     }
 
-    [Fact]
-    public void ResidentNpcAssortmentRejectsDuplicatesAndAllowsReplacingAnOrder()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResidentNpcAssortmentRejectsDuplicatesAndAllowsReplacingAnOrder(bool standard)
     {
         TestClock clock = new();
         using TestWorld fixture = new(clock: clock, liveWorld: true);
         Seed(fixture, clock);
         var live = fixture.Services.GetRequiredService<LiveWorld>();
+        if (standard)
+        {
+            using var change = live.Economy.Begin(TransactionParticipants.None);
+            var order = change.Set<NpcMarketOrder>().Single();
+            order.Kind = NpcMarketKind.Standard;
+            order.SourceOrderId = 123;
+            change.Commit();
+        }
         NpcMarketOrder committed;
         using (var read = live.Economy.Begin(TransactionParticipants.None))
         {
@@ -497,6 +507,7 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
                 OwnerId = original.OwnerId,
                 TypeId = original.TypeId,
                 Kind = original.Kind,
+                SourceOrderId = original.SourceOrderId,
                 Bid = original.Bid,
                 PriceCents = original.PriceCents,
                 Entered = 2,
