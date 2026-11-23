@@ -65,6 +65,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Agent missions and research
 
+- [Rogue Drone Harassment](protocol/agents.md#rogue-drone-harassment--november-23-2026)
 - [Level-four Mordus Headhunters](protocol/agents.md#level-four-mordus-headhunters--november-23-2026)
 - [Station Event agent availability](protocol/agents.md#station-event-agent-availability--november-23-2026)
 - [Epic arc chains](protocol/agents.md#epic-arc-chains--november-22-2026)

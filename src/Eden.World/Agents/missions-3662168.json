@@ -4473,6 +4473,207 @@
       ]
     },
     {
+      "missionId": 1219,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_2)",
+      "sourceRevision": "oldid=191890",
+      "rooms": [
+        {
+          "roomId": 13916,
+          "entryObjectId": 585972
+        },
+        {
+          "roomId": 13917,
+          "entryObjectId": 585975
+        },
+        {
+          "roomId": 13918,
+          "entryObjectId": 586052
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585971,
+          "destinationRoomId": 13917,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 586019,
+          "destinationRoomId": 13918,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13917,
+          "groups": [
+            {
+              "types": [
+                3750,
+                18087,
+                18079,
+                18080
+              ],
+              "count": 6,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18087,
+                18088
+              ],
+              "count": 5,
+              "range": 64000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13918,
+          "groups": [
+            {
+              "types": [
+                3746
+              ],
+              "count": 1,
+              "range": 12000,
+              "enemyFaction": 500025
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1222,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_3)",
+      "sourceRevision": "oldid=201909",
+      "rooms": [
+        {
+          "roomId": 13903,
+          "entryObjectId": 585561
+        },
+        {
+          "roomId": 13904,
+          "entryObjectId": 585564
+        },
+        {
+          "roomId": 13905,
+          "entryObjectId": 585641
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585560,
+          "destinationRoomId": 13904,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 585608,
+          "destinationRoomId": 13905,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13904,
+          "groups": [
+            {
+              "types": [
+                18083
+              ],
+              "count": 4,
+              "range": 19000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18084
+              ],
+              "count": 4,
+              "range": 22000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18080,
+                18079
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3745
+              ],
+              "count": 3,
+              "range": 65000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13905,
+          "groups": [
+            {
+              "types": [
+                18084,
+                18076,
+                3745
+              ],
+              "count": 8,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18073,
+                3747
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076,
+                3745,
+                18077
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18078
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 1237,
       "level": 1,
       "difficulty": 500,
@@ -7578,6 +7779,207 @@
       ]
     },
     {
+      "missionId": 1221,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_2)",
+      "sourceRevision": "oldid=191890",
+      "rooms": [
+        {
+          "roomId": 13916,
+          "entryObjectId": 585972
+        },
+        {
+          "roomId": 13917,
+          "entryObjectId": 585975
+        },
+        {
+          "roomId": 13918,
+          "entryObjectId": 586052
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585971,
+          "destinationRoomId": 13917,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 586019,
+          "destinationRoomId": 13918,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13917,
+          "groups": [
+            {
+              "types": [
+                3750,
+                18087,
+                18079,
+                18080
+              ],
+              "count": 6,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18087,
+                18088
+              ],
+              "count": 5,
+              "range": 64000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13918,
+          "groups": [
+            {
+              "types": [
+                3746
+              ],
+              "count": 1,
+              "range": 12000,
+              "enemyFaction": 500025
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1223,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_3)",
+      "sourceRevision": "oldid=201909",
+      "rooms": [
+        {
+          "roomId": 13903,
+          "entryObjectId": 585561
+        },
+        {
+          "roomId": 13904,
+          "entryObjectId": 585564
+        },
+        {
+          "roomId": 13905,
+          "entryObjectId": 585641
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585560,
+          "destinationRoomId": 13904,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 585608,
+          "destinationRoomId": 13905,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13904,
+          "groups": [
+            {
+              "types": [
+                18083
+              ],
+              "count": 4,
+              "range": 19000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18084
+              ],
+              "count": 4,
+              "range": 22000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18080,
+                18079
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3745
+              ],
+              "count": 3,
+              "range": 65000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13905,
+          "groups": [
+            {
+              "types": [
+                18084,
+                18076,
+                3745
+              ],
+              "count": 8,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18073,
+                3747
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076,
+                3745,
+                18077
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18078
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 1565,
       "level": 1,
       "difficulty": 500,
@@ -7687,6 +8089,408 @@
           "objectId": 57913,
           "required": true,
           "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1572,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_2)",
+      "sourceRevision": "oldid=191890",
+      "rooms": [
+        {
+          "roomId": 13916,
+          "entryObjectId": 585972
+        },
+        {
+          "roomId": 13917,
+          "entryObjectId": 585975
+        },
+        {
+          "roomId": 13918,
+          "entryObjectId": 586052
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585971,
+          "destinationRoomId": 13917,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 586019,
+          "destinationRoomId": 13918,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13917,
+          "groups": [
+            {
+              "types": [
+                3750,
+                18087,
+                18079,
+                18080
+              ],
+              "count": 6,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18087,
+                18088
+              ],
+              "count": 5,
+              "range": 64000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13918,
+          "groups": [
+            {
+              "types": [
+                3746
+              ],
+              "count": 1,
+              "range": 12000,
+              "enemyFaction": 500025
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1573,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_2)",
+      "sourceRevision": "oldid=191890",
+      "rooms": [
+        {
+          "roomId": 13916,
+          "entryObjectId": 585972
+        },
+        {
+          "roomId": 13917,
+          "entryObjectId": 585975
+        },
+        {
+          "roomId": 13918,
+          "entryObjectId": 586052
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585971,
+          "destinationRoomId": 13917,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 586019,
+          "destinationRoomId": 13918,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13917,
+          "groups": [
+            {
+              "types": [
+                3750,
+                18087,
+                18079,
+                18080
+              ],
+              "count": 6,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18087,
+                18088
+              ],
+              "count": 5,
+              "range": 64000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13918,
+          "groups": [
+            {
+              "types": [
+                3746
+              ],
+              "count": 1,
+              "range": 12000,
+              "enemyFaction": 500025
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1574,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_3)",
+      "sourceRevision": "oldid=201909",
+      "rooms": [
+        {
+          "roomId": 13903,
+          "entryObjectId": 585561
+        },
+        {
+          "roomId": 13904,
+          "entryObjectId": 585564
+        },
+        {
+          "roomId": 13905,
+          "entryObjectId": 585641
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585560,
+          "destinationRoomId": 13904,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 585608,
+          "destinationRoomId": 13905,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13904,
+          "groups": [
+            {
+              "types": [
+                18083
+              ],
+              "count": 4,
+              "range": 19000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18084
+              ],
+              "count": 4,
+              "range": 22000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18080,
+                18079
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3745
+              ],
+              "count": 3,
+              "range": 65000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13905,
+          "groups": [
+            {
+              "types": [
+                18084,
+                18076,
+                3745
+              ],
+              "count": 8,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18073,
+                3747
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076,
+                3745,
+                18077
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18078
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 1575,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_3)",
+      "sourceRevision": "oldid=201909",
+      "rooms": [
+        {
+          "roomId": 13903,
+          "entryObjectId": 585561
+        },
+        {
+          "roomId": 13904,
+          "entryObjectId": 585564
+        },
+        {
+          "roomId": 13905,
+          "entryObjectId": 585641
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 585560,
+          "destinationRoomId": 13904,
+          "requiresClear": false
+        },
+        {
+          "fromObjectId": 585608,
+          "destinationRoomId": 13905,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 13904,
+          "groups": [
+            {
+              "types": [
+                18083
+              ],
+              "count": 4,
+              "range": 19000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18084
+              ],
+              "count": 4,
+              "range": 22000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18080,
+                18079
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076
+              ],
+              "count": 2,
+              "range": 45000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3745
+              ],
+              "count": 3,
+              "range": 65000,
+              "enemyFaction": 500025
+            }
+          ]
+        },
+        {
+          "roomId": 13905,
+          "groups": [
+            {
+              "types": [
+                18084,
+                18076,
+                3745
+              ],
+              "count": 8,
+              "range": 20000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18073,
+                3747
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18076,
+                3745,
+                18077
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                18078
+              ],
+              "count": 1,
+              "range": 32000,
+              "enemyFaction": 500025,
+              "required": false
+            }
+          ]
         }
       ]
     },

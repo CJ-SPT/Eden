@@ -116,11 +116,11 @@ missionId,name,template,status,reason
 1216,The Missing Convoy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1217,The Infested Ruins,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1218,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1219,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1219,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1220,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1221,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1222,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1223,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1221,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1222,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1223,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1224,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1225,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1226,The Hidden Stash,BasicKillMission,admitted,Catalog cargo or reviewed encounter
@@ -386,10 +386,10 @@ missionId,name,template,status,reason
 1569,Head Hunter Threat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1570,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1571,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1572,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1573,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1574,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1575,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1572,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1573,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1574,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1575,Rogue Drone Harassment,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1576,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1578,Rogue Drone Harassment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1579,The Black Market Hub,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

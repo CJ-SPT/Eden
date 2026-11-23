@@ -475,6 +475,32 @@ def extend(db, missions, group):
 
     # These dungeons use the generic mission faction in the pinned catalog. The
     # encounter actors are Rogue Drones. The Silo is the localized name of type 18012.
+    def drone_group(names, count, distance, npc_group, **flags):
+        return group(names, count, distance, npc_group=npc_group, enemyFaction=drone_faction, **flags)
+
+    for mid, level, revision, rooms, gate_ids, rosters in [
+        (1219, 2, 191890, [(13916, 585972), (13917, 585975), (13918, 586052)], [585971, 586019], [
+            [drone_group('Infester Alvi/Splinter Alvi/Sunder Alvi/Raider Alvi', 6, 20000, infester_group),
+             drone_group('Splinter Alvi/Render Alvi', 5, 64000, infester_group)],
+            [drone_group('Wrecker Alvum', 1, 12000, 803)]]),
+        (1222, 3, 201909, [(13903, 585561), (13904, 585564), (13905, 585641)], [585560, 585608], [
+            [drone_group('Annihilator Alvum', 4, 19000, 803), drone_group('Devastator Alvum', 4, 22000, 803),
+             drone_group('Raider Alvi/Sunder Alvi', 2, 45000, infester_group),
+             drone_group('Violator Alvum', 2, 45000, 803), drone_group('Viral Infector Alvum', 3, 65000, 803)],
+            [drone_group('Devastator Alvum/Violator Alvum/Viral Infector Alvum', 8, 20000, 803),
+             drone_group('Defeater Alvatis/Enforcer Alvatis', 1, 32000, 801),
+             drone_group('Violator Alvum/Viral Infector Alvum/Disintegrator Alvum', 1, 32000, 803),
+             drone_group('Bomber Alvum', 1, 32000, 803, required=False)]]),
+    ]:
+        # Level three uses the reported variant that requires both objective groups in pocket two.
+        missions.append(dict(missionId=mid, level=level, difficulty=500, storyline=False, offerOrder=1,
+                             source=f'https://wiki.eveuniversity.org/Rogue_Drone_Harassment_(Level_{level})',
+                             sourceRevision=f'oldid={revision}',
+                             rooms=[dict(roomId=room_id, entryObjectId=entry_id) for room_id, entry_id in rooms],
+                             gates=[dict(fromObjectId=gate_id, destinationRoomId=rooms[i + 1][0], requiresClear=i > 0)
+                                    for i, gate_id in enumerate(gate_ids)],
+                             waves=[dict(roomId=room_id, groups=groups) for (room_id, _), groups in zip(rooms[1:], rosters)]))
+
     encounter(1237, 500021, 'The_Roving_Rogue_Drones', 203054,
               [group('Belphegor Apis/Mammon Apis', 4, 55000, enemyFaction=drone_faction),
                group('Infester Alvi', 1, 55000, npc_group=infester_group, enemyFaction=drone_faction)], 59191)

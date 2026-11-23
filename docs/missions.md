@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **925 definitions**. That includes **93 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **933 definitions**. That includes **101 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,967** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,959** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -94,6 +94,7 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Seek and Destroy | Angel and Guristas levels 1–3; Sansha levels 1–2; Blood levels 1 and 3; Serpentis levels 2–3; two Thukker-supplier templates using the same Sansha dungeons | 14 |
 | The Score | Angel and Guristas level 1, Blood and Serpentis level 2, Guristas level 3 | 5 |
 | The Roving Rogue Drones and The Drone Infestation | Level 1 | 2 |
+| Rogue Drone Harassment | Levels 2 and 3, four templates per level | 8 |
 | Smuggler Interception | Angel and Sansha level 2 | 2 |
 
 Avenge a Fallen Comrade requires destruction of the **Habitat** in the Angel, Guristas, Serpentis and level-two DED pockets; guards are optional and no cargo is required. Level-one DED instead requires all six DED soldiers. Each variant retains its empty entrance room and acceleration gate. The remaining variants with unverified reinforcement triggers stay blocked. See the [evejs comparison and validation](protocol/agents.md#avenge-a-fallen-comrade--november-14-2026).
@@ -134,6 +135,10 @@ requires the full Mammoth group in pocket two. The three other groups are option
 The Blood Raider Spies requires the six ships in the third group. Attack the Angel Hideout requires the Angel cruiser
 and its five escorts. The Seven's Brothel and Prison Facility each require a named leader and one bodyguard.
 [Encounter evidence](protocol/agents.md#reported-security-mission-targets--november-23-2026)
+
+Rogue Drone Harassment locks the second gate until the initial combat pocket is clear. Level two requires the Wrecker Alvum
+in the final pocket. Level three uses the reported variant that requires the first two final groups, with the separate Bomber
+Alvum optional. [Encounter evidence](protocol/agents.md#rogue-drone-harassment--november-23-2026)
 
 ## Paragon hull exchanges
 

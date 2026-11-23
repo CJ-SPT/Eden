@@ -2,6 +2,36 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Rogue Drone Harassment — November 23, 2026
+
+The level-two definition 1219 uses dungeon 311 and admits twins 1221, 1572, and 1573. Level three definition 1222 uses
+dungeon 312 and admits twins 1223, 1574, and 1575. Each level uses the pinned lobby, two gates, and room-local scenery.
+The dungeons use generic faction 500021. All spawned actors use the reported Rogue Drone faction 500025 and its pinned
+mission NPC types. Declared spawn ranges select anchors from the matching room.
+
+Level two requires all eleven regular guards in the first combat pocket and the lone Wrecker Alvum in the final pocket.
+Level three requires all fifteen regular guards, then both of the first two groups in the final pocket. That selects the
+stricter objective variant reported by players. The lone Bomber Alvum in the separate third group is optional. The optional
+Strain Infester occurrence and its distribution, as well as group-specific aggro, remain open. The EVE.js offer evidence
+was consulted for the mission family. The encounter is built from the pinned catalog and the reports below.
+
+- [EVE University level two, revision 191890](https://wiki.eveuniversity.org/index.php?title=Rogue_Drone_Harassment_(Level_2)&oldid=191890) · [EVE-Survival level two, May 22, 2013](https://eve-survival.org/?wakka=RogueDroneHarassment2)
+- [EVE University level three, revision 201909](https://wiki.eveuniversity.org/index.php?title=Rogue_Drone_Harassment_(Level_3)&oldid=201909) · [EVE-Survival level three, July 5, 2023](https://eve-survival.org/?wakka=RogueDroneHarassment3)
+
+**Automated validation**
+
+The solution built with zero warnings or errors in 26.67 seconds. The exact resident filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.RogueDroneHarassmentClearsTheFirstPocketAndItsReportedFinalTargets`
+passed both levels in 16.86 seconds after a 2.15-second feature build.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Complete level three with the final Bomber Alvum still alive.
+
 ## Level-four Mordus Headhunters — November 23, 2026
 
 Reviewed mission 2561 and admitted its catalog twins 2562 and 2564 after matching their full encounter payload. Build 3662168
