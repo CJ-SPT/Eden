@@ -163,6 +163,10 @@ Pilots within range of a dockable Upwell structure can move eligible ship cargo 
 from space. They can see the deposit in Personal Assets and move it into Item Hangar after docking.
 [Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)
 
+While docked at an Upwell structure, pilots can send eligible personal Item Hangar stacks to another pilot's Deliveries
+hangar. The recipient's items and inbox notification persist across restarts.
+[Personal Deliveries at Upwell structures](protocol/structures.md#personal-deliveries-at-upwell-structures)
+
 Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
 missiles, neutralize capacitor, slow ships and disrupt warp. Loading the Standup scrambling script also blocks
 microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner

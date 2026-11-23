@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Mail;
 using Eden.Gameplay.Notifications;
@@ -46,6 +47,24 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
         );
     }
 
+    internal static void AddStructureDelivery(
+        WorldAction world,
+        long sender,
+        long receiver,
+        StructureDeliveryContent delivery,
+        long time
+    ) =>
+        world.Add(
+            new SavedInboxNotification
+            {
+                Type = InboxNotificationType.StructureItemsDelivered,
+                SenderId = sender,
+                ReceiverId = receiver,
+                Created = time,
+                Message = JsonSerializer.Serialize(delivery),
+            }
+        );
+
     private static void CheckPilot(WorldAction world, long id)
     {
         if (!world.PilotExists(id))
@@ -67,7 +86,8 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
             ),
             InboxGroup.Bills => rows.Where(n => n.Type == InboxNotificationType.AllianceMaintenanceBill),
             InboxGroup.Miscellaneous => rows.Where(n =>
-                n.Type >= InboxNotificationType.KillRightAvailable && n.Type <= InboxNotificationType.KillRightUnavailableOpen
+                n.Type == InboxNotificationType.StructureItemsDelivered
+                || n.Type >= InboxNotificationType.KillRightAvailable && n.Type <= InboxNotificationType.KillRightUnavailableOpen
             ),
             InboxGroup.FactionWarfare => rows.Where(n =>
                 n.Type >= InboxNotificationType.MilitiaMemberStandingWarning

@@ -19,6 +19,9 @@ public enum InboxNotificationType
     KillRightUnavailable = 119,
     KillRightUnavailableOpen = 120,
 
+    // Build 3662168 eve.common.script.util.notificationconst.
+    StructureItemsDelivered = 199,
+
     // Build 3662168 notifications.common.notificationconst.
     MilitiaMemberStandingWarning = 298,
     MilitiaCorporationCeoStandingWarning = 299,
@@ -54,6 +57,16 @@ public sealed record ContactNotificationContent(double Level, string Message);
 
 public sealed record KillRightNotificationContent(KillRight Right);
 
+public sealed record StructureDeliveryQuantity(int TypeId, long Quantity);
+
+public sealed record StructureDeliveryContent(
+    long StructureId,
+    int StructureTypeId,
+    int SystemId,
+    StructureDeliveryQuantity[] Types,
+    long[] ItemIds
+);
+
 public sealed record MilitiaStandingNotificationContent(
     long CharacterId,
     int CorporationId,
@@ -76,7 +89,10 @@ public sealed record InboxNotification(
     int? AllianceId = null,
     MilitiaStandingNotificationContent? MilitiaStanding = null,
     KillRightNotificationContent? KillRight = null
-);
+)
+{
+    public StructureDeliveryContent? StructureDelivery { get; init; }
+}
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);
 

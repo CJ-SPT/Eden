@@ -42,7 +42,13 @@ public sealed class SavedInboxNotification
             Type is >= InboxNotificationType.KillRightAvailable and <= InboxNotificationType.KillRightUnavailableOpen
                 ? JsonSerializer.Deserialize<KillRightNotificationContent>(Message)
                 : null
-        );
+        )
+        {
+            StructureDelivery =
+                Type == InboxNotificationType.StructureItemsDelivered
+                    ? JsonSerializer.Deserialize<StructureDeliveryContent>(Message)
+                    : null,
+        };
 }
 
 public sealed class SavedMail

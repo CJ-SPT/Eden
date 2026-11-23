@@ -46,6 +46,43 @@ FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureCargoDropoffTests|Ful
 **Optional maintainer checks.** Open **Cargo Deposit** within 10 km of a dockable Upwell structure. Deposit a stack, dock,
 then move the stack from **Deliveries** into **Item Hangar**.
 
+## Personal Deliveries at Upwell structures
+
+Build **3662168** `invItemFunctions.pyj` sends `structureDeliveries.Deliver(structureID, characterID, itemIDs)` from
+**Deliver to**. It sends whole item stacks. The original client archive has SHA-256 prefix `37fb2af4fa0e`. EVE.js
+**261108.1**, build **3396210**, processes the personal Item Hangar source in `structureDeliveriesService.js` (`ff6f7a64e11d`).
+[CCP Upwell Structures quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts) ·
+[EVE University character transfers](https://wiki.eveuniversity.org/Alternate_characters#Transferring_goods_between_characters)
+
+A docked pilot can send eligible items from their Item Hangar to a local pilot's Deliveries hangar at the same Upwell
+structure. The receiving pilot can be offline or elsewhere. A self-delivery moves the items between the pilot's hangars.
+Supported containers carry eligible contents with them. A container with an ineligible item or a different owner inside
+stays in the sender's hangar. Ownership and the saved delivery notification commit together. Recipients can see their
+items in Personal Assets and move them into Item Hangar after docking.
+
+The pinned formatter in `notifications/common/formatters/structures.pyj` reads notification type **199**, the structure and
+sender identifiers, and `(quantity, typeID)` pairs. A recipient already docked there receives inventory updates for the
+delivered items that are still in Deliveries. Corporation inventory sources and assembled ship transfers remain separate.
+
+**Automated validation.** The exact
+`Eden.Protocol.Tests.Structures.StructureDeliveryTests.NativeDeliverToPersistsPrivateCustodyAndNoticesThenAllowsClaimAfterRestart`
+filter passed in 8.73 s after a 15.91 s build. It exercises container ownership, retry safety, the native inbox and
+claiming deliveries after checkpoint and reopen. The previous Personal Assets test still expected unsupported results
+for two implemented Asset Safety routes. Its failure reproduced on the pre-delivery main revision `eeb96063` and the
+corrected malformed-request test passed in 8.70 s.
+
+The solution build completed in 14.97 s with zero warnings or errors. This combined filter passed all 78 tests in 35.51 s.
+The catalog setup and formatting policy suites passed all 17 Python tests.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureDeliveryTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureCargoDropoffTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.AssetSafetyTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InboxTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.InboxServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PersonalAssetServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.CargoContainerAssemblyTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PlayerTradeTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Dock at the same Upwell structure with two accounts. Send a stack using **Deliver to**, then
+confirm it appears in the recipient's Deliveries and notification inbox.
+
 ## Upwell completion program — November 16, 2026
 
 The completion program continues the existing foundation with resident authority and checkpoint persistence.

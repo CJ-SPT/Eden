@@ -1,14 +1,16 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Notifications;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class InboxHandler(IPilotInbox inbox) : ISelectedPilotCallHandler
+internal sealed class InboxHandler(IPilotInbox inbox, IPilotInventory inventory) : ISelectedPilotCallHandler
 {
     private long? _pilot;
     private long _cursor;
@@ -51,6 +53,8 @@ internal sealed class InboxHandler(IPilotInbox inbox) : ISelectedPilotCallHandle
             return;
         }
         var batch = inbox.Changes(context.Pilot.PilotId, _cursor);
+        var pilot = context.Pilot;
+        HashSet<long>? deliveredItems = null;
         foreach (var notification in batch.Items)
         {
             if (notification.KillRight is { Right: var right })
@@ -74,6 +78,30 @@ internal sealed class InboxHandler(IPilotInbox inbox) : ISelectedPilotCallHandle
             if (notification.ReceiverId == _pilot && !fetched && !notification.Processed && !notification.Deleted)
             {
                 context.Notifications.Add(new InboxNotificationReceived(notification));
+            }
+            if (
+                pilot.InStructure
+                && notification.ReceiverId == pilot.PilotId
+                && notification.SenderId != pilot.PilotId
+                && notification.StructureDelivery is { } delivery
+                && delivery.StructureId == pilot.DockedLocationId
+            )
+            {
+                (deliveredItems ??= []).UnionWith(delivery.ItemIds);
+            }
+        }
+        if (deliveredItems is { Count: > 0 })
+        {
+            foreach (var item in inventory.List(pilot.PilotId, pilot.DockedLocationId))
+            {
+                if (
+                    item.OwnerId == pilot.PilotId
+                    && item.FlagId == (int)InventoryFlag.StructureDeliveries
+                    && deliveredItems.Contains(item.Id)
+                )
+                {
+                    InventoryChangesWire.NotifyItemChange(context, new(item, null), beforeFlight: true);
+                }
             }
         }
         _cursor = batch.Cursor;
@@ -196,6 +224,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
         notification.MilitiaStanding is { } militia ? new InboxMilitiaStandingData(notification.Type, militia)
         : notification.AllianceId is int alliance ? new InboxAllianceData(alliance)
         : notification.KillRight is { } killRight ? new InboxKillRightData(notification.Type, notification.SenderId, killRight.Right)
+        : notification.StructureDelivery is { } delivery ? new InboxStructureDeliveryData(notification.SenderId, delivery)
         : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>
@@ -223,6 +252,20 @@ internal sealed record InboxNotificationReceived(InboxNotification Notification)
 internal sealed record InboxAllianceData(int AllianceId) : BlueModel
 {
     public override object ToBlue() => new Dictionary<string, object?> { ["allianceID"] = AllianceId };
+}
+
+internal sealed record InboxStructureDeliveryData(long SenderId, StructureDeliveryContent Content) : BlueModel
+{
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["structureID"] = Content.StructureId,
+            ["structureTypeID"] = Content.StructureTypeId,
+            ["solarsystemID"] = Content.SystemId,
+            ["structureShowInfoData"] = new object?[] { "showinfo", Content.StructureTypeId, Content.StructureId },
+            ["charID"] = SenderId,
+            ["listOfTypesAndQty"] = Content.Types.Select(entry => (object?)new object?[] { entry.Quantity, entry.TypeId }).ToList(),
+        };
 }
 
 internal sealed record InboxKillRightData(InboxNotificationType Type, long OtherPilotId, KillRight Right) : BlueModel

@@ -11,12 +11,12 @@ internal static class BlueRead
     internal static Dictionary<string, object?> Fields(object? value) =>
         value as Dictionary<string, object?> ?? throw new InvalidDataException("Expected fields.");
 
-    internal static long[] PositiveIds(List<object?> values)
+    internal static long[] PositiveIds(List<object?> values, string idName = "character IDs")
     {
         var ids = new long[values.Count];
         for (int i = 0; i < ids.Length; i++)
         {
-            ids[i] = values[i] is long and > 0 and var id ? id : throw new InvalidDataException("Supply a list of positive character IDs.");
+            ids[i] = values[i] is long and > 0 and var id ? id : throw new InvalidDataException($"Supply a list of positive {idName}.");
         }
         return ids;
     }
