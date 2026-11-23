@@ -76,11 +76,14 @@ internal static class MultifitWire
             || number is < 1 or > MultifitRules.MaximumShips
             || name is not (null or string or byte[])
             || container is not (null or long)
+            || rigs is not (bool or 0L or 1L)
         )
         {
             throw new InvalidDataException("Invalid multifit request.");
         }
-        var fitting = ApplyFittingWire.Read([0L, type, new Dictionary<long, object?>(), location, plan, cargo, rigs]);
+        // Build 3662168 MultiFitWnd forwards the checkbox's integer value as fitRigs.
+        bool fitRigs = rigs is true or 1L;
+        var fitting = ApplyFittingWire.Read([0L, type, new Dictionary<long, object?>(), location, plan, cargo, fitRigs]);
         var request = new MultifitRequest(fitting, (int)number, name is null ? null : BlueMarshal.Text(name), (long?)container);
         MultifitRules.Check(request);
         return request;

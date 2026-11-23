@@ -9,9 +9,12 @@ using Eden.Protocol.Fittings;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Ammunition;
+using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Fittings;
@@ -151,25 +154,41 @@ public sealed class MultifitTests
     }
 
     [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    public void ExhaustingThePackageStackPreservesItsFinalIdentityAndSkipsUnconfirmedRigs(int count)
+    [InlineData(1, 0L)]
+    [InlineData(2, 0L)]
+    [InlineData(1, 1L)]
+    public void NativeRigCheckboxFitsPackagedShipsAndPreservesTheFinalPackageId(int count, long fitRigs)
     {
+        const int rig = 31788;
         using var fixture = Create();
         long package = Grant(fixture, Hull, count);
         Grant(fixture, Miner, 2 * count);
+        if (fitRigs == 1)
+        {
+            string catalogPath = new WorldDatabase(fixture.Db.Path).CatalogPath;
+            PassiveCatalogFixture.LoadRigs(catalogPath);
+            using CatalogDbContext catalog = new(catalogPath, writable: true);
+            // Build 3662168 Venture calibration, rig slots, available rig slots and rig size.
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO TypeAttribute VALUES (32880,1132,400),(32880,1137,3),(32880,1154,3),(32880,1547,1);"
+            );
+            Grant(fixture, rig, count);
+        }
         using var scope = fixture.Db.Services.CreateScope();
         using var context = fixture.Context();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var keywords = Request(context, count);
+        keywords["fitRigs"] = fitRigs;
         var plan = Assert.IsType<BlueInstance>(keywords["fitInfo"]);
         var fields = Assert.IsType<Dictionary<string, object?>>(plan.State);
-        Assert.IsType<Dictionary<long, object?>>(fields["modulesByFlag"])[(long)InventoryFlag.RigSlot0] = 31788L;
+        Assert.IsType<Dictionary<long, object?>>(fields["modulesByFlag"])[(long)InventoryFlag.RigSlot0] = (long)rig;
         context.Notifications.Clear();
-        Assert.Null(Reply(router.Call(context, "ship", "FitShips", Array.Empty<object?>(), _ => { }, keywords)));
+        Assert.Null(Assert.IsType<object?[]>(Reply(Bind(router, context, keywords)))[1]);
         Assert.Contains(Ships(fixture), ship => ship.Id == package && ship.Singleton);
         Assert.DoesNotContain(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.DockedLocationId), item => item.Id == package);
-        Assert.Equal(2, fixture.Inventory.List(context.Pilot.PilotId, package).Count);
+        var contents = fixture.Inventory.List(context.Pilot.PilotId, package);
+        Assert.Equal(2, contents.Count(item => item.TypeId == Miner));
+        Assert.Equal(fitRigs, contents.Count(item => item.TypeId == rig && item.FlagId == (int)InventoryFlag.RigSlot0));
         Assert.Equal(
             0,
             Assert.Single(context.Notifications.OfType<ItemChanged>(), item => item.Item.Id == package).Previous[InventoryColumn.Singleton]
@@ -270,6 +289,7 @@ public sealed class MultifitTests
     [InlineData("keyword")]
     [InlineData("name")]
     [InlineData("slot")]
+    [InlineData("rig checkbox")]
     public void InvalidOrForeignRequestsLeaveTheBatchUnchanged(string invalid)
     {
         using var fixture = Create();
@@ -295,6 +315,9 @@ public sealed class MultifitTests
                 break;
             case "name":
                 keywords["name"] = "bad\nname";
+                break;
+            case "rig checkbox":
+                keywords["fitRigs"] = 2L;
                 break;
             case "slot":
                 var fields = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(keywords["fitInfo"]).State);

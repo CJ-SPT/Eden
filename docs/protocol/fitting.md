@@ -68,6 +68,38 @@ policy suites, and formatting verification passed.
 
 **Optional maintainer checks.** None.
 
+## Multifit rig checkbox on packaged ships, November 22, 2026
+
+Clicking **Fit Ships** with a packaged Venture and matching hangar stock returned `Invalid ship fitting request`.
+Build **3662168** `MultiFitWnd.DoFitShips` forwards `rigCB.GetValue()` through `fittingSvc.DoFitManyShips`
+as the `ship.FitShips` keyword `fitRigs`. In `carbonui/control/checkbox.pyj`, `SetChecked` stores an integer and
+`GetValue` returns it. `fittingSvc.LoadFitting` sends a Boolean on the assembled-ship `FitFitting` route.
+The Multifit adapter accepts `0`, `1` and Boolean values and converts them before the shared fitting parser.
+Invalid values fail before the resident world assembles a hull or consumes stock.
+
+Inert inspection used pinned archive SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The `multiFitWnd.pyj` decoded payload SHA-256 is `7072a6670bfbfe081bc3e2b4a665dc379607b7edf36dc823d9719c42005290e4`.
+The `checkbox.pyj` decoded payload SHA-256 is `2e32ab9a3d825a7d4e9255214ecdfd635ee79841b6df0f0813ab63bd2c627e1b`.
+All three client modules match the staged overlay byte-for-byte. The
+[native batch record](#native-multifit-batches-november-15-2026) identifies the EVE.js snapshot and notes the
+historical EVE University ship-supply procedure. Carbon Blue distinguishes integer zero and one from the Boolean tags.
+[Carbon Blue Marshal.cpp at fcbf0c2][multifit-carbon]
+
+**Automated validation.** The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Fittings.MultifitTests.NativeRigCheckboxFitsPackagedShipsAndPreservesTheFinalPackageId`
+reproduced `Invalid ship fitting request` in all three cases before the fix. After the fix, all three passed in 26.69 s
+(17.14 s build), covering one and two packaged Ventures, rig selection and preservation of the final package ID.
+The combined `FullyQualifiedName~Eden.Protocol.Tests.Fittings.MultifitTests` and
+`FullyQualifiedName~Eden.Protocol.Tests.Fittings.ApplyFittingTests` filter passed 30 cases in 48.86 s.
+The solution build passed in 2.21 s with zero warnings or errors. The catalog and formatting policy suites passed 8 and 9 cases.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Click **Fit Ships** on one packaged Venture with the modules in the Item Hangar.
+For a fit with a rig, select **Fit Rigs** and confirm the rig is installed on the assembled hull.
+
+[multifit-carbon]: https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp
+
 ## Multifit exhausted-stack notifications, November 17, 2026
 
 The maintainer reported an invisible fitted module occupying a slot while appearing to remain in the
