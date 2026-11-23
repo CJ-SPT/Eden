@@ -511,6 +511,7 @@ internal sealed partial class CapsuleerScheduler(
         Dictionary<long, HaulerObservation> hauling = [];
         CapsuleerJob? executing = null;
         bool actedInObservedSystem = false;
+        long previouslyCompleted = _completed;
         try
         {
             if (!activity.Active)
@@ -672,8 +673,10 @@ internal sealed partial class CapsuleerScheduler(
             if (turn.OldestDueTicks is null)
             {
                 Settle(Math.Max(_settledTicks, throughTicks));
-                // Use the capacity freed by this turn before another deadline comes due.
-                int starts = StartBackgroundPilots(throughTicks);
+            }
+            if (turn.OldestDueTicks is null || _completed > previouslyCompleted)
+            {
+                int starts = StartBackgroundPilots(throughTicks, allowDueWork: true);
                 if (starts > 0)
                 {
                     turn = turn with

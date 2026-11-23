@@ -4,11 +4,16 @@ using System.Text.Json;
 using Eden.Data.Catalog.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Inventory;
 using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
 
-internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, TrafficProfile[] profiles)
+internal sealed class TrafficSnapshot(
+    TrafficSnapshotManifest? manifest,
+    TrafficProfile[] profiles,
+    IReadOnlyList<TrafficProfile>? recorded = null
+)
 {
     internal static TrafficSnapshot Empty { get; } = new(null, []);
     internal TrafficSnapshotManifest? Manifest => manifest;
@@ -20,7 +25,7 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         .GroupBy(profile => profile.SecurityBand)
         .ToDictionary(group => group.Key, group => Ordered(group));
     private readonly TrafficProfile[] _global = Ordered(profiles);
-    private readonly Dictionary<long, TrafficProfile> _kills = profiles.ToDictionary(profile => profile.KillId);
+    private readonly Dictionary<long, TrafficProfile> _kills = (recorded ?? profiles).ToDictionary(profile => profile.KillId);
 
     internal TrafficProfile? Find(long killId) => _kills.GetValueOrDefault(killId);
 
@@ -254,7 +259,7 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         }
     }
 
-    internal static TrafficSnapshot Read(string path, string fingerprint)
+    internal static TrafficSnapshot Read(string path, string fingerprint, CatalogDbContext? catalog = null)
     {
         using var connection = TrafficConnections.Snapshot(path);
         connection.Open();
@@ -279,7 +284,24 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         {
             throw new InvalidDataException("Traffic snapshot content checksum does not match.");
         }
-        return new(metadata, values.ToArray());
+        if (catalog is null)
+        {
+            return new(metadata, values.ToArray());
+        }
+        var mutationTypes = values
+            .SelectMany(profile => profile.Equipment)
+            .Select(item => item.TypeId)
+            .Distinct()
+            .Where(type => MutationCatalog.BaseType(catalog, type) != type)
+            .ToHashSet();
+        if (mutationTypes.Count == 0)
+        {
+            return new(metadata, values.ToArray());
+        }
+        var compatible = values.Where(profile => !profile.Equipment.Any(item => mutationTypes.Contains(item.TypeId))).ToArray();
+        Console.Error.WriteLine($"Skipped {values.Count - compatible.Length:N0} traffic fits with missing Abyssal mutations.");
+        // Keep recorded fits available by kill ID for saved identities, ammunition and correction.
+        return new(metadata, compatible, values);
     }
 
     internal static TrafficSnapshotManifest ReadManifest(string path, string fingerprint)

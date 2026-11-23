@@ -6,6 +6,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -22,6 +23,35 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class TrafficSnapshotTests
 {
     private const int Source = 30000141;
+
+    [Fact]
+    public void ResidentPopulationSkipsLegacyAbyssalFitAndUsesTheCompatibleObservation()
+    {
+        const int abyssalDamageControl = 47702;
+        using CapsuleerHaulerTests.Fixture f = new(
+            legacyFounders: false,
+            isolateRoute: true,
+            additionalCatalogData: PassiveCatalogFixture.LoadAbyssal
+        );
+        var supported = Profile();
+        var missingMutation = supported with
+        {
+            KillId = supported.KillId + 1,
+            Equipment = [new(abyssalDamageControl, (int)InventoryFlag.LowSlot0, 1)],
+        };
+        Install(f.Database, supported, missingMutation);
+        CapsuleerBackgroundPreparationTests.PrepareStartup(f);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+        host.PrepareActivatedPopulations();
+
+        var live = host.GetRequiredService<LiveWorld>();
+        var identity = live.Economy.Inspect(world => Assert.Single(world.Set<SavedTrafficIdentity>()));
+        Assert.Equal(supported.KillId, identity.KillId);
+        Assert.Equal(missingMutation.KillId, f.Database.Traffic.Find(missingMutation.KillId)?.KillId);
+        using CatalogDbContext catalog = new(f.Database.CatalogPath);
+        Assert.Throws<InvalidDataException>(() => TrafficFitting.CheckTypes(catalog, missingMutation));
+    }
 
     [Fact]
     public void RuntimeCandidatePoolsPreserveSelectionAndReleaseTheirCatalogReader()

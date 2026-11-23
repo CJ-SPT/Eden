@@ -25,7 +25,8 @@ public sealed class PatrolCatalogTests
         using var catalog = new CatalogDbContext(path);
         var snapshot = TrafficSnapshot.Read(
             Path.Combine(Path.GetDirectoryName(path)!, "traffic.sqlite"),
-            TrafficSnapshot.Fingerprint(catalog)
+            TrafficSnapshot.Fingerprint(catalog),
+            catalog
         );
         const int system = 30004759; // 1DQ1-A, nullsec.
         var pools = snapshot.PrepareCandidates(catalog.RequireSystem(system).RegionId, TrafficSecurityBand.Null, null, null);

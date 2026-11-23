@@ -43,6 +43,10 @@ internal static partial class TrafficFitting
         foreach (var item in profile.Equipment)
         {
             var type = catalog.FittingType(item.TypeId) ?? throw new InvalidDataException("Unknown equipment type.");
+            if (MutationCatalog.BaseType(catalog, item.TypeId) != item.TypeId)
+            {
+                throw new InvalidDataException("Recorded Abyssal equipment is missing its per-item mutation.");
+            }
             if (
                 type.CategoryId != (int)InventoryCategory.Charge
                 && (item.Quantity != 1 || FittingCatalog.Definition(catalog, item.TypeId) is null)

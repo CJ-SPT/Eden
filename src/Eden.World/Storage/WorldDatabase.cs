@@ -27,7 +27,7 @@ public sealed record WorldDatabase(string Path)
         try
         {
             using CatalogDbContext catalog = new(CatalogPath);
-            return Eden.World.Capsuleers.TrafficSnapshot.Read(path, Eden.World.Capsuleers.TrafficSnapshot.Fingerprint(catalog));
+            return Eden.World.Capsuleers.TrafficSnapshot.Read(path, Eden.World.Capsuleers.TrafficSnapshot.Fingerprint(catalog), catalog);
         }
         catch (Exception error)
             when (error is IOException or InvalidDataException or System.Text.Json.JsonException or Microsoft.Data.Sqlite.SqliteException)

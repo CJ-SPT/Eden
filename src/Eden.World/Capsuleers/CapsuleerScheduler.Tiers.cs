@@ -38,7 +38,7 @@ internal sealed partial class CapsuleerScheduler
     private long? NextWorkTicks() =>
         _waitingBackground.Count == 0 ? _queue.NextDueTicks : Math.Min(_queue.NextDueTicks ?? long.MaxValue, _nextBackgroundStartTicks);
 
-    private int StartBackgroundPilots(long elapsedTicks)
+    private int StartBackgroundPilots(long elapsedTicks, bool allowDueWork = false)
     {
         if (_waitingBackground.Count == 0 || elapsedTicks < _nextBackgroundStartTicks)
         {
@@ -47,14 +47,8 @@ internal sealed partial class CapsuleerScheduler
         int limit = BackgroundStartsPerInterval;
         if (_queue.NextDueTicks is long oldest && oldest <= elapsedTicks)
         {
-            // An expanded fresh roster can keep some work due even while healthy.
-            // Let one current-time start join the existing deadlines per interval.
-            var settings = _populationSettings.Settings;
-            if (
-                !settings.FreshUniverse
-                || settings.Capsuleers.FreshFounderCohortsPerSystem == FreshCareerRules.DefaultFounderCohorts
-                || elapsedTicks - oldest >= CapsuleerJobQueue.WakeInterval.Ticks * 2
-            )
+            // A healthy busy queue may never become empty. Admit one pilot after existing work advances.
+            if (!allowDueWork || elapsedTicks - oldest >= CapsuleerJobQueue.WakeInterval.Ticks * 2)
             {
                 return 0;
             }

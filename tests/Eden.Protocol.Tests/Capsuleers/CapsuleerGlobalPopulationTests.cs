@@ -376,6 +376,41 @@ public sealed class CapsuleerGlobalPopulationTests
     }
 
     [Fact]
+    public void EstablishedOffscreenStartsContinueWhileRecentlyDueJobsAdvance()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerProvisioningTests.AddSystem(f.Database, Third);
+        Restart(f, new(Miners: false, TrafficMultiplier: 10, GateVisitors: 0));
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        using (var world = live.Economy.Begin())
+        {
+            foreach (var job in world.Set<SavedCapsuleerJob>().ToArray())
+            {
+                job.DueTicks = 0;
+            }
+            world.Commit();
+        }
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+        int waiting = scheduler.Read().WaitingBackgroundStarts;
+        Assert.True(waiting > 2);
+
+        f.Clock.Milliseconds += 25;
+        var first = scheduler.Run(0, maximumActions: 1).Turn;
+        Assert.Equal(1, first.Completed);
+        Assert.NotNull(first.OldestDueTicks);
+        Assert.Equal(waiting - 1, scheduler.Read().WaitingBackgroundStarts);
+        Assert.NotNull(scheduler.Run(0, maximumActions: 1).Turn.OldestDueTicks);
+        Assert.Equal(waiting - 1, scheduler.Read().WaitingBackgroundStarts);
+
+        f.Clock.Milliseconds += 100;
+        Assert.Equal(0L, scheduler.Run(0, maximumActions: 1).Turn.OldestDueTicks);
+        Assert.Equal(waiting - 1, scheduler.Read().WaitingBackgroundStarts);
+        Assert.Equal(0, scheduler.Read().Failures);
+    }
+
+    [Fact]
     public async Task SavedTrafficCrossesUnobservedSystemsAndResumesAfterRestart()
     {
         const int home = 30000141;

@@ -2,6 +2,46 @@
 
 [Protocol index](../protocol.md)
 
+## Pilot creation and offscreen admission under load
+
+After `62f36b60` enabled unvisited-system preparation in Established Universe, the server repeatedly deferred
+systems with “This Abyssal module has no saved mutation.” The operator log reported 4,231 occurrences across 384
+systems. A copied traffic snapshot contains 417 profiles that reference known mutation output types. Killmail fittings
+contain equipment types and slots. Mutated equipment also requires the particular item's saved attribute rolls.
+
+Runtime snapshot loading verifies the saved checksum, then excludes fits that require missing mutations from new
+selections. An older compatible fit or generated traffic can fill the slot. Existing identity lookups retain their
+recorded fit. New imports reject these fits before reusing a cached validation result. The local EVE.js 261108.1
+reference exposes per-item dynamic attributes in `server/src/services/dogma/dynamicItemService.js`. Eden resolves the
+actual module types using the build 3662168 mutation catalog.
+
+An Established Universe scheduler previously required the due queue to empty before starting offscreen pilots.
+After advancing existing work, the scheduler can now admit one waiting pilot per 50 ms interval while the oldest
+deadline is less than 100 ms late. A drained queue still permits up to four starts per interval. Older backlogs get
+priority, and the existing pause, resume, and saved deadline rules apply.
+
+### Automated validation
+
+The exact filters for `ResidentPopulationSkipsLegacyAbyssalFitAndUsesTheCompatibleObservation`,
+`EstablishedOffscreenStartsContinueWhileRecentlyDueJobsAdvance`, and
+`LoginDrainsLocalJobsBeforeStartingBoundedBatchesOfOffscreenTravelers` passed all three cases in 9.06 seconds.
+They verify fallback to a compatible observation, paced starts alongside recently due work, pausing starts under an
+older backlog, and the original login and departure behavior.
+
+The broader `FullyQualifiedName~` filter joined `TrafficSnapshotTests`, `CapsuleerGlobalPopulationTests`,
+`CapsuleerBackgroundPreparationTests`, `CapsuleerPopulationRetryTests`, `CapsuleerPopulationSettingsTests`,
+`CapsuleerMaintenanceTests`, `MutaplasmidTests` and `InstalledSnapshotSelectsAndValidatesEveryCombatCapablePatrolHull`
+with `|`. All 109 cases passed in 94.06 seconds, including the test against the copied catalog and traffic snapshot.
+The solution built in 7.46 seconds with zero warnings or errors. Both Python policy suites, formatting, and the diff check passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After updating the server, select a character and check **Offscreen pilots waiting to start** on **Performance**.
+
 ## Unvisited systems in Established Universe
 
 The population switch still required `FreshUniverse` after `af60d570` made Established Universe the setup profile.
