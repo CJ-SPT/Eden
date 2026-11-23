@@ -341,7 +341,7 @@ internal sealed class InventoryTransfers(
         var flight = context.Flight;
         if (!flight.CanUseSelfModules || flight.InWarp || flight.PreparingWarp || flight.Cloaked || flight.MicroJumpSpooling)
         {
-            throw new InvalidDataException("Use the mobile fitting service from your active ship outside warp.");
+            throw new InvalidDataException("Change your active ship's fitting outside warp and while uncloaked.");
         }
         flight.Checkpoint();
     }

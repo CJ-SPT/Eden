@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
@@ -15,6 +16,17 @@ internal sealed record NotificationErrorValues(string Message) : BlueModel
 internal sealed record CargoSpaceErrorValues(double Available, double Required) : BlueModel
 {
     public override object ToBlue() => new Dictionary<string, object?> { ["available"] = Available, ["volume"] = Required };
+}
+
+internal sealed record ModuleOnlineCapacitorErrorValues(int ModuleTypeId, double CurrentPercent) : BlueModel
+{
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["module"] = ModuleTypeId,
+            ["have"] = CurrentPercent,
+            ["need"] = ModuleFittingRules.OnlineCapacitorRequiredPercent,
+        };
 }
 
 internal sealed record TargetLimitErrorValues(int Limit) : BlueModel

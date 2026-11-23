@@ -15,6 +15,7 @@ using Eden.Protocol.Skills;
 using Eden.Protocol.Transport;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -482,39 +483,38 @@ public sealed class PilotServicesTests
     public async Task GameplayRejectionShowsTextAndKeepsTheModuleAndSessionIntact(bool bound, bool native)
     {
         using TestWorld world = new(liveWorld: true);
+        const long pilot = 90000001;
         const long ship = 1000000000001L;
+        var live = world.Services.GetRequiredService<LiveWorld>();
         long module;
-        using (WorldDbContext saved = new(world.Path))
+        using (var action = live.Economy.Begin(new(pilots: [pilot], ships: [ship])))
         {
-            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == 90000001 && i.TypeId == InventoryDefinitions.CivilianMinerType);
+            var item = action.Set<OwnedItem>().Single(i => i.OwnerId == pilot && i.TypeId == InventoryDefinitions.CivilianMinerType);
             module = item.Id;
             item.LocationId = ship;
-            item.FlagId = (int)InventoryFlag.HighSlot0;
-            item.Singleton = true;
-            item.Online = true;
-            saved.SaveChanges();
+            item.FlagId = (int)InventoryFlag.Cargo;
+            action.Commit();
         }
-        string method = native ? "Deactivate" : "TakeModuleOffline";
-        object?[] args = native ? [module, InventoryWireDefinitions.OnlineEffectName] : [ship, module];
+        string method = native ? "Activate" : "SetModuleOnline";
+        object?[] args = native ? [module, InventoryWireDefinitions.OnlineEffectName, null, 0L] : [ship, module];
         var rejection = bound
             ? Request("dogmaIM", "MachoBindObject", [null, new object?[] { method, args, new Dictionary<string, object?>() }])
             : Request("dogmaIM", method, args);
         var packets = await ExchangeAsync(
             world,
             42,
-            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
-            Request("ship", "Undock", [ship]),
+            Request("charUnboundMgr", "SelectCharacterID", [pilot]),
             rejection,
             Request("account", "GetCashBalance", [0L])
         );
-        AssertNotifyError(packets[^2], "Change module online state on your docked active ship.");
+        AssertNotifyError(packets[^2], "Change online state only for modules fitted to your active ship.");
         Assert.EndsWith(".CallRsp", packets[^1].Name);
         Assert.Equal(0d, Result(packets[^1]));
-        using WorldDbContext persisted = new(world.Path);
-        var retained = persisted.Set<OwnedItem>().Find(module)!;
+        var inventory = world.Services.GetRequiredService<IPilotInventory>();
+        var retained = Assert.Single(inventory.List(pilot, ship), item => item.Id == module);
         Assert.Equal(ship, retained.LocationId);
-        Assert.Equal((int)InventoryFlag.HighSlot0, retained.FlagId);
-        Assert.True(retained.Online);
+        Assert.Equal((int)InventoryFlag.Cargo, retained.FlagId);
+        Assert.False(retained.Online);
     }
 
     [Fact]

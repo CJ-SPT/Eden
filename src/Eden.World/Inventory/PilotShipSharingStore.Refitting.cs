@@ -3,6 +3,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -60,8 +61,12 @@ internal sealed partial class PilotShipSharingStore
         using var world = BeginRefit(pilotId, shipId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        RequireRefit(world, catalog, pilotId, shipId, [moduleId], now);
-        var changes = PilotFittingStore.SetOnline(world, catalog, pilotId, shipId, moduleId, online, now, mobileRefit: true);
+        var pilot = RequireRefitShip(world, pilotId, shipId, now);
+        RequireIdleModules(world, shipId, [moduleId], now);
+        var (system, position) = RefitPosition(catalog, pilot);
+        bool pay = online && (WeaponsTimerActive(world, pilotId, now) || !HasFittingService(world, catalog, pilot, system, position));
+        var mode = pay ? ModuleOnlineMode.InSpaceWithCapacitorCost : ModuleOnlineMode.InSpaceWithoutCapacitorCost;
+        var changes = PilotFittingStore.SetOnline(world, catalog, pilotId, shipId, moduleId, online, now, mode);
         world.Commit();
         return changes;
     }
@@ -73,17 +78,36 @@ internal sealed partial class PilotShipSharingStore
 
     private void RequireRefit(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, IReadOnlyList<long> items, long now)
     {
-        var pilot = world.Pilots.Find(pilotId);
-        if (pilot?.ActiveShipId != shipId || pilot.ActiveShip.Position is null || pilot.ActiveShip.OwnerId != pilotId)
-        {
-            throw new InvalidDataException("Only your active ship in space can use a mobile fitting service.");
-        }
-        world.RequireUncloaked(shipId);
-        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
-        if (world.Set<SavedCrimewatch>().Find(pilotId)?.WeaponsUntil > now)
+        var pilot = RequireRefitShip(world, pilotId, shipId, now);
+        if (WeaponsTimerActive(world, pilotId, now))
         {
             throw new InvalidDataException("The weapons timer prevents refitting in space.");
         }
+        RequireIdleModules(world, shipId, items, now);
+        var (system, position) = RefitPosition(catalog, pilot);
+        if (!HasFittingService(world, catalog, pilot, system, position))
+        {
+            throw new InvalidDataException("Approach a fleet or corporation ship that provides a mobile fitting service.");
+        }
+    }
+
+    private static Pilot RequireRefitShip(WorldAction world, long pilotId, long shipId, long now)
+    {
+        var pilot = world.Pilots.Find(pilotId);
+        if (pilot?.ActiveShipId != shipId || pilot.ActiveShip.Position is null || pilot.ActiveShip.OwnerId != pilotId)
+        {
+            throw new InvalidDataException("Change your fitting only on your active ship in space.");
+        }
+        world.RequireUncloaked(shipId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        return pilot;
+    }
+
+    private static bool WeaponsTimerActive(WorldAction world, long pilotId, long now) =>
+        world.Set<SavedCrimewatch>().Find(pilotId)?.WeaponsUntil > now;
+
+    private static void RequireIdleModules(WorldAction world, long shipId, IReadOnlyList<long> items, long now)
+    {
         if (
             items.Any(id =>
                 world.Set<ActiveFittedModule>().Find(id) is { } active
@@ -94,19 +118,29 @@ internal sealed partial class PilotShipSharingStore
         {
             throw new InvalidDataException("Stop the active module before changing the fit.");
         }
+    }
+
+    private (int System, SpacePosition Position) RefitPosition(CatalogDbContext catalog, Pilot pilot)
+    {
+        long shipId = pilot.ActiveShipId;
         int system = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
         if (presence.IsTravelProtected(system, shipId) || presence.FindArea(system, shipId) is not { } source)
         {
-            throw new InvalidDataException("Wait until your ship can use a fitting service.");
+            throw new InvalidDataException("Wait until your ship can change its fitting.");
         }
+        return (system, source.Position);
+    }
+
+    private bool HasFittingService(WorldAction world, CatalogDbContext catalog, Pilot pilot, int system, SpacePosition position)
+    {
         bool MaintenanceBay(Pilot candidate) =>
             catalog.FittingAttributes(candidate.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.ShipMaintenanceBayCapacity) > 0;
         if (MaintenanceBay(pilot))
         {
-            return;
+            return true;
         }
-        var fleet = fleets.Identity(pilotId)?.FleetId;
-        foreach (long other in presence.NearbyShips(system, source.Position))
+        var fleet = fleets.Identity(pilot.Id)?.FleetId;
+        foreach (long other in presence.NearbyShips(system, position))
         {
             var host = Adjacent(world, catalog, pilot, other, ShipSharingRules.FittingRange);
             if (
@@ -115,9 +149,9 @@ internal sealed partial class PilotShipSharingStore
                 && (host.CorporationId == pilot.CorporationId || fleet is not null && fleets.Identity(host.Id)?.FleetId == fleet)
             )
             {
-                return;
+                return true;
             }
         }
-        throw new InvalidDataException("Approach a fleet or corporation ship that provides a mobile fitting service.");
+        return false;
     }
 }

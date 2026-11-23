@@ -50,7 +50,10 @@ Select **Eden Pilot**, verify **prospector (Venture)** and its saved ore in Inve
 
 #### Check a rejected gameplay action
 
-Select **Eden Pilot**, open Inventory and verify the active equipped ship. Undock safely outside a station. Right-click an online module on the HUD, choose **Put Offline** and accept the local module prompt. Eden currently requires docking to change online state, so the native **Information** dialog should explain: **Change module online state on your docked active ship.** Dismiss it and check that the module remains online and the ship still responds. This check must preserve the module, cargo and wallet. Capacity errors retain the client's existing quantity-selection flow.
+Undock with two fitted, idle modules and move clear of fitting services. Put both modules offline, then bring the first
+online with at least 95% capacitor. Charge should drop to 33%. Try bringing the second online before the capacitor
+recovers to 95%. Dismiss the capacitor error and check that the second module is still fitted and offline and the ship
+still responds. [Module online state in space](protocol/fitting.md#module-online-state-in-space)
 
 ### Flight and shared scenes
 

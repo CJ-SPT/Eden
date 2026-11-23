@@ -102,7 +102,7 @@ internal sealed partial class PilotDeveloperFittingStore(WorldDatabase database,
                             fitted.Item.Id,
                             true,
                             now,
-                            mobileRefit: inSpace,
+                            inSpace ? ModuleOnlineMode.InSpaceWithoutCapacitorCost : ModuleOnlineMode.Docked,
                             allowOfflineIfInsufficient: true
                         );
                     }
@@ -171,7 +171,7 @@ internal sealed partial class PilotDeveloperFittingStore(WorldDatabase database,
                         item.Id,
                         true,
                         now,
-                        mobileRefit: owner.ActiveShip.Position is not null,
+                        owner.ActiveShip.Position is null ? ModuleOnlineMode.Docked : ModuleOnlineMode.InSpaceWithoutCapacitorCost,
                         allowOfflineIfInsufficient: true
                     );
                 }

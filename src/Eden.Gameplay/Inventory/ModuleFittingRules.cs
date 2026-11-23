@@ -20,6 +20,20 @@ public enum ModuleRack
     Rig,
 }
 
+public enum ModuleOnlineMode
+{
+    Docked,
+    InSpaceWithCapacitorCost,
+    InSpaceWithoutCapacitorCost,
+}
+
+public sealed class ModuleOnlineCapacitorException(int moduleTypeId, double currentPercent)
+    : Exception("The ship does not have enough capacitor to bring this module online.")
+{
+    public int ModuleTypeId { get; } = moduleTypeId;
+    public double CurrentPercent { get; } = currentPercent;
+}
+
 public sealed record ModuleFittingDefinition(ModuleRack Rack, bool Turret, bool Launcher, int MaximumGroup, int MaximumType)
 {
     public int FirstFlag =>
@@ -45,6 +59,19 @@ public sealed record ModuleFittingDefinition(ModuleRack Rack, bool Turret, bool 
 
 public static class ModuleFittingRules
 {
+    // Build 3662168 appConst.onlineCapacitorChargeRatio and onlineCapacitorRemainderRatio.
+    public const int OnlineCapacitorRequiredPercent = 95;
+    public const int OnlineCapacitorRemainingPercent = 33;
+
+    public static double CapacitorAfterOnlining(int moduleTypeId, double charge, double capacity)
+    {
+        if (capacity <= 0 || charge < capacity * (OnlineCapacitorRequiredPercent / 100.0))
+        {
+            throw new ModuleOnlineCapacitorException(moduleTypeId, capacity > 0 ? charge / capacity * 100 : 0);
+        }
+        return capacity * (OnlineCapacitorRemainingPercent / 100.0);
+    }
+
     public static ModuleFittingDefinition? Define(
         int typeId,
         int groupId,
