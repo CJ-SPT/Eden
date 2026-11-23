@@ -42,7 +42,15 @@ internal sealed class PilotSkillPurchaseStore(WorldDatabase database, TimeProvid
         return new(typeIds.ToArray(), balance);
     }
 
-    internal static bool TryPurchase(WorldAction world, CatalogDbContext catalog, long pilotId, int typeId, long budget, long now)
+    internal static bool TryPurchase(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int typeId,
+        long budget,
+        long now,
+        bool fundedRefit = false
+    )
     {
         if (catalog.Read(CatalogData.Client.Typelist, PurchasableSkillsList) is null)
         {
@@ -60,7 +68,7 @@ internal sealed class PilotSkillPurchaseStore(WorldDatabase database, TimeProvid
         {
             return false;
         }
-        Settle(world, catalog, pilotId, [new(typeId, price)], now);
+        Settle(world, catalog, pilotId, [new(typeId, price)], now, fundedRefit);
         world.SaveChanges();
         return true;
     }
@@ -86,13 +94,17 @@ internal sealed class PilotSkillPurchaseStore(WorldDatabase database, TimeProvid
         CatalogDbContext catalog,
         long pilotId,
         IReadOnlyList<SkillPurchaseLine> purchases,
-        long now
+        long now,
+        bool fundedRefit = false
     )
     {
         long balance = world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0;
         foreach (var purchase in purchases)
         {
-            balance = EconomicStore.Pay(world, pilotId, 0, purchase.TypeId, WalletEntryType.SkillPurchase, purchase.PriceCents, now);
+            if (!fundedRefit)
+            {
+                balance = EconomicStore.Pay(world, pilotId, 0, purchase.TypeId, WalletEntryType.SkillPurchase, purchase.PriceCents, now);
+            }
             world.Add(new PilotSkill { PilotId = pilotId, TypeId = purchase.TypeId });
         }
         if (purchases.Count > 0)

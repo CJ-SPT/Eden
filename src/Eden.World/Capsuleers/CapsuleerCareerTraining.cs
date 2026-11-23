@@ -262,12 +262,13 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
             PilotSkillBookStore.Inject(world, catalog, id, [owned.Id], now);
             return true;
         }
-        long budget = (world.Set<PilotWallet>().Find(id)?.Cents ?? 0) / SkillbookBudgetDivisor;
+        bool funded = CapsuleerRefitFunding.Applies(world, id);
+        long budget = funded ? long.MaxValue : (world.Set<PilotWallet>().Find(id)?.Cents ?? 0) / SkillbookBudgetDivisor;
         if (budget == 0)
         {
             return false;
         }
-        if (PilotSkillPurchaseStore.TryPurchase(world, catalog, id, type, budget, now))
+        if (PilotSkillPurchaseStore.TryPurchase(world, catalog, id, type, budget, now, funded))
         {
             return true;
         }
@@ -280,7 +281,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         {
             return false;
         }
-        var buy = market.ExecuteBuy(world, catalog, id, station, [new(type, offer.PriceCents, 1)], 0);
+        var buy = market.BuyBotRefitSupplies(world, catalog, id, station, [new(type, offer.PriceCents, 1)]);
         PilotSkillBookStore.Inject(world, catalog, id, [buy.Changes.Single(change => change.Item.TypeId == type).Item.Id], now);
         marketChanged = true;
         return true;

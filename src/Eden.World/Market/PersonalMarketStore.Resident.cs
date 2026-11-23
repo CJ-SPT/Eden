@@ -8,6 +8,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
@@ -168,7 +169,8 @@ internal sealed partial class PilotMarketStore
         SavedPersonalOrder incoming,
         List<InventoryChange> changes,
         bool npcDemandOnly = false,
-        long? specificOrder = null
+        long? specificOrder = null,
+        bool fundedRefit = false
     )
     {
         long now = Now;
@@ -278,7 +280,7 @@ internal sealed partial class PilotMarketStore
                         buyerOrder.Id == 0 ? candidate.Id : buyerOrder.Id
                     );
                 }
-                else
+                else if (!fundedRefit)
                 {
                     if (buyerWallet.Cents < gross)
                     {
@@ -286,6 +288,7 @@ internal sealed partial class PilotMarketStore
                     }
                     buyerWallet.Cents -= gross;
                 }
+                // A funded refit pays only this matched fill. Nothing is credited to the buyer's wallet.
             }
             long tax = sellerWallet is null ? 0 : MarketRules.Fill(quantity, quantity, price, TaxRate(world, catalog, sellerId)).TaxCents;
             if (sellerOrder?.CorporationId is not null)
@@ -334,7 +337,12 @@ internal sealed partial class PilotMarketStore
                     .Entity;
             if (buyerWallet is not null)
             {
-                var execution = Execution(buyerId, true, buyerWallet.Cents, escrowed || buyerOrder?.CorporationId is not null ? 0 : null);
+                var execution = Execution(
+                    buyerId,
+                    true,
+                    buyerWallet.Cents,
+                    fundedRefit || escrowed || buyerOrder?.CorporationId is not null ? 0 : null
+                );
                 if (incoming.Bid)
                 {
                     trades.Add(execution);
@@ -449,6 +457,14 @@ internal sealed partial class PilotMarketStore
         return Array.ConvertAll(matches, id => writable.Find(id)!);
     }
 
+    internal MarketResult BuyBotRefitSupplies(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int stationId,
+        IReadOnlyList<MarketPurchase> items
+    ) => ExecuteBuyCore(world, catalog, pilotId, stationId, items, 0, null, null, CapsuleerRefitFunding.Applies(world, pilotId));
+
     internal MarketResult ExecuteBuy(
         WorldAction world,
         CatalogDbContext catalog,
@@ -458,6 +474,18 @@ internal sealed partial class PilotMarketStore
         int days,
         int? corporationId = null,
         List<long>? placedOrders = null
+    ) => ExecuteBuyCore(world, catalog, pilotId, stationId, items, days, corporationId, placedOrders, false);
+
+    private MarketResult ExecuteBuyCore(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int stationId,
+        IReadOnlyList<MarketPurchase> items,
+        int days,
+        int? corporationId,
+        List<long>? placedOrders,
+        bool fundedRefit
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -494,7 +522,7 @@ internal sealed partial class PilotMarketStore
                 corporationId
             );
             int start = changes.Count;
-            var fills = MatchOrders(world, catalog, order, changes);
+            var fills = MatchOrders(world, catalog, order, changes, fundedRefit: fundedRefit);
             if (days == 0 && fills.Count == 0)
             {
                 throw new InvalidDataException("No matching station order remains at that price. Refresh the market quote.");

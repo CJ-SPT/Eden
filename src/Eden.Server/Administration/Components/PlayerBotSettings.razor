@@ -119,8 +119,12 @@
 <section class="card settings-group">
     <h3>PvP roams &amp; regional conflicts</h3>
     <div class="settings-fields">
-        <SettingField Label="Buy PvP ships with activity income"
-                      Help="New combat pilots earn ISK through ordinary activities and buy their PvP ships and fittings from the market.">
+        <SettingField Label="Fund bot refits"
+                      Help="Cover bot ship, fit and resupply purchases without drawing from their wallets.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.FundBotRefits" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Buy dedicated PvP fits from the market"
+                      Help="Buy a separate PvP ship and fit. Pilots use their earnings when bot refit funding is off.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.EarnedPvpShips" aria-describedby="@field.Help" /></Control>
         </SettingField>
         <SettingField Label="Nullsec PvP roams"

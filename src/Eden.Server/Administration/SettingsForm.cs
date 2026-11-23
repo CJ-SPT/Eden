@@ -102,6 +102,7 @@ public sealed class SettingsForm
     public bool NewSovereigntyClaims { get; set; }
 
     public bool EarnedPvpShips { get; set; }
+    public bool FundBotRefits { get; set; }
     public bool RoamingPvp { get; set; }
     public bool NullsecExpeditions { get; set; }
     public bool MilitiaPatrols { get; set; }
@@ -392,6 +393,7 @@ public sealed class SettingsForm
             AutomaticAlliances = settings.Capsuleers.AutomaticAlliances,
             NewSovereigntyClaims = settings.Capsuleers.NewSovereigntyClaims,
             EarnedPvpShips = settings.Capsuleers.EarnedPvpShips,
+            FundBotRefits = settings.Capsuleers.FundRefits,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
             NullsecExpeditions = settings.Capsuleers.NullsecExpeditions,
             MilitiaPatrols = settings.Capsuleers.MilitiaPatrols,
@@ -487,6 +489,7 @@ public sealed class SettingsForm
                 AutomaticAlliances = AutomaticAlliances,
                 NewSovereigntyClaims = NewSovereigntyClaims,
                 EarnedPvpShips = EarnedPvpShips,
+                FundRefits = FundBotRefits,
                 RoamingPvp = RoamingPvp,
                 NullsecExpeditions = NullsecExpeditions,
                 MilitiaPatrols = MilitiaPatrols,

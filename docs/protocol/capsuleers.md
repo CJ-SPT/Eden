@@ -268,6 +268,29 @@ None.
 
 ## Activity-funded PvP ships
 
+### Funded refits for existing pilots
+
+A November 23 checkpoint on `3a00e987` contained 3,082 saved hauler pilots. Of those, 1,885 had no wallet balance
+above their starting cash and 37 had a recorded purchased PvP ship. A funded refit now uses existing market stock,
+ordinary matching and recorded executions. Its buyer wallet entry is zero while the seller receives the normal
+proceeds. The same policy funds stocked replacement fits, compatible charges and drones, and career skill purchases.
+Normal and corporate market orders keep their usual wallet and escrow rules. The policy defaults on when the setting
+is absent from a saved revision. Stock, access, fit and skill requirements still govern the outcome.
+
+The local EVE.js market service checks wallet funds before settlement and its ship service supports loading docked
+fits. Eden uses those ordinary market and docked fitting boundaries with a server-paid option for simulated pilots.
+[EVE University fitting](https://wiki.eveuniversity.org/Fitting_ships)
+
+**Automated validation.** The zero-wallet cases bought PvP fits locally and from a supplier, reloaded at dock,
+replaced a lost Venture from station stock, and reopened the checkpoint. The combined market, capsuleer,
+skills and configuration selection passed 101 tests in 46 seconds. The solution built in 9.25 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe refits and PvP departures after deployment.
+
+### Earlier activity-funded behavior
+
 New worlds use the Established Universe profile with the Standard market and **Buy PvP ships with activity
 income** enabled. Existing worlds load their saved profile and policy. Administrators can enable the setting for an
 existing save. The original purchase rules and validation are recorded below. Current pilots use the

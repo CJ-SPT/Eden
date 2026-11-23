@@ -732,7 +732,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
         PrepareCatalog(fixture);
-        UseLocalOrders(fixture);
+        UseLocalOrders(fixture, fundRefits: false);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         long producer;
         long patrol;
@@ -1082,7 +1082,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
         PrepareCatalog(fixture);
-        UseLocalOrders(fixture);
+        UseLocalOrders(fixture, fundRefits: false);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         PassiveCatalogFixture.LoadSovereignty(fixture.Database.CatalogPath);
         long miner;
@@ -2947,7 +2947,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         );
     }
 
-    private static void UseLocalOrders(CapsuleerHaulerTests.Fixture fixture, int? freightSurvival = null)
+    private static void UseLocalOrders(CapsuleerHaulerTests.Fixture fixture, int? freightSurvival = null, bool fundRefits = true)
     {
         var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
         var startup = configuration.Read();
@@ -2959,12 +2959,16 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 Settings = draft.Settings with
                 {
                     Economy = draft.Settings.Economy with { ProgressiveMarkets = false, StandardMarket = false },
-                    Capsuleers = freightSurvival is int survival
-                        ? draft.Settings.Capsuleers with
-                        {
-                            Freight = draft.Settings.Capsuleers.Freight with { WreckSurvivalPercent = survival },
-                        }
-                        : draft.Settings.Capsuleers,
+                    Capsuleers = draft.Settings.Capsuleers with
+                    {
+                        FundRefits = fundRefits,
+                        Freight = freightSurvival is int survival
+                            ? draft.Settings.Capsuleers.Freight with
+                            {
+                                WreckSurvivalPercent = survival,
+                            }
+                            : draft.Settings.Capsuleers.Freight,
+                    },
                 },
             },
             "Corporate industry fixture"

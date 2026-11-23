@@ -626,7 +626,10 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   they can do on arrival. [Independent expeditions](capsuleer-population.md#independent-nullsec-expeditions)
 - **Faction warfare patrols** (`settings.capsuleers.militiaPatrols`, default off) enables sorties to reachable
   current Frontlines in either empire warzone. [Faction warfare bot patrols](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
-- **Buy PvP ships with activity income** (`settings.capsuleers.earnedPvpShips`) funds new PvP fits through existing bot earnings.
+- **Fund bot refits** (`settings.capsuleers.fundRefits`, default on) pays for actual ship, fitting, replacement and
+  resupply purchases without taking ISK from the bot's wallet. Existing saves pick up the default on restart.
+- **Buy dedicated PvP fits from the market** (`settings.capsuleers.earnedPvpShips`) gives bots a separate PvP ship
+  purchased from market stock. With refit funding off, pilots finance those fits from activity earnings.
   Setup enables this for new saves. To enable it on an existing established save, select it under **PvP roams & regional conflicts**
   and save for restart. With the Progressive market and **Beginner market supply** enabled, eligible lowsec and nullsec NPC traffic
   stations seed a small supply of the entry PvP hull, fittings and ammunition.

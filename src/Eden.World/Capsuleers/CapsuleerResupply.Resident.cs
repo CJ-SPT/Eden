@@ -343,7 +343,7 @@ internal sealed partial class CapsuleerResupply
                 {
                     break;
                 }
-                long funds = Math.Min(progress.BudgetCents - progress.SpentCents, world.Set<PilotWallet>().Find(pilotId)!.Cents);
+                long funds = SpendableSupplyFunds(world, pilotId, progress);
                 if (funds <= 0)
                 {
                     break;
@@ -353,13 +353,12 @@ internal sealed partial class CapsuleerResupply
                 {
                     continue;
                 }
-                var purchase = market.ExecuteBuy(
+                var purchase = market.BuyBotRefitSupplies(
                     world,
                     catalog,
                     pilotId,
                     ship.StationId,
-                    [new(need.TypeId, order.PriceCents, quantity)],
-                    0
+                    [new(need.TypeId, order.PriceCents, quantity)]
                 );
                 long spent = purchase.Trades.Sum(t => checked(t.Quantity * t.PriceCents));
                 int bought = purchase.Trades.Sum(t => t.Quantity);
@@ -487,7 +486,7 @@ internal sealed partial class CapsuleerResupply
         IReadOnlySet<int> avoided
     )
     {
-        long funds = Math.Min(progress.BudgetCents - progress.SpentCents, world.Set<PilotWallet>().Find(pilotId)!.Cents);
+        long funds = SpendableSupplyFunds(world, pilotId, progress);
         var types = progress.Requirements.Where(r => Limit(r.TypeId) > 0).Select(r => r.TypeId).ToArray();
         if (types.Length == 0 || funds <= 0)
         {
@@ -549,6 +548,11 @@ internal sealed partial class CapsuleerResupply
             .FirstOrDefault()
             ?.Route;
     }
+
+    private static long SpendableSupplyFunds(WorldAction world, long pilot, ResupplyProgress progress) =>
+        CapsuleerRefitFunding.Applies(world, pilot)
+            ? long.MaxValue
+            : Math.Min(progress.BudgetCents - progress.SpentCents, world.Set<PilotWallet>().Find(pilot)!.Cents);
 
     private static void Load(
         WorldAction world,

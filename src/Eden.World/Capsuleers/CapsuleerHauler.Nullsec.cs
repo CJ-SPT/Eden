@@ -108,6 +108,14 @@ internal sealed partial class CapsuleerHauler
                 _operation.MarketChanged |= supplies.SpentCents != spent;
                 _work = Work with { Resupply = supplies };
             }
+            else if (
+                CapsuleerRefitFunding.Applies(world, pilotId)
+                && CapsuleerIndustry.CanStagePvp(world, catalog, Pilot.SystemId)
+                && TryShopForPvpShip(world)
+            )
+            {
+                return true;
+            }
         }
         var profile = CapsuleerPatrolFit.CombatHull(catalog, Pilot.ShipTypeId)
             ? CapsuleerDefenseProfile.Read(world, catalog, pilotId, resupplyFit)

@@ -21,6 +21,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Configuration;
 using Eden.World.Docking;
 using Eden.World.Inventory;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -31,15 +32,82 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class CapsuleerAmmunitionSupplyTests
 {
+    [Fact]
+    public async Task FundedReplacementBuysAndBoardsFromStationStockWithAnEmptyWallet()
+    {
+        const int venture = (int)CapsuleerMiningHull.Venture;
+        const int laser = (int)Eden.Gameplay.Mining.MiningLaserType.MinerI;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PrepareCatalog(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        long minerId;
+        long replaced;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using (var world = live.Economy.Begin())
+            {
+                world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
+                var agent = world.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining);
+                minerId = agent.PilotId;
+                var miner = world.Pilots.Find(minerId)!;
+                var seller = world.Pilots.Find(Customer)!;
+                seller.ActiveShip.StationId = Depot;
+                if (world.Positions.Find(seller.ActiveShipId) is { } sellerPosition)
+                {
+                    world.Remove(sellerPosition);
+                }
+                world.Add(new PilotWallet { PilotId = Customer, Cents = 10 * PersonalMarketRules.MinimumBrokerFeeCents });
+                AddStock(world, Customer, Depot, venture, 1);
+                AddStock(world, Customer, Depot, laser, 1);
+                var listings = world
+                    .Filter<OwnedItem>(item => item.OwnerId == Customer)
+                    .Where(item => item.LocationId == Depot && (item.TypeId == venture || item.TypeId == laser))
+                    .Select(item => new MarketSale(item.Id, Depot, item.TypeId, 100, 1))
+                    .ToArray();
+                Assert.Equal(2, listings.Length);
+                host.GetRequiredService<PilotMarketStore>().ExecuteSell(world, catalog, Customer, listings, 30);
+                long sellerBalance = world.Set<PilotWallet>().Find(Customer)!.Cents;
+                var station = SystemObjects.Geometry(catalog, Home).Single(body => body.Id == Depot);
+                SqliteWorld.SetPosition(world, catalog, miner.ActiveShipId, station.Position, Home, fixture.Clock.Now);
+                long capsule = DestroyBotShip(world, catalog, minerId, fixture.Clock.Now);
+                world.Set<PilotWallet>().Find(minerId)!.Cents = 0;
+                var shipStore = host.GetRequiredService<SqliteWorld>();
+                var docked = shipStore.Dock(world, catalog, minerId, capsule, Depot);
+                Assert.Null(CapsuleerIndustry.Employer(world, minerId, docked.CorpId));
+                var result = host.GetRequiredService<CapsuleerIndustry>()
+                    .ReplaceShip(world, catalog, docked, CapsuleerCareer.Mining, fixture.Clock.Now, null, null);
+                Assert.True(result.Boarded);
+                replaced = world.Pilots.Find(minerId)!.ActiveShipId;
+                Assert.Equal(venture, world.Ships.Find(replaced)!.TypeId);
+                Assert.Equal(0, world.Set<PilotWallet>().Find(minerId)!.Cents);
+                var trades = world.Filter<MarketExecution>(row => row.PilotId == minerId).ToArray();
+                Assert.Equal(2, trades.Length);
+                Assert.All(trades, trade => Assert.Equal(0, trade.WalletAmountCents));
+                Assert.True(world.Set<PilotWallet>().Find(Customer)!.Cents > sellerBalance);
+                world.Commit();
+            }
+            await live.FlushAsync();
+        }
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        Assert.True(reopened.GetRequiredService<LiveWorld>().Economy.ActiveShip(minerId, replaced));
+    }
+
     [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(true, false, false)]
-    [InlineData(false, true, false)]
-    [InlineData(false, false, true)]
+    [InlineData(false, false, false, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(false, true, false, false)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, false, false, true)]
+    [InlineData(true, false, false, true)]
     public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(
         bool remoteSupplier,
         bool progress,
-        bool blockedGoal
+        bool blockedGoal,
+        bool fundedRefit
     )
     {
         const int incursus = (int)TechOneHullType.Incursus;
@@ -158,6 +226,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     Capsuleers = settings.Capsuleers with
                     {
                         EarnedPvpShips = true,
+                        FundRefits = fundedRefit,
                         Exploration = false,
                         GateCamps = false,
                         RoamingGangs = false,
@@ -244,14 +313,17 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 Assert.True(CapsuleerIndustry.CanStagePvp(work, catalog, docked.SystemId));
                 Assert.True(CapsuleerWorkHulls.CanLeaveShip(work, catalog, docked));
                 Assert.False(CapsuleerIndustry.HasPvpShip(work, pilotId, workShipId));
-                var pending = supply.TryBuyEarnedPvpShip(work, catalog, snapshot, docked, fixture.Clock.Now);
-                Assert.False(pending.Boarded);
-                Assert.False(pending.MarketChanged);
+                if (!fundedRefit)
+                {
+                    var pending = supply.TryBuyEarnedPvpShip(work, catalog, snapshot, docked, fixture.Clock.Now);
+                    Assert.False(pending.Boarded);
+                    Assert.False(pending.MarketChanged);
+                }
                 Assert.Equal(workShipId, work.Pilots.Find(pilotId)!.ActiveShipId);
                 Assert.Equal(openingCents, work.Set<PilotWallet>().Find(pilotId)!.Cents);
                 var organization = CapsuleerCorporations.Organization(work, pilotId);
                 Assert.Null(organization.EarnedPvpShipId);
-                Assert.Equal(remoteSupplier ? null : incursus, organization.PvpFitGoal?.HullTypeId);
+                Assert.Equal(remoteSupplier || fundedRefit ? null : incursus, organization.PvpFitGoal?.HullTypeId);
                 Assert.Empty(work.Filter<MarketExecution>(row => row.PilotId == pilotId));
                 work.Commit();
             }
@@ -302,6 +374,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk, bounty.AmountCents);
                 fundedBalance = openingCents + bounty.AmountCents - bounty.TaxCents;
                 Assert.Equal(fundedBalance, work.Set<PilotWallet>().Find(pilotId)!.Cents);
+                if (fundedRefit)
+                {
+                    // Simulate a pilot who has already spent all their earnings.
+                    work.Set<PilotWallet>().Find(pilotId)!.Cents = 0;
+                    fundedBalance = 0;
+                }
                 var docked = ships.FindPilot(work, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
 
                 var usableHulls = PilotSkillReader.UsableTypes(work, catalog, pilotId, [incursus, nextHull]);
@@ -399,9 +477,22 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 );
                 Assert.Equal(1, purchases.Single(row => row.TypeId == incursus).Quantity);
                 Assert.Equal(2, purchases.Single(row => row.TypeId == railgun).Quantity);
-                walletAfterPurchase = fundedBalance - purchases.Sum(row => row.Quantity * row.PriceCents);
+                walletAfterPurchase = fundedRefit ? 0 : fundedBalance - purchases.Sum(row => row.Quantity * row.PriceCents);
                 Assert.Equal(walletAfterPurchase, work.Set<PilotWallet>().Find(pilotId)!.Cents);
-                Assert.True(walletAfterPurchase >= openingCents);
+                Assert.All(
+                    purchases,
+                    row =>
+                    {
+                        if (fundedRefit)
+                        {
+                            Assert.Equal(0, row.WalletAmountCents);
+                        }
+                        else
+                        {
+                            Assert.True(walletAfterPurchase >= openingCents);
+                        }
+                    }
+                );
                 purchaseIds = purchases.Select(row => row.Id).Order().ToArray();
                 work.Commit();
             }
@@ -457,6 +548,21 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             Assert.Equal(walletAfterPurchase, review.Set<PilotWallet>().Find(pilotId)!.Cents);
             var restoredPurchases = review.Filter<MarketExecution>(row => row.PilotId == pilotId).Select(row => row.Id).Order();
             Assert.Equal(purchaseIds, restoredPurchases);
+            if (fundedRefit && !remoteSupplier)
+            {
+                var restock = reopened
+                    .GetRequiredService<CapsuleerResupply>()
+                    .Dock(fixture.Database, review, catalog, pilotId, new(Depot, 0, 0), fixture.Clock.Now);
+                Assert.True(restock.SpentCents > 0);
+                Assert.Equal(0, review.Set<PilotWallet>().Find(pilotId)!.Cents);
+                var resupplyPurchases = review
+                    .Filter<MarketExecution>(row => row.PilotId == pilotId)
+                    .AsEnumerable()
+                    .Where(row => !purchaseIds.Contains(row.Id))
+                    .ToArray();
+                Assert.NotEmpty(resupplyPurchases);
+                Assert.All(resupplyPurchases, row => Assert.Equal((charge, 0L), (row.TypeId, row.WalletAmountCents)));
+            }
             review.Commit();
         }
 

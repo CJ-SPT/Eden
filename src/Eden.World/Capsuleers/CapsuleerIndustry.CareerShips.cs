@@ -204,11 +204,11 @@ internal sealed partial class CapsuleerIndustry
             return default;
         }
         long balance = WalletBalance(world, id);
-        decimal spending = balance + bids.Sum(bid => (decimal)bid.EscrowCents);
+        decimal spending = CapsuleerRefitFunding.Applies(world, id) ? long.MaxValue : balance + bids.Sum(bid => (decimal)bid.EscrowCents);
         if (spending > 0 && QuoteCareerKit(world, catalog, id, station, missing, spending, coverProduction) is { } purchases)
         {
             CancelCareerBids(world, catalog, bids);
-            market.ExecuteBuy(world, catalog, id, station, purchases, 0);
+            market.BuyBotRefitSupplies(world, catalog, id, station, purchases);
             if (MissingParts(parts, Hangar(world, id, station).ToLookup(item => item.TypeId)).Length == 0)
             {
                 BoardKit(world, catalog, pilot, kit, now);

@@ -65,15 +65,16 @@ system. Delayed Local keeps its normal privacy rules.
 
 ## Activity-funded PvP ships
 
-A new established world starts with the Standard market and **Buy PvP ships with activity income** enabled. To enable this
-on an existing established save, open **Player bots → PvP roams & regional conflicts**, select that option, save for
-restart and restart the server.
+A new established world starts with the Standard market and **Buy dedicated PvP fits from the market** enabled.
+**Fund bot refits** defaults on for new and existing saves. The server pays for available fits, replacements, ammunition,
+drones and qualifying skillbooks at purchase. Bots with empty wallets can still re-equip. Find both controls under
+**Player bots → PvP roams & regional conflicts**.
 
 An eligible pilot chooses a complete fit from the installed zKillboard traffic snapshot and saves that goal. It trains
 the hull and fitting skills at dock and earns ISK in its current ship. Ratters earn bounties, and miners can sell surplus
-ore after checking production and moon-supply needs. The pilot spends only personal ISK above its starting cash and
-can shop at a reachable market for the full fit. After boarding, it looks for a higher-stage hull or a better-equipped
-fit at the same stage. The pilot keeps its previous ships and can rat between PvP sorties to fund the next goal.
+ore after checking production and moon-supply needs. With refit funding off, the pilot spends only personal ISK above
+its starting cash on PvP fits. It can shop at a reachable market for the full fit. After boarding, it looks for a
+higher-stage hull or a better-equipped fit at the same stage and keeps its previous ships.
 [Import zKillboard traffic](#zkill-backed-travelers) · [Fit progression and validation](protocol/capsuleers.md#bot-pvp-fit-progression-and-rat-damage)
 
 ## Mining fleets

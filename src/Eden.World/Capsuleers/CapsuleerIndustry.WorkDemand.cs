@@ -43,8 +43,9 @@ internal sealed partial class CapsuleerIndustry
         long id = pilot.PilotId;
         int station = pilot.StationId;
         long balance = WalletBalance(world, id);
+        bool funded = CapsuleerRefitFunding.Applies(world, id);
         if (
-            balance <= 0
+            (!funded && balance <= 0)
             || pilot.Position is not null
             || station == 0
             || !StationCapabilities.Has(catalog, pilot.OperationId, StationService.Market)
@@ -62,7 +63,7 @@ internal sealed partial class CapsuleerIndustry
         // Keep enough capital for repairs, consumables and normal work after replenishing a spare.
         decimal capital = parts.Sum(part => (decimal)ReferencePrice(catalog, part.TypeId) * part.Quantity);
         decimal budget = Math.Min(balance - capital, balance / RattingRules.BudgetDivisor);
-        if (capital <= 0 || budget <= 0)
+        if (capital <= 0 || (!funded && budget <= 0))
         {
             return false;
         }
@@ -86,8 +87,12 @@ internal sealed partial class CapsuleerIndustry
             return false;
         }
         bool coverProduction = UsesPatrolSupport(catalog, candidate?.TypeId ?? pilot.ShipTypeId);
-        if (QuoteCareerKit(world, catalog, id, station, missing, budget, coverProduction) is not { } purchases)
+        if (QuoteCareerKit(world, catalog, id, station, missing, funded ? long.MaxValue : budget, coverProduction) is not { } purchases)
         {
+            if (budget <= 0)
+            {
+                return false;
+            }
             if (TryManufactureHuntReserve(world, catalog, pilot, missing, budget, organization))
             {
                 return false;
@@ -101,7 +106,7 @@ internal sealed partial class CapsuleerIndustry
             }
             return false;
         }
-        var bought = market.ExecuteBuy(world, catalog, id, station, purchases, 0);
+        var bought = market.BuyBotRefitSupplies(world, catalog, id, station, purchases);
         if (bought.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(purchase => (long)purchase.Quantity))
         {
             throw new InvalidDataException("Hunt reserve offers changed before purchase.");

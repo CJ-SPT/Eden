@@ -114,6 +114,7 @@ public sealed record CapsuleerPopulationPolicy(
     public bool NullsecExpeditions { get; init; } = true;
     public bool MilitiaPatrols { get; init; }
     public bool EarnedPvpShips { get; init; }
+    public bool FundRefits { get; init; } = true;
     public bool RoamingGangs { get; init; } = true;
     public int RoamingGangSize { get; init; } = 4;
     public bool RegionalConflicts { get; init; } = true;

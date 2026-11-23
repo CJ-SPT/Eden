@@ -184,6 +184,7 @@ public sealed class WorldConfigurationTests
         settings["capsuleers"]!.AsObject().Remove("exploration");
         settings["capsuleers"]!.AsObject().Remove("wreckSalvage");
         settings["capsuleers"]!.AsObject().Remove("runWithoutPlayers");
+        settings["capsuleers"]!.AsObject().Remove("fundRefits");
         settings["capsuleers"]!["roamPercent"] = 30;
         settings["capsuleers"]!["generatedCombatPercent"] = 35;
         var imported = store.Import(state.Generation, document.ToJsonString(), "legacy");
@@ -196,6 +197,7 @@ public sealed class WorldConfigurationTests
         Assert.True(legacy.Capsuleers.Exploration);
         Assert.True(legacy.Capsuleers.WreckSalvage);
         Assert.True(legacy.Capsuleers.RunWithoutPlayers);
+        Assert.True(legacy.Capsuleers.FundRefits);
         Assert.Equal(30, legacy.Capsuleers.RoamPercent);
         Assert.Equal(35, legacy.Capsuleers.GeneratedCombatPercent);
         var disabled = legacy with
@@ -208,7 +210,14 @@ public sealed class WorldConfigurationTests
                 BeginnerMarketSupply = false,
             },
             Progression = legacy.Progression with { GrantStartingEquipment = false },
-            Capsuleers = legacy.Capsuleers with { Enabled = false, Exploration = false, WreckSalvage = false, RunWithoutPlayers = false },
+            Capsuleers = legacy.Capsuleers with
+            {
+                Enabled = false,
+                Exploration = false,
+                WreckSalvage = false,
+                RunWithoutPlayers = false,
+                FundRefits = false,
+            },
         };
         var saved = store.Save(imported.Generation, imported.Pending.Draft with { Settings = disabled }, "admin");
         Assert.True(database.Settings.Economy.EmpireLpDatacores);

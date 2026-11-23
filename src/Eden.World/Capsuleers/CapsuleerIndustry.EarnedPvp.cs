@@ -115,7 +115,7 @@ internal sealed partial class CapsuleerIndustry
             CapsuleerCorporations.SaveOrganization(world, id, organization with { PvpFitGoal = null });
             return default;
         }
-        long budget = WalletBalance(world, id) - agent.StartingCents;
+        long budget = PvpAcquisitionBudget(world, id, agent.StartingCents);
         bool permitted = PvpRouteAllows(catalog, kit.HullTypeId, visitsHighSecurity);
         bool needsFittingSkills = false;
         bool qualified = permitted && PvpFitQualified(world, catalog, pilot, kit, parts, out needsFittingSkills);
@@ -159,7 +159,7 @@ internal sealed partial class CapsuleerIndustry
                 );
             return new(MarketChanged: boughtBook);
         }
-        var bought = market.ExecuteBuy(world, catalog, id, station, purchases, 0);
+        var bought = market.BuyBotRefitSupplies(world, catalog, id, station, purchases);
         if (bought.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(purchase => (long)purchase.Quantity))
         {
             throw new InvalidDataException("PvP ship offers changed before purchase.");
@@ -223,7 +223,7 @@ internal sealed partial class CapsuleerIndustry
             world.Set<SavedCapsuleerAgent>().Find(id) is not { } agent
             || !CapsuleerWorkHulls.CanLeaveShip(world, catalog, pilot)
             || !StationCapabilities.Has(catalog, catalog.RequireStation(stationId).OperationId, StationService.Market)
-            || WalletBalance(world, id) - agent.StartingCents is not > 0
+            || PvpAcquisitionBudget(world, id, agent.StartingCents) is not > 0
         )
         {
             return null;
@@ -238,7 +238,7 @@ internal sealed partial class CapsuleerIndustry
             targetSystem,
             visitsHighSecurity: false,
             allowedFit,
-            affordableReadyBudget: WalletBalance(world, id) - agent.StartingCents
+            affordableReadyBudget: PvpAcquisitionBudget(world, id, agent.StartingCents)
         );
     }
 
@@ -275,7 +275,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        long budget = WalletBalance(world, id) - agent.StartingCents;
+        long budget = PvpAcquisitionBudget(world, id, agent.StartingCents);
         var kit = goal?.Kit();
         var parts = kit?.Parts();
         if (kit is not null && (budget <= 0 || !PvpFitQualified(world, catalog, pilot, kit, parts!, out _)))
@@ -342,4 +342,7 @@ internal sealed partial class CapsuleerIndustry
         route.Systems.Any(system =>
             TrafficRules.SecurityBand(catalog.Definition(CapsuleerProvisioningCatalog.Security, system)) == TrafficSecurityBand.High
         );
+
+    private static long PvpAcquisitionBudget(EconomyTransaction world, long pilot, long openingCents) =>
+        CapsuleerRefitFunding.Applies(world, pilot) ? long.MaxValue : WalletBalance(world, pilot) - openingCents;
 }
