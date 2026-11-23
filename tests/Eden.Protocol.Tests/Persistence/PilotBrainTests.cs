@@ -7,6 +7,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Targeting;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
@@ -50,25 +51,34 @@ public sealed class PilotBrainTests
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
-    public void EarnedFittingOutputSkillsMatchTheAuthoritativeBudget(int level)
+    public void EarnedShipAttributeSkillsMatchTheAuthoritativeFit(int level)
     {
         const long shipId = 1000000000001;
+        (int SkillId, DogmaAttributeId Attribute, double PercentPerLevel)[] expected =
+        [
+            ((int)FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput, 5),
+            ((int)FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput, 5),
+            ((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity, 5),
+            ((int)FittingSkill.CapacitorSystemsOperation, DogmaAttributeId.CapacitorRechargeTime, -5),
+            ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange, 5),
+            ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution, 5),
+            ((int)DefenseSkill.Mechanics, DogmaAttributeId.StructureHitPoints, 5),
+            ((int)DefenseSkill.HullUpgrades, DogmaAttributeId.ArmorHitPoints, 5),
+            ((int)DefenseSkill.ShieldManagement, DogmaAttributeId.ShieldCapacity, 5),
+            ((int)DefenseSkill.ShieldOperation, DogmaAttributeId.ShieldRechargeTime, -5),
+        ];
         Skills skills = new()
         {
-            Values =
-            [
-                new((int)FittingSkill.CpuManagement, TrainedSkill.PointsForLevel(1, level), 1),
-                new((int)FittingSkill.PowerGridManagement, TrainedSkill.PointsForLevel(1, level), 1),
-            ],
+            Values = expected.Select(bonus => new TrainedSkill(bonus.SkillId, TrainedSkill.PointsForLevel(1, level), 1)).ToArray(),
         };
         var source = new PilotBrain(skills, new Clock(), skills, skills, skills);
         var update = source.Update(90000001, shipId);
-        var matter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(update.GrayMatter)));
+        var matter = Assert.IsType<object?[]>(BlueMarshal.Decode(update.GrayMatter));
         var effects = Assert.IsType<List<object?>>(matter[1]).Select(State).ToArray();
-        Assert.Equal(level == 0 ? 0 : 2, effects.Length);
-        var basis = new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.CpuOutput] = 178, [DogmaAttributeId.PowerOutput] = 80 };
+        Assert.Equal(level == 0 ? 0 : expected.Length, effects.Length);
+        var basis = expected.ToDictionary(bonus => bonus.Attribute, _ => 200d);
         var authoritative = FittingRules.Apply(basis, skills.Values.ToDictionary(skill => skill.TypeId, skill => skill.Level), []);
-        foreach (var bonus in FittingRules.ResourceOutputSkills)
+        foreach (var bonus in expected)
         {
             double percent = 0;
             if (level > 0)
@@ -78,9 +88,9 @@ public sealed class PilotBrainTests
                 Assert.Equal("M"u8.ToArray(), Assert.IsType<byte[]>(effect["modifierType"]));
                 Assert.Equal(6L, effect["operation"]);
                 Assert.Empty(Assert.IsType<object?[]>(effect["extras"]));
-                Assert.Equal((long)bonus.Skill, Assert.Single(Assert.IsType<List<object?>>(effect["skills"])));
+                Assert.Equal((long)bonus.SkillId, Assert.Single(Assert.IsType<List<object?>>(effect["skills"])));
                 percent = Assert.IsType<double>(effect["value"]);
-                Assert.Equal(5d * level, percent);
+                Assert.Equal(bonus.PercentPerLevel * level, percent);
             }
             Assert.Equal(basis[bonus.Attribute] * (1 + percent / 100), authoritative[bonus.Attribute], 8);
         }

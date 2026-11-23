@@ -2,6 +2,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -41,18 +42,17 @@ internal sealed class PilotBrain(
         {
             levels[grant.TypeId] = Math.Max(levels.GetValueOrDefault(grant.TypeId), grant.Level);
         }
-        // Docked OnlineModule activates the local graph before calling the server.
-        // Absolute Godma output values alone do not supply its earned fitting budget.
-        var resourceEffects = FittingRules
-            .ResourceOutputSkills.Where(bonus => levels.GetValueOrDefault((int)bonus.Skill) > 0)
+        // The docked and simulated graphs apply these bonuses to catalog hull attributes.
+        var hullEffects = FittingRules
+            .ShipAttributeSkills.Where(bonus => levels.GetValueOrDefault(bonus.SkillId) > 0)
             .Select(bonus => new BrainEffect(
                 shipId,
                 BrainModifier.Item,
                 bonus.Attribute,
                 BrainOperation.PostPercent,
                 [],
-                [(int)bonus.Skill],
-                Percent * InventoryDefinitions.OutputBonusPerSkillLevel * levels[(int)bonus.Skill]
+                [bonus.SkillId],
+                Percent * bonus.PerLevel * levels[bonus.SkillId]
             ));
         var effects = CombatDefinitions
             .SkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)
@@ -66,7 +66,7 @@ internal sealed class PilotBrain(
                 Percent * modifier.PerLevel * levels[(int)modifier.Skill]
             ))
             .ToList();
-        effects.AddRange(resourceEffects);
+        effects.AddRange(hullEffects);
         AddGatheringEffects(effects, shipId, tuning?.Settings.Resources ?? new());
         if (tuning is not null)
         {
@@ -112,10 +112,9 @@ internal sealed class PilotBrain(
                     bonus.Percent
                 ))
         );
-        // Drone control is already sent as absolute pilot attributes by primes and live updates.
-        var fittingBonuses = (fitting?.SkillBonuses(pilotId) ?? []).Where(bonus =>
-            bonus.Modifier.Attribute is not (DogmaAttributeId.MaxActiveDrones or DogmaAttributeId.DroneControlDistance)
-        );
+        // Godma primes carry absolute control values. The local dogma graph loads
+        // character control attributes from the catalog and needs their skill modifiers.
+        var fittingBonuses = fitting?.SkillBonuses(pilotId) ?? [];
         BrainEffect FittingEffect(FittingSkillBonus bonus) =>
             new(
                 bonus.Modifier.Domain == ModifierDomain.Character ? pilotId : shipId,
@@ -135,6 +134,17 @@ internal sealed class PilotBrain(
             );
         effects.AddRange(fittingBonuses.Where(b => b.Modifier.Domain != ModifierDomain.Character).Select(FittingEffect));
         var ownerEffects = fittingBonuses.Where(b => b.Modifier.Domain == ModifierDomain.Character).Select(FittingEffect);
+        var droneEffects = DroneRules
+            .CombatSkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)
+            .Select(modifier => new BrainEffect(
+                pilotId,
+                BrainModifier.OwnerRequiredSkill,
+                modifier.Attribute,
+                BrainOperation.PostPercent,
+                [(int)modifier.RequiredSkill],
+                [(int)modifier.Skill],
+                Percent * modifier.PerLevel * levels[(int)modifier.Skill]
+            ));
         var character = industry
             .CharacterBonuses(pilotId)
             .Select(bonus => new BrainEffect(
@@ -147,6 +157,7 @@ internal sealed class PilotBrain(
                 bonus.Value
             ))
             .Concat(ownerEffects)
+            .Concat(droneEffects)
             .ToArray();
         var cloneSkills = clones.ReadCloneSkills(pilotId);
         var cloneEffects = new[]

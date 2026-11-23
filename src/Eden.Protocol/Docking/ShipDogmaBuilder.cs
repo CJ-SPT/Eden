@@ -230,6 +230,8 @@ internal sealed class ShipDogmaBuilder(
         );
     }
 
+    internal DogmaFittingBrain FittingBrain(DockedPilot pilot) => new(brain.Read(pilot.PilotId, pilot.ShipId));
+
     internal DogmaAllInfo AllInfo(DockedPilot pilot)
     {
         var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();

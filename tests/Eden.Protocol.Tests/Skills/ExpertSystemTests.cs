@@ -1,6 +1,7 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -87,6 +88,8 @@ public sealed partial class ExpertSystemTests
         using (Client client = new(world.Services, OwnerAccount))
         {
             Assert.Empty(client.Systems());
+            int trainedShieldLevel = learned.SingleOrDefault(skill => skill.TypeId == (int)DefenseSkill.ShieldManagement)?.Level ?? 0;
+            Assert.Equal(5d * trainedShieldLevel, client.SimulatedShieldBonus());
             Assert.IsType<PilotCallResult.Failure>(client.Board(hull));
             Assert.IsType<PilotCallResult.Failure>(client.Consume(foreign));
             Assert.Empty(client.Notices());
@@ -109,6 +112,7 @@ public sealed partial class ExpertSystemTests
             AssertSkill(changedRows[MiningBargeSkill], MiningBargeSkill, null, null, 4d, 4);
             AssertSkill(client.Skills()[SpaceshipCommand], SpaceshipCommand, 2, trainedPoints, 1d, 4);
             AssertSkill(client.Skills()[MiningBargeSkill], MiningBargeSkill, null, null, 4d, 4);
+            Assert.Equal(5d * Math.Max(trainedShieldLevel, 3), client.SimulatedShieldBonus());
             Assert.Equal(learned, actualSkills.ReadSkills(owner.PilotId).OrderBy(skill => skill.TypeId));
 
             clock.AdvanceWallTime(TimeSpan.FromDays(1));
@@ -335,6 +339,21 @@ public sealed partial class ExpertSystemTests
             Assert.IsType<Dictionary<long, object?>>(
                 WireAssertions.Materialize(Reply(Call(Bind("skillMgr2", "GetMySkillHandler", []), "GetSkills", [])))
             );
+
+        public double SimulatedShieldBonus()
+        {
+            var reply = Reply(Call("dogmaIM", "GetAllInfo", [Pilot.PilotId, null, null]));
+            var packet = Assert.IsType<BlueInstance>(WireAssertions.Materialize(reply));
+            var fields = Assert.IsType<Dictionary<string, object?>>(packet.State);
+            var brain = Assert.IsType<object?[]>(fields["charInfo"]);
+            Assert.Equal(4, brain.Length);
+            var effect = Assert
+                .IsType<List<object?>>(brain[2])
+                .Cast<BlueNewObject>()
+                .Select(value => Assert.IsType<Dictionary<string, object?>>(value.State))
+                .SingleOrDefault(effect => Equals(effect["toAttribID"], (int)DogmaAttributeId.ShieldCapacity));
+            return effect is null ? 0 : Assert.IsType<double>(effect["value"]);
+        }
 
         public PilotNotification[] Notices()
         {

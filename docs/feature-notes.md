@@ -292,6 +292,8 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 
 - **Fitting.** Swap and rearrange modules, group weapons, load charges and save personal, corporation or alliance fittings.
   Apply supported fits with Multifit. Administrators can scale CPU, power grid, calibration and drone bandwidth.
+  Fitting simulation uses the selected pilot's ship and combat-drone skill bonuses.
+  [Fitting simulation](protocol/fitting.md#trained-skills-in-fitting-simulation) ·
   [Fitting records](protocol/fitting.md) · [World settings](world-configuration.md#fitting)
 - **Weapons and defense.** Use supported hybrid, projectile and energy turrets, missiles, drones, smartbombs, and local or remote
   repairs. Scripts, ammunition, crystals, skills and hull bonuses affect their supported equipment. Native overload controls

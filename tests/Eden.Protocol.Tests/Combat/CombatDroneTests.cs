@@ -17,6 +17,7 @@ using Eden.Protocol.Drones;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -36,6 +37,7 @@ public sealed class CombatDroneTests
 {
     private const int Brutix = 16229;
     private const int BrutixNavyIssue = 33151;
+    private const int WarriorOne = 2486;
     private const int WarriorTwo = 2488;
     private const int HammerheadTwo = 2185;
     private const int SystemId = 30000144;
@@ -336,13 +338,48 @@ public sealed class CombatDroneTests
         using var scope = f.Base.Db.Services.CreateScope();
         var pilot = f.Base.Db.Store.FindPilot(1000001)!;
         var item = f.Base.Inventory.List(f.Pilot, f.Ship).Single(i => i.Id == id);
-        var prime = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>().PrimeModule(pilot, item);
+        var dogma = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>();
+        var prime = dogma.PrimeModule(pilot, item);
         using CatalogDbContext catalog = new(f.Base.CatalogPath);
         var basis = catalog.FittingAttributes(WarriorTwo);
         Assert.Equal(basis[DogmaAttributeId.StructureHitPoints] * 1.25, prime.Attributes[DogmaAttributeId.StructureHitPoints]);
         Assert.Equal(basis[DogmaAttributeId.ArmorHitPoints] * 1.25, prime.Attributes[DogmaAttributeId.ArmorHitPoints]);
         Assert.Equal(basis[DogmaAttributeId.ShieldCapacity] * 1.25, prime.Attributes[DogmaAttributeId.ShieldCapacity]);
-        Assert.Equal(basis[DogmaAttributeId.DamageMultiplier] * 1.25 * 1.5 * 1.1, prime.Attributes[DogmaAttributeId.DamageMultiplier], 8);
+        var modifiers = dogma
+            .FittingBrain(pilot)
+            .Brain.CharacterEffects.Where(effect => effect.Modifier == BrainModifier.OwnerRequiredSkill);
+        var ordinary = catalog.FittingAttributes(WarriorOne);
+        Assert.Equal(basis[DogmaAttributeId.DamageMultiplier] * 1.25 * 1.5 * 1.1, Simulated(basis, DogmaAttributeId.DamageMultiplier), 8);
+        Assert.Equal(ordinary[DogmaAttributeId.DamageMultiplier] * 1.25 * 1.5, Simulated(ordinary, DogmaAttributeId.DamageMultiplier), 8);
+        foreach (
+            var attribute in new[]
+            {
+                DogmaAttributeId.DamageMultiplier,
+                DogmaAttributeId.StructureHitPoints,
+                DogmaAttributeId.ArmorHitPoints,
+                DogmaAttributeId.ShieldCapacity,
+                DogmaAttributeId.MaxRange,
+                DogmaAttributeId.MaxVelocity,
+            }
+        )
+        {
+            Assert.Equal(prime.Attributes[attribute], Simulated(basis, attribute), 8);
+        }
+
+        double Simulated(IReadOnlyDictionary<DogmaAttributeId, double> attributes, DogmaAttributeId attribute)
+        {
+            var skills = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
+            return modifiers
+                .Where(effect => effect.Attribute == attribute && skills.Contains(Assert.Single(effect.Extras)))
+                .Aggregate(
+                    attributes[attribute],
+                    (value, effect) =>
+                    {
+                        Assert.Equal(BrainOperation.PostPercent, effect.Operation);
+                        return value * (1 + effect.Value / 100);
+                    }
+                );
+        }
     }
 
     [Fact]

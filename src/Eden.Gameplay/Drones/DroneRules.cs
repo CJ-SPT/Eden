@@ -1,8 +1,11 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Content;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Drones;
+
+public sealed record DroneSkillModifier(DroneSkill Skill, DroneSkill RequiredSkill, DogmaAttributeId Attribute, double PerLevel);
 
 public static class DroneRules
 {
@@ -28,6 +31,34 @@ public static class DroneRules
     private const double SharpshootingOptimalPerLevel = .05;
     private const double AvionicsRangePerLevel = 5000;
     private const double AdvancedAvionicsRangePerLevel = 3000;
+
+    private static readonly DroneSkill[] s_specializations =
+    [
+        DroneSkill.AmarrDroneSpecialization,
+        DroneSkill.MinmatarDroneSpecialization,
+        DroneSkill.GallenteDroneSpecialization,
+        DroneSkill.CaldariDroneSpecialization,
+    ];
+
+    // The local fitting graph applies these owner-required-skill modifiers to the
+    // drone types in its bay. Effect 1730 uses the source skill as its selector.
+    public static IReadOnlyList<DroneSkillModifier> CombatSkillModifiers { get; } =
+    [
+        new(DroneSkill.DroneInterfacing, DroneSkill.Drones, DogmaAttributeId.DamageMultiplier, InterfacingDamagePerLevel),
+        new(DroneSkill.DroneNavigation, DroneSkill.Drones, DogmaAttributeId.MaxVelocity, NavigationSpeedPerLevel),
+        new(DroneSkill.DroneSharpshooting, DroneSkill.Drones, DogmaAttributeId.MaxRange, SharpshootingOptimalPerLevel),
+        new(DroneSkill.DroneDurability, DroneSkill.Drones, DogmaAttributeId.ShieldCapacity, DurabilityPerLevel),
+        new(DroneSkill.DroneDurability, DroneSkill.Drones, DogmaAttributeId.ArmorHitPoints, DurabilityPerLevel),
+        new(DroneSkill.DroneDurability, DroneSkill.Drones, DogmaAttributeId.StructureHitPoints, DurabilityPerLevel),
+        DamageSkill(DroneSkill.LightDroneOperation, OperationDamagePerLevel),
+        DamageSkill(DroneSkill.MediumDroneOperation, OperationDamagePerLevel),
+        DamageSkill(DroneSkill.HeavyDroneOperation, OperationDamagePerLevel),
+        DamageSkill(DroneSkill.SentryDroneInterfacing, OperationDamagePerLevel),
+        .. s_specializations.Select(skill => DamageSkill(skill, SpecializationDamagePerLevel)),
+    ];
+
+    private static DroneSkillModifier DamageSkill(DroneSkill skill, double perLevel) =>
+        new(skill, skill, DogmaAttributeId.DamageMultiplier, perLevel);
 
     // Initial Eden policy; Tranquility's private NPC target-selection AI is not available.
     public const double NpcRetaliationChance = .25;
@@ -176,15 +207,7 @@ public static class DroneRules
         double damage =
             (1 + operation * OperationDamagePerLevel)
             * (1 + skills.GetValueOrDefault(DroneSkill.DroneInterfacing) * InterfacingDamagePerLevel);
-        foreach (
-            var skill in new[]
-            {
-                DroneSkill.AmarrDroneSpecialization,
-                DroneSkill.MinmatarDroneSpecialization,
-                DroneSkill.GallenteDroneSpecialization,
-                DroneSkill.CaldariDroneSpecialization,
-            }
-        )
+        foreach (var skill in s_specializations)
         {
             if (requiredSkills.Contains((int)skill))
             {

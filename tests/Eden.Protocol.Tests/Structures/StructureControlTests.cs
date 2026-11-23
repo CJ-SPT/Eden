@@ -197,6 +197,7 @@ public sealed class StructureControlTests
         var controlInfo = Assert.IsType<DogmaAllInfo>(Call("dogmaIM", "GetAllInfo", [true, true, true]).Reply);
         Assert.Contains(structure.Id, controlInfo.ShipInfo.Keys);
         Assert.Equal(structure.Id, controlInfo.ActiveShipId);
+        Assert.IsType<DogmaFittingBrain>(Call("dogmaIM", "GetAllInfo", [f.PilotId, null, null]).Reply);
         Assert.Equal(structure.Id, controlInfo.StructureInfo![structure.Id].Item!.Id);
         Assert.IsType<PilotCallResult.Failure>(
             router.Call(context, "structureDocking", "Undock", new object?[] { structure.Id, long.MaxValue }, _ => { })

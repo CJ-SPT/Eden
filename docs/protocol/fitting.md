@@ -2,6 +2,58 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Trained skills in fitting simulation
+
+The build 3662168 fitting simulator reads the selected character's skill modifiers from its local dogma location. If that
+location has not been created, `ClientDogmaInstanceManager._GetBrainForGhostFitting` calls
+`dogmaIM.GetAllInfo(characterID, None, None)` and consumes `charInfo` as the four-part brain. Ordinary `StateManager.Prime`
+passes three flags to `GetAllInfo` and unpacks `charInfo` as a character item map and a brain. Eden recognizes the simulator
+request for the selected pilot and returns the four-part brain directly in `charInfo`. Normal ship and structure priming
+continue to use the two-part `charInfo` tuple.
+
+The brain now sends the hull bonuses that authoritative fitting already applies for trained CPU, power grid, capacitor
+capacity and recharge, targeting range and scan resolution, and shield, armor and structure HP and shield recharge.
+Bootstrap and skill-change notifications use the same modifiers, including effective Expert System levels.
+
+Combat drones receive owner-required-skill modifiers for the trained size and racial specialization skills, Drone
+Interfacing, Drone Navigation, Drone Sharpshooting and Drone Durability. The client applies each modifier to drones whose
+catalog prerequisites match its selector. Catalog effects 316 and 504 carry trained drone count and avionics bonuses for
+the local graph. Godma item primes supply effective counts and range for live readouts. The pinned client applies a
+five-drone minimum to its fitting preview limit.
+
+The original client archive SHA-256 is
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Static inspection covered
+`clientDogmaIM._GetBrainForGhostFitting`, `StateManager.Prime`, `FittingDogmaLocation.GetMaxActiveDrones`,
+`CharacterDogmaItem.Load`, and `BaseDogmaLocation._UpdateShipEffectsFromBrain`. Build 3662168 supplies hull effects
+397, 490, 2432, 485, 507, 699, 392, 271, 446 and 486 and drone effects 316, 504 and 6663–6667. The pinned
+`DroneDmgBonus` Python effect 1730 establishes the size and specialization selectors. EVE.js 261108.1 for build 3396210
+uses the same effect selector in `fittingBrainBuilder.js` (SHA-256 prefix `6DBAEFBE0CC7`).
+[EVE University fitting skills](https://wiki.eveuniversity.org/Fitting_Skills) ·
+[EVE University drone skills](https://wiki.eveuniversity.org/Skills:Drones)
+
+**Automated validation.** `Test-Feature.ps1` passed 13 cases after a 15.50-second build and 22.71-second test command.
+The filter selected `EarnedShipAttributeSkillsMatchTheAuthoritativeFit`,
+`NativeDronePrimeUsesSkilledHpAndDamageForTooltipsAndBayDamageGauges`, `NativePrimeAndFittingBrainCarryDroneControlAndTracking`,
+`NativeExpertSystemUnlocksRetrieverAndStripMinerUntilExactExpiryThenSupportsRemoval` and
+`DockedControlInstallsAthanorCoreFuelAndServiceAndCheckpointsTheRealShip`. Coverage includes untrained through level V,
+the simulator's reply at a station and under structure control, an active Expert System and the different skill selectors
+on Warrior I and II. On `8e41f234`, the same filter with the entire `ExpertSystemTests` class passed 15 cases in 18.15 seconds
+after a 19.15-second solution build. Catalog and formatting policy checks passed eight and nine tests respectively.
+`Format.ps1 -Check` passed in 56.39 seconds.
+
+The broader check on `6bef7afb` with this change passed 466 of 467 cases in 6 minutes 14 seconds. The filter selected
+`PilotBrainTests`, `PilotFittingTests`, `AmmunitionTests`, `CombatDroneTests`, `DroneHullTests`, `DroneEquipmentTests`,
+`ExpertSystemTests`, `StructureControlTests`, `TypedCallResultTests`, `FreeSkillPointServiceTests`, `PilotHealthTests`,
+`TargetingTests`, `FittingConfigurationTests` and `FittingSnapshotTests` by fully qualified name substring.
+`ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes` counted 10 SQL commands against a limit of 9.
+The exact-method replay on unchanged `6bef7afb` reproduced the same failure in 13.07 seconds. The full suite was outside
+the scope of this run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Simulate the same fit on pilots with different capacitor and shield skills. Compare
+Warrior I and II with Minmatar Drone Specialization trained and check the simulated drone control range.
+
 ## Marauder Bastion modules
 
 The pinned build **3662168** catalog gives Bastion Module I type **33400**, group **515**, and default effect **6658**
