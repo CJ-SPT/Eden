@@ -197,10 +197,16 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             database,
             world =>
             {
-                var pilot = Pilot(world, pilotId);
+                var ship = Pilot(world, pilotId).ActiveShip;
+                // Browsing depends on the pilot's location, even at a station without industry services.
                 int systemId =
-                    pilot.ActiveShip.Position?.SystemId ?? Station(world, catalog, pilot.ActiveShip.DockedLocationId, null).SolarSystemId;
-                int regionId = catalog.Definitions.Systems[systemId].RegionId;
+                    ship.Position?.SystemId
+                    ?? (
+                        ship.StructureId is long structure
+                            ? world.StructureSystemId(structure)
+                            : catalog.RequireStation(ship.StationId).SolarSystemId
+                    );
+                int regionId = catalog.RequireSystem(systemId).RegionId;
                 return catalog
                     .Definitions.Stations.Values.Where(s => catalog.Definitions.Systems[s.SolarSystemId].RegionId == regionId)
                     .OrderBy(s => s.Id)

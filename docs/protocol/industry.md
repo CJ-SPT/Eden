@@ -7,6 +7,36 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Browsing industry facilities from any station
+
+`facilityManager.GetFacilities` now resolves the browsing region from the pilot's in-space system or dock location.
+Pilots docked at an NPC station without a factory or laboratory can browse available facilities in their region.
+The inventory-location and job installation calls still enforce their own facility, access and docking rules.
+
+Inert inspection of build **3662168** `code.ccp` (SHA-256 `849e408861af5d85bd09d69e440d97fe06d021f306530b4abbe328180df57e31`)
+showed that `facilitySvc.pyj` calls `GetFacilities()` without a station argument and keys the list by session region.
+Local EVE.js 261108.1 `industryStaticData.js` (SHA-256 `19d0d5692f68d6e19570174f79ac2b81feec24b2305d93dab19f7a90d0f1b567`)
+also lists facilities from the session region without requiring the current station to provide industry.
+See [CCP's Industry UI notes](https://www.eveonline.com/news/view/industry-ui), the
+[YC119.1 fix for current-location limits](https://www.eveonline.com/news/view/patch-notes-for-yc119.1-release), and
+[EVE University's Industry guide](https://wiki.eveuniversity.org/Industry#Industry_window).
+
+### Automated validation
+
+`IndustryFacilityLookupTests.RegionalFacilityBrowserWorksFromAnNpcStationWithoutIndustry` reproduced the native call
+failure and passed after the fix in 17.27 seconds of test command time. It checks the facility row and product list,
+local and remote inventory-location rejections, and zero world SQL during browsing. The combined facility lookup,
+manufacturing, production catalog facility list and reactor family filters passed 34 cases in 46.03 seconds.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Open the Industry window from the Neocom while docked at an NPC station without a factory or lab and inspect the
+Facilities tab for other stations in the region.
+
 ## Regional market location while docked at Upwell structures
 
 Resident order books, system and region best asks, and regional price history now use the docked structure's actual
