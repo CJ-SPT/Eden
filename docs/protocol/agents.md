@@ -2,6 +2,61 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Epic arc chains — November 22, 2026
+
+Build 3662168 contains **227 stages** in the **nine epic arcs** displayed by the native Epic Journal. The arcs use
+47 catalog agents, including 22 existing space contacts. The exporter checks all graph edges, assigned agents,
+failure targets, and the 129,600-minute replay interval. The twelve deprecated one-minute tutorial graphs are
+hidden by the client and remain outside the manifest. The build audit admits **915 of 2,892** mission records.
+[Epic arc guide](../missions.md#epic-arcs) · [Catalog audit](../data/mission-support-3662168.csv)
+
+### Catalog and client evidence
+
+The exporter uses the user's installed `client/epicarcs`, `client/missions`, `client/npccharacters`, `client/agentsinspace`
+and dungeon datasets. The manifest stores graph and objective bindings, with original Eden encounter rosters.
+Native response checks used the original client archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Consulted EVE.js 261108.1
+`epicArcStatusService.js` SHA-256 `d9acab8ddfa7f940af34e4a44386614d3eb873b216d7836eb57ed340881c7cdb`
+and `agentMissionRuntime.js` SHA-256 `f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`.
+[EVE University arc mechanics, revision 231647](https://wiki.eveuniversity.org/index.php?title=Epic_arcs&oldid=231647)
+
+- `GetMyEpicArcStatus` returns arc and mission integer keys with native KeyVal time fields. Closed attempts have a quit
+  time and an empty offer marker. `GetMessagesForEpicArcMissions` serves cached nested localization-ID dictionaries.
+- Branch options use offer-scoped actions in `DoAction`. Selection and next-offer creation commit together.
+  Agent handoffs finish at the destination contact and queue an Epic Journal invalidation before the ordinary mission
+  updates. Replay uses the last terminal timestamp and shows only the current run in the journal.
+- Container deliveries, gates, mining, analyzers and ship losses use resident transactions. Timed catalog credits and
+  item rewards settle with completion. Faction rewards use the branch's catalog target, without derived faction changes.
+  For configured objectives, destruction of required cargo fails the stage if no owned copy survives. A recovery
+  step can reopen the earlier acquisition mission.
+
+Eden requires pilots to visit issuing contacts for acceptance and most turn-ins, and to accept the chosen branch's
+next offer. Epic arc pockets use owner-scoped gates. Encounter compositions, some room links, and objectives whose
+private scripts are unavailable use Eden implementations. ORE and AIR simplify scripted environmental and module
+lessons, and AIR issues fit supplies directly. The audit measures coverage of the authored mission graphs.
+
+### Automated validation
+
+- A read-only runtime catalog audit loaded **227 mission profiles**, **nine graphs**, **47 agent contacts**
+  including **22 in space**, and **67 NPC profiles** from the installed build-3662168 catalog.
+- The solution build passed in 29.95 seconds with zero warnings and errors. The epic manifest and mission audit regenerated
+  deterministically. All **19** mission content checks passed in 0.75 seconds.
+- The exact native delivery and analyzer tests covered one-time cargo deposits, gate or objective progress,
+  checkpoint reopen, and a single reinforcement spawn.
+- The exact `EpicArcProgressionTests.BranchSettlementSurvivesCheckpointAndReplaysOnlyAfterNinetyDays` case passed
+  in 11.14 seconds. The final filtered run covered epic arcs, career agents, the agent directory, mission protocol,
+  ordinary chains and gates, hacking, and focused mining and salvage cases. It passed **165/165** in 153.14 seconds
+  with no skips. The full filter and TRX are in `artifacts/epic-arc-missions-20261122`.
+- Formatting, documentation link checks, and `git diff --check` passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Career agent chains — November 22, 2026
 
 Eden admits all **180 career stages** for the **100 active career agents** in build 3662168. The five divisions

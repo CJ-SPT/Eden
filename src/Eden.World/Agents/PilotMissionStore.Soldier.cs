@@ -39,10 +39,28 @@ internal sealed partial class PilotMissionStore
         bool inVisitRange = position.DistanceTo(target.Position) - (hull.Radius ?? 0) - target.Radius <= visit.Range;
         if (profile.Definition.CareerSacrifice)
         {
-            if (!inVisitRange || ship.TypeId != profile.CareerGift?.TypeId || !Damage(target, DamageVector.None, forceLoss: true))
+            if (!inVisitRange || ship.TypeId != profile.CareerGift?.TypeId || world.Set<ShipLoss>().Find(ship.Id) is not null)
             {
                 return false;
             }
+            if (visit.RequiredCargoTypeId is int cargoType)
+            {
+                bool hasCargo = world
+                    .Filter<OwnedItem>(item =>
+                        item.OwnerId == pilot.Id
+                        && item.LocationId == ship.Id
+                        && item.FlagId == (int)InventoryFlag.Cargo
+                        && item.TypeId == cargoType
+                        && item.Quantity > 0
+                    )
+                    .Any();
+                if (!hasCargo)
+                {
+                    return false;
+                }
+                _ = MissionGatePayment.Pay(world, catalog, pilot.Id, ship.Id, new(cargoType, Consume: true), unlocked: false);
+            }
+            _ = Damage(target, DamageVector.None, forceLoss: true);
             row.ObjectiveComplete = true;
             foreach (var guard in world.Filter<WorldNpc>(npc => npc.EncounterId == MissionRules.FirstSiteId + row.Id))
             {

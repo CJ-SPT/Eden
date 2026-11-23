@@ -1,8 +1,10 @@
+using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
@@ -10,6 +12,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
+using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.FactionWarfare;
@@ -109,11 +112,20 @@ internal static partial class NpcDamagePersistence
             {
                 world.Remove(aggression);
             }
+            npc.DestroyedAt = now;
+            if (
+                npc.AnchorKind == NpcAnchorKind.Mission
+                && world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId) is { } mission
+                && EpicArcCatalog.IsSimulation(mission.MissionId)
+            )
+            {
+                PilotMissionStore.Killed(world, catalog, npc, now);
+                return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
+            }
             if (npc.Role != NpcRole.MissionStructure)
             {
                 PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             }
-            npc.DestroyedAt = now;
             MilitiaObjectiveStore.Destroyed(world, catalog, npc, pilot, now);
             if (npc.AnchorKind == NpcAnchorKind.Abyssal)
             {

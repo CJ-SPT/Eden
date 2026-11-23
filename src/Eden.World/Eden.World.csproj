@@ -15,6 +15,7 @@
     <EmbeddedResource Include="Market/market-prices.json" LogicalName="Eden.World.MarketSnapshot.json" />
     <EmbeddedResource Include="Agents/missions-3662168.json" LogicalName="Eden.World.Missions.json" />
     <EmbeddedResource Include="Agents/career-missions-3662168.json" LogicalName="Eden.World.CareerMissions.json" />
+    <EmbeddedResource Include="Agents/epic-arc-missions-3662168.json" LogicalName="Eden.World.EpicArcMissions.json" />
     <EmbeddedResource Include="Mining/mining-sites-3662168.json" LogicalName="Eden.World.MiningSites.json" />
     <EmbeddedResource Include="Fittings/ship-content-roadmap-3662168.json" LogicalName="Eden.World.ShipContentRoadmap.json" />
   </ItemGroup>

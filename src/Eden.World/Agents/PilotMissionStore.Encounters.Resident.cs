@@ -122,7 +122,7 @@ internal sealed partial class PilotMissionStore
         {
             Spawn(world, catalog, mission, nextWave, now);
         }
-        if (decision.Complete && profile.Definition.SalvageObjectId is null)
+        if (decision.Complete && profile.Definition.SalvageObjectId is null && EpicCombatObjectivesReady(world, mission, profile))
         {
             mission.ObjectiveComplete =
                 member.CompletesMission || MissionStructureRules.Complete(true, StructureProgress(world, mission.Id));
@@ -173,7 +173,7 @@ internal sealed partial class PilotMissionStore
     {
         if (
             world is not EconomyTransaction
-            || !profile.Definition.Career
+            || !profile.Definition.Scripted
             || !profile.Definition.Waves[member.Wave].Groups.Any(g => g.LootToPilotCargo && g.LootTypeId == member.LootTypeId)
             || world.Pilots.Find(mission.PilotId)?.ActiveShip is not { Position: { } saved } ship
             || (saved.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId) != mission.SystemId

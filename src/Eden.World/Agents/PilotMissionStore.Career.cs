@@ -84,14 +84,14 @@ internal sealed partial class PilotMissionStore
         CatalogDbContext catalog,
         SavedMission row,
         MissionProfile profile,
-        int station
+        long location,
+        int flag
     )
     {
         var gift = profile.CareerGift!;
-        int hangar = (int)InventoryFlag.Hangar;
         if (catalog.RequireItem(gift.TypeId).CategoryId != (int)InventoryCategory.Blueprint)
         {
-            return InventoryPersistence.MergeOutput(world, catalog, row.PilotId, station, hangar, gift.TypeId, gift.Quantity);
+            return InventoryPersistence.MergeOutput(world, catalog, row.PilotId, location, flag, gift.TypeId, gift.Quantity);
         }
         // Career industry starter copies have finite runs. Captured examples have ME 5 and TE 2.
         var copy = world
@@ -100,8 +100,8 @@ internal sealed partial class PilotMissionStore
                 {
                     Id = InventoryPersistence.NextId(world),
                     OwnerId = row.PilotId,
-                    LocationId = station,
-                    FlagId = hangar,
+                    LocationId = location,
+                    FlagId = flag,
                     TypeId = gift.TypeId,
                     Quantity = 1,
                     Singleton = true,
@@ -119,7 +119,8 @@ internal sealed partial class PilotMissionStore
         CatalogDbContext catalog,
         SavedMission row,
         MissionProfile profile,
-        int station,
+        long location,
+        int flag,
         long now
     )
     {
@@ -127,14 +128,6 @@ internal sealed partial class PilotMissionStore
         {
             return null;
         }
-        return InventoryPersistence.MergeOutput(
-            world,
-            catalog,
-            row.PilotId,
-            station,
-            (int)InventoryFlag.Hangar,
-            item.TypeId,
-            item.Quantity
-        );
+        return InventoryPersistence.MergeOutput(world, catalog, row.PilotId, location, flag, item.TypeId, item.Quantity);
     }
 }

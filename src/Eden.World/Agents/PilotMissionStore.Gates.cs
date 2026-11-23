@@ -4,8 +4,10 @@ using Eden.Data.World.Exploration;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
+using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -95,6 +97,25 @@ internal sealed partial class PilotMissionStore
             )
             {
                 throw new InvalidDataException("Resolve this training signature to 100% before activating its gate.");
+            }
+        }
+        if (EpicArcCatalog.Find(mission.MissionId) is { } epic)
+        {
+            if (mission.PilotId != pilot.Id)
+            {
+                throw new InvalidDataException("Only the assigned pilot can activate this epic arc gate.");
+            }
+            var definition = epic.Gates.Single(g => g.FromObjectId == gate.DungeonObjectId);
+            if (
+                definition.RequiresDeliveryObjectId is long delivery
+                && !MissionDeliveryComplete(world, MissionCatalog.Find(catalog, mission.MissionId), mission, delivery)
+            )
+            {
+                throw new InvalidDataException("Deliver the mission cargo before using this acceleration gate.");
+            }
+            if (definition.RequiresMiningSurvey)
+            {
+                InformationRules.RequireMiningSurvey(PilotFittingStore.ShipAttributes(world, catalog, pilot));
             }
         }
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);

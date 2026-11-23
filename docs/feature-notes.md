@@ -71,6 +71,7 @@ combat, delivery, trade, mining, Data Center, and Paragon missions. All 100 care
 including combat, scanning, hacking, and industry lessons. R&D agents support passive research, paid datacore redemption,
 and bonus assignments. Mission progress, direct mission penalties, and capped derived faction changes for ordinary
 storylines persist through resident checkpoints.
+[Nine epic arcs](missions.md#epic-arcs) offer branching progression, cross-agent handoffs and a 90-day replay interval.
 [Supported missions](missions.md) · [Agent and research records](protocol/agents.md)
 
 Home stations now persist independently of ship travel. Select the current NPC station or your school corporation’s headquarters for **100,000 ISK**. A docked capsule away from home can use **Self-Destruct** in the home-station panel to return there in a replacement capsule; other ships, wallet and skills stay in place. New pilots retain their starting station as home. Player-corporation remote offices remain pending. See the [home-station notes](protocol/characters.md#persistent-home-stations-and-docked-clone-transfer).

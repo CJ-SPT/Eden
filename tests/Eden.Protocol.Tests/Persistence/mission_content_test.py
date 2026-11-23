@@ -10,7 +10,10 @@ from contextlib import closing
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
-from mission_content import career_mission_ids, delivery_rejection, courier_chain_definitions, militia_mission_ids, special_agent_mission, trade_definitions
+from mission_content import (
+    career_mission_ids, courier_chain_definitions, delivery_rejection, epic_mission_ids, militia_mission_ids, special_agent_mission,
+    trade_definitions,
+)
 from mission_fixed_agents import data_center_definitions
 
 
@@ -197,7 +200,9 @@ class MissionAdmissionTests(unittest.TestCase):
         self.assertEqual(16, len(militia))
         career = career_mission_ids()
         self.assertEqual(180, len(career))
-        expected = {m['missionId'] for m in manifest['missions']} | {mid for mid, reason in special.items() if reason} | militia | career
+        epic = epic_mission_ids()
+        self.assertEqual(227, len(epic))
+        expected = {m['missionId'] for m in manifest['missions']} | {mid for mid, reason in special.items() if reason} | militia | career | epic
         self.assertEqual(expected, admitted)
         self.assertTrue(all(row['reason'] for row in audit))
 

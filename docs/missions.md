@@ -2,13 +2,13 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **688 definitions**. That includes **83 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **915 definitions**. That includes **83 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
-missions, 16 militia encounters, and 180 career stages**.
+missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**2,204** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,977** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
-New offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
+Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
 See [timed bonus rules and validation](protocol/agents.md#timed-mission-bonuses--november-14-2026).
 
@@ -30,6 +30,28 @@ agent's chain. Failing a required training objective permits a retry after the n
 have deadlines. The chain supplies catalog gifts such as ships, training equipment and blueprint copies, and the final
 turn-in grants direct empire standing. Bring the required hull or module where the briefing calls for it.
 [Career agent implementation record](protocol/agents.md#career-agent-chains--november-22-2026)
+
+## Epic arcs
+
+Find the starting agent in the Agency, then follow the agent conversations and Epic Journal. Accepted missions and
+unaccepted offers have no expiry. Each branch choice is final for the current run. Return to the starting agent
+90 days after completion to begin a new run.
+
+| Arc | Level | Starting contact | Stages across all branches |
+| --- | ---: | --- | ---: |
+| The Blood-Stained Stars | 1 | Sister Alitura in Arnon | 64 |
+| Fractured Legacy | 1 | Elias Peltonnen in Kisogo | 3 |
+| Visions of Greatness | 1 | Cassandra Ahfrim in Manifest | 8 |
+| Angel Sound | 3 | Angel, Amarr or Minmatar contacts | 22 |
+| Smash and Grab | 3 | Guristas, Caldari or Gallente contacts | 20 |
+| Penumbra | 4 | Aursa Kunivuri in Josameto | 40 |
+| Right to Rule | 4 | Karde Romu in Kor-Azor Prime | 24 |
+| Syndication | 4 | Roineron Aviviere in Dodixie | 27 |
+| Wildfire | 4 | Arsten Takalo in Frarn | 19 |
+
+The higher-level entry contacts use effective standings. Later contacts unlock through the chain. Epic arc payouts
+use the catalog's ISK, item and timed rewards. Faction rewards apply directly to the faction designated by the branch.
+[Epic arc implementation record](protocol/agents.md#epic-arc-chains--november-22-2026)
 
 ## Mining content
 
@@ -213,7 +235,7 @@ See the [engine, evidence and validation record](protocol/agents.md#resident-mis
 
 The previous blanket chain-progression exclusion covered 278 ordinary definitions. The engine now handles complete
 linear sequences, while the remaining **266** require complete verified bindings or additional mechanics for their
-parts. Their unsupported encounters are not bypassed. Special-agent and epic-arc lifecycles remain separate blockers.
+parts. Special agents and epic arcs use their own progression rules and eligibility.
 
 ## Singleton courier cargo
 
@@ -266,7 +288,7 @@ The client catalog omits courier agent-level assignments. Existing eight level a
 
 These bands are not CCP level assignments. Rewards use Eden's existing level/difficulty/social-skill rules. Pickup is the issuing agent's station; the existing route policy selects a neighboring station, preferring the corporation, then a local fallback. Missing catalog deadlines retain seven days. Authored positive deadlines apply to both the offer and the completion window; acceptance starts a fresh window. The existing twenty definitions stay first in their eligible offer pools, followed by the expansion in stable order. Supplier restrictions mean an individual agent offers only a subset of the total pool. Generic delivery storylines still require sixteen completed missions for the same faction and level.
 
-Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded from the ordinary courier pool. Specialized lifecycles use their own agents and eligibility. Epic arcs, non-Data-Center COSMOS and level-five combat remain unavailable. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers. Those need verified reports and explicit bindings.
+Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded from the ordinary courier pool. Specialized lifecycles use their own agents and eligibility. Non-Data-Center COSMOS and level-five combat remain unavailable. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers. Those need verified reports and explicit bindings.
 
 Gameplay references: [University distribution reports](https://wiki.eveuniversity.org/Distribution_mission_reports), [agent types and divisions](https://wiki.eveuniversity.org/Agent), and the revision-specific encounter links recorded per definition. The source reports describe gameplay; pinned catalog records determine build-specific identities. Source inspection and automated checks do not establish native client acceptance.
 

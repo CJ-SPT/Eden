@@ -34,6 +34,8 @@ public enum MissionKind
     Combat,
     Mining,
     Trade,
+    AgentHandoff,
+    Choice,
 }
 
 public enum MissionScanKind
@@ -131,6 +133,14 @@ public sealed record MissionOffer(
     public bool NonExpiring => ExpiresAt == long.MaxValue;
     public double? ResearchPoints { get; init; }
     public bool RequiresScanner { get; init; }
+    public int? EpicArcId { get; init; }
+    public long? EpicArcTargetAgentId { get; init; }
+    public int? EpicArcTargetStation { get; init; }
+    public int? EpicArcTargetSystem { get; init; }
+    public int? EpicArcTargetTypeId { get; init; }
+    public SpacePosition? EpicArcTargetPosition { get; init; }
+    public int? EpicArcStandingFactionId { get; init; }
+    public IReadOnlyList<MissionItemReward> AdditionalGifts { get; init; } = [];
 }
 
 public sealed record MissionStandingChange(long SourceId, double Before, double After);
@@ -185,6 +195,14 @@ public sealed record MissionGate(long Id, SpacePosition Position, float Radius, 
 public interface IPilotMissions
 {
     IReadOnlySet<long> CompletedCareerAgents(long pilotId, IReadOnlySet<long> agentIds);
+    IReadOnlyList<EpicArcProgress> ArcStatus(long pilotId) => [];
+    bool EpicArcAgentAvailable(long pilotId, long agentId) => false;
+    IReadOnlyList<EpicArcMessage> EpicArcMessages() => [];
+    IReadOnlyList<EpicArcChoice> EpicArcChoices(long pilotId, long agentId) => [];
+    MissionUpdate ChooseEpicArc(long pilotId, long agentId, long offerId, int missionId) =>
+        throw new InvalidDataException("This epic arc choice is unavailable.");
+    long? EpicArcReplayAt(long pilotId, long agentId) => null;
+    MissionUpdate? ArriveEpicArcAgent(long pilotId, long agentId) => null;
     IReadOnlyList<MissionTrackingEntry> Tracking(long pilotId);
     AgentAccess Access(long pilotId, long agentId);
     AgentServiceInformation Information(long pilotId, long agentId);

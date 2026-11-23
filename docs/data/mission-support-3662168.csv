@@ -2288,187 +2288,187 @@ missionId,name,template,status,reason
 13880,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
 13881,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
 13882,Making Mountains of Molehills (7 of 10),StorylineCourierMission,admitted,Pinned career agent chain stage
-14117,A Beacon Beckons,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14118,Agent Inquiry,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14119,Of Interest,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14120,Retrieving Red,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14121,Alerting Alitura,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14122,Jet-Canning a Janitor,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14123,Chivvying a Chef,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14124,Delivering a Doctor,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14125,Engineering a Rescue,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14126,Going Gallente,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14127,Studying the Scene,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14128,Rendering Assistance,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14129,Lair of the Snakes,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14130,Data Retrieval,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14131,Crossing Enemy Lines,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14132,Passive Observation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14133,Mercenary Distractions,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14134,House of Records,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14135,An Economy Under Threat,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14136,A Sense of Dread,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14137,Every Drone Inside,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14138,Royal Jelly,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14139,Tracking the Queen (Part 1),EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14140,Nature Pictures,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14141,Tracking or Scanning,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14142,Bag of Blood,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14386,Tracking the Queen (Part 2),EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14387,Tracking the Queen (Part 3),EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14388,Planting the Body,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14389,Chasing a Nightmare,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14390,Burning Down the Hive,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14391,An Eye on Everything,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14392,The Uses of Force,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14393,Goading the Leader,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14394,Hunting the Lieutenants,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14396,Marked for Death,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14397,Thwarting the Succession,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14398,Certificate of Death,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14399,A Matter of Decorum,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14401,New Friends,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14403,Recovery,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14404,Of Quiet Nights Long Past,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14405,Revelations,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14406,A Call to Trial,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14407,Brothers and Sisters,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14413,A Stranger's Face,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14414,The Sisters and the Spy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14415,Sealing the Deal,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14416,Chasing Shadows,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14422,Valuable Cargo,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14442,The Missing Piece,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14443,Our Man Dagan,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14444,Our Man Dagan,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14445,Our Man Dagan,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14446,Our Man Dagan,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14451,It's Not Over Yet,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14453,The Gallente Commander,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14454,The Minmatar Commander,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14455,The Caldari Commander,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14456,The Amarr Commander,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14467,Dal Segno al Fine,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14468,Dal Segno al Fine,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14469,Dal Segno al Fine,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14470,Dal Segno al Fine,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14490,Trust and Discretion,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14492,"Their loss, our profit.",EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+14117,A Beacon Beckons,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14118,Agent Inquiry,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14119,Of Interest,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14120,Retrieving Red,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14121,Alerting Alitura,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14122,Jet-Canning a Janitor,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14123,Chivvying a Chef,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14124,Delivering a Doctor,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14125,Engineering a Rescue,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14126,Going Gallente,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14127,Studying the Scene,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14128,Rendering Assistance,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14129,Lair of the Snakes,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14130,Data Retrieval,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14131,Crossing Enemy Lines,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14132,Passive Observation,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14133,Mercenary Distractions,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14134,House of Records,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14135,An Economy Under Threat,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14136,A Sense of Dread,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14137,Every Drone Inside,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14138,Royal Jelly,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14139,Tracking the Queen (Part 1),EpicArcKillMission,admitted,Pinned epic arc graph stage
+14140,Nature Pictures,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14141,Tracking or Scanning,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14142,Bag of Blood,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14386,Tracking the Queen (Part 2),EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14387,Tracking the Queen (Part 3),EpicArcKillMission,admitted,Pinned epic arc graph stage
+14388,Planting the Body,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14389,Chasing a Nightmare,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14390,Burning Down the Hive,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14391,An Eye on Everything,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14392,The Uses of Force,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14393,Goading the Leader,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14394,Hunting the Lieutenants,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14396,Marked for Death,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14397,Thwarting the Succession,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14398,Certificate of Death,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14399,A Matter of Decorum,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14401,New Friends,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14403,Recovery,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14404,Of Quiet Nights Long Past,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14405,Revelations,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14406,A Call to Trial,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14407,Brothers and Sisters,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14413,A Stranger's Face,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14414,The Sisters and the Spy,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14415,Sealing the Deal,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14416,Chasing Shadows,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14422,Valuable Cargo,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14442,The Missing Piece,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14443,Our Man Dagan,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14444,Our Man Dagan,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14445,Our Man Dagan,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14446,Our Man Dagan,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14451,It's Not Over Yet,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14453,The Gallente Commander,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14454,The Minmatar Commander,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14455,The Caldari Commander,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14456,The Amarr Commander,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14467,Dal Segno al Fine,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14468,Dal Segno al Fine,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14469,Dal Segno al Fine,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14470,Dal Segno al Fine,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14490,Trust and Discretion,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14492,"Their loss, our profit.",EpicArcKillMission,admitted,Pinned epic arc graph stage
 14497,04A - Shifting the goods,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14511,An Honorable Betrayal,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14548,The Paths that are Hidden,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
+14511,An Honorable Betrayal,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14548,The Paths that are Hidden,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
 14549,Unnamed4,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14552,Two Steps Into Hell,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14553,Playing it Safer,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+14552,Two Steps Into Hell,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14553,Playing it Safer,EpicArcKillMission,admitted,Pinned epic arc graph stage
 14555,05B,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14558,Two Steps into Hell,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14559,Playing it Safer,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+14558,Two Steps into Hell,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14559,Playing it Safer,EpicArcKillMission,admitted,Pinned epic arc graph stage
 14560,F1,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14576,Return to Isha,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14597,Almost Unmasked,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14599,Some Light Theatrics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14601,Proof of Intent,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14602,Untouchable,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14603,Meet Sinas,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14607,A General's Best Friend,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+14576,Return to Isha,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14597,Almost Unmasked,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14599,Some Light Theatrics,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14601,Proof of Intent,EpicArcTradeMission,admitted,Pinned epic arc graph stage
+14602,Untouchable,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14603,Meet Sinas,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14607,A General's Best Friend,EpicArcKillMission,admitted,Pinned epic arc graph stage
 14608,Unnamed1,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14610,Pre-Emptive Opportunity,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14612,Pre-Emptive Opportunities,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14613,The Crimson Decoy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+14610,Pre-Emptive Opportunity,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14612,Pre-Emptive Opportunities,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14613,The Crimson Decoy,EpicArcKillMission,admitted,Pinned epic arc graph stage
 14615,Unnamed6,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14616,Meet Sinas,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14619,A General's Best Friend,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14623,Late Reports,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14624,The Outclassed Outpost,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14627,Raging Sansha,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14628,Cowardly Commander,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14633,Aralin Jick,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14645,Background Check,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14646,Longing Leman,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14647,Languishing Lord,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14648,Razing the Outpost,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14746,The Tolle Scar,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14819,Priority One,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14820,The Averon Exchange,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14821,A Different Kind of Director,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14822,Assistance,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14827,Too Close for Comfort,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14831,Impetus,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14833,Re-examining Options,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14838,Ascending Nobles,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14839,Hunting the Hunter,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14842,Falling into Place,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14843,Interrogation: Catching the Scent,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14847,Right Tool for the Job.,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14848,Right Tool for the Job,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14849,The Intermediary,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14851,A Demonstration,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14852,The Cost of Preservation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14853,Written by the Victors,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14854,Glowing Embers,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14855,From Way Above,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14856,Friends in High Places,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14860,Fate of a Madman,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14861,Making an Arrest,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14862,An Unfortunate End,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14863,Panic Response,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14864,The Right to Rule,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14882,The Breakout,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14884,The Breakout,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
-14885,Whisper of a Conspiracy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14886,Whisper of a Conspiracy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14888,The High or Low Road,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14889,Into the Black,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14890,Outside the Scope,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14891,Poor Man's Shakedown,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14892,Hidden Camera,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14893,Underground Circus,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14894,Rendezvous,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14895,Intaki Chase,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14896,Handoff,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14898,Practical Solutions,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14899,Rat in a Corner,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14900,Practical Solutions,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14901,Forewarning,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14903,Forewarning,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14905,With Authority,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14906,Silence Rahsa: The Nation's Path,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14912,A Human Body,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14913,A Metal Mind,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14914,A Digital Soul,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14915,Regal Replacement,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14916,Aiding an Investigator,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14932,My Little Eye,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14934,Dead End Intercept,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14935,Surfacing,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14936,Who Art in Heaven,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14937,Playing all Their Cards,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14942,Places to Hide,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14943,Octomet Plantation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14944,Little Fingers,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14945,Oldest Profession,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14946,Carry On,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14947,Studio I,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14948,Showtime,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+14616,Meet Sinas,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14619,A General's Best Friend,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14623,Late Reports,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14624,The Outclassed Outpost,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14627,Raging Sansha,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14628,Cowardly Commander,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14633,Aralin Jick,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14645,Background Check,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14646,Longing Leman,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14647,Languishing Lord,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14648,Razing the Outpost,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14746,The Tolle Scar,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14819,Priority One,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14820,The Averon Exchange,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14821,A Different Kind of Director,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14822,Assistance,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14827,Too Close for Comfort,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14831,Impetus,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14833,Re-examining Options,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14838,Ascending Nobles,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14839,Hunting the Hunter,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14842,Falling into Place,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14843,Interrogation: Catching the Scent,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14847,Right Tool for the Job.,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14848,Right Tool for the Job,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14849,The Intermediary,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14851,A Demonstration,EpicArcTradeMission,admitted,Pinned epic arc graph stage
+14852,The Cost of Preservation,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14853,Written by the Victors,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14854,Glowing Embers,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14855,From Way Above,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14856,Friends in High Places,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14860,Fate of a Madman,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14861,Making an Arrest,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14862,An Unfortunate End,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14863,Panic Response,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14864,The Right to Rule,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14882,The Breakout,EpicArcTradeMission,admitted,Pinned epic arc graph stage
+14884,The Breakout,EpicArcTradeMission,admitted,Pinned epic arc graph stage
+14885,Whisper of a Conspiracy,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14886,Whisper of a Conspiracy,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14888,The High or Low Road,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14889,Into the Black,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14890,Outside the Scope,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14891,Poor Man's Shakedown,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14892,Hidden Camera,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14893,Underground Circus,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14894,Rendezvous,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14895,Intaki Chase,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14896,Handoff,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14898,Practical Solutions,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14899,Rat in a Corner,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14900,Practical Solutions,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14901,Forewarning,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14903,Forewarning,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14905,With Authority,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14906,Silence Rahsa: The Nation's Path,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14912,A Human Body,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14913,A Metal Mind,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14914,A Digital Soul,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14915,Regal Replacement,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14916,Aiding an Investigator,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14932,My Little Eye,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14934,Dead End Intercept,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14935,Surfacing,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14936,Who Art in Heaven,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14937,Playing all Their Cards,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14942,Places to Hide,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14943,Octomet Plantation,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14944,Little Fingers,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14945,Oldest Profession,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14946,Carry On,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14947,Studio I,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14948,Showtime,EpicArcKillMission,admitted,Pinned epic arc graph stage
 14949,Where's the Line?,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14950,Safe Return,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14951,Everybody Has a Price,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14960,History in the Making,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14961,Church of the Obsidian,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14962,Heresiology,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14963,Wildfire,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14965,Stillwater,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14966,With Great Power,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14967,Retraction,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14968,Revelation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14969,A Difference of Opinion,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14970,The Knowledge to Act,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14971,Learning by Doing,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14972,The Price of Silence,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14973,Home in Peace,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
-14975,Across the Line,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14976,Slipping Away,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14980,Where's the Line?,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
+14950,Safe Return,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14951,Everybody Has a Price,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14960,History in the Making,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14961,Church of the Obsidian,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14962,Heresiology,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14963,Wildfire,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14965,Stillwater,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14966,With Great Power,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14967,Retraction,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14968,Revelation,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14969,A Difference of Opinion,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14970,The Knowledge to Act,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+14971,Learning by Doing,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14972,The Price of Silence,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14973,Home in Peace,EpicArcCourierMission,admitted,Pinned epic arc graph stage
+14975,Across the Line,EpicArcKillMission,admitted,Pinned epic arc graph stage
+14976,Slipping Away,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+14980,Where's the Line?,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
 14990,Cosmic Anomalies (1 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
 14991,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,admitted,Pinned career agent chain stage
 14992,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
@@ -2493,46 +2493,46 @@ missionId,name,template,status,reason
 15012,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
 15013,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
 15014,Gas Site Scanning (5 of 5),StorylineTradeMission,admitted,Pinned career agent chain stage
-15015,Enemy of my Enemy,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15017,Recruitment Drive,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15018,Intelligence Mining,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15019,Planning the Operation,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-15020,Sabotage 101,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15021,Brassy Faced Bastard,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15026,Turning Coat,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15028,New Opportunities,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15029,Fight or Flight,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-15030,Mistaken Identity,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15031,Headhunted,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15032,The Balance of Power,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15033,Natural Consequences,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15034,Serpentis Fill-In,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15035,Ride to the Rescue,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15036,Clear the Way,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15037,Salvage Heist,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15038,The Best Kind of Revenge,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15039,Wrath of Angels,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15040,Rabbit Trap,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15041,Dominus,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15042,Dominus,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15043,The Lesser of Two,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-15044,The Lesser of Two,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-15045,Data Destruction,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15046,Situation Normal,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15047,Breaking the Lock,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15053,Upward Momentum,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15055,Miscommunication,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15056,Fuel Gauge,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15057,Knockout Punch,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15058,New Opportunities,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15059,Culling the Weak,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-15060,Threat Assessment,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-15061,Dread Pirates,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15062,Smoke and Mirrors,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15063,Foxfire,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15064,Spy Games,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15065,Rabbit Hole,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15066,Passing the Buck,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+15015,Enemy of my Enemy,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15017,Recruitment Drive,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15018,Intelligence Mining,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15019,Planning the Operation,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+15020,Sabotage 101,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15021,Brassy Faced Bastard,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15026,Turning Coat,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15028,New Opportunities,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15029,Fight or Flight,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+15030,Mistaken Identity,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15031,Headhunted,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15032,The Balance of Power,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15033,Natural Consequences,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15034,Serpentis Fill-In,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15035,Ride to the Rescue,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15036,Clear the Way,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15037,Salvage Heist,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15038,The Best Kind of Revenge,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15039,Wrath of Angels,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15040,Rabbit Trap,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15041,Dominus,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15042,Dominus,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15043,The Lesser of Two,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+15044,The Lesser of Two,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+15045,Data Destruction,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15046,Situation Normal,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15047,Breaking the Lock,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15053,Upward Momentum,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15055,Miscommunication,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15056,Fuel Gauge,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15057,Knockout Punch,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15058,New Opportunities,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15059,Culling the Weak,EpicArcAgentInteractionMission,admitted,Pinned epic arc graph stage
+15060,Threat Assessment,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+15061,Dread Pirates,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15062,Smoke and Mirrors,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15063,Foxfire,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15064,Spy Games,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15065,Rabbit Hole,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15066,Passing the Buck,EpicArcKillMission,admitted,Pinned epic arc graph stage
 15086,Mining Base Camp - Nugoeihuvi Corporation,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 15087,Mining Base Camp - Hyasyoda Corporation,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 15088,Mining Base Camp - Lai Dai Corporation,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -2583,8 +2583,8 @@ missionId,name,template,status,reason
 15139,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
 15140,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
 15141,The Exam (10 of 10),StorylineKillMission,admitted,Pinned career agent chain stage
-15143,Intelligence Mining,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15144,Fear of Angels,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+15143,Intelligence Mining,EpicArcKillMission,admitted,Pinned epic arc graph stage
+15144,Fear of Angels,EpicArcKillMission,admitted,Pinned epic arc graph stage
 15168,Onslaught,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 15169,"After The Seven (1 of 5) ""Replacement""",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 15170,Onslaught,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2872,9 +2872,9 @@ missionId,name,template,status,reason
 17114,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
 17115,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
 17116,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
-17130,The Missing Pilot,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17131,Pioneering Spirit,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17132,Shattered Catalyst,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
+17130,The Missing Pilot,EpicArcKillMission,admitted,Pinned epic arc graph stage
+17131,Pioneering Spirit,EpicArcKillMission,admitted,Pinned epic arc graph stage
+17132,Shattered Catalyst,EpicArcKillMission,admitted,Pinned epic arc graph stage
 17133,Paragon Requests: Ships for Tips,HeraldryMission,admitted,Paragon packaged hull exchange
 17134,GREAD5 Mission,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 17135,GREAD4 Mission,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
@@ -2882,12 +2882,12 @@ missionId,name,template,status,reason
 17180,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
 17181,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
 17182,Paragon Requests: Ships for Tips,HeraldryMission,blocked,"Requires evidence for Paragon ammunition, singleton or standing rewards"
-17183,Golgothan Fields,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17184,Caldari Prime Breakout,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17185,Intaki Liberation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17186,Battle of Pator,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-17187,Travel to the Amarr,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-17188,Holographic Reenactment,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-17189,Travel to the Gallente,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-17190,Travel to the Minmatar,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
+17183,Golgothan Fields,EpicArcKillMission,admitted,Pinned epic arc graph stage
+17184,Caldari Prime Breakout,EpicArcKillMission,admitted,Pinned epic arc graph stage
+17185,Intaki Liberation,EpicArcKillMission,admitted,Pinned epic arc graph stage
+17186,Battle of Pator,EpicArcKillMission,admitted,Pinned epic arc graph stage
+17187,Travel to the Amarr,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+17188,Holographic Reenactment,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+17189,Travel to the Gallente,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
+17190,Travel to the Minmatar,EpicArcTalkToAgentMission,admitted,Pinned epic arc graph stage
 17192,QA Restricted Modules Test Mission,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

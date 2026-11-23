@@ -65,7 +65,15 @@ def militia_mission_ids():
 
 
 def career_mission_ids():
-    manifest = Path(__file__).resolve().parent.parent / 'src/Eden.World/Agents/career-missions-3662168.json'
+    return mission_manifest_ids('career-missions-3662168.json')
+
+
+def epic_mission_ids():
+    return mission_manifest_ids('epic-arc-missions-3662168.json')
+
+
+def mission_manifest_ids(name):
+    manifest = Path(__file__).resolve().parent.parent / 'src/Eden.World/Agents' / name
     return {row['missionId'] for row in json.loads(manifest.read_text(encoding='utf-8'))['missions']}
 
 
@@ -538,6 +546,7 @@ def extend(db, missions, group):
     hulls = ship_types(db)
     militia = militia_mission_ids()
     career = career_mission_ids()
+    epic = epic_mission_ids()
     for key, raw in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='client/missions' ORDER BY CAST(Key AS INTEGER)"):
         mid, data = int(key), json.loads(raw)
         sde = source(db, 'sde/missions', mid)
@@ -550,6 +559,8 @@ def extend(db, missions, group):
             special_agent = 'Existing faction warfare mission binding'
         if mid in career:
             special_agent = 'Pinned career agent chain stage'
+        if mid in epic:
+            special_agent = 'Pinned epic arc graph stage'
         if mid in KNOWN_BLOCKERS:
             reason = KNOWN_BLOCKERS[mid]
         elif mid in admitted:

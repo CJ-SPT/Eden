@@ -12,6 +12,7 @@ internal sealed record MissionTrackerObjectiveReply(MissionTrackerObjective Obje
         object?[] values = Objective.Kind switch
         {
             MissionObjectiveKind.Travel => ["TravelTo", Objective.LocationId],
+            MissionObjectiveKind.TalkToAgent => ["TalkToAgent", Objective.TargetId],
             MissionObjectiveKind.TransportMissing => ["TransportItemsMissing", Objective.TypeId, Objective.Quantity],
             MissionObjectiveKind.TransportPresent => ["TransportItemsPresent", Objective.TypeId, Objective.LocationId, Objective.Quantity],
             MissionObjectiveKind.DestroyAll => ["DestroyAll"],
@@ -34,10 +35,14 @@ internal sealed record MissionTrackerObjectiveReply(MissionTrackerObjective Obje
             MissionObjectiveKind.Complete => ["AllObjectivesComplete", Objective.AgentId],
             _ => throw new InvalidDataException("Unknown mission objective."),
         };
-        // Build 3662168's legacy tracker parses text arguments; the objective history retains native numbers.
-        return TextArguments
-            ? values.Select(value => value is IFormattable number ? number.ToString(null, CultureInfo.InvariantCulture) : value).ToList()
-            : values;
+        if (!TextArguments)
+        {
+            return values;
+        }
+        // The TalkToAgent objective forwards its target directly to the agent service without parsing.
+        return Objective.Kind == MissionObjectiveKind.TalkToAgent
+            ? values.ToList()
+            : values.Select(value => value is IFormattable number ? number.ToString(null, CultureInfo.InvariantCulture) : value).ToList();
     }
 }
 

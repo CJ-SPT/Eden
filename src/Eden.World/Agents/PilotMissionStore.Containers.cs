@@ -1,7 +1,9 @@
+using Eden.Data.Catalog.Agents;
 using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Exploration;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
@@ -35,16 +37,23 @@ internal sealed partial class PilotMissionStore
         for (int index = 0; index < profile.Definition.Containers.Length; index++)
         {
             var container = profile.Definition.Containers[index];
+            if (container.DepositTypeId > 0)
+            {
+                continue;
+            }
             long id = MissionContainerRules.Id(mission.Id, index);
-            InventoryPersistence.MergeOutput(
-                world,
-                catalog,
-                mission.PilotId,
-                id,
-                (int)InventoryFlag.Cargo,
-                container.TypeId,
-                container.Quantity
-            );
+            if (container.TypeId > 0)
+            {
+                InventoryPersistence.MergeOutput(
+                    world,
+                    catalog,
+                    mission.PilotId,
+                    id,
+                    (int)InventoryFlag.Cargo,
+                    container.TypeId,
+                    container.Quantity
+                );
+            }
             foreach (var item in container.AdditionalItems)
             {
                 InventoryPersistence.MergeOutput(world, catalog, mission.PilotId, id, (int)InventoryFlag.Cargo, item.TypeId, item.Quantity);
@@ -67,6 +76,8 @@ internal sealed partial class PilotMissionStore
 
     private sealed record ContainerAccess(Pilot Pilot, StaticSpaceObject Container, int SystemId, SavedMissionStructure? Structure = null)
     {
+        internal MissionContainerDefinition? Definition { get; init; }
+        internal SavedMission? Mission { get; init; }
         internal SavedMission? Objective { get; init; }
         internal int ObjectiveType { get; init; }
         internal ExplorationKind? Analyzer { get; init; }
@@ -136,6 +147,14 @@ internal sealed partial class PilotMissionStore
         bool guarded = definition.RequiresClear && !mission.ObjectiveComplete;
         if (hackRange is double range)
         {
+            if (definition.RequiresMiningDepletion && MissionDeposits(world.Set<WorldAsteroid>(), mission.Id).Any(a => a.Quantity > 0))
+            {
+                throw new InvalidDataException("Mine the mission deposits before using the analyzer here.");
+            }
+            if (definition.CompletesOnHack && mission.ObjectiveComplete)
+            {
+                throw new InvalidDataException("This mission's hacking objective is already complete.");
+            }
             if (
                 guarded
                 || definition.Analyzer is null
@@ -156,9 +175,16 @@ internal sealed partial class PilotMissionStore
         }
         return new(pilot, container, mission.SystemId)
         {
+            Definition = definition,
+            Mission = mission,
             Analyzer = definition.Analyzer,
             Objective =
-                profile.Definition.Scan is not null || definition.Analyzer is not null || profile.Definition.CareerRescue ? mission : null,
+                profile.Definition.Scan is not null
+                || definition.Analyzer is not null
+                || definition.CompletesOnTake
+                || profile.Definition.CareerRescue
+                    ? mission
+                    : null,
             ObjectiveType = profile.CargoType,
         };
     }
@@ -189,9 +215,9 @@ internal sealed partial class PilotMissionStore
         return body with { HackingState = state.Hacked ? 2 : 0, Container = new(state.OwnerId, state.Empty) };
     }
 
-    private static void RetireCareerExploration(WorldAction world, SavedMission mission)
+    private static void RetireMissionExploration(WorldAction world, SavedMission mission)
     {
-        if (CareerMissionCatalog.Find(mission.MissionId) is not { } definition)
+        if ((CareerMissionCatalog.Find(mission.MissionId) ?? EpicArcCatalog.Find(mission.MissionId)) is not { } definition)
         {
             return;
         }
@@ -227,6 +253,8 @@ internal sealed partial class PilotMissionStore
             {
                 var access = AccessContainer(world, catalog, pilotId, containerId, Now);
                 var container = access.Container;
+                var definition = access.Definition;
+                var contents = PilotInventoryStore.List(world, catalog, pilotId, containerId);
                 return new(
                     new(
                         container.Id,
@@ -240,8 +268,18 @@ internal sealed partial class PilotMissionStore
                         PilotInventoryStore.Volume(catalog, container.TypeId),
                         true
                     ),
-                    PilotInventoryStore.List(world, catalog, pilotId, containerId)
-                );
+                    definition is { DepositTypeId: > 0 }
+                        ? contents.Where(item => item.TypeId != definition.DepositTypeId).ToArray()
+                        : contents
+                )
+                {
+                    DepositCapacity = definition is { DepositTypeId: > 0 }
+                        ? Math.Max(
+                            PilotInventoryStore.Volume(catalog, definition.DepositTypeId) * definition.DepositQuantity,
+                            contents.Where(item => item.TypeId != definition.DepositTypeId).Sum(item => item.Quantity * item.Volume)
+                        )
+                        : null,
+                };
             }
         );
     }
@@ -260,6 +298,13 @@ internal sealed partial class PilotMissionStore
             var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             var access = AccessContainer(world, catalog, pilotId, request.SourceId, Now);
+            if (
+                access.Definition is { DepositTypeId: > 0 } delivery
+                && request.ItemIds.Any(id => world.Set<OwnedItem>().Find(id)?.TypeId == delivery.DepositTypeId)
+            )
+            {
+                throw new InvalidDataException("Delivered mission cargo cannot be retrieved.");
+            }
             var changes = SpaceLootTransfer.Take(
                 world,
                 catalog,

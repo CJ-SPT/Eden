@@ -294,6 +294,10 @@ internal sealed partial class PirateExplorationStore
                     }
                     CombatAnomalyStore.HackSignal(world, catalog, site.Id, SleeperWaveTrigger.HackResolved, now);
                 }
+                else
+                {
+                    PilotMissionStore.CompleteEpicHack(world, catalog, access.Container, now);
+                }
             }
             else if (access.Site is { } failedSite)
             {

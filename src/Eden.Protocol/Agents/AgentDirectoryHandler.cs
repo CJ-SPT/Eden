@@ -44,20 +44,19 @@ internal sealed class AgentDirectoryHandler(INpcDirectory directory, IPilotMissi
         }
         if (service == "epicArcStatus")
         {
-            // The Agent Finder checks this even though Eden has no authored epic arcs.
-            // False keeps these catalog agents browsable without advertising playable missions.
             return args is [long epicAgent] && directory.Agent(epicAgent) is not null
-                ? false
+                ? missions.EpicArcAgentAvailable(context.Pilot.PilotId, epicAgent)
                 : new PilotCallResult.Failure("Choose an active NPC agent.");
         }
         switch (method, args)
         {
             case ("GetAgents", []):
                 return new AgentDirectoryReply(directory.Agents());
-            case ("GetMyEpicArcStatus" or "GetMessagesForEpicArcMissions", []):
-                // Eden has no authored epic arcs or saved epic-arc progression.
-                // Both native consumers use dictionary lookups, not list iteration.
-                return BlueEmpty.IndexedDictionary;
+            case ("GetMyEpicArcStatus", []):
+                return new EpicArcStatusReply(missions.ArcStatus(context.Pilot.PilotId));
+            case ("GetMessagesForEpicArcMissions", []):
+                var messages = missions.EpicArcMessages();
+                return messages.Count == 0 ? BlueEmpty.IndexedDictionary : new CachedEpicArcMessages(messages);
             case ("GetAgentStaticInfo" or "GetAgentByID" or "GetSolarSystemOfAgent", [long id]) when id > 0:
                 if (directory.Agent(id) is not { } agent)
                 {

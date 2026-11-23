@@ -100,9 +100,29 @@ internal sealed class InventoryHandler(
         Dictionary<string, object?>? keywords
     )
     {
+        try
+        {
+            int flag = (int)(service == "@hangar" ? InventoryFlag.Hangar : InventoryFlag.Cargo);
+            return ReadMoveRequest(method, args, keywords, flag) is { } request
+                ? transfers.Move(context, service, request)
+                : PilotCallResult.Unsupported;
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    internal static InventoryMoveRequest? ReadMoveRequest(
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords,
+        int defaultFlag
+    )
+    {
         if (args.Length != 2 || args[1] is not long source)
         {
-            return PilotCallResult.Unsupported;
+            return null;
         }
         long[] ids;
         if (method == "Add" && args[0] is long id)
@@ -115,7 +135,7 @@ internal sealed class InventoryHandler(
         }
         else
         {
-            return PilotCallResult.Unsupported;
+            return null;
         }
         object? flagValue = keywords?.GetValueOrDefault("flag");
         object? quantityValue = keywords?.GetValueOrDefault("qty");
@@ -126,14 +146,11 @@ internal sealed class InventoryHandler(
             || (quantityValue is long quantityNumber && (quantityNumber <= 0 || quantityNumber > int.MaxValue))
         )
         {
-            return new PilotCallResult.Failure("Invalid cargo flag or quantity.");
+            throw new InvalidDataException("Invalid cargo flag or quantity.");
         }
-        int flag =
-            flagValue is long f ? (int)f
-            : service == "@hangar" ? (int)InventoryFlag.Hangar
-            : (int)InventoryFlag.Cargo;
+        int flag = flagValue is long f ? (int)f : defaultFlag;
         int? quantity = quantityValue is long q ? (int)q : null;
-        return transfers.Move(context, service, new InventoryMoveRequest(ids, source, flag, quantity));
+        return new(ids, source, flag, quantity);
     }
 
     private PilotCallResult CrystalDamage(DockedPilot pilot, object?[] args, Dictionary<string, object?>? keywords)

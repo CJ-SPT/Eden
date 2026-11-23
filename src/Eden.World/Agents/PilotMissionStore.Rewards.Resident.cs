@@ -64,7 +64,15 @@ internal sealed partial class PilotMissionStore
             share: true
         );
 
-    private MissionUpdate ActResident(LiveWorld live, long pilotId, long agentId, MissionAction action, long? offerId, bool share = false)
+    private MissionUpdate ActResident(
+        LiveWorld live,
+        long pilotId,
+        long agentId,
+        MissionAction action,
+        long? offerId,
+        bool share = false,
+        int? epicChoice = null
+    )
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var transaction = live.Economy.Begin(new(pilots: [pilotId]));
@@ -82,7 +90,7 @@ internal sealed partial class PilotMissionStore
             Random.Shared.Shuffle(recipients.AsSpan());
             recipients = recipients[..MaximumOtherMissionRecipients];
         }
-        var result = Act(transaction, catalog, pilot, agent, action, offerId, now, recipients);
+        var result = Act(transaction, catalog, pilot, agent, action, offerId, now, recipients, epicChoice);
         transaction.Commit();
         return result;
     }
@@ -128,7 +136,7 @@ internal sealed partial class PilotMissionStore
     private static void Close(WorldAction world, SavedMission mission, MissionState state, long now)
     {
         CloseCareerSalvage(world, mission);
-        RetireCareerExploration(world, mission);
+        RetireMissionExploration(world, mission);
         if (MissionCatalog.IsMining(mission.MissionId))
         {
             world.RemoveRange(MissionDeposits(world.Set<WorldAsteroid>(), mission.Id));

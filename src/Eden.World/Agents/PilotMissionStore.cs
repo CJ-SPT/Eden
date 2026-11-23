@@ -138,6 +138,18 @@ internal sealed partial class PilotMissionStore(
                         access.Reason
                     );
                 }
+                if (agent.Type == AgentType.EpicArc)
+                {
+                    return new AgentServiceInformation(
+                        agent,
+                        EpicArcCatalog.ForAgent(catalog, agent.Id).Any(),
+                        access.Allowed && active is null,
+                        access.Reason
+                    )
+                    {
+                        ReplayAt = EpicArcReplayAt(world, catalog, pilotId, agentId, now),
+                    };
+                }
                 bool content =
                     agent.Type is AgentType.Basic or AgentType.Event or AgentType.FactionalWarfare
                     && access.Allowed
@@ -188,7 +200,7 @@ internal sealed partial class PilotMissionStore(
         }
         bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
         if (
-            (agent.Type is not (AgentType.Basic or AgentType.Research or AgentType.FactionalWarfare) && !fixedAgent)
+            (agent.Type is not (AgentType.Basic or AgentType.Research or AgentType.FactionalWarfare or AgentType.EpicArc) && !fixedAgent)
             || agent.Level is < 1 or > MissionRules.MaximumAgentLevel
         )
         {
@@ -242,6 +254,17 @@ internal sealed partial class PilotMissionStore(
                 pirate,
                 bonuses
             );
+        if (agent.Type == AgentType.EpicArc)
+        {
+            var entry = MissionRules.Access(
+                agent.Level,
+                Effective(agent.Id),
+                Effective(agent.CorporationId),
+                agent.FactionId is int epicFaction ? Effective(epicFaction) : 0,
+                pilot.Account.CloneGrade == AccountCloneGrade.Omega
+            );
+            return EpicArcAccess(world, catalog, pilot, agent, entry, now);
+        }
         if (fixedAgent)
         {
             return FixedAgentRules.Access(
@@ -491,7 +514,8 @@ internal sealed partial class PilotMissionStore(
         MissionAction action,
         long? offerId,
         long now,
-        IReadOnlyList<long> sharers
+        IReadOnlyList<long> sharers,
+        int? epicChoice = null
     )
     {
         long pilotId = pilot.Id;
@@ -499,7 +523,7 @@ internal sealed partial class PilotMissionStore(
         if (
             world is not EconomyTransaction
             && (
-                agent.Type is AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career
+                agent.Type is AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career or AgentType.EpicArc
                 || MissionCatalog.FixedAgentIds.Contains(agentId)
             )
         )
@@ -543,7 +567,7 @@ internal sealed partial class PilotMissionStore(
                 }
                 RequireAgentLocation(pilot, agent);
                 var profile = MissionCatalog.Find(catalog, row.MissionId);
-                if (!profile.AvailableTo(agent) || profile.AttacksFaction(agent.FactionId))
+                if (!profile.AvailableTo(agent) || !profile.Definition.EpicArcId.HasValue && profile.AttacksFaction(agent.FactionId))
                 {
                     throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
                 }
@@ -553,13 +577,32 @@ internal sealed partial class PilotMissionStore(
                 row.State = MissionState.Accepted;
                 row.AcceptedAt = now;
                 row.ExpiresAt = Deadline(profile, now);
+                var giftLocation = profile.Definition.EpicArcId.HasValue
+                    ? EpicArcGiftLocation(pilot, agent)
+                    : (agent.StationId.GetValueOrDefault(), (int)InventoryFlag.Hangar);
                 if (profile.CareerGift is not null)
                 {
-                    changes.Add(CareerGift(world, catalog, row, profile, agent.StationId!.Value));
+                    changes.Add(CareerGift(world, catalog, row, profile, giftLocation.Item1, giftLocation.Item2));
                 }
-                if (profile.Kind == MissionKind.Courier)
+                foreach (var gift in profile.Definition.AdditionalGifts)
                 {
-                    changes.Add(CreateCourierCargo(world, catalog, pilotId, agent.StationId!.Value, profile));
+                    changes.Add(
+                        InventoryPersistence.MergeOutput(
+                            world,
+                            catalog,
+                            pilotId,
+                            giftLocation.Item1,
+                            giftLocation.Item2,
+                            gift.TypeId,
+                            gift.Quantity
+                        )
+                    );
+                }
+                if (profile.Kind == MissionKind.Courier && (!profile.Definition.EpicArcId.HasValue || profile.ArcSuppliesCourierCargo))
+                {
+                    changes.Add(
+                        CreateCourierCargo(world, catalog, pilotId, profile.Definition.PickupStationId ?? agent.StationId!.Value, profile)
+                    );
                 }
                 if (!profile.Deposits.IsEmpty)
                 {
@@ -573,12 +616,35 @@ internal sealed partial class PilotMissionStore(
             case MissionAction.Complete:
                 RequireState(row, MissionState.Accepted);
                 var mission = MissionCatalog.Find(catalog, row!.MissionId);
+                if (mission.Kind == MissionKind.Choice)
+                {
+                    var branch = EpicArcCatalog.Get(catalog, mission.Definition.EpicArcId!.Value).Nodes[row.MissionId];
+                    if (epicChoice is not int followed || !branch.Successors.Contains(followed))
+                    {
+                        throw new InvalidDataException("Choose one of the offered epic arc branches.");
+                    }
+                }
+                else if (epicChoice is not null)
+                {
+                    throw new InvalidDataException("This epic arc choice is stale.");
+                }
                 RequireChainAcceptance(world, catalog, agent, row, mission);
                 RequireFixedAssignment(world, catalog, row, mission);
                 RequireResidentReward(world, row, mission);
                 if (mission.Kind == MissionKind.Courier)
                 {
-                    RequireStation(pilot, row.DestinationStation);
+                    if (mission.Definition.DeliverToAgent)
+                    {
+                        RequireAgentLocation(pilot, agent);
+                    }
+                    else
+                    {
+                        RequireStation(pilot, row.DestinationStation);
+                    }
+                }
+                else if (mission.Kind == MissionKind.AgentHandoff)
+                {
+                    RequireAgentLocation(pilot, EpicArcHandoff(catalog, mission, agent));
                 }
                 else if (agent.Type == AgentType.FactionalWarfare)
                 {
@@ -601,7 +667,14 @@ internal sealed partial class PilotMissionStore(
                 }
                 if (mission.CargoType > 0)
                 {
-                    ConsumeCargo(world, catalog, pilot, row, mission, changes);
+                    if (!mission.Definition.PreserveObjectiveCargo)
+                    {
+                        ConsumeCargo(world, catalog, pilot, row, mission, changes);
+                    }
+                    else if (Cargo(world, pilot, row, mission).Sum(item => (long)item.Quantity) < mission.CargoQuantity)
+                    {
+                        throw new InvalidDataException("Bring the required mission cargo to complete this assignment.");
+                    }
                 }
                 if (mission.Paragon)
                 {
@@ -617,20 +690,38 @@ internal sealed partial class PilotMissionStore(
                 {
                     payment = Pay(world, catalog, pilot, agent, row, mission.NameId, now, standings, sharers);
                 }
-                if (GrantItemReward(world, catalog, row, agent.StationId) is { } rewardChange)
+                if (
+                    (
+                        mission.Definition.EpicArcId.HasValue
+                            ? GrantEpicArcReward(world, catalog, pilot, row, agent)
+                            : GrantItemReward(world, catalog, row, agent.StationId)
+                    ) is
+                    { } rewardChange
+                )
                 {
                     changes.Add(rewardChange);
                 }
-                if (mission.Definition.Career && CareerBonus(world, catalog, row, mission, agent.StationId!.Value, now) is { } bonusItem)
+                var bonusLocation = mission.Definition.EpicArcId.HasValue
+                    ? EpicArcGiftLocation(pilot, agent)
+                    : (agent.StationId.GetValueOrDefault(), (int)InventoryFlag.Hangar);
+                if (
+                    mission.Definition.Scripted
+                    && CareerBonus(world, catalog, row, mission, bonusLocation.Item1, bonusLocation.Item2, now) is { } bonusItem
+                )
                 {
                     changes.Add(bonusItem);
                 }
                 Close(world, row, MissionState.Completed, now);
-                if (!row.Storyline && agent.Type is not (AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career))
+                if (
+                    !row.Storyline
+                    && agent.Type is not (AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career or AgentType.EpicArc)
+                )
                 {
                     Progress(world, catalog, pilot, agent, row.Level, now);
                 }
-                continuation = ContinueChain(world, catalog, pilot, agent, row, mission, now);
+                continuation = mission.Definition.EpicArcId is int arc
+                    ? ContinueEpicArc(world, catalog, pilot, row, arc, epicChoice, now)
+                    : ContinueChain(world, catalog, pilot, agent, row, mission, now);
                 eventName = "completed";
                 break;
             case MissionAction.Decline:
@@ -715,13 +806,22 @@ internal sealed partial class PilotMissionStore(
     {
         var profile = MissionCatalog.Find(catalog, row.MissionId);
         var agent = Agent(row.AgentId);
+        var handoff = profile.Kind == MissionKind.AgentHandoff ? EpicArcHandoff(catalog, profile, agent) : null;
+        int? pickupStation = profile.Definition.PickupStationId ?? agent.StationId;
+        bool toSpaceAgent = profile.Definition.DeliverToAgent && agent.Space is not null;
         MissionCargo? cargo =
             profile.Kind == MissionKind.Courier
-                ? new(profile.CargoType, profile.CargoQuantity, profile.CargoVolume, agent.StationId!.Value, row.DestinationStation)
+                ? new(
+                    profile.CargoType,
+                    profile.CargoQuantity,
+                    profile.CargoVolume,
+                    pickupStation!.Value,
+                    toSpaceAgent ? checked((int)agent.Id) : row.DestinationStation
+                )
                 {
-                    PickupTypeId = catalog.FindStation(agent.StationId.Value)!.TypeId,
-                    DestinationTypeId = catalog.FindStation(row.DestinationStation)!.TypeId,
-                    PickupSystemId = agent.SystemId!.Value,
+                    PickupTypeId = catalog.RequireStation(pickupStation.Value).TypeId,
+                    DestinationTypeId = toSpaceAgent ? agent.Space!.TypeId : catalog.RequireStation(row.DestinationStation).TypeId,
+                    PickupSystemId = catalog.RequireStation(pickupStation.Value).SolarSystemId,
                 }
                 : null;
         bool hasCargo = profile.CargoType > 0 && Cargo(world, pilot, row, profile).Sum(i => (long)i.Quantity) >= profile.CargoQuantity;
@@ -730,7 +830,7 @@ internal sealed partial class PilotMissionStore(
             || (
                 profile.Kind is MissionKind.Courier or MissionKind.Trade
                     ? hasCargo
-                    : row.ObjectiveComplete && (profile.CargoType == 0 || hasCargo)
+                    : handoff is not null && AtEpicAgent(pilot, handoff) || row.ObjectiveComplete && (profile.CargoType == 0 || hasCargo)
             );
         return new(
             row.Id,
@@ -757,7 +857,7 @@ internal sealed partial class PilotMissionStore(
             BriefingId = profile.BriefingId,
             PilotId = row.PilotId,
             CombatComplete = row.ObjectiveComplete,
-            Bonus = Bonus(row),
+            Bonus = Bonus(row, profile.CareerBonusItem is not null),
             DeclineCooldownEndsAt =
                 row.State == MissionState.Offered && HasDeclineWindow(agent.Type)
                     ? DeclineWindowEnds(world.Set<SavedAgentDecline>().Find(row.PilotId, row.AgentId))
@@ -768,8 +868,19 @@ internal sealed partial class PilotMissionStore(
                 .Any(g => g.Access.AllowedShips is not null || g.Access.AllowedRaces.Count > 0),
             ItemReward = row.ItemRewardTypeId > 0 && row.ItemRewardQuantity > 0 ? new(row.ItemRewardTypeId, row.ItemRewardQuantity) : null,
             CareerGift = profile.CareerGift,
+            AdditionalGifts = profile.Definition.AdditionalGifts,
             RequiresScanner = profile.Definition.Scan is not null,
             CareerBonusItem = profile.CareerBonusItem,
+            EpicArcId = profile.Definition.EpicArcId,
+            EpicArcTargetAgentId = handoff?.Id,
+            EpicArcTargetStation = handoff?.Space is null ? handoff?.StationId : null,
+            EpicArcTargetSystem = handoff?.Space?.SystemId ?? handoff?.SystemId,
+            EpicArcTargetTypeId =
+                handoff?.Space?.TypeId ?? (handoff?.StationId is int targetStation ? catalog.RequireStation(targetStation).TypeId : null),
+            EpicArcTargetPosition = handoff?.Space?.Position,
+            EpicArcStandingFactionId = profile.ArcStandings is { Count: 1 }
+                ? int.Parse(profile.ArcStandings.Keys.Single(), System.Globalization.CultureInfo.InvariantCulture)
+                : null,
             ResearchPoints = ResearchMissionPoints(world, catalog, pilot, agent, row),
             Retrieval =
                 profile.Kind != MissionKind.Courier && profile.CargoType > 0
@@ -784,8 +895,8 @@ internal sealed partial class PilotMissionStore(
         };
     }
 
-    private static MissionBonus? Bonus(SavedMission row) =>
-        row.BonusIskCents > 0 && row.BonusWindowTicks > 0
+    private static MissionBonus? Bonus(SavedMission row, bool hasItem = false) =>
+        (row.BonusIskCents > 0 || hasItem) && row.BonusWindowTicks > 0
             ? new(
                 row.BonusIskCents,
                 row.BonusWindowTicks,

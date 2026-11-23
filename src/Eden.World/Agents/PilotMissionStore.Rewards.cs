@@ -52,13 +52,18 @@ internal sealed partial class PilotMissionStore
             );
             storyline = true;
         }
-        if (!storyline && agent.Type is not (AgentType.Basic or AgentType.FactionalWarfare or AgentType.Research or AgentType.Career))
+        if (
+            !storyline
+            && agent.Type
+                is not (AgentType.Basic or AgentType.FactionalWarfare or AgentType.Research or AgentType.Career or AgentType.EpicArc)
+        )
         {
             throw new InvalidDataException("This special agent does not offer ordinary missions.");
         }
         bool research = agent.Type == AgentType.Research;
         bool career = agent.Type == AgentType.Career;
-        bool special = research || career;
+        bool epic = agent.Type == AgentType.EpicArc;
+        bool special = research || career || epic;
         if (!storyline && !special && agent.Type != AgentType.FactionalWarfare && MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");
@@ -84,6 +89,7 @@ internal sealed partial class PilotMissionStore
                 {
                     AgentType.Research => ResearchMissionProfile(world, catalog, pilot, agent, now),
                     AgentType.Career => CareerOfferProfile(world, catalog, pilot, agent, now),
+                    AgentType.EpicArc => EpicArcOfferProfile(world, catalog, pilot, agent, now),
                     _ => profiles[sequence % profiles.Length],
                 }
             );
@@ -110,6 +116,12 @@ internal sealed partial class PilotMissionStore
         {
             reward = reward with { LoyaltyPoints = 0, FactionFraction = profile.CareerFactionFraction };
         }
+        if (epic)
+        {
+            int social = Skill(world, catalog, pilot, MissionSocialSkill.Social);
+            double fraction = (profile.ArcStandings?.Values.Sum() ?? 0) / 100 * (1 + social * 0.05);
+            reward = reward with { IskCents = profile.ArcIsk, LoyaltyPoints = 0, FactionFraction = fraction };
+        }
         var station = agent.Space is null
             ? catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.")
             : null;
@@ -121,6 +133,17 @@ internal sealed partial class PilotMissionStore
         if (profile.Kind == MissionKind.Courier && courierDestination is int selected)
         {
             destination = catalog.RequireStation(selected);
+        }
+        else if (profile.Kind == MissionKind.Courier && profile.Definition.DeliveryStationId is int authoredStation)
+        {
+            destination = catalog.RequireStation(authoredStation);
+        }
+        else if (profile.Kind == MissionKind.Courier && epic)
+        {
+            destination =
+                profile.Definition.DeliverToAgent && agent.Space is not null
+                    ? null
+                    : station ?? catalog.RequireStation(agent.StationId!.Value);
         }
         else if (profile.Kind == MissionKind.Courier)
         {
@@ -138,7 +161,7 @@ internal sealed partial class PilotMissionStore
                 ?? throw new InvalidDataException("This agent has no supported courier destination.");
         }
         long serial = world.Next("WorldMission");
-        int systemId = warzoneDestination ?? agent.Space?.SystemId ?? destination!.SolarSystemId;
+        int systemId = warzoneDestination ?? profile.Definition.SiteSystemId ?? agent.Space?.SystemId ?? destination!.SolarSystemId;
         var position = profile.DungeonId.HasValue
             ? MissionPlacementRules.Place(PlacementAnchor(catalog, systemId), serial)
             : agent.Space?.Position ?? new SpacePosition(destination!.X, destination.Y, destination.Z);
@@ -158,9 +181,9 @@ internal sealed partial class PilotMissionStore
             Y = position.Y,
             Z = position.Z,
             IskCents = reward.IskCents,
-            BonusIskCents = MissionBonusRules.Quote(reward.IskCents),
+            BonusIskCents = epic ? profile.ArcBonus : MissionBonusRules.Quote(reward.IskCents),
             BonusWindowTicks =
-                research ? 0
+                research || epic && profile.CareerBonusTicks == 0 ? 0
                 : profile.CareerBonusTicks > 0 ? profile.CareerBonusTicks
                 : MissionBonusRules.Window.Ticks,
             LoyaltyPoints = reward.LoyaltyPoints,
@@ -265,6 +288,10 @@ internal sealed partial class PilotMissionStore
                 gains,
                 missionTitleId: missionTitleId
             );
+            if (agent.Type == AgentType.EpicArc)
+            {
+                ApplyEpicArcStandings(world, catalog, agent, mission, recipient, count, now, gains);
+            }
             foreach (var gain in gains)
             {
                 world.AfterCommit(() => fleets.NotifyStandingChanged(recipient, gain.SourceId, gain.After));
@@ -332,6 +359,10 @@ internal sealed partial class PilotMissionStore
                 missionTitleId: missionTitleId
             );
             ApplyStorylineDerivedStandings(world, catalog, agent, mission, faction, now, standings);
+        }
+        if (agent.Type == AgentType.EpicArc)
+        {
+            ApplyEpicArcStandings(world, catalog, agent, mission, pilot.Id, count, now, standings);
         }
         return payment;
     }

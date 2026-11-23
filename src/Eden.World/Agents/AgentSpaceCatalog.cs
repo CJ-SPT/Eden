@@ -31,9 +31,10 @@ internal static class AgentSpaceCatalog
     private static ImmutableArray<AgentSpaceSite> Load(CatalogDbContext catalog)
     {
         List<AgentSpaceSite> result = [];
-        foreach (var (id, source) in catalog.ReadMany(CatalogData.Client.Agentsinspace, MissionCatalog.FixedAgentIds))
+        var epicAgents = EpicArcCatalog.AgentIds;
+        foreach (var (id, source) in catalog.ReadMany(CatalogData.Client.Agentsinspace, MissionCatalog.FixedAgentIds.Union(epicAgents)))
         {
-            if (!MissionCatalog.ForFixedAgent(catalog, id).Any())
+            if (!epicAgents.Contains(id) && !MissionCatalog.ForFixedAgent(catalog, id).Any())
             {
                 continue;
             }

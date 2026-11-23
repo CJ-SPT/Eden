@@ -3,12 +3,16 @@ using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Agents;
 
-public sealed record MissionContainerInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items);
+public sealed record MissionContainerInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items)
+{
+    public double? DepositCapacity { get; init; }
+}
 
 public interface IPilotMissionContainers
 {
     MissionContainerInventory Read(long pilotId, long containerId);
     IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, InventoryMoveRequest request);
+    IReadOnlyList<InventoryChange> Deposit(long pilotId, long shipId, long containerId, InventoryMoveRequest request);
 }
 
 public static class MissionContainerRules

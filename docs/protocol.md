@@ -39,7 +39,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 | Topic | Coverage |
 | --- | --- |
 | [The Agency](protocol/agency.md) | Native activity directories, Agent Finder and mission cards. |
-| [Agent missions and research](protocol/agents.md) | Offers, objectives, standings, storylines, career chains, militia missions and R&D agents. |
+| [Agent missions and research](protocol/agents.md) | Offers, objectives, standings, storylines, career chains, epic arcs, militia missions and R&D agents. |
 | [Information modules and salvage](protocol/information.md) | Scanning, hacking, targeting, tractors and salvage. |
 | [Wormholes](protocol/wormholes.md) | Connections, mass and lifetime, Sleeper encounters and native system effects. |
 | [Abyssal Deadspace](protocol/abyssal.md) | Filaments, pocket timers, room encounters, ship loss and recovery. |
@@ -65,6 +65,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Agent missions and research
 
+- [Epic arc chains](protocol/agents.md#epic-arc-chains--november-22-2026)
 - [Career agent chains](protocol/agents.md#career-agent-chains--november-22-2026)
 - [Mission gap expansion](protocol/agents.md#mission-gap-expansion--november-22-2026)
 - [Bounded mission site placement](protocol/agents.md#bounded-mission-site-placement--november-22-2026)

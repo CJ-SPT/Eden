@@ -145,9 +145,15 @@ internal sealed partial class MissionHandler(
                 {
                     return new PilotCallResult.Failure("Read only your own agent replay timestamp.");
                 }
-                if (agent.Type == AgentType.Heraldry && missions.Information(pilotId, agentId).ReplayAt is long replayAt)
+                long? replayAt = agent.Type switch
                 {
-                    return replayAt;
+                    AgentType.Heraldry => missions.Information(pilotId, agentId).ReplayAt,
+                    AgentType.EpicArc => missions.EpicArcReplayAt(pilotId, agentId),
+                    _ => null,
+                };
+                if (replayAt is long timestamp)
+                {
+                    return timestamp;
                 }
                 return PilotCallResult.None;
             }
@@ -163,17 +169,29 @@ internal sealed partial class MissionHandler(
                     {
                         return ParagonCooldown(null, replayAt);
                     }
-                    var current = missions.Current(pilotId, agentId);
-                    var access = missions.Access(pilotId, agentId);
-                    return new MissionConversation(current, "", access.Reason)
+                    if (agent.Type == AgentType.EpicArc && missions.ArriveEpicArcAgent(pilotId, agentId) is { } arrival)
                     {
-                        SuppressRequest = agent.Type == AgentType.Career && !access.Allowed,
-                    };
+                        loyalty.Enter(context);
+                        Notify(context, arrival.Offer?.Agent.Id ?? agentId, arrival);
+                    }
+                    var current = missions.Current(pilotId, agentId);
+                    return Conversation(pilotId, agent, current, "");
                 }
                 long token = (long)action;
                 if (token < 0)
                 {
                     throw new InvalidDataException("Invalid mission action token.");
+                }
+                if (EpicArcChoiceAction.Read(token) is { } selected)
+                {
+                    if (agent.Type != AgentType.EpicArc)
+                    {
+                        throw new InvalidDataException("Choose a branch from an active epic arc offer.");
+                    }
+                    loyalty.Enter(context);
+                    var update = missions.ChooseEpicArc(pilotId, agentId, selected.OfferId, selected.MissionId);
+                    Notify(context, agentId, update);
+                    return Conversation(pilotId, agent, update.Offer, update.Event, "Request a mission from this agent.");
                 }
                 long instanceId = token / MissionRules.ActionStride;
                 var operation = (MissionAction)(token % MissionRules.ActionStride);
@@ -196,10 +214,7 @@ internal sealed partial class MissionHandler(
                     {
                         return ParagonCooldown(update.Offer, replayAt);
                     }
-                    return new MissionConversation(update.Offer, update.Event, "Request a mission from this agent.")
-                    {
-                        SuppressRequest = agent.Type == AgentType.Career && !missions.Access(pilotId, agentId).Allowed,
-                    };
+                    return Conversation(pilotId, agent, update.Offer, update.Event, "Request a mission from this agent.");
                 }
                 if (operation == MissionAction.Complete && missions.CanShareReward(pilotId, agentId, instanceId))
                 {
@@ -264,15 +279,27 @@ internal sealed partial class MissionHandler(
                     args is not [string or byte[], 0L, var distance, false or 0L or true or 1L, var referringAgent, var formation]
                     || distance is not (double or long)
                     || referringAgent is not null && !Equals(referringAgent, agentId)
-                    || BlueMarshal.Text(args[0]) != "dungeon"
-                    || offer is not { Kind: MissionKind.Combat or MissionKind.Mining, State: MissionState.Accepted, RequiresScanner: false }
-                    || offer.SystemId != context.Pilot.SystemId
                     || context.Pilot.Position is null
                 )
                 {
-                    throw new InvalidDataException("Warp to your accepted mission pocket in its solar system.");
+                    throw new InvalidDataException("Choose a mission warp from space.");
                 }
-                var warp = new FlightCommand.WarpToPoint(MissionRules.FirstSiteId + offer.Id, offer.Position, Convert.ToDouble(distance));
+                string location = BlueRead.Text(args[0]);
+                int system = context.Pilot.SystemId;
+                double range = Convert.ToDouble(distance);
+                FlightCommand warp = offer switch
+                {
+                    { State: MissionState.Accepted, Kind: MissionKind.Combat or MissionKind.Mining, RequiresScanner: false }
+                        when location == "dungeon" && offer.SystemId == system => new FlightCommand.WarpToPoint(
+                        MissionRules.FirstSiteId + offer.Id,
+                        offer.Position,
+                        range
+                    ),
+                    { State: MissionState.Accepted, Kind: MissionKind.AgentHandoff, EpicArcTargetAgentId: long destination }
+                        when location is "objective" or "objective.destination" && offer.EpicArcTargetSystem == system =>
+                        new FlightCommand.WarpTo(offer.EpicArcTargetStation is int station ? station : destination, range),
+                    _ => throw new InvalidDataException("Warp to your accepted mission destination in its solar system."),
+                };
                 if (args[3] is true or 1L)
                 {
                     return fleets.Warp(context, warp, formation);
@@ -300,7 +327,10 @@ internal sealed partial class MissionHandler(
             [offer.Agent.Id] = (10 - current.GetValueOrDefault(offer.Agent.Id)) * offer.Rewards.CorporationFraction,
             [offer.Agent.CorporationId] = (10 - current.GetValueOrDefault(offer.Agent.CorporationId)) * offer.Rewards.CorporationFraction,
         };
-        if ((offer.Storyline || offer.Rewards.FactionFraction > 0) && offer.Agent.FactionId is int faction)
+        if (
+            (offer.Storyline || offer.Rewards.FactionFraction > 0)
+            && (offer.EpicArcStandingFactionId ?? offer.Agent.FactionId) is int faction
+        )
         {
             gains[faction] = (10 - current.GetValueOrDefault(faction)) * offer.Rewards.FactionFraction;
         }
@@ -308,6 +338,26 @@ internal sealed partial class MissionHandler(
     }
 
     private static object?[] FleetRewardLabel(string name) => [$"UI/Agents/StandardMission/{name}", BlueEmpty.Dictionary];
+
+    private MissionConversation Conversation(long pilotId, CatalogAgent agent, MissionOffer? offer, string action, string? greeting = null)
+    {
+        bool epic = agent.Type == AgentType.EpicArc;
+        bool gated = epic || agent.Type == AgentType.Career;
+        var access = gated || greeting is null ? missions.Access(pilotId, agent.Id) : null;
+        long? replayDelay =
+            epic && missions.EpicArcReplayAt(pilotId, agent.Id) is long replay
+                ? replay - clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+                : null;
+        return new(offer, action, greeting ?? access!.Reason)
+        {
+            SuppressRequest = gated && access?.Allowed == false,
+            ReplayDelay = replayDelay is > 0 ? replayDelay : null,
+            EpicChoices =
+                epic && offer is { Kind: MissionKind.Choice, State: MissionState.Accepted }
+                    ? missions.EpicArcChoices(pilotId, agent.Id)
+                    : [],
+        };
+    }
 
     private MissionConversation ParagonCooldown(MissionOffer? offer, long replayAt) =>
         new(offer, "", "IRIS is on cooldown.") { ReplayDelay = Math.Max(1, replayAt - clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) };
@@ -341,6 +391,10 @@ internal sealed partial class MissionHandler(
                 context.Notifications.Add(new AgentMissionChanged("offered", storyline.Agent.Id));
             }
         }
+        if ((update.Event.Length > 0 || update.Continuation is not null) && update.Offer?.EpicArcId is not null)
+        {
+            context.Notifications.Add(new EpicArcJournalChanged());
+        }
         if (update.Event.Length > 0)
         {
             context.Notifications.Add(new AgentMissionChanged(update.Event, agentId));
@@ -353,9 +407,9 @@ internal sealed partial class MissionHandler(
         {
             context.Notifications.Add(new AgentMissionChanged("offer_removed", retired));
         }
-        if (update.Continuation is not null)
+        if (update.Continuation is { } continuation)
         {
-            context.Notifications.Add(new AgentMissionChanged("offered", agentId));
+            context.Notifications.Add(new AgentMissionChanged("offered", continuation.Agent.Id));
         }
     }
 }

@@ -54,6 +54,10 @@ internal sealed partial class PilotMissionStore
         }
 
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        if (profile.Definition.CareerVisit is { RequiresClear: true } && !EnemiesComplete(world, mission, profile))
+        {
+            return false;
+        }
         bool areaChanged =
             site.Objects.FirstOrDefault(body => body.Id == (site.CareerVisit ?? site.CareerHazard)!.ObjectId) is { } target
             && ApplyCareerAreaObjective(world, catalog, pilot, mission, profile, site, target, position, now);

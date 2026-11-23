@@ -101,7 +101,7 @@ internal sealed partial class PilotMissionStore
                                         )
                                         .Select(s => RecoveryContainer(catalog, m, profile, s.Key, structures[s.Value.ObjectId].LootEmpty))
                                 )
-                                .Concat(profile.Deposits.IsEmpty ? [] : MiningContacts(world, m, profile))
+                                .Concat(profile.Deposits.IsEmpty ? [] : MiningContacts(world, m, profile, room.Id))
                                 .ToArray();
                             var gates = room
                                 .Gates.Select(g =>
@@ -130,7 +130,7 @@ internal sealed partial class PilotMissionStore
                                 Entrance = position,
                                 Gates = gates,
                                 Deadspace = profile.Definition.Deadspace,
-                                Private = profile.Kind == MissionKind.Mining || profile.Definition.Career,
+                                Private = profile.Kind == MissionKind.Mining || profile.Definition.Scripted,
                                 PublicBeacon = room == profile.Rooms[0] ? MilitiaBeacon(catalog, m, profile, position) : null,
                                 CareerVisit = ScenePoint(
                                     room.CareerVisit,

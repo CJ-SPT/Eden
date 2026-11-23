@@ -20,6 +20,7 @@ public enum MissionObjectiveKind
     Mine,
     ReturnMinedCargo,
     Complete,
+    TalkToAgent,
 }
 
 public sealed record MissionTrackerObjective(
@@ -52,6 +53,15 @@ public static class MissionTrackingRules
             && position is { } point
             && entry.Rooms.Any(room => room.DistanceTo(point) <= MissionRules.ArrivalRange);
         var complete = new MissionTrackerObjective(MissionObjectiveKind.Complete, offer.Agent.Id);
+        if (offer.Kind == MissionKind.AgentHandoff && offer.EpicArcTargetAgentId is long destination)
+        {
+            var talk = new MissionTrackerObjective(MissionObjectiveKind.TalkToAgent, offer.Agent.Id, TargetId: destination);
+            return new(talk, [talk], false);
+        }
+        if (offer.Kind == MissionKind.Choice)
+        {
+            return new(complete, [complete], false);
+        }
         if (offer.Cargo is { } cargo)
         {
             var missing = new MissionTrackerObjective(

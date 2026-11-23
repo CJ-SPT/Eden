@@ -29,6 +29,8 @@ public enum MissionWaveTrigger
     StructureDamaged,
     StructureDestroyed,
     Mining,
+    HackResolved,
+    Delivery,
 }
 
 public sealed record MissionWave(
@@ -38,7 +40,11 @@ public sealed record MissionWave(
     long TriggerObjectId = 0
 );
 
-public sealed record MissionCareerVisitDefinition(long ObjectId, double Range, bool RemoveObject = false, double ThermalDamage = 0);
+public sealed record MissionCareerVisitDefinition(long ObjectId, double Range, bool RemoveObject = false, double ThermalDamage = 0)
+{
+    public bool RequiresClear { get; init; }
+    public int? RequiredCargoTypeId { get; init; }
+}
 
 public sealed record MissionItemRewardDefinition(ImmutableArray<int> Types, int Quantity);
 
@@ -49,7 +55,14 @@ public sealed record CareerMissionDeposit(long ObjectId, int Quantity);
 public sealed record MissionContainerDefinition(long ObjectId, int TypeId, int Quantity, bool RequiresClear = false)
 {
     public ExplorationKind? Analyzer { get; init; }
+    public bool CompletesOnHack { get; init; }
+    public bool RequiresMiningDepletion { get; init; }
+    public bool CompletesOnTake { get; init; }
     public ImmutableArray<MissionItemReward> AdditionalItems { get; init; } = [];
+    public int DepositTypeId { get; init; }
+    public int DepositQuantity { get; init; }
+    public long? DepositRequiresDestroyedObjectId { get; init; }
+    public bool DepositCompletesMission { get; init; } = true;
 }
 
 public sealed record MissionStructureDrop(int TypeId, int Quantity);
@@ -61,12 +74,11 @@ public sealed record MissionStructureDefinition(
     MissionStructureDrop? Drop = null
 );
 
-public sealed record MissionGateDefinition(
-    long FromObjectId,
-    int DestinationRoomId,
-    bool RequiresClear = false,
-    MissionGateKey? Key = null
-);
+public sealed record MissionGateDefinition(long FromObjectId, int DestinationRoomId, bool RequiresClear = false, MissionGateKey? Key = null)
+{
+    public long? RequiresDeliveryObjectId { get; init; }
+    public bool RequiresMiningSurvey { get; init; }
+}
 
 public sealed record MissionDefinition(
     int MissionId,
@@ -94,12 +106,23 @@ public sealed record MissionDefinition(
     public MissionItemRewardDefinition? ItemReward { get; init; }
     public ImmutableArray<long> FixedAgentIds { get; init; } = [];
     public bool Career { get; init; }
+    public int? EpicArcId { get; init; }
+    public int? SiteSystemId { get; init; }
+    public int? DeliveryStationId { get; init; }
+    public int? PickupStationId { get; init; }
+    public bool PreserveObjectiveCargo { get; init; }
+    public bool FailOnCargoLoss { get; init; }
+    public int? CargoLossRetryMissionId { get; init; }
+    public bool DeliverToAgent { get; init; }
+    public bool Scripted => Career || EpicArcId.HasValue;
     public int? DungeonId { get; init; }
     public int? ObjectiveTypeId { get; init; }
     public int? ObjectiveQuantity { get; init; }
     public int? GiftBlueprintRuns { get; init; }
     public int? GiftTypeId { get; init; }
     public int? GiftQuantity { get; init; }
+    public ImmutableArray<MissionItemReward> AdditionalGifts { get; init; } = [];
+    public bool RequiresAllHacks { get; init; }
     public MissionCareerEffect? CareerEffect { get; init; }
     public MissionCareerHazard? CareerHazard { get; init; }
     public bool CareerSacrifice { get; init; }
