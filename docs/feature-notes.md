@@ -62,7 +62,12 @@ All **25 published learning implants** now support native installation, destruct
 
 Unallocated skill points now persist and can be applied through native individual-skill, selected-level and queue workflows. All **59** fixed SP reward types from the pinned client can be issued through the redeem queue and credited once to an owned pilot, without creating inventory. Previews preserve saved state; application retains elapsed training, enforces Alpha skill limits, and refreshes the queue and fitted-ship brain. Unallocated points count toward Alpha passive-training limits. Native rendering remains unverified. See the [skill point notes](protocol/characters.md#persistent-unallocated-skill-points).
 
-The account redeem queue now supports administrator-issued inventory, fixed SP and currency rewards, native claiming, trashing and reversal of intact redeemed stacks. Rewards have optional expiry and fixed stations, can be delivered to an owned pilot before character selection or to its home station, and survive restarts. Grant references prevent duplicate issuance; queue updates reach connected accounts. Special activation rewards and blueprint metadata remain pending. See [redemption administration](development-client.md#issuing-account-redeem-rewards) and the [protocol notes](protocol/characters.md#persistent-account-redemption).
+The account redeem queue supports administrator-issued inventory, fixed SP, currency, and Expert System rewards.
+Claiming an Expert System activates it directly on the recipient. Grants have optional expiry and survive restarts.
+Physical rewards support fixed stations and home-station delivery. Grant references prevent duplicate issuance, queue
+updates reach connected accounts, and the queue supports trash and reversal of intact redeemed stacks. Other activation
+rewards and blueprint metadata remain pending. [Redemption administration](development-client.md#issuing-account-redeem-rewards) ·
+[Direct Expert System redemption](protocol/characters.md#direct-expert-system-redemption)
 
 Personal jump clones now support installation, naming, destruction and activation at NPC stations, with saved bodies, fees and cooldowns. Installation and activation each cost **900,000 ISK**; swaps within one station do not start or reset a cooldown. Infomorph skills and Alpha limits apply. The client can leave a docked ship in its hangar before jumping. Learning implants persist with each body. Rorqual and Titan vats can install and receive clones. Upwell installation, Pochven installation and native presentation remain open. See the [jump-clone notes](protocol/characters.md#persistent-personal-jump-clones) and [mobile jump clones](protocol/capital-logistics.md#mobile-jump-clones).
 

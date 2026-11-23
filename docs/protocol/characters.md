@@ -41,6 +41,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Catalog agent directory and saved agents](#catalog-agent-directory-and-saved-agents)
 - [Persistent personal jump clones](#persistent-personal-jump-clones)
 - [Persistent account redemption](#persistent-account-redemption)
+- [Direct Expert System redemption](#direct-expert-system-redemption)
 - [Persistent unallocated skill points](#persistent-unallocated-skill-points)
 - [Persistent learning implants](#persistent-learning-implants)
 - [Persistent cerebral accelerators](#persistent-cerebral-accelerators)
@@ -641,7 +642,7 @@ runs are retained under ignored test artifacts. No full .NET suite was requested
 
 `RedemptionHandler` replaces the empty account-level `userSvc.GetRedeemTokens()` reply and owns native `ClaimRedeemTokens(tokens, charID, useHomeStation=False)`, `TrashRedeemTokens(keys)` and selected-pilot `ReverseRedeem(itemID)`. The queue is private to the authenticated account and works before character selection. Issuance is a trusted local administrator operation through `--grant-redeem`, documented in the [Windows guide](../development-client.md#issuing-account-redeem-rewards); there is no issuance RPC or automatic reward fixture in a real save.
 
-Native queue rows are `utillib.KeyVal` records with `tokenID`, nullable `massTokenID`, `typeID`, `quantity`, literal/localization label and description, nullable fixed `stationID`, FILETIME `dateTime` and `expireDateTime`, `soulbound=False`, `isAutoInject=False` and `blueprintInfo=None`. Ordinary grants use personal token IDs and no mass campaign identity. The new panel sends a **list of three-key dictionaries** (`tokenID`, `massTokenID`, `typeID`); trash sends a **list of two-member tuples** `(tokenID, massTokenID)`. Eden rejects forged extra fields, mixed container forms, unsupported mass IDs, duplicates and extra options. Only the optional native boolean `useHomeStation` is accepted. Eden's explicit request bound is **one to 100 distinct tokens**.
+Ordinary native queue rows are `utillib.KeyVal` records with `tokenID`, nullable `massTokenID`, `typeID`, `quantity`, literal/localization label and description, nullable fixed `stationID`, FILETIME `dateTime` and `expireDateTime`, `soulbound=False`, `isAutoInject=False` and `blueprintInfo=None`. Ordinary grants use personal token IDs and no mass campaign identity. The new panel sends a **list of three-key dictionaries** (`tokenID`, `massTokenID`, `typeID`); trash sends a **list of two-member tuples** `(tokenID, massTokenID)`. Eden rejects forged extra fields, mixed container forms, unsupported mass IDs, duplicates and extra options. Only the optional native boolean `useHomeStation` is accepted. Eden's explicit request bound is **one to 100 distinct tokens**.
 
 Claims re-read the target pilot's account, position and home station inside the transaction. Ordinary delivery uses its current NPC station while docked, or its saved home station when requested, including from space. A fixed-station token overrides that destination. Foreign target pilots reject without changes. Unavailable, foreign, expired or mismatched tokens produce private per-token errors while eligible rewards proceed. At this milestone the native report dictionary contained `charID`, `stationID` (None for mixed/no destinations), `skillpoints=0`, `itemsCreated` and `errors`; fixed SP fulfillment is added below. Each created-item dictionary includes `itemID`, `typeID`, `quantity` and `stationID`; each error is `(tokenID, exceptions.UserError('CustomInfo', values))`. The existing outbound exception constructor carries the information and request type. The inbound codec deliberately does not instantiate exception reductions; tests inspect those outbound constructors inertly, while ordinary reply fields also receive native encode/decode coverage. No codec allowlist was broadened.
 
@@ -651,7 +652,7 @@ World version **55** adds `WorldRedeemToken` with an account foreign key, unique
 
 Successful local operations emit `OnRedeemingQueueUpdated()` after commit and ordered native inventory changes only when the selected recipient can see the destination hangar. Other clients poll their own queue once per second after the first queue fetch, detecting external command grants, claims, trash and expiry without a process-local signal. The production session loop can monitor account state before a pilot exists; the account tick flushes notifications without creating a flight. Snapshot identity comparison suppresses repeated notifications, and another account's changes remain invisible. Leaving a pilot does not stop the account's redemption monitoring.
 
-References: inert inspection of build **3662168** `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, including `eve/client/script/ui/services/redeemsvc.pyj`, `ui/shared/redeem/redeemItem.pyj`, `redeemItemsContainer.pyj`, and `redeem/client/ui.pyj`, `redeem/data.pyj`. The client consumes per-token errors, report items grouped by station and `OnRedeemingQueueUpdated`, and owns confirmation prompts, local seen-item state and `OnTokensRedeemed`. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectNewobj`, alongside Eden's existing KeyVal and `exceptions.UserError` outbound adapters. No client or gameplay Python was executed. This initial milestone excluded special activation, skill-point/currency/subscription rewards, mass campaigns, SKIN/personalization activation and blueprint metadata. Fixed SP and currency rewards are implemented below; the other excluded categories still reject instead of fabricating inventory fulfillment.
+References: inert inspection of build **3662168** `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, including `eve/client/script/ui/services/redeemsvc.pyj`, `ui/shared/redeem/redeemItem.pyj`, `redeemItemsContainer.pyj`, and `redeem/client/ui.pyj`, `redeem/data.pyj`. The client consumes per-token errors, report items grouped by station and `OnRedeemingQueueUpdated`, and owns confirmation prompts, local seen-item state and `OnTokensRedeemed`. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectNewobj`, alongside Eden's existing KeyVal and `exceptions.UserError` outbound adapters. No client or gameplay Python was executed. This initial milestone covered physical inventory. Later milestones added fixed SP, currency, and [direct Expert System activation](#direct-expert-system-redemption).
 
 **Automated validation.** Development compilation corrected a list-pattern spelling and two xUnit assertion-style diagnostics before executing their affected tests. The first persistence run passed **8 of 19** cases, with missing mineral fixture/catalog category data and an assumed second station causing the failures; corrected coverage passed **20 cases** in **four seconds**. The first native-service run passed **4 of 5** cases; the remaining assertion tried to feed an outbound exception into the deliberately restricted inbound decoder. The corrected test inspects that existing constructor inertly, and all **five** native-service cases passed in **four seconds**. Expanded persistence/command checks passed **23 of 24** cases in **nine seconds**; the failed assembly assertion used a minimal Ibis fixture without assembly metadata. A focused correction using the existing supported Venture fixture passed all **four catalog variants** in **three seconds**, before adding four reversal-rejection cases. The final required root sequence passed **553 affected tests**, including **34 redemption cases**, in **32 seconds**, with `FullyQualifiedName~Redemption|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~HomeStation|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~PilotFleetTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Launcher|FullyQualifiedName~MarketTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~ShipInventoryRulesTests` and `xUnit.MaxParallelThreads=4`. Tool/solution restores, build with zero warnings/errors, Python catalog (**3**) and formatting-policy (**9**) suites, formatting (**518 files**), diff verification and documentation links/unique anchors passed. The final sequence took **56.86 seconds** overall. Coverage includes the real administrator command invoked twice without listeners, grant/claim races, restart, genuine version-54 migration, exact expiry, native account reads and argument shapes, per-token private errors, real inventory and ship assembly, current/home/fixed destinations, foreign and malformed requests, atomic late-write rollback, intact-stack reversal, unchanged-state rejection and actual timer-driven account notifications before pilot selection. Ignored TRX artifacts retain the failed and corrected runs. No full .NET suite was authorized or run.
 
@@ -982,6 +983,36 @@ including the previously affected trained-skill readers. The catalog and formatt
 **Optional maintainer checks.** Activate the Mining Barge Expert System on a pilot without Mining Barge trained. Inspect
 the virtual levels, board a Retriever and fit a Strip Miner I, then remove the Expert System and check the module and
 hull requirements.
+
+## Direct Expert System redemption
+
+Build **3662168** uses `userSvc.ClaimRedeemTokens` for Expert System rewards from both the redeem panel and character
+selection. The queue's `soulbound` and `isAutoInject` fields tell the client these rewards activate on the target pilot.
+`characterSlots.pyj` reads `isk_balance` after each successful claim. EVE.js **261108.1**, build **3396210**, installs
+Expert Systems directly in `userService.js` (`ef2e6cded872`) and scales the duration by token quantity.
+[CCP automatic Expert System redemption](https://www.eveonline.com/news/view/expert-systems-and-accelerators-landing-in-the-nes)
+
+The existing account grant path accepts activatable Expert System types. A claim consumes the token and grants the
+rental in one resident transaction. Expert rewards produce an installation without a station delivery. A rejected
+installation leaves that token pending, and other valid rewards in the batch can settle independently. A selected
+recipient receives the existing Expert System and virtual-skill updates. Unselected recipients load the grant at entry.
+
+**Automated validation.** The exact filter
+`Eden.Protocol.Tests.Skills.ExpertSystemTests.NativeExpertTokenClaimInstallsAndPreservesFailedTokensAcrossRestart`
+passed in 11.19 s after an 18.11 s build. It covers native preselection and selected claims, quantity-scaled duration,
+automatic token flags, mixed rewards, SQL-guarded activation, restart, replay, and rejection without consuming the token.
+
+The solution built in 1.08 s with zero warnings or errors. The following filter passed all 163 tests in 73.95 s. The
+catalog and formatting policy suites passed all 17 cases.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Skills.ExpertSystemTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.RedemptionServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.RedemptionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CurrencyRewardTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillPointRewardTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.DeveloperToolsTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Claim an Expert System from the redeem queue at character selection, then enter with
+the recipient and inspect the Expert Systems tab for the rental.
 
 ## Character creation and first spawn, November 2, 2026
 

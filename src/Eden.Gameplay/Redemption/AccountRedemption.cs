@@ -23,7 +23,10 @@ public sealed record RedeemToken(
     int? StationId,
     long CreatedAt,
     long? ExpiresAt
-);
+)
+{
+    public bool ActivatesExpertSystem { get; init; }
+}
 
 public sealed record RedeemSelection(long TokenId, int TypeId);
 
@@ -42,6 +45,7 @@ public sealed record RedeemResult(
 )
 {
     public IReadOnlyList<RedeemedCurrency> Currencies { get; init; } = [];
+    public ExpertSystemChange? ExpertSystems { get; init; }
 }
 
 public interface IAccountRedemption

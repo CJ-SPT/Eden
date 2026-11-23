@@ -18,7 +18,8 @@ using Eden.World.Storage;
 namespace Eden.World.Redemption;
 
 [Injectable]
-internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvider clock) : IAccountRedemption
+internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvider clock, PilotExpertSystemsStore expertSystems)
+    : IAccountRedemption
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -52,13 +53,14 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             {
                 throw new InvalidDataException("This grant reference already has a different reward.");
             }
-            return prior.Snapshot();
+            return Snapshot(catalog, prior);
         }
         if (grant.ExpiresAt <= now)
         {
             throw new InvalidDataException("The redeem grant must expire in the future.");
         }
-        CheckType(catalog, grant.TypeId);
+        bool expert = ActivatesExpertSystem(catalog, grant.TypeId);
+        CheckType(catalog, grant.TypeId, expert);
         if ((SkillPointRewards.Amount(grant.TypeId) > 0 || CurrencyRewardRules.Kind(grant.TypeId).HasValue) && grant.StationId.HasValue)
         {
             throw new InvalidDataException("Automatic rewards have no fixed station.");
@@ -84,7 +86,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             )
             .Entity;
         world.SaveChanges();
-        return token.Snapshot();
+        return Snapshot(catalog, token);
     }
 
     public IReadOnlyList<RedeemToken> Read(long accountId) =>
@@ -97,14 +99,18 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             {
                 Account(world, accountId);
                 long now = Now;
-                return world
+                var pending = world
                     .Filter<SavedRedeemToken>(t =>
                         t.AccountId == accountId && t.State == RedeemTokenState.Pending && (t.ExpiresAt == null || t.ExpiresAt > now)
                     )
                     .OrderBy(t => t.Id)
-                    .AsEnumerable()
-                    .Select(t => t.Snapshot())
                     .ToArray();
+                if (pending.Length == 0)
+                {
+                    return Array.Empty<RedeemToken>();
+                }
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                return pending.Select(t => Snapshot(catalog, t)).ToArray();
             }
         );
 
@@ -115,14 +121,15 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         var world = transaction.World;
         var pilot = Pilot(world, accountId, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        int? destination =
-            useHomeStation ? PilotHomeStationStore.Read(world, catalog, pilot).Id
-            : pilot.ActiveShip.Position is null && pilot.ActiveShip.StructureId is null ? pilot.ActiveShip.StationId
-            : null;
+        int? destination = null;
+        bool destinationResolved = false;
         long now = Now;
         List<RedeemedItem> items = [];
         List<RedeemFailure> errors = [];
         List<RedeemedCurrency> currencies = [];
+        List<ExpertSystemEvent> expertEvents = [];
+        ExpertSystemState? expertsBefore = null;
+        ExpertSystemState? expertsAfter = null;
         long skillPoints = 0;
         long? freeSkillPoints = null;
         long? freePointRevision = null;
@@ -167,6 +174,41 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
                 token.PilotId = pilotId;
                 continue;
             }
+            if (IsExpertSystemType(catalog, token.TypeId))
+            {
+                if (world is not EconomyTransaction resident)
+                {
+                    errors.Add(new(token.Id, token.TypeId, "Expert Systems require the resident world."));
+                    continue;
+                }
+                PilotExpertSystemsStore.Installation plan;
+                try
+                {
+                    plan = PilotExpertSystemsStore.PrepareInstallation(resident, catalog, pilotId, token.TypeId, token.Quantity, now);
+                }
+                catch (InvalidDataException error)
+                {
+                    errors.Add(new(token.Id, token.TypeId, error.Message));
+                    continue;
+                }
+                var change = expertSystems.Install(resident, plan);
+                expertsBefore ??= change.Before;
+                expertsAfter = change.After;
+                expertEvents.AddRange(change.Events);
+                token.State = RedeemTokenState.Claimed;
+                token.FinishedAt = now;
+                token.PilotId = pilotId;
+                token.ItemId = null;
+                continue;
+            }
+            if (!destinationResolved)
+            {
+                destination =
+                    useHomeStation ? PilotHomeStationStore.Read(world, catalog, pilot).Id
+                    : pilot.ActiveShip is { Position: null, StructureId: null } ship ? ship.StationId
+                    : null;
+                destinationResolved = true;
+            }
             if (destination is null)
             {
                 errors.Add(new(token.Id, token.TypeId, "Dock the destination pilot or choose its home station."));
@@ -203,7 +245,11 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(pilotId, items, errors, skillPoints, freeSkillPoints, training, freePointRevision) { Currencies = currencies };
+        return new(pilotId, items, errors, skillPoints, freeSkillPoints, training, freePointRevision)
+        {
+            Currencies = currencies,
+            ExpertSystems = expertsBefore is null ? null : new(expertsBefore, expertsAfter!, null, expertEvents),
+        };
     }
 
     public void Trash(long accountId, IReadOnlyList<long> tokens)
@@ -302,10 +348,25 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         }
     }
 
-    private static void CheckType(CatalogDbContext catalog, int id)
+    private static RedeemToken Snapshot(CatalogDbContext catalog, SavedRedeemToken token) =>
+        ActivatesExpertSystem(catalog, token.TypeId)
+            ? token.Snapshot() with
+            {
+                ActivatesExpertSystem = true,
+                StationId = null,
+            }
+            : token.Snapshot();
+
+    private static bool IsExpertSystemType(CatalogDbContext catalog, int id) =>
+        catalog.FittingType(id)?.CategoryId == (int)InventoryCategory.ExpertSystem;
+
+    private static bool ActivatesExpertSystem(CatalogDbContext catalog, int id) =>
+        IsExpertSystemType(catalog, id) && ExpertSystemCatalog.Read(catalog, id) is { Activatable: true };
+
+    private static void CheckType(CatalogDbContext catalog, int id, bool expert = false)
     {
         var type = catalog.FittingType(id);
-        if (type is not null && (SkillPointRewards.Amount(id) > 0 || CurrencyRewardRules.Kind(id).HasValue))
+        if (type is not null && (expert || SkillPointRewards.Amount(id) > 0 || CurrencyRewardRules.Kind(id).HasValue))
         {
             return;
         }

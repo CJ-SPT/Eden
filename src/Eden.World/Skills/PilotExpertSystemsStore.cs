@@ -17,6 +17,16 @@ namespace Eden.World.Skills;
 internal sealed class PilotExpertSystemsStore(WorldDatabase database, TimeProvider clock, InboxChangeSignal signal) : IPilotExpertSystems
 {
     private static readonly ExpertSystemState s_empty = new([], []);
+    private static readonly long s_maxExpiry = DateTimeOffset.MaxValue.ToFileTime();
+
+    internal sealed record Installation(
+        List<SavedExpertSystem> Systems,
+        SavedExpertSystem? Existing,
+        SavedExpertSystem Updated,
+        ExpertSystemState Before,
+        ExpertSystemState After,
+        long Now
+    );
 
     public ExpertSystemState Read(long pilotId)
     {
@@ -52,54 +62,86 @@ internal sealed class PilotExpertSystemsStore(WorldDatabase database, TimeProvid
         }
 
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (ExpertSystemCatalog.Read(catalog, item.TypeId) is not { Activatable: true } profile)
-        {
-            throw new InvalidDataException("That Expert System cannot be activated.");
-        }
-
-        long now = Now;
-        var systems = Installed(world, pilotId);
-        var before = Snapshot(catalog, systems);
-        var events = RemoveExpired(world, systems, now);
-        var system = systems.Find(row => row.TypeId == item.TypeId);
-        bool added = system is null;
-        if (added && systems.Count >= ExpertSystemRules.MaximumActive)
-        {
-            throw new InvalidDataException($"You can install up to {ExpertSystemRules.MaximumActive} active Expert Systems.");
-        }
-        if (system is not null && system.ExpiresAt - now > ExpertSystemRules.TopUpWindow)
-        {
-            throw new InvalidDataException("That Expert System still has more than 30 days remaining.");
-        }
-        long expires = checked((system?.ExpiresAt ?? now) + profile.DurationDays * TimeSpan.TicksPerDay);
-        if (system is null)
-        {
-            system = new()
-            {
-                PilotId = pilotId,
-                TypeId = item.TypeId,
-                InstalledAt = now,
-            };
-            systems.Add(system);
-            world.Add(system);
-        }
-        system.ExpiresAt = expires;
-
+        var installation = PrepareInstallation(world, catalog, pilotId, item.TypeId, 1, Now);
         var previous = PilotInventoryStore.Read(catalog, item);
+        var result = Install(world, installation);
         item.Quantity--;
         if (item.Quantity == 0)
         {
             world.Remove(item);
         }
-        events.Add(new(system.TypeId, added));
-        var result = new ExpertSystemChange(
-            before,
-            Snapshot(catalog, systems),
-            new(previous with { Quantity = item.Quantity }, previous),
-            events
-        );
         world.Commit();
-        return result;
+        return result with { Inventory = new(previous with { Quantity = item.Quantity }, previous) };
+    }
+
+    internal static Installation PrepareInstallation(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int typeId,
+        int quantity,
+        long now
+    )
+    {
+        _ = RequirePilot(world, pilotId);
+        if (quantity <= 0 || ExpertSystemCatalog.Read(catalog, typeId) is not { Activatable: true } profile)
+        {
+            throw new InvalidDataException("That Expert System cannot be activated.");
+        }
+        var systems = Installed(world, pilotId);
+        var active = systems.Where(row => row.ExpiresAt > now).ToArray();
+        var existing = active.FirstOrDefault(row => row.TypeId == typeId);
+        if (existing is null && active.Length >= ExpertSystemRules.MaximumActive)
+        {
+            throw new InvalidDataException($"You can install up to {ExpertSystemRules.MaximumActive} active Expert Systems.");
+        }
+        if (existing is not null && existing.ExpiresAt - now > ExpertSystemRules.TopUpWindow)
+        {
+            throw new InvalidDataException("That Expert System still has more than 30 days remaining.");
+        }
+        long expires;
+        try
+        {
+            expires = checked((existing?.ExpiresAt ?? now) + profile.DurationDays * TimeSpan.TicksPerDay * quantity);
+        }
+        catch (OverflowException)
+        {
+            throw new InvalidDataException("The Expert System duration exceeds the supported date range.");
+        }
+        if (expires > s_maxExpiry)
+        {
+            throw new InvalidDataException("The Expert System duration exceeds the supported date range.");
+        }
+        SavedExpertSystem updated = new()
+        {
+            PilotId = pilotId,
+            TypeId = typeId,
+            InstalledAt = existing?.InstalledAt ?? now,
+            ExpiresAt = expires,
+        };
+        return new(
+            systems,
+            existing,
+            updated,
+            Snapshot(catalog, systems),
+            Snapshot(catalog, active.Where(row => row.TypeId != typeId).Append(updated).ToArray()),
+            now
+        );
+    }
+
+    internal ExpertSystemChange Install(EconomyTransaction world, Installation plan)
+    {
+        var events = RemoveExpired(world, plan.Systems, plan.Now);
+        if (plan.Existing is { } existing)
+        {
+            existing.ExpiresAt = plan.Updated.ExpiresAt;
+        }
+        else
+        {
+            world.Add(plan.Updated);
+        }
+        events.Add(new(plan.Updated.TypeId, plan.Existing is null));
+        return new(plan.Before, plan.After, null, events);
     }
 
     public ExpertSystemChange Remove(long pilotId, int typeId)

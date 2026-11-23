@@ -295,7 +295,7 @@ public sealed partial class ExpertSystemTests
         private readonly ExpertSystemHandler _systems;
         private readonly PilotCallContext _context;
 
-        public Client(IServiceProvider services, long account)
+        public Client(IServiceProvider services, long account, bool select = true)
         {
             _scope = services.CreateScope();
             _router = _scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
@@ -303,11 +303,19 @@ public sealed partial class ExpertSystemTests
             var factory = _scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
             var pilot = services.GetRequiredService<SqliteWorld>().FindPilot(account)!;
             _context = new(account, pilot.Account, [pilot], factory.Create, account, SignedSettings.Empty);
-            _context.Select(pilot);
-            _systems.Enter(_context);
+            if (select)
+            {
+                Select();
+            }
         }
 
         public DockedPilot Pilot => _context.Pilot;
+
+        public void Select()
+        {
+            _context.Select(Assert.Single(_context.Roster));
+            _systems.Enter(_context);
+        }
 
         public PilotCallResult Consume(long id) => Call(ExpertService, "ConsumeExpertSystem", [id]);
 
@@ -342,7 +350,7 @@ public sealed partial class ExpertSystemTests
             return Assert.IsType<string>(_context.ResolveReference(reference.Id));
         }
 
-        private PilotCallResult Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+        public PilotCallResult Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             _router.Call(_context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
 
         private static BlueModel Reply(PilotCallResult call) => Assert.IsType<PilotCallResult.Success>(call).Reply;

@@ -79,7 +79,7 @@ internal sealed class ExpertSystemHandler(IPilotExpertSystems expertSystems, Ski
         }
     }
 
-    private void Apply(PilotCallContext context, ExpertSystemChange change)
+    internal void Apply(PilotCallContext context, ExpertSystemChange change)
     {
         context.ObserveExpertSystems(change.After);
         if (change.Inventory is { } inventory)
@@ -88,8 +88,15 @@ internal sealed class ExpertSystemHandler(IPilotExpertSystems expertSystems, Ski
         }
         if (change.Events.Count > 0)
         {
-            var announcement = change.Events.FirstOrDefault(entry => entry.Added) ?? change.Events[0];
-            context.Notifications.Add(new ExpertSystemsUpdated(new(change.After.Systems), announcement));
+            var systems = new ExpertSystemsReply(change.After.Systems);
+            var announcements = change
+                .Events.Where(entry => entry.Added)
+                .DistinctBy(entry => entry.TypeId)
+                .DefaultIfEmpty(change.Events[0]);
+            foreach (var announcement in announcements)
+            {
+                context.Notifications.Add(new ExpertSystemsUpdated(systems, announcement));
+            }
         }
         skills.ApplyExpertSystems(context, change);
     }

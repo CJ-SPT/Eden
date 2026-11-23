@@ -15,7 +15,8 @@ internal sealed class RedemptionHandler(
     IAccountRedemption redemption,
     TimeProvider clock,
     FreeSkillPointHandler freePoints,
-    LoyaltyWalletHandler loyalty
+    LoyaltyWalletHandler loyalty,
+    ExpertSystemHandler expertSystems
 ) : IPilotCallHandler
 {
     private long[]? _tokens;
@@ -80,12 +81,13 @@ internal sealed class RedemptionHandler(
                     var pending = redemption.Read(context.AccountId).ToDictionary(t => t.Id, t => t.TypeId);
                     var selected = requested.Select(value => Selection(value, pending)).ToArray();
                     var result = redemption.Claim(context.AccountId, pilot, selected, home);
+                    var cash = result.Currencies.LastOrDefault(r => r.Kind == RedeemCurrencyKind.Isk);
+                    double? iskBalance = cash is null ? null : (double)cash.After / MarketDefinitions.CentsPerIsk;
                     if (context.Selected && context.Pilot.PilotId == pilot)
                     {
-                        var cash = result.Currencies.LastOrDefault(r => r.Kind == RedeemCurrencyKind.Isk);
-                        if (cash is not null)
+                        if (iskBalance is double isk)
                         {
-                            context.Notifications.Add(new AccountBalanceChanged(pilot, (double)cash.After / MarketDefinitions.CentsPerIsk));
+                            context.Notifications.Add(new AccountBalanceChanged(pilot, isk));
                         }
                         loyalty.Notify(context, result.Currencies);
                         if (
@@ -96,6 +98,10 @@ internal sealed class RedemptionHandler(
                         {
                             freePoints.Notify(context, balance, revision, state);
                         }
+                        if (result.ExpertSystems is { } expertChange)
+                        {
+                            expertSystems.Apply(context, expertChange);
+                        }
                         foreach (
                             var item in result.Items.Where(i =>
                                 i.Item.LocationId == context.Pilot.StationId && context.Pilot.Position is null
@@ -105,11 +111,11 @@ internal sealed class RedemptionHandler(
                             InventoryChangesWire.NotifyItemChange(context, new(item.Item, null));
                         }
                     }
-                    if (result.Items.Count > 0 || result.SkillPoints > 0 || result.Currencies.Count > 0)
+                    if (result.Items.Count > 0 || result.SkillPoints > 0 || result.Currencies.Count > 0 || result.ExpertSystems is not null)
                     {
                         Changed(context);
                     }
-                    return new RedeemClaimReply(result);
+                    return new RedeemClaimReply(result, iskBalance);
                 case ("TrashRedeemTokens", [List<object?> requested]):
                     redemption.Trash(context.AccountId, requested.Select(Key).ToArray());
                     Changed(context);
@@ -201,20 +207,24 @@ internal sealed record RedeemTokenRow(RedeemToken Token) : BlueModel
                 ["stationID"] = Token.StationId,
                 ["dateTime"] = Token.CreatedAt,
                 ["expireDateTime"] = Token.ExpiresAt,
-                ["soulbound"] = false,
-                ["isAutoInject"] = SkillPointRewards.Amount(Token.TypeId) > 0 || CurrencyRewardRules.Kind(Token.TypeId).HasValue,
+                ["soulbound"] = Token.ActivatesExpertSystem,
+                ["isAutoInject"] =
+                    Token.ActivatesExpertSystem
+                    || SkillPointRewards.Amount(Token.TypeId) > 0
+                    || CurrencyRewardRules.Kind(Token.TypeId).HasValue,
                 ["blueprintInfo"] = null,
             }
         );
 }
 
-internal sealed record RedeemClaimReply(RedeemResult Result) : BlueModel
+internal sealed record RedeemClaimReply(RedeemResult Result, double? IskBalance) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             ["charID"] = Result.PilotId,
             ["stationID"] = Result.Items.Select(i => i.Item.LocationId).Distinct().ToArray() is [long station] ? station : null,
+            ["isk_balance"] = IskBalance,
             ["skillpoints"] = Result.SkillPoints,
             ["itemsCreated"] = Result.Items.Select(i => (object?)new RedeemedItemRow(i)).ToList(),
             ["errors"] = Result
