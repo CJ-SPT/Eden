@@ -1,8 +1,11 @@
+using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Thermal;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -17,6 +20,70 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed class GateCloakTests
 {
+    [Fact]
+    public void HealthReadsFollowGateTransfersAndUseCurrentDamageOnReturn()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var gate = db.Objects.Single(body => body.DestinationGateId.HasValue);
+        var systems = db.Services.GetRequiredService<ISystemObjects>();
+        var travel = db.Services.GetRequiredService<IPilotGateTravel>();
+        var health = db.Services.GetRequiredService<IPilotHealth>();
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        db.Store.SetPosition(pilot.ShipId, gate.Position, pilot.SystemId);
+
+        using var source = live.UseSystem(pilot.SystemId);
+        var initial = health.Read(pilot.PilotId, clock.Now);
+        var destination = travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId!.Value);
+        using (var damage = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            damage
+                .Set<ShipHealthState>()
+                .Add(
+                    new()
+                    {
+                        ShipId = pilot.ShipId,
+                        ShieldCharge = initial.Defense.Shield,
+                        ArmorDamage = 1,
+                        UpdatedAt = clock.Now,
+                    }
+                );
+            damage.Commit();
+        }
+        var damaged = health.Read(pilot.PilotId, clock.Now);
+        Assert.Equal(initial.Remaining.Armor - 1, damaged.Remaining.Armor);
+
+        var returnGate = systems.Load(destination.SystemId).Single(body => body.Id == gate.DestinationGateId);
+        using var away = live.UseSystem(destination.SystemId);
+        Assert.Equal(damaged, health.Read(pilot.PilotId, clock.Now));
+        db.Store.SetPosition(pilot.ShipId, returnGate.Position, destination.SystemId);
+        var returned = travel.Transfer(pilot.PilotId, pilot.ShipId, returnGate.Id, gate.Id);
+        Assert.Equal(pilot.SystemId, returned.SystemId);
+        Assert.Equal(damaged, health.Read(pilot.PilotId, clock.Now));
+        using var arrived = live.UseSystem(returned.SystemId);
+        Assert.Equal(damaged, health.Read(pilot.PilotId, clock.Now));
+    }
+
+    [Fact]
+    public void HeatReadsFollowACommittedGateTransfer()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var gate = db.Objects.Single(body => body.DestinationGateId.HasValue);
+        var travel = db.Services.GetRequiredService<IPilotGateTravel>();
+        var heat = db.Services.GetRequiredService<IPilotShipHeat>();
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        db.Store.SetPosition(pilot.ShipId, gate.Position, pilot.SystemId);
+        using var source = live.UseSystem(pilot.SystemId);
+        var before = heat.Read(pilot.PilotId, pilot.ShipId, clock.Now);
+        travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId!.Value);
+
+        Assert.True(HeatCycleRules.SameState(before, heat.Read(pilot.PilotId, pilot.ShipId, clock.Now)));
+        Assert.Equal(pilot.SystemId, live.CurrentSystem);
+    }
+
     [Theory]
     [InlineData("expiry")]
     [InlineData("heading")]

@@ -2,6 +2,31 @@
 
 [Protocol index](../protocol.md)
 
+## Ship state after gate transfers
+
+An incident reported a capsuleer `GateTransfer` with “The ship's system membership changed,” followed by
+maintenance failures and a client disconnect. Regression tests built from `50aa7128` reproduced the exception
+in both health and heat reads scoped to the departure system after a committed transfer.
+The health service now reads the current ship through the
+resident world when the scoped combat runtime cannot serve it. Heat reads resolve the current system under
+persistence coordination. A departing ship's clean combat cache is discarded so its next visit loads any damage or
+fitting changes made while away. Combat actions still require the ship to belong to the system executing the action.
+
+[EVE University stargates](https://wiki.eveuniversity.org/Stargates)
+
+**Automated validation**
+
+The solution built in 4.14 seconds without warnings or errors. Both new `GateCloakTests` passed and verified
+that heat can be read across a committed gate transfer and armor damage survives a return to the original system.
+The 30-second focused run passed 49 of 50 cases covering ship heat, gate cloak, capsuleer presentation, inbound
+gate traffic, offscreen nullsec expeditions, translocation, and system isolation. The shared-coordinator case of
+`PausedSystemCannotBlockAnotherSystemsCompleteWarmFrame` timed out in isolation on both `50aa7128` and the fix.
+All 17 Python policy cases and the repository formatting check passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
 ## Independent nullsec expeditions
 
 Eligible armed travelers can choose an independent expedition from a station using the build 3662168 catalog's

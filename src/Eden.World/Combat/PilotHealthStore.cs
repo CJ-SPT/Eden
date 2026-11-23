@@ -8,7 +8,6 @@ using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Repair;
 using Eden.World.Runtime;
-using Eden.World.Runtime.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -30,14 +29,23 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
     public ShipHealth Read(long pilotId, long now)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("health.read");
-        if (LiveCombatRuntime.Find(database.Path, pilotId)?.Health(pilotId, now) is { } resident)
-        {
-            return resident;
-        }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         if (LiveWorld.Find(database.Path) is { } live)
         {
-            return live.Economy.Read(ReadAndSettle, new(pilots: [pilotId]));
+            return live.Run(
+                () =>
+                {
+                    if (live.CombatForPilot(pilotId)?.Health(pilotId, now) is { } resident)
+                    {
+                        return resident;
+                    }
+                    // A read can still be scoped to the departure system. Resolve under
+                    // persistence ownership so the current ship's pending combat is included.
+                    TransactionParticipants participants = new(pilots: [pilotId]);
+                    using var ownership = live.EnterShared("ship health membership", participants);
+                    return live.Economy.Read(ReadAndSettle, participants);
+                },
+                nameof(Read)
+            );
         }
         using WorldDbContext file = new(database.Path) { Participants = new(pilots: [pilotId]) };
         using var transaction = file.Database.BeginTransaction();
@@ -47,6 +55,7 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
 
         ShipHealth ReadAndSettle(WorldAction world)
         {
+            using CatalogDbContext catalog = new(database.CatalogPath);
             long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
             return Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
         }

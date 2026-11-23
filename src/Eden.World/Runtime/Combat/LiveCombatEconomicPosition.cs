@@ -15,21 +15,31 @@ internal sealed partial class LiveCombatRuntime
             ?? (hull?.StructureId is long structureId ? owner.Economy.Structure(structureId)?.SystemId : null)
             ?? (hull is null ? null : database.Catalog.FindStation(hull.StationId)?.SolarSystemId);
         SpacePosition? position = row is null ? null : new(row.X, row.Y, row.Z);
+        bool belongs = systemId is null || destination == systemId;
         if (_shipPilots.TryGetValue(id, out long pilot) && _ships.TryGetValue(pilot, out var ship))
         {
-            _ships[pilot] = ship with { Position = position, SystemId = destination ?? ship.SystemId };
-            if (_savedShips.TryGetValue(pilot, out var saved))
+            if (!belongs && !_dirtyShips.Contains(pilot))
             {
-                // Only position moves to the economic baseline. Keep all unrelated
-                // differences until their owning combat projection is captured.
-                _savedShips[pilot] = saved with
+                // The next visit must load damage and fittings from the current world.
+                _ships.Remove(pilot);
+                _savedShips.Remove(pilot);
+                _staleShips.Remove(pilot);
+            }
+            else
+            {
+                _ships[pilot] = ship with { Position = position, SystemId = destination ?? ship.SystemId };
+                if (_savedShips.TryGetValue(pilot, out var saved))
                 {
-                    Position = position,
-                    SystemId = destination ?? saved.SystemId,
-                };
+                    // Only position moves to the economic baseline. Keep all unrelated
+                    // differences until their owning combat projection is captured.
+                    _savedShips[pilot] = saved with
+                    {
+                        Position = position,
+                        SystemId = destination ?? saved.SystemId,
+                    };
+                }
             }
         }
-        bool belongs = systemId is null || destination == systemId;
         if (position is not null && belongs && (_positions.ContainsKey(id) || _shipPilots.ContainsKey(id)))
         {
             var current = new LivePosition(row!.SystemId, position);

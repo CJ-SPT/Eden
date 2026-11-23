@@ -89,6 +89,8 @@ internal sealed partial class LiveWorld
     internal LiveCombatRuntime? CombatForKnownPilot(long pilot) =>
         _pilotSystems.TryGetValue(pilot, out int system) ? _systems.Get(system).State.Combat : _shared.Combat;
 
+    internal int? KnownPilotSystem(long pilot) => _pilotSystems.TryGetValue(pilot, out int system) ? system : null;
+
     internal LiveCombatRuntime? CombatForSystem(int system) => _systems.Get(system).State.Combat;
 
     internal Eden.Gameplay.Flight.SpacePosition? PublishedPosition(int system, long id)

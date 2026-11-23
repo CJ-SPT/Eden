@@ -21,9 +21,16 @@ internal sealed class PilotShipHeatStore(WorldDatabase database) : IPilotShipHea
         {
             throw new InvalidDataException("Invalid ship heat clock.");
         }
-        if (LiveWorld.Find(database.Path)?.Heat is { } resident)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
-            return resident.Read(pilotId, shipId, now);
+            if (live.CurrentSystem is int current && live.KnownShipSystem(shipId) is int system && current != system)
+            {
+                // Travel already moved the heat state. Resolve its current owner under
+                // persistence coordination before entering the destination system.
+                using var ownership = live.EnterShared("ship heat membership", new(ships: [shipId]));
+                return LiveWorld.ExecuteForShip(database.Path, shipId, () => live.Heat.Read(pilotId, shipId, now), nameof(Read));
+            }
+            return live.Heat.Read(pilotId, shipId, now);
         }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();

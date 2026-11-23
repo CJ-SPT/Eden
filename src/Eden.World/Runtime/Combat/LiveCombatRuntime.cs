@@ -406,12 +406,15 @@ internal sealed partial class LiveCombatRuntime(
     private ShipHealth? HealthOwned(long pilotId, long now)
     {
         using var ownership = owner.Enter();
-        if (!CanRun)
+        if (!CanRun || systemId is int system && owner.KnownPilotSystem(pilotId) is int known && known != system)
         {
             return null;
         }
         Trim();
-        var ship = Ship(pilotId, now);
+        if (ShipInSystem(pilotId, now) is not { } ship)
+        {
+            return null;
+        }
         var settled = ship.SettleRepairs(now);
         if (!ReferenceEquals(ship, settled))
         {
@@ -422,30 +425,39 @@ internal sealed partial class LiveCombatRuntime(
         return new(settled.ShipId, settled.Health.Defense, settled.Health.At(now));
     }
 
-    private LiveCombatShip Ship(long pilotId, long now)
+    private LiveCombatShip Ship(long pilotId, long now) =>
+        ShipInSystem(pilotId, now) ?? throw new InvalidDataException("The ship's system membership changed.");
+
+    private LiveCombatShip? ShipInSystem(long pilotId, long now)
     {
-        if (!_ships.TryGetValue(pilotId, out var ship))
+        bool refresh = true;
+        LiveCombatShip ship;
+        if (!_ships.TryGetValue(pilotId, out var cached))
         {
             ship = Loading(() => LoadShip(pilotId, now));
-            _ships[pilotId] = ship;
-            _savedShips[pilotId] = ship;
-            _staleShips.Remove(pilotId);
         }
         else if (_staleShips.Contains(pilotId))
         {
-            ship = Loading(() => ReloadShip(ship, now));
-            _ships[pilotId] = ship;
+            ship = Loading(() => ReloadShip(cached, now));
+        }
+        else
+        {
+            ship = cached;
+            refresh = false;
+        }
+        var positioned = Positioned(ship);
+        if (systemId is int system && positioned.SystemId != system)
+        {
+            return null;
+        }
+        if (refresh)
+        {
             _savedShips[pilotId] = ship;
             _staleShips.Remove(pilotId);
         }
-        ship = Positioned(ship);
-        if (systemId is int system && ship.SystemId != system)
-        {
-            throw new InvalidDataException("The ship's system membership changed.");
-        }
-        owner.TrackShip(ship.ShipId, ship.SystemId, pilotId);
-        _ships[pilotId] = ship;
-        return ship;
+        owner.TrackShip(positioned.ShipId, positioned.SystemId, pilotId);
+        _ships[pilotId] = positioned;
+        return positioned;
     }
 
     private LiveCombatNpc? Npc(long id, long now)
