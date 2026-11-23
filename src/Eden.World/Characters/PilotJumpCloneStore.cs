@@ -4,6 +4,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -36,7 +37,7 @@ internal sealed partial class PilotJumpCloneStore(
     private static CatalogStationDefinition Station(CatalogDbContext catalog, int id) =>
         catalog.FindStation(id) ?? throw new InvalidDataException("Unknown jump clone station.");
 
-    private static CatalogStationDefinition CurrentStation(CatalogDbContext catalog, Pilot pilot, bool facility)
+    private static CatalogStationDefinition CurrentStation(WorldAction world, CatalogDbContext catalog, Pilot pilot, bool facility)
     {
         if (
             pilot.ActiveShip.Position is not null
@@ -48,12 +49,20 @@ internal sealed partial class PilotJumpCloneStore(
             throw new InvalidDataException("Use jump clones while docked in an NPC station.");
         }
         var station = Station(catalog, pilot.ActiveShip.StationId);
-        if (facility && !StationCapabilities.Has(catalog, station.OperationId, StationService.JumpCloneFacility))
+        bool pochven = station.RegionId == HomeStationRules.PochvenRegion;
+        if ((facility || pochven) && !StationCapabilities.Has(catalog, station.OperationId, StationService.JumpCloneFacility))
         {
             throw new InvalidDataException("This station has no jump clone facility.");
         }
-        // Pochven installation requires standings that Eden does not implement.
-        JumpCloneRules.CheckLocation(station.SolarSystemId, station.RegionId);
+        if (pochven)
+        {
+            var standing = world.Set<SavedNpcStanding>().Find(pilot.Id, (long)AgentStandingFaction.Triglavian);
+            JumpCloneRules.CheckPochvenStanding(standing?.Value ?? 0);
+        }
+        else
+        {
+            JumpCloneRules.CheckLocation(station.SolarSystemId, station.RegionId);
+        }
         return station;
     }
 
@@ -154,13 +163,12 @@ internal sealed partial class PilotJumpCloneStore(
     public long Price(long pilotId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = WorldActionScope.Inspect(database, world => CurrentStation(catalog, Pilot(world, pilotId), facility: false));
+        _ = WorldActionScope.Inspect(database, world => CurrentStation(world, catalog, Pilot(world, pilotId), facility: false));
         return JumpCloneRules.FeeCents;
     }
 
     private static int? InstallLimit(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
-        _ = CurrentStation(catalog, pilot, facility: true);
         int capacity = Skills(world, catalog, pilot).Capacity;
         return world.Filter<SavedJumpClone>(c => c.PilotId == pilot.Id && !c.Active).Count() >= capacity ? capacity : null;
     }
@@ -168,7 +176,15 @@ internal sealed partial class PilotJumpCloneStore(
     public int? InstallLimit(long pilotId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return WorldActionScope.Inspect(database, world => InstallLimit(world, catalog, Pilot(world, pilotId)));
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId);
+                _ = CurrentStation(world, catalog, pilot, facility: true);
+                return InstallLimit(world, catalog, pilot);
+            }
+        );
     }
 
     private SavedJumpClonePayment Pay(
@@ -205,11 +221,11 @@ internal sealed partial class PilotJumpCloneStore(
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
+        var station = CurrentStation(world, catalog, pilot, facility: true);
         if (InstallLimit(world, catalog, pilot) is not null)
         {
             throw new InvalidDataException("Your trained Infomorph skills and account status do not allow another jump clone.");
         }
-        var station = CurrentStation(catalog, pilot, facility: true);
         var payment = Pay(
             world,
             pilot,
@@ -293,7 +309,7 @@ internal sealed partial class PilotJumpCloneStore(
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        var source = CurrentStation(catalog, pilot, facility: false);
+        var source = CurrentStation(world, catalog, pilot, facility: false);
         var old = pilot.ActiveShip;
         if (old.Id != expectedShipId || catalog.FittingType(old.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
         {
@@ -305,10 +321,15 @@ internal sealed partial class PilotJumpCloneStore(
             throw new InvalidDataException("The jump clone is not at that destination.");
         }
         var destination = Station(catalog, stationId);
-        JumpCloneRules.CheckLocation(destination.SolarSystemId, destination.RegionId);
+        bool sameStation = source.Id == destination.Id;
+        if (!sameStation)
+        {
+            JumpCloneRules.CheckLocation(source.SolarSystemId, source.RegionId);
+            JumpCloneRules.CheckLocation(destination.SolarSystemId, destination.RegionId);
+        }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var timer = world.Set<SavedJumpCloneTimer>().Find(pilotId);
-        JumpCloneRules.CheckTimer(source.Id == stationId, timer?.Time, Skills(world, catalog, pilot), now);
+        JumpCloneRules.CheckTimer(sameStation, timer?.Time, Skills(world, catalog, pilot), now);
         var payment = Pay(world, pilot, source, JumpClonePaymentKind.Activation, quotedCents, now);
         var type =
             (
@@ -330,7 +351,7 @@ internal sealed partial class PilotJumpCloneStore(
             )
             .Entity;
         SwapBodies(world, pilotId, incoming, source.Id);
-        if (source.Id != stationId)
+        if (!sameStation)
         {
             timer ??= world.Add(new SavedJumpCloneTimer { PilotId = pilotId }).Entity;
             timer.Time = now;

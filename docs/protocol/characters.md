@@ -40,6 +40,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Persistent home stations and docked clone transfer](#persistent-home-stations-and-docked-clone-transfer)
 - [Catalog agent directory and saved agents](#catalog-agent-directory-and-saved-agents)
 - [Persistent personal jump clones](#persistent-personal-jump-clones)
+- [Pochven NPC clone bays](#pochven-npc-clone-bays)
 - [Persistent account redemption](#persistent-account-redemption)
 - [Direct Expert System redemption](#direct-expert-system-redemption)
 - [Persistent unallocated skill points](#persistent-unallocated-skill-points)
@@ -568,7 +569,7 @@ Inert inspection of the pinned `clonejumpsvc.pyj`, `jumpClonesPanel.pyj` and sta
 
 Installation requires station service **24**, Jump Clone Facility. Capacity comes from earned Infomorph Psychology **24242**, Advanced **33407** and Elite **73910**, with ranks **1/5/12** from the catalog. Each trained effective level adds one body. Pinned race-specific Alpha grades cap Psychology at I and exclude the other clone skills. Alpha pilots can continue using bodies acquired as Omega, consistent with [CCP's Alpha facts](https://support.eveonline.com/hc/en-us/articles/213811425-Alpha-Clones-and-Omega-Clone-lapsing-Quick-Facts). Capacity is checked for new installations rather than deleting existing bodies after a lapse. Character primes and native brain modifiers expose `maxJumpClones` **979** and `cloneJumpCoolDown` **1921** using the same effective skills as the server. Infomorph skill completion also sends character attribute updates to the existing godma cache, so the panel need not reconnect to observe its new cooldown or capacity.
 
-Cross-station jumps require a capsule and a **24-hour** cooldown reduced by one hour per effective Infomorph Synchronizing **33399** level (catalog rank **2**). The exact deadline is allowed. Swapping within the current NPC station bypasses that check and neither clears nor restarts an existing cross-station timer, following [CCP's 20.07 patch](https://www.eveonline.com/news/view/patch-notes-version-20-07) and the pinned panel's `validate_jump_to`. A body is left at departure even if that station lacks an installation facility; no capacity is consumed by the swap. Remote wormhole destinations other than **Thera 31000005** and Pochven are rejected, following [CCP's jump-clone restrictions](https://support.eveonline.com/hc/en-us/articles/203217202-Jump-Clones). [Mobile capital vat bays](capital-logistics.md#mobile-jump-clones) now support invite-based installation and capsule arrivals from NPC stations. Special Pochven standings and installation rules, Upwell cloning services and non-learning implant effects remain open.
+Cross-station jumps require a capsule and a **24-hour** cooldown reduced by one hour per effective Infomorph Synchronizing **33399** level (catalog rank **2**). The exact deadline is allowed. Swapping within the current NPC station bypasses that check and neither clears nor restarts an existing cross-station timer, following [CCP's 20.07 patch](https://www.eveonline.com/news/view/patch-notes-version-20-07) and the pinned panel's `validate_jump_to`. In ordinary NPC stations, a body is left at departure even if that station lacks an installation facility. A swap does not consume extra capacity. Remote jumps involving Pochven or wormhole systems other than **Thera 31000005** are rejected. See [CCP's jump-clone restrictions](https://support.eveonline.com/hc/en-us/articles/203217202-Jump-Clones) and [Pochven NPC clone bays](#pochven-npc-clone-bays). [Mobile capital vat bays](capital-logistics.md#mobile-jump-clones) support invite-based installation and capsule arrivals from NPC stations. Upwell cloning services and non-learning implant effects remain open.
 
 The native client automatically calls `ship.LeaveShip(currentShipID)` when starting a jump from a hull. Eden now supports that docked operation, preserving the old ship, modules and cargo and selecting an existing local Capsule **670** or creating one. A clone jump retires only the departure capsule and selects a new capsule at the destination; it does not record a pod death, insurance payout or recovery grant. Home station and other assets stay in place. Actual home-clone self-destruction retires the active named body while preserving stored bodies and the jump timer. Old location bindings are released, and inventory changes, the brain, clone-cache invalidation and balance notifications precede the native session delta. Service bindings require the client's exact current-location/group tuple rather than None or an arbitrary location.
 
@@ -579,6 +580,18 @@ World version **47** adds `WorldJumpClone`, `WorldJumpCloneTimer` and `WorldJump
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Inspect Jump Clones preflight, installed names and wallet entries in the native character sheet. Try the automatic ship departure, a cross-station jump and same-station swaps, then reconnect to inspect state. Native rendering, input and scene transitions remain unverified.
+
+## Pochven NPC clone bays
+
+Pochven NPC stations with a Jump Clone Facility accept installation and same-station swaps at **+3.00** personal Triglavian Collective standing. Clone jumps between stations and from an NPC station to a ship vat still apply the regional restriction at both ends. Local swaps use the existing capsule, implant, **900,000 ISK** fee and checkpoint paths. An existing remote cooldown is preserved.
+
+CCP's [Triglavian Space service table](https://support.eveonline.com/hc/en-us/articles/360017005339-Triglavian-Space) and the [EVE University Pochven guide](https://wiki.eveuniversity.org/Pochven) give the local-use threshold. Inert inspection of the pinned build **3662168** archive confirmed that `clonejumpsvc.pyj` uses the standard NPC station install and jump calls and that `appConst.pyj` excludes Triglavian standings from social skill modifiers. The pinned catalog lists station service **24** on all six operations used by Pochven NPC stations. EVE.js snapshot `261108.1`, `services/station/jumpCloneRuntime.js`, confirms shared station pricing and a same-location cooldown exemption and has no Pochven-specific standing check.
+
+**Automated validation.** The exact `PochvenCloneFacilitiesRequireStandingAndOnlyAllowLocalSwaps` regression passed in **10.03 seconds** after a **13.03-second** build. The focused jump clone, implant and home station filter passed **77 tests** in **32.96 seconds**. The two Rorqual clone vat methods passed **3 cases** in **17 seconds**. The test covers the standing boundary, rejected remote jumps, wallet charges, unchanged cooldown and checkpoint reload with no world SQL for the measured swap operations.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Install and switch to a clone at a Pochven NPC clone bay with +3.00 standing while a remote cooldown is active.
 
 ## Native redemption pairs and batched training queues, November 9, 2026
 
