@@ -4,6 +4,7 @@ namespace Eden.Gameplay.Flight;
 
 public interface IPilotGateTravel
 {
+    void CheckJump(long pilotId, long shipId);
     DockedPilot Transfer(long pilotId, long shipId, long sourceGateId, long exitGateId);
 }
 

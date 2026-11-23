@@ -472,8 +472,3 @@ internal sealed record JumpTimersUpdated(JumpTimers Timers) : PilotNotification(
 {
     public override object?[] Arguments => JumpTimerState.Arguments(Timers);
 }
-
-internal sealed record CapitalJumpCancelled(string Message) : PilotNotification("OnRemoteMessage")
-{
-    public override object?[] Arguments => ["CustomNotify", new Dictionary<string, object?> { ["notify"] = Message }];
-}

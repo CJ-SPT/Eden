@@ -1096,7 +1096,7 @@ internal sealed partial class FlightSession(
             {
                 _travel.CancelTranslocation();
                 SnapshotCore();
-                NotificationsBeforeFlight.Add(new CapitalJumpCancelled(error.Message));
+                NotificationsBeforeFlight.Add(new JumpCancelled(error.Message));
                 return null;
             }
             Relocate(moved.Pilot, transit.Objects);
@@ -1260,6 +1260,17 @@ internal sealed partial class FlightSession(
         {
             return departure.Result;
         }
+        if (CapitalTravelRules.RestrictedCapital(Pilot.ShipGroupId))
+        {
+            try
+            {
+                gates?.CheckJump(Pilot.PilotId, Pilot.ShipId);
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+        }
         // Keep the source scene alive for the camera handoff before transferring the pilot.
         CancelGateCloak();
         if (!automatic)
@@ -1270,7 +1281,8 @@ internal sealed partial class FlightSession(
         ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
-        tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        // Keep incoming tackle available for the authoritative transfer check.
+        tackle?.Disconnect(Pilot.PilotId, Pilot.ShipId);
         electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
         SetAtRest();
         Update(new DestinyCommand.Stop(Pilot.ShipId));
@@ -1342,26 +1354,30 @@ internal sealed partial class FlightSession(
                 return false;
             }
         }
-        else if (jump.Bridge is { } bridge)
+        else
         {
             try
             {
-                position = bridge.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+                if (jump.Bridge is { } bridge)
+                {
+                    position = bridge.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+                }
+                else if (gates is not null)
+                {
+                    position = gates.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+                }
+                else
+                {
+                    world.SetPosition(Pilot.ShipId, position, jump.System.Id);
+                }
             }
             catch (InvalidDataException error)
             {
                 _travel.Reset();
-                NotificationsBeforeFlight.Add(new CapitalJumpCancelled(error.Message));
+                Snapshot();
+                NotificationsBeforeFlight.Add(new JumpCancelled(error.Message));
                 return false;
             }
-        }
-        else if (gates is not null)
-        {
-            position = gates.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
-        }
-        else
-        {
-            world.SetPosition(Pilot.ShipId, position, jump.System.Id);
         }
         LeaveSpace();
         Scene.ReplaceObjects(jump.Objects);
