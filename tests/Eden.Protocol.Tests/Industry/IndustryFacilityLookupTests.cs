@@ -18,6 +18,46 @@ namespace Eden.Protocol.Tests.Industry;
 
 public sealed class IndustryFacilityLookupTests
 {
+    [Fact]
+    public void RegionalFacilityBrowserWorksFromAnNpcStationWithoutIndustry()
+    {
+        using Fixture f = new();
+        ContractAssetTestData.AddRemoteStation(f.Db);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7]}}'),
+                    ('client/stationoperations','15','{{"services":[14]}}');
+                UPDATE Station SET OperationId=15 WHERE Id=60003761;
+                """
+            );
+        }
+        using var host = ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true);
+        var pilot = f.Pilot;
+        using var context = Context(f);
+        var handler = new IndustryHandler(f.Store);
+
+        List<string> commands = [];
+        using (SessionPerformance.Begin("resident regional facility browsing", _ => { }, force: true, command: commands.Add))
+        {
+            var result = Success(handler.Call(context, "facilityManager", "GetFacilities", []));
+            var facility = Assert.Single(Assert.IsType<BlueList<IndustryFacilityReply>>(result).Items);
+            Assert.Equal(ContractAssetTestData.RemoteStation, facility.Facility.Id);
+            Assert.Equal(pilot.SystemId, facility.Facility.SystemId);
+            Assert.Contains(215, facility.Products);
+            Assert.Single(Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(result))));
+        }
+        Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+        Assert.IsType<PilotCallResult.Failure>(
+            handler.Call(context, "facilityManager", "GetFacilityLocations", [pilot.DockedLocationId, pilot.PilotId])
+        );
+        Assert.IsType<PilotCallResult.Failure>(
+            handler.Call(context, "facilityManager", "GetFacilityLocations", [(long)ContractAssetTestData.RemoteStation, pilot.PilotId])
+        );
+        Assert.Empty(context.Notifications);
+    }
+
     [Theory]
     [InlineData("list")]
     [InlineData("set")]
