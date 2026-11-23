@@ -101,19 +101,39 @@ public sealed class CareerIndustryTests
         Assert.Equal(hostile, Assert.Single(Actors(reopened.GetRequiredService<LiveWorld>(), mission.Id)).Id);
     }
 
-    [Fact]
-    public async Task CivilianSalvagerRecoversOneBlackBoxFromTheGuardedCareerWreck()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CivilianSalvagerRecoversOneBlackBoxFromTheGuardedCareerWreck(bool occupiedSource)
     {
         using var f = Create(catalog =>
             catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=100 WHERE ItemTypeId=27275 AND AttributeId=901")
         );
         var agent = DockAtAgent(f, Entrepreneur, previous: 3203);
-        var mission = f.Accept(f.Request(agent.Id));
-        Assert.Equal(3181, mission.MissionId);
+        var offer = f.Request(agent.Id);
         var live = Live(f);
+        long preferredSource = MissionSalvageRules.SourceId(offer.Id);
+        if (occupiedSource)
+        {
+            using var world = live.Economy.Begin(new(systems: [offer.SystemId]));
+            world.Add(
+                new WorldNpc
+                {
+                    Id = preferredSource,
+                    TypeId = CivilianTransportWreck,
+                    SystemId = offer.SystemId,
+                    DestroyedAt = f.Clock.Now,
+                }
+            );
+            world.Commit();
+        }
+        var mission = f.Accept(offer);
+        Assert.Equal(3181, mission.MissionId);
         long wreckId = MissionSalvageRules.WreckId(mission.Id);
         var wreck = live.Economy.Inspect(world => world.Set<WorldWreck>().Find(wreckId))!;
         Assert.Equal(CivilianTransportWreck, wreck.TypeId);
+        long source = Assert.IsType<long>(wreck.NpcId);
+        Assert.Equal(occupiedSource, source != preferredSource);
         await live.FlushAsync();
         long module = FitGift(f, agent.StationId!.Value, CivilianSalvager);
         var room = f.Missions.Sites(mission.SystemId).OrderBy(site => site.RoomId).Last();
@@ -140,7 +160,15 @@ public sealed class CareerIndustryTests
         await live.FlushAsync();
         f.StopResident();
         using var reopened = ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true);
-        Assert.Null(reopened.GetRequiredService<LiveWorld>().Economy.Inspect(world => world.Set<WorldWreck>().Find(wreckId)));
+        reopened
+            .GetRequiredService<LiveWorld>()
+            .Economy.Inspect(world =>
+            {
+                Assert.Null(world.Set<WorldWreck>().Find(wreckId));
+                Assert.Null(world.Set<WorldNpc>().Find(source));
+                Assert.Equal(occupiedSource, world.Set<WorldNpc>().Find(preferredSource) is not null);
+                return true;
+            });
     }
 
     [Fact]

@@ -41,7 +41,7 @@ internal sealed partial class PilotMissionStore
         var position = new SpacePosition(mission.X, mission.Y, mission.Z) + contact.Position;
         // The wreck is already destroyed when the player arrives. Keep its source
         // out of the active encounter while preserving ordinary wreck custody.
-        long source = MissionSalvageRules.SourceId(mission.Id);
+        long source = world.AvailableNpcId(MissionSalvageRules.SourceId(mission.Id));
         world.Add(
             new WorldNpc
             {
@@ -103,15 +103,15 @@ internal sealed partial class PilotMissionStore
 
     internal static void CloseCareerSalvage(WorldAction world, SavedMission mission)
     {
-        if (!MissionCatalog.IsCareerSalvage(mission.MissionId))
+        if (
+            !MissionCatalog.IsCareerSalvage(mission.MissionId)
+            || world.Set<WorldWreck>().Find(MissionSalvageRules.WreckId(mission.Id)) is not { } wreck
+        )
         {
             return;
         }
-        if (world.Set<WorldWreck>().Find(MissionSalvageRules.WreckId(mission.Id)) is { } wreck)
-        {
-            world.Remove(wreck);
-        }
-        if (world.Set<WorldNpc>().Find(MissionSalvageRules.SourceId(mission.Id)) is { } source)
+        world.Remove(wreck);
+        if (wreck.NpcId is long npcId && world.Set<WorldNpc>().Find(npcId) is { } source)
         {
             world.Remove(source);
         }

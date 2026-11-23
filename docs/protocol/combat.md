@@ -4,6 +4,35 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## NPC identities for encounter waves
+
+On `9776f92e`, a timed reinforcement after checkpoint reopen reproduced the reported session rejection
+`Duplicate resident WorldNpc identity`. Ordinary NPC spawns use the same sequence that advances when an
+encounter assigns an NPC ID from its site and wave. An ordinary spawn can therefore claim an ID before a later
+wave needs it.
+
+Anomalies, DED rooms, mission waves, and career salvage wrecks now use the authored NPC ID when it is free and
+allocate through the existing sequence when it is occupied. Encounter membership and wreck references use the
+selected ID. Career salvage cleanup follows its wreck's source reference, keeping the NPC that held the preferred
+ID. This lets saved encounters advance with existing NPC identities intact. EVE.js
+`server/src/space/npc/nativeNpcStore.js` also uses a persistent counter to allocate NPC entities.
+
+**Automated validation**
+
+`TimedWaveSpawnsWhenAnotherNpcAlreadyOwnsItsFirstIdentity` reproduced the disconnect exception before the fix
+and verified that a saved wave advances once while the original NPC survives. The occupied-source case of
+`CivilianSalvagerRecoversOneBlackBoxFromTheGuardedCareerWreck` reproduced the same exception on the career
+mission path added in `3cdda38f` and verified that completion and checkpoint reopen preserve the unrelated NPC.
+
+The solution built without warnings or errors. The combined class filter for `CombatAnomalyWorldTests`,
+`CombatAnomalyFrameTests`, `DedAndGhostSiteTests`, `SleeperGuardedSiteTests`, `MissionEncounterTests`,
+`CareerIndustryTests`, `EnforcerCareerTests`, and `NpcEncounterTests` passed 97 cases in 53.51 seconds.
+All 17 Python policy cases and the repository formatting check passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
 ## Lowsec unlawful aggression penalties
 
 A paid unlawful offensive action against a ship or capsule applies a security-status loss in the resident Crimewatch

@@ -246,8 +246,8 @@ internal sealed partial class PilotMissionStore
             bool repairTarget = group.CareerPassive && profile.Definition.CareerEffect?.TypeId == type;
             int faction = group.EnemyFaction == 0 ? profile.EnemyFaction : group.EnemyFaction;
             int corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
-            long id = checked(
-                MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot
+            long id = world.AvailableNpcId(
+                checked(MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot)
             );
             var p = new SpacePosition(mission.X, mission.Y, mission.Z) + (room.Position + placements[slot].Position);
             world.Add(

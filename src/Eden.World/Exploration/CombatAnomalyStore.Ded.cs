@@ -236,11 +236,14 @@ internal sealed partial class CombatAnomalyStore
             for (int i = 0; i < binding.Count; i++)
             {
                 var point = DedOrigin(site) + member.Position + new SpacePosition(i * NpcSpawnRules.MemberSpacing, 0, 0);
-                long id =
-                    CombatAnomalyRules.FirstNpcId
-                    + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.NpcsPerSite
-                    + index * AnomalyEncounterRules.MembersPerWave
-                    + slot;
+                long id = world.AvailableNpcId(
+                    checked(
+                        CombatAnomalyRules.FirstNpcId
+                        + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.NpcsPerSite
+                        + index * AnomalyEncounterRules.MembersPerWave
+                        + slot
+                    )
+                );
                 world.Add(
                     new WorldNpc
                     {

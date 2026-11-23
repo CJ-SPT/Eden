@@ -15,6 +15,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Configuration;
 using Eden.World.Exploration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -444,6 +445,72 @@ public sealed class CombatAnomalyWorldTests
                 )
         );
         Assert.True(world.Set<WorldAnomalyMember>().Any(m => m.SiteId == site.Id && m.Wave == 1));
+    }
+
+    [Fact]
+    public async Task TimedWaveSpawnsWhenAnotherNpcAlreadyOwnsItsFirstIdentity()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock);
+        var database = new WorldDatabase(fixture.Path);
+        PassiveCatalogFixture.LoadCombatAnomalyWorld(database.CatalogPath);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var site = Seed(database, catalog, "Blood Den");
+        long occupied = CombatAnomalyRules.FirstNpcId + AnomalyEncounterRules.MembersPerWave;
+        long deadline;
+
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            CombatAnomalyStore sites = new(database);
+            sites.Arrive(site.SystemId, new(site.X, site.Y, site.Z), clock.Now);
+            using (var action = live.Economy.Begin(new(systems: [site.SystemId])))
+            {
+                deadline = action.Set<WorldCombatAnomaly>().Find(site.Id)!.NextWaveAt!.Value;
+                int type = action.Filter<WorldNpc>(npc => npc.EncounterId == site.Id).First().TypeId;
+                // Model ordinary NPC spawns advancing the shared sequence into the next wave's range.
+                Assert.Equal(occupied - 1, action.Next("WorldNpc", occupied - 2));
+                var rat = action
+                    .Add(
+                        new WorldNpc
+                        {
+                            SystemId = site.SystemId,
+                            TypeId = type,
+                            Role = NpcRole.Pirate,
+                        }
+                    )
+                    .Entity;
+                Assert.Equal(occupied, rat.Id);
+                action.Commit();
+            }
+            await live.FlushAsync();
+        }
+
+        using LiveWorld reopened = new(database, clock, _ => { });
+        CombatAnomalyStore resumed = new(database);
+        _ = resumed.List(site.SystemId, deadline);
+        var first = Observe();
+        Assert.NotEmpty(first);
+        Assert.DoesNotContain(occupied, first);
+        _ = resumed.List(site.SystemId, deadline);
+        Assert.Equal(first, Observe());
+
+        long[] Observe() =>
+            reopened.Economy.Inspect(world =>
+            {
+                Assert.Equal(1, world.Set<WorldCombatAnomaly>().Find(site.Id)!.Wave);
+                Assert.Equal(0, world.Set<WorldNpc>().Find(occupied)!.EncounterId);
+                return world
+                    .Filter<WorldAnomalyMember>(member => member.SiteId == site.Id && member.Wave == 1)
+                    .AsEnumerable()
+                    .Select(member =>
+                    {
+                        var npc = Assert.IsType<WorldNpc>(world.Set<WorldNpc>().Find(member.NpcId));
+                        Assert.Equal(site.Id, npc.EncounterId);
+                        return npc.Id;
+                    })
+                    .Order()
+                    .ToArray();
+            });
     }
 
     [Fact]

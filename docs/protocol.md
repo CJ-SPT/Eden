@@ -346,6 +346,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [NPC identities for encounter waves](protocol/combat.md#npc-identities-for-encounter-waves)
 - [Aggression box indicators](protocol/combat.md#aggression-box-indicators--november-15-2026)
 - [Missile impact timing and damage application](protocol/combat.md#missile-impact-timing-and-damage-application)
 - [NPC weapon capability correction](protocol/combat.md#npc-weapon-capability-correction--november-15-2026)

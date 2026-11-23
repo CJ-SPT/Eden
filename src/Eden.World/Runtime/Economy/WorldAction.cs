@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
@@ -135,6 +136,20 @@ internal abstract class WorldAction
     internal abstract void SaveChanges();
     internal abstract long Next(string name, long minimum = 0);
     internal abstract long NextItemId();
+
+    internal long AvailableNpcId(long preferred)
+    {
+        var npcs = Set<WorldNpc>();
+        // Ordinary NPCs share the table's sequence and may have already used an
+        // authored wave's preferred ID. Keep the existing NPC and use the sequence.
+        long id = preferred;
+        while (npcs.Find(id) is not null)
+        {
+            id = Next(nameof(WorldNpc), id);
+        }
+        return id;
+    }
+
     internal EconomyTracking ChangeTracker => new(this);
     internal EconomySet<Pilot> Pilots => Set<Pilot>();
     internal EconomySet<Ship> Ships => Set<Ship>();
