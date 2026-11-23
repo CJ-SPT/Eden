@@ -4,6 +4,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
@@ -75,8 +76,12 @@ internal sealed partial class PilotAssetStore
                     continue;
                 }
                 if (
-                    items.Find(id) is { Singleton: true, FlagId: (int)InventoryFlag.Hangar } item
+                    items.Find(id) is { Singleton: true } item
                     && item.OwnerId == pilotId
+                    && (
+                        item.FlagId == (int)InventoryFlag.Hangar
+                        || item.FlagId == (int)InventoryFlag.StructureDeliveries && item.LocationId >= StructureRules.FirstStructureId
+                    )
                     && catalog.FittingType(item.TypeId) is { } type
                     && Enum.IsDefined((PersonalAssetContainerGroup)type.GroupId)
                     && Location(world, catalog, item.LocationId) is not null
@@ -94,8 +99,7 @@ internal sealed partial class PilotAssetStore
         using var world = live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckPilot(world, pilotId);
-        var items = AvailableItems(world, pilotId)
-            .Where(i => i.FlagId == (int)InventoryFlag.Hangar)
+        var items = DockedRootItems(AvailableItems(world, pilotId))
             .GroupBy(i => i.LocationId)
             .Select(g => new AssetCount(g.Key, g.Count()))
             .ToArray();
@@ -128,7 +132,7 @@ internal sealed partial class PilotAssetStore
         var hulls = world.Ships.AsNoTracking().Include(s => s.Position).Where(s => s.OwnerId == pilotId && s.Position == null);
         if (!query.IncludeContainers)
         {
-            stacks = stacks.Where(i => i.FlagId == (int)InventoryFlag.Hangar);
+            stacks = DockedRootItems(stacks);
             hulls = hulls.Where(s => s.StoredInId == null);
         }
         if (query.StationId is long location && !query.IncludeContainers)
@@ -155,6 +159,12 @@ internal sealed partial class PilotAssetStore
             .AsNoTracking()
             .Where(i => i.OwnerId == pilotId)
             .Where(i => !world.Set<IndustryJob>().Any(j => j.BlueprintId == i.Id && j.Status == IndustryJobStatus.Installed));
+
+    private static IQueryable<OwnedItem> DockedRootItems(IQueryable<OwnedItem> items) =>
+        items.Where(i =>
+            i.FlagId == (int)InventoryFlag.Hangar
+            || i.FlagId == (int)InventoryFlag.StructureDeliveries && i.LocationId >= StructureRules.FirstStructureId
+        );
 
     private static void CheckPilot(Eden.World.Runtime.Economy.WorldAction world, long pilotId)
     {

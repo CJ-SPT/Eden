@@ -772,6 +772,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Player Upwell structures
 
 - [Structures gap audit](protocol/structures.md#structures-gap-audit)
+- [Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)
 - [Structure GM commands](protocol/structures.md#structure-gm-commands)
 - [Standup Focused Warp Disruptors](protocol/structures.md#standup-focused-warp-disruptors)
 - [Standup stasis webifiers](protocol/structures.md#standup-stasis-webifiers)

@@ -234,6 +234,7 @@ public enum DogmaAttributeId
     FrigateEscapeBayCapacity = 3020,
     SpecialIceHoldCapacity = 3136,
     SpecialMobileDepotHoldCapacity = 5325,
+    StructureCargoDeliveryRange = 2790,
     SpecialColonyResourcesHoldCapacity = 5646,
     SpecialExpeditionHoldCapacity = 5944,
 

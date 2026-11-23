@@ -1,4 +1,5 @@
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Structures;
 
 namespace Eden.Gameplay.Inventory;
 
@@ -39,7 +40,15 @@ public static class PersonalAssetRules
         bool includeContainers
     )
     {
-        var selected = items.Where(i => stations.Contains(i.LocationId) && i.FlagId == (int)InventoryFlag.Hangar).ToList();
+        var selected = items
+            .Where(i =>
+                stations.Contains(i.LocationId)
+                && (
+                    i.FlagId == (int)InventoryFlag.Hangar
+                    || i.FlagId == (int)InventoryFlag.StructureDeliveries && i.LocationId >= StructureRules.FirstStructureId
+                )
+            )
+            .ToList();
         if (includeContainers)
         {
             var children = items.ToLookup(i => i.LocationId);

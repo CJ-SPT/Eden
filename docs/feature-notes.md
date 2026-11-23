@@ -159,6 +159,10 @@ Use **Orbit** or **Keep at Range** on a nearby ship, NPC, asteroid or wreck to c
 
 ## Player Upwell structures
 
+Pilots within range of a dockable Upwell structure can move eligible ship cargo into their personal Deliveries hangar
+from space. They can see the deposit in Personal Assets and move it into Item Hangar after docking.
+[Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)
+
 Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
 missiles, neutralize capacitor, slow ships and disrupt warp. Loading the Standup scrambling script also blocks
 microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner

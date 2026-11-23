@@ -2,6 +2,50 @@
 
 [Protocol index](../protocol.md) Â· [Documentation index](../README.md)
 
+## Cargo Deposit at dockable Upwell structures
+
+Build **3662168** `dropboxWnd.pyj` sends `structureCargoDelivery.DropOffItems(itemIDs, shipID, structureID)` from its
+space-side Cargo Deposit window. The reply lists the item IDs that moved. Dogma attribute **2790** supplies a **10 km**
+surface range on supported hulls, and inventory flag **173** identifies the personal Deliveries hangar. The original
+client archive has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**, build **3396210**, implements the route in
+`structureCargoDeliveryService.js` (`ae8c9e10c413`). [Upwell structure hauling](https://wiki.eveuniversity.org/Hauling)
+
+Pilots can transfer eligible ship-hold items from space at a dockable Upwell structure. The deposit uses the active ship's
+position and works independently of docking access. Cloaking, warp, and an active weapons timer prevent deposits. A
+criminal flag prevents deposit in empire space. Accepted items keep their owners, IDs, contents and metadata in the
+personal Deliveries hangar. An item that has already moved or is unavailable stays out of the success reply.
+
+Personal Assets includes the resulting items and locations, so the existing asset-safety path can be reached when docking
+is unavailable. After docking, the owner can move the delivered items into Item Hangar using the native inventory view.
+FLEX fueling, assembled ship custody and courier completion while undocked remain separate features.
+[Asset safety](https://wiki.eveuniversity.org/Asset_Safety)
+
+**Automated validation.** `NativeDropOffChecksSurfaceRangeAndPreservesPrivateDeliveriesAcrossRestart` passed through
+`Test-Feature.ps1` in 22.17 seconds after a 48.79-second build. It covers the exact surface limit, deposit without docking
+access, weapons timer expiry, mixed item eligibility, private asset visibility, retry and checkpoint reopen, and retrieval
+through the bound structure inventory.
+
+The solution built in 4.26 seconds with no warnings or errors. Before rebasing, the following filter passed 72 tests in
+97.46 seconds.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureCargoDropoffTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.AssetSafetyTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.PersonalAssetRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackSplitTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryOwnershipTests
+```
+
+After rebasing onto `4425121c`, the catalog policy identified six unchanged Epic Arc calls by the cached helper name
+`Get`. Renaming it to `RequireArc` restored the policy check. The final solution build completed in 12.55 seconds with no
+warnings or errors. The following overlap filter passed 14 tests in 13.27 seconds. Both Python suites, full formatting and
+the whitespace check passed.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureCargoDropoffTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.EpicArcDeliveryTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.EpicArcProgressionTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.EpicArcWireTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryOwnershipTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open **Cargo Deposit** within 10 km of a dockable Upwell structure. Deposit a stack, dock,
+then move the stack from **Deliveries** into **Item Hangar**.
+
 ## Upwell completion program — November 16, 2026
 
 The completion program continues the existing foundation with resident authority and checkpoint persistence.

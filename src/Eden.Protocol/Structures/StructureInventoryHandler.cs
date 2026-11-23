@@ -41,6 +41,15 @@ internal sealed class StructureInventoryHandler(
                 && structureId >= StructureRules.FirstStructureId
             )
             {
+                // Non-managers use invbroker's personal hangar binding for the same native structure inventory ID.
+                if (
+                    context.Pilot.InStructure
+                    && context.Pilot.DockedLocationId == structureId
+                    && !structures.CanControl(context.Pilot.PilotId, structureId)
+                )
+                {
+                    return PilotCallResult.Unsupported;
+                }
                 if (structures.Read(context.Pilot.PilotId, structureId) is null)
                 {
                     return PilotCallResult.Unsupported;
@@ -51,6 +60,20 @@ internal sealed class StructureInventoryHandler(
             if (!service.StartsWith(Prefix, StringComparison.Ordinal) || !long.TryParse(service.AsSpan(Prefix.Length), out long id))
             {
                 return PilotCallResult.Unsupported;
+            }
+            if (method == "List" && InventoryHandler.ListsStructureDeliveries(args, keywords))
+            {
+                if (!context.Pilot.InStructure || context.Pilot.DockedLocationId != id)
+                {
+                    return new PilotCallResult.Failure("Dock at this structure to read your deliveries.");
+                }
+                return new BlueList<InventoryRow>(
+                    personalInventory
+                        .List(context.Pilot.PilotId, id)
+                        .Where(item => item.FlagId == (int)InventoryFlag.StructureDeliveries)
+                        .Select(InventoryRow.From)
+                        .ToArray()
+                );
             }
             var items = structures.Inventory(context.Pilot.PilotId, id);
             if (context.Pilot.InStructure && context.Pilot.DockedLocationId == id)

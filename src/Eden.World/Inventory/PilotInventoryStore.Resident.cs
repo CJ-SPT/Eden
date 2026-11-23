@@ -113,11 +113,20 @@ internal sealed partial class PilotInventoryStore
         bool sameShipQuantityMove = sourceId == active.Id && destinationId == active.Id && quantity.HasValue;
         bool sourceHangar = active.Position is null && sourceId == active.DockedLocationId;
         bool destinationHangar = active.Position is null && destinationId == active.DockedLocationId;
+        bool claimDelivery =
+            sourceHangar
+            && destinationHangar
+            && active.StructureId.HasValue
+            && flagId == (int)InventoryFlag.Hangar
+            && itemIds.Count > 0
+            && world.Set<OwnedItem>().Find(itemIds[0]) is { FlagId: (int)InventoryFlag.StructureDeliveries } first
+            && first.OwnerId == pilotId
+            && first.LocationId == sourceId;
         if (
             (active.Position is not null && !sameShipQuantityMove && !mobileRefit)
             || !(sourceHangar || sourceShip is not null)
             || !(destinationHangar && flagId == (int)InventoryFlag.Hangar || destinationShip is not null && ShipHoldRules.IsHold(flagId))
-            || sourceHangar && destinationHangar && !quantity.HasValue
+            || sourceHangar && destinationHangar && !quantity.HasValue && !claimDelivery
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
             || quantity is <= 0
@@ -128,6 +137,7 @@ internal sealed partial class PilotInventoryStore
         }
 
         var holdFlags = ShipHoldRules.Definitions.Select(h => (int)h.Flag).ToArray();
+        int sourceHangarFlag = (int)(claimDelivery ? InventoryFlag.StructureDeliveries : InventoryFlag.Hangar);
         var items = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -139,7 +149,7 @@ internal sealed partial class PilotInventoryStore
                         ? Enumerable.Contains(holdFlags, i.FlagId)
                             || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
                             || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
-                        : i.FlagId == (int)InventoryFlag.Hangar
+                        : i.FlagId == sourceHangarFlag
                 )
             )
             .OrderBy(i => i.Id)

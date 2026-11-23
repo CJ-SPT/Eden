@@ -38,6 +38,13 @@ internal sealed class InventoryHandler(
 
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
 
+    internal static bool ListsStructureDeliveries(object?[] args, Dictionary<string, object?>? keywords)
+    {
+        // Build 3662168 invCacheContainer.List forwards its flag as a keyword to the bound inventory.
+        const long flag = (long)InventoryFlag.StructureDeliveries;
+        return args is [flag] || args.Length == 0 && Equals(keywords?.GetValueOrDefault("flag"), flag);
+    }
+
     private BlueList<InventoryRow> List(DockedPilot pilot, string service, long? flag)
     {
         List<InventoryRow> result = [];
@@ -522,6 +529,11 @@ internal sealed class InventoryHandler(
                     ) => context.Reference(
                 $"{Eden.Protocol.Contracts.CourierPackageHandler.InventoryPrefix}{id}",
                 PilotBindingLifetime.Location
+            ),
+            ("@hangar", "List") when ListsStructureDeliveries(args, keywords) => List(
+                pilot,
+                service,
+                (long)InventoryFlag.StructureDeliveries
             ),
             ("@hangar" or "@ship", "List") => List(pilot, service, args.FirstOrDefault() as long?),
             ("@pilot", "List") => BlueEmpty.List,
