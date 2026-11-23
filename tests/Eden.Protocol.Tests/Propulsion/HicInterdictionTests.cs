@@ -10,6 +10,7 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
+using Eden.Protocol.Tests.Fixtures;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
@@ -23,6 +24,10 @@ public sealed class HicInterdictionTests
 {
     private const int Broadsword = 12013;
     private const int Generator = 28654;
+    private const int Revelation = 19720;
+    private const int Rhea = 28844;
+    private const int Ibis = 601;
+    private const int WarpDisruptor = 3244;
 
     [Fact]
     public void MovingFieldFollowsItsHullBlocksAssistanceAndExpiresExactly()
@@ -132,6 +137,128 @@ public sealed class HicInterdictionTests
                 .Single(fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>().Read(fixture.PilotId, ship))
                 .Quantity
         );
+    }
+
+    [Theory]
+    [InlineData(Revelation, InterdictionRules.FocusedDisruptionScript, DogmaEffect.FocusedWarpDisruption, true, false)]
+    [InlineData(Revelation, InterdictionRules.FocusedScramblingScript, DogmaEffect.FocusedWarpScrambling, true, false)]
+    [InlineData(Revelation, InterdictionRules.FocusedDisruptionScript, DogmaEffect.FocusedWarpDisruption, true, true)]
+    [InlineData(Revelation, 0, DogmaEffect.WarpDisruptor, false, false)]
+    [InlineData(Rhea, InterdictionRules.FocusedDisruptionScript, DogmaEffect.FocusedWarpDisruption, false, false)]
+    [InlineData(Ibis, InterdictionRules.FocusedScramblingScript, DogmaEffect.FocusedWarpScrambling, false, false)]
+    public void StargateBlocksOnlyFocusedScriptsOnCombatCapitals(
+        int hull,
+        int script,
+        DogmaEffect effect,
+        bool blocked,
+        bool tackleDuringDeparture
+    )
+    {
+        const long victimAccount = 1000002;
+        using var fixture = InterdictionTests.Prepare(0.1, Broadsword);
+        PassiveCatalogFixture.LoadCapitalTravel(fixture.CatalogPath);
+        using (CatalogDbContext catalog = new(fixture.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                UPDATE SourceRecord SET Data = json_set(Data, '$.securityStatus', 0.1)
+                WHERE Dataset = 'client/systems' AND Key = '30000142'
+                """
+            );
+        }
+        bool focused = InterdictionRules.Focused(effect);
+        if (!focused)
+        {
+            PassiveCatalogFixture.LoadTackleTiers(fixture.CatalogPath, new HashSet<int> { WarpDisruptor });
+        }
+        long module = fixture.Fit(focused ? Generator : WarpDisruptor);
+        if (focused)
+        {
+            InterdictionTests.Load(fixture, module, script);
+        }
+        using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
+        var victim = fixture.Db.Store.FindPilot(victimAccount)!;
+        using (var action = live.Economy.Begin(new(pilots: [fixture.PilotId, victim.PilotId])))
+        {
+            action.Pilots.Find(fixture.PilotId)!.SafetyLevel = ShipSafetyLevel.Disabled;
+            action.Ships.Find(victim.ShipId)!.TypeId = hull;
+            action.Commit();
+        }
+        victim = fixture.Db.Store.FindPilot(victimAccount)!;
+        var systems = fixture.Db.Services.GetRequiredService<ISystemObjects>();
+        var gate = Assert.Single(systems.Load(victim.SystemId), body => body.DestinationGateId.HasValue);
+        var approach = gate.Position + new SpacePosition(gate.Radius + victim.Flight.ShipRadius + 1000, 0, 0);
+        fixture.Db.Store.SetPosition(fixture.ShipId, approach + new SpacePosition(victim.Flight.ShipRadius + 1000, 0, 0), victim.SystemId);
+        fixture.Db.Store.SetPosition(victim.ShipId, approach, victim.SystemId);
+        victim = fixture.Db.Store.FindPilot(victimAccount)!;
+
+        using var scope = fixture.Db.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        using PilotCallContext context = new(
+            victimAccount,
+            victim.Account,
+            [victim],
+            services.GetRequiredService<FlightSessionFactory>().Create,
+            2,
+            SignedSettings.Empty
+        );
+        context.Select(victim);
+        var flight = context.Flight;
+        flight.Snapshot();
+        flight.Updates.Clear();
+        if (tackleDuringDeparture)
+        {
+            Assert.Same(PilotCallResult.None, Jump());
+            flight.GateDeparturePublished();
+        }
+        var tackle = services.GetRequiredService<IPilotTackle>();
+        TackleTarget target = new(victim.ShipId, TackleTargetKind.Ship);
+        HashSet<long> lockedTargets = [target.Id];
+        if (focused)
+        {
+            services
+                .GetRequiredService<IPilotInterdiction>()
+                .ActivateGenerator(fixture.PilotId, fixture.ShipId, module, effect, target, lockedTargets, fixture.Clock.Now);
+        }
+        else
+        {
+            tackle.Activate(fixture.PilotId, module, effect, target, lockedTargets, fixture.Clock.Now);
+        }
+        var incoming = Assert.Single(tackle.Incoming(victim.ShipId));
+        Assert.Equal(effect, incoming.Module.Effect);
+
+        if (blocked)
+        {
+            var travel = services.GetRequiredService<IPilotGateTravel>();
+            var rejected = Assert.Throws<InvalidDataException>(() =>
+                travel.Transfer(victim.PilotId, victim.ShipId, gate.Id, gate.DestinationGateId!.Value)
+            );
+            Assert.Contains("Heavy Interdiction Cruiser", rejected.Message, StringComparison.Ordinal);
+            if (tackleDuringDeparture)
+            {
+                fixture.Clock.Seconds += GateTravelRules.DurationTicks;
+                Assert.False(flight.CompleteJump());
+                Assert.Contains(new JumpCancelled(rejected.Message), flight.NotificationsBeforeFlight);
+                Assert.Contains(flight.Updates, update => update.Command is DestinyCommand.SetState);
+            }
+            else
+            {
+                Assert.Equal(rejected.Message, Assert.IsType<PilotCallResult.Failure>(Jump()).Message);
+                Assert.Empty(flight.Updates);
+            }
+            Assert.Equal(victim.SystemId, fixture.Db.Store.FindPilot(victimAccount)!.SystemId);
+            Assert.Equal(approach, fixture.Db.Store.FindPilot(victimAccount)!.Position);
+            Assert.Single(tackle.Incoming(victim.ShipId));
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(incoming.ExpiresAt - fixture.Clock.Now));
+        }
+        Assert.Same(PilotCallResult.None, Jump());
+        flight.GateDeparturePublished();
+        fixture.Clock.Seconds += GateTravelRules.DurationTicks;
+        Assert.True(flight.CompleteJump());
+        Assert.Equal(gate.DestinationSystemId, flight.Pilot.SystemId);
+        Assert.Equal(flight.Pilot.SystemId, fixture.Db.Store.FindPilot(victimAccount)!.SystemId);
+
+        PilotCallResult Jump() => flight.StartJump([gate.Id, (long)gate.DestinationGateId!.Value, victim.ShipId], systems);
     }
 
     [Fact]

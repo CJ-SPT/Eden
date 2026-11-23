@@ -147,6 +147,10 @@ executor, and the executor can transfer EverMarks to member corporations.
 
 ## Travel and navigation
 
+Focused Heavy Interdiction Cruiser scripts prevent combat capitals and Capital Industrial Ships from jumping through
+NPC stargates while the effect is active. Freighters, Jump Freighters and subcapitals can still jump under focused tackle.
+[Focused interdiction at NPC stargates](protocol/navigation.md#focused-interdiction-at-npc-stargates)
+
 The star map's **Personal → Systems Visited** filter shows each pilot's visit counts and latest timestamps. History starts
 when the pilot first selects a character after upgrading and persists across world restarts.
 [Personal map visit history](protocol/navigation.md#personal-map-visit-history)

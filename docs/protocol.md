@@ -723,6 +723,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Sovereignty information tab, November 8, 2026](protocol/navigation.md#sovereignty-information-tab-november-8-2026)
 - [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)
+- [Focused interdiction at NPC stargates](protocol/navigation.md#focused-interdiction-at-npc-stargates)
 - [Empty-space context menu latency](protocol/navigation.md#empty-space-context-menu-latency)
 - [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)
 - [Direct station-to-space TR, November 8, 2026](protocol/navigation.md#direct-station-to-space-tr-november-8-2026)

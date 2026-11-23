@@ -41,6 +41,11 @@ internal readonly record struct FlightTravelContext(DockedPilot Pilot, bool InBa
 
 internal sealed record FlightJumpDecision(PilotCallResult Result, GateDestination? Destination = null);
 
+internal sealed record JumpCancelled(string Message) : PilotNotification("OnRemoteMessage")
+{
+    public override object?[] Arguments => ["CustomNotify", new Dictionary<string, object?> { ["notify"] = Message }];
+}
+
 internal sealed class FlightTravel
 {
     internal const int ArrivalDurationTicks = GateTravelRules.ArrivalTicks;
