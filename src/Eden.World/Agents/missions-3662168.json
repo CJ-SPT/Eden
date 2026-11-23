@@ -294,6 +294,429 @@
       ]
     },
     {
+      "missionId": 2925,
+      "level": 1,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade1gu",
+      "sourceRevision": "2017-10-16 08:49 UTC; EVE University oldid=191985",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17608
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                16981
+              ],
+              "count": 4,
+              "range": 25000
+            },
+            {
+              "types": [
+                17001,
+                17006
+              ],
+              "count": 1,
+              "range": 25000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16981,
+                16994
+              ],
+              "count": 6,
+              "range": 120000
+            },
+            {
+              "types": [
+                16996
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16981
+              ],
+              "count": 6,
+              "range": 115000
+            },
+            {
+              "types": [
+                16987,
+                17002
+              ],
+              "count": 1,
+              "range": 115000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16994,
+                16981
+              ],
+              "count": 8,
+              "range": 100000
+            },
+            {
+              "types": [
+                17002,
+                16987
+              ],
+              "count": 1,
+              "range": 100000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17002,
+                16987
+              ],
+              "count": 4,
+              "range": 100000
+            },
+            {
+              "types": [
+                17001
+              ],
+              "count": 1,
+              "range": 100000,
+              "completesMission": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2926,
+      "level": 1,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade1sa",
+      "sourceRevision": "2017-10-16 08:49 UTC; 2010-10-18 completion; EVE University oldid=191987",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17606
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                17068
+              ],
+              "count": 3,
+              "range": 25000
+            },
+            {
+              "types": [
+                17072
+              ],
+              "count": 1,
+              "range": 25000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17068
+              ],
+              "count": 4,
+              "range": 120000
+            },
+            {
+              "types": [
+                17078
+              ],
+              "count": 2,
+              "range": 120000
+            },
+            {
+              "types": [
+                17074
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17078
+              ],
+              "count": 6,
+              "range": 120000
+            },
+            {
+              "types": [
+                17076
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17068
+              ],
+              "count": 4,
+              "range": 120000
+            },
+            {
+              "types": [
+                17078
+              ],
+              "count": 3,
+              "range": 120000
+            },
+            {
+              "types": [
+                17081
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17076
+              ],
+              "count": 4,
+              "range": 120000
+            },
+            {
+              "types": [
+                17072
+              ],
+              "count": 1,
+              "range": 120000,
+              "completesMission": true
+            }
+          ]
+        }
+      ],
+      "deadspace": false
+    },
+    {
+      "missionId": 2940,
+      "level": 2,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade2gu",
+      "sourceRevision": "2012-07-14 05:36 UTC; EVE University oldid=193403",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17612
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                16986
+              ],
+              "count": 4,
+              "range": 25000
+            },
+            {
+              "types": [
+                23984
+              ],
+              "count": 3,
+              "range": 25000
+            },
+            {
+              "types": [
+                23971
+              ],
+              "count": 1,
+              "range": 25000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17002
+              ],
+              "count": 1,
+              "range": 60000
+            },
+            {
+              "types": [
+                16986
+              ],
+              "count": 3,
+              "range": 60000
+            },
+            {
+              "types": [
+                23971
+              ],
+              "count": 6,
+              "range": 60000
+            },
+            {
+              "types": [
+                16982
+              ],
+              "count": 3,
+              "range": 60000
+            },
+            {
+              "types": [
+                17004
+              ],
+              "count": 1,
+              "range": 60000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24045
+              ],
+              "count": 4,
+              "range": 65000
+            },
+            {
+              "types": [
+                23985
+              ],
+              "count": 3,
+              "range": 65000
+            },
+            {
+              "types": [
+                23971
+              ],
+              "count": 3,
+              "range": 65000
+            },
+            {
+              "types": [
+                17004
+              ],
+              "count": 1,
+              "range": 65000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17006
+              ],
+              "count": 3,
+              "range": 70000
+            },
+            {
+              "types": [
+                24050
+              ],
+              "count": 3,
+              "range": 70000
+            },
+            {
+              "types": [
+                23971
+              ],
+              "count": 2,
+              "range": 70000
+            },
+            {
+              "types": [
+                16982
+              ],
+              "count": 1,
+              "range": 70000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16989
+              ],
+              "count": 4,
+              "range": 50000
+            },
+            {
+              "types": [
+                23987
+              ],
+              "count": 3,
+              "range": 50000
+            },
+            {
+              "types": [
+                24087
+              ],
+              "count": 1,
+              "range": 50000,
+              "completesMission": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 875,
       "level": 1,
       "difficulty": 500,

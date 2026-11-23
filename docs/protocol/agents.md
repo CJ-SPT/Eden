@@ -274,6 +274,59 @@ Not performed; agent client testing is disabled.
 - Start an R&D project and complete Mineral Acquisition. Confirm the journal and project balance refresh together.
 - In the level-three Guristas Score, clear the first combat pocket and confirm the gate and radio-telescope objective.
 
+## The Blockade variants — November 23, 2026
+
+Three Security missions now bind reported reinforcements to their single build-3662168 pockets. One designated
+ship in each of the first four waves advances the encounter once. The final leader completes the objective even if
+the tower and earlier defenders survive. Fixed towers retain their catalog positions. All three are ordinary combat
+offers.
+
+| Mission ID | Variant | Dungeon / room | Fixed tower type | Reinforcement triggers in order | Completion target |
+| --- | --- | --- | --- | --- | --- |
+| 2925 | Guristas level 1 | 1940 / 12183 | 17608 Gallente | Pithi Plunderer or Wrecker, Infiltrator, Despoiler or Saboteur, Saboteur or Despoiler | Pithi Plunderer |
+| 2926 | Sansha level 1 | 1941 / 12184 | 17606 Minmatar | Centii Plague, Ravener, Savage, Slavehunter | Centii Plague |
+| 2940 | Guristas level 2 | 1956 / 13988 | 17612 Caldari | Pithior Nihilist, Pithum Silencer, Pithum Silencer, Pithum Ascriber | Pithum Eraser |
+
+The selected examples come from dated EVE-Survival reports and their indexed EVE University counterparts. For Guristas L1,
+the [2017 report](https://eve-survival.org/?wakka=Blockade1gu) gives named triggers and completion.
+[University revision 191985](https://wiki.eveuniversity.org/index.php?title=The_Blockade_(Guristas_Pirates)_(Level_1)&oldid=191985)
+shows a smaller third wave, consistent with variation between runs. For Sansha L1,
+[University revision 191987](https://wiki.eveuniversity.org/index.php?title=The_Blockade_(Sansha%27s_Nation)_(Level_1)&oldid=191987)
+corroborates the five-wave example. The [Survival report and observations](https://eve-survival.org/?show_comments=3&wakka=Blockade1sa)
+identify the final Plague and describe the pocket as normal space. For Guristas L2, the
+[Survival report](https://eve-survival.org/?wakka=Blockade2gu) names the unique example's triggers.
+[University revision 193403](https://wiki.eveuniversity.org/index.php?title=The_Blockade_(Guristas_Pirates)_(Level_2)&oldid=193403)
+identifies the objective as the leader, the final example's only cruiser. Native type names correct spelling in both reports.
+Eden uses one reported sequence per variant and its existing placement hints where later waves lack distances.
+
+The local EVE.js level-one security pack marks the compared templates as provisional. Its release and fingerprints are
+recorded in [the earlier layout comparison](#mission-layout-corrections--november-9-2026). The report and pinned catalog
+define these additions. Mission 2924 retains its original Eden Guristas reconstruction in the Angel-tagged dungeon
+1938 so outstanding offers keep their original encounter. The native Angel roster for that ID needs a save-compatible
+transition. The other blocked Blockade IDs, including the DED twins, remain outside this batch. Mining-triggered
+hazards, optional rare spawns, and structure loot still require separate gameplay support.
+
+**Automated validation:** Tool and solution restore and a warning-free solution build passed (24.42 seconds).
+The exact `BlockadeVariantsSpawnEachReinforcementOnceAndFinishOnTheLeader` filter passed 3 tests in 13.81 seconds.
+The final focused run passed 19 tests in 24.02 seconds after a 7.15-second build, with the following clauses:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.BlockadeVariantsSpawnEachReinforcementOnceAndFinishOnTheLeader
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionSpawnClearanceTests.EveryCombatWaveAndHullVariantSpawnsOutsideSolidScenery
+```
+
+The initial expanded run exposed a stale admitted-count assertion in the layout test, corrected in the final run.
+Nineteen mission compiler, eight catalog setup, and nine formatting policy tests passed. Formatting verification and
+byte-for-byte regeneration of the mission manifest, audit and fixture passed. The audit admits 918 of 2,892 records.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Run one of the new Blockade variants and confirm that killing only the four triggers
+and final leader completes the objective while the stasis tower remains active.
+
 ## Bounded mission site placement — November 22, 2026
 
 The offer builder multiplied the global mission sequence by 10 billion metres on two axes. At sequence 95,202 the

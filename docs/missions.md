@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **915 definitions**. That includes **83 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **918 definitions**. That includes **86 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,977** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,974** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -80,7 +80,7 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Serpentis Spies | Levels 2–3 | 2 |
 | Sansha Spies | Levels 2–4 | 3 |
 | Eliminate a Pirate Nuisance | Angel, Blood, Guristas, Sansha, Serpentis; level 1 | 5 |
-| The Blockade | Guristas, level 1 | 1 |
+| The Blockade | Guristas levels 1–2 and Sansha level 1, plus the original level-one reconstruction | 4 |
 | The Assault | Guristas, level 4 | 1 |
 | Dread Pirate Scarlet | Both catalog templates, level 4, same reviewed dungeon | 2 |
 | The Spy Stash | Guristas, level 3 | 1 |
@@ -115,6 +115,9 @@ The Hidden Stash permits the warehouse blitz: guards remain optional, the wareho
 Duo of Death requires both named combatants, with optional sentries/spider drones. Only the last objective carrier releases **one Special Delivery**, type **11068**, through ordinary personally owned wreck inventory. The Guristas level-three report's nonexistent `Pithatis Usurper` alternative is excluded; the catalog resolves its reported Death Dealer and Revolter alternatives. The required Seek and Destroy groups follow the reports' blitz descriptions; unspecified reinforcement scripts are not fabricated.
 
 Each encounter selects one deterministic alternative from each reported group. Variable counts use the report's upper bound. Reported distances guide selection among the pinned room's native NPC anchors; missing distances retain explicit Eden hints (typically 20–25 km). Fixed batteries use their own catalog positions, and ship groups use deterministic spacing around the selected anchors. See [mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) for placement policy and save compatibility. Catalog twins are admitted only when their full `killMission` payload matches a reviewed encounter and they do not declare chains or extra scripts. This is a content reconstruction, not recovery of CCP's hidden mission selection or NPC-group tables.
+
+The Blockade uses four kill-triggered reinforcements. Killing the final wave's leader completes the objective even
+with earlier defenders still alive. [Blockade evidence](protocol/agents.md#the-blockade-variants--november-23-2026)
 
 The level-three Guristas Score locks the second gate behind the first combat pocket's guards. The four ships
 at the radio telescope complete the final objective. The Drone Infestation requires destroying its Drone Silo.

@@ -69,6 +69,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Epic arc chains](protocol/agents.md#epic-arc-chains--november-22-2026)
 - [Career agent chains](protocol/agents.md#career-agent-chains--november-22-2026)
 - [Mission gap expansion](protocol/agents.md#mission-gap-expansion--november-22-2026)
+- [The Blockade variants](protocol/agents.md#the-blockade-variants--november-23-2026)
 - [Bounded mission site placement](protocol/agents.md#bounded-mission-site-placement--november-22-2026)
 - [Data Center family and one-time space agents](protocol/agents.md#data-center-family-and-one-time-space-agents--november-15-2026)
 - [Resident trade objectives and item rewards](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026)

@@ -45,13 +45,46 @@ def export(catalog, output, audit_output):
            [[group('Gistii Nomad/Gistii Hijacker', 2, 20000)]])
     combat(916, 1, 0, 'EliminateaPirateNuisance1gu', '2017-11-17 13:40 UTC',
            [[group('Pithi Arrogator', 1, 45000), group('Pithi Imputor', 1, 45000)]])
-    combat(2924, 1, 1000, 'Blockade1gu', '2017-10-16 08:49 UTC', [
-        [group('Minmatar Stasis Tower', 1, 25000, required=False), group('Pithi Arrogator', 4, 25000),
-         group('Pithi Plunderer/Pithi Wrecker', 1, 25000, trigger=True)],
-        [group('Pithi Arrogator/Pithi Imputor', 6, 120000), group('Pithi Infiltrator', 1, 120000, trigger=True)],
-        [group('Pithi Arrogator', 6, 115000), group('Pithi Despoiler/Pithi Saboteur', 1, 115000, trigger=True)],
-        [group('Pithi Imputor/Pithi Arrogator', 8, 100000), group('Pithi Saboteur/Pithi Despoiler', 1, 100000, trigger=True)],
-        [group('Pithi Saboteur/Pithi Despoiler', 4, 100000), group('Pithi Plunderer', 1, 100000, completesMission=True)]])
+    def guristas_blockade_level_one(tower):
+        return [
+            [group(tower, 1, 25000, required=False), group('Pithi Arrogator', 4, 25000),
+             group('Pithi Plunderer/Pithi Wrecker', 1, 25000, trigger=True)],
+            [group('Pithi Arrogator/Pithi Imputor', 6, 120000), group('Pithi Infiltrator', 1, 120000, trigger=True)],
+            [group('Pithi Arrogator', 6, 115000), group('Pithi Despoiler/Pithi Saboteur', 1, 115000, trigger=True)],
+            [group('Pithi Imputor/Pithi Arrogator', 8, 100000), group('Pithi Saboteur/Pithi Despoiler', 1, 100000, trigger=True)],
+            [group('Pithi Saboteur/Pithi Despoiler', 4, 100000), group('Pithi Plunderer', 1, 100000, completesMission=True)],
+        ]
+
+    # Mission 2924 retains the original Eden roster for outstanding offers. The pinned Guristas
+    # pocket is mission 2925, where the fixed Stasis Tower at warp-in is the Gallente type.
+    combat(2924, 1, 1000, 'Blockade1gu', '2017-10-16 08:49 UTC', guristas_blockade_level_one('Minmatar Stasis Tower'))
+    combat(2925, 1, 1000, 'Blockade1gu', '2017-10-16 08:49 UTC; EVE University oldid=191985',
+           guristas_blockade_level_one('Gallente Stasis Tower'))
+
+    # The two reports agree on the five-wave example. A separate observation in the Survival
+    # comments identifies the last Plague as the completion target.
+    combat(2926, 1, 1000, 'Blockade1sa', '2017-10-16 08:49 UTC; 2010-10-18 completion; EVE University oldid=191987', [
+        [group('Minmatar Stasis Tower', 1, 25000, required=False), group('Centii Minion', 3, 25000),
+         group('Centii Plague', 1, 25000, trigger=True)],
+        [group('Centii Minion', 4, 120000), group('Centii Servant', 2, 120000), group('Centii Ravener', 1, 120000, trigger=True)],
+        [group('Centii Servant', 6, 120000), group('Centii Savage', 1, 120000, trigger=True)],
+        [group('Centii Minion', 4, 120000), group('Centii Servant', 3, 120000), group('Centii Slavehunter', 1, 120000, trigger=True)],
+        [group('Centii Savage', 4, 120000), group('Centii Plague', 1, 120000, completesMission=True)],
+    ])
+    missions[-1]['deadspace'] = False
+
+    combat(2940, 2, 1000, 'Blockade2gu', '2012-07-14 05:36 UTC; EVE University oldid=193403', [
+        [group('Caldari Stasis Tower', 1, 25000, required=False), group('Pithi Demolisher', 4, 25000),
+         group('Pithior Anarchist', 3, 25000), group('Pithior Nihilist', 1, 25000, trigger=True)],
+        [group('Pithi Saboteur', 1, 60000), group('Pithi Demolisher', 3, 60000), group('Pithior Nihilist', 6, 60000),
+         group('Pithum Ascriber', 3, 60000), group('Pithum Silencer', 1, 60000, trigger=True)],
+        [group('Dire Pithi Despoiler', 4, 65000), group('Pithior Renegade', 3, 65000), group('Pithior Nihilist', 3, 65000),
+         group('Pithum Silencer', 1, 65000, trigger=True)],
+        [group('Pithi Wrecker', 3, 70000), group('Dire Pithi Demolisher', 3, 70000), group('Pithior Nihilist', 2, 70000),
+         group('Pithum Ascriber', 1, 70000, trigger=True)],
+        [group('Pithi Destructor', 4, 50000), group('Pithior Terrorist', 3, 50000),
+         group('Pithum Eraser', 1, 50000, completesMission=True)],
+    ])
     combat(875, 1, 500, 'GuristaSpies1', '2012-07-14 06:31 UTC',
            [[group('Pithi Arrogator', 4, 20000), group('Pithi Arrogator', 3, 60000), group('Pithi Invader', 1, 60000)]])
     missions[-1]['rooms'] = [dict(roomId=2711, entryObjectId=53017), dict(roomId=2710, entryObjectId=53011)]
