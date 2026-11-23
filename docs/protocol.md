@@ -503,6 +503,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Dragging loaded charges between fitting slots](protocol/fitting.md#dragging-loaded-charges-between-fitting-slots)
 - [Module online state in space](protocol/fitting.md#module-online-state-in-space)
 - [Trained skills in fitting simulation](protocol/fitting.md#trained-skills-in-fitting-simulation)
 - [Multifit rig checkbox on packaged ships](protocol/fitting.md#multifit-rig-checkbox-on-packaged-ships-november-22-2026)

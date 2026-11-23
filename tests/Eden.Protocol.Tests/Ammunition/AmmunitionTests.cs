@@ -618,13 +618,17 @@ public sealed class AmmunitionTests
         Assert.NotEmpty(BlueMarshal.Encode(all));
         f.Clock.Milliseconds = 5000;
         context.Notifications.Clear();
-        Assert.Null(
+        var unloaded = Assert.IsType<List<object?>>(
             handler.CallWire(
                 context,
                 "dogmaIM",
                 "UnloadAmmo",
                 [f.Pilot.ShipId, f.Gun, new object?[] { f.Pilot.ShipId, f.Pilot.PilotId, (long)InventoryFlag.Cargo }, null]
             )
+        );
+        Assert.Equal(
+            Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId), item => item.TypeId == 222).Id,
+            Assert.IsType<long>(Assert.Single(unloaded))
         );
         Assert.Contains(
             context.Notifications,
@@ -633,6 +637,68 @@ public sealed class AmmunitionTests
                 && Assert.IsType<List<object?>>(n.Arguments[0]).Cast<object?[]>().Any(a => a[2] is object?[] && Equals(a[5], 0d))
         );
         Assert.Equal(20, f.Total(222));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(7)]
+    public void NativeSlotToSlotDragReloadsFromTheStackReturnedByUnload(int? quantity)
+    {
+        using Fixture f = new(liveWorld: true);
+        using var scope = f.Db.Services.CreateScope();
+        using var context = f.Context();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var pilot = context.Pilot;
+        const int railgun = 561;
+        const int rounds = 20;
+        int charge = (int)HybridChargeType.AntimatterSmall;
+        long destinationModule = f.Buy(railgun, 1);
+        f.Fitting.Fit(pilot.PilotId, [destinationModule], pilot.StationId, (int)InventoryFlag.AutoFit);
+        f.Fitting.SetOnline(pilot.PilotId, pilot.ShipId, destinationModule, true);
+        var loaded = f.Load(charge, rounds);
+        f.Clock.Milliseconds += (long)loaded.ReloadMilliseconds;
+
+        object?[] cargo = [pilot.ShipId, pilot.PilotId, (long)InventoryFlag.Cargo];
+        var unload = Assert.IsType<PilotCallResult.Success>(
+            router.Call(context, "dogmaIM", "UnloadAmmo", new object?[] { pilot.ShipId, f.Gun, cargo, (long?)quantity }, _ => { })
+        );
+        var reply = Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(unload.Reply)));
+        long stack = Assert.IsType<long>(Assert.Single(reply));
+        var cargoItem = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.ShipId), item => item.Id == stack);
+        Assert.Equal(charge, cargoItem.TypeId);
+        Assert.Equal((int)InventoryFlag.Cargo, cargoItem.FlagId);
+        int moved = quantity ?? rounds;
+        Assert.Equal(moved, cargoItem.Quantity);
+        Assert.Contains(context.Notifications.OfType<ItemChanged>(), change => change.Item.Id == stack);
+
+        Assert.Same(
+            PilotCallResult.None,
+            router.Call(
+                context,
+                "dogmaIM",
+                "LoadAmmo",
+                new object?[]
+                {
+                    pilot.ShipId,
+                    destinationModule,
+                    new List<object?> { stack },
+                    pilot.ShipId,
+                },
+                _ => { }
+            )
+        );
+        Assert.DoesNotContain(f.Inventory.List(pilot.PilotId, pilot.ShipId), item => item.Id == stack);
+        var magazines = f.Ammo.Read(pilot.PilotId, pilot.ShipId);
+        Assert.Equal(rounds, magazines.Sum(magazine => magazine.Quantity));
+        Assert.Equal(moved, Assert.Single(magazines, magazine => magazine.ModuleId == destinationModule).Quantity);
+        if (quantity is null)
+        {
+            Assert.DoesNotContain(magazines, magazine => magazine.ModuleId == f.Gun);
+        }
+        else
+        {
+            Assert.Equal(rounds - moved, Assert.Single(magazines, magazine => magazine.ModuleId == f.Gun).Quantity);
+        }
     }
 
     [Theory]

@@ -5,6 +5,7 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Ammunition;
 
@@ -128,7 +129,10 @@ internal sealed class AmmunitionHandler(
             {
                 structureDogma?.NotifyAttributes(context, structure);
             }
-            return PilotCallResult.None;
+            // FitCharges loads from the first new stack when dragging a charge between fitting slots.
+            return method == "UnloadAmmo" && transfer.Items.Count > 0
+                ? new BlueList<long>(transfer.Items.Select(change => change.Item.Id).ToArray())
+                : PilotCallResult.None;
         }
         catch (CargoCapacityException error)
         {

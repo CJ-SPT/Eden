@@ -2,6 +2,46 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Dragging loaded charges between fitting slots
+
+The build 3662168 fitting window reads the first returned destination stack ID when a pilot drags a fitted charge
+to another module. `FittingSlotController.FitCharges` calls `DogmaLocation.UnloadAmmoToContainer` with ship cargo
+as the destination, substitutes the returned item ID for the source sublocation tuple and then loads the charge.
+`UnloadAmmoToContainer` returns the actual `dogmaIM.UnloadAmmo` reply. Eden previously moved the ammunition but
+returned Python None, so the client kept the old sublocation instead of loading the new cargo stack.
+
+`UnloadAmmo` now returns a Python list of destination stack IDs from the committed inventory changes for ships and
+structures. A partial transfer returns the split stack's ID. An unload that moves no charges returns Python None.
+`LoadAmmo` continues to return Python None. The fitting window's second call uses the existing loading, compatibility
+and reload checks.
+
+Static inspection used the original client archive SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. EVE.js 261108.1 for build 3396210
+returns the same list or None in `moduleOperation.js` (SHA-256 prefix `C27F281DEB63`). Eden reuses its existing
+Blue list serialization and the pinned 75mm Gatling Rail I and Antimatter Charge S test inputs.
+[CCP fitting window](https://support.eveonline.com/hc/en-us/articles/213287845-Fitting-Window) ·
+[EVE University fitting by dragging charges](https://wiki.eveuniversity.org/Enforcer_(Career_Agent))
+
+**Automated validation.** Both cases of
+`FullyQualifiedName=Eden.Protocol.Tests.Ammunition.AmmunitionTests.NativeSlotToSlotDragReloadsFromTheStackReturnedByUnload`
+reproduced the Python None reply before the correction. The final exact filter selected that method,
+`NativeLoadingPrimesTheTupleSublocationAndReloadStateForReconnect`,
+`AcceptsTheSimulationAmmoSetAndContinuesWithTheNativeLoadCall` and
+`NativeBayLoadTuplePrimingPartialUnloadAndPersonalWithdrawalUseCorporationCustody`. All five cases passed in 32.32
+seconds. Full and partial ship transfers load another gun using the decoded stack ID and conserve rounds. The simulation
+case covers empty unloads and the structure case checks the corporation's destination stack.
+
+The solution build passed in 7.31 seconds with zero warnings or errors. All 86 cases in `AmmunitionTests`,
+`WeaponBankTests`, `ApplyFittingTests`, `PilotFittingTests` and `StructureAmmunitionTests` passed. The build and
+affected tests took 55.11 seconds. The catalog and formatting policy suites passed eight and nine tests. The added
+documentation links, file encoding, whitespace and `git diff --check` passed. `Format.ps1 -Check` passed across
+3,150 files. The build, tests and policy checks took 95.03 seconds in total.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Drag loaded ammunition from one fitted railgun onto another compatible railgun in the
+fitting window and check that the charge leaves the first module and reloads in the second.
+
 ## Module online state in space
 
 Pilots can switch fitted, idle modules online or offline in normal flight without a nearby fitting service. Offlining
@@ -979,6 +1019,8 @@ Checked the same pinned build **3662168**, `code.ccp` SHA-256 **37fb2af4fa0ec5c8
 The starter policy adds the 75mm gun at **1,000 ISK**, plus Iron and Antimatter at **1 ISK per round**, with finite stocks of 100 guns and 100,000 of each charge at visited market stations. Existing orders, stock and history stay intact. Other small Tech I hybrid types can use the family implementation when available as owned equipment; the starter market initially offers only the 75mm gun. Required skills, high-slot/turret limits and combined CPU/grid remain enforced.
 
 Pinned `DogmaLocation.LoadChargesToModule` and `LoadAmmoToModules` call `dogmaIM.LoadAmmo(shipID, moduleIDList, chargeItemIDList, ammoLocationID)`. `UnloadAmmoFromModules` passes a module list; `UnloadAmmoToContainer` passes a single module, a `(locationID, ownerID, flagID)` destination and optional quantity. The HUD's native unload menu uses current-ship cargo. One ammunition handler owns both methods; source IDs must be distinct owned stacks of one compatible charge type in ordinary cargo or the current docked station hangar. Unload supports partial quantities for a single module. Invalid batches and capacity failures roll back the entire transfer.
+
+See [dragging loaded charges between fitting slots](#dragging-loaded-charges-between-fitting-slots) for the unload reply.
 
 Loaded rounds remain actual owned stacks whose durable `LocationId` is the fitted module's ID. They are absent from ordinary cargo until unloaded. The wire identity is the native **(shipID, flagID, chargeTypeID)** sublocation. Godma primes carry a null `invItem`, that tuple identity, charge attributes including **805 / quantity**, and no active effects. Mixed-key `shipInfo` uses the existing `BlueDictionary` type. `shipState.instanceFlagQuantityCache` contains a four-column native DBRow `(locationID, flagID, typeID, quantity)` per slot, as consumed by `BaseDogmaLocation.LoadSublocations` and `GetQuantityFromCache`. Quantity changes use the tuple as the item key; zero quantity removes the exhausted sublocation. The existing reduction opcode now carries the inventory descriptor's reduce state; no new opcode is introduced.
 

@@ -185,7 +185,13 @@ public sealed class ApplyFittingTests
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() - reloadTime
         );
         var destination = new object?[] { pilot.DockedLocationId, pilot.PilotId, (long)InventoryFlag.Hangar };
-        Assert.Null(CallWire(router, context, "dogmaIM", "UnloadAmmo", [pilot.ShipId, ItemSet(fixture.Gun), destination]));
+        var unloaded = Assert.IsType<List<object?>>(
+            CallWire(router, context, "dogmaIM", "UnloadAmmo", [pilot.ShipId, ItemSet(fixture.Gun), destination])
+        );
+        long unloadedId = Assert.IsType<long>(Assert.Single(unloaded));
+        var unloadedStack = Assert.Single(fixture.Inventory.List(pilot.PilotId, pilot.DockedLocationId), item => item.Id == unloadedId);
+        Assert.Equal(Iron, unloadedStack.TypeId);
+        Assert.Equal(200, unloadedStack.Quantity);
         Assert.Empty(fixture.Ammo.Read(pilot.PilotId, pilot.ShipId));
         Assert.Null(CallWire(router, context, "dogmaIM", "UnloadAmmo", [pilot.ShipId, ItemSet(), destination]));
         long ammo = fixture.Buy(Antimatter, 200);
