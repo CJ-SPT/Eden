@@ -403,7 +403,8 @@ internal static class Program
             var gateway = LocalGateway.Create(
                 services.GetRequiredService<GatewayRequests>(),
                 options,
-                services.GetRequiredService<IGatewayAuthentication>()
+                services.GetRequiredService<IGatewayAuthentication>(),
+                services.GetRequiredService<Eden.Infrastructure.Operations.IPilotOperationScope>()
             );
             lifetime.OnStop("gateway", gateway.DisposeAsync);
             var chat = services.GetRequiredService<ChatServer>();

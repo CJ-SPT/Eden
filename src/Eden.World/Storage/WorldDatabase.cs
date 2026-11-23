@@ -8,6 +8,8 @@ namespace Eden.World.Storage;
 
 public sealed record WorldDatabase(string Path)
 {
+    internal bool GuardGameplaySql { get; set; }
+
     private Eden.World.Market.LiveMarketSnapshotCatalog? _marketSnapshot;
     public Eden.World.Market.LiveMarketSnapshotCatalog MarketSnapshot => _marketSnapshot ??= new(this);
     private Eden.World.Capsuleers.TrafficSnapshot? _traffic;

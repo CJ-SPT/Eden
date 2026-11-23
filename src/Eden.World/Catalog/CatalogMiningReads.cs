@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Mining;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,9 @@ public sealed partial class CatalogDbContext
             : Definitions.BeltAnchors(systemId);
 
     internal HashSet<int> MiningSystems() =>
+        !writable && Definitions.RuntimePrepared ? Definitions.BeltSystems.ToHashSet() : ReadMiningSystems();
+
+    private HashSet<int> ReadMiningSystems() =>
         Set<Celestial>()
             .Where(body => body.GroupId == AsteroidDefinitions.BeltGroup)
             .Select(body => body.SolarSystemId)
@@ -26,6 +30,11 @@ public sealed partial class CatalogDbContext
 
     // Read just the distinct populated type IDs. Belt layouts remain in the catalog.
     internal int[] PopulatedBeltOreTypes() =>
+        !writable && Definitions.RuntimePrepared
+            ? PreparedOreBeltLocations().Select(location => location.OreType).Distinct().ToArray()
+            : ReadPopulatedBeltOreTypes();
+
+    private int[] ReadPopulatedBeltOreTypes() =>
         Database
             .SqlQuery<int>(
                 $"""
@@ -39,6 +48,33 @@ public sealed partial class CatalogDbContext
             .ToArray();
 
     internal int[] BeltSystemsWithOreGroup(int oreGroup) =>
+        !writable && Definitions.RuntimePrepared
+            ? PreparedOreBeltLocations()
+                .Where(location => FittingType(location.OreType)?.GroupId == oreGroup)
+                .Select(location => location.System)
+                .Distinct()
+                .ToArray()
+            : ReadBeltSystemsWithOreGroup(oreGroup);
+
+    private IEnumerable<(int System, int OreType)> PreparedOreBeltLocations()
+    {
+        foreach (var (id, entries) in Records(CatalogData.Client.Asteroidcountbytypeidbeltid))
+        {
+            if (FindCelestial(id) is not { GroupId: AsteroidDefinitions.BeltGroup } belt)
+            {
+                continue;
+            }
+            foreach (var (key, count) in entries)
+            {
+                if (count > 0 && int.TryParse(key, NumberStyles.None, CultureInfo.InvariantCulture, out int type))
+                {
+                    yield return (belt.SolarSystemId, type);
+                }
+            }
+        }
+    }
+
+    private int[] ReadBeltSystemsWithOreGroup(int oreGroup) =>
         Database
             .SqlQuery<int>(
                 $"""

@@ -11,6 +11,8 @@ BOUNDARIES = {
     "src/Eden.World/Catalog/CatalogConnectionScope.cs": "Operation-owned read-only catalog connection transport.",
     "src/Eden.World/Catalog/CatalogProvider.cs": "Shared bounded source loading, indexes and administration pages.",
     "src/Eden.World/Catalog/CatalogProvider.Geography.cs": "Shared indexed location loading.",
+    "src/Eden.World/Catalog/CatalogProvider.Runtime.cs": "Host-startup typed catalog projection.",
+    "src/Eden.World/Catalog/CatalogRuntimeSources.cs": "Host-startup source payload materialization.",
     "src/Eden.World/Catalog/CatalogSource.cs": "Generated source mappings and full source verification.",
     "src/Eden.World/Catalog/CatalogSources.cs": "Installed catalog build/provenance verification.",
     "src/Eden.World/Skills/SkillCatalogProjection.cs": "Explicit skill package projection: read-only original, isolated writable catalog image.",
@@ -87,8 +89,30 @@ def violations(root=ROOT):
     return problems
 
 
+def runtime_source_violations(root):
+    catalog = root / "src/Eden.World/Catalog"
+    generated = (catalog / "CatalogData.g.cs").read_text(encoding="utf-8-sig")
+    definitions = {}
+    for source, body in re.findall(r"public static class (Client|Sde|Index)\s*\{(.*?)(?=\n    \})", generated, re.S):
+        for name, dataset in re.findall(r'\b(\w+)\s*=\s*new\("([^"]+)"\);', body):
+            definitions[source, name] = dataset
+    manifest = (catalog / "CatalogRuntimeSources.cs").read_text(encoding="utf-8-sig").split("private readonly", 1)[0]
+    names = set(re.findall(r'"((?:client|sde|index)/[^"]+)"', manifest))
+    problems = []
+    for project in ("Eden.World", "Eden.Server"):
+        for file in sorted((root / "src" / project).rglob("*.cs")):
+            if {"obj", "bin"}.intersection(file.parts) or file.name.endswith(".g.cs"):
+                continue
+            for number, line in enumerate(file.read_text(encoding="utf-8-sig").splitlines(), 1):
+                for key in re.findall(r"\bCatalogData\.(Client|Sde|Index)\.(\w+)\b", line):
+                    if definitions[key] not in names:
+                        problems.append({"path": file.relative_to(root).as_posix(), "line": number,
+                                         "rule": "unprepared-runtime-source", "text": line.strip()})
+    return problems
+
+
 if __name__ == "__main__":
-    problems = violations()
+    problems = violations() + runtime_source_violations(ROOT)
     for problem in problems:
         print(f"{problem['path']}:{problem['line']}: {problem['rule']}: {problem['text']}")
     if problems:

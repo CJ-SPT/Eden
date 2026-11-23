@@ -327,6 +327,7 @@ internal static partial class WorldConnections
 
         public override void Open()
         {
+            Eden.Infrastructure.Diagnostics.GameplaySqlGuard.Check("live world connection");
             if (_lease is not null)
             {
                 base.Open();

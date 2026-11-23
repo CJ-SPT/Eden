@@ -1,5 +1,6 @@
 using System.Net;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Gateway;
 using Eden.Server.Launcher;
@@ -18,7 +19,8 @@ internal static class LocalGateway
     public static WebApplication Create(
         GatewayRequests requests,
         LauncherOptions? configuration = null,
-        IGatewayAuthentication? authentication = null
+        IGatewayAuthentication? authentication = null,
+        IPilotOperationScope? operations = null
     )
     {
         var builder = WebApplication.CreateSlimBuilder();
@@ -43,6 +45,10 @@ internal static class LocalGateway
         });
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(requests);
+        if (operations is not null)
+        {
+            builder.Services.AddSingleton(operations);
+        }
         builder.Services.AddSingleton(authentication ?? (IGatewayAuthentication)new PublicGatewayAuthentication());
         var app = builder.Build();
         app.Use(
@@ -82,7 +88,11 @@ internal static class LocalGateway
 }
 
 [Injectable]
-internal sealed class RequestStream(GatewayRequests requests, IGatewayAuthentication authentication) : Requests.RequestsBase
+internal sealed class RequestStream(
+    GatewayRequests requests,
+    IGatewayAuthentication authentication,
+    IPilotOperationScope? operations = null
+) : Requests.RequestsBase
 {
     public override Task<Empty> Ping(Empty request, ServerCallContext context) => Task.FromResult(new Empty());
 
@@ -91,6 +101,7 @@ internal sealed class RequestStream(GatewayRequests requests, IGatewayAuthentica
         await context.WriteResponseHeadersAsync(new Metadata());
         await foreach (var request in input.ReadAllAsync(context.CancellationToken))
         {
+            using var operation = operations?.Begin();
             long? account = authentication.Account(context.RequestHeaders.GetValue("authorization") ?? "");
             var response = requests.Handle(request, account);
             ServerLog.Console.Debug($"Gateway {Any.GetTypeName(request.Payload?.TypeUrl ?? "")} ({response.StatusCode}).");
@@ -100,7 +111,8 @@ internal sealed class RequestStream(GatewayRequests requests, IGatewayAuthentica
 }
 
 [Injectable]
-internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthentication authentication) : Notices.NoticesBase
+internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthentication authentication, IPilotOperationScope? operations = null)
+    : Notices.NoticesBase
 {
     public override Task<Empty> Ping(Empty request, ServerCallContext context) => Task.FromResult(new Empty());
 
@@ -119,6 +131,7 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
         {
             while (await timer.WaitForNextTickAsync(stopping.Token))
             {
+                using var operation = operations?.Begin();
                 if (authentication.Account(authorization) is not long account)
                 {
                     skinNotices = new();

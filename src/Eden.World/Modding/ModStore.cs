@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -5,6 +6,8 @@ using Eden.Data.World.Modding;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.Modding;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -523,21 +526,96 @@ public sealed class ModStore(WorldDatabase database)
         return db.Set<SavedModIdentity>().Find(logicalId)?.TypeId ?? throw new InvalidDataException("Unknown logical skill.");
     }
 
+    internal FrozenDictionary<string, int> LoadRuntimeSkillIdentities()
+    {
+        if (!File.Exists(ModDbContext.FilePath(database.Path)))
+        {
+            return FrozenDictionary<string, int>.Empty;
+        }
+        using ModDbContext db = new(database.Path);
+        return db.Set<SavedModIdentity>().AsNoTracking().ToFrozenDictionary(row => row.LogicalId, row => row.TypeId);
+    }
+
+    internal void ImportRuntimeState(WorldDbContext world)
+    {
+        if (!File.Exists(ModDbContext.FilePath(database.Path)))
+        {
+            return;
+        }
+        using ModDbContext legacy = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        foreach (var state in legacy.Set<SavedModState>().AsNoTracking().Where(state => state.ModId != ""))
+        {
+            string id = ModStateSchema.Id(state.ModId, state.Key);
+            world.Database.ExecuteSql($"INSERT INTO WorldModState(Id,Json) VALUES({id},{state.Json}) ON CONFLICT(Id) DO NOTHING");
+        }
+        transaction.Commit();
+    }
+
+    internal string? ReadRuntimeState(string modId, string key) => ReadResident(RuntimeWorld(), ModStateSchema.Id(modId, key));
+
+    private static string? ReadResident(LiveWorld live, string id) =>
+        live.Economy.Inspect(world => world.Set<SavedWorldModState>().Find(0, id)?.Json);
+
+    internal void WriteRuntimeState(string modId, string key, string json)
+    {
+        ValidateState(key, json);
+        WriteResident(RuntimeWorld(), ModStateSchema.Id(modId, key), json);
+    }
+
+    private static void WriteResident(LiveWorld live, string id, string json)
+    {
+        using var action = live.Economy.Begin(TransactionParticipants.None);
+        var row = action.Set<SavedWorldModState>().Find(0, id);
+        if (row is null)
+        {
+            action.Add(new SavedWorldModState { Id = id, Json = json });
+        }
+        else
+        {
+            row.Json = json;
+        }
+        action.Commit();
+    }
+
+    private LiveWorld RuntimeWorld() =>
+        LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Server mod state requires the resident world.");
+
     public string? ReadState(string modId, string key)
     {
+        string id = ModStateSchema.Id(modId, key);
+        if (modId.Length != 0 && LiveWorld.Find(database.Path) is { } live)
+        {
+            return ReadResident(live, id);
+        }
+        using var saved = modId.Length == 0 ? null : OpenStateCheckpoint();
+        if (saved?.Set<SavedWorldModState>().Find(id) is { } current)
+        {
+            return current.Json;
+        }
         using var db = Open();
         return db.Set<SavedModState>().Find(modId, key)?.Json;
     }
 
     public void WriteState(string modId, string key, string json)
     {
-        if (string.IsNullOrWhiteSpace(key) || key.Length > 200 || json.Length > ModFormat.MaximumCommandBytes)
+        ValidateState(key, json);
+        string id = ModStateSchema.Id(modId, key);
+        if (modId.Length != 0 && LiveWorld.Find(database.Path) is { } live)
         {
-            throw new InvalidDataException("Mod state is too large or its key is invalid.");
+            WriteResident(live, id, json);
+            return;
         }
-        using var document = JsonDocument.Parse(json);
         lock (_gate)
         {
+            using var saved = modId.Length == 0 ? null : OpenStateCheckpoint();
+            if (saved is not null)
+            {
+                saved.Database.ExecuteSql(
+                    $"INSERT INTO WorldModState(Id,Json) VALUES({id},{json}) ON CONFLICT(Id) DO UPDATE SET Json=excluded.Json"
+                );
+                return;
+            }
             using var db = Open();
             var state = db.Set<SavedModState>().Find(modId, key);
             if (state is null)
@@ -548,5 +626,41 @@ public sealed class ModStore(WorldDatabase database)
             state.Json = json;
             db.SaveChanges();
         }
+    }
+
+    private WorldDbContext? OpenStateCheckpoint()
+    {
+        if (!File.Exists(database.Path))
+        {
+            return null;
+        }
+        WorldDbContext saved = new(database.Path);
+        try
+        {
+            if (
+                saved
+                    .Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM sqlite_master WHERE name='WorldModState' AND type='table'")
+                    .Single() != 0
+            )
+            {
+                return saved;
+            }
+        }
+        catch
+        {
+            saved.Dispose();
+            throw;
+        }
+        saved.Dispose();
+        return null;
+    }
+
+    private static void ValidateState(string key, string json)
+    {
+        if (string.IsNullOrWhiteSpace(key) || key.Length > 200 || json.Length > ModFormat.MaximumCommandBytes)
+        {
+            throw new InvalidDataException("Mod state is too large or its key is invalid.");
+        }
+        using var document = JsonDocument.Parse(json);
     }
 }

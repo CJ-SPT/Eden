@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
@@ -27,6 +28,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
     private readonly ModStore _store = store;
     private readonly IServiceScopeFactory _scopes = scopes;
     private IReadOnlyDictionary<int, SkillDefinition> _skills = new Dictionary<int, SkillDefinition>();
+    private FrozenDictionary<string, int> _skillIdentities = FrozenDictionary<string, int>.Empty;
 
     private sealed record Command(long Roles, Func<ModCommandContext, ModCommandReply> Handler);
 
@@ -50,6 +52,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
             {
                 return;
             }
+            _skillIdentities = _store.LoadRuntimeSkillIdentities();
             var active = SkillPackageActivation.Active(_database.Path);
             if (active is null || !File.Exists(Path.Combine(_store.SetDirectory(active.Id), "mod-set.json")))
             {
@@ -276,11 +279,14 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
 
     private sealed class Services(ModRuntime runtime, string id) : IModServices
     {
-        public string? ReadState(string key) => runtime._store.ReadState(id, key);
+        public string? ReadState(string key) => runtime._store.ReadRuntimeState(id, key);
 
-        public void WriteState(string key, string json) => runtime._store.WriteState(id, key, json);
+        public void WriteState(string key, string json) => runtime._store.WriteRuntimeState(id, key, json);
 
-        public int ResolveSkill(string logicalId) => runtime._store.ResolveSkill(logicalId);
+        public int ResolveSkill(string logicalId) =>
+            runtime._skillIdentities.TryGetValue(logicalId, out int typeId)
+                ? typeId
+                : throw new InvalidDataException("Unknown logical skill.");
 
         public SkillDefinition? Skill(int typeId) => runtime._skills.GetValueOrDefault(typeId);
 

@@ -1,4 +1,5 @@
 using Eden.Data.World.Modding;
+using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +9,11 @@ internal sealed class ModDbContext(string worldPath) : DbContext
 {
     internal static string FilePath(string worldPath) => Path.GetFullPath(worldPath) + ".mods.sqlite";
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options) =>
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.TracePerformance("mod metadata");
         options.UseSqlite(new SqliteConnectionStringBuilder { DataSource = FilePath(worldPath), Pooling = false }.ToString());
+    }
 
     protected override void OnModelCreating(ModelBuilder model)
     {

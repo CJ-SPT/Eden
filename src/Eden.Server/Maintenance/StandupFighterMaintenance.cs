@@ -1,11 +1,13 @@
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class StandupFighterMaintenance(IStandupFighterFlight fighters, TimeProvider clock) : IDisposable
+internal sealed class StandupFighterMaintenance(IStandupFighterFlight fighters, TimeProvider clock, IPilotOperationScope? operations = null)
+    : IDisposable
 {
     private PeriodicTimer? _timer;
     private Task _loop = Task.CompletedTask;
@@ -25,6 +27,7 @@ internal sealed class StandupFighterMaintenance(IStandupFighterFlight fighters, 
         {
             try
             {
+                using var operation = operations?.Begin();
                 fighters.AdvanceReturns(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
             catch (Exception error)

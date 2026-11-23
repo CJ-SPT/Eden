@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -28,7 +29,7 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
         writable ? definition.Load(this, typeId) : Definitions.Definition(definition, typeId);
 
     internal T GlobalDefinition<T>(CatalogDefinition<T> definition)
-        where T : class => writable ? definition.Load(this, 0) : Definitions.GlobalDefinition(definition);
+        where T : notnull => writable ? definition.Load(this, 0) : Definitions.GlobalDefinition(definition);
 
     internal IReadOnlyDictionary<TKey, TValue> ReadMany<TKey, TValue>(CatalogSource<TKey, TValue> source, IEnumerable<TKey> keys)
         where TKey : notnull
@@ -76,7 +77,8 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.TracePerformance();
+        GameplaySqlGuard.Check("catalog context");
+        options.TracePerformance("catalog");
         if (!writable && _connectionInputs.IsScoped)
         {
             // Service operations share one immutable catalog connection. Contexts

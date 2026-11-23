@@ -1,6 +1,7 @@
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
 
@@ -12,7 +13,8 @@ internal sealed class MarketMaintenance(
     TimeProvider clock,
     IResourceRenewal? resources = null,
     WorldDatabase? database = null,
-    IMarketDemandMaintenance? demand = null
+    IMarketDemandMaintenance? demand = null,
+    IPilotOperationScope? operations = null
 ) : IDisposable, IAsyncDisposable
 {
     internal static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
@@ -58,6 +60,7 @@ internal sealed class MarketMaintenance(
                 {
                     try
                     {
+                        using var operation = operations?.Begin();
                         if (market.NextExpiry <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                         {
                             market.Expire();

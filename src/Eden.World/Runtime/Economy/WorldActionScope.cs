@@ -1,3 +1,4 @@
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,7 @@ internal sealed class WorldActionScope : IDisposable
         }
         else
         {
+            GameplaySqlGuard.Check("world action fallback");
             _sql = new(database.Path) { Participants = participants };
             _transaction = _sql.Database.BeginTransaction();
             World = new SqlWorldAction(_sql);
@@ -45,6 +47,7 @@ internal sealed class WorldActionScope : IDisposable
         {
             return live.Economy.Inspect(read);
         }
+        GameplaySqlGuard.Check("world inspection fallback");
         using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
         using var transaction = consistentFileRead ? world.Database.BeginTransaction() : null;
         return read(new SqlWorldAction(world));

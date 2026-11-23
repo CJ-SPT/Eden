@@ -259,6 +259,53 @@ public sealed class CatalogProviderTests
     }
 
     [Fact]
+    public void PreparedCatalogServesColdProjectedAndSourceLookupsWithGameplaySqlGuarded()
+    {
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        using CatalogDbContext catalog = new(path);
+        var provider = catalog.Definitions;
+        var gate = provider.Gates.Values.First();
+        var expectedOrigin = catalog.FirstCelestialPositions()[gate.SolarSystemId];
+        var expectedAttributes = provider.Attributes(601);
+        var expectedOreSystems = catalog.BeltSystemsWithOreGroup(MiningDefinitions.MercoxitGroup).Order().ToArray();
+        provider.PrepareRuntime();
+
+        using var sql = GameplaySqlGuard.Begin();
+        using var metrics = SessionPerformance.Begin("prepared catalog", _ => { }, force: true)!;
+        Assert.Equal(expectedOrigin, catalog.FirstCelestialPositions()[gate.SolarSystemId]);
+        Assert.Equal(
+            expectedAttributes.OrderBy(pair => pair.Key),
+            provider.AttributeSets([601, int.MaxValue])[601].OrderBy(pair => pair.Key)
+        );
+        Assert.Equal(expectedOreSystems, catalog.BeltSystemsWithOreGroup(MiningDefinitions.MercoxitGroup).Order());
+        Assert.Equal(gate.SolarSystemId, catalog.StaticGateSystems()[gate.Id]);
+        Assert.Contains(provider.FindCelestial(gate.Id), provider.CelestialsInSystem(gate.SolarSystemId));
+        Assert.Null(catalog.Read(CatalogData.Client.Skillplans, long.MaxValue));
+        Assert.Null(catalog.Read(CatalogData.Client.Skins, "missing"));
+        Assert.Null(catalog.Read(CatalogData.Client.Skinlicenses, "missing"));
+        Assert.Empty(catalog.ReadMany(CatalogData.Client.LocalizationFsdEnUs, [long.MaxValue]));
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
+    public void GameplayRejectsDirectCatalogQueriesBeforeOpeningSqlite()
+    {
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        using CatalogDbContext catalog = new(path);
+        using var metrics = SessionPerformance.Begin("gameplay guard", _ => { }, force: true)!;
+        using (GameplaySqlGuard.Begin())
+        {
+            var error = Assert.Throws<InvalidOperationException>(() => catalog.Set<SourceRecord>().Any());
+            Assert.Contains("catalog context", error.Message);
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
     public void PagingUsesStableSourceKeysAndLazyCacheStaysWithinItsBudget()
     {
         using TestWorld world = new();

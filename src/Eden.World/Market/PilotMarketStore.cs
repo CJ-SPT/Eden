@@ -269,6 +269,10 @@ internal sealed partial class PilotMarketStore(
                 return cached;
             }
         }
+        if (database.Settings.Economy.StandardMarket && database.MarketSnapshot.Ready && !live.IsEntered)
+        {
+            return ReadStandardMarketBook(live, pilotId, typeId: null, scope).Orders;
+        }
         using var wait = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryOwnerAndRead");
         return live.Run(() =>
         {
@@ -300,6 +304,10 @@ internal sealed partial class PilotMarketStore(
         RequireResidentStandardMarket();
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
+            if (database.Settings.Economy.StandardMarket && database.MarketSnapshot.Ready && !live.IsEntered)
+            {
+                return ReadStandardMarketBook(live, pilotId, typeId, scope);
+            }
             return ResidentReadOrders(live, pilotId, typeId, scope);
         }
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryLoad");

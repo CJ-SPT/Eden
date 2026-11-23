@@ -19,6 +19,7 @@ using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
+using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
 
@@ -41,6 +42,15 @@ internal sealed partial class CapsuleerIndustry
 
     private static readonly ConditionalWeakTable<TrafficSnapshot, ConcurrentDictionary<long, Lazy<SnapshotPvpFits>>> s_snapshotPvpFits =
         new();
+
+    internal static void WarmSnapshotPvpFits(WorldDatabase database, CatalogDbContext catalog)
+    {
+        var policy = database.Settings.Capsuleers;
+        if (policy.Enabled && (policy.EarnedPvpShips || policy.MilitiaPatrols))
+        {
+            PrepareSnapshotPvpFits(catalog, database.Traffic);
+        }
+    }
 
     internal static void PrepareSnapshotPvpFits(CatalogDbContext catalog, TrafficSnapshot snapshot)
     {

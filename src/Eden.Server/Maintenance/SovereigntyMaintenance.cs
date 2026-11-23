@@ -1,11 +1,13 @@
 using Eden.Gameplay.Sovereignty;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SovereigntyMaintenance(TimeProvider clock, ISovereigntyResources resources) : IDisposable
+internal sealed class SovereigntyMaintenance(TimeProvider clock, ISovereigntyResources resources, IPilotOperationScope? operations = null)
+    : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -14,6 +16,7 @@ internal sealed class SovereigntyMaintenance(TimeProvider clock, ISovereigntyRes
     {
         if (_timer is null)
         {
+            using var operation = operations?.Begin();
             resources.AdvanceAll();
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
@@ -26,6 +29,7 @@ internal sealed class SovereigntyMaintenance(TimeProvider clock, ISovereigntyRes
         {
             try
             {
+                using var operation = operations?.Begin();
                 resources.AdvanceAll();
             }
             catch (Exception error)

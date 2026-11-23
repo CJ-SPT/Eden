@@ -133,10 +133,22 @@ public sealed class DetachedCheckpointTests
         var first = Fire();
         var live = LiveWorld.Find(f.Db.Path)!;
         WorldSnapshot snapshot;
-        using (var metrics = SessionPerformance.Begin("capture", _ => { }, force: true)!)
+        List<string> captureCommands = [];
+        using (var metrics = SessionPerformance.Begin("capture", _ => { }, force: true, command: captureCommands.Add)!)
         {
             snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
             Assert.Equal(0, metrics.Commands);
+            Assert.Equal(captureCommands.Count, metrics.CheckpointMetadataCommands);
+            Assert.Contains("PRAGMA data_version", captureCommands);
+            Assert.Single(captureCommands, command => command.StartsWith("SELECT page_count", StringComparison.Ordinal));
+            Assert.All(
+                captureCommands,
+                command =>
+                    Assert.True(
+                        command == "PRAGMA data_version" || command.StartsWith("SELECT page_count", StringComparison.Ordinal),
+                        command
+                    )
+            );
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }

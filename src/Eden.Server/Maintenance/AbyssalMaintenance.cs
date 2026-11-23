@@ -1,11 +1,12 @@
 using Eden.Gameplay.Exploration;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class AbyssalMaintenance(IAbyssalDeadspace abyss, TimeProvider clock) : IDisposable
+internal sealed class AbyssalMaintenance(IAbyssalDeadspace abyss, TimeProvider clock, IPilotOperationScope? operations = null) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -14,6 +15,7 @@ internal sealed class AbyssalMaintenance(IAbyssalDeadspace abyss, TimeProvider c
     {
         if (_timer is null)
         {
+            using var operation = operations?.Begin();
             abyss.Advance();
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
@@ -26,6 +28,7 @@ internal sealed class AbyssalMaintenance(IAbyssalDeadspace abyss, TimeProvider c
         {
             try
             {
+                using var operation = operations?.Begin();
                 abyss.Advance();
             }
             catch (Exception error)

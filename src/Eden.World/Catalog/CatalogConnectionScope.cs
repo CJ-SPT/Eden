@@ -15,6 +15,7 @@ internal sealed class CatalogConnectionInputs(bool scoped = false) : IDisposable
 
     internal SqliteConnection Connection(string path)
     {
+        GameplaySqlGuard.Check("catalog connection");
         if (_connection is null)
         {
             var connection = new SqliteConnection(
@@ -42,6 +43,7 @@ internal sealed class CatalogConnectionInputs(bool scoped = false) : IDisposable
 
     internal SourceRecord? ReadRecord(string path, string dataset, string key)
     {
+        GameplaySqlGuard.Check("catalog record");
         lock (_recordGate)
         {
             if (_record is null)

@@ -13,7 +13,10 @@ public readonly record struct PerformanceSample(
     double CommitMilliseconds,
     double BeginMilliseconds,
     long AllocatedBytes
-);
+)
+{
+    public int CheckpointMetadataCommands { get; init; }
+}
 
 public sealed class SessionPerformance : IDisposable
 {
@@ -31,6 +34,7 @@ public sealed class SessionPerformance : IDisposable
     private readonly long _allocated = GC.GetAllocatedBytesForCurrentThread();
     public int FittingCalculations { get; private set; }
     public int Commands { get; private set; }
+    public int CheckpointMetadataCommands { get; private set; }
     public int Connections { get; private set; }
     public int TackleReads { get; private set; }
     public int AggressionReads { get; private set; }
@@ -123,6 +127,7 @@ public sealed class SessionPerformance : IDisposable
 
     public static void DatabaseCommand(string sql)
     {
+        GameplaySqlGuard.Check("database command");
         for (var scope = s_current.Value; scope is not null; scope = scope._parent)
         {
             scope.Commands++;
@@ -132,6 +137,16 @@ public sealed class SessionPerformance : IDisposable
                 scope.TackleReads += sql.Contains("WorldTackle", StringComparison.Ordinal) ? 1 : 0;
                 scope.AggressionReads += sql.Contains("WorldNpcAggression", StringComparison.Ordinal) ? 1 : 0;
             }
+        }
+    }
+
+    public static void CheckpointMetadataCommand(string sql)
+    {
+        GameplaySqlGuard.Check("checkpoint metadata");
+        for (var scope = s_current.Value; scope is not null; scope = scope._parent)
+        {
+            scope.CheckpointMetadataCommands++;
+            scope._command?.Invoke(sql);
         }
     }
 
@@ -159,7 +174,11 @@ public sealed class SessionPerformance : IDisposable
                 TransactionStartMilliseconds,
                 Math.Max(0, GC.GetAllocatedBytesForCurrentThread() - _allocated)
             )
+            {
+                CheckpointMetadataCommands = CheckpointMetadataCommands,
+            }
         );
+        string metadata = CheckpointMetadataCommands > 0 ? $" Checkpoint metadata commands={CheckpointMetadataCommands}." : "";
         _report?.Invoke(
             string.Create(
                 CultureInfo.InvariantCulture,
@@ -167,6 +186,7 @@ public sealed class SessionPerformance : IDisposable
                     + $"commands={Commands}, connections={Connections}, tackleReads={TackleReads}, "
                     + $"aggressionReads={AggressionReads}, fittings={FittingCalculations}, "
                     + $"sql={SqlMilliseconds:F2} ms, commit={CommitMilliseconds:F2} ms, begin={TransactionStartMilliseconds:F2} ms."
+                    + $"{metadata}"
             )
         );
     }

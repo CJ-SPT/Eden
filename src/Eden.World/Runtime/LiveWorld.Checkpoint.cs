@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Capsuleers;
 using Eden.World.Maps;
 using Eden.World.Runtime.Combat;
@@ -72,12 +73,15 @@ internal sealed partial class LiveWorld
             long ownersStarted = Stopwatch.GetTimestamp();
             using var owners = _systems.Enter(entries.Select(e => e.Id), "checkpoint resident capture");
             wait += Stopwatch.GetElapsedTime(ownersStarted);
-            Heat.Advance(SimulationTime);
-            Nanites.Advance(SimulationTime);
-            foreach (var entry in entries.Where(e => e.State.SimulationEntered))
+            using (var operation = _database.GuardGameplaySql ? GameplaySqlGuard.Begin() : null)
             {
-                using var context = UseSystem(entry.Id);
-                using var ownership = EnterSimulation("checkpoint deadlines", entry.Id);
+                Heat.Advance(SimulationTime);
+                Nanites.Advance(SimulationTime);
+                foreach (var entry in entries.Where(e => e.State.SimulationEntered))
+                {
+                    using var context = UseSystem(entry.Id);
+                    using var ownership = EnterSimulation("checkpoint deadlines", entry.Id);
+                }
             }
             if (!_systems.Snapshot().Select(e => e.Id).SequenceEqual(entries.Select(e => e.Id)))
             {

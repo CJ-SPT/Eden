@@ -6,21 +6,22 @@ namespace Eden.World.Storage;
 
 internal static class DatabasePerformance
 {
-    internal static DbContextOptionsBuilder TracePerformance(this DbContextOptionsBuilder options) =>
+    internal static DbContextOptionsBuilder TracePerformance(this DbContextOptionsBuilder options, string storage) =>
         options.LogTo(
             (id, _) =>
-                SessionPerformance.IsActive
-                && (
-                    id == RelationalEventId.CommandExecuting
-                    || id == RelationalEventId.ConnectionOpened
-                    || id == RelationalEventId.CommandExecuted
-                    || id == RelationalEventId.TransactionCommitted
-                    || id == RelationalEventId.TransactionStarted
-                ),
-            Record
+                (GameplaySqlGuard.IsActive && id == RelationalEventId.CommandExecuting)
+                || SessionPerformance.IsActive
+                    && (
+                        id == RelationalEventId.CommandExecuting
+                        || id == RelationalEventId.ConnectionOpened
+                        || id == RelationalEventId.CommandExecuted
+                        || id == RelationalEventId.TransactionCommitted
+                        || id == RelationalEventId.TransactionStarted
+                    ),
+            data => Record(data, storage)
         );
 
-    private static void Record(EventData data)
+    private static void Record(EventData data, string storage)
     {
         if (data is CommandExecutedEventData executed)
         {
@@ -39,6 +40,7 @@ internal static class DatabasePerformance
         }
         else if (data is CommandEventData command)
         {
+            GameplaySqlGuard.Check(storage);
             SessionPerformance.DatabaseCommand(command.Command.CommandText);
         }
         else if (data is ConnectionEndEventData)

@@ -56,7 +56,7 @@ internal static class DedComplexCatalog
 
     private static readonly CatalogDefinition<ImmutableArray<DedComplex>> s_definitions = new("ded-complexes", Load);
 
-    internal static ImmutableArray<DedComplex> Read(CatalogDbContext catalog) => catalog.Definition(s_definitions, 0);
+    internal static ImmutableArray<DedComplex> Read(CatalogDbContext catalog) => catalog.GlobalDefinition(s_definitions);
 
     private static readonly Lazy<HashSet<int>> s_rewardTypes = new(() =>
         s_content

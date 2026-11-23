@@ -1,11 +1,13 @@
 using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class ActivityRewardMaintenance(IActivityRewardTicks rewards, TimeProvider clock) : IDisposable
+internal sealed class ActivityRewardMaintenance(IActivityRewardTicks rewards, TimeProvider clock, IPilotOperationScope? operations = null)
+    : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -32,6 +34,7 @@ internal sealed class ActivityRewardMaintenance(IActivityRewardTicks rewards, Ti
     {
         try
         {
+            using var operation = operations?.Begin();
             rewards.Advance();
         }
         catch (Exception error)

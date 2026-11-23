@@ -14,6 +14,12 @@ public sealed class SavedModState
     public string Json { get; set; } = "null";
 }
 
+public sealed class SavedWorldModState
+{
+    public string Id { get; set; } = "";
+    public string Json { get; set; } = "null";
+}
+
 public sealed class SavedModConfiguration
 {
     public int Id { get; set; } = 1;

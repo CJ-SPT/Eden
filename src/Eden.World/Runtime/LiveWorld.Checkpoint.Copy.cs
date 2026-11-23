@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Globalization;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 
@@ -39,8 +39,10 @@ internal sealed partial class LiveWorld
                 // is synced before it replaces the saved world.
                 using var configure = database.CreateCommand();
                 configure.CommandText = "PRAGMA synchronous=OFF";
+                SessionPerformance.CheckpointMetadataCommand(configure.CommandText);
                 configure.ExecuteNonQuery();
             }
+            WorldResidentCapture completed;
             while (true)
             {
                 long requested = Stopwatch.GetTimestamp();
@@ -92,39 +94,39 @@ internal sealed partial class LiveWorld
                             // with a resident capture before accepting that relational image.
                             continue;
                         }
-                        using var size = database.CreateCommand();
-                        size.CommandText = "SELECT page_count*page_size FROM pragma_page_count(),pragma_page_size()";
-                        long bytes = Convert.ToInt64(size.ExecuteScalar(), CultureInfo.InvariantCulture);
-                        WorldSnapshot snapshot = new(
-                            database,
-                            resident.Combat,
-                            resident.Generation,
-                            wait,
-                            capture,
-                            resident.Heat,
-                            resident.Tractors,
-                            resident.Miners,
-                            resident.Haulers,
-                            resident.Activity,
-                            resident.Jobs,
-                            copy,
-                            captureAllocated,
-                            copyAllocated,
-                            bytes,
-                            resident.Routines,
-                            resident.Economy,
-                            maximumPause,
-                            steps,
-                            resident.MapStatistics,
-                            captureFile
-                        );
-                        transferred = true;
-                        return snapshot;
+                        completed = resident;
+                        Volatile.Write(ref _checkpointCopying, false);
+                        break;
                     }
                 }
                 // The FIFO owner admits queued sessions before the next page batch.
                 CheckpointStepCompleted?.Invoke(steps);
             }
+            var snapshot = new WorldSnapshot(
+                database,
+                completed.Combat,
+                completed.Generation,
+                wait,
+                capture,
+                completed.Heat,
+                completed.Tractors,
+                completed.Miners,
+                completed.Haulers,
+                completed.Activity,
+                completed.Jobs,
+                copy,
+                captureAllocated,
+                copyAllocated,
+                CheckpointSize(database),
+                completed.Routines,
+                completed.Economy,
+                maximumPause,
+                steps,
+                completed.MapStatistics,
+                captureFile
+            );
+            transferred = true;
+            return snapshot;
         }
         finally
         {

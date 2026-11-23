@@ -38,6 +38,8 @@ public sealed partial class CatalogProvider
         return security.Values.TryGetValue(systemId, out double value) && !security.Missing.Contains(systemId) ? value : null;
     }
 
+    internal IEnumerable<int> BeltSystems => _systemBelts.Value.Keys;
+
     internal ImmutableArray<CatalogCelestialDefinition> BeltAnchors(int systemId) => _systemBelts.Value.GetValueOrDefault(systemId, []);
 
     internal void WarmGateBodies() => _ = _gateBodies.Value;
@@ -54,13 +56,8 @@ public sealed partial class CatalogProvider
     internal IReadOnlyDictionary<int, RegionalGateStyle> RegionalGateStyles()
     {
         RequireCurrent();
-        using CatalogDbContext catalog = new(Identity.Path);
-        Interlocked.Increment(ref _loads);
-        return catalog
-            .Set<Celestial>()
-            .Where(body => body.GroupId == StargateGroup)
+        return GateStyleRows()
             .Select(body => new { body.SolarSystemId, body.TypeId })
-            .AsEnumerable()
             .Where(body => RegionalGateRules.Style(body.TypeId) is not null)
             .GroupBy(body => Systems[body.SolarSystemId].RegionId)
             .ToDictionary(
@@ -75,8 +72,23 @@ public sealed partial class CatalogProvider
             );
     }
 
+    private IEnumerable<CatalogCelestialDefinition> GateStyleRows()
+    {
+        if (Runtime is { } runtime)
+        {
+            return runtime.Bodies.Values.Where(body => body.GroupId == StargateGroup);
+        }
+        using CatalogDbContext catalog = new(Identity.Path);
+        Interlocked.Increment(ref _loads);
+        return CelestialRows(catalog.Set<Celestial>().Where(body => body.GroupId == StargateGroup)).ToArray();
+    }
+
     internal IReadOnlyDictionary<int, CatalogCelestialDefinition> FindCelestials(IEnumerable<int> ids)
     {
+        if (Runtime is { } runtime)
+        {
+            return ids.Distinct().Where(runtime.Bodies.ContainsKey).ToDictionary(id => id, id => runtime.Bodies[id]);
+        }
         Dictionary<int, CatalogCelestialDefinition> result = [];
         List<int> missing = [];
         foreach (int id in ids.Distinct())
@@ -109,21 +121,27 @@ public sealed partial class CatalogProvider
     }
 
     public CatalogCelestialDefinition? FindCelestial(long id) =>
-        id is >= int.MinValue and <= int.MaxValue
-            ? _celestials
-                .Read(
-                    (int)id,
-                    () =>
-                    {
-                        using CatalogDbContext catalog = new(Identity.Path);
-                        var value = CelestialRows(catalog.Set<Celestial>().Where(body => body.Id == id)).SingleOrDefault();
-                        return new(value is not null, value, CelestialEstimatedBytes);
-                    }
-                )
-                .Value
-            : null;
+        id is < int.MinValue or > int.MaxValue ? null
+        : Runtime is { } runtime ? runtime.Bodies.GetValueOrDefault((int)id)
+        : ReadCelestial(id);
+
+    private CatalogCelestialDefinition? ReadCelestial(long id) =>
+        _celestials
+            .Read(
+                (int)id,
+                () =>
+                {
+                    using CatalogDbContext catalog = new(Identity.Path);
+                    var value = CelestialRows(catalog.Set<Celestial>().Where(body => body.Id == id)).SingleOrDefault();
+                    return new(value is not null, value, CelestialEstimatedBytes);
+                }
+            )
+            .Value;
 
     public ImmutableArray<CatalogCelestialDefinition> CelestialsInSystem(int systemId) =>
+        Runtime is { } runtime ? runtime.SystemBodies.GetValueOrDefault(systemId, []) : ReadSystemCelestials(systemId);
+
+    private ImmutableArray<CatalogCelestialDefinition> ReadSystemCelestials(int systemId) =>
         _systemCelestials
             .Read(
                 systemId,

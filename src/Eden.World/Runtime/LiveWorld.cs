@@ -700,6 +700,7 @@ internal sealed partial class LiveWorld : IDisposable
     {
         using var command = _memory.CreateCommand();
         command.CommandText = "PRAGMA data_version";
+        SessionPerformance.CheckpointMetadataCommand(command.CommandText);
         return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
     }
 
@@ -772,31 +773,45 @@ internal sealed partial class LiveWorld : IDisposable
         }
     }
 
+    private static long CheckpointSize(SqliteConnection database)
+    {
+        using var size = database.CreateCommand();
+        size.CommandText = "SELECT page_count*page_size FROM pragma_page_count(),pragma_page_size()";
+        SessionPerformance.CheckpointMetadataCommand(size.CommandText);
+        return Convert.ToInt64(size.ExecuteScalar(), CultureInfo.InvariantCulture);
+    }
+
     private WorldSnapshot? CaptureAtomicSnapshot()
     {
         using var context = UseShared();
         long started = Stopwatch.GetTimestamp();
-        using (EnterPersistence("checkpoint capture"))
+        SqliteConnection? database = null;
+        bool transferred = false;
+        try
         {
-            var wait = Stopwatch.GetElapsedTime(started);
-            if (_disposed)
+            WorldResidentCapture captured;
+            TimeSpan wait;
+            TimeSpan copy;
+            long copyAllocated;
+            using (EnterPersistence("checkpoint capture"))
             {
-                return null;
-            }
-            if (SqlConnections != 0)
-            {
-                throw new InvalidOperationException("Complete world connections before capturing a checkpoint.");
-            }
-            var resident = CaptureResidents();
-            if (resident is null)
-            {
-                return null;
-            }
-            // System owners and registry admission are released. Persistence remains
-            // held so SQL cannot advance beyond the captured resident generation.
-            SqliteConnection database = new("Data Source=:memory:;Pooling=False;Foreign Keys=True");
-            try
-            {
+                wait = Stopwatch.GetElapsedTime(started);
+                if (_disposed)
+                {
+                    return null;
+                }
+                if (SqlConnections != 0)
+                {
+                    throw new InvalidOperationException("Complete world connections before capturing a checkpoint.");
+                }
+                if (CaptureResidents() is not { } resident)
+                {
+                    return null;
+                }
+                captured = resident;
+                // System owners and registry admission are released. Persistence remains
+                // held so SQL cannot advance beyond the captured resident generation.
+                database = new("Data Source=:memory:;Pooling=False;Foreign Keys=True");
                 long allocated = GC.GetAllocatedBytesForCurrentThread();
                 long copyStarted = Stopwatch.GetTimestamp();
                 database.Open();
@@ -810,36 +825,37 @@ internal sealed partial class LiveWorld : IDisposable
                 {
                     Volatile.Write(ref _checkpointCopying, false);
                 }
-                TimeSpan copy = Stopwatch.GetElapsedTime(copyStarted);
-                long copyAllocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
-                using var size = database.CreateCommand();
-                size.CommandText = "SELECT page_count*page_size FROM pragma_page_count(),pragma_page_size()";
-                long bytes = Convert.ToInt64(size.ExecuteScalar(), CultureInfo.InvariantCulture);
-                return new(
-                    database,
-                    resident.Combat,
-                    resident.Generation,
-                    wait + resident.Wait,
-                    resident.Capture,
-                    resident.Heat,
-                    resident.Tractors,
-                    resident.Miners,
-                    resident.Haulers,
-                    resident.Activity,
-                    resident.Jobs,
-                    copy,
-                    resident.AllocatedBytes,
-                    copyAllocated,
-                    bytes,
-                    resident.Routines,
-                    resident.Economy,
-                    mapStatistics: resident.MapStatistics
-                );
+                copy = Stopwatch.GetElapsedTime(copyStarted);
+                copyAllocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
             }
-            catch
+            var snapshot = new WorldSnapshot(
+                database,
+                captured.Combat,
+                captured.Generation,
+                wait + captured.Wait,
+                captured.Capture,
+                captured.Heat,
+                captured.Tractors,
+                captured.Miners,
+                captured.Haulers,
+                captured.Activity,
+                captured.Jobs,
+                copy,
+                captured.AllocatedBytes,
+                copyAllocated,
+                CheckpointSize(database),
+                captured.Routines,
+                captured.Economy,
+                mapStatistics: captured.MapStatistics
+            );
+            transferred = true;
+            return snapshot;
+        }
+        finally
+        {
+            if (!transferred)
             {
-                database.Dispose();
-                throw;
+                database?.Dispose();
             }
         }
     }

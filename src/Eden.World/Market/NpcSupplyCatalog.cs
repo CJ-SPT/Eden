@@ -35,7 +35,10 @@ internal sealed partial class PilotMarketStore
         var station = catalog.RequireStation(stationId);
         if (database.Settings.Economy.StandardMarket)
         {
-            _ = database.MarketSnapshot.RegionOrdersByType(station.RegionId);
+            if (!database.MarketSnapshot.Ready)
+            {
+                _ = database.MarketSnapshot.RegionOrdersByType(station.RegionId);
+            }
             return;
         }
         _ = InstitutionalOffers(catalog, station);
@@ -45,7 +48,7 @@ internal sealed partial class PilotMarketStore
     {
         if (database.Settings.Economy.StandardMarket)
         {
-            _ = database.MarketSnapshot.Manifest;
+            WarmStandardMarket();
             return;
         }
         bool testing = Economy().TestingMarket;

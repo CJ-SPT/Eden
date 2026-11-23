@@ -54,18 +54,18 @@ internal sealed class PilotServices(
         using var stationPresence = guests;
         using var tradePresence = trades;
         using var chatPresence = chat;
-        using PilotCallContext context = new(
-            accountId,
-            pilots.ReadAccount(accountId),
-            pilots.ListPilots(accountId),
-            flights.Create,
-            clientId,
-            signedSettings
-        )
+        using var context = CreateContext();
+        using var modSession = new Eden.Protocol.Modding.ModSessionObserver(context, modEvents, operations);
+
+        PilotCallContext CreateContext()
         {
-            Roles = identity.ReadRoles(accountId),
-        };
-        using var modSession = new Eden.Protocol.Modding.ModSessionObserver(context, modEvents);
+            using var operation = operations?.Begin();
+            return new(accountId, pilots.ReadAccount(accountId), pilots.ListPilots(accountId), flights.Create, clientId, signedSettings)
+            {
+                Roles = identity.ReadRoles(accountId),
+            };
+        }
+
         PilotSessionOutput output = new(context, accountId, clientId, write, report, diagnostics);
         PilotSessionCalls calls = new(
             context,
@@ -159,6 +159,7 @@ internal sealed class PilotServices(
         {
             if (context.Selected)
             {
+                using var operation = operations?.Begin();
                 using var system = context.Flight.UseSystem();
                 updates.DisconnectAutoMining(context);
             }

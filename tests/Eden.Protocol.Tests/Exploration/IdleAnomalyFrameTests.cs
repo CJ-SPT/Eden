@@ -27,6 +27,47 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
 {
+    [Fact]
+    public async Task FirstExplorationFrameAndScannerRegistrationExecuteNoSql()
+    {
+        using NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
+        WorldDatabase database = new(fixture.Db.Path);
+        PassiveCatalogFixture.LoadCombatAnomalyWorld(database.CatalogPath);
+        PassiveCatalogFixture.LoadDedAndGhost(database.CatalogPath);
+        PassiveCatalogFixture.LoadWormholes(database.CatalogPath);
+        using (CatalogDbContext writable = new(database.CatalogPath, writable: true))
+        {
+            writable.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO SourceRecord(Dataset,Key,Data)
+                SELECT 'client/asteroidcountbytypeidbeltid', CAST(Id AS TEXT), '{{}}' FROM Celestial WHERE GroupId=9;
+                """
+            );
+        }
+        using (CatalogDbContext catalog = new(database.CatalogPath))
+        {
+            catalog.Definitions.PrepareRuntime();
+            ExplorationCatalogPreparation.Prepare(catalog);
+        }
+
+        int system = CombatAnomalyRules.SystemId;
+        fixture.Db.Store.SetPosition(fixture.Pilot.ShipId, new(1e12, 1e12, 1e12), system);
+
+        List<string> commands = [];
+        using var guard = GameplaySqlGuard.Begin();
+        using var metrics = SessionPerformance.Begin("first exploration and scanner", _ => { }, force: true, command: commands.Add)!;
+        using ReplayClient pilot = new(fixture, 1000001);
+        fixture.Clock.Seconds++;
+        await pilot.Advance();
+        pilot.RegisterScanner();
+        await pilot.Advance();
+
+        var signatures = fixture.Db.Services.GetRequiredService<ICombatAnomalies>().Signatures(system, fixture.Clock.Now);
+        Assert.Contains(signatures, site => site.Exploration == ExplorationKind.Ghost);
+        Assert.True(metrics.Commands == 0, string.Join(Environment.NewLine, commands));
+        Assert.Equal(0, metrics.Connections);
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
@@ -100,8 +141,8 @@ public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
         var observer = fixture.Db.Store.FindPilot(1000002)!;
         fixture.Db.Store.SetPosition(observer.ShipId, origin + new SpacePosition(1e10, 0, 0), CombatAnomalyRules.SystemId);
         fixture.Db.Services.GetRequiredService<IPilotContacts>().Add(90000001, observer.PilotId, 0, true);
-        using ReplayClient pod = new(fixture, sites, 1000001);
-        using ReplayClient remote = new(fixture, sites, 1000002);
+        using ReplayClient pod = new(fixture, 1000001, sites);
+        using ReplayClient remote = new(fixture, 1000002, sites);
         Assert.Equal(FleetDefinitions.CapsuleGroup, pod.Context.Pilot.ShipGroupId);
         List<double> milliseconds = [];
         int commands = 0;
@@ -161,11 +202,12 @@ public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
         private readonly IServiceScope _scope;
         private readonly PilotSessionTick _tick;
         private readonly PilotSessionOutput _transport;
+        private readonly PilotCallRouter _router;
         private readonly long _account;
         public PilotCallContext Context { get; }
         public int Bytes { get; set; }
 
-        internal ReplayClient(NpcCombatTests.Fixture fixture, CombatAnomalyStore sites, long account)
+        internal ReplayClient(NpcCombatTests.Fixture fixture, long account, CombatAnomalyStore? sites = null)
         {
             _account = account;
             _scope = fixture.Db.Services.CreateScope();
@@ -177,18 +219,22 @@ public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
             Context.Flight.Snapshot();
             var updates = services.GetRequiredService<PilotUpdateCoordinator>();
             updates.Enter(Context);
-            var router = services.GetRequiredService<PilotCallRouter>();
+            _router = services.GetRequiredService<PilotCallRouter>();
             Assert.IsType<PilotCallResult.Success>(
-                router.Call(Context, "onlineStatus", "GetInitialState", Array.Empty<object?>(), _ => { })
+                _router.Call(Context, "onlineStatus", "GetInitialState", Array.Empty<object?>(), _ => { })
             );
-            Assert.IsType<PilotCallResult.Success>(router.Call(Context, "userSvc", "GetRedeemTokens", Array.Empty<object?>(), _ => { }));
+            Assert.IsType<PilotCallResult.Success>(_router.Call(Context, "userSvc", "GetRedeemTokens", Array.Empty<object?>(), _ => { }));
             _tick = new(
                 fixture.Clock,
                 updates,
                 services.GetRequiredService<SkillHandler>(),
                 services.GetRequiredService<IAsteroidField>(),
                 services.GetRequiredService<IPilotOperationScope>(),
-                anomalies: new(sites, services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), fixture.Clock)
+                anomalies: sites is null
+                    ? services.GetRequiredService<CombatAnomalyHandler>()
+                    : new(sites, services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), fixture.Clock),
+                abyss: sites is null ? services.GetRequiredService<AbyssalHandler>() : null,
+                environments: sites is null ? services.GetRequiredService<WormholeEnvironmentHandler>() : null
             );
             _transport = new(
                 Context,
@@ -204,6 +250,11 @@ public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
         }
 
         internal Task Advance() => _tick.AdvanceAsync(Context, _transport, _ => { }, _account, _account);
+
+        internal void RegisterScanner() =>
+            Assert.IsType<PilotCallResult.Success>(
+                _router.Call(Context, "scanMgr", "SignalTrackerRegister", Array.Empty<object?>(), _ => { })
+            );
 
         public void Dispose()
         {

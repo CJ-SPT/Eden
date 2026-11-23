@@ -7,6 +7,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Chat;
 using Microsoft.Extensions.DependencyInjection;
@@ -112,6 +113,7 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
                 );
             }
             using var scope = scopes.CreateScope();
+            using var operation = scope.ServiceProvider.GetRequiredService<IPilotOperationScope>().Begin();
             await scope
                 .ServiceProvider.GetRequiredService<XmppSession>()
                 .RunAsync(

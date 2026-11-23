@@ -77,6 +77,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
+        Eden.Infrastructure.Diagnostics.GameplaySqlGuard.Check("world context");
         if (_snapshot is not null)
         {
             if (_projectionOwner is not null)
@@ -85,7 +86,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             }
             // Detached checkpoint projection uses the same model and SQLite rules,
             // without consulting or invalidating the advancing resident world.
-            options.TracePerformance().UseSqlite(_snapshot, contextOwnsConnection: false);
+            options.TracePerformance("world snapshot").UseSqlite(_snapshot, contextOwnsConnection: false);
             return;
         }
         options
@@ -96,7 +97,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
                 new MarketPreparationTransactions(this),
                 new CombatPersistenceBridge(path)
             )
-            .TracePerformance()
+            .TracePerformance("world")
             .UseSqlite(WorldConnections.Create(path, Participants, IsResidentProjection, CommittedSystems), contextOwnsConnection: true);
     }
 
@@ -401,6 +402,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             )
             .HasKey(s => new { s.PilotId, s.Key });
         model.Entity<SavedCharacterSetting>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
+        model.Entity<Eden.Data.World.Modding.SavedWorldModState>().ToTable("WorldModState").HasKey(s => s.Id);
         model.Entity<SavedCharacterSheet>().ToTable("WorldCharacterSheet").HasKey(s => s.PilotId);
         model.Entity<SavedCharacterSheet>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
         model

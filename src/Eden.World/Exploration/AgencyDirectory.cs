@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Eden.Data.World.Exploration;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Exploration;
@@ -14,8 +15,21 @@ namespace Eden.World.Exploration;
 [Injectable(InjectionType.Singleton)]
 internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
 {
-    private long _catalogGeneration = -1;
-    private IReadOnlyDictionary<int, int> _iceSystems = new Dictionary<int, int>();
+    private static readonly CatalogDefinition<FrozenDictionary<int, int>> s_iceSystems = new("agency-ice-systems", LoadIceSystems);
+
+    internal static FrozenDictionary<int, int> IceSystems(CatalogDbContext catalog) => catalog.GlobalDefinition(s_iceSystems);
+
+    private static FrozenDictionary<int, int> LoadIceSystems(CatalogDbContext catalog, int unused) =>
+        // Match MiningSiteStore's admission. A count advertises one field per
+        // system, even when several pinned templates are eligible there.
+        MiningSiteCatalog
+            .Sites.Where(s =>
+                s.Family == MiningFamily.Ice && s.Deposits.All(d => catalog.FittingType(d.TypeId)?.GroupId == MiningDefinitions.IceGroup)
+            )
+            .SelectMany(s => s.Systems!)
+            .Distinct()
+            .Where(id => catalog.FindSystem(id) is not null && catalog.CelestialsInSystem(id).Any())
+            .ToFrozenDictionary(id => id, _ => 1);
 
     public AgencyIceDirectory Ice(long now)
     {
@@ -27,22 +41,8 @@ internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
-            if (_catalogGeneration != database.Catalog.Identity.Generation)
-            {
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                // Match MiningSiteStore's admission. A count advertises one field per
-                // system, even when several pinned templates are eligible there.
-                _iceSystems = MiningSiteCatalog
-                    .Sites.Where(s =>
-                        s.Family == MiningFamily.Ice
-                        && s.Deposits.All(d => catalog.FittingType(d.TypeId)?.GroupId == MiningDefinitions.IceGroup)
-                    )
-                    .SelectMany(s => s.Systems!)
-                    .Distinct()
-                    .Where(id => catalog.FindSystem(id) is not null && catalog.CelestialsInSystem(id).Any())
-                    .ToDictionary(id => id, _ => 1);
-                _catalogGeneration = database.Catalog.Identity.Generation;
-            }
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            var iceSystems = IceSystems(catalog);
             var latest = WorldActionScope.Inspect(
                 database,
                 world =>
@@ -54,7 +54,7 @@ internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
                         .Select(group => group.MaxBy(s => s.Id)!)
                         .ToArray()
             );
-            var counts = _iceSystems.ToDictionary();
+            var counts = iceSystems.ToDictionary();
             List<AnomalySystemSites> known = [];
             foreach (var site in latest)
             {

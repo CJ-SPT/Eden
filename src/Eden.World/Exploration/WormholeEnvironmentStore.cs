@@ -46,7 +46,10 @@ internal sealed class WormholeEnvironmentStore(WorldDatabase database) : IWormho
         position?.SystemId is int system ? At(catalog, system) : null;
 
     internal static WormholeEnvironment? At(CatalogDbContext catalog, int system) =>
-        WormholeRules.IsWormholeSystem(system) ? catalog.Definitions.GlobalDefinition(s_environments).GetValueOrDefault(system) : null;
+        WormholeRules.IsWormholeSystem(system) ? Environments(catalog).GetValueOrDefault(system) : null;
+
+    internal static FrozenDictionary<int, WormholeEnvironment> Environments(CatalogDbContext catalog) =>
+        catalog.GlobalDefinition(s_environments);
 
     private static FrozenDictionary<int, WormholeEnvironment> Load(CatalogDbContext catalog, int unused)
     {

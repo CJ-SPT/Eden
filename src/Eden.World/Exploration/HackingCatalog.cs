@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Eden.Data.Catalog.Exploration;
@@ -21,17 +22,18 @@ internal static class HackingCatalog
     private const int CivilianDataAnalyzer = 27014;
     private const int CivilianRelicAnalyzer = 27019;
     internal static readonly IReadOnlyList<ExplorationDefinition> Sites = Load();
-    private static readonly CatalogDefinition<ImmutableArray<int>> s_loot = new("exploration-rewards", LoadLoot);
+    private static readonly CatalogDefinition<FrozenDictionary<long, ImmutableArray<int>>> s_loot = new("exploration-rewards", LoadLoot);
 
-    internal static ImmutableArray<int> Loot(CatalogDbContext catalog, int group) => catalog.Definition(s_loot, group);
+    internal static FrozenDictionary<long, ImmutableArray<int>> LootGroups(CatalogDbContext catalog) => catalog.GlobalDefinition(s_loot);
 
-    private static ImmutableArray<int> LoadLoot(CatalogDbContext catalog, int group) =>
+    internal static ImmutableArray<int> Loot(CatalogDbContext catalog, int group) => LootGroups(catalog).GetValueOrDefault(group, []);
+
+    private static FrozenDictionary<long, ImmutableArray<int>> LoadLoot(CatalogDbContext catalog, int unused) =>
         catalog
             .Records(CatalogData.Client.Types)
-            .Where(t => t.Value.GroupID == group && t.Value.Published == 1)
-            .Select(t => checked((int)t.Key))
-            .Order()
-            .ToImmutableArray();
+            .Where(t => t.Value is { GroupID: not null, Published: 1 })
+            .GroupBy(t => t.Value.GroupID!.Value)
+            .ToFrozenDictionary(g => g.Key, g => g.Select(t => checked((int)t.Key)).Order().ToImmutableArray());
 
     private static readonly CatalogTypeRule s_support = new(typeof(HackingCatalog).FullName!, Validate);
 

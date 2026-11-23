@@ -13,7 +13,7 @@ internal static class GhostSiteCatalog
 {
     private static readonly CatalogDefinition<ImmutableArray<ExplorationDefinition>> s_sites = new("ghost-sites", Load);
 
-    internal static ImmutableArray<ExplorationDefinition> Read(CatalogDbContext catalog) => catalog.Definition(s_sites, 0);
+    internal static ImmutableArray<ExplorationDefinition> Read(CatalogDbContext catalog) => catalog.GlobalDefinition(s_sites);
 
     internal static ExplorationDefinition Find(CatalogDbContext catalog, int id) => Read(catalog).Single(s => s.DungeonId == id);
 

@@ -38,7 +38,7 @@ internal static class PlanetaryCatalogReader
         (_, _) => new()
     );
 
-    internal static PlanetaryCatalog Read(CatalogDbContext catalog) => catalog.Definition(s_catalog, 0);
+    internal static PlanetaryCatalog Read(CatalogDbContext catalog) => catalog.GlobalDefinition(s_catalog);
 
     internal static IReadOnlyDictionary<int, ImmutableArray<PlanetaryPlanet>> ProductionSites(
         CatalogDbContext catalog,

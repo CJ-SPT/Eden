@@ -15,6 +15,7 @@ internal sealed class LiveMarketSummaries
     private readonly Dictionary<long, PilotLocation> _locations = [];
     private readonly Dictionary<(MarketScope Scope, int Location), Entry> _views = [];
     private long _catalog;
+    private long _ordersRevision;
 
     private sealed record Entry(MarketSummary Summary, long Catalog, WorldSettings Settings, long At, long ActiveAt)
     {
@@ -93,17 +94,45 @@ internal sealed class LiveMarketSummaries
         }
     }
 
-    internal void Publish(MarketSummary summary, MarketScope scope, long catalog, WorldSettings settings, long now, long active)
+    internal long CaptureLocation(long pilot, long ship, int station, int system, int region)
     {
         lock (_gate)
         {
+            if (_locations.Count >= MaximumEntries && !_locations.ContainsKey(pilot))
+            {
+                _locations.Clear();
+            }
+            _locations[pilot] = new(ship, station, system, region);
+            return _ordersRevision;
+        }
+    }
+
+    internal void Publish(
+        MarketSummary summary,
+        MarketScope scope,
+        long catalog,
+        WorldSettings settings,
+        long now,
+        long active,
+        long? capturedRevision = null
+    )
+    {
+        lock (_gate)
+        {
+            PilotLocation location = new(summary.ShipId, summary.StationId, summary.SystemId, summary.RegionId);
+            if (
+                capturedRevision is long revision
+                && (revision != _ordersRevision || _locations.GetValueOrDefault(summary.PilotId) != location)
+            )
+            {
+                return;
+            }
             if (_catalog != catalog || _views.Count >= MaximumEntries || _locations.Count >= MaximumEntries)
             {
                 _views.Clear();
                 _locations.Clear();
             }
             _catalog = catalog;
-            PilotLocation location = new(summary.ShipId, summary.StationId, summary.SystemId, summary.RegionId);
             _locations[summary.PilotId] = location;
             _views[(scope, Location(location, scope))] = new(summary, catalog, settings, now, active);
         }
@@ -115,7 +144,7 @@ internal sealed class LiveMarketSummaries
         {
             lock (_gate)
             {
-                return _views.Count != 0;
+                return _views.Count != 0 || _locations.Count != 0;
             }
         }
     }
@@ -153,10 +182,15 @@ internal sealed class LiveMarketSummaries
                     && changes.Any(c => c.Table is "WorldMarketOrder" or "WorldPersonalOrder" or "WorldRegionalMarketStock")
             )
             {
+                _ordersRevision++;
                 _views.Clear();
             }
             else if (locations is not null)
             {
+                if (locations.Any(location => !location.Bid))
+                {
+                    _ordersRevision++;
+                }
                 foreach (var location in locations.Where(location => !location.Bid))
                 {
                     _views.Remove((MarketScope.Station, location.Station));

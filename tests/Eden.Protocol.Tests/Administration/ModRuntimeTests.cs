@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.World.Modding;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Modding;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Modding;
@@ -6,6 +8,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Server;
 using Eden.Server.Modding;
 using Eden.World.Modding;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -54,12 +57,15 @@ public sealed class ModRuntimeTests
             );
         }
         Assert.True(store.BeginActivation());
-        using var services = ServerServices.Build(new WorldDatabase(world.Path));
+        WorldDatabase runtimeDatabase = new(world.Path);
+        using LiveWorld live = new(runtimeDatabase, TimeProvider.System, _ => { });
+        live.Economy.Warm();
+        using var services = ServerServices.Build(runtimeDatabase);
         var runtime = services.GetRequiredService<ModRuntime>();
         runtime.Start();
         store.CompleteActivation();
-        Assert.Equal("true", store.ReadState("test.runtime", "started"));
-        Assert.Null(store.ReadState("other.mod", "started"));
+        Assert.Equal("true", store.ReadRuntimeState("test.runtime", "started"));
+        Assert.Null(store.ReadRuntimeState("other.mod", "started"));
         var pilot = new ModPilot(1000001, 90000001, 0, 60003760, 30000142);
         var reply = runtime.Execute("test.runtime", "hello", new(pilot, "hello"));
         Assert.True(reply.Success);
@@ -73,14 +79,102 @@ public sealed class ModRuntimeTests
         Assert.True(reward.Success);
         Assert.Equal(reward.Json, runtime.Execute("test.runtime", "reward", new(pilot, "")).Json);
         runtime.Publish(new(ModEventKind.PilotSelected, pilot));
-        Assert.Equal("90000001", new ModStore(new WorldDatabase(world.Path)).ReadState("test.runtime", "selected"));
+        Assert.Equal("90000001", new ModStore(new WorldDatabase(world.Path)).ReadRuntimeState("test.runtime", "selected"));
         runtime.Publish(new(ModEventKind.LocationChanged, pilot));
-        Assert.Equal("1", store.ReadState("test.runtime", "locations"));
+        Assert.Equal("1", store.ReadRuntimeState("test.runtime", "locations"));
         runtime.Publish(new(ModEventKind.PilotDisconnected, pilot));
-        Assert.Equal("true", store.ReadState("test.runtime", "disconnected"));
+        Assert.Equal("true", store.ReadRuntimeState("test.runtime", "disconnected"));
         Assert.Throws<InvalidOperationException>(() => runtime.Publish(new(ModEventKind.LocationChanged, pilot)));
         Assert.True(runtime.FailureToken.IsCancellationRequested);
         Assert.Equal(built.Id, store.Status().Active!.Id);
+    }
+
+    [Fact]
+    public void CommandsAndSessionEventsUseMigratedResidentStateWithoutSql()
+    {
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        ModStore store = new(database);
+        store.WriteState("", "world-identity", JsonSerializer.Serialize("preserved"));
+        using (ModDbContext legacy = new(fixture.Path))
+        {
+            legacy.AddRange(
+                new SavedModState
+                {
+                    ModId = "test.state",
+                    Key = "count",
+                    Json = "1",
+                },
+                new SavedModState
+                {
+                    ModId = "test.other",
+                    Key = "count",
+                    Json = "9",
+                },
+                new SavedModIdentity { LogicalId = "test.state:science", TypeId = 9000 }
+            );
+            legacy.SaveChanges();
+        }
+        WorldInitialization.Initialize(database);
+
+        using (LiveWorld live = new(database, TimeProvider.System, _ => { }))
+        using (var services = ServerServices.Build(database))
+        {
+            live.Economy.Warm();
+            var runtime = services.GetRequiredService<ModRuntime>();
+            runtime.Register("test.state", new StatePlugin());
+            runtime.Start();
+            var pilot = new ModPilot(1000001, 90000001, 0, 60003760, 30000142);
+
+            using var guard = GameplaySqlGuard.Begin();
+            using var metrics = SessionPerformance.Begin("mod command and session event", _ => { }, force: true)!;
+            var imported = runtime.Execute("test.state", "probe", new(pilot, "null"));
+            Assert.True(imported.Success);
+            Assert.Equal("[1,9000]", imported.Json);
+            runtime.Publish(new(ModEventKind.PilotSelected, pilot));
+            var updated = runtime.Execute("test.state", "probe", new(pilot, "null"));
+            Assert.True(updated.Success);
+            Assert.Equal("[2,9000]", updated.Json);
+            Assert.Equal("9", store.ReadState("test.other", "count"));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+        }
+
+        Assert.Equal("2", store.ReadState("test.state", "count"));
+        store.WriteState("test.state", "count", "3");
+        WorldInitialization.Initialize(database);
+        using (LiveWorld reopened = new(database, TimeProvider.System, _ => { }))
+        {
+            reopened.Economy.Warm();
+            Assert.Equal("3", store.ReadRuntimeState("test.state", "count"));
+            Assert.Equal("9", store.ReadRuntimeState("test.other", "count"));
+        }
+
+        string backup = Path.Combine(Path.GetDirectoryName(fixture.Path)!, "wiped-mod-state");
+        WorldWipe.Execute(fixture.Path, backup);
+        WorldInitialization.Initialize(database);
+        Assert.Null(store.ReadState("test.state", "count"));
+        Assert.Null(store.ReadState("test.other", "count"));
+        Assert.Equal("preserved", store.WorldIdentity());
+
+        ModStore backedUp = new(new(Path.Combine(backup, "world.sqlite")));
+        Assert.Equal("3", backedUp.ReadState("test.state", "count"));
+        Assert.Equal("9", backedUp.ReadState("test.other", "count"));
+        Assert.Equal("preserved", backedUp.WorldIdentity());
+    }
+
+    private sealed class StatePlugin : IServerMod
+    {
+        public void Register(IModRegistration registration)
+        {
+            var services = registration.Services;
+            registration.Command(
+                "probe",
+                0,
+                _ => ModCommandReply.Ok($"[{services.ReadState("count")},{services.ResolveSkill("test.state:science")}]")
+            );
+            registration.On(ModEventKind.PilotSelected, _ => services.WriteState("count", "2"));
+        }
     }
 
     [Fact]

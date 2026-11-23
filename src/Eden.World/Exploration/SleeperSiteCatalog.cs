@@ -15,14 +15,14 @@ internal static class SleeperSiteCatalog
     private static readonly Lazy<ImmutableArray<AnomalyEncounterReport>> s_reports = new(LoadReports);
     private static readonly CatalogDefinition<ImmutableArray<CombatAnomalyDefinition>> s_definitions = new("sleeper-sites", Load);
 
-    internal static ImmutableArray<CombatAnomalyDefinition> Read(CatalogDbContext catalog) => catalog.Definition(s_definitions, 0);
+    internal static ImmutableArray<CombatAnomalyDefinition> Read(CatalogDbContext catalog) => catalog.GlobalDefinition(s_definitions);
 
     private static readonly CatalogDefinition<ImmutableArray<ExplorationDefinition>> s_exploration = new(
         "sleeper-exploration",
         LoadExploration
     );
 
-    internal static ImmutableArray<ExplorationDefinition> Exploration(CatalogDbContext catalog) => catalog.Definition(s_exploration, 0);
+    internal static ImmutableArray<ExplorationDefinition> Exploration(CatalogDbContext catalog) => catalog.GlobalDefinition(s_exploration);
 
     private static ImmutableArray<ExplorationDefinition> LoadExploration(CatalogDbContext catalog, int unused) =>
         Read(catalog)

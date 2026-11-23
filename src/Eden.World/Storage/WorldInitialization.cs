@@ -66,6 +66,7 @@ public static class WorldInitialization
         using (SessionPerformance.Phase("startup.schema"))
         {
             WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics, setup);
+            mods.ImportRuntimeState(world);
         }
         if (skillsChanged)
         {

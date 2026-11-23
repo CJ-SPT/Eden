@@ -43,6 +43,7 @@ internal sealed partial class CapsuleerScheduler
         CapsuleerProfession DefaultProfession,
         CapsuleerCareerPlan? TrainingPlan,
         TrafficSnapshot? PvpSnapshot,
+        CapsuleerIndustry.FactorySupplyPreparation? FactorySupplies,
         bool PrepareMercoxit,
         bool PrepareMarketOffers
     );
@@ -200,6 +201,19 @@ internal sealed partial class CapsuleerScheduler
             world is EconomyTransaction
             && dockedWork
             && (policy.EarnedPvpShips || job.Action == CapsuleerAction.Trade && policy.MilitiaPatrols);
+        int trainingHull = dockedWork ? resident?.ShipTypeId ?? world.Ships.Find(shipId)?.TypeId ?? 0 : 0;
+        var factorySupplies =
+            dockedWork && job.Action == CapsuleerAction.Trade && world is EconomyTransaction economy && Live is { } live
+                ? CapsuleerIndustry.CaptureFactorySupplies(
+                    economy,
+                    catalog,
+                    live,
+                    job.PilotId,
+                    trainingHull,
+                    work,
+                    clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+                )
+                : null;
         return new(
             job,
             system,
@@ -224,10 +238,11 @@ internal sealed partial class CapsuleerScheduler
                     hauler?.PreparationRoute
                 )
                 : null,
-            dockedWork ? resident?.ShipTypeId ?? world.Ships.Find(shipId)?.TypeId ?? 0 : 0,
+            trainingHull,
             profession,
             trainingPlan,
             preparePvpFits ? database.Traffic : null,
+            factorySupplies,
             mercoxit,
             dockedWork && (world.Settings.Economy.StandardMarket || PilotMarketStore.UsesInstitutionalOffers(world))
         );
@@ -251,6 +266,17 @@ internal sealed partial class CapsuleerScheduler
 
     private void PrepareStationInputs(CatalogDbContext catalog, PreparationInput input)
     {
+        if (input.FactorySupplies is { } factory)
+        {
+            CapsuleerIndustry.PrepareFactorySupplies(catalog, factory, database.Settings.Capsuleers);
+            if (input.PrepareMarketOffers)
+            {
+                foreach (int warehouse in factory.Warehouses)
+                {
+                    market.PrepareMarketOffers(catalog, warehouse);
+                }
+            }
+        }
         if (input.PvpSnapshot is { } snapshot)
         {
             CapsuleerIndustry.PrepareSnapshotPvpFits(catalog, snapshot);

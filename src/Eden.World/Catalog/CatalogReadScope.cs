@@ -1,15 +1,17 @@
 using System.Collections.Concurrent;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
+using Eden.World.Storage;
 
 namespace Eden.World.Catalog;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CatalogReadScope : IPilotOperationScope
+internal sealed class CatalogReadScope(WorldDatabase? database = null) : IPilotOperationScope
 {
     private static readonly AsyncLocal<Operation?> s_current = new();
 
-    public IDisposable Begin() => new Operation();
+    public IDisposable Begin() => new Operation(database?.GuardGameplaySql == true);
 
     internal static CatalogProvider Resolve(string path, CatalogCacheOptions? options)
     {
@@ -32,10 +34,12 @@ internal sealed class CatalogReadScope : IPilotOperationScope
         // The host resolves one operation scope. Keep catalog generations and
         // connection reuse in that same lifetime instead of competing registrations.
         private readonly IDisposable _connection = new CatalogConnectionScope().Begin();
+        private readonly IDisposable? _gameplay;
         internal ConcurrentDictionary<string, CatalogProvider> Catalogs { get; }
 
-        internal Operation()
+        internal Operation(bool guard)
         {
+            _gameplay = guard && !GameplaySqlGuard.IsActive ? GameplaySqlGuard.Begin() : null;
             Catalogs = _previous?.Catalogs ?? new(StringComparer.OrdinalIgnoreCase);
             s_current.Value = this;
         }
@@ -44,6 +48,7 @@ internal sealed class CatalogReadScope : IPilotOperationScope
         {
             _connection.Dispose();
             s_current.Value = _previous;
+            _gameplay?.Dispose();
         }
     }
 }

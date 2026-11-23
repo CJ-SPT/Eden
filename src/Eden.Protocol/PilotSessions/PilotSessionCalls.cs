@@ -63,9 +63,6 @@ internal sealed class PilotSessionCalls(
         }
         string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
         string method = call.Method;
-        // Trusted plugin code runs outside the world owner. Its typed services acquire their own operation scopes.
-        PilotCallResult? modResult =
-            service == "edenMods" ? router.Call(context, service, method, call.Arguments, report, call.Keywords) : null;
         using var operation = operations?.Begin();
         using var systemContext = context.Selected ? context.Flight.UseSystem() : null;
         string description = DescribeCall(service, method, call.Arguments);
@@ -77,6 +74,9 @@ internal sealed class PilotSessionCalls(
             diagnostics?.Trace ?? report,
             received
         );
+        // Trusted plugin code runs outside the world owner but inside the call's accounting.
+        PilotCallResult? modResult =
+            service == "edenMods" ? router.Call(context, service, method, call.Arguments, report, call.Keywords) : null;
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
         long? previousControl = context.ControlledStructureId;

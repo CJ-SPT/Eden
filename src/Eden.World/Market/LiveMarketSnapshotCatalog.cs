@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Eden.Data.Catalog.Market;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 
@@ -12,7 +13,9 @@ namespace Eden.World.Market;
 public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
 {
     private readonly ConcurrentDictionary<int, Lazy<IReadOnlyDictionary<int, LiveMarketOrder[]>>> _regions = new();
+    private readonly ConcurrentDictionary<int, Lock> _preparation = new();
     private LiveMarketSnapshotManifest? _manifest;
+    private volatile bool _ready;
     internal string Root => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(database.Path))!, "market-orders");
 
     public LiveMarketSnapshotManifest ReadManifest() => ReadManifest(Root);
@@ -59,17 +62,25 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
     internal IReadOnlyDictionary<int, LiveMarketOrder[]> RegionOrdersByType(int regionId) =>
         _regions.GetOrAdd(regionId, id => new(() => LoadRegion(id))).Value;
 
+    internal Lock RegionPreparation(int regionId) => _preparation.GetOrAdd(regionId, static _ => new());
+
+    internal bool Ready => _ready;
+
+    internal void CompleteReadiness() => _ready = true;
+
     private static string RegionPath(string root, LiveMarketSnapshotManifest manifest, int regionId) =>
         Path.Combine(root, manifest.Generation, $"{regionId}.json.gz");
 
     private IReadOnlyDictionary<int, LiveMarketOrder[]> LoadRegion(int regionId)
     {
-        var descriptor = Manifest.Regions.SingleOrDefault(region => region.RegionId == regionId);
+        var manifest = Manifest;
+        var descriptor = manifest.Regions.SingleOrDefault(region => region.RegionId == regionId);
         if (descriptor is null)
         {
             return new Dictionary<int, LiveMarketOrder[]>();
         }
-        using var file = File.OpenRead(RegionPath(Root, Manifest, regionId));
+        using var phase = SessionPerformance.Phase("market.loadStandardRegion");
+        using var file = File.OpenRead(RegionPath(Root, manifest, regionId));
         if (!Convert.ToHexString(SHA256.HashData(file)).Equals(descriptor.Sha256, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException("Live market region checksum does not match its manifest.");

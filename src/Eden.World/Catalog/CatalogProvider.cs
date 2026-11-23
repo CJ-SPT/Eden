@@ -329,7 +329,7 @@ public sealed partial class CatalogProvider
 
     // One catalog-wide index per declared definition, retained for this catalog generation.
     internal T GlobalDefinition<T>(CatalogDefinition<T> definition)
-        where T : class
+        where T : notnull
     {
         var index = _globalDefinitions.GetOrAdd(
             definition,
@@ -373,6 +373,11 @@ public sealed partial class CatalogProvider
     public ImmutableArray<int> BlueprintsForProduct(int productId) => _blueprints.Value.GetValueOrDefault(productId, []);
 
     public ImmutableDictionary<DogmaAttributeId, double> Attributes(int typeId) =>
+        Runtime is { } runtime
+            ? runtime.Attributes.GetValueOrDefault(typeId, ImmutableDictionary<DogmaAttributeId, double>.Empty)
+            : ReadAttributes(typeId);
+
+    private ImmutableDictionary<DogmaAttributeId, double> ReadAttributes(int typeId) =>
         _attributes
             .Read(
                 typeId,
@@ -391,6 +396,15 @@ public sealed partial class CatalogProvider
 
     internal IReadOnlyDictionary<int, ImmutableDictionary<DogmaAttributeId, double>> AttributeSets(IEnumerable<int> typeIds)
     {
+        if (Runtime is { } runtime)
+        {
+            return typeIds
+                .Distinct()
+                .ToFrozenDictionary(
+                    id => id,
+                    id => runtime.Attributes.GetValueOrDefault(id, ImmutableDictionary<DogmaAttributeId, double>.Empty)
+                );
+        }
         Dictionary<int, ImmutableDictionary<DogmaAttributeId, double>> result = [];
         List<int> missing = [];
         foreach (int id in typeIds.Distinct())
@@ -692,12 +706,22 @@ public sealed partial class CatalogProvider
                 key,
                 () =>
                 {
+                    string encoded = CatalogKey.Encode(key);
+                    if (_owner.Runtime is { } runtime)
+                    {
+                        return Decode(runtime.Sources.Records(_source.Name), encoded);
+                    }
                     string path = _owner.Identity.Path;
                     var inputs = CatalogConnectionScope.Inputs(path);
                     using var owned = inputs.IsScoped ? null : inputs;
-                    return Decode(inputs.ReadRecord(path, _source.Name, CatalogKey.Encode(key)));
+                    return Decode(inputs.ReadRecord(path, _source.Name, encoded));
                 }
             );
+
+        private CatalogValue<TValue> Decode(IReadOnlyDictionary<string, CatalogRuntimeSources.Payload> records, string key) =>
+            records.TryGetValue(key, out var record)
+                ? new(true, record.Read<TValue>(_source.Name, key), EntryOverhead + record.Length * PayloadExpansionEstimate)
+                : new(false, default!, EntryOverhead);
 
         private static CatalogValue<TValue> Decode(SourceRecord? record) =>
             record is null
@@ -732,17 +756,19 @@ public sealed partial class CatalogProvider
             if (missing.Count > 0)
             {
                 _owner.RequireCurrent();
-                using CatalogDbContext catalog = new(_owner.Identity.Path);
-                var encoded = missing.Select(key => CatalogKey.Encode(key)).ToArray();
-                Interlocked.Increment(ref _owner._loads);
-                // One collection parameter avoids thousands of scalar SQLite bindings.
-                var rows = catalog
-                    .Set<SourceRecord>()
-                    .Where(record => record.Dataset == _source.Name && EF.Parameter(encoded).Contains(record.Key))
-                    .ToDictionary(record => record.Key);
+                var runtime = _owner.Runtime;
+                var records = runtime?.Sources.Records(_source.Name);
+                var rows = runtime is null ? ReadRecords(missing) : null;
                 foreach (var key in missing)
                 {
-                    var value = _memo.Read(key, () => Decode(rows.GetValueOrDefault(CatalogKey.Encode(key))));
+                    var value = _memo.Read(
+                        key,
+                        () =>
+                        {
+                            string encoded = CatalogKey.Encode(key);
+                            return records is null ? Decode(rows!.GetValueOrDefault(encoded)) : Decode(records, encoded);
+                        }
+                    );
                     if (value.Found)
                     {
                         result.Add(key, value.Value);
@@ -750,6 +776,18 @@ public sealed partial class CatalogProvider
                 }
             }
             return result.ToFrozenDictionary();
+        }
+
+        private Dictionary<string, SourceRecord> ReadRecords(IReadOnlyCollection<TKey> keys)
+        {
+            using CatalogDbContext catalog = new(_owner.Identity.Path);
+            var encoded = keys.Select(key => CatalogKey.Encode(key)).ToArray();
+            Interlocked.Increment(ref _owner._loads);
+            // One collection parameter avoids thousands of scalar SQLite bindings.
+            return catalog
+                .Set<SourceRecord>()
+                .Where(record => record.Dataset == _source.Name && EF.Parameter(encoded).Contains(record.Key))
+                .ToDictionary(record => record.Key);
         }
 
         internal CatalogPage<TKey, TValue> Page(string? after, int limit)
@@ -832,9 +870,24 @@ public sealed partial class CatalogProvider
         private FrozenDictionary<TKey, TValue> PinAll()
         {
             _owner.RequireCurrent();
+            var values = _owner.Runtime is { } runtime ? PinRuntime(runtime) : PinFile();
+            Interlocked.Add(ref _owner._pinnedRecords, values.Count);
+            return values;
+        }
+
+        private FrozenDictionary<TKey, TValue> PinRuntime(RuntimeCatalog runtime)
+        {
+            var records = runtime.Sources.Records(_source.Name);
+            return records
+                .Keys.Select(encoded => (Encoded: encoded, Key: JsonSerializer.Deserialize<TKey>(encoded)!))
+                .ToFrozenDictionary(pair => pair.Key, pair => _memo.Read(pair.Key, () => Decode(records, pair.Encoded)).Value);
+        }
+
+        private FrozenDictionary<TKey, TValue> PinFile()
+        {
             using CatalogDbContext catalog = new(_owner.Identity.Path);
             Interlocked.Increment(ref _owner._loads);
-            var values = catalog
+            return catalog
                 .Set<SourceRecord>()
                 .Where(record => record.Dataset == _source.Name)
                 .AsEnumerable()
@@ -842,8 +895,6 @@ public sealed partial class CatalogProvider
                     record => JsonSerializer.Deserialize<TKey>(record.Key)!,
                     record => _memo.Read(JsonSerializer.Deserialize<TKey>(record.Key)!, () => Decode(record)).Value
                 );
-            Interlocked.Add(ref _owner._pinnedRecords, values.Count);
-            return values;
         }
     }
 }

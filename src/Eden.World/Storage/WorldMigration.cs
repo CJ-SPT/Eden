@@ -106,6 +106,7 @@ internal static class WorldMigration
         CorporationCalendarSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);
+        Eden.World.Modding.ModStateSchema.Upgrade(world);
         WorldConfigurationStore.Seed(world, catalog, clock);
         if (
             !world

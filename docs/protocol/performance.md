@@ -6,6 +6,78 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## SQL-free gameplay and cold market preparation
+
+November 23, 2026. The installed server prepares a resident catalog generation before gameplay begins. It loads the
+typed source datasets used by World and Server, the dogma attribute and celestial projections, and the indexes
+needed for first-visit exploration. Large source records are stored as compressed UTF-8. The bounded decoded
+cache can still evict entries. Cold, repeated and absent lookups use the same resident source generation.
+Tooling retains the existing typed SQLite reads for authoring and verification.
+
+Player sessions and gateway requests, bot work and timed gameplay services use a guard at the storage boundary.
+It rejects SQL in gameplay regardless of whether performance tracing is enabled. The catalog policy checks that
+new World and Server source consumers are represented in the startup projection. Gameplay mod commands and events
+use checkpoint-backed resident state and a frozen skill identity index. Startup imports existing named mod state
+from the sidecar without overwriting newer checkpoint values.
+
+Standard market readiness verifies and loads immutable regional stock before listeners and traffic start.
+Regional best-ask reads capture the relevant committed rows under ownership, project their summary outside
+ownership and publish it only for the captured market revision and pilot location. First whole-region
+materialization uses bounded resident commits. Type-specific trading retains lazy stock publication and uses the
+prepared source data. Bot planetary sourcing prepares the relevant requests and catalog sites before Trade
+settlement and checks the resident inputs again before committing.
+
+Checkpoint work retains the relational persistence format. Size queries run against the detached image outside
+the owner. Checkpoint metadata SQL is reported separately from projection commands and from gameplay metrics.
+
+### Automated validation
+
+Release saved-world replays used private copies of the incident checkpoint with its original active skill
+catalog, traffic and Standard market data. The previous Trade revision 1475 recorded 101 catalog commands under
+the world owner. The courier replay requires the original job to reach Arrival revision 1476 at station
+60006511 by the same six-system route, with zero SQL and connection opens in both due Trade actions.
+The final Release run passed in 1 minute 58 seconds. Revision 1475 spent 116.22 ms executing the owned queue action,
+down from 961.14 ms in the previous replay. Its planetary site search took 4.92 ms with zero commands, down from
+244.98 ms and 44 commands. Selection, the first frame and regional best-ask call, and five repeated pairs all
+recorded zero SQL and connection opens. The first frame took 227.31 ms. The first market call took 1,104.05 ms
+for an initially incomplete region, including bounded resident stock commits. Warm market calls took 2.27 to
+5.37 ms. These are single instrumented observations.
+
+The paired Forge market probe returned the same 17,377 asks, including aggregate prices and remaining
+quantities, with zero SQL and connection opens. The old path used one 352.15 ms owner hold and completed
+in 359.75 ms. On the final path, the longest of four owner leases was 35.21 ms and the request completed
+in 155.62 ms. The leases totaled 92.97 ms and the detached summary projection took 31.29 ms.
+This sample starts with the captured generation already imported under the legacy station markers.
+Unseeded regions instead use bounded resident commits with the same prepared input.
+
+The final `ReplaySustainedBotThroughput` run completed 17,631 bot actions with zero failures in a 75-second
+workload across 135 communities. The two cold operations and all 75 timed player requests recorded zero SQL,
+connection opens and fitting rebuilds. Bot work also recorded zero gameplay SQL and opens. The selected workload
+case passed in 2 minutes 38 seconds. Three other theory variants returned early through the case selector.
+The first frame took 258.66 ms. The first best ask for the incomplete region took 1,077.50 ms, with a
+62.63 ms longest shared owner lease. The 30 warmed frames and 15 warmed market requests had p95
+arrival-to-completion times of 25.56 ms and 33.62 ms. Six periodic generation probes and the detached
+checkpoint projection were accounted separately.
+
+Host startup in that replay took 12.58 seconds to prepare the resident catalog and 9.51 seconds to build the
+snapshot PvP fit index. Exploration and market preparation took 0.61 and 3.38 seconds, respectively. These
+operations now precede gameplay. The replay uses automated sessions without a live listener or game transport.
+
+The 69-case rebased Release selection passed in 31 seconds of test execution. It covered catalog reads,
+checkpoint isolation, gateway skill plans, XMPP, ship SKINs, Standard market behavior, cold exploration
+and resident mod state. The final 28-case selection passed in 34 seconds, including the prepared catalog,
+SQL guard, ship SKIN and Standard market checks. The separate guarded exploration and mod package selection
+passed three cases in 54.03 seconds, including migration, restart, stopped reads, wipe and backup. The pinned
+client files were used for headless packaging. All eight catalog setup and policy tests and the code format check passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Planetary sourcing and tether waits during bot trades
 
 A read-only November 23 HostCram capture verified the running revision as `1547ae5f`. At 04:55:54 UTC a Trade

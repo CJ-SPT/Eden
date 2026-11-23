@@ -1,9 +1,11 @@
+using Eden.Infrastructure.Operations;
 using Eden.Modding;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Modding;
 
-internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEvents? events) : IDisposable
+internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEvents? events, IPilotOperationScope? operations = null)
+    : IDisposable
 {
     private ModPilot? _previous;
 
@@ -33,6 +35,7 @@ internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEv
         {
             return;
         }
+        using var operation = operations?.Begin();
         var current = context.Selected ? Pilot(context) : null;
         if (_previous is { } previous && current?.PilotId != previous.PilotId)
         {
@@ -53,6 +56,7 @@ internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEv
     {
         if (_previous is { } previous)
         {
+            using var operation = operations?.Begin();
             _previous = null;
             events?.Publish(new(ModEventKind.PilotDisconnected, previous));
         }

@@ -32,7 +32,7 @@ internal static class WormholeCatalog
 {
     private static readonly CatalogDefinition<WormholeAuthority> s_authority = new("wormhole-authority", Load);
 
-    internal static WormholeAuthority Read(CatalogDbContext catalog) => catalog.Definitions.GlobalDefinition(s_authority);
+    internal static WormholeAuthority Read(CatalogDbContext catalog) => catalog.GlobalDefinition(s_authority);
 
     private static WormholeAuthority Load(CatalogDbContext catalog, int unused)
     {

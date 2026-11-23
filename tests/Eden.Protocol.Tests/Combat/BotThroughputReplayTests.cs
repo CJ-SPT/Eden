@@ -93,6 +93,7 @@ public sealed partial class ServerPerformanceReplayTests
         {
             return;
         }
+        bool verifyGameplaySql = Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_VERIFY_ZERO_SQL") == "1";
         systems = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_SYSTEMS") ?? systems.ToString());
         int observers = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_OBSERVERS") ?? "1");
         int seconds = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_SECONDS") ?? "600");
@@ -120,12 +121,22 @@ public sealed partial class ServerPerformanceReplayTests
         var writingLog = WriteThroughputLog(Path.Combine(destination, name + ".log"), reports.Reader);
         void Report(string line) => reports.Writer.TryWrite(line);
         ConcurrentQueue<OwnershipTiming> ownership = new();
+        ConcurrentQueue<OwnershipTiming> coldOwnership = new();
+        ConcurrentQueue<string> gameplaySqlRejections = new();
+        bool captureColdOwnership = false;
         using var logging = ServerLog.Console.Redirect(
             (level, message) =>
             {
-                if (level is ServerLogLevel.Warning or ServerLogLevel.Error)
+                if (
+                    level is ServerLogLevel.Warning or ServerLogLevel.Error
+                    || verifyGameplaySql && message.StartsWith("Startup ", StringComparison.Ordinal)
+                )
                 {
                     Report(message);
+                }
+                if (verifyGameplaySql && message.Contains("Gameplay attempted to use SQLite", StringComparison.Ordinal))
+                {
+                    gameplaySqlRejections.Enqueue(message);
                 }
             }
         );
@@ -181,6 +192,11 @@ public sealed partial class ServerPerformanceReplayTests
                 }
             }
             using var host = ServerServices.Build(database, clock, liveWorld: true);
+            if (verifyGameplaySql)
+            {
+                File.AppendAllText(progress, "Preparing production gameplay catalogs.\n");
+                ServerStartup.WarmCatalogs(host, database);
+            }
             using var player = new ReplayPlayer(host, clock, observerPilot, observerAccount, Report);
             using var additional = new ThroughputObservers(host, clock, observers - 1, player.Context.Pilot, Report);
             ReplayPlayer[] players = [player, .. additional.Players];
@@ -204,6 +220,10 @@ public sealed partial class ServerPerformanceReplayTests
             }
             using var ownershipObservation = live.ObserveOwnership(timing =>
             {
+                if (Volatile.Read(ref captureColdOwnership))
+                {
+                    coldOwnership.Enqueue(timing);
+                }
                 if (timing.Hold.TotalMilliseconds >= 25 || timing.Wait.TotalMilliseconds >= 25)
                 {
                     ownership.Enqueue(timing);
@@ -260,7 +280,9 @@ public sealed partial class ServerPerformanceReplayTests
             }
             long explorationBytes = GC.GetAllocatedBytesForCurrentThread() - beforeExploration;
             exploration.Stop();
+            Volatile.Write(ref captureColdOwnership, verifyGameplaySql);
             ReplaySample[] cold = [await player.Frame(), await player.Call("marketProxy", "GetRegionBest")];
+            Volatile.Write(ref captureColdOwnership, false);
             foreach (var observer in additional.Players)
             {
                 await observer.Frame();
@@ -271,12 +293,12 @@ public sealed partial class ServerPerformanceReplayTests
             {
                 clock.Offset = TimeSpan.FromSeconds(70);
             }
-            bool traceWorker = Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_WORKER_TRACE") != "0";
+            bool traceWorker = verifyGameplaySql || Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_WORKER_TRACE") != "0";
             using var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin(
                 "sustained bot worker",
                 Report,
                 force: traceWorker,
-                command: Environment.GetEnvironmentVariable("EDEN_SQL_HOTSPOTS") == "1"
+                command: verifyGameplaySql || Environment.GetEnvironmentVariable("EDEN_SQL_HOTSPOTS") == "1"
                     ? sql => sqlCalls.AddOrUpdate(sql, key => (1, Environment.StackTrace), (_, value) => (value.Count + 1, value.Stack))
                     : null,
                 slowCommand: (duration, sql) => Report($"Slow SQL command: {duration.TotalMilliseconds:F2} ms. {sql}")
@@ -499,6 +521,7 @@ public sealed partial class ServerPerformanceReplayTests
                         ExplorationMilliseconds = exploration.Elapsed.TotalMilliseconds,
                         ExplorationAllocatedBytes = explorationBytes,
                         ColdSamples = cold,
+                        ColdOwnership = coldOwnership,
                         Visits = visits,
                         Checkpoints = checkpointReports.DistinctBy(checkpoint => checkpoint.CompletedAt).ToArray(),
                         NpcPopulation = live.NpcPopulationCounts.ToArray(),
@@ -506,6 +529,10 @@ public sealed partial class ServerPerformanceReplayTests
                         TimestampFrequency = Stopwatch.Frequency,
                         ServerGC = System.Runtime.GCSettings.IsServerGC,
                         TraceWorkerPhases = traceWorker,
+                        VerifyGameplaySql = verifyGameplaySql,
+                        WorkerCommands = metrics?.Commands,
+                        WorkerConnections = metrics?.Connections,
+                        CheckpointMetadataCommands = metrics?.CheckpointMetadataCommands,
                         MarketMaintenance = marketMaintenance is not null,
                         NativeCheckpoints = nativeCheckpoints,
                         CheckpointSeconds = database.Settings.Simulation.CheckpointSeconds,
@@ -548,8 +575,22 @@ public sealed partial class ServerPerformanceReplayTests
                         })
                 )
             );
-            File.Copy(Path.Combine(source, "manifest.json"), Path.Combine(destination, name + ".manifest.json"), overwrite: true);
+            if (File.Exists(Path.Combine(source, "manifest.json")))
+            {
+                File.Copy(Path.Combine(source, "manifest.json"), Path.Combine(destination, name + ".manifest.json"), overwrite: true);
+            }
             output.WriteLine($"Systems={systems} backlog={backlog} recovered={recovered} scheduled={diagnostics.Read().ScheduledAgents}");
+            if (verifyGameplaySql)
+            {
+                Assert.Equal(seconds * observers, requests.Count);
+                Assert.True(completedDuringReplay > 0);
+                Assert.All(
+                    cold.Concat(requests.Select(request => request.Result)),
+                    request => Assert.Equal((0, 0), (request.Sql, request.Connections))
+                );
+                Assert.Empty(gameplaySqlRejections);
+                Assert.Equal((0, 0), (metrics?.Commands ?? 0, metrics?.Connections ?? 0));
+            }
             if (seconds >= 600 && Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_BASELINE") != "1")
             {
                 if (requiredPilots is { } required)

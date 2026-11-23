@@ -804,6 +804,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
+- [SQL-free gameplay and cold market preparation](protocol/performance.md#sql-free-gameplay-and-cold-market-preparation)
 - [Planetary sourcing and tether waits during bot trades](protocol/performance.md#planetary-sourcing-and-tether-waits-during-bot-trades)
 - [Session frames blocked by docked bot trades](protocol/performance.md#session-frames-blocked-by-docked-bot-trades)
 - [Bot CPU and the historical population ceiling](protocol/performance.md#bot-cpu-and-the-historical-population-ceiling)

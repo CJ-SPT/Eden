@@ -37,15 +37,10 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        var members = world.Filter<Pilot>(pilot => pilot.CorporationId == employer.Id).OrderBy(pilot => pilot.Id).ToArray();
-        if (members.Any(pilot => ActiveSupplyRun(live, pilot) is not null))
+        if (FactoryRequests(world, live, employer.Id, now) is not { } requests)
         {
             return null;
         }
-        var requests = members
-            .Select(member => (member.Id, Request: CurrentFactoryRequest(world, live, member.Id, employer.Id, now)))
-            .Where(entry => entry.Request is not null)
-            .ToArray();
         if (work is not null && PlanPlanetaryCollection(world, catalog, courier, employer, work, requests, avoided, now) is { } planetary)
         {
             return planetary;
@@ -158,6 +153,22 @@ internal sealed partial class CapsuleerIndustry
             }
         }
         return null;
+    }
+
+    private static (long Id, FactorySupplyRequest? Request)[]? FactoryRequests(
+        EconomyTransaction world,
+        LiveWorld live,
+        int corporation,
+        long now
+    )
+    {
+        var members = world.Filter<Pilot>(pilot => pilot.CorporationId == corporation).OrderBy(pilot => pilot.Id).ToArray();
+        return members.Any(pilot => ActiveSupplyRun(live, pilot) is not null)
+            ? null
+            : members
+                .Select(member => (member.Id, Request: CurrentFactoryRequest(world, live, member.Id, corporation, now)))
+                .Where(entry => entry.Request is not null)
+                .ToArray();
     }
 
     internal FreightManifest? PurchaseFactoryMaterials(

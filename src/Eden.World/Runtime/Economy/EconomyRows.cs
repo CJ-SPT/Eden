@@ -1005,6 +1005,7 @@ internal sealed partial class ResidentEconomy
         RegisterRedemption();
         RegisterSavedFittings();
         RegisterCharacterSettings();
+        RegisterModState();
         RegisterJetcans();
         RegisterStructureIndustryTables();
         RegisterMailTables();

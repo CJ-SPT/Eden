@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using Eden.Infrastructure.Diagnostics;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
+using Eden.World.Exploration;
 using Eden.World.Market;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,9 +34,14 @@ internal static class ServerStartup
     internal static void WarmCatalogs(IServiceProvider services, WorldDatabase database)
     {
         using var reads = new CatalogReadScope().Begin();
-        Measure("core catalog", () => services.GetRequiredService<CatalogProvider>().PreloadCore());
+        Measure("resident catalog", () => services.GetRequiredService<CatalogProvider>().PrepareRuntime());
+        _ = database.Traffic;
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        Measure("exploration catalog", () => ExplorationCatalogPreparation.Prepare(catalog));
         Measure("market catalog", () => services.GetRequiredService<PilotMarketStore>().WarmMarketCatalog());
         Measure("price catalog", () => services.GetRequiredService<Eden.Protocol.Industry.EconomicPriceCache>().Warm());
         Measure("NPC catalog", () => services.GetRequiredService<NpcPopulationSeeder>().WarmCatalog(database));
+        Measure("capsuleer snapshot fits", () => CapsuleerIndustry.WarmSnapshotPvpFits(database, catalog));
+        database.GuardGameplaySql = true;
     }
 }

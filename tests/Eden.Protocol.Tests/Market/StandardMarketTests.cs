@@ -34,6 +34,105 @@ public sealed class StandardMarketTests
     private const long StartingBalance = 10_000_000;
 
     [Fact]
+    public async Task StandardReadinessKeepsFirstRegionalSummaryAndSettlementOffColdLoad()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = Create(clock);
+        WorldDatabase database = new(fixture.Path);
+        var orders = Enumerable
+            .Range(1, 12_000)
+            .Select(id => Order(clock, id, 100 + id, 3))
+            .Append(Order(clock, 12_001, 200, 5) with { TypeId = Pyerite })
+            .ToArray();
+        WriteSnapshot(database, clock, orders);
+        string regionPath = Path.Combine(
+            database.MarketSnapshot.Root,
+            database.MarketSnapshot.ReadManifest().Generation,
+            $"{Region}.json.gz"
+        );
+        using (var host = ServerServices.Build(database, clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var market = Assert.IsType<PilotMarketStore>(host.GetRequiredService<IPilotMarket>());
+            live.Economy.Warm();
+            database.Catalog.PrepareRuntime();
+            List<(PerformanceSample Sample, bool Owned)> startup = [];
+            using (SessionPerformance.Capture("standard readiness", sample => startup.Add((sample, live.IsEntered))))
+            {
+                market.WarmMarketCatalog();
+            }
+            Assert.False(Assert.Single(startup, phase => phase.Sample.Name == "market.loadStandardRegion").Owned);
+            Assert.DoesNotContain(startup, phase => phase.Sample.Name == "market.seedStandardOrders");
+            string parked = regionPath + ".parked";
+            File.Move(regionPath, parked);
+            try
+            {
+                List<(PerformanceSample Sample, bool Owned)> calls = [];
+                using (var metrics = SessionPerformance.Capture("ready standard market", sample => calls.Add((sample, live.IsEntered))))
+                {
+                    using (var action = live.Economy.Begin())
+                    using (CatalogDbContext catalog = new(database.CatalogPath))
+                    {
+                        Assert.Empty(action.RegionalOrders(Region));
+                        Assert.Equal(5, Assert.Single(market.SupplyOrders(action, catalog, Hub, [Pyerite], Pilot)).Remaining);
+                        Assert.Empty(action.RegionalOrders(Region, Tritanium));
+                        action.Commit();
+                    }
+                    var best = market.BestAsks(Pilot, MarketScope.Region);
+                    Assert.Equal(
+                        new[] { (Tritanium, 101L), (Pyerite, 200L) },
+                        best.OrderBy(order => order.TypeId).Select(order => (order.TypeId, order.PriceCents))
+                    );
+                    Assert.Same(best, market.BestAsks(Pilot, MarketScope.Region));
+                    Assert.Equal(12_000, market.Orders(Pilot, Tritanium).Count);
+                    Assert.Equal(3, Assert.Single(market.Buy(Pilot, Hub, [new(Tritanium, 101, 3)]).Trades).Quantity);
+                    Assert.Equal(102, market.BestAsks(Pilot, MarketScope.Region).Single(order => order.TypeId == Tritanium).PriceCents);
+                    Assert.Equal(0, market.AdvanceDemand());
+                    Assert.Equal(0, metrics.Commands);
+                    Assert.Equal(0, metrics.Connections);
+                }
+                Assert.Contains(calls, phase => phase.Sample.Name == "market.projectStandardBook");
+                Assert.All(calls.Where(phase => phase.Sample.Name == "market.projectStandardBook"), phase => Assert.False(phase.Owned));
+                Assert.False(Assert.Single(calls, phase => phase.Sample.Name == "market.prepareStandardRegion").Owned);
+                Assert.DoesNotContain(calls, phase => phase.Sample.Name == "market.loadStandardRegion");
+
+                // Simulate a legacy save that finished the region through station markers alone.
+                using (var action = live.Economy.Begin())
+                {
+                    var markers = action.Set<SavedStandardMarketType>();
+                    markers.Find(-Region, 0)!.SnapshotTicks = 0;
+                    markers.Find(Region, Tritanium)!.SnapshotTicks = 0;
+                    markers.Find(Region, Pyerite)!.SnapshotTicks = 0;
+                    action.Commit();
+                }
+                List<PerformanceSample> legacy = [];
+                using (SessionPerformance.Capture("legacy station markers", legacy.Add))
+                {
+                    Assert.Equal(12_000, market.Orders(Pilot).Count);
+                }
+                Assert.DoesNotContain(legacy, phase => phase.Name is "market.loadStandardRegion" or "market.seedStandardOrders");
+                Assert.Equal(0, live.Economy.Inspect(world => world.Set<SavedStandardMarketType>().Find(Region, Tritanium)!.SnapshotTicks));
+            }
+            finally
+            {
+                File.Move(parked, regionPath);
+            }
+            await live.FlushAsync();
+        }
+
+        WorldDatabase reopenedDatabase = new(fixture.Path);
+        using var reopened = ServerServices.Build(reopenedDatabase, clock, liveWorld: true);
+        var shop = Assert.IsType<PilotMarketStore>(reopened.GetRequiredService<IPilotMarket>());
+        List<PerformanceSample> restart = [];
+        using (SessionPerformance.Capture("standard restart", restart.Add))
+        {
+            shop.WarmMarketCatalog();
+        }
+        Assert.DoesNotContain(restart, phase => phase.Name is "market.loadStandardRegion" or "market.seedStandardOrders");
+        Assert.Equal(102, shop.BestAsks(Pilot, MarketScope.Region).Single(order => order.TypeId == Tritanium).PriceCents);
+    }
+
+    [Fact]
     public async Task ColdBotQuoteSeedsOnlyRequestedTypeAndPreservesDepletedStockAcrossReopen()
     {
         TestClock clock = new();

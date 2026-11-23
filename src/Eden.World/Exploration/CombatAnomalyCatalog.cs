@@ -49,7 +49,7 @@ internal static class CombatAnomalyCatalog
         Estimate: values => 1024 + values.Length * 16384L
     );
 
-    internal static ImmutableArray<CombatAnomalyDefinition> Read(CatalogDbContext catalog) => catalog.Definition(s_definitions, 0);
+    internal static ImmutableArray<CombatAnomalyDefinition> Read(CatalogDbContext catalog) => catalog.GlobalDefinition(s_definitions);
 
     internal static CombatAnomalyDefinition? Find(CatalogDbContext catalog, int dungeonId) =>
         Read(catalog).FirstOrDefault(d => d.DungeonId == dungeonId);
