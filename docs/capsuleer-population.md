@@ -162,6 +162,7 @@ materials and an available blueprint. The component job delivers back to the ope
 [Miner II component production](protocol/capsuleers.md#miner-ii-components-from-owned-materials)
 
 Venture specialists stage from market stations, reach nearby nullsec Mercoxit belts and sell their mined ore.
+They try alternate systems when the closest deposit is depleted or already has two assigned expeditions.
 A factory short of Morphite can send a corporate hauler to collect the ore in enough trips to run a refining portion.
 [Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight)
 

@@ -115,26 +115,49 @@ internal sealed partial class CapsuleerIndustry
             CapsuleerCorporations.SaveOrganization(world, id, organization with { PvpFitGoal = null });
             return default;
         }
-        if (!PvpRouteAllows(catalog, kit.HullTypeId, visitsHighSecurity))
+        long budget = WalletBalance(world, id) - agent.StartingCents;
+        bool permitted = PvpRouteAllows(catalog, kit.HullTypeId, visitsHighSecurity);
+        bool needsFittingSkills = false;
+        bool qualified = permitted && PvpFitQualified(world, catalog, pilot, kit, parts, out needsFittingSkills);
+        var purchases = qualified ? QuotePvpGoal(world, catalog, id, station, parts, budget) : null;
+        if (purchases is null && owned is null && allowedMilitiaFit is null && budget > 0 && organization.PvpFitReviewAt <= now)
         {
-            return default;
-        }
-        if (!PvpFitQualified(world, catalog, pilot, kit, parts, out bool needsFittingSkills))
-        {
-            bool boughtBook = careerTraining.TrainForEquipment(
+            var affordable = SelectSnapshotPvpGoal(
                 world,
                 catalog,
+                snapshot,
                 pilot,
-                parts.Select(part => part.TypeId).ToArray(),
-                now,
-                improveFittingResources: needsFittingSkills
+                station,
+                current: null,
+                staging,
+                visitsHighSecurity,
+                affordableReadyBudget: budget
             );
-            return new(MarketChanged: boughtBook);
+            if (affordable?.Kit() is { } starter && QuotePvpGoal(world, catalog, id, station, starter.Parts(), budget) is { } quote)
+            {
+                kit = starter;
+                purchases = quote;
+            }
+            else
+            {
+                organization = organization with { PvpFitReviewAt = now + PvpFitReviewInterval.Ticks };
+                CapsuleerCorporations.SaveOrganization(world, id, organization);
+            }
         }
-        long budget = WalletBalance(world, id) - agent.StartingCents;
-        if (QuotePvpGoal(world, catalog, id, station, parts, budget) is not { } purchases)
+        if (purchases is null)
         {
-            return default;
+            bool boughtBook =
+                permitted
+                && !qualified
+                && careerTraining.TrainForEquipment(
+                    world,
+                    catalog,
+                    pilot,
+                    parts.Select(part => part.TypeId).ToArray(),
+                    now,
+                    improveFittingResources: needsFittingSkills
+                );
+            return new(MarketChanged: boughtBook);
         }
         var bought = market.ExecuteBuy(world, catalog, id, station, purchases, 0);
         if (bought.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(purchase => (long)purchase.Quantity))

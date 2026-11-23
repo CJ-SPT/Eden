@@ -289,6 +289,11 @@ can deal damage. Support fits qualify where gangs can use them. The resident tra
 loads the ship, then saves its identity alongside the parked work ship. Paid fits qualify for roams, camps and gangs
 under ordinary security and contact rules. Capsule recovery can reboard the parked work ship at the same station.
 
+On deployed revision `341589a5`, a November 23 checkpoint showed 24 of 3,082 saved hauler pilots with a recorded
+earned PvP ship and one independent PvP expedition in space. When a pilot's saved first fit cannot be flown or bought,
+it now checks for an affordable, usable snapshot fit at the same dock. The existing fit and budget checks govern
+the purchase. A failed alternative search uses the existing review interval. Later upgrades still follow saved goals.
+
 EVE University documents earning ISK through mining, trade and ratting, and the regional market's station-based orders.
 The local EVE.js 261108.1 reference targets build 3396210. `doc/MARKET_SETUP.md` describes synthetic market seeding over
 ordinary market orders and `externalservices/market-server/README.md` describes order precedence. Eden's Standard market
@@ -1204,6 +1209,20 @@ In a read-only host checkpoint spot sample on November 23, 2026, running revisio
 gate-transfer jobs belonged to Venture pilots. All six had the Mining career and an active Mercoxit expedition.
 The sample describes the queued jobs at that checkpoint. It provides no count of completed jumps or repeated crossings.
 
+### Mercoxit traffic concentration at Y-CWQY
+
+A later November 23 checkpoint on `341589a5` contained 35 simulated ships in space in Y-CWQY. All were Ventures on
+Mercoxit expeditions. All 48 active Mercoxit routes in that checkpoint ended in Y-CWQY through the Amarr link. The
+nearest-deposit cache had assigned the same destination to founders from many staging systems. Live deposits could
+keep attracting departures even after the depleted-belt check was added.
+
+The cached reciprocal-gate search now keeps up to four distinct destinations within eight jumps. A miner tries the
+closest eligible destination with ore and room, or stays with local work. A system stops accepting departures once two
+expeditions are assigned. A committed expedition reserves its destination through its return and releases it when the work ends.
+The resident index rebuilds from saved miner progress. Existing trips can finish at their assigned destination.
+EVE University documents the deep-core mining requirement. The EVE.js asteroid service lists the same three ore variants.
+[EVE University mining](https://wiki.eveuniversity.org/Mining)
+
 The miner unloads at the staging station and lists one reprocessing portion from its mined inventory. The miner pays
 the normal broker fee and can post a lower ask if its wallet cannot fund the reference price. While that listing is
 open it can resume ordinary mining. A Miner II factory's Morphite shortfall can trigger a normal corporate purchase
@@ -1220,9 +1239,13 @@ reference identifies the same three grades (SHA-256 `8CA75BC0E2CA005F2E719D7ED9C
 
 ### Automated validation
 
-`VentureLaunchesForMercoxitOnlyWhenSavedDepositsContainOre` runs the docked founder's departure with a viable and
-a depleted resident belt. The viable case starts its gate leg, while the depleted case skips the Mercoxit trip.
-Both cases and the existing restart and freight replay passed together in 19.55 seconds including the build.
+`VentureLaunchesForMercoxitOnlyWhenThereIsOreAndRoom` runs the docked founder's departure with a viable and
+a depleted resident belt and with a full closer destination. The latter starts its gate leg to the other deposit.
+The existing restart and freight replay also checks that the in-flight miner still occupies a destination slot after reload.
+The expanded PvP replay exercises a blocked saved starter fit with another affordable and flyable fit in local stock.
+The final traffic navigation, patrol, expedition and supply selection passed 41 tests in 34 seconds. The solution build
+took 13.30 seconds with no warnings or errors. The clean rebase build took 11.87 seconds. Its selection also included
+the adjacent HIC changes from main and passed all 55 tests in 28 seconds. Catalog and formatting policy checks passed.
 
 `BotsMineAndHaulMercoxitToTheMinerTwoFactoryAcrossRestarts` starts with no Mercoxit or Morphite sellers, reopens the
 world with the miner operating in a stationless system and again after a hauler buys the first half of a refining

@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.World.Capsuleers;
 
 namespace Eden.World.Runtime.Economy;
 
@@ -20,6 +21,22 @@ internal sealed partial class ResidentEconomy
             if (!suspensions.Contains(key) && jobs.Snapshot(key) is { } job)
             {
                 yield return (job.DueTicks, job.PilotId);
+            }
+        }
+    }
+
+    internal IEnumerable<(long Pilot, int Destination)> SavedMercoxitExpeditions()
+    {
+        var communities = (EconomyTable<SavedCapsuleerCommunity, EconomySavedCapsuleerCommunity>)_tables[typeof(SavedCapsuleerCommunity)];
+        foreach (var key in communities.Keys)
+        {
+            if (
+                communities.Snapshot(key) is { PilotId: long pilot, Progress: { } progress }
+                && Peek<SavedCapsuleerAgent>(pilot)?.Career == CapsuleerCareer.Mining
+                && MinerCheckpoint.Read(progress)?.Mercoxit?.Systems is [.., int destination]
+            )
+            {
+                yield return (pilot, destination);
             }
         }
     }

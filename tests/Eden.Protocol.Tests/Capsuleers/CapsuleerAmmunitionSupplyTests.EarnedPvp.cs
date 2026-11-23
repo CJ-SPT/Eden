@@ -32,10 +32,15 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed partial class CapsuleerAmmunitionSupplyTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(bool remoteSupplier, bool progress)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
+    public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(
+        bool remoteSupplier,
+        bool progress,
+        bool blockedGoal
+    )
     {
         const int incursus = (int)TechOneHullType.Incursus;
         const int rifter = (int)TechOneHullType.Rifter;
@@ -301,6 +306,19 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
 
                 var usableHulls = PilotSkillReader.UsableTypes(work, catalog, pilotId, [incursus, nextHull]);
                 Assert.Equal(incursus, Assert.Single(usableHulls));
+                if (blockedGoal)
+                {
+                    var organization = CapsuleerCorporations.Organization(work, pilotId);
+                    var goal = Assert.IsType<CapsuleerPvpFitGoal>(organization.PvpFitGoal);
+                    CapsuleerCorporations.SaveOrganization(
+                        work,
+                        pilotId,
+                        organization with
+                        {
+                            PvpFitGoal = goal with { HullTypeId = nextHull },
+                        }
+                    );
+                }
                 var turn = supply.TryBuyEarnedPvpShip(work, catalog, snapshot, docked, fixture.Clock.Now);
                 Assert.Equal(!remoteSupplier, turn.Boarded);
                 Assert.Equal(!remoteSupplier, turn.MarketChanged);

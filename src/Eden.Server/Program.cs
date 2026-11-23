@@ -354,6 +354,10 @@ internal static class Program
             // Load the canonical world image before accepting players or starting bot turns.
             // The first economic action must not pay the full saved-world hydration cost.
             ServerStartup.Measure("resident readiness", world.Economy.Warm);
+            if (database.Settings.Capsuleers is { Enabled: true, Miners: true })
+            {
+                ServerStartup.Measure("restore Mercoxit expeditions", world.WarmMercoxitExpeditions);
+            }
             ServerStartup.Measure("accounts", accounts.Initialize);
             var mods = services.GetRequiredService<Eden.Server.Modding.ModRuntime>();
             using var modFailure = mods.FailureToken.Register(shutdown.Cancel);

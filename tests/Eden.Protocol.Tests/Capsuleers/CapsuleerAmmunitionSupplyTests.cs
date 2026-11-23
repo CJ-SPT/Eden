@@ -1843,23 +1843,38 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void VentureLaunchesForMercoxitOnlyWhenSavedDepositsContainOre(bool depleted)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void VentureLaunchesForMercoxitOnlyWhenThereIsOreAndRoom(bool depleted, bool busy)
     {
         const int beltSystem = 30000144;
+        const int busySystem = 30000142;
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PassiveCatalogFixture.LoadMining(fixture.Database.CatalogPath);
         PrepareCatalog(fixture);
         PrepareMinerTwoCatalog(fixture);
         PrepareMercoxitRoute(fixture);
+        if (busy)
+        {
+            using CatalogDbContext edit = new(fixture.Database.CatalogPath, writable: true);
+            edit.Database.ExecuteSqlRaw(
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/systems','30000142','{{"securityStatus":-0.8}}'),
+                    ('client/solarsystemcontent','30000142','{{"security":-0.8}}'),
+                    ('client/asteroidcountbytypeidbeltid','40009982','{{"11396":8}}');
+                """
+            );
+        }
         UseLocalOrders(fixture);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
-        Assert.Equal(new[] { Home, beltSystem }, CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions)[Home]);
+        var routes = CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions)[Home];
+        Assert.Equal(busy ? [busySystem, beltSystem] : [beltSystem], routes.Select(route => route[^1]));
         long extractor;
         using (var setup = live.Economy.Begin())
         {
@@ -1887,6 +1902,14 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             }
             setup.Commit();
         }
+        if (busy)
+        {
+            using var owner = live.EnterShared("reserve the closer test deposit");
+            Assert.True(live.MercoxitDepartureAvailable(extractor, busySystem));
+            live.PublishMercoxitExpedition(long.MaxValue, new(Depot, [Home, busySystem]));
+            live.PublishMercoxitExpedition(long.MaxValue - 1, new(Depot, [Home, busySystem], Returning: true));
+            Assert.False(live.MercoxitDepartureAvailable(extractor, busySystem));
+        }
 
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
         using var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
@@ -1911,6 +1934,14 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             $"Unexpected Mercoxit route from {scheduler.Miner(extractor)?.Pilot.SystemId} in activity {work.Activity}: {work.WaitingReason}"
         );
         Assert.Equal(!depleted, work.Activity == MinerActivity.FlyingToGate);
+        Assert.Equal(depleted ? null : (int?)beltSystem, work.Mercoxit?.Systems[^1]);
+        if (busy)
+        {
+            using var owner = live.EnterShared("release a returned test miner");
+            Assert.False(live.MercoxitDepartureAvailable(extractor, busySystem));
+            live.PublishMercoxitExpedition(long.MaxValue - 1, null);
+            Assert.True(live.MercoxitDepartureAvailable(extractor, busySystem));
+        }
         Assert.Equal(0, scheduler.Read().Failures);
     }
 
@@ -1992,7 +2023,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 SetMinerTwoAdjustedPrices(setup, catalog);
                 setup.Commit();
             }
-            Assert.Equal(new[] { Home, beltSystem }, CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions)[Home]);
+            Assert.Equal(new[] { Home, beltSystem }, Assert.Single(CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions)[Home]));
             using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
             {
                 Advance(
@@ -2017,6 +2048,15 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
             var live = host.GetRequiredService<LiveWorld>();
+            live.Economy.Warm();
+            live.WarmMercoxitExpeditions();
+            using (live.EnterShared("verify saved Mercoxit reservation"))
+            {
+                Assert.True(live.MercoxitDepartureAvailable(manufacturer, beltSystem));
+                live.PublishMercoxitExpedition(manufacturer, new(FactoryStation, [factorySystem, beltSystem]));
+                Assert.False(live.MercoxitDepartureAvailable(courier, beltSystem));
+                live.PublishMercoxitExpedition(manufacturer, null);
+            }
             using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
             {
                 Advance(

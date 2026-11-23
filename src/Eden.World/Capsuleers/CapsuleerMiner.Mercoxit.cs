@@ -19,12 +19,12 @@ internal sealed partial class CapsuleerMiner
         var catalog = _operation.Catalog;
         if (
             _operation.World is not EconomyTransaction world
+            || Live is not { } live
             || !world.Settings.Capsuleers.Miners
             || Pilot.ShipTypeId != (int)CapsuleerMiningHull.Venture
             || world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { Slot: 0 } agent
             || agent.CommunitySystemId != Pilot.SystemId
-            || !CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions).TryGetValue(Pilot.SystemId, out var route)
-            || !world.Settings.Capsuleers.CanWork(catalog.Definitions, route[^1])
+            || !CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions).TryGetValue(Pilot.SystemId, out var routes)
             || !StationCapabilities.Has(catalog, Pilot.OperationId, StationService.Market)
         )
         {
@@ -38,7 +38,12 @@ internal sealed partial class CapsuleerMiner
             // Existing stock or an open sale supplies this station. Resume ordinary belt work in the meantime.
             return null;
         }
-        if (!CanMineMercoxit(world, route[^1]))
+        var route = routes.FirstOrDefault(path =>
+            world.Settings.Capsuleers.CanWork(catalog.Definitions, path[^1])
+            && live.MercoxitDepartureAvailable(pilotId, path[^1])
+            && CanMineMercoxit(world, path[^1])
+        );
+        if (route is null)
         {
             return null;
         }

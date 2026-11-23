@@ -200,6 +200,7 @@ internal sealed class CapsuleerOperation(
             if (miner is not null)
             {
                 live.MinerCheckpoints[miner.PilotId] = miner;
+                live.PublishMercoxitExpedition(miner.PilotId, miner.Work.Mercoxit);
             }
             if (hauler is not null)
             {
@@ -219,12 +220,14 @@ internal sealed class CapsuleerOperation(
                 live.HaulerCheckpoints.Remove(mining.PilotId);
                 live.ProjectedHaulers.Remove(mining.PilotId);
                 live.MinerCheckpoints[mining.PilotId] = mining;
+                live.PublishMercoxitExpedition(mining.PilotId, mining.Work.Mercoxit);
                 live.CapsuleerWorkerChanges[mining.PilotId] = CapsuleerCareer.Mining;
             }
             if (IncomingHauler is { } hauling)
             {
                 live.MinerCheckpoints.Remove(hauling.PilotId);
                 live.ProjectedMiners.Remove(hauling.PilotId);
+                live.PublishMercoxitExpedition(hauling.PilotId, null);
                 live.HaulerCheckpoints[hauling.PilotId] = hauling;
                 live.CapsuleerWorkerChanges[hauling.PilotId] = CapsuleerCareer.Hauling;
             }
