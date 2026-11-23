@@ -1,0 +1,139 @@
+@page "/killboard"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@using System.Globalization
+@using Eden.Gameplay.Characters
+@using Microsoft.AspNetCore.WebUtilities
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+
+<PageTitle>Killboard · Eden</PageTitle>
+<h1>Server killboard</h1>
+
+@if (SessionExpired)
+{
+    <p class="error" role="alert">Your administrator session has ended. <a href="/login">Sign in again</a>.</p>
+}
+else if (Page is null)
+{
+    <p role="status">Combat history is available while the world is running.</p>
+}
+else
+{
+    <form class="toolbar" method="get" action="/killboard" aria-label="Killboard filters">
+        <label>
+            Final blow (kills)
+            <select name="killer">
+                <option value="">All</option>
+                @foreach (var kind in PartyKinds)
+                {
+                    <option value="@kind" selected="@(Filter.Killer == kind)">@KindLabel(kind)</option>
+                }
+            </select>
+        </label>
+        <label>
+            Destroyed (losses)
+            <select name="victim">
+                <option value="">All</option>
+                @foreach (var kind in PartyKinds)
+                {
+                    <option value="@kind" selected="@(Filter.Victim == kind)">@KindLabel(kind)</option>
+                }
+            </select>
+        </label>
+        <button type="submit">Apply filters</button>
+    </form>
+    @if (Page.Entries.Count == 0)
+    {
+        <p role="status">No combat reports match these filters.</p>
+    }
+    else
+    {
+        <div class="scroll">
+            <table aria-label="Combat reports">
+                <thead>
+                    <tr><th scope="col">Time (UTC)</th><th scope="col">System</th><th scope="col">Destroyed</th><th scope="col">Final blow</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Page.Entries)
+                    {
+                        var time = DateTime.FromFileTimeUtc(entry.Cursor.Time);
+                        <tr data-report-id="@entry.Cursor.Id">
+                            <td><time datetime="@time.ToString("O", CultureInfo.InvariantCulture)">@time.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)</time></td>
+                            <td>@entry.System</td>
+                            <td>
+                                <strong>@entry.Victim.Name</strong>
+                                <div class="muted">@PartyDescription(entry.Victim)</div>
+                            </td>
+                            <td>
+                                <strong>@entry.Killer.Name</strong>
+                                <div class="muted">@PartyDescription(entry.Killer)</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Filter.Before is not null || Page.Older is not null)
+    {
+        <nav class="toolbar" aria-label="Killboard pages">
+            @if (Filter.Before is not null)
+            {
+                <a href="@PageLink(null)">Latest reports</a>
+            }
+            @if (Page.Older is { } older)
+            {
+                <a href="@PageLink(older)">Older reports</a>
+            }
+        </nav>
+    }
+}
+
+@code {
+    private static readonly KillboardPartyKind[] PartyKinds = Enum.GetValues<KillboardPartyKind>();
+
+    [SupplyParameterFromQuery(Name = "killer")] private string? Killer { get; set; }
+    [SupplyParameterFromQuery(Name = "victim")] private string? Victim { get; set; }
+    [SupplyParameterFromQuery(Name = "beforeTime")] private string? BeforeTime { get; set; }
+    [SupplyParameterFromQuery(Name = "beforeId")] private string? BeforeId { get; set; }
+
+    private KillboardPage? Page;
+    private KillboardFilter Filter = new(null, null);
+    private bool SessionExpired;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        KillboardCursor? cursor =
+            long.TryParse(BeforeTime, NumberStyles.None, CultureInfo.InvariantCulture, out long time)
+            && long.TryParse(BeforeId, NumberStyles.None, CultureInfo.InvariantCulture, out long id)
+            && id > 0 ? new(time, id) : null;
+        Filter = new(ParseKind(Killer), ParseKind(Victim), cursor);
+        try
+        {
+            Page = await Operations.Killboard((await Authentication.GetAuthenticationStateAsync()).User, Filter);
+            SessionExpired = false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Page = null;
+            SessionExpired = true;
+        }
+    }
+
+    private string PageLink(KillboardCursor? before) => QueryHelpers.AddQueryString("/killboard", new Dictionary<string, string?>
+    {
+        ["killer"] = Filter.Killer?.ToString(),
+        ["victim"] = Filter.Victim?.ToString(),
+        ["beforeTime"] = before?.Time.ToString(CultureInfo.InvariantCulture),
+        ["beforeId"] = before?.Id.ToString(CultureInfo.InvariantCulture),
+    });
+
+    private static KillboardPartyKind? ParseKind(string? text) =>
+        Enum.TryParse<KillboardPartyKind>(text, ignoreCase: true, out var kind) && Enum.IsDefined(kind) ? kind : null;
+
+    private static string KindLabel(KillboardPartyKind kind) => kind == KillboardPartyKind.Npc ? "NPC" : kind.ToString();
+
+    private static string PartyDescription(KillboardParty party) => party.Ship is { } ship && ship != party.Name
+        ? $"{KindLabel(party.Kind)} · {ship}"
+        : KindLabel(party.Kind);
+}

@@ -352,6 +352,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [Server killboard](protocol/combat.md#server-killboard)
 - [NPC identities for encounter waves](protocol/combat.md#npc-identities-for-encounter-waves)
 - [Aggression box indicators](protocol/combat.md#aggression-box-indicators--november-15-2026)
 - [Missile impact timing and damage application](protocol/combat.md#missile-impact-timing-and-damage-application)

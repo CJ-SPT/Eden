@@ -698,36 +698,6 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
-            new EconomyTable<Eden.Data.World.Characters.SavedCombatReport, EconomySavedCombatReport>(
-                "WorldCombatReport",
-                row => new(row.Id),
-                row => new(row.Id, row.Data, row.IsLoss, row.PilotId, row.SourceKey, row.Time),
-                state => new Eden.Data.World.Characters.SavedCombatReport
-                {
-                    Id = state.Id,
-                    Data = state.Data,
-                    IsLoss = state.IsLoss,
-                    PilotId = state.PilotId,
-                    SourceKey = state.SourceKey,
-                    Time = state.Time,
-                },
-                ProjectSavedCombatReport,
-                "Id,Data,IsLoss,PilotId,SourceKey,Time",
-                reader =>
-                    new(
-                        reader.GetInt64(1),
-                        reader.GetString(2),
-                        reader.GetBoolean(3),
-                        reader.GetInt64(4),
-                        reader.GetString(5),
-                        reader.GetInt64(6)
-                    ),
-                state => new(state.Id),
-                indexes: [new("Id", row => row.Id), new("PilotId", row => row.PilotId), new("SourceKey", row => row.SourceKey)],
-                primaryColumn: "Id"
-            )
-        );
-        Register(
             new EconomyTable<Eden.Data.World.Characters.SavedHomeStation, EconomySavedHomeStation>(
                 "WorldHomeStation",
                 row => new(row.PilotId),

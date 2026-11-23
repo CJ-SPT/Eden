@@ -55,6 +55,9 @@ public sealed class InteractionHistoryPersistenceTests
         Assert.Equal(fixture.Npc.TypeId, report.Victim.ShipTypeId);
         Assert.Equal(fixture.Npc.Id, report.Victim.EntityId);
         Assert.Equal(PilotId, report.FinalBlow.CharacterId);
+        var board = fixture.Db.Services.GetRequiredService<IServerKillboard>();
+        var entry = Assert.Single(board.Read(new(KillboardPartyKind.Player, KillboardPartyKind.Npc))!.Entries);
+        Assert.Equal(new KillboardCursor(report.Time, report.Id), entry.Cursor);
         Assert.Equal(601, report.FinalBlow.ShipTypeId);
         Assert.Equal(shot.Weapon.TypeId, report.FinalBlow.WeaponTypeId);
         Assert.Equal(shot.Applied, report.Victim.Damage, 8);

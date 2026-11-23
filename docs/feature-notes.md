@@ -274,6 +274,8 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 
 ## Combat and NPC populations
 
+- The administration killboard shows recorded ship and capsule destruction across the server, with independent NPC,
+  player and bot filters for final blows and losses. [Server killboard](protocol/combat.md#server-killboard)
 - Belt pirates use regional catalog pools with supported missiles, turrets, electronic warfare and self-repairs.
   Empire guards defend gates and stations, and civilian convoys and NPC mining fleets run local routes.
   [Populations and combat behavior](protocol/combat.md)
