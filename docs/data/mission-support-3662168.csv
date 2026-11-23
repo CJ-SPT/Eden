@@ -1429,11 +1429,11 @@ missionId,name,template,status,reason
 2930,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2931,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2932,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2933,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2934,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2935,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2933,The Blockade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2934,The Blockade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2935,The Blockade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2936,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2937,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2937,The Blockade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2939,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2940,The Blockade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2941,The Blockade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

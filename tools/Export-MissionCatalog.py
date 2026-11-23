@@ -103,6 +103,80 @@ def export(catalog, output, audit_output):
         return [dict(types=[highest], count=1, range=distance, trigger=True, required=required),
                 dict(types=[tid for tid in ids if tid != highest], count=count-1, range=distance, required=required)]
 
+    def blockade_level_three(mid, report, revision, waves):
+        for wave in waves[:-1]:
+            for group_data in wave:
+                group_data['required'] = False
+        combat(mid, 3, 1000, report, revision, waves)
+
+    # The Angel report identifies one of the opening destroyers, a singleton in each marked
+    # battlecruiser group, and the final Tribunus. Use one roster within its reported bounds.
+    blockade_level_three(2933, 'Blockade3an', '2015-06-16 08:52 UTC; EVE University oldid=205299', [
+        [group('Minmatar Stasis Tower', 1, 17500), group('Arch Gistii Nomad/Arch Gistii Ruffian', 4, 17500),
+         group('Gistior Defiler/Gistior Haunter', 3, 17500), group('Gistior Defiler/Gistior Haunter', 1, 17500, trigger=True)],
+        [group('Gistatis Praefectus/Gistatis Tribunus', 2, 115000), group('Gistum Centurion/Gistum Phalanx', 3, 115000),
+         group('Gistior Defacer/Gistior Haunter/Gistior Trasher/Gistior Defiler', 3, 115000),
+         group('Gistatis Praefectus/Gistatis Primus/Gistatis Tribunus', 3, 115000),
+         group('Gistatis Legionnaire', 1, 115000, trigger=True)],
+        [group('Arch Gistum Liquidator/Arch Gistum Marauder', 3, 107500), group('Gistatis Legionnaire/Gistatis Primus', 3, 107500),
+         group('Gistior Defacer/Gistior Defiler/Gistior Haunter/Gistior Shatterer', 4, 107500),
+         group('Gistatis Legionnaire/Gistatis Primus/Gistatis Tribunus', 4, 107500),
+         group('Gistatis Praefectus', 1, 107500, trigger=True)],
+        [group('Gistum Centurion/Gistum Marauder/Gistum Phalanx', 3, 120000), group('Gistatis Praefectus', 3, 120000),
+         group('Arch Gistum Breaker/Arch Gistum Crusher', 4, 120000), group('Gistatis Legionnaire/Gistatis Primus', 4, 120000),
+         group('Gistatis Tribunus', 1, 120000, trigger=True)],
+        [group('Arch Gistii Nomad/Arch Gistii Ruffian', 4, 35000, required=False),
+         group('Gistatis Legatus', 4, 35000, required=False), group('Gistatis Tribunus', 1, 35000, completesMission=True)],
+    ])
+
+    # The last-wave Guristas objective is the entire reported battlecruiser group.
+    blockade_level_three(2934, 'Blockade3gu', '2016-05-17 00:16 UTC; EVE University oldid=214891', [
+        [group('Caldari Stasis Tower', 1, 25000), group('Pithior Renegade', 1, 25000, trigger=True),
+         group('Dire Pithum Abolisher/Dire Pithum Eraser/Dire Pithum Mortifier', 4, 25000),
+         group('Pithatis Enforcer/Pithatis Executor', 4, 25000)],
+        [group('Pithi Plunderer/Pithi Wrecker', 2, 65000),
+         group('Pithior Anarchist/Pithior Nihilist/Pithior Renegade/Pithior Supremacist/Pithior Terrorist', 6, 65000),
+         *trigger('Pithatis Assassin/Pithatis Assaulter/Pithatis Enforcer/Pithatis Executor', 9, 65000, required=False)],
+        [group('Pithior Anarchist/Pithior Nihilist/Pithior Renegade/Pithior Supremacist', 4, 115000),
+         group('Dire Pithum Mortifier', 2, 115000),
+         *trigger('Pithatis Assassin/Pithatis Death Dealer/Pithatis Enforcer/Pithatis Executor', 7, 115000, required=False)],
+        [group('Dire Pithi Plunderer/Dire Pithi Wrecker', 4, 100000), group('Pithum Abolisher/Pithum Eraser', 3, 100000),
+         *trigger('Pithatis Assassin/Pithatis Assaulter/Pithatis Enforcer', 8, 100000, required=False)],
+        [group('Dire Pithi Despoiler/Dire Pithi Saboteur', 4, 22500, required=False),
+         group('Pithatis Death Dealer/Pithatis Revolter', 5, 22500)],
+    ])
+
+    # The October 2009 Sansha roster records one named trigger per wave. A September 2010
+    # pilot confirmed the trigger identities and completion on one of the four final Daemons.
+    blockade_level_three(2935, 'Blockade3sa', 'EVE-Survival comments 2009-10-21 and 2010-09-04', [
+        [group('Amarr Stasis Tower', 1, 25000), group('Centum Loyal Fiend', 4, 25000),
+         group('Centatis Phantasm', 3, 25000), group('Centior Devourer', 1, 25000, trigger=True)],
+        [group('Centatis Phantasm', 6, 120000), group('Centii Enslaver', 1, 120000),
+         group('Centior Cannibal', 2, 120000), group('Centior Devourer', 4, 120000),
+         group('Centatis Wraith', 1, 120000, trigger=True)],
+        [group('Centatis Phantasm', 6, 120000), group('Centior Misshape', 3, 120000),
+         group('Centum Loyal Torturer', 2, 120000), group('Centatis Devil', 1, 120000, trigger=True)],
+        [group('Centatis Phantasm', 6, 122500), group('Centii Loyal Plague', 4, 122500),
+         group('Centum Hellhound', 2, 122500), group('Centatis Wraith', 1, 122500, trigger=True)],
+        [group('Centii Loyal Slavehunter', 4, 30000, required=False), group('Centatis Behemoth', 1, 30000, required=False),
+         group('Centatis Daemon', 3, 30000, required=False), group('Centatis Daemon', 1, 30000, completesMission=True)],
+    ])
+    missions[-1]['source'] = 'https://eve-survival.org/?show_comments=3&wakka=Blockade3sa'
+
+    # Survival names the four triggers. The University report separates the first Fanatic
+    # from the other battlecruisers and identifies the last battlecruisers as the objective.
+    blockade_level_three(2937, 'Blockade3br', '2017-10-16 08:49 UTC; EVE University oldid=191981', [
+        [group('Amarr Stasis Tower', 1, 20000), group('Elder Corpii Diviner', 4, 20000),
+         group('Corpatis Exorcist', 4, 20000), group('Corpior Devoter', 1, 20000, trigger=True)],
+        [group('Corpii Raider', 1, 110000), group('Corpior Visionary/Corpior Templar', 4, 110000),
+         group('Corpatis Seer/Corpatis Shade', 7, 110000), group('Corpatis Fanatic', 1, 110000, trigger=True)],
+        [group('Corpior Templar', 4, 105000), group('Elder Corpum Arch Sage', 2, 105000),
+         group('Corpatis Seer/Corpatis Bishop', 6, 105000), group('Corpatis Fanatic', 1, 105000, trigger=True)],
+        [group('Elder Corpii Raider', 3, 118000), group('Corpum Arch Priest', 2, 118000),
+         group('Corpatis Bishop', 4, 118000), group('Corpatis Shade', 1, 118000, trigger=True)],
+        [group('Elder Corpii Raider', 4, 20000, required=False), group('Corpatis Exorcist/Corpatis Phantom', 5, 20000)],
+    ])
+
     combat(2537, 4, 1000, 'Assault4gu', '2017-10-16 08:49 UTC; completion clarification 2018-03-01 04:27 UTC', [
         [group('Dire Pithi Wrecker/Dire Pithi Plunderer', 2, 31000, required=False),
          *trigger('Pith Dismantler/Pith Obliterator/Pith Destroyer/Pith Eliminator', 4, 31000, required=False),

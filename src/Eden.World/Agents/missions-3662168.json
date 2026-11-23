@@ -769,6 +769,818 @@
       ]
     },
     {
+      "missionId": 2933,
+      "level": 3,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade3an",
+      "sourceRevision": "2015-06-16 08:52 UTC; EVE University oldid=205299",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17606
+              ],
+              "count": 1,
+              "range": 17500,
+              "required": false
+            },
+            {
+              "types": [
+                24034,
+                24033
+              ],
+              "count": 4,
+              "range": 17500,
+              "required": false
+            },
+            {
+              "types": [
+                23976,
+                23975
+              ],
+              "count": 3,
+              "range": 17500,
+              "required": false
+            },
+            {
+              "types": [
+                23976,
+                23975
+              ],
+              "count": 1,
+              "range": 17500,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24006,
+                24007
+              ],
+              "count": 2,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                24112,
+                24111
+              ],
+              "count": 3,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                23974,
+                23975,
+                23978,
+                23976
+              ],
+              "count": 3,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                24006,
+                24004,
+                24007
+              ],
+              "count": 3,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                23999
+              ],
+              "count": 1,
+              "range": 115000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24120,
+                24119
+              ],
+              "count": 3,
+              "range": 107500,
+              "required": false
+            },
+            {
+              "types": [
+                23999,
+                24004
+              ],
+              "count": 3,
+              "range": 107500,
+              "required": false
+            },
+            {
+              "types": [
+                23974,
+                23976,
+                23975,
+                23969
+              ],
+              "count": 4,
+              "range": 107500,
+              "required": false
+            },
+            {
+              "types": [
+                23999,
+                24004,
+                24007
+              ],
+              "count": 4,
+              "range": 107500,
+              "required": false
+            },
+            {
+              "types": [
+                24006
+              ],
+              "count": 1,
+              "range": 107500,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24112,
+                16891,
+                24111
+              ],
+              "count": 3,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24006
+              ],
+              "count": 3,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24117,
+                24116
+              ],
+              "count": 4,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                23999,
+                24004
+              ],
+              "count": 4,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24007
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24034,
+                24033
+              ],
+              "count": 4,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                24008
+              ],
+              "count": 4,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                24007
+              ],
+              "count": 1,
+              "range": 35000,
+              "completesMission": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2934,
+      "level": 3,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade3gu",
+      "sourceRevision": "2016-05-17 00:16 UTC; EVE University oldid=214891",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17612
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                23985
+              ],
+              "count": 1,
+              "range": 25000,
+              "trigger": true,
+              "required": false
+            },
+            {
+              "types": [
+                24098,
+                24097,
+                24095
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                24014,
+                24001
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17001,
+                17006
+              ],
+              "count": 2,
+              "range": 65000,
+              "required": false
+            },
+            {
+              "types": [
+                23984,
+                23971,
+                23985,
+                23988,
+                23987
+              ],
+              "count": 6,
+              "range": 65000,
+              "required": false
+            },
+            {
+              "types": [
+                24016
+              ],
+              "count": 1,
+              "range": 65000,
+              "trigger": true,
+              "required": false
+            },
+            {
+              "types": [
+                24015,
+                24014,
+                24001
+              ],
+              "count": 8,
+              "range": 65000,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                23984,
+                23971,
+                23985,
+                23988
+              ],
+              "count": 4,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                24095
+              ],
+              "count": 2,
+              "range": 115000,
+              "required": false
+            },
+            {
+              "types": [
+                24017
+              ],
+              "count": 1,
+              "range": 115000,
+              "trigger": true,
+              "required": false
+            },
+            {
+              "types": [
+                24016,
+                24014,
+                24001
+              ],
+              "count": 6,
+              "range": 115000,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24047,
+                24048
+              ],
+              "count": 4,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                24088,
+                24087
+              ],
+              "count": 3,
+              "range": 100000,
+              "required": false
+            },
+            {
+              "types": [
+                24016
+              ],
+              "count": 1,
+              "range": 100000,
+              "trigger": true,
+              "required": false
+            },
+            {
+              "types": [
+                24015,
+                24014
+              ],
+              "count": 7,
+              "range": 100000,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24045,
+                24046
+              ],
+              "count": 4,
+              "range": 22500,
+              "required": false
+            },
+            {
+              "types": [
+                24017,
+                24018
+              ],
+              "count": 5,
+              "range": 22500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2935,
+      "level": 3,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?show_comments=3&wakka=Blockade3sa",
+      "sourceRevision": "EVE-Survival comments 2009-10-21 and 2010-09-04",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17609
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                24085
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                24002
+              ],
+              "count": 3,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                23990
+              ],
+              "count": 1,
+              "range": 25000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24002
+              ],
+              "count": 6,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                17063
+              ],
+              "count": 1,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                23989
+              ],
+              "count": 2,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                23990
+              ],
+              "count": 4,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24020
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24002
+              ],
+              "count": 6,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                23972
+              ],
+              "count": 3,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24084
+              ],
+              "count": 2,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24021
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24002
+              ],
+              "count": 6,
+              "range": 122500,
+              "required": false
+            },
+            {
+              "types": [
+                24054
+              ],
+              "count": 4,
+              "range": 122500,
+              "required": false
+            },
+            {
+              "types": [
+                24076
+              ],
+              "count": 2,
+              "range": 122500,
+              "required": false
+            },
+            {
+              "types": [
+                24020
+              ],
+              "count": 1,
+              "range": 122500,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24052
+              ],
+              "count": 4,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24023
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24022
+              ],
+              "count": 3,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24022
+              ],
+              "count": 1,
+              "range": 30000,
+              "completesMission": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2937,
+      "level": 3,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade3br",
+      "sourceRevision": "2017-10-16 08:49 UTC; EVE University oldid=191981",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17609
+              ],
+              "count": 1,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                24042
+              ],
+              "count": 4,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                24013
+              ],
+              "count": 4,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                23981
+              ],
+              "count": 1,
+              "range": 20000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16945
+              ],
+              "count": 1,
+              "range": 110000,
+              "required": false
+            },
+            {
+              "types": [
+                23970,
+                23980
+              ],
+              "count": 4,
+              "range": 110000,
+              "required": false
+            },
+            {
+              "types": [
+                24009,
+                24010
+              ],
+              "count": 7,
+              "range": 110000,
+              "required": false
+            },
+            {
+              "types": [
+                24011
+              ],
+              "count": 1,
+              "range": 110000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                23980
+              ],
+              "count": 4,
+              "range": 105000,
+              "required": false
+            },
+            {
+              "types": [
+                24107
+              ],
+              "count": 2,
+              "range": 105000,
+              "required": false
+            },
+            {
+              "types": [
+                24009,
+                24000
+              ],
+              "count": 6,
+              "range": 105000,
+              "required": false
+            },
+            {
+              "types": [
+                24011
+              ],
+              "count": 1,
+              "range": 105000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24041
+              ],
+              "count": 3,
+              "range": 118000,
+              "required": false
+            },
+            {
+              "types": [
+                16928
+              ],
+              "count": 2,
+              "range": 118000,
+              "required": false
+            },
+            {
+              "types": [
+                24000
+              ],
+              "count": 4,
+              "range": 118000,
+              "required": false
+            },
+            {
+              "types": [
+                24010
+              ],
+              "count": 1,
+              "range": 118000,
+              "trigger": true,
+              "required": false
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24041
+              ],
+              "count": 4,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                24013,
+                24012
+              ],
+              "count": 5,
+              "range": 20000
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 2537,
       "level": 4,
       "difficulty": 1000,

@@ -428,6 +428,75 @@ Not performed; agent client testing is disabled.
 - Start an R&D project and complete Mineral Acquisition. Confirm the journal and project balance refresh together.
 - In the level-three Guristas Score, clear the first combat pocket and confirm the gate and radio-telescope objective.
 
+## Level-three Blockade variants — November 23, 2026
+
+Four more Blockade missions now use the five-wave runtime in their build-3662168 pockets. Required kills are
+specific reinforcement triggers and the final objective. Other defenders can survive. Tower types and anchors
+come from the catalog.
+
+| Mission ID | Faction | Dungeon / room | Fixed tower type | Final objective |
+| --- | --- | --- | --- | --- |
+| 2933 | Angel Cartel | 1944 / 12174 | 17606 Minmatar | One Gistatis Tribunus |
+| 2934 | Guristas | 1946 / 12189 | 17612 Caldari | Five Pithatis Death Dealers or Revolters |
+| 2935 | Sansha | 1947 / 12188 | 17609 Amarr | One Centatis Daemon |
+| 2937 | Blood Raiders | 1945 / 12179 | 17609 Amarr | Five Corpatis Exorcists or Phantoms |
+
+The [Angel report](https://eve-survival.org/?wakka=Blockade3an) identifies an opening destroyer, a singleton
+battlecruiser in each following wave, and the Tribunus as the objective. The roster stays within the ranges in
+[University revision 205299](https://wiki.eveuniversity.org/index.php?title=The_Blockade_(Angel_Cartel)_(Level_3)&oldid=205299).
+Eden designates one reported destroyer and presents Legionnaire, Praefectus, and Tribunus as the three singleton
+battlecruisers. The report's Gistatis Seizer spelling resolves to no catalog type, so the second reinforcement
+uses another listed alternative, Praefectus.
+
+The [Guristas report](https://eve-survival.org/?wakka=Blockade3gu) names the first trigger, Pithior Renegade.
+The next three are selected by highest pinned bounty among the reported battlecruisers: Pithatis Assassin,
+Death Dealer, and Assassin. Both that report and
+[University revision 214891](https://wiki.eveuniversity.org/index.php?title=The_Blockade_(Guristas_Pirates)_(Level_3)&oldid=214891)
+require five battlecruiser kills in the last wave. The third reinforcement uses the existing 100 km placement
+hint for a Blockade wave without a reported distance.
+
+The [Sansha player reports from October 2009 and September 2010](https://eve-survival.org/?show_comments=3&wakka=Blockade3sa)
+record Centior Devourer, Centatis Wraith, Centatis Devil, and Centatis Wraith as the triggers. The later pilot
+recorded completion with three of four final Centatis Daemons still alive. Eden designates one of those four.
+The roster follows the 2009 report, resolving its unqualified Enslaver to the native Centii Enslaver. The
+main report gives distances for the room, represented by the midpoint where it lists two different group distances.
+The university page title says level three, but its level field says four.
+
+The [Blood Raider report](https://eve-survival.org/?wakka=Blockade3br) names Corpior Devoter, Corpatis Fanatic,
+Corpatis Fanatic, and Corpatis Shade as its reinforcement triggers. The first reinforcement follows
+[University revision 191981](https://wiki.eveuniversity.org/index.php?title=The_Blockade_(Blood_Raiders)_(Level_3)&oldid=191981),
+which lists one Fanatic separate from the other battlecruisers. The University report also identifies the final
+battlecruiser group as the completion requirement.
+
+The compared EVE.js security pack targets older builds, recorded in [the earlier layout comparison](#mission-layout-corrections--november-9-2026).
+Eden binds the reports to its own catalog. Upper reported counts and deterministic alternatives select one
+example per mission. Rare enemies and asteroid traps remain future work. The Serpentis reports leave the final objective and one
+reinforcement trigger ambiguous. That variant and the DED twins remain blocked.
+
+**Automated validation:** Tool and solution restore and a warning-free solution build passed (24.62 seconds).
+The exact `BlockadeVariantsSpawnEachReinforcementOnceAndFinishOnReportedTargets` filter passed seven tests in 32.23 seconds.
+Each case defeats only the four triggers and checked final targets. The first expanded theory exposed a test
+assumption about ordinary escort flags in lower-level cases. It now checks the explicit completing leader when
+present and the required final group otherwise.
+
+The affected mission matrix passed 23 tests in 41.33 seconds after a 4.73-second build. Its filter combined:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.BlockadeVariantsSpawnEachReinforcementOnceAndFinishOnReportedTargets
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionSpawnClearanceTests.EveryCombatWaveAndHullVariantSpawnsOutsideSolidScenery
+```
+
+Nineteen mission compiler, eight catalog setup, and nine formatting policy tests passed. Formatting verification
+and byte-for-byte regeneration passed. The audit admits 922 of 2,892 records.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Verify that the level-three Guristas objective completes only when the fifth
+battlecruiser in the last wave dies, with earlier defenders still present.
+
 ## The Blockade variants — November 23, 2026
 
 Three Security missions now bind reported reinforcements to their single build-3662168 pockets. One designated

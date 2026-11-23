@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **941 definitions**. That includes **109 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **945 definitions**. That includes **113 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,951** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,947** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -83,7 +83,7 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Attack the Angel Hideout | Level 2 | 1 |
 | The Seven's Brothel and The Seven's Prison Facility | Levels 2 and 3, respectively | 2 |
 | Eliminate a Pirate Nuisance | Angel, Blood, Guristas, Sansha, Serpentis; level 1 | 5 |
-| The Blockade | Guristas levels 1–2 and Sansha level 1, plus the original level-one reconstruction | 4 |
+| The Blockade | Guristas levels 1–3, Sansha levels 1 and 3, Angel and Blood Raiders level 3, and the original level-one reconstruction | 8 |
 | The Assault | Guristas, level 4 | 1 |
 | The Mordus Headhunters | Level 4, three templates sharing the reviewed dungeon | 3 |
 | Dread Pirate Scarlet | Both catalog templates, level 4, same reviewed dungeon | 2 |
@@ -127,8 +127,11 @@ Duo of Death requires both named combatants, with optional sentries/spider drone
 
 Each encounter selects one deterministic alternative from each reported group. Variable counts use the report's upper bound. Reported distances guide selection among the pinned room's native NPC anchors; missing distances retain explicit Eden hints (typically 20–25 km). Fixed batteries use their own catalog positions, and ship groups use deterministic spacing around the selected anchors. See [mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) for placement policy and save compatibility. Catalog twins are admitted only when their full `killMission` payload matches a reviewed encounter and they do not declare chains or extra scripts. This is a content reconstruction, not recovery of CCP's hidden mission selection or NPC-group tables.
 
-The Blockade uses four kill-triggered reinforcements. Killing the final wave's leader completes the objective even
-with earlier defenders still alive. [Blockade evidence](protocol/agents.md#the-blockade-variants--november-23-2026)
+The Blockade uses four kill-triggered reinforcements. The final wave's leader completes the objective in the
+level-one and level-two variants and the level-three Angel and Sansha variants. The level-three Guristas and Blood Raider
+variants require all five final battlecruisers. Earlier defenders can survive in each case.
+[Level-three evidence](protocol/agents.md#level-three-blockade-variants--november-23-2026) ·
+[Other Blockade variants](protocol/agents.md#the-blockade-variants--november-23-2026)
 
 The level-three Guristas Score locks the second gate behind the first combat pocket's guards. The four ships
 at the radio telescope complete the final objective. The Drone Infestation requires destroying its Drone Silo.
