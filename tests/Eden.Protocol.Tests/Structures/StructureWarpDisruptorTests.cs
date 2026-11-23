@@ -1,16 +1,21 @@
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
 using Eden.Data.World.Structures;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Skills;
 using Eden.Gameplay.Structures;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Structures;
+using Eden.Protocol.Tests.Fixtures;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Eden.World.Structures;
@@ -25,6 +30,9 @@ public sealed class StructureWarpDisruptorTests
     private const DogmaEffect Effect = DogmaEffect.StructureWarpDisruptor;
     private const string NativeEffect = "structureWarpScrambleBlockMWDWithNPCEffect";
     private const int ScramblingScript = 47336;
+    private const int WarpDisruptor = 3244;
+    private const int WarpScrambler = 447;
+    private const int WarpCoreStabilizer = 10998;
 
     [Theory]
     [InlineData(35949, false, 210000, 4000)]
@@ -141,6 +149,123 @@ public sealed class StructureWarpDisruptorTests
         Assert.False(peer.Flight.MicrowarpdriveBlocked);
         Assert.Contains(peer.Notifications.OfType<TackleEwarChanged>(), e => !e.Active);
         Assert.Equal(structure.Id, docking.Dock(other.PilotId, other.ShipId, structure.Id).DockedLocationId);
+    }
+
+    [Theory]
+    [InlineData(WarpDisruptor, DogmaEffect.WarpDisruptor, false, false)]
+    [InlineData(WarpScrambler, DogmaEffect.WarpScrambler, true, false)]
+    [InlineData(WarpScrambler, DogmaEffect.WarpScrambler, true, true)]
+    public void ShipTackleBlocksUpwellDockingUntilItExpiresOrMeetsWarpCoreStrength(
+        int type,
+        DogmaEffect effect,
+        bool stabilize,
+        bool overlap
+    )
+    {
+        using var f = StructureAttackTests.Prepare();
+        var structure = f.Online();
+        f.Structures.SetAccess(f.PilotId, structure.Id, true, []);
+        string catalogPath = new WorldDatabase(f.Db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadTackleTiers(
+            catalogPath,
+            new HashSet<int>
+            {
+                type,
+                WarpCoreStabilizer,
+                TackleDefinitions.PropulsionJammingSkill,
+                (int)NavigationSkill.Navigation,
+                WarpCapacitorRules.WarpDriveOperationSkill,
+            }
+        );
+        var target = f.Db.Store.FindPilot(1000002)!;
+        var approach = structure.Position + new SpacePosition(structure.Profile.Radius + 1000, 0, 0);
+        f.Db.Store.SetPosition(target.ShipId, approach, Fixture.SystemId);
+        f.Db.Store.SetPosition(f.ShipId, approach + new SpacePosition(1000, 0, 0), Fixture.SystemId);
+        long point;
+        long secondPoint;
+        long core;
+        using (CatalogDbContext catalog = new(catalogPath))
+        using (var action = StructureAttackTests.Scope(f))
+        {
+            action.World.Pilots.Find(f.PilotId)!.SafetyLevel = ShipSafetyLevel.Disabled;
+            point = Fit(f.PilotId, f.ShipId, type, InventoryFlag.MediumSlot0);
+            secondPoint = overlap ? Fit(f.PilotId, f.ShipId, type, InventoryFlag.MediumSlot0 + 1) : 0;
+            core = Fit(target.PilotId, target.ShipId, WarpCoreStabilizer, InventoryFlag.LowSlot0);
+            action.Commit();
+
+            long Fit(long pilot, long ship, int itemType, InventoryFlag slot)
+            {
+                var attributes = catalog.FittingAttributes(itemType);
+                foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
+                {
+                    int skillType = (int)attributes.GetValueOrDefault(skillAttribute);
+                    if (skillType != 0)
+                    {
+                        var skill =
+                            action.World.Set<PilotSkill>().Find(pilot, skillType)
+                            ?? action.World.Add(new PilotSkill { PilotId = pilot, TypeId = skillType }).Entity;
+                        int rank = (int)catalog.FittingAttributes(skillType).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
+                        int level = (int)attributes.GetValueOrDefault(levelAttribute);
+                        skill.Points = Math.Max(skill.Points, TrainedSkill.PointsForLevel(level, rank));
+                    }
+                }
+                return action
+                    .World.Add(
+                        new OwnedItem
+                        {
+                            Id = action.World.NextItemId(),
+                            OwnerId = pilot,
+                            LocationId = ship,
+                            TypeId = itemType,
+                            FlagId = (int)slot,
+                            Quantity = 1,
+                            Singleton = true,
+                            Online = true,
+                        }
+                    )
+                    .Entity.Id;
+            }
+        }
+        var tackle = f.Db.Services.GetRequiredService<IPilotTackle>();
+        TackleTarget receiver = new(target.ShipId, TackleTargetKind.Ship);
+        HashSet<long> locked = [receiver.Id];
+        var paid = tackle.Activate(f.PilotId, point, effect, receiver, locked, f.Clock.Now);
+        var docking = f.Db.Services.GetRequiredService<IStationDocking>();
+        var denied = Assert.Throws<InvalidDataException>(() => docking.Dock(target.PilotId, target.ShipId, structure.Id));
+        Assert.Contains("warp disruption", denied.Message);
+        Assert.Equal(approach, f.Db.Store.FindPilot(1000002)!.Position);
+
+        if (stabilize)
+        {
+            if (overlap)
+            {
+                f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+                tackle.Activate(f.PilotId, secondPoint, effect, receiver, locked, f.Clock.Now);
+                f.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.ReadyAt - f.Clock.Now));
+            }
+            var defense = tackle.Activate(target.PilotId, core, DogmaEffect.WarpCoreStabilizer, null, new HashSet<long>(), f.Clock.Now);
+            Assert.Equal(overlap ? 2 : 0, tackle.ShipAttributes(target.PilotId)[DogmaAttributeId.WarpScrambleStatus]);
+            Assert.Equal(overlap ? 2 : 1, tackle.Incoming(target.ShipId).Count);
+            if (!overlap)
+            {
+                // Renew the scrambler just before the stabilizer ends, then dock before any tackle sweep.
+                f.Clock.AdvanceWallTime(TimeSpan.FromMilliseconds(defense.Module.DurationMilliseconds) - TimeSpan.FromSeconds(1));
+                var renewed = tackle.Activate(f.PilotId, point, effect, receiver, locked, f.Clock.Now);
+                f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+                Assert.Equal(0, tackle.ShipAttributes(target.PilotId)[DogmaAttributeId.WarpScrambleStatus]);
+                var expiredDefense = Assert.Throws<InvalidDataException>(() => docking.Dock(target.PilotId, target.ShipId, structure.Id));
+                Assert.Contains("warp disruption", expiredDefense.Message);
+                Assert.Equal(approach, f.Db.Store.FindPilot(1000002)!.Position);
+                f.Clock.AdvanceWallTime(TimeSpan.FromTicks(renewed.ReadyAt - f.Clock.Now));
+            }
+        }
+        else
+        {
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.ReadyAt - f.Clock.Now - 1));
+            Assert.Throws<InvalidDataException>(() => docking.Dock(target.PilotId, target.ShipId, structure.Id));
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+        }
+        Assert.Equal(structure.Id, docking.Dock(target.PilotId, target.ShipId, structure.Id).DockedLocationId);
     }
 
     private static void LoadScript(Fixture f, long structure, long module)

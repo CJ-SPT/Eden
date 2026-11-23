@@ -2,6 +2,42 @@
 
 [Protocol index](../protocol.md) Â· [Documentation index](../README.md)
 
+## Warp disruption and Upwell docking
+
+A ship under targeted warp disruption cannot dock at an Upwell structure while the active strength exceeds its warp
+core strength. Eden previously checked only focused Heavy Interdictor and Standup effects, so a ship held by an ordinary
+Warp Disruptor or Warp Scrambler could still dock.
+[CCP Upwell Quick Facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts) ·
+[EVE University tackling](https://wiki.eveuniversity.org/Tackling)
+
+The Upwell dock transaction now checks targeted tackle from ships, structures and NPCs using the existing fitted warp-scramble
+status. It excludes expired offensive points and settles an expired stabilizer on the docking ship if the session's
+module update has not run. A tied active stabilizer allows docking and a denial preserves the ship's current location.
+
+The pinned build **3662168** catalog supplies warp-scramble status **104** and additive targeted strength **105**.
+EVE.js **261108.1**, build **3396210**, checks the scrambled flag for Upwell docking in
+`space/runtime/spaceRuntime/docking.js` (SHA-256 prefix `fde06eb9bb2e`) and
+`services/structure/structureTetherRestrictionState.js` (`73a15e89d333`). Eden reuses the existing dock request and error.
+
+**Automated validation.** The Warp Disruptor I case reproduced the dock bypass on base `852bc415`. The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureWarpDisruptorTests.ShipTackleBlocksUpwellDockingUntilItExpiresOrMeetsWarpCoreStrength`
+passed all three cases in 20.63 seconds after a 14.75-second build. It covers the tick before expiry, exact expiry, tied
+warp-core strength, overlapping scrams and an expired stabilizer whose owner has yet to run the module update. The
+expired-stabilizer case failed before the docking check began settling the inactive defensive effect.
+The final combined filter passed all 144 cases in 186.59 seconds after a 1.71-second build.
+
+```text
+FullyQualifiedName~StructureWarpDisruptorTests|FullyQualifiedName~StructureTetherTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.TackleTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~StructureServiceTests
+```
+
+The solution build had zero warnings and errors. Both Python policy suites passed (8 catalog and 9 formatting cases),
+and formatting, updated documentation anchors and whitespace checks passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Attempt to dock at an Upwell structure under an ordinary point, then retry after the point ends.
+Repeat with a Warp Core Stabilizer that matches the scramble strength.
+
 ## Cargo Deposit at dockable Upwell structures
 
 Build **3662168** `dropboxWnd.pyj` sends `structureCargoDelivery.DropOffItems(itemIDs, shipID, structureID)` from its

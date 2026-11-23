@@ -176,6 +176,10 @@ Use **Orbit** or **Keep at Range** on a nearby ship, NPC, asteroid or wreck to c
 
 ## Player Upwell structures
 
+Ordinary targeted warp disruption prevents Upwell docking while its active strength exceeds the ship's warp core strength.
+Pilots can retry when the effect expires or their stabilizer ties the incoming strength.
+[Warp disruption and Upwell docking](protocol/structures.md#warp-disruption-and-upwell-docking)
+
 Pilots within range of a dockable Upwell structure can move eligible ship cargo into their personal Deliveries hangar
 from space. They can see the deposit in Personal Assets and move it into Item Hangar after docking.
 [Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)

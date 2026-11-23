@@ -1,10 +1,12 @@
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Propulsion;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -15,6 +17,40 @@ internal sealed partial class PilotTackleStore
     private sealed record TackleEndpoint(long Pilot, long? Source, long Target, int System, TackleTargetKind Kind);
 
     private sealed record ActiveEndpoint(long Module, long Ship);
+
+    internal static bool BlocksUpwellDocking(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, int systemId, long now)
+    {
+        var targeted = world
+            .Filter<WorldTackle>(row => row.TargetId == shipId && row.TargetKind == TackleTargetKind.Ship && row.Strength > 0)
+            .AsEnumerable()
+            .Where(row => !TackleDefinitions.Web(row.Effect))
+            .Select(row => (row.Strength, Active: row.SystemId == systemId && row.ExpiresAt > now));
+        var npc = NpcEwarStore
+            .Active(world, shipId)
+            .Where(effect => effect.Ability.Kind == NpcEwarKind.WarpDisruption && effect.Applied.WarpStrength > 0)
+            .Select(effect => (Strength: effect.Applied.WarpStrength, Active: effect.ReadyAt > now));
+        bool active = false;
+        double inactiveStrength = 0;
+        foreach (var disruption in targeted.Concat(npc))
+        {
+            active |= disruption.Active;
+            if (!disruption.Active)
+            {
+                inactiveStrength += disruption.Strength;
+            }
+        }
+        if (!active)
+        {
+            return false;
+        }
+        if (world is EconomyTransaction)
+        {
+            ExpireWarpCoreStabilizers(world, catalog, world.Filter<ActiveFittedModule>(module => module.ShipId == shipId), now);
+        }
+        // Fitting combines additive tackle with defensive warp core strength. A paid row can
+        // remain in the graph until its owner settles it, so exclude its expired strength here.
+        return world.Attributes(pilotId).GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > inactiveStrength;
+    }
 
     private TransactionParticipants TackleParticipants(
         WorldAction world,
