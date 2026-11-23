@@ -21,8 +21,20 @@ internal sealed partial class MilitiaComplexStore
             return [];
         }
         int[] fitted = world.FittedItems(pilotId, ship.Id).Select(item => item.TypeId).ToArray();
+        return MilitiaPatrolSites(world, catalog, systemId, now, ship.TypeId, fitted);
+    }
+
+    internal IReadOnlyList<MilitiaPatrolSite> MilitiaPatrolSites(
+        WorldAction world,
+        CatalogDbContext catalog,
+        int systemId,
+        long now,
+        int hull,
+        IReadOnlyList<int> fitted
+    )
+    {
         return PatrolSites(world, systemId, now)
-            .Where(site => AdmitsPatrolFit(catalog, site.Profile.Access!, ship.TypeId, fitted))
+            .Where(site => AdmitsPatrolFit(catalog, site.Profile.Access!, hull, fitted))
             .Select(site => new MilitiaPatrolSite(
                 site.Id,
                 site.System.SystemId,

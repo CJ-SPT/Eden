@@ -203,10 +203,19 @@ internal sealed class CapsuleerOperation(
             }
             if (hauler is not null)
             {
+                if (hauler.Work.MilitiaPatrol is { Phase: not MilitiaPatrolPhase.Returning })
+                {
+                    live.MilitiaPatrolPilots.Add(hauler.PilotId);
+                }
+                else if (live.HaulerCheckpoints.GetValueOrDefault(hauler.PilotId)?.Work.MilitiaPatrol is not null)
+                {
+                    live.MilitiaPatrolPilots.Remove(hauler.PilotId);
+                }
                 live.HaulerCheckpoints[hauler.PilotId] = hauler;
             }
             if (IncomingMiner is { } mining)
             {
+                live.MilitiaPatrolPilots.Remove(mining.PilotId);
                 live.HaulerCheckpoints.Remove(mining.PilotId);
                 live.ProjectedHaulers.Remove(mining.PilotId);
                 live.MinerCheckpoints[mining.PilotId] = mining;

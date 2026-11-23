@@ -40,7 +40,8 @@ internal sealed partial class CapsuleerIndustry
         long now,
         int? stagingSystem = null,
         bool visitsHighSecurity = false,
-        Func<int, IEnumerable<int>, bool>? allowedMilitiaFit = null
+        Func<int, IEnumerable<int>, bool>? allowedMilitiaFit = null,
+        CapsuleerPvpFitGoal? stagedMilitiaFit = null
     )
     {
         long id = pilot.PilotId;
@@ -83,7 +84,7 @@ internal sealed partial class CapsuleerIndustry
             return new(Boarded: true);
         }
 
-        var goal = organization.PvpFitGoal;
+        var goal = stagedMilitiaFit ?? organization.PvpFitGoal;
         if (
             goal is not null
             && allowedMilitiaFit is not null
@@ -182,6 +183,40 @@ internal sealed partial class CapsuleerIndustry
         }
         needsFittingSkills = !PilotFittingStore.CanOnlineFit(world, catalog, pilot.PilotId, kit);
         return !needsFittingSkills;
+    }
+
+    internal CapsuleerPvpFitGoal? MilitiaFitAtStation(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        TrafficSnapshot snapshot,
+        DockedPilot pilot,
+        int stationId,
+        int targetSystem,
+        Func<int, IEnumerable<int>, bool> allowedFit
+    )
+    {
+        long id = pilot.PilotId;
+        if (
+            world.Set<SavedCapsuleerAgent>().Find(id) is not { } agent
+            || !CapsuleerWorkHulls.CanLeaveShip(world, catalog, pilot)
+            || !StationCapabilities.Has(catalog, catalog.RequireStation(stationId).OperationId, StationService.Market)
+            || WalletBalance(world, id) - agent.StartingCents is not > 0
+        )
+        {
+            return null;
+        }
+        return SelectSnapshotPvpGoal(
+            world,
+            catalog,
+            snapshot,
+            pilot,
+            stationId,
+            current: null,
+            targetSystem,
+            visitsHighSecurity: false,
+            allowedFit,
+            affordableReadyBudget: WalletBalance(world, id) - agent.StartingCents
+        );
     }
 
     private static Ship? OwnedPvpShip(WorldAction world, long pilot, CapsuleerOrganization organization) =>

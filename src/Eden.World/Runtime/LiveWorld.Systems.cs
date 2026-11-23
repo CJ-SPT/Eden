@@ -263,6 +263,8 @@ internal sealed partial class LiveWorld
 
     private readonly Dictionary<int, HashSet<long>> _capsuleersBySystem = [];
 
+    internal int CapsuleerCountInSystem(int system) => _capsuleersBySystem.GetValueOrDefault(system)?.Count ?? 0;
+
     internal IEnumerable<int> CapsuleerSystems(Func<int, bool> systemMatches, Func<long, bool> pilotMatches) =>
         _capsuleersBySystem.Where(entry => systemMatches(entry.Key) && entry.Value.Any(pilotMatches)).Select(entry => entry.Key);
 
@@ -295,6 +297,10 @@ internal sealed partial class LiveWorld
         ReleaseIfProjected(pilot, CapsuleerJobs, ProjectedCapsuleerJobs);
         ReleaseIfProjected(pilot, MinerCheckpoints, ProjectedMiners);
         ReleaseIfProjected(pilot, HaulerCheckpoints, ProjectedHaulers);
+        if (!HaulerCheckpoints.ContainsKey(pilot))
+        {
+            MilitiaPatrolPilots.Remove(pilot);
+        }
         if (
             !HasCapsuleerState(pilot)
             && !CapsuleerRoutines.HasPending(pilot)

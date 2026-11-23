@@ -56,6 +56,10 @@ internal sealed partial class CapsuleerScheduler
             {
                 HaulerCheckpoint checkpoint = new(agent.PilotId, work);
                 live.HaulerCheckpoints.Add(agent.PilotId, checkpoint);
+                if (work.MilitiaPatrol is { Phase: not MilitiaPatrolPhase.Returning })
+                {
+                    live.MilitiaPatrolPilots.Add(agent.PilotId);
+                }
                 live.ProjectedHaulers.TryAdd(agent.PilotId, checkpoint);
             }
         }

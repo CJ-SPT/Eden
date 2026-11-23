@@ -33,7 +33,18 @@ internal sealed partial class CapsuleerInspection
                 gang.DestinationStationId,
                 gang.Regional?.TargetSystemId
             ),
-            (_, { MilitiaPatrol: { } patrol }, _) => new($"Militia patrol · {Words(patrol.Phase)}", SystemId: patrol.SystemId),
+            (_, { MilitiaPatrol: { } patrol }, _) => new(
+                $"Militia patrol · {Words(patrol.Phase)}",
+                $"Contest a {Words(patrol.Site.Family)} complex",
+                patrol.StagingStationId > 0 ? patrol.StagingStationId : patrol.HomeStationId,
+                patrol.SystemId
+            ),
+            (_, { Journey: { Kind: TrafficJourneyKind.NullsecExpedition } expedition } traveler, _) => new(
+                traveler.RouteDirection < 0 ? "Returning from nullsec" : activity,
+                expedition.NullsecWork == NullsecExpeditionWork.Ratting ? "Rat in nullsec" : "Roam in nullsec",
+                expedition.DestinationStationId,
+                traveler.RouteDirection > 0 && expedition.Systems.Length > 0 ? expedition.Systems[^1] : null
+            ),
             (_, { Ratting: { } ratting }, _) => new($"Bounty hunting · {Words(ratting.Phase)}", StationId: ratting.StationId),
             (_, { Exploration: { } exploration }, _) => new($"Exploration · {Words(exploration.Phase)}", StationId: exploration.StationId),
             (_, { Resupply: { } resupply }, _) => new(activity, "Resupply ship", resupply.DestinationStationId ?? resupply.StationId),

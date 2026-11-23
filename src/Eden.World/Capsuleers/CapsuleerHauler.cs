@@ -418,7 +418,7 @@ internal sealed partial class CapsuleerHauler(
             }
         }
         bool canWork = CanWorkHere;
-        if (!canWork && Work.MilitiaPatrol is null && !CanContinueTransit())
+        if (!canWork && Work.MilitiaPatrol is null && !(OnNullsecExpedition && Pilot.Position is not null) && !CanContinueTransit())
         {
             using CapsuleerOperation hold = new(database, job, marketSignal);
             var next = CapsuleerWorkRegions.Retry(job, Live?.CapsuleerActivity.Read().ElapsedTicks ?? job.DueTicks);
@@ -583,7 +583,9 @@ internal sealed partial class CapsuleerHauler(
                     && Pilot.Position is not null
                     && Work.Ratting is null
                     && Work.Exploration is null
-                    && Work.MilitiaPatrol is null or { Phase: MilitiaPatrolPhase.Travelling or MilitiaPatrolPhase.Returning }
+                    && Work.MilitiaPatrol
+                        is null
+                            or { Phase: MilitiaPatrolPhase.Travelling or MilitiaPatrolPhase.Returning or MilitiaPatrolPhase.Staging }
                 )
                 {
                     BeginTravel();
@@ -915,6 +917,10 @@ internal sealed partial class CapsuleerHauler(
 
     private void Step(CombatAnomaly? scoutedAnomaly, IReadOnlyList<CombatAnomaly>? signatures = null)
     {
+        if (RecallNullsecExpedition())
+        {
+            return;
+        }
         if (Work.MilitiaPatrol is { } patrol && StepMilitiaPatrol(patrol))
         {
             return;
@@ -1077,6 +1083,10 @@ internal sealed partial class CapsuleerHauler(
             AttemptShipReplacement();
             return;
         }
+        if (Work.MilitiaPatrol is { Phase: MilitiaPatrolPhase.Staging } && TryLaunchMilitiaPatrol())
+        {
+            return;
+        }
         if (_operation.World is EconomyTransaction stop && (FinishPvpShopping(stop) || TryLaunchExploration(stop)))
         {
             return;
@@ -1161,9 +1171,13 @@ internal sealed partial class CapsuleerHauler(
         CapsuleerSupplyStore.PrepareCombatSkills(_operation.World, _operation.Catalog, pilotId);
         CapsuleerSupplyStore.Ensure(_operation.World, _operation.Catalog, pilotId, Founder.FounderShipId);
         UnloadRattingLoot();
-        var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now);
+        var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now, out var resupplyFit);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
+        if (TryLaunchNullsecExpedition(supplies, resupplyFit))
+        {
+            return;
+        }
         if (TryGangDeparture())
         {
             return;
@@ -1255,7 +1269,11 @@ internal sealed partial class CapsuleerHauler(
     private void BeginTravel()
     {
         bool canWork = CanWorkHere;
-        if (Work.MilitiaPatrol is { Phase: MilitiaPatrolPhase.Travelling } patrol && Pilot.SystemId == patrol.SystemId)
+        if (Work.Journey is { Kind: TrafficJourneyKind.NullsecExpedition } journey && PrepareNullsecLeg(journey))
+        {
+            return;
+        }
+        if (canWork && Work.MilitiaPatrol is { Phase: MilitiaPatrolPhase.Travelling } patrol && Pilot.SystemId == patrol.SystemId)
         {
             ApproachMilitiaGate(patrol);
             return;
@@ -1552,6 +1570,7 @@ internal sealed partial class CapsuleerHauler(
                 ),
             };
             FinishCorporationRelocation();
+            FinishNullsecExpedition();
             if (Work.MilitiaPatrol is { Phase: MilitiaPatrolPhase.Returning })
             {
                 _work = Work with { MilitiaPatrol = null, Journey = null, Retreating = false };
@@ -1617,6 +1636,7 @@ internal sealed partial class CapsuleerHauler(
                     or TrafficJourneyKind.CorporationRelocation
                     or TrafficJourneyKind.PvpShopping
                     or TrafficJourneyKind.MilitiaPatrol
+                    or TrafficJourneyKind.NullsecExpedition
             || !TryRegionalGrid()
         )
         {
@@ -1666,7 +1686,8 @@ internal sealed partial class CapsuleerHauler(
         if (
             !database.Settings.Capsuleers.SituationalAwareness
             || Work.Retreating
-            || Work.Freight?.Stacks.Length is not > 0
+            || !OnNullsecExpedition
+                && Work.Freight?.Stacks.Length is not > 0
                 && (HullClass)Pilot.ShipGroupId
                     is not (
                         HullClass.Hauler

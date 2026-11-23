@@ -49,6 +49,8 @@ public sealed record HaulerProgress(
     public FactoryPlanetaryProduction? PlanetaryProduction { get; init; }
     public SovereigntyExpedition? SovereigntyExpedition { get; init; }
     public MilitiaPatrolProgress? MilitiaPatrol { get; init; }
+    public long MilitiaRetryAt { get; init; }
+    public string? MilitiaWaitingReason { get; init; }
     public int? HomeDefenseAllianceId { get; init; }
     public long PlanetaryRetryAt { get; init; }
     public long RegionalStockRetryAt { get; init; }
@@ -81,6 +83,7 @@ public enum MilitiaPatrolPhase
     EnteringSite,
     Holding,
     Returning,
+    Staging,
 }
 
 public sealed record MilitiaPatrolProgress(
@@ -92,6 +95,9 @@ public sealed record MilitiaPatrolProgress(
     long ExpiresAt
 )
 {
+    public int StagingStationId { get; init; }
+    public ulong RouteDraw { get; init; }
+    public CapsuleerPvpFitGoal? StagingFit { get; init; }
     public int SystemId => Site.SystemId;
     public long SiteId => Site.Id;
 }

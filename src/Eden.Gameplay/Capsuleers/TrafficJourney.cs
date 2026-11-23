@@ -10,6 +10,13 @@ public enum TrafficJourneyKind
     CorporationRelocation,
     PvpShopping,
     MilitiaPatrol,
+    NullsecExpedition,
+}
+
+public enum NullsecExpeditionWork
+{
+    Ratting,
+    Roaming,
 }
 
 public sealed record TrafficJourney(
@@ -19,7 +26,22 @@ public sealed record TrafficJourney(
     int DestinationStationId,
     int[] Systems,
     long Sequence
-);
+)
+{
+    public NullsecExpeditionWork? NullsecWork { get; init; }
+}
+
+public static class NullsecExpeditionRules
+{
+    public const int MinimumJumps = 1;
+    public const int MaximumJumps = 8;
+    private const int DeparturePercent = 10;
+
+    public static ulong Draw(long worldSeed, long pilotId, long sequence) =>
+        TravelerRoutineRules.Mix((ulong)worldSeed ^ TravelerRoutineRules.Mix((ulong)pilotId) ^ (ulong)sequence);
+
+    public static bool ShouldDepart(ulong draw) => draw % 100 < DeparturePercent;
+}
 
 public static class TrafficJourneyRules
 {

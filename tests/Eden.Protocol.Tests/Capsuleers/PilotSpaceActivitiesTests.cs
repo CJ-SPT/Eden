@@ -599,6 +599,19 @@ public sealed partial class PilotSpaceActivitiesTests
         Assert.True(completed, $"Last phase {state!.Work.Ratting?.Phase}, activity {state.Work.Activity}");
         Assert.Equal(Station, state!.Pilot.StationId);
         Assert.False(live.IsDetailedSystem(SystemId));
+        if (!loot)
+        {
+            long deadline = live.Economy.Read(world =>
+                world
+                    .Filter<SavedActivityRewardTick>(tick => tick.PilotId == pilot)
+                    .AsEnumerable()
+                    .Single(tick => tick.Bounties.GetValueOrDefault(SystemId)?.FirstNpcId == pirateId)
+                    .DueAt
+            );
+            Assert.True(deadline > f.Clock.Now);
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(deadline - f.Clock.Now));
+            host.GetRequiredService<IActivityRewardTicks>().Advance();
+        }
         await live.FlushAsync();
         host.Dispose();
         WorldInitialization.Initialize(f.Database, f.Clock);

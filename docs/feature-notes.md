@@ -13,12 +13,13 @@
 - **Fleets and territory.** Form fleets, manage corporations and alliances, deploy Upwell structures, and contest sovereignty.
   [Fleets](#cooperative-fleets) · [Corporations](corporations.md) · [Structures](protocol/structures.md) · [Sovereignty](protocol/sovereignty.md)
 - **Faction Warfare.** Enlist a pilot, corporation or alliance. Run militia missions, earn ranks and LP, capture complexes and
-  battlefields, and contest infrastructure hubs in both warzones. Optional Caldari and Gallente bots patrol shared
-  complexes in Aldranette–Nennamaila. [Faction Warfare](protocol/faction-warfare.md)
+  battlefields, and contest infrastructure hubs in both warzones. Optional militia bots select reachable Frontlines and
+  contest shared complexes. [Faction Warfare](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. On new established worlds, eligible
   bots buy and fit separate PvP ships with spendable ISK from ordinary work. Corporate pilots can take paid production work,
   replace lost ships and fund first sovereignty claims. With background preparation enabled, eligible high-security systems
-  gain bots ahead of player visits. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
+  gain bots ahead of player visits. Independent pilots can plan round trips into nullsec. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
+  [Independent nullsec expeditions](capsuleer-population.md#independent-nullsec-expeditions) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
   [First claims](protocol/sovereignty.md#autonomous-first-claims) · [Population inspector](capsuleer-population.md#inspecting-bots-and-organizations)
 

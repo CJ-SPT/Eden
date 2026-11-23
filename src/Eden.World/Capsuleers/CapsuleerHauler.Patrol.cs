@@ -36,17 +36,22 @@ internal sealed partial class CapsuleerHauler
     private bool TryPatrolTransitGate(StaticSpaceObject gate)
     {
         var policy = database.Settings.Capsuleers;
+        bool expedition = Work.Journey is { Kind: TrafficJourneyKind.NullsecExpedition, NullsecWork: NullsecExpeditionWork.Roaming };
         if (
-            _background
+            _background && !expedition
             || !policy.RoamingPvp
             || !HasPvpShip
+            || OnNullsecExpedition && !expedition
             || Work.Journey?.Kind == TrafficJourneyKind.PvpShopping
             || Work.Retreating
             || Work.Freight?.Stacks.Length > 0
             || Work.Resupply?.DestinationStationId is not null
             || Work.LastPatrolledGateId == gate.Id
             || GangContactBeyondGate(gate)
-            || !InActiveGang && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction world && DynamicWorkPilot(world)
+            || !InActiveGang
+                && !expedition
+                && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction world
+                && DynamicWorkPilot(world)
             || !InActiveGang && !PatrolRules.Choose(pilotId, gate.Id ^ (Work.Journey?.Sequence ?? Work.DwellSequence), policy.RoamPercent)
         )
         {

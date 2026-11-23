@@ -5,6 +5,7 @@ using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
 using Eden.World.FactionWarfare;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
@@ -12,15 +13,32 @@ namespace Eden.World.Capsuleers;
 internal sealed partial class CapsuleerHauler
 {
     private const double MilitiaHoldRadius = MilitiaComplexRules.CaptureRange / 2;
-    private const int MilitiaRefugeJumps = 2;
     private static readonly long s_militiaPatrolDuration = TimeSpan.FromMinutes(30).Ticks;
 
     private bool TryLaunchMilitiaPatrol()
     {
+        if (_operation.World is not EconomyTransaction world || Live is not { } live)
+        {
+            return false;
+        }
+        if (Work.MilitiaPatrol is { Phase: MilitiaPatrolPhase.Staging } staging)
+        {
+            if (ContinueMilitiaStaging(world, staging))
+            {
+                return true;
+            }
+            _work = Work with
+            {
+                MilitiaPatrol = null,
+                Journey = null,
+                MilitiaRetryAt = checked(Work.ActiveTicks + s_militiaReviewInterval),
+            };
+            return false;
+        }
         if (
             !database.Settings.Capsuleers.MilitiaPatrols
-            || MilitiaPatrolRules.StagingFaction(Pilot.StationId) is not { } faction
-            || Live is not { } live
+            || Pilot.InStructure
+            || Work.ActiveTicks < Work.MilitiaRetryAt
             || Work.Freight is { Stacks.Length: > 0 }
             || InActiveGang
             || Work
@@ -38,49 +56,21 @@ internal sealed partial class CapsuleerHauler
                 }
             || Work.Journey is { Kind: TrafficJourneyKind.PvpShopping or TrafficJourneyKind.CorporationRelocation }
             || Work.Resupply?.DestinationStationId is not null
-            || live.CapsuleerParticipants(new(systems: [MilitiaPatrolRules.Aldranette, MilitiaPatrolRules.Nennamaila]))
-                .Count(pilot => live.HaulerCheckpoints.GetValueOrDefault(pilot)?.Work.MilitiaPatrol?.Faction == faction)
-                >= MilitiaPatrolRules.MaximumPerFaction
-            || !TryPrepareMilitiaPatrol()
         )
         {
             return false;
         }
 
-        var world = _operation.World;
-        var catalog = _operation.Catalog;
-        var site = militia.MilitiaPatrolSites(world, catalog, pilotId, MilitiaPatrolRules.Aldranette, Now).FirstOrDefault();
-        if (site is null || FactionWarzoneStore.System(world, site.SystemId)?.Adjacency != WarzoneAdjacency.Frontline)
-        {
-            return false;
-        }
+        _work = Work with { MilitiaRetryAt = checked(Work.ActiveTicks + s_militiaReviewInterval) };
+        return TryAssignMilitiaPatrol(live, world);
+    }
 
-        var route = CapsuleerTrafficRoutes.ToStation(
-            catalog,
-            Pilot.StationId,
-            MilitiaPatrolRules.AldranetteStation,
-            (HullClass)Pilot.ShipGroupId,
-            maximumJumps: 1,
-            policy: database.Settings.Capsuleers
-        );
-        if (route is null)
-        {
-            return false;
-        }
-
-        var patrol = new MilitiaPatrolProgress(
-            Pilot.ShipId,
-            faction,
-            Pilot.StationId,
-            site,
-            MilitiaPatrolPhase.Travelling,
-            checked(Work.ActiveTicks + s_militiaPatrolDuration)
-        );
+    private void StartMilitiaFlight(MilitiaPatrolProgress patrol, CapsuleerTrafficRoute route)
+    {
         SetMilitiaPatrolRoute(patrol, route);
         _background = false;
         LaunchActivity();
         BeginTravel();
-        return true;
     }
 
     private void SetMilitiaPatrolRoute(MilitiaPatrolProgress patrol, CapsuleerTrafficRoute route)
@@ -102,6 +92,7 @@ internal sealed partial class CapsuleerHauler
             TrafficLane = null,
             LaneDeparting = false,
             WaitingReason = null,
+            MilitiaWaitingReason = null,
         };
     }
 
@@ -113,8 +104,13 @@ internal sealed partial class CapsuleerHauler
             || Work.ActiveTicks >= patrol.ExpiresAt
             || patrol.ShipId != Pilot.ShipId
             || Live is not { } live
-            || live.OwnerDirectory.Snapshot.PilotMilitia(pilotId) != patrol.Faction
+            || !database.Settings.Capsuleers.CanWork(database.Catalog, patrol.SystemId)
         )
+        {
+            return false;
+        }
+        var affiliation = live.OwnerDirectory.Snapshot.PilotMilitia(pilotId);
+        if (affiliation != patrol.Faction && (affiliation is not null || patrol.Phase != MilitiaPatrolPhase.Staging))
         {
             return false;
         }
@@ -123,12 +119,12 @@ internal sealed partial class CapsuleerHauler
 
     private bool StepMilitiaPatrol(MilitiaPatrolProgress patrol)
     {
-        if (patrol.ShipId != Pilot.ShipId || Pilot.Position is null)
+        if (patrol.ShipId != Pilot.ShipId || Pilot.Position is null && patrol.Phase != MilitiaPatrolPhase.Staging)
         {
             _work = Work with { MilitiaPatrol = null, Journey = null, Retreating = false };
             return false;
         }
-        if (Work.Activity == HaulerActivity.Jumping)
+        if (Pilot.Position is null || Work.Activity == HaulerActivity.Jumping)
         {
             return false;
         }
@@ -145,7 +141,7 @@ internal sealed partial class CapsuleerHauler
             }
             return false;
         }
-        if (!MilitiaPatrolActive(patrol) || !CanWorkHere)
+        if (!MilitiaPatrolActive(patrol))
         {
             if (_navigation.Warp is not null)
             {
@@ -157,7 +153,7 @@ internal sealed partial class CapsuleerHauler
             }
             return true;
         }
-        if (patrol.Phase == MilitiaPatrolPhase.Travelling)
+        if (patrol.Phase is MilitiaPatrolPhase.Travelling or MilitiaPatrolPhase.Staging)
         {
             return false;
         }
@@ -198,6 +194,20 @@ internal sealed partial class CapsuleerHauler
     {
         if (patrol.Phase == MilitiaPatrolPhase.Returning)
         {
+            var world = _operation.World;
+            var station = _operation.Catalog.Definitions.FindStation(Work.DestinationStationId);
+            if (
+                station is not null
+                && station.SolarSystemId == Pilot.SystemId
+                && (
+                    !CanWorkHere
+                    || !MilitiaEnlistmentStore.CanUseDocking(world, world.Pilots.Find(pilotId)!, Pilot.SystemId, Pilot.ShipGroupId)
+                )
+            )
+            {
+                ReturnFromMilitiaPatrol(patrol);
+                return true;
+            }
             return false;
         }
         if (!MilitiaPatrolActive(patrol))
@@ -205,7 +215,7 @@ internal sealed partial class CapsuleerHauler
             ReturnFromMilitiaPatrol(patrol);
             return true;
         }
-        if (patrol.Phase == MilitiaPatrolPhase.Travelling)
+        if (patrol.Phase is MilitiaPatrolPhase.Travelling or MilitiaPatrolPhase.Staging)
         {
             return false;
         }
@@ -218,6 +228,15 @@ internal sealed partial class CapsuleerHauler
                 return true;
             }
 
+            if (
+                !militia
+                    .MilitiaPatrolSites(_operation.World, _operation.Catalog, pilotId, patrol.SystemId, Now)
+                    .Any(site => site.Id == patrol.SiteId)
+            )
+            {
+                ReturnFromMilitiaPatrol(patrol);
+                return true;
+            }
             var beacon = militia.ActivateMilitiaPatrolGate(_operation.World, _operation.Catalog, pilotId, gate.Id, Now);
             SetMilitiaFlightTarget(
                 patrol with
@@ -261,29 +280,18 @@ internal sealed partial class CapsuleerHauler
         var catalog = _operation.Catalog;
         var pilot = world.Pilots.Find(pilotId)!;
         var definitions = catalog.Definitions;
-        var nearby = definitions.GatesInSystem(Pilot.SystemId).Select(gate => gate.DestinationSystemId).Prepend(Pilot.SystemId);
-        var source = definitions.StationsInSystem(Pilot.SystemId).FirstOrDefault();
-        var route = source is null
-            ? null
-            : nearby
-                .SelectMany(system => definitions.StationsInSystem(system))
-                .Where(station => MilitiaEnlistmentStore.CanUseDocking(world, pilot, station.SolarSystemId, Pilot.ShipGroupId))
-                .OrderByDescending(station => station.Id == patrol.HomeStationId)
-                .ThenByDescending(station => station.SolarSystemId == Pilot.SystemId)
-                .ThenBy(station => station.Id)
-                .Select(station =>
-                    CapsuleerTrafficRoutes.ToStation(
-                        catalog,
-                        source.Id,
-                        station.Id,
-                        (HullClass)Pilot.ShipGroupId,
-                        maximumJumps: MilitiaRefugeJumps
-                    )
-                )
-                .OfType<CapsuleerTrafficRoute>()
-                .FirstOrDefault();
+        var nearby = CapsuleerTrafficRoutes.Nearby(catalog, Pilot.SystemId, (HullClass)Pilot.ShipGroupId, MilitiaRecruitmentJumps);
+        var refuge = nearby
+            .Systems.Where(entry => world.Settings.Capsuleers.CanWork(definitions, entry.SystemId))
+            .Where(entry => MilitiaEnlistmentStore.CanUseDocking(world, pilot, entry.SystemId, Pilot.ShipGroupId))
+            .SelectMany(entry => definitions.StationsInSystem(entry.SystemId).Select(station => (entry.Jumps, Station: station)))
+            .OrderByDescending(entry => entry.Station.Id == patrol.HomeStationId)
+            .ThenBy(entry => entry.Jumps)
+            .ThenBy(entry => TravelerRoutineRules.Mix(patrol.RouteDraw ^ (ulong)patrol.SiteId ^ (uint)entry.Station.Id))
+            .Select(entry => entry.Station)
+            .FirstOrDefault();
         var returning = patrol with { Phase = MilitiaPatrolPhase.Returning };
-        if (route is null)
+        if (refuge is null || nearby.PathTo(refuge.SolarSystemId, patrol.RouteDraw ^ (ulong)patrol.SiteId) is not { } path)
         {
             _navigation.SetAtRest();
             _target = null;
@@ -291,7 +299,7 @@ internal sealed partial class CapsuleerHauler
             Wait("Waiting for a reachable militia refuge.");
             return;
         }
-        SetMilitiaPatrolRoute(returning, route);
+        SetMilitiaPatrolRoute(returning, new(patrol.HomeStationId, refuge.Id, path));
         BeginTravel();
     }
 

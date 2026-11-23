@@ -19,6 +19,17 @@ namespace Eden.World.FactionWarfare;
 [Injectable]
 internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvider clock) : IMilitiaEnlistment
 {
+    private static readonly CatalogDefinition<MilitiaFaction?> s_enlistmentStationFactions = new(
+        "militia-enlistment-station-factions",
+        (catalog, owner) =>
+        {
+            long? faction =
+                catalog.Read(CatalogData.Client.Npccorporations, (long)owner)?.FactionID
+                ?? catalog.Read(CatalogData.Sde.NpcCorporations, (long)owner)?.FactionID;
+            return faction is long id && Enum.IsDefined((MilitiaFaction)id) ? (MilitiaFaction)id : null;
+        }
+    );
+
     private LiveWorld Resident =>
         LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Militia enrollment requires the resident world.");
 
@@ -98,21 +109,11 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = RequirePilot(world, pilotId);
         CheckJoin(world, catalog, pilot, faction);
-        if (MilitiaOrganizationStore.Organization(world, pilot.CorporationId) is not null)
+        if (DirectEnlistFailure(world, pilot, faction, now) is { } failure)
         {
-            throw new InvalidDataException("Your corporation already has organization enlistment or a pending change.");
+            throw new InvalidDataException(failure);
         }
-        if (PlayerCorporation(world, pilot) is not { } corporation || !Allowed(corporation).Contains(faction))
-        {
-            throw new InvalidDataException("Your player corporation must permit direct enlistment with this militia.");
-        }
-        var saved = Enlistment(world, pilotId);
-        if (saved.DirectCooldownUntil > now)
-        {
-            throw new InvalidDataException("Your direct enlistment cooldown is still active.");
-        }
-        saved.DirectFaction = faction;
-        saved.DirectCooldownUntil = 0;
+        SaveDirectEnlistment(world, pilotId, faction);
         world.Commit();
     }
 
@@ -155,29 +156,50 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
         world.Commit();
     }
 
-    internal static bool CanJoinBotMilitia(WorldAction world, CatalogDbContext catalog, long pilotId, MilitiaFaction faction)
+    internal static MilitiaFaction[] BotMilitiaFactions(WorldAction world, CatalogDbContext catalog, long pilotId, long now)
     {
         if (world.Set<SavedCapsuleerAgent>().Find(pilotId) is null || world.Pilots.Find(pilotId) is not { } pilot)
         {
-            return false;
+            return [];
         }
-        return Effective(world, pilot) is { } enrolled
-            ? enrolled == faction
-            : PlayerCorporation(world, pilot) is null
-                && JoinFailure(world, catalog, pilot, faction) is null
-                && catalog.NpcCorporationName(MilitiaRules.Corporation(faction)) is not null;
+        if (Effective(world, pilot) is { } enrolled)
+        {
+            return [enrolled];
+        }
+        var corporation = PlayerCorporation(world, pilot);
+        return (corporation is null ? Enum.GetValues<MilitiaFaction>() : Allowed(corporation))
+            .Where(faction =>
+                StandingPermitsEnlistment(world, pilot, faction)
+                && (
+                    corporation is null
+                        ? catalog.NpcCorporationName(MilitiaRules.Corporation(faction)) is not null
+                        : DirectEnlistFailure(world, pilot, faction, now) is null
+                )
+            )
+            .ToArray();
     }
 
     internal static bool TryJoinBotMilitia(WorldAction world, CatalogDbContext catalog, long pilotId, MilitiaFaction faction, long now)
     {
-        if (!CanJoinBotMilitia(world, catalog, pilotId, faction))
+        if (!BotMilitiaFactions(world, catalog, pilotId, now).Contains(faction))
         {
             return false;
         }
         var pilot = world.Pilots.Find(pilotId)!;
         if (Effective(world, pilot) is null)
         {
-            Move(world, pilot, MilitiaRules.Corporation(faction), now);
+            if (JoinFailure(world, catalog, pilot, faction) is not null)
+            {
+                return false;
+            }
+            if (PlayerCorporation(world, pilot) is null)
+            {
+                Move(world, pilot, MilitiaRules.Corporation(faction), now);
+            }
+            else
+            {
+                SaveDirectEnlistment(world, pilotId, faction);
+            }
         }
         return true;
     }
@@ -223,16 +245,39 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
         {
             return "Dock at an NPC station belonging to the requested empire.";
         }
-        var station = catalog.RequireStation(ship.StationId);
-        long? stationFaction =
-            catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId)?.FactionID
-            ?? catalog.Read(CatalogData.Sde.NpcCorporations, (long)station.OwnerId)?.FactionID;
-        if (stationFaction != (int)faction)
+        if (EnlistmentStationFaction(catalog, catalog.RequireStation(ship.StationId).OwnerId) != faction)
         {
             return "Dock at an NPC station belonging to the requested empire.";
         }
-        double standing = world.Set<SavedNpcStanding>().Find(pilot.Id, (long)faction)?.Value ?? 0;
-        return standing < 0 ? "Your unmodified standing with this empire must be nonnegative." : null;
+        return StandingPermitsEnlistment(world, pilot, faction) ? null : "Your unmodified standing with this empire must be nonnegative.";
+    }
+
+    internal static MilitiaFaction? EnlistmentStationFaction(CatalogDbContext catalog, int stationOwner) =>
+        catalog.Definition(s_enlistmentStationFactions, stationOwner);
+
+    private static bool StandingPermitsEnlistment(WorldAction world, Pilot pilot, MilitiaFaction faction) =>
+        (world.Set<SavedNpcStanding>().Find(pilot.Id, (long)faction)?.Value ?? 0) >= 0;
+
+    private static string? DirectEnlistFailure(WorldAction world, Pilot pilot, MilitiaFaction faction, long now)
+    {
+        if (MilitiaOrganizationStore.Organization(world, pilot.CorporationId) is not null)
+        {
+            return "Your corporation already has organization enlistment or a pending change.";
+        }
+        if (!Allowed(PlayerCorporation(world, pilot)).Contains(faction))
+        {
+            return "Your player corporation must permit direct enlistment with this militia.";
+        }
+        return world.Set<SavedMilitiaEnlistment>().Find(pilot.Id)?.DirectCooldownUntil > now
+            ? "Your direct enlistment cooldown is still active."
+            : null;
+    }
+
+    private static void SaveDirectEnlistment(WorldAction world, long pilotId, MilitiaFaction faction)
+    {
+        var saved = Enlistment(world, pilotId);
+        saved.DirectFaction = faction;
+        saved.DirectCooldownUntil = 0;
     }
 
     private static Pilot RequirePilot(WorldAction world, long pilotId) =>

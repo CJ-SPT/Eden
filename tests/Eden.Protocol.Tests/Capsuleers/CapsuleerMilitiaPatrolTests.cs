@@ -26,57 +26,59 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output)
 {
-    private const int Aldranette = MilitiaPatrolRules.Aldranette;
-    private const int Nennamaila = MilitiaPatrolRules.Nennamaila;
-    private const int AldranetteStation = MilitiaPatrolRules.AldranetteStation;
-    private const int NennamailaStation = MilitiaPatrolRules.NennamailaStation;
     private const int Jita = 30000142;
+    private const int JitaStation = 60003760;
     private const long Human = 90000001;
-    private const long CaldariPilot = 90150001;
-    private const long GallentePilot = 90150002;
-    private const long CaldariShip = 1000000150001;
-    private const long GallenteShip = 1000000150002;
+    private const long AttackerPilot = 90150001;
+    private const long DefenderPilot = 90150002;
+    private const long AttackerShip = 1000000150001;
+    private const long DefenderShip = 1000000150002;
     private const int Merlin = 603;
     private const int Railgun = 561;
     private const int Antimatter = 215;
-    private const int GallenteScout = 9601;
     private const int MaximumSeconds = 1_200;
 
-    [Fact]
-    public async Task OpposingMilitiaPatrolsMeetAndFightThroughTheSameComplexGateOffscreen()
+    [Theory]
+    [InlineData(14)]
+    [InlineData(25)]
+    public async Task OpposingMilitiaPatrolsMeetAndFightThroughTheLiveFrontlineComplexOffscreen(int seed)
     {
         var directory = TestDirectory.Create("militia-patrol-replay-");
         try
         {
             WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
             TestClock clock = new(new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
-            PrepareCatalog(database.CatalogPath);
+            var scenario = PatrolScenario.FromSeed(seed);
+            PrepareCatalog(database.CatalogPath, scenario);
             Configure(database, clock);
             long contestedSite;
             using (var host = ServerServices.Build(database, clock, liveWorld: true))
             {
                 var live = host.GetRequiredService<LiveWorld>();
-                StagePilots(live, database, clock);
+                StagePilots(live, database, clock, scenario);
                 var enlistment = host.GetRequiredService<IMilitiaEnlistment>();
-                Assert.Null(enlistment.Read(CaldariPilot).Effective);
-                Assert.Null(enlistment.Read(GallentePilot).Effective);
+                Assert.Null(enlistment.Read(AttackerPilot).Effective);
+                Assert.Null(enlistment.Read(DefenderPilot).Effective);
                 var scheduler = host.GetRequiredService<CapsuleerScheduler>();
                 var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
                 var concord = host.GetRequiredService<ConcordMaintenance>();
                 var complexes = host.GetRequiredService<IMilitiaComplexes>();
                 var presence = host.GetRequiredService<IHumanPresence>();
                 using var human = presence.Select(Human, Jita);
-                scheduler.PopulationPrepared(Nennamaila);
-                scheduler.PopulationPrepared(Aldranette);
+                scheduler.PopulationPrepared(scenario.AttackerSystem);
+                scheduler.PopulationPrepared(scenario.Frontline);
 
-                var site = Assert.Single(complexes.Sites(Aldranette, clock.Now));
-                Assert.Equal(GallenteScout, site.DungeonId);
+                var occupation = host.GetRequiredService<IFactionWarzones>().System(scenario.Frontline);
+                Assert.Equal(WarzoneAdjacency.Frontline, occupation?.Adjacency);
+                Assert.Equal(scenario.DefenderFaction, occupation?.Occupier);
+                var site = Assert.Single(complexes.Sites(scenario.Frontline, clock.Now));
+                Assert.Equal(scenario.DungeonId, site.DungeonId);
                 var capture = Assert.Single(site.Objects, body => body.MilitiaCapture is not null);
                 var gate = Assert.Single(site.Objects, body => body.AccelerationGateDirection is not null);
-                bool caldariApproachedGate = false;
-                bool gallenteApproachedGate = false;
-                bool caldariEntered = false;
-                bool gallenteEntered = false;
+                bool attackerApproachedGate = false;
+                bool defenderApproachedGate = false;
+                bool attackerEntered = false;
+                bool defenderEntered = false;
                 bool contested = false;
                 long? firstShotAt = null;
                 List<PilotDamage> shots = [];
@@ -84,7 +86,7 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                 {
                     if (
                         damage.Applied > 0
-                        && (damage.PilotId, damage.AttackerId) is (CaldariPilot, GallentePilot) or (GallentePilot, CaldariPilot)
+                        && (damage.PilotId, damage.AttackerId) is (AttackerPilot, DefenderPilot) or (DefenderPilot, AttackerPilot)
                     )
                     {
                         firstShotAt ??= clock.Seconds;
@@ -97,16 +99,16 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                     clock.Seconds++;
                     maintenance.Tick();
                     concord.Tick();
-                    var caldari = scheduler.Hauler(CaldariPilot);
-                    var gallente = scheduler.Hauler(GallentePilot);
-                    caldariApproachedGate |= AtGate(caldari);
-                    gallenteApproachedGate |= AtGate(gallente);
-                    caldariEntered |= InCapture(caldari);
-                    gallenteEntered |= InCapture(gallente);
-                    if (InCapture(caldari) && InCapture(gallente))
+                    var attacker = scheduler.Hauler(AttackerPilot);
+                    var defender = scheduler.Hauler(DefenderPilot);
+                    attackerApproachedGate |= AtGate(attacker);
+                    defenderApproachedGate |= AtGate(defender);
+                    attackerEntered |= InCapture(attacker);
+                    defenderEntered |= InCapture(defender);
+                    if (InCapture(attacker) && InCapture(defender))
                     {
                         var bracket = complexes
-                            .Sites(Aldranette, clock.Now)
+                            .Sites(scenario.Frontline, clock.Now)
                             .Single(candidate => candidate.Id == site.Id)
                             .Objects.Single(body => body.Id == capture.Id)
                             .MilitiaCapture;
@@ -115,32 +117,35 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                 }
 
                 string state =
-                    $"At {clock.Seconds}s: Caldari {Describe(CaldariPilot)}, Gallente {Describe(GallentePilot)}. "
-                    + $"Gate: {caldariApproachedGate}/{gallenteApproachedGate}, capture: {caldariEntered}/{gallenteEntered}, "
+                    $"At {clock.Seconds}s: Attacker {Describe(AttackerPilot)}, Defender {Describe(DefenderPilot)}. "
+                    + $"Gate: {attackerApproachedGate}/{defenderApproachedGate}, capture: {attackerEntered}/{defenderEntered}, "
                     + $"contested: {contested}, damage events: {shots.Count}.";
                 Assert.Equal(new[] { Jita }, presence.Read().ActiveSystems);
-                Assert.Equal(MilitiaFaction.Caldari, enlistment.Read(CaldariPilot).Effective);
-                Assert.Equal(MilitiaFaction.Gallente, enlistment.Read(GallentePilot).Effective);
-                Assert.True(caldariApproachedGate && gallenteApproachedGate, state);
-                Assert.True(caldariEntered && gallenteEntered && contested, state);
+                Assert.Equal(scenario.AttackerFaction, enlistment.Read(AttackerPilot).Effective);
+                Assert.Equal(scenario.DefenderFaction, enlistment.Read(DefenderPilot).Effective);
+                Assert.True(attackerApproachedGate && defenderApproachedGate, state);
+                Assert.True(attackerEntered && defenderEntered && contested, state);
                 Assert.NotEmpty(shots);
                 output.WriteLine($"First opposing militia railgun damage at {firstShotAt} simulated seconds.");
                 Assert.All(shots, shot => Assert.Equal(Railgun, shot.WeaponType));
                 var map = host.GetRequiredService<IMapStatistics>().History(MapHistoryStatistic.Jumps, 1);
-                Assert.Contains(map.Rows, row => row.SystemId == Aldranette && row.Counts.Jumps >= 1);
+                Assert.Contains(map.Rows, row => row.SystemId == scenario.BorderSystem && row.Counts.Jumps >= 1);
+                Assert.Contains(map.Rows, row => row.SystemId == scenario.Frontline && row.Counts.Jumps >= 1);
                 var crimewatch = host.GetRequiredService<IPilotCrimewatch>();
-                Assert.Equal(CrimewatchFlag.None, crimewatch.Read(CaldariPilot, Aldranette).Timers.Flag(clock.Now));
-                Assert.Equal(CrimewatchFlag.None, crimewatch.Read(GallentePilot, Aldranette).Timers.Flag(clock.Now));
+                Assert.Equal(CrimewatchFlag.None, crimewatch.Read(AttackerPilot, scenario.Frontline).Timers.Flag(clock.Now));
+                Assert.Equal(CrimewatchFlag.None, crimewatch.Read(DefenderPilot, scenario.Frontline).Timers.Flag(clock.Now));
                 contestedSite = site.Id;
                 await live.FlushAsync();
 
                 bool AtGate(HaulerObservation? pilot) =>
-                    pilot?.Pilot is { SystemId: Aldranette, Position: { } at }
+                    pilot?.Pilot is { Position: { } at }
+                    && pilot.Pilot.SystemId == scenario.Frontline
                     && at.DistanceTo(gate.Position) <= MilitiaComplexRules.GateRange + gate.Radius;
 
                 bool InCapture(HaulerObservation? pilot) =>
                     pilot?.Work.MilitiaPatrol?.Site.Id == site.Id
-                    && pilot.Pilot is { SystemId: Aldranette, Position: { } at }
+                    && pilot.Pilot is { Position: { } at }
+                    && pilot.Pilot.SystemId == scenario.Frontline
                     && at.DistanceTo(capture.Position) <= MilitiaComplexRules.CaptureRange;
 
                 string Describe(long pilotId) =>
@@ -155,9 +160,9 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
 
             using var reopened = ServerServices.Build(database, clock, liveWorld: true);
             var saved = reopened.GetRequiredService<LiveWorld>();
-            var retained = saved.Economy.Inspect(world => world.Filter<SavedCapsuleerHauler>(row => row.PilotId == CaldariPilot).Single());
+            var retained = saved.Economy.Inspect(world => world.Set<SavedCapsuleerHauler>().Find(scenario.AttackerSystem)!);
             Assert.Equal(contestedSite, HaulerCheckpoint.Read(retained.Progress)!.MilitiaPatrol?.Site.Id);
-            Assert.Equal(MilitiaFaction.Caldari, reopened.GetRequiredService<IMilitiaEnlistment>().Read(CaldariPilot).Effective);
+            Assert.Equal(scenario.AttackerFaction, reopened.GetRequiredService<IMilitiaEnlistment>().Read(AttackerPilot).Effective);
         }
         finally
         {
@@ -194,9 +199,19 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
         WorldInitialization.Initialize(database, clock);
     }
 
-    private static void StagePilots(LiveWorld live, WorldDatabase database, TestClock clock, bool includeCaldari = true)
+    private static void StagePilots(
+        LiveWorld live,
+        WorldDatabase database,
+        TestClock clock,
+        PatrolScenario scenario,
+        bool includeAttacker = true,
+        bool includeDefender = true,
+        int? worldSeed = null,
+        bool fromTradeHub = false
+    )
     {
-        using var world = live.Economy.Begin(new(systems: [Aldranette, Nennamaila]));
+        int origin = fromTradeHub ? Jita : scenario.AttackerSystem;
+        using var world = live.Economy.Begin(new(systems: [scenario.Frontline, origin]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (world.Set<Account>().Find(CapsuleerCommunityStore.MinerAccountId) is null)
         {
@@ -210,15 +225,31 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                 }
             );
         }
-        if (includeCaldari)
+        var provisioning = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
+        provisioning ??= world.Add(new SavedCapsuleerProvisioning { Id = 1 }).Entity;
+        provisioning.WorldSeed = worldSeed ?? scenario.Seed;
+        int station = fromTradeHub ? JitaStation : scenario.AttackerStation;
+        int[] route = fromTradeHub ? [Jita, .. scenario.Route] : scenario.Route;
+        if (includeAttacker)
         {
-            Stage(CaldariPilot, CaldariShip, Nennamaila, NennamailaStation, AldranetteStation, "Nennamaila Patrol Test");
+            Stage(AttackerPilot, AttackerShip, origin, station, scenario.DefenderStation, route, "Attacker Patrol Test");
         }
-        Stage(GallentePilot, GallenteShip, Aldranette, AldranetteStation, NennamailaStation, "Aldranette Patrol Test");
+        if (includeDefender)
+        {
+            Stage(
+                DefenderPilot,
+                DefenderShip,
+                scenario.Frontline,
+                scenario.DefenderStation,
+                station,
+                [.. route.Reverse()],
+                "Defender Patrol Test"
+            );
+        }
         CapsuleerPopulationStore.ScheduleFounders(world);
         world.Commit();
 
-        void Stage(long pilot, long ship, int system, int station, int destination, string name)
+        void Stage(long pilot, long ship, int system, int station, int destination, int[] systems, string name)
         {
             world.Add(new InventoryOwner { Id = pilot });
             world.Add(
@@ -253,7 +284,7 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                 {
                     SystemId = system,
                     HomeStationId = station,
-                    Seed = 1,
+                    Seed = scenario.Seed,
                     Version = CapsuleerPopulationStore.PopulationVersion,
                 }
             );
@@ -265,7 +296,7 @@ public sealed partial class CapsuleerMilitiaPatrolTests(ITestOutputHelper output
                     FounderShipId = ship,
                     SourceStationId = station,
                     DestinationStationId = destination,
-                    RouteSystems = system == Aldranette ? [Aldranette, Nennamaila] : [Nennamaila, Aldranette],
+                    RouteSystems = systems,
                 }
             );
             CapsuleerPopulationStore.AddAgent(world, new(pilot, system, CapsuleerCareer.Hauling, ship, 0, 0));

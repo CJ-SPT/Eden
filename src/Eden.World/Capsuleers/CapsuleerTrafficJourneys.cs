@@ -12,6 +12,7 @@ internal static partial class CapsuleerTrafficRoutes
     private const int RecentSystemWeight = 1;
     private const int HubStationWeight = 4;
     private const int JourneyNodeEstimatedBytes = 32;
+    private const int NearbySearchDepth = 8;
     private const ulong StationDrawSalt = 0x9E3779B97F4A7C15UL;
 
     internal static CapsuleerTrafficRoute[] RegionalRoutes(
@@ -66,16 +67,38 @@ internal static partial class CapsuleerTrafficRoutes
             EntryEstimatedBytes + (long)nodes.EnsureCapacity(0) * JourneyNodeEstimatedBytes + stationSystems.Length * 2L * sizeof(int);
     }
 
+    internal interface INearbyRoutes
+    {
+        IEnumerable<(int SystemId, int Jumps)> Systems { get; }
+
+        int[]? PathTo(int destinationSystem, ulong draw);
+    }
+
+    private sealed class NearbyRoutes(TrafficGraph graph, JourneyMap map, int maximumJumps) : INearbyRoutes
+    {
+        public IEnumerable<(int SystemId, int Jumps)> Systems =>
+            map.Nodes.Where(pair => pair.Value.Jumps <= maximumJumps).Select(pair => (pair.Key, pair.Value.Jumps));
+
+        public int[]? PathTo(int destinationSystem, ulong draw) =>
+            map.Nodes.TryGetValue(destinationSystem, out var node) && node.Jumps <= maximumJumps
+                ? JourneyPath(graph, map, destinationSystem, draw)
+                : null;
+    }
+
     private sealed class JourneyMaps(bool unrestricted)
     {
         internal readonly CatalogDefinition<JourneyMap> Local = Define(unrestricted, TrafficJourneyKind.Local);
         internal readonly CatalogDefinition<JourneyMap> Regional = Define(unrestricted, TrafficJourneyKind.Regional);
         internal readonly CatalogDefinition<JourneyMap> LongDistance = Define(unrestricted, TrafficJourneyKind.LongDistance);
+        internal readonly CatalogDefinition<JourneyMap> Nearby = Define(unrestricted, "nearby", NearbySearchDepth);
 
         private static CatalogDefinition<JourneyMap> Define(bool unrestricted, TrafficJourneyKind kind) =>
+            Define(unrestricted, kind.ToString(), TrafficJourneyRules.MaximumDistance(kind));
+
+        private static CatalogDefinition<JourneyMap> Define(bool unrestricted, string name, int depth) =>
             new(
-                $"capsuleer-journey-{kind}-{unrestricted}",
-                (catalog, source) => LoadJourneyMap(catalog, source, unrestricted, TrafficJourneyRules.MaximumDistance(kind)),
+                $"capsuleer-journey-{name}-{unrestricted}",
+                (catalog, source) => LoadJourneyMap(catalog, source, unrestricted, depth),
                 Estimate: map => map.EstimatedBytes
             );
 
@@ -90,6 +113,30 @@ internal static partial class CapsuleerTrafficRoutes
 
     private static readonly JourneyMaps s_journeyMaps = new(true);
     private static readonly JourneyMaps s_capitalJourneyMaps = new(false);
+
+    internal static INearbyRoutes Nearby(
+        CatalogDbContext catalog,
+        int sourceSystemId,
+        HullClass hull,
+        int maximumJumps,
+        IReadOnlySet<int>? avoided = null
+    )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(maximumJumps);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(maximumJumps, TrafficJourneyRules.MaximumJumps);
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
+        if (!TrafficRules.RouteAllows(hull, false) || !catalog.Definitions.Systems.ContainsKey(sourceSystemId))
+        {
+            return new NearbyRoutes(graph, new([], []), maximumJumps);
+        }
+
+        bool unrestricted = TrafficRules.RouteAllows(hull, true);
+        var maps = unrestricted ? s_journeyMaps : s_capitalJourneyMaps;
+        var map = avoided is { Count: > 0 }
+            ? LoadJourneyMap(catalog, sourceSystemId, unrestricted, maximumJumps, avoided)
+            : catalog.Definition(maximumJumps <= NearbySearchDepth ? maps.Nearby : maps.LongDistance, sourceSystemId);
+        return new NearbyRoutes(graph, map, maximumJumps);
+    }
 
     internal static CapsuleerTrafficRoute? Journey(
         CatalogDbContext catalog,

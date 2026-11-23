@@ -11,32 +11,35 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class CapsuleerMilitiaPatrolTests
 {
-    [Fact]
-    public async Task DisablingMilitiaPatrolsOnReopenLetsAnInFlightPilotReturnHome()
+    [Theory]
+    [InlineData(32)]
+    [InlineData(41)]
+    public async Task DisablingMilitiaPatrolsOnReopenLetsAnInFlightPilotReturnHome(int seed)
     {
         var directory = TestDirectory.Create("militia-patrol-return-");
         try
         {
             WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
             TestClock clock = new(new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
-            PrepareCatalog(database.CatalogPath);
+            var scenario = PatrolScenario.FromSeed(seed);
+            PrepareCatalog(database.CatalogPath, scenario);
             Configure(database, clock);
             using (var host = ServerServices.Build(database, clock, liveWorld: true))
             {
                 var live = host.GetRequiredService<LiveWorld>();
-                StagePilots(live, database, clock);
+                StagePilots(live, database, clock, scenario);
                 using var human = host.GetRequiredService<IHumanPresence>().Select(Human, Jita);
                 var scheduler = host.GetRequiredService<CapsuleerScheduler>();
-                scheduler.PopulationPrepared(Nennamaila);
-                scheduler.PopulationPrepared(Aldranette);
+                scheduler.PopulationPrepared(scenario.AttackerSystem);
+                scheduler.PopulationPrepared(scenario.Frontline);
                 var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
-                for (int turn = 0; turn < MaximumSeconds && scheduler.Hauler(CaldariPilot)?.Work.Navigation.Warp is null; turn++)
+                for (int turn = 0; turn < MaximumSeconds && scheduler.Hauler(AttackerPilot)?.Work.Navigation.Warp is null; turn++)
                 {
                     clock.Seconds++;
                     maintenance.Tick();
                 }
-                var departing = Assert.IsType<HaulerObservation>(scheduler.Hauler(CaldariPilot));
-                Assert.Equal(Nennamaila, departing.Pilot.SystemId);
+                var departing = Assert.IsType<HaulerObservation>(scheduler.Hauler(AttackerPilot));
+                Assert.Equal(scenario.AttackerSystem, departing.Pilot.SystemId);
                 Assert.Equal(MilitiaPatrolPhase.Travelling, departing.Work.MilitiaPatrol?.Phase);
                 Assert.NotNull(departing.Work.Navigation.Warp);
                 await live.FlushAsync();
@@ -57,9 +60,9 @@ public sealed partial class CapsuleerMilitiaPatrolTests
             using var reopened = ServerServices.Build(database, clock, liveWorld: true);
             using var observer = reopened.GetRequiredService<IHumanPresence>().Select(Human, Jita);
             var reopenedScheduler = reopened.GetRequiredService<CapsuleerScheduler>();
-            reopenedScheduler.PopulationPrepared(Nennamaila);
-            reopenedScheduler.PopulationPrepared(Aldranette);
-            var resumed = Assert.IsType<HaulerObservation>(reopenedScheduler.Hauler(CaldariPilot));
+            reopenedScheduler.PopulationPrepared(scenario.AttackerSystem);
+            reopenedScheduler.PopulationPrepared(scenario.Frontline);
+            var resumed = Assert.IsType<HaulerObservation>(reopenedScheduler.Hauler(AttackerPilot));
             Assert.NotNull(resumed.Work.Navigation.Warp);
             Assert.NotNull(resumed.Work.MilitiaPatrol);
             var worker = reopened.GetRequiredService<CapsuleerMaintenance>();
@@ -69,9 +72,9 @@ public sealed partial class CapsuleerMilitiaPatrolTests
             {
                 clock.Seconds++;
                 worker.Tick();
-                var pilot = reopenedScheduler.Hauler(CaldariPilot);
+                var pilot = reopenedScheduler.Hauler(AttackerPilot);
                 returning |= pilot?.Work.MilitiaPatrol?.Phase == MilitiaPatrolPhase.Returning;
-                if (pilot is { Pilot: { StationId: NennamailaStation, Position: null }, Work.MilitiaPatrol: null })
+                if (pilot is { Pilot.Position: null, Work.MilitiaPatrol: null } && pilot.Pilot.StationId == scenario.AttackerStation)
                 {
                     docked = pilot;
                     break;
@@ -79,7 +82,7 @@ public sealed partial class CapsuleerMilitiaPatrolTests
             }
             Assert.True(returning, "The saved patrol never transitioned into its return phase.");
             Assert.NotNull(docked);
-            Assert.Equal(CaldariShip, docked.Pilot.ShipId);
+            Assert.Equal(AttackerShip, docked.Pilot.ShipId);
         }
         finally
         {

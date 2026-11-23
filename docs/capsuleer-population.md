@@ -205,13 +205,23 @@ Bubble use defaults on. With the full catalog, 12% of newly generated nullsec co
 Change the percentage or disable bubble launches in the simulated pilot settings. New camp Sabres have an autocannon,
 a scrambler and three real disruption probes. Simulated travelers obey bubble drag and catch geometry and can burn clear.
 
-## Aldranette–Nennamaila militia patrols
+## Faction warfare patrols
 
-The opt-in patrols give Gallente and Caldari bots shared Scout and Small objectives. Eligible pilots in the two
-staging stations enlist through the same rules as players. They deploy in qualified paid or already-owned fits,
-spend ammunition in fights, and can retreat to an accessible station. While any player is selected, patrols can
-travel and fight even in the absence of a human observer in the corridor.
-[Patrol operations and rewards](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
+Enable **Faction warfare patrols** under **Player bots → PvP roams & regional conflicts** and save for restart.
+Eligible pilots look for reachable current Frontlines in either empire warzone. They select a staging station and
+an eligible complex based on their faction, standing, fit, and access, and use normal stargates and acceleration
+gates. They can travel and fight while a player is selected elsewhere. Changes in the front, access, or site
+availability can end a sortie and send the pilot back to an accessible dock.
+[Patrol operations and rewards](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
+
+## Independent nullsec expeditions
+
+Armed pilots can set out for nullsec using gates from a reachable station. A sortie uses the pilot's owned ship,
+available ammunition, and remembered threats to choose among viable routes. With earned PvP enabled, pilots can
+use activity income to buy a suitable fit from actual local offers. A stationless system can be the
+destination when the pilot has a reachable return dock. The pilot can advance while a player is selected elsewhere.
+The Population inspector shows the recorded journey while it is active.
+[Expedition selection and persistence](protocol/capsuleers.md#independent-nullsec-expeditions)
 
 ## PvP roams
 

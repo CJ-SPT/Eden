@@ -32,9 +32,39 @@ traffic preparation, and earned PvP fitting cases in 1 minute 22 seconds. Both v
 as an exact 7.46-second run. Schema 219 preserves resident hostility state and adds the market table and combat
 columns where missing. The solution built without warnings and both Python policy suites passed.
 
+## Dynamic faction warfare patrols
+
+The opt-in patrol planner reads current Frontline occupation and shared complexes from the resident warzone. Eligible
+pilots travel to a reachable staging station and enlist through ordinary militia rules. The patrol uses its own
+qualified fit, public gates, shared site and existing rewards. Its assignment remains with the pilot across checkpoints.
+The world and pilot seeds vary comparable options, with preference for reachable complexes that already have opposing
+patrols. The concurrent limit is two active patrols per faction across the warzone. A corporation's direct enlistment
+permissions and cooldown apply to its members. The planner checks the site, faction, ship and docking access as
+the patrol advances, and checks standing and corporation permissions again before enlisting. Human LP rules and
+ordinary combat and capture accounting also apply to bot-involved encounters.
+
+The client and catalog are pinned to build 3662168. EVE.js 261108.1 provides the behavioral references
+`fwCharacterEnlistmentMgrService.js` and `fwWarzoneSolarsystemService.js` for personal enlistment and warzone occupation.
+[CCP factional warfare](https://support.eveonline.com/hc/en-us/articles/203209072-Factional-Warfare) ·
+[CCP direct enlistment](https://www.eveonline.com/news/view/patch-notes-version-21-03) ·
+[EVE University faction warfare](https://wiki.eveuniversity.org/Faction_Warfare)
+
+**Automated validation**
+
+The resident replay `SeededPatrolChoicesVaryOnTheSameFrontAndFollowAChangedOccupation` reached different objectives
+on the same topology across world seeds, then returned and redeployed after the original objective lost Frontline
+status. `CorporationsControlDirectMilitiaEnlistmentAfterTravelToAValidOffice` passed both cases in five seconds,
+checking travel, the corporation's direct-enlistment policy and membership retention. The remaining militia patrol
+replays cover both empire warzones, real gate crossings, opposing fire, capture, and a checkpoint return.
+[Combined expedition and militia validation](capsuleers.md#independent-nullsec-expeditions)
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
 ## Aldranette–Nennamaila militia patrols
 
-Enable **Aldranette–Nennamaila militia patrols** in Player bots and save the settings draft for restart. The established
+The original implementation used the **Aldranette–Nennamaila militia patrols** setting in Player bots. The established
 population can commit up to two Gallente and two Caldari pilots to the initial front. Aldranette's FedMart station
 (60011014) and Nennamaila's Wiyrkomi Peace Corps station (60015126) satisfy the ordinary faction enlistment rules in
 build 3662168. Eligible pilots keep an existing qualified combat fit or shop for one from their earned wallet budget.

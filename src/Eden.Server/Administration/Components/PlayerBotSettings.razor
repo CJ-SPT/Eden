@@ -127,8 +127,12 @@
                       Help="Allows eligible armed pilots to hunt targets while traveling in nullsec.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RoamingPvp" aria-describedby="@field.Help" /></Control>
         </SettingField>
-        <SettingField Label="Aldranette–Nennamaila militia patrols"
-                      Help="Allows eligible Gallente and Caldari bots to enlist and contest Scout and Small complexes in this corridor.">
+        <SettingField Label="Independent nullsec expeditions"
+                      Help="Lets eligible bots travel to work in reachable nullsec systems and return to an accessible station.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.NullsecExpeditions" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Faction warfare patrols"
+                      Help="Lets eligible bots stage and contest suitable complexes at reachable Frontlines in either empire warzone.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.MilitiaPatrols" aria-describedby="@field.Help" /></Control>
         </SettingField>
         <SettingField Label="Persistent roaming gangs"

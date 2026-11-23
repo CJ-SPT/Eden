@@ -145,7 +145,7 @@ internal sealed partial class CapsuleerInspection(WorldDatabase database, Catalo
                     suspended is not null,
                     activity.Active,
                     Work(miner, hauler, organization),
-                    miner?.WaitingReason ?? hauler?.WaitingReason,
+                    miner?.WaitingReason ?? hauler?.WaitingReason ?? hauler?.MilitiaWaitingReason,
                     job?.Action ?? savedJob?.Action,
                     due.HasValue ? TimeSpan.FromTicks(Math.Max(0, due.Value - elapsed)) : null,
                     miner?.CareerPlan ?? hauler?.CareerPlan,

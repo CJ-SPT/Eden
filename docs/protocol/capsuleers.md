@@ -2,6 +2,46 @@
 
 [Protocol index](../protocol.md)
 
+## Independent nullsec expeditions
+
+Eligible armed travelers can choose an independent expedition from a station using the build 3662168 catalog's
+reciprocal stargates, the world seed and the resident pilot's ship and work settings. The departure draw combines
+the seed, pilot and saved station visit. The picker favors multi-system nullsec routes and gives quieter eligible
+destinations more weight.
+Belt expeditions need an actual belt. Roaming expeditions need an eligible PvP fit and use ordinary patrol grids.
+The return dock can be the starting station or a reachable refuge if work policy, docking access or local danger
+changes. Transit-only systems can be crossed. The active route and direction use the existing travel checkpoint.
+Gate crossings and activity effects use ordinary gameplay owners, including map statistics, ammunition, combat and bounties.
+
+The pinned catalog audit found asteroid counts for all 21,831 known-space nullsec belt anchors.
+EVE.js 261108.1 separates ordinary gate travel (`spaceRuntime/stargateJump.js`) from NPC station and structure docking
+(`npcStationDirectory.js` and `structureDockingService.js`). Eden's route uses its own catalog geometry and access rules.
+[CCP route calculation](https://developers.eveonline.com/docs/guides/route-calculation/) ·
+[EVE University sovereignty and NPC nullsec](https://wiki.eveuniversity.org/Sovereignty)
+
+**Automated validation**
+
+`IndependentTravelerResumesSeededStationlessNullsecExpeditionOffscreen` passed both resident cases in 11 seconds
+with a 6.03-second cached build. Each case launched two saved world seeds on the same graph and observed different
+destinations. In each mode one pilot resumed from the checkpoint, did its chosen work and returned in the same hull.
+The PvP case had no belts, and both crossed a transit-only system while the human remained elsewhere.
+`ExpeditionPathsDiversifyAcrossSeedsAndReplanAroundObservedThreats` covered three real gate branches across 32 draws
+and verified that the path picker avoids the reported threat.
+
+The solution built in 13 seconds with zero warnings or errors. The combined focus run passed 24 cases in 31 seconds
+using the two expedition replays, `CapsuleerMilitiaPatrolTests`, `MilitiaEnlistmentTests`,
+`EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen`,
+`TravelerRatsUnobservedAndPausesWhenTheLastHumanLeaves`,
+`PopulationInspectorLinksResidentBotTrainingCorporationAndAllianceWork`,
+`MilitiaPatrolsAreOptInAndRoundTripThroughAdministration`, and
+`PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges`.
+The offscreen ratting replay advances the scheduled bounty payout before verifying the paid record after reopening.
+The Python catalog and formatting policy suites passed all 17 cases.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
 ## Population inspector
 
 The administrator Population page reads directory results and selected details from the resident world. Pilot details

@@ -13,6 +13,36 @@ public sealed class CapsuleerTrafficRoutesTests
     private const int FirstSystem = 30001001;
     private const int FirstStation = 60001001;
 
+    [Fact]
+    public void ExpeditionPathsDiversifyAcrossSeedsAndReplanAroundObservedThreats()
+    {
+        using Fixture fixture = new();
+        int objective = FirstSystem + 4;
+        int[] forks = Enumerable.Range(FirstSystem + 1, 3).ToArray();
+        foreach (int fork in forks)
+        {
+            fixture.Connect(FirstSystem, fork);
+            fixture.Connect(fork, objective);
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        var reachable = CapsuleerTrafficRoutes.Nearby(catalog, FirstSystem, HullClass.Frigate, maximumJumps: 2);
+        HashSet<int> usedForks = [];
+        for (ulong worldSeed = 1; worldSeed <= 32; worldSeed++)
+        {
+            ulong draw = TravelerRoutineRules.Mix(worldSeed);
+            int[] path = Assert.IsType<int[]>(reachable.PathTo(objective, draw));
+            Assert.Equal(3, path.Length);
+            Assert.Equal(FirstSystem, path[0]);
+            Assert.Equal(objective, path[^1]);
+            Assert.Contains(path[1], forks);
+            usedForks.Add(path[1]);
+            HashSet<int> avoided = [path[1]];
+            var safer = CapsuleerTrafficRoutes.Nearby(catalog, FirstSystem, HullClass.Frigate, maximumJumps: 2, avoided);
+            Assert.DoesNotContain(path[1], Assert.IsType<int[]>(safer.PathTo(objective, draw)));
+        }
+        Assert.Equal(forks.Length, usedForks.Count);
+    }
+
     [Theory]
     [InlineData(3, true)]
     [InlineData(4, false)]

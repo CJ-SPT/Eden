@@ -102,6 +102,7 @@ public sealed class SettingsForm
 
     public bool EarnedPvpShips { get; set; }
     public bool RoamingPvp { get; set; }
+    public bool NullsecExpeditions { get; set; }
     public bool MilitiaPatrols { get; set; }
     public bool RoamingGangs { get; set; }
     public int RoamingGangSize { get; set; }
@@ -390,6 +391,7 @@ public sealed class SettingsForm
             NewSovereigntyClaims = settings.Capsuleers.NewSovereigntyClaims,
             EarnedPvpShips = settings.Capsuleers.EarnedPvpShips,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
+            NullsecExpeditions = settings.Capsuleers.NullsecExpeditions,
             MilitiaPatrols = settings.Capsuleers.MilitiaPatrols,
             RoamingGangs = settings.Capsuleers.RoamingGangs,
             RoamingGangSize = settings.Capsuleers.RoamingGangSize,
@@ -483,6 +485,7 @@ public sealed class SettingsForm
                 NewSovereigntyClaims = NewSovereigntyClaims,
                 EarnedPvpShips = EarnedPvpShips,
                 RoamingPvp = RoamingPvp,
+                NullsecExpeditions = NullsecExpeditions,
                 MilitiaPatrols = MilitiaPatrols,
                 RoamingGangs = RoamingGangs,
                 RoamingGangSize = RoamingGangSize,

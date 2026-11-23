@@ -22,8 +22,10 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class CapsuleerMilitiaPatrolTests
 {
-    [Fact]
-    public void FullSafetyPilotSeesLocksAndTradesLegalFireWithOpposingMilitiaPatrol()
+    [Theory]
+    [InlineData(52)]
+    [InlineData(67)]
+    public void FullSafetyPilotSeesLocksAndTradesLegalFireWithOpposingMilitiaPatrol(int seed)
     {
         const long account = 1000001;
         const int lockTimeout = 20;
@@ -34,16 +36,17 @@ public sealed partial class CapsuleerMilitiaPatrolTests
         {
             WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
             TestClock clock = new(new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
-            PrepareCatalog(database.CatalogPath);
+            var scenario = PatrolScenario.FromSeed(seed);
+            PrepareCatalog(database.CatalogPath, scenario);
             Configure(database, clock);
             using var host = ServerServices.Build(database, clock, liveWorld: true);
             var live = host.GetRequiredService<LiveWorld>();
-            StagePilots(live, database, clock, includeCaldari: false);
+            StagePilots(live, database, clock, scenario, includeAttacker: false);
             var ships = host.GetRequiredService<SqliteWorld>();
             long humanShip = ships.FindPilot(account)!.ShipId;
-            long gun = FitPlayerShip(live, database, humanShip, clock);
+            long gun = FitPlayerShip(live, database, humanShip, clock, scenario.AttackerStation);
             var enlistment = host.GetRequiredService<IMilitiaEnlistment>();
-            enlistment.JoinNpcMilitia(Human, MilitiaFaction.Caldari);
+            enlistment.JoinNpcMilitia(Human, scenario.AttackerFaction);
             host.GetRequiredService<IPilotSafety>().Set(Human, ShipSafetyLevel.Full);
 
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
@@ -51,23 +54,23 @@ public sealed partial class CapsuleerMilitiaPatrolTests
             var concord = host.GetRequiredService<ConcordMaintenance>();
             var presence = host.GetRequiredService<IHumanPresence>();
             using var observer = presence.Select(Human, Jita);
-            scheduler.PopulationPrepared(Aldranette);
+            scheduler.PopulationPrepared(scenario.Frontline);
             HaulerObservation? patrol = null;
             for (int second = 0; second < MaximumSeconds; second++)
             {
                 Tick();
-                patrol = scheduler.Hauler(GallentePilot);
+                patrol = scheduler.Hauler(DefenderPilot);
                 if (patrol?.Work.MilitiaPatrol is { Phase: MilitiaPatrolPhase.Holding })
                 {
                     break;
                 }
             }
             Assert.Equal(MilitiaPatrolPhase.Holding, patrol?.Work.MilitiaPatrol?.Phase);
-            Assert.Equal(MilitiaFaction.Gallente, enlistment.Read(GallentePilot).Effective);
+            Assert.Equal(scenario.DefenderFaction, enlistment.Read(DefenderPilot).Effective);
             var enemyPosition = Assert.IsType<SpacePosition>(patrol!.Pilot.Position);
 
             // Keep the fixture's human grid entry separate from the flight, target and combat paths under test.
-            ships.SetPosition(humanShip, enemyPosition + new SpacePosition(1_000, 0, 0), Aldranette);
+            ships.SetPosition(humanShip, enemyPosition + new SpacePosition(1_000, 0, 0), scenario.Frontline);
             var human = ships.FindPilot(account)!;
             using PilotCallContext client = new(
                 account,
@@ -81,12 +84,12 @@ public sealed partial class CapsuleerMilitiaPatrolTests
             observer.Dispose();
             Tick();
             client.Flight.Snapshot();
-            Assert.Equal(MilitiaFaction.Caldari, client.Pilot.Identity.WarFaction);
+            Assert.Equal(scenario.AttackerFaction, client.Pilot.Identity.WarFaction);
             var snapshot = client.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.SetState>().Last().Snapshot;
-            var enemy = Assert.Single(snapshot.Slims.OfType<ShipSlimItem>(), slim => slim.Ship.Pilot.ShipId == GallenteShip);
+            var enemy = Assert.Single(snapshot.Slims.OfType<ShipSlimItem>(), slim => slim.Ship.Pilot.ShipId == DefenderShip);
             var fields = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(enemy.ToBlue()).State);
-            Assert.Equal((int)MilitiaFaction.Gallente, fields["warFactionID"]);
-            Assert.NotNull(client.Flight.FindTarget(GallenteShip));
+            Assert.Equal((int)scenario.DefenderFaction, fields["warFactionID"]);
+            Assert.NotNull(client.Flight.FindTarget(DefenderShip));
 
             using var scope = host.CreateScope();
             var targeting = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
@@ -94,20 +97,20 @@ public sealed partial class CapsuleerMilitiaPatrolTests
             List<PilotDamage> shots = [];
             host.GetRequiredService<PilotDamageSignal>().Applied += damage =>
             {
-                if (damage.Applied > 0 && (damage.PilotId, damage.AttackerId) is (Human, GallentePilot) or (GallentePilot, Human))
+                if (damage.Applied > 0 && (damage.PilotId, damage.AttackerId) is (Human, DefenderPilot) or (DefenderPilot, Human))
                 {
                     shots.Add(damage);
                 }
             };
-            Assert.IsType<PilotCallResult.Failure>(combat.Call(client, "dogmaIM", "Activate", [gun, firingEffect, GallenteShip, 1L]));
-            Assert.IsNotType<PilotCallResult.Failure>(targeting.Call(client, "dogmaIM", "AddTarget", [GallenteShip]));
-            for (int second = 0; second < lockTimeout && !targeting.IsLocked(GallenteShip); second++)
+            Assert.IsType<PilotCallResult.Failure>(combat.Call(client, "dogmaIM", "Activate", [gun, firingEffect, DefenderShip, 1L]));
+            Assert.IsNotType<PilotCallResult.Failure>(targeting.Call(client, "dogmaIM", "AddTarget", [DefenderShip]));
+            for (int second = 0; second < lockTimeout && !targeting.IsLocked(DefenderShip); second++)
             {
                 Tick();
                 targeting.Advance(client);
             }
-            Assert.True(targeting.IsLocked(GallenteShip));
-            Assert.Same(PilotCallResult.None, combat.Call(client, "dogmaIM", "Activate", [gun, firingEffect, GallenteShip, 10L]));
+            Assert.True(targeting.IsLocked(DefenderShip));
+            Assert.Same(PilotCallResult.None, combat.Call(client, "dogmaIM", "Activate", [gun, firingEffect, DefenderShip, 10L]));
             for (int second = 0; second < combatTimeout && shots.Select(shot => shot.AttackerId).Distinct().Count() < 2; second++)
             {
                 Tick();
@@ -115,14 +118,14 @@ public sealed partial class CapsuleerMilitiaPatrolTests
                 combat.Advance(client);
             }
             Assert.Contains(shots, shot => shot.AttackerId == Human && shot.WeaponType == Railgun);
-            Assert.Contains(shots, shot => shot.AttackerId == GallentePilot && shot.WeaponType == Railgun);
+            Assert.Contains(shots, shot => shot.AttackerId == DefenderPilot && shot.WeaponType == Railgun);
 
             var crimewatch = host.GetRequiredService<IPilotCrimewatch>();
             var status = host.GetRequiredService<IPilotSecurityStatus>();
-            Assert.Equal(ShipSafetyLevel.Full, crimewatch.Read(Human, Aldranette).Safety);
-            foreach (long pilot in new[] { Human, GallentePilot })
+            Assert.Equal(ShipSafetyLevel.Full, crimewatch.Read(Human, scenario.Frontline).Safety);
+            foreach (long pilot in new[] { Human, DefenderPilot })
             {
-                var timers = crimewatch.Read(pilot, Aldranette).Timers;
+                var timers = crimewatch.Read(pilot, scenario.Frontline).Timers;
                 Assert.Equal(CrimewatchFlag.None, timers.Flag(clock.Now));
                 Assert.True(timers.Weapons.Running(clock.Now));
                 Assert.DoesNotContain(status.History(pilot), entry => entry.Event == SecurityEvent.IllegalAggression);
@@ -141,13 +144,13 @@ public sealed partial class CapsuleerMilitiaPatrolTests
         }
     }
 
-    private static long FitPlayerShip(LiveWorld live, WorldDatabase database, long ship, TestClock clock)
+    private static long FitPlayerShip(LiveWorld live, WorldDatabase database, long ship, TestClock clock, int station)
     {
         using var world = live.Economy.Begin(new(pilots: [Human], ships: [ship]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var hull = world.Ships.Find(ship)!;
         hull.TypeId = Merlin;
-        hull.StationId = NennamailaStation;
+        hull.StationId = station;
         TrafficFitting.Apply(
             world,
             catalog,

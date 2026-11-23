@@ -311,6 +311,9 @@ internal sealed partial class CapsuleerHauler
                 _work = Work with { Ratting = null };
                 BeginTravel();
                 break;
+            case RattingPhase.Returning when OnNullsecExpedition:
+                ReturnFromNullsecDestination(activity);
+                break;
             case RattingPhase.Returning:
                 if (Work.TargetId != activity.StationId || _target?.Id != activity.StationId || Work.WaitingReason is not null)
                 {

@@ -196,6 +196,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Batched population startup](protocol/capsuleers.md#batched-population-startup--november-10-2026)
 - [Simulated-pilot target lock retention](protocol/capsuleers.md#simulated-pilot-target-lock-retention-november-9-2026)
 - [Nullsec transit encounters](protocol/capsuleers.md#nullsec-transit-encounters)
+- [Independent nullsec expeditions](protocol/capsuleers.md#independent-nullsec-expeditions)
 - [Stalled gate traffic and belt pursuit](protocol/capsuleers.md#stalled-gate-traffic-and-belt-pursuit)
 - [Temporary gate camps](protocol/capsuleers.md#temporary-gate-camps)
 - [Nullsec PvP roams](protocol/capsuleers.md#nullsec-pvp-roams)
@@ -478,6 +479,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 - [Battlefield rally points, friendly fire and defender loot](protocol/faction-warfare.md#battlefield-rally-points-friendly-fire-and-defender-loot)
 - [Aldranette–Nennamaila militia patrols](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
+- [Dynamic faction warfare patrols](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
 - [Resident faction warfare capture and combat eligibility](protocol/faction-warfare.md#resident-capture-and-combat-eligibility)
 - [Theaters of War shipcaster reads, November 21, 2026](protocol/faction-warfare.md#theaters-of-war-shipcaster-reads--november-21-2026)
 - [Faction Warfare militia missions, ranks and combat statistics, November 20, 2026](protocol/faction-warfare.md#militia-missions-ranks-and-combat-statistics--november-20-2026)

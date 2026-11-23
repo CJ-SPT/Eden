@@ -246,14 +246,19 @@ public sealed class WorldSettingsPageTests
         Assert.True(SettingsForm.From(enabled).MilitiaPatrols);
         Assert.Contains(
             ConfigurationDisplay.Compare(original, original with { Settings = enabled }),
-            change => change.Field == "Aldranette–Nennamaila militia patrols" && change.After == "On"
+            change => change.Field == "Faction warfare patrols" && change.After == "On"
         );
     }
 
     [Fact]
     public void PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges()
     {
-        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9) { Exploration = false, WreckSalvage = false };
+        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9)
+        {
+            Exploration = false,
+            WreckSalvage = false,
+            NullsecExpeditions = false,
+        };
         var form = SettingsForm.From(new() { Capsuleers = policy });
         Assert.Equal(policy, form.Build().Capsuleers);
         Assert.Equal(new CapsuleerPopulationPolicy(), SettingsForm.From(new()).Build().Capsuleers);

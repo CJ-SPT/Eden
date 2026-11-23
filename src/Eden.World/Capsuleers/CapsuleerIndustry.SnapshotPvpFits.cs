@@ -43,7 +43,8 @@ internal sealed partial class CapsuleerIndustry
         Ship? current,
         int stagingSystem,
         bool visitsHighSecurity,
-        Func<int, IEnumerable<int>, bool>? allowedMilitiaFit = null
+        Func<int, IEnumerable<int>, bool>? allowedMilitiaFit = null,
+        long? affordableReadyBudget = null
     )
     {
         if (snapshot.Profiles.Count == 0)
@@ -94,7 +95,15 @@ internal sealed partial class CapsuleerIndustry
                 .ThenBy(fit => TravelerRoutineRules.Mix((ulong)id ^ TravelerRoutineRules.Mix((ulong)fit.KillId)))
         )
         {
-            if (fit.Parts.All(part => Available(part)))
+            if (
+                fit.Parts.All(part => Available(part))
+                && (
+                    affordableReadyBudget is not long budget
+                    || fit.Parts.Sum(part => (decimal)quotes[part]!.LimitPriceCents * part.Quantity) <= budget
+                        && fit.Parts.All(part => usable.Contains(part.TypeId))
+                        && PvpFitQualified(world, catalog, pilot, fit.Kit, fit.Parts, out _)
+                )
+            )
             {
                 return new(fit.Kit.HullTypeId, fit.Kit.Slots, fit.Kit.Magazines);
             }
