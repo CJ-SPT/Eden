@@ -1127,6 +1127,7 @@ internal sealed partial class ResidentEconomy
                 primaryColumn: "Id"
             )
         );
+        RegisterCombatReports();
         Register(
             new EconomyTable<Ship, EconomyShip>(
                 "WorldShip",

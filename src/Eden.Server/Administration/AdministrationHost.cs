@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration.Components;
@@ -114,6 +115,7 @@ internal static class AdministrationHost
             ));
             builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<IServerKillboard>());
             builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
             builder.Services.AddScoped<AdministrationOperations>();
             builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Modding.ModStore>());

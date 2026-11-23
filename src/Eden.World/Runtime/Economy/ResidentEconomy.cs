@@ -237,7 +237,11 @@ internal sealed partial class ResidentEconomy
         return result;
     }
 
-    private ResidentEconomy() => RegisterTables();
+    private ResidentEconomy()
+    {
+        _combatReports = new(KillboardPilotKind);
+        RegisterTables();
+    }
 
     internal ResidentEconomy(LiveWorld owner, WorldDatabase database)
         : this()

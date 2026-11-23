@@ -412,6 +412,11 @@ Restoring also creates a pending revision.
 Use **Player bots** to configure individual bot activities. **Population** shows the active values after restart.
 [Autonomous population settings](#autonomous-population)
 
+Open **Killboard** to browse server combat history with the administrator account. Choose a **Final blow (kills)**
+type, a **Destroyed (losses)** type, or both. For example, choose **NPC** and **Bot** to find bots killed by NPCs.
+The board lists up to 50 reports per page, newest first, and keeps the filters when you open older reports.
+[Server killboard coverage](protocol/combat.md#server-killboard)
+
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 
 The editor uses a dark theme throughout settings, catalog browsing, revision history and sign-in, including native form controls, validation messages and keyboard focus indicators.

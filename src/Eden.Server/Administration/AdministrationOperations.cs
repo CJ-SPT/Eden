@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Skills;
 using Eden.World.Capsuleers;
@@ -48,6 +49,7 @@ internal sealed partial class AdministrationOperations(
     Eden.World.Storage.WorldDatabase database,
     CapsuleerCorporationIdentityStore corporationIdentities,
     OptionalDataImports optionalDataImports,
+    IServerKillboard killboard,
     IRegionalConflictDiagnostics? regionalConflicts = null
 )
 {
@@ -93,6 +95,12 @@ internal sealed partial class AdministrationOperations(
     {
         await Authorize(user);
         return performance.Read();
+    }
+
+    internal async Task<KillboardPage?> Killboard(ClaimsPrincipal user, KillboardFilter filter)
+    {
+        await Authorize(user);
+        return killboard.Read(filter);
     }
 
     internal async Task<AdminPopulationSnapshot> Population(ClaimsPrincipal user)

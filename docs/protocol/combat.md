@@ -1938,3 +1938,32 @@ The build, Python policy suites and formatting checks passed.
 **Live acceptance.** Not performed. Agent client testing is disabled.
 
 **Optional maintainer checks.** None.
+
+## Server killboard
+
+The authenticated administration page at `/killboard` shows the system, UTC time, destroyed ship or capsule, and final
+blow for Eden's recorded combat events. Either side can be filtered independently by player, bot or NPC. Non-capsuleer
+sources such as environmental damage are included under NPC when a combat report records them. The board uses the
+victim's report for a capsuleer loss and the original kill report for an NPC loss. Participant copies remain available
+in the native combat log. [Operator guide](../world-configuration.md#local-graphical-editor)
+
+The resident combat report table builds its board index when the world loads and updates it with committed report
+writes and deletes. The cursor uses event time and report ID to preserve ordering when events share a timestamp.
+Existing checkpoints supply the history, including records backfilled from older saves. Encounters without a saved
+report, including Abyssal NPC kills, and the imported zKillboard traffic snapshot are outside this feed.
+
+UniWiki describes final-blow and victim roles. The local EVE.js 261108.1 reference, targeting build 3396210,
+was checked in `server/src/space/combat/killmailTracker.js` (SHA-256 prefix `97CBFC3C26C59EFF`).
+The board reads Eden's existing combat history for build 3662168.
+[UniWiki Killmail](https://wiki.eveuniversity.org/Killmail) ·
+[Character interaction history](characters.md#character-interaction-history-november-5-2026)
+
+**Automated validation.** The two exact killboard and NPC turret methods passed in 17 seconds. The follow-up
+filter covered `AdministrationTests`, `InteractionHistoryPersistenceTests`, `CharacterInteractionHistoryTests`,
+`FatalShotSettlesOneLossCapsuleWreckInsuranceAndBothHistoriesAcrossReopen`, and
+`ResidentLossCheckpointRetriesTheCapsuleWreckReportAndInsuranceTogether`. It passed 51 cases in 49 seconds
+with one live-browser case skipped. The build, Python catalog and formatting policies, and format verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open Killboard after updating the server and use the NPC and bot filters against a known encounter.
