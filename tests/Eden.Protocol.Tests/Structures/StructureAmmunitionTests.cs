@@ -120,11 +120,17 @@ public sealed class StructureAmmunitionTests
         );
         Assert.Equal(30, tupleInfo.Attributes[DogmaAttributeId.Quantity]);
         f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(10));
-        Success("dogmaIM", "UnloadAmmo", [structure.Id, launcher, structure.Id, 10L]);
+        var unload = Success("dogmaIM", "UnloadAmmo", [structure.Id, launcher, structure.Id, 10L]);
+        long unloadedId = Assert.IsType<long>(Assert.Single(Assert.IsType<List<object?>>(WireAssertions.Materialize(unload.Reply))));
         info = Assert.IsType<DogmaAllInfo>(Success("dogmaIM", "GetAllInfo", [true, true, true]).Reply);
         Assert.Equal(20, Assert.Single(info.Charges).Value.Attributes[DogmaAttributeId.Quantity]);
         Success("@hangar", "Add", [first, structure.Id], new() { ["flag"] = (long)InventoryFlag.Hangar, ["qty"] = 1L });
         using var action = StructureAttackTests.Scope(f);
+        var unloaded = Assert.Single(action.World.Filter<OwnedItem>(item => item.Id == unloadedId));
+        Assert.Equal(f.CorporationId, unloaded.OwnerId);
+        Assert.Equal(structure.Id, unloaded.LocationId);
+        Assert.Equal((int)InventoryFlag.Cargo, unloaded.FlagId);
+        Assert.Equal(10, unloaded.Quantity);
         Assert.Contains(
             action.World.Filter<OwnedItem>(item => item.OwnerId == f.PilotId && item.LocationId == structure.Id),
             item => item.TypeId == 37843 && item.FlagId == (int)InventoryFlag.Hangar && item.Quantity == 1

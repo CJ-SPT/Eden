@@ -299,7 +299,9 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 - **Fitting.** Swap and rearrange modules, group weapons, load charges and save personal, corporation or alliance fittings.
   Apply supported fits with Multifit. Administrators can scale CPU, power grid, calibration and drone bandwidth.
   Fitting simulation uses the selected pilot's ship and combat-drone skill bonuses.
+  Drag loaded charges between compatible modules in the fitting window.
   In space, fitted modules can go offline without cost. Bringing them online away from a fitting service requires 95% capacitor.
+  [Drag loaded charges](protocol/fitting.md#dragging-loaded-charges-between-fitting-slots) ·
   [Module online state](protocol/fitting.md#module-online-state-in-space) ·
   [Fitting simulation](protocol/fitting.md#trained-skills-in-fitting-simulation) ·
   [Fitting records](protocol/fitting.md) · [World settings](world-configuration.md#fitting)
