@@ -159,6 +159,16 @@ internal sealed partial class WreckStore
         {
             pilot = world.Pilots.Find(mission.PilotId) ?? pilot;
         }
+        else
+        {
+            pilot =
+                LootRightsRules
+                    .RankNpcWreckOwners(PilotInteractionHistoryStore.DamageContributions(world, npc.Id))
+                    .Select(id => world.Pilots.Find(id))
+                    .OfType<Pilot>()
+                    .FirstOrDefault()
+                ?? pilot;
+        }
         var wreck = world
             .Set<WorldWreck>()
             .Add(

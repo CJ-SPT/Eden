@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 
@@ -15,6 +16,14 @@ public interface ISpaceLootRights
 public static class LootRightsRules
 {
     public const int MaximumAbandonSelection = 1000;
+
+    public static IEnumerable<long> RankNpcWreckOwners(IEnumerable<CombatParty> damage) =>
+        damage
+            .Where(attacker => attacker.CharacterId is > 0 && attacker.Damage > 0)
+            .GroupBy(attacker => attacker.CharacterId.GetValueOrDefault())
+            .OrderByDescending(character => character.Sum(attacker => attacker.Damage))
+            .ThenBy(character => character.Key)
+            .Select(character => character.Key);
 
     public static bool CanTakeFromOwner(LootOwnerAccess owner) =>
         owner.Flag is CrimewatchFlag.Suspect or CrimewatchFlag.Criminal

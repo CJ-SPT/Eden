@@ -62,6 +62,15 @@ internal sealed partial class PilotInteractionHistoryStore
             .OfType<Pilot>()
             .ToArray();
 
+    internal static IEnumerable<CombatParty> DamageContributions(WorldAction world, long victimId) =>
+        world.Filter<SavedCombatDamage>(row => row.VictimId == victimId).AsEnumerable().Select(RecordedAttacker);
+
+    private static CombatParty RecordedAttacker(SavedCombatDamage row) =>
+        (JsonSerializer.Deserialize<CombatParty>(row.PartyJson) ?? throw new InvalidDataException("Invalid combat damage record.")) with
+        {
+            Damage = row.Damage,
+        };
+
     internal static void Destroyed(
         WorldAction world,
         long pilotId,
@@ -77,15 +86,7 @@ internal sealed partial class PilotInteractionHistoryStore
         // Include tracked entries for a fatal first shot before SaveChanges.
         var rows = world.Set<SavedCombatDamage>().Where(d => d.VictimId == victim.EntityId).ToList();
         rows.AddRange(world.Set<SavedCombatDamage>().Local.Where(d => d.VictimId == victim.EntityId && !Enumerable.Contains(rows, d)));
-        var attackers = rows.Select(d =>
-                (
-                    JsonSerializer.Deserialize<CombatParty>(d.PartyJson) ?? throw new InvalidDataException("Invalid combat damage record.")
-                ) with
-                {
-                    Damage = d.Damage,
-                }
-            )
-            .ToArray();
+        var attackers = rows.Select(RecordedAttacker).ToArray();
         final = attackers.SingleOrDefault(a => a.EntityId == final.EntityId) ?? final;
         long? killRightSupplier = shareWithAttackers ? PilotKillRightStore.Consume(world, pilotId, final.CharacterId, now) : null;
         Save(

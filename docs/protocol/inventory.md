@@ -17,6 +17,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Resident cargo container access, November 15, 2026](#resident-cargo-container-access-november-15-2026)
 - [Cargo container assembly and personal asset worth](#cargo-container-assembly-and-personal-asset-worth)
 - [Criminal loot and lawful recovery, November 14, 2026](#criminal-loot-and-lawful-recovery-november-14-2026)
+- [NPC wreck ownership from damage](#npc-wreck-ownership-from-damage)
 
 - [Loot abandonment and theft, November 14, 2026](#loot-abandonment-and-theft-november-14-2026)
 
@@ -331,6 +332,34 @@ FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~PersonalAssetS
 
 **Optional maintainer checks.** On the updated server, assemble a packaged station container and reopen the personal
 inventory to check estimated worth.
+
+## NPC wreck ownership from damage
+
+Ordinary NPC wrecks and their dropped items now belong to the capsuleer with the highest total applied damage. Damage
+from different hulls or drones is summed by character. Eden breaks exact ties by character ID, as in the reference
+engine. A wreck in a mission with a saved owner still belongs to that mission owner. The final blow stays credited to
+the pilot who fired it in Eden's combat history.
+
+The resident kill settlement picks the wreck owner from the target's indexed damage contributions after the lethal hit
+and before the report clears the contributions. Wreck ownership, contents and loot rights commit with the kill. The pinned
+build **3662168** uses `HaveLootRight(itemID)` in `bracketVarious.IsForbiddenContainer` and
+`celestialCheckers.OfferAbandonWreck`. Both use the existing wreck metadata and loot-rights path.
+
+Sources include [CCP's container and wreck rules](https://support.eveonline.com/hc/en-us/articles/115000597345-Container-and-Wreck-Ownership),
+[EVE University on salvaging and theft](https://wiki.eveuniversity.org/Ninja_Salvaging_and_Stealing), and the local EVE.js
+`261108.1` snapshot's `combatDestruction.js` and `killmailTracker.js`. The pinned archive was inspected as inert code
+objects and matched SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+
+**Automated validation.** `NpcWreckBelongsToTheHighestDamagePilotAcrossShipsAndKeepsTheFinalBlow` failed on the original
+ownership assertion and passed after the fix in **7.24 seconds**. It checks resident damage aggregation, wreck and item
+ownership, the separate final-blow record, and checkpointed loot after the target's damage rows are cleared. The
+`NpcCombatTests|WreckTests|MissionGateAccessTests|LiveCombatObjectTests` filter passed **82 tests** in **45.60 seconds**.
+The solution build had zero warnings and errors, and the catalog and formatting policy suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Have two pilots damage the same NPC, with the lower-damage pilot landing the final shot.
+Check the wreck's ownership and the combat report.
 
 ## Criminal loot and lawful recovery, November 14, 2026
 
