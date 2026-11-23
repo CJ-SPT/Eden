@@ -301,6 +301,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - <a id="persistent-home-stations-and-docked-clone-transfer"></a>[Persistent home stations and docked clone transfer](protocol/characters.md#persistent-home-stations-and-docked-clone-transfer)
 - <a id="catalog-agent-directory-and-saved-agents"></a>[Catalog agent directory and saved agents](protocol/characters.md#catalog-agent-directory-and-saved-agents)
 - <a id="persistent-personal-jump-clones"></a>[Persistent personal jump clones](protocol/characters.md#persistent-personal-jump-clones)
+- [Pochven NPC clone bays](protocol/characters.md#pochven-npc-clone-bays)
 - <a id="persistent-account-redemption"></a>[Persistent account redemption](protocol/characters.md#persistent-account-redemption)
 - <a id="persistent-unallocated-skill-points"></a>[Persistent unallocated skill points](protocol/characters.md#persistent-unallocated-skill-points)
 - [Skill-point queue call latency, November 13, 2026](protocol/characters.md#skill-point-queue-call-latency-november-13-2026)

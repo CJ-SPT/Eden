@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -124,6 +125,116 @@ internal static class JumpCloneTestData
 
 public sealed class JumpCloneTests
 {
+    [Fact]
+    public async Task PochvenCloneFacilitiesRequireStandingAndOnlyAllowLocalSwaps()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock);
+        JumpCloneTestData.Prepare(db);
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            const int constellation = 20010001;
+            catalog.Add(new Region { Id = HomeStationRules.PochvenRegion, Name = "Pochven" });
+            catalog.Add(new Constellation { Id = constellation, RegionId = HomeStationRules.PochvenRegion });
+            catalog.Set<SolarSystem>().AsTracking().Single(system => system.Id == HomeStationTestData.System).ConstellationId =
+                constellation;
+            catalog.SaveChanges();
+        }
+
+        const long pilot = JumpCloneTestData.PilotId;
+        const int pochven = HomeStationTestData.Other;
+        const long faction = (long)AgentStandingFaction.Triglavian;
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath))
+        {
+            Assert.Equal(HomeStationRules.PochvenRegion, catalog.RequireStation(pochven).RegionId);
+        }
+        var login = db.Store.FindPilot(1000001)!;
+        long capsule = db.Services.GetRequiredService<IPilotFleet>().Leave(pilot, login.ShipId).Pilot.ShipId;
+        var clones = db.Services.GetRequiredService<IPilotJumpClones>();
+        var wallet = db.Services.GetRequiredService<IPilotWalletReader>();
+        long installedId;
+        long lastJump;
+        using (LiveWorld live = new(new(db.Path), clock, _ => { }))
+        {
+            clones.Install(pilot);
+            var remote = Assert.Single(clones.Read(pilot).Clones);
+            using (var setup = live.Economy.Begin(new(pilots: [pilot], ships: [capsule])))
+            {
+                setup.Ships.Find(capsule)!.StationId = pochven;
+                setup.Add(
+                    new SavedNpcStanding
+                    {
+                        PilotId = pilot,
+                        SourceId = faction,
+                        Value = 2.99,
+                    }
+                );
+                setup.Add(new SavedJumpCloneTimer { PilotId = pilot, Time = clock.Now });
+                setup.Commit();
+            }
+            Assert.Equal(pochven, live.Economy.Inspect(world => world.Pilots.Find(pilot)!.ActiveShip.StationId));
+            Assert.Throws<InvalidDataException>(() => clones.Price(pilot));
+            Assert.Throws<InvalidDataException>(() => clones.InstallLimit(pilot));
+            Assert.Throws<InvalidDataException>(() => clones.Install(pilot));
+            Assert.Equal(JumpCloneTestData.Funds - JumpCloneRules.FeeCents, wallet.Balance(pilot));
+
+            using (var standing = live.Economy.Begin(new(pilots: [pilot])))
+            {
+                standing.Set<SavedNpcStanding>().Find(pilot, faction)!.Value = 3;
+                standing.Commit();
+            }
+            Assert.Equal(JumpCloneRules.FeeCents, clones.Price(pilot));
+            Assert.Null(clones.InstallLimit(pilot));
+            Assert.Equal(pochven, clones.Install(pilot).StationId);
+            var local = Assert.Single(clones.ReadStationClones(pilot));
+            installedId = local.Id;
+            Assert.Equal(pochven, local.StationId);
+
+            List<string> commands = [];
+            using (SessionPerformance.Begin("Pochven clone commands", _ => { }, force: true, command: commands.Add))
+            {
+                // Expire the cooldown before testing the regional restriction.
+                clock.AdvanceWallTime(TimeSpan.FromHours(24));
+                Assert.Throws<InvalidDataException>(() =>
+                    clones.Jump(pilot, capsule, remote.StationId, remote.Id, JumpCloneRules.FeeCents)
+                );
+                using (var setup = live.Economy.Begin(new(pilots: [pilot], ships: [capsule])))
+                {
+                    setup.Ships.Find(capsule)!.StationId = HomeStationTestData.Origin;
+                    setup.Commit();
+                }
+                Assert.Throws<InvalidDataException>(() => clones.Jump(pilot, capsule, pochven, installedId, JumpCloneRules.FeeCents));
+                using (var setup = live.Economy.Begin(new(pilots: [pilot], ships: [capsule])))
+                {
+                    setup.Ships.Find(capsule)!.StationId = pochven;
+                    setup.Set<SavedNpcStanding>().Find(pilot, faction)!.Value = 2.99;
+                    setup.Commit();
+                }
+                Assert.Throws<InvalidDataException>(() => clones.Jump(pilot, capsule, pochven, installedId, JumpCloneRules.FeeCents));
+                lastJump = clock.Now;
+                using (var setup = live.Economy.Begin(new(pilots: [pilot])))
+                {
+                    setup.Set<SavedNpcStanding>().Find(pilot, faction)!.Value = 3;
+                    setup.Set<SavedJumpCloneTimer>().Find(pilot)!.Time = lastJump;
+                    setup.Commit();
+                }
+                clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+                var swap = clones.Jump(pilot, capsule, pochven, installedId, JumpCloneRules.FeeCents);
+                Assert.Equal(pochven, swap.Pilot.StationId);
+                Assert.NotEqual(capsule, swap.Pilot.ShipId);
+                Assert.Equal(lastJump, clones.Read(pilot).LastJump);
+                Assert.Equal(JumpCloneTestData.Funds - 3 * JumpCloneRules.FeeCents, wallet.Balance(pilot));
+            }
+            Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+            await live.FlushAsync();
+        }
+        using LiveWorld reopened = new(new(db.Path), clock, _ => { });
+        Assert.Equal(lastJump, clones.Read(pilot).LastJump);
+        Assert.DoesNotContain(clones.Read(pilot).Clones, clone => clone.Id == installedId);
+        Assert.Single(clones.ReadStationClones(pilot));
+        Assert.Equal(JumpCloneTestData.Funds - 3 * JumpCloneRules.FeeCents, wallet.Balance(pilot));
+    }
+
     [Fact]
     public async Task ResidentSwapsAndCloneReadsAvoidWorldSqlAndCheckpointTheFinalActiveBody()
     {

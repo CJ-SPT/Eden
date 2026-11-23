@@ -77,6 +77,7 @@ public static class JumpCloneRules
     public const int BaseCooldownHours = 24;
     public const long FirstJournalId = 11_000_000_000_000;
     public const int TheraSystem = 31000005;
+    private const double PochvenStandingRequired = 3.0;
 
     public static long Pay(long balance, long quotedCents)
     {
@@ -109,6 +110,15 @@ public static class JumpCloneRules
         )
         {
             throw new InvalidDataException("Remote clone jumps are unavailable in this system.");
+        }
+    }
+
+    public static void CheckPochvenStanding(double standing)
+    {
+        // CCP's Triglavian Space service requirements allow only local clone swaps.
+        if (standing < PochvenStandingRequired)
+        {
+            throw new InvalidDataException("You need 3.00 standing with the Triglavian Collective to use this clone facility.");
         }
     }
 

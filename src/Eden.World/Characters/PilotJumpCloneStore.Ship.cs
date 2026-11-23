@@ -102,7 +102,8 @@ internal sealed partial class PilotJumpCloneStore
         long now = Now;
         var pilot = Pilot(world, pilotId);
         var old = pilot.ActiveShip;
-        var source = CurrentStation(catalog, pilot, facility: false);
+        var source = CurrentStation(world, catalog, pilot, facility: false);
+        JumpCloneRules.CheckLocation(source.SolarSystemId, source.RegionId);
         if (old.Id != expectedShipId || catalog.FittingType(old.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidDataException("Leave your ship and jump from your current capsule.");
