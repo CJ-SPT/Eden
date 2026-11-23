@@ -2,6 +2,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -103,11 +104,12 @@ public sealed class SovereigntyProtocolTests
             1,
             SignedSettings.Empty
         );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.Same(PilotCallResult.Unsupported, AllianceSystems([(long)fixture.AllianceId]));
         context.Select(pilot);
         context.Flight.Snapshot();
         var monitor = scope.ServiceProvider.GetRequiredService<SovereigntyMonitor>();
         monitor.Advance(context);
-        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         object? Reply(string service, string method, object?[] args)
         {
             var result = Assert.IsType<PilotCallResult.Success>(router.Call(context, service, method, args, _ => { }));
@@ -136,6 +138,25 @@ public sealed class SovereigntyProtocolTests
         );
         Assert.Equal((long)fixture.AllianceId, BlueRead.Fields(mapRow.State)["allianceID"]);
         Assert.Equal((long)SovereigntyCaptureFixture.SystemId, BlueRead.Fields(mapRow.State)["solarSystemID"]);
+        using (var metrics = SessionPerformance.Begin("alliance systems", _ => { }, force: true)!)
+        {
+            var filteredRow = Assert.IsType<BlueInstance>(Assert.Single(AllianceRows([(long)fixture.AllianceId])));
+            Assert.Equal("utillib.KeyVal", filteredRow.Name);
+            var claimFields = BlueRead.Fields(filteredRow.State);
+            Assert.Equal((long)fixture.AllianceId, claimFields["allianceID"]);
+            Assert.Equal((long)SovereigntyCaptureFixture.SystemId, claimFields["solarSystemID"]);
+            Assert.Equivalent(filteredRow, Assert.Single(AllianceRows([])));
+            Assert.Empty(AllianceRows([(long)fixture.OtherAllianceId]));
+            Assert.Empty(AllianceRows([0L]));
+            Assert.Empty(AllianceRows([null]));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+        }
+        foreach (object?[] invalid in new object?[][] { [-1L], [(long)int.MaxValue + 1], ["invalid"], [1L, 2L] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(AllianceSystems(invalid));
+        }
+        Assert.IsType<PilotCallResult.Failure>(AllianceSystems([(long)fixture.AllianceId], new() { ["allianceID"] = 1L }));
         var contacts = fixture.World.Services.GetRequiredService<IStructureContacts>().Contacts(SovereigntyCaptureFixture.SystemId);
         var body = Assert.Single(contacts, body => body.Id == hub);
         var slim = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(new StaticSlimItem(body))));
@@ -153,6 +174,22 @@ public sealed class SovereigntyProtocolTests
         var status = Assert.Single(context.Notifications.OfType<SovereigntyStatusChanged>());
         var args = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(status.Arguments)), 2);
         Assert.IsType<BlueConstructor>(args[1]);
+
+        PilotCallResult AllianceSystems(object?[] arguments, Dictionary<string, object?>? keywords = null) =>
+            router.Call(
+                context,
+                "stationSvc",
+                "GetSystemsForAlliance",
+                BlueMarshal.Decode(BlueMarshal.Encode(arguments)),
+                _ => { },
+                keywords
+            );
+
+        List<object?> AllianceRows(object?[] arguments)
+        {
+            var result = Assert.IsType<PilotCallResult.Success>(AllianceSystems(arguments));
+            return Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(result.Reply)));
+        }
     }
 
     [Theory]

@@ -2,6 +2,7 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Sovereignty;
 using Eden.Protocol.Structures;
 
 namespace Eden.Protocol.Maps;
@@ -18,6 +19,23 @@ internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis 
         Dictionary<string, object?>? keywords = null
     )
     {
+        if ((service, method) == ("stationSvc", "GetSystemsForAlliance"))
+        {
+            if (keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Unexpected alliance systems options.");
+            }
+            // Build 3662168 FormAlliancesSystems.Load passes session.allianceid to this lookup.
+            return args switch
+            {
+                [] => new AllianceSystemsReply(
+                    context.Pilot.Identity.AllianceId is > 0 and var alliance ? entosis.ClaimsForAlliance(alliance) : []
+                ),
+                [null or 0L] => new AllianceSystemsReply([]),
+                [long id] when id is > 0 and <= int.MaxValue => new AllianceSystemsReply(entosis.ClaimsForAlliance((int)id)),
+                _ => new PilotCallResult.Failure("Choose a valid alliance ID."),
+            };
+        }
         if (
             (service, method)
             is not (
@@ -43,7 +61,7 @@ internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis 
         {
             "solarsystemInterferenceMgr" when method == "GetLocalInterferenceState" => PilotCallResult.None,
             "structureDirectory" => new JumpBridgeNetworkReply(bridges?.Network(context.Pilot.PilotId) ?? new([], [], [])),
-            "stationSvc" => new Eden.Protocol.Sovereignty.AllianceSystemsReply(entosis.Claims()),
+            "stationSvc" => new AllianceSystemsReply(entosis.Claims()),
             _ => BlueEmpty.IndexedDictionary,
         };
     }

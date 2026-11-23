@@ -176,15 +176,21 @@ internal sealed partial class PilotEntosisStore(
         return live.Economy.Inspect(world => Snapshot(world, systemId, Now));
     }
 
-    public IReadOnlyList<SovereigntyClaim> Claims() =>
-        Live.Economy.Inspect(world =>
-            (IReadOnlyList<SovereigntyClaim>)
-                world
-                    .Set<SavedSovereigntyClaim>()
-                    .OrderBy(row => row.SystemId)
-                    .Select(row => new SovereigntyClaim(row.SystemId, row.HubId, row.CorporationId, row.AllianceId, row.ClaimedAt))
-                    .ToArray()
-        );
+    public IReadOnlyList<SovereigntyClaim> Claims() => ReadClaims(null);
+
+    public IReadOnlyList<SovereigntyClaim> ClaimsForAlliance(int allianceId) => ReadClaims(allianceId);
+
+    private IReadOnlyList<SovereigntyClaim> ReadClaims(int? allianceId) =>
+        Live.Economy.Inspect<IReadOnlyList<SovereigntyClaim>>(world =>
+        {
+            var claims = allianceId is int owner
+                ? world.Filter<SavedSovereigntyClaim>(row => row.AllianceId == owner)
+                : world.Set<SavedSovereigntyClaim>();
+            return claims
+                .OrderBy(row => row.SystemId)
+                .Select(row => new SovereigntyClaim(row.SystemId, row.HubId, row.CorporationId, row.AllianceId, row.ClaimedAt))
+                .ToArray();
+        });
 
     internal static SovereigntyHub? Snapshot(WorldAction world, int system, long now)
     {

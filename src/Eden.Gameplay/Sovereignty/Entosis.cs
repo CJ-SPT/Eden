@@ -55,6 +55,7 @@ public interface IPilotEntosis
     StructureResult Deploy(long pilotId, long itemId);
     SovereigntyHub? Hub(int systemId);
     IReadOnlyList<SovereigntyClaim> Claims();
+    IReadOnlyList<SovereigntyClaim> ClaimsForAlliance(int allianceId);
     SovereigntyDevelopment Development(int systemId);
     IReadOnlyList<SovereigntyDevelopment> AllDevelopment();
     SovereigntyCapital Capital(long pilotId);

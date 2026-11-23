@@ -905,6 +905,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sovereignty
 
+- [Alliance Systems window](protocol/sovereignty.md#alliance-systems-window)
 - [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims)
 - [Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep)
 - [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)

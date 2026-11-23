@@ -2,6 +2,31 @@
 
 [Earlier sovereignty implementation record](https://github.com/CJ-SPT/Eden/blob/c31ac05af42c133567e203bb6859799c19af3852/docs/protocol/sovereignty.md)
 
+## Alliance Systems window
+
+Build **3662168** `FormAlliancesSystems.Load` calls `stationSvc.GetSystemsForAlliance(session.allianceid)` before building
+the Systems dashboard. The original archive has SHA-256 prefix `37fb2af4fa0e`. EVE.js **261108.1**, build **3396210**,
+answers with a list of `utillib.KeyVal` records containing `solarSystemID` and `allianceID`. The reference is in
+`stationService.js` (`34c675bfafdf`), `sovPayloads.js` (`998c373de30e`), and `sovState.js` (`674bf18c6288`).
+[Sovereignty](https://wiki.eveuniversity.org/Sovereignty)
+
+Eden reads the committed sovereignty claims through the resident alliance index and returns matching systems ordered by
+system ID. An alliance without claims returns an empty list. A call without arguments uses the selected pilot's alliance.
+
+**Automated validation.** `ClaimedHubRepliesMapRowsSlimScoreAndNotificationsUseNativeShapes` passed through `Test-Feature.ps1`
+in 20.86 seconds after a 10.77-second build. It covers selection gating, native row fields, the session-alliance fallback,
+empty and malformed inputs, separation between alliances, and zero SQL commands and connections on the warm read.
+The solution build finished in 1.12 seconds with zero warnings or errors. The following filter passed 19 tests in 9.94
+seconds. The catalog setup and formatting policy suites passed 8 and 9 tests. `Format.ps1 -Check` and the whitespace check passed.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Sovereignty.SovereigntyProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Maps.MapStartupTests|FullyQualifiedName~Eden.Protocol.Tests.Maps.SovereigntyTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.StationDirectoryTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open the corporation window's **Alliances → Systems** tab for an alliance that holds systems.
+
 ## Autonomous first claims
 
 After a Sovereignty Hub reaches the executor's headquarters, a free docked corporate hauler can use its existing
