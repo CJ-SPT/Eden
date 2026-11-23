@@ -20,7 +20,7 @@
   replace lost ships and fund first sovereignty claims. With background preparation enabled, eligible high-security systems
   gain bots ahead of player visits. [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
-  [First claims](protocol/sovereignty.md#autonomous-first-claims)
+  [First claims](protocol/sovereignty.md#autonomous-first-claims) · [Population inspector](capsuleer-population.md#inspecting-bots-and-organizations)
 
 The linked protocol records contain scope, source revisions and validation for individual milestones.
 

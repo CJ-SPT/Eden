@@ -42,6 +42,8 @@
         .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
         .grid .card { margin: 0; }
         .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+        .population-directory a { padding: 6px 12px; border-bottom: 2px solid transparent; }
+        .population-directory a[aria-current=true] { border-bottom-color: var(--accent); color: var(--accent); }
         .badge { display: inline-block; color: #ffe0a3; background: #42351e; padding: 7px 12px; border-radius: 20px; font-size: 13px; }
         .notice { background: #18372f; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 5px; }
         .error, .validation-message, .validation-errors { color: #ffabb4; }

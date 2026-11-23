@@ -2,6 +2,35 @@
 
 [Protocol index](../protocol.md)
 
+## Population inspector
+
+The administrator Population page reads directory results and selected details from the resident world. Pilot details
+prefer the latest published routine and job, with retained resident records for dormant pilots. Corporation membership,
+skill queue entries, industry jobs, alliance bills and sovereignty claims come from their owning tables. Directory
+results are sorted and paginated after the resident read. Each linked detail has a direct URL and refreshes on request.
+
+The administration API exposes `GET /api/admin/population/directory?directory=Bots` with optional `search` and
+zero-based `page`, and detail endpoints under `/api/admin/population/bots/{id}`, `/corporations/{id}` and
+`/alliances/{id}` relative to the same population prefix. These reads require a current administrator session.
+
+EVE.js 261108.1 provides skill queue and corporation membership reference behavior in
+`server/src/services/skills/training/skillQueueState.js` and `server/src/services/corporation/allianceViewState.js`.
+Eden uses its own build 3662168 definitions and saved automation state for the inspector.
+[EVE University skill training](https://wiki.eveuniversity.org/Skills_and_Learning) · [Alliances](https://wiki.eveuniversity.org/Alliance)
+
+**Automated validation**
+
+The inspector test covers administrator access, direct links, current and dormant work, skill queues, organization
+membership, dues and sovereignty assignments. Warm reads assert zero SQL commands, connections and fitting calculations.
+The combined feature run passed 23 tests in 22.93 seconds using
+`PopulationInspectorLinksResidentBotTrainingCorporationAndAllianceWork`,
+`PopulationRequiresAdministratorAndReportsSavedCoverageWithoutAdvancingJobs`, `ResidentPopulationTests`,
+`CapsuleerCorporationTests` and `CapsuleerAllianceTests`.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
 ## Pilot creation and offscreen admission under load
 
 After `62f36b60` enabled unvisited-system preparation in Established Universe, the server repeatedly deferred

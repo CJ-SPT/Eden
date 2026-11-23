@@ -1,10 +1,19 @@
 using Eden.Gameplay.Capsuleers;
+using Microsoft.AspNetCore.Components;
 
 namespace Eden.Server.Administration.Components;
 
 public partial class PopulationPage
 {
     private const int PageSize = 50;
+
+    [SupplyParameterFromQuery]
+    private string? View { get; set; }
+
+    [SupplyParameterFromQuery]
+    private long? Id { get; set; }
+
+    private int RefreshVersion;
     private AdminPopulationSnapshot? Snapshot;
     private string? Error;
     private string Search = "";
@@ -39,6 +48,7 @@ public partial class PopulationPage
         {
             Snapshot = await Operations.Population((await Authentication.GetAuthenticationStateAsync()).User);
             Error = null;
+            RefreshVersion++;
             ResetPage();
         }
         catch (Exception error) when (error is UnauthorizedAccessException or InvalidOperationException)

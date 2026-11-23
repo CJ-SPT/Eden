@@ -2,6 +2,22 @@
 
 [Documentation index](README.md) / [Implementation evidence](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic)
 
+## Inspecting bots and organizations
+
+In server administration, open **Population** and choose **Bots**, **Corporations**, or **Alliances**. Search by
+name or ID, or by ticker for organizations. Open a result to inspect it, follow links between related entries,
+and use **Refresh population** to update the current view.
+
+- **Bots** show their current activity, recorded objective, waiting reason when available, location, ship, wallet,
+  next scheduled action, training queue, and career or PvP hull goal when recorded.
+- **Corporations** show the CEO, headquarters, wallet, roster, pending applications, relocating bots, open
+  industry jobs, and sovereignty assignments for bot-founded corporations.
+- **Alliances** show the executor, member corporations, due bills, claimed systems, and bot sovereignty assignments
+  for alliances founded by a bot or containing a bot-founded corporation.
+
+Enabled bots can retain an assignment while the simulation is paused. Time until a bot's next action is measured in
+active simulation time. Skill queue timestamps are in UTC. [Implementation record](protocol/capsuleers.md#population-inspector)
+
 ## Population controls
 
 Open **Player bots** in the server web editor. **Bot population** sets the world-wide cap. **Where bots work** sets

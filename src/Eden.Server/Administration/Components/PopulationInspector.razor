@@ -1,0 +1,267 @@
+@using Eden.Gameplay.Capsuleers
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+@inject Eden.World.Catalog.CatalogProvider Catalog
+
+<section class="card" aria-labelledby="population-inspection">
+    <h2 id="population-inspection">Inspect autonomous population</h2>
+    <nav class="toolbar population-directory" aria-label="Population directory">
+        @foreach (var directory in Enum.GetValues<CapsuleerDirectory>())
+        {
+            <a href="@Href(directory)" aria-current="@(directory == Directory ? "true" : null)">@directory</a>
+        }
+    </nav>
+    @if (Error is not null)
+    {
+        <p class="error" role="alert">@Error</p>
+    }
+    else if (Id.HasValue)
+    {
+        <p><a href="@Href(Directory)">Back to @Directory.ToString().ToLowerInvariant()</a></p>
+        @if (SelectedBot is { } bot)
+        {
+            <h3>@bot.Name <span class="muted">#@bot.Id</span></h3>
+            <dl class="readings">
+                <div><dt>Status</dt><dd>@Status(bot)</dd></div>
+                <div><dt>Current activity</dt><dd>@bot.Work.Activity</dd></div>
+                <div><dt>Active career</dt><dd>@bot.ActiveCareer</dd></div>
+                <div><dt>System</dt><dd>@SystemName(bot.SystemId)</dd></div>
+                <div><dt>Location</dt><dd>@(bot.DockedLocationId is long dock ? Location(dock) : "In space")</dd></div>
+                <div><dt>Ship</dt><dd>@TypeName(bot.ShipTypeId)@(bot.ShipName.Length > 0 ? $" · {bot.ShipName}" : "")</dd></div>
+                <div><dt>Wallet</dt><dd>@Isk(bot.BalanceCents)</dd></div>
+            </dl>
+            <h4>Work and goals</h4>
+            <dl class="readings">
+                <div><dt>Current objective</dt><dd>@(bot.Work.Goal ?? "No recorded assignment")</dd></div>
+                @if (bot.Work.SystemId is int targetSystem)
+                {
+                    <div><dt>Work system</dt><dd>@SystemName(targetSystem)</dd></div>
+                }
+                @if (bot.Work.StationId is int targetStation)
+                {
+                    <div><dt>Work station</dt><dd>@Location(targetStation)</dd></div>
+                }
+                @if (bot.WaitingReason is { Length: > 0 } waiting)
+                {
+                    <div><dt>Waiting reason</dt><dd>@waiting</dd></div>
+                }
+                <div><dt>Next scheduled action</dt><dd>@NextAction(bot)</dd></div>
+                @if (bot.PvpGoalTypeId is int pvpHull)
+                {
+                    <div><dt>PvP fit goal</dt><dd>@TypeName(pvpHull)</dd></div>
+                }
+            </dl>
+            <h4>Training</h4>
+            <dl class="readings">
+                @if (bot.CareerPlan is { } plan)
+                {
+                    <div><dt>Training profession</dt><dd>@plan.Profession</dd></div>
+                    <div><dt>Next training focus</dt><dd>@plan.NextFocus</dd></div>
+                    @if (plan.ShipTypeId > 0)
+                    {
+                        <div><dt>Target hull</dt><dd>@TypeName(plan.ShipTypeId)</dd></div>
+                    }
+                }
+                <div><dt>Unallocated SP</dt><dd>@bot.FreeSkillPoints.ToString("N0")</dd></div>
+            </dl>
+            @if (bot.Skills.Count == 0)
+            {
+                <p class="muted">No skills in the training queue.</p>
+            }
+            else
+            {
+                <div class="scroll"><table>
+                    <thead><tr><th scope="col">Skill</th><th scope="col">Level</th><th scope="col">Status</th><th scope="col">Ends (UTC)</th></tr></thead>
+                    <tbody>
+                        @foreach (var skill in bot.Skills)
+                        {
+                            <tr><td>@TypeName(skill.TypeId)</td><td>@skill.Level</td><td>@SkillStatus(skill)</td><td>@Utc(skill.EndsAt)</td></tr>
+                        }
+                    </tbody>
+                </table></div>
+            }
+            <h4>Affiliation</h4>
+            <dl class="readings">
+                <div><dt>Corporation</dt><dd>@Organization(bot.Corporation, CapsuleerDirectory.Corporations)</dd></div>
+                <div><dt>Alliance</dt><dd>@Organization(bot.Alliance, CapsuleerDirectory.Alliances)</dd></div>
+                <div><dt>Founder career</dt><dd>@bot.FounderCareer</dd></div>
+                <div><dt>Origin</dt><dd>@SystemName(bot.OriginSystemId)</dd></div>
+                @if (bot.WorkBaseId is int workBase)
+                {
+                    <div><dt>Operating base</dt><dd>@Location(workBase)</dd></div>
+                }
+                @if (bot.CorporationApplicationId is long application)
+                {
+                    <div><dt>Corporation application</dt><dd>#@application</dd></div>
+                }
+                @if (bot.ProspectiveCorporationId is int prospect)
+                {
+                    <div><dt>Prospective corporation</dt><dd>#@prospect</dd></div>
+                }
+            </dl>
+        }
+        else if (SelectedCorporation is { } corporation)
+        {
+            <h3>@DisplayName(corporation.Corporation) <span class="muted">#@corporation.Corporation.Id</span></h3>
+            <dl class="readings">
+                <div><dt>Leadership</dt><dd>@(corporation.BotLed ? "Bot-led" : "Player-led")</dd></div>
+                <div><dt>CEO</dt><dd>@Member(corporation.Members.FirstOrDefault(member => member.Id == corporation.CeoId))</dd></div>
+                <div><dt>Headquarters</dt><dd>@Location(corporation.HeadquartersStationId) · @SystemName(corporation.HeadquartersSystemId)</dd></div>
+                <div><dt>Founding system</dt><dd>@SystemName(corporation.OriginSystemId)</dd></div>
+                <div><dt>Master wallet</dt><dd>@Isk(corporation.BalanceCents)</dd></div>
+                <div><dt>Alliance</dt><dd>@Organization(corporation.Alliance, CapsuleerDirectory.Alliances)</dd></div>
+                <div><dt>Pending applications</dt><dd>@corporation.PendingApplications</dd></div>
+                <div><dt>Relocating bots</dt><dd>@corporation.RelocatingPilots</dd></div>
+            </dl>
+            <h4>Roster</h4>
+            <p>@corporation.Members.Count / @corporation.MemberLimit members · @corporation.Members.Count(member => member.Career.HasValue) bots</p>
+            @if (corporation.Members.Count > 0)
+            {
+                <div class="scroll"><table>
+                    <thead><tr><th scope="col">Pilot</th><th scope="col">Founder career</th><th scope="col">Population status</th></tr></thead>
+                    <tbody>
+                        @foreach (var member in corporation.Members)
+                        {
+                            <tr><td>@Member(member)</td><td>@(member.Career?.ToString() ?? "Player")</td>
+                                <td>@(member.Career.HasValue ? member.Suspended ? "Suspended" : "Enabled" : "—")</td></tr>
+                        }
+                    </tbody>
+                </table></div>
+            }
+            <h4>Industry jobs (@corporation.IndustryJobs.Count)</h4>
+            @if (corporation.IndustryJobs.Count == 0)
+            {
+                <p class="muted">No open corporation industry jobs.</p>
+            }
+            else
+            {
+                <div class="scroll"><table>
+                    <thead><tr><th scope="col">Job</th><th scope="col">Product</th><th scope="col">Activity</th><th scope="col">Runs</th><th scope="col">Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var job in corporation.IndustryJobs)
+                        {
+                            <tr><td>#@job.Id</td><td>@TypeName(job.TypeId)</td><td>@IndustryActivityName(job.Activity)</td>
+                                <td>@job.Runs</td><td>@job.Status</td></tr>
+                        }
+                    </tbody>
+                </table></div>
+            }
+            @Expeditions(corporation.Expeditions)
+        }
+        else if (SelectedAlliance is { } alliance)
+        {
+            <h3>@DisplayName(alliance.Alliance) <span class="muted">#@alliance.Alliance.Id</span></h3>
+            <dl class="readings">
+                <div><dt>Origin</dt><dd>@(alliance.BotFounded ? "Bot-founded" : "Player-founded")</dd></div>
+                <div><dt>Executor</dt><dd>@Organization(alliance.Corporations.FirstOrDefault(corp => corp.Id == alliance.ExecutorCorporationId), CapsuleerDirectory.Corporations)</dd></div>
+                <div><dt>Founding corporation ID</dt><dd>@alliance.CreatorCorporationId</dd></div>
+                <div><dt>Next unpaid dues</dt><dd>@(alliance.BillCents is long cents ? $"{Isk(cents)} · {Utc(alliance.BillDue)} UTC" : "None")</dd></div>
+            </dl>
+            <h4>Member corporations (@alliance.Corporations.Count)</h4>
+            @if (alliance.Corporations.Count > 0)
+            {
+                <ul>
+                    @foreach (var corp in alliance.Corporations)
+                    {
+                        <li>@Organization(corp, CapsuleerDirectory.Corporations)</li>
+                    }
+                </ul>
+            }
+            <h4>Claimed systems (@alliance.ClaimedSystems.Count)</h4>
+            @if (alliance.ClaimedSystems.Count == 0)
+            {
+                <p class="muted">No claimed systems.</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var system in alliance.ClaimedSystems)
+                    {
+                        <li>@SystemName(system)</li>
+                    }
+                </ul>
+            }
+            @Expeditions(alliance.Expeditions)
+        }
+        else
+        {
+            <p role="status">This entry is unavailable in the current population.</p>
+        }
+    }
+    else if (Results is { } results)
+    {
+        <form class="toolbar" @onsubmit="SearchDirectory" @onsubmit:preventDefault>
+            <label for="population-search">@(Directory == CapsuleerDirectory.Bots ? "Name or pilot ID" : "Name, ticker or ID")</label>
+            <input id="population-search" @bind="Search" @bind:event="oninput" />
+            <button type="submit" class="secondary">Search</button>
+        </form>
+        <p class="muted" role="status">@results.Total matching @Directory.ToString().ToLowerInvariant()</p>
+        @if (results.Total > 0)
+        {
+            <div class="scroll"><table>
+                <thead><tr><th scope="col">Name</th><th scope="col">ID</th><th scope="col">@(Directory == CapsuleerDirectory.Bots ? "Founder career" : "Ticker")</th></tr></thead>
+                <tbody>
+                    @foreach (var entry in results.Entries)
+                    {
+                        <tr><td><a href="@Href(Directory, entry.Id)">@entry.Name</a></td><td>@entry.Id</td><td>@(entry.Career?.ToString() ?? entry.Ticker)</td></tr>
+                    }
+                </tbody>
+            </table></div>
+            @if (results.Total > results.PageSize)
+            {
+                <div class="toolbar">
+                    <button class="secondary" disabled="@(results.Page == 0)" @onclick="() => LoadPage(results.Page - 1)">Previous results</button>
+                    <span>Page @(results.Page + 1) of @((results.Total - 1) / results.PageSize + 1)</span>
+                    <button class="secondary" disabled="@((results.Page + 1) * results.PageSize >= results.Total)"
+                            @onclick="() => LoadPage(results.Page + 1)">Next results</button>
+                </div>
+            }
+        }
+    }
+</section>
+
+@code {
+    private RenderFragment Organization(CapsuleerOrganizationLink? organization, CapsuleerDirectory directory) => @<text>
+        @if (organization is { Inspectable: true })
+        {
+            <a href="@Href(directory, organization.Id)">@DisplayName(organization)</a>
+        }
+        else
+        {
+            @(organization is null ? "None" : DisplayName(organization))
+        }
+    </text>;
+
+    private RenderFragment Member(CapsuleerMemberInspection? member) => @<text>
+        @if (member is { Career: not null })
+        {
+            <a href="@Href(CapsuleerDirectory.Bots, member.Id)">@member.Name</a>
+        }
+        else
+        {
+            @(member?.Name ?? "Unavailable")
+        }
+    </text>;
+
+    private RenderFragment Expeditions(IReadOnlyList<CapsuleerSovereigntyInspection> expeditions) => @<text>
+        <h4>Sovereignty assignments</h4>
+        @if (expeditions.Count == 0)
+        {
+            <p class="muted">No recorded sovereignty assignments.</p>
+        }
+        else
+        {
+            <div class="scroll"><table>
+                <thead><tr><th scope="col">Pilot</th><th scope="col">Duty</th><th scope="col">Target system</th><th scope="col">Status</th></tr></thead>
+                <tbody>
+                    @foreach (var expedition in expeditions)
+                    {
+                        <tr><td><a href="@Href(CapsuleerDirectory.Bots, expedition.PilotId)">@expedition.PilotName</a></td>
+                            <td>@(expedition.Duty == SovereigntyDuty.ReagentDelivery ? "Reagent delivery" : expedition.Duty.ToString())</td>
+                            <td>@SystemName(expedition.SystemId)</td><td>@(expedition.Returning ? "Returning" : "Assigned")</td></tr>
+                    }
+                </tbody>
+            </table></div>
+        }
+    </text>;
+}

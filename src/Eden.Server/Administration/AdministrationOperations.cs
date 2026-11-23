@@ -41,6 +41,7 @@ internal sealed partial class AdministrationOperations(
     ServerPerformanceMonitor performance,
     ICapsuleerPopulation population,
     ICapsuleerDiagnostics capsuleers,
+    ICapsuleerInspection inspection,
     ICapsuleerScene scene,
     Eden.World.Modding.ModStore mods,
     Eden.Server.Modding.ModPublisher modPublisher,
@@ -113,6 +114,35 @@ internal sealed partial class AdministrationOperations(
     {
         await Authorize(user);
         return corporationIdentities.Preview(id);
+    }
+
+    internal async Task<CapsuleerDirectoryPage> BrowsePopulation(
+        ClaimsPrincipal user,
+        CapsuleerDirectory directory,
+        string? search,
+        int page
+    )
+    {
+        await Authorize(user);
+        return inspection.Browse(directory, search, page);
+    }
+
+    internal async Task<CapsuleerPilotInspection?> InspectBot(ClaimsPrincipal user, long id)
+    {
+        await Authorize(user);
+        return inspection.Pilot(id);
+    }
+
+    internal async Task<CapsuleerCorporationInspection?> InspectBotCorporation(ClaimsPrincipal user, int id)
+    {
+        await Authorize(user);
+        return inspection.Corporation(id);
+    }
+
+    internal async Task<CapsuleerAllianceInspection?> InspectBotAlliance(ClaimsPrincipal user, int id)
+    {
+        await Authorize(user);
+        return inspection.Alliance(id);
     }
 
     internal async Task<bool> ApplyCorporationName(ClaimsPrincipal user, CapsuleerCorporationNamePreview preview)

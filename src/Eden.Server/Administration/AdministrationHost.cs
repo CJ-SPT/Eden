@@ -120,6 +120,7 @@ internal static class AdministrationHost
             builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.Server.Modding.ModPublisher>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerInspection>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
             builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Capsuleers.CapsuleerCorporationIdentityStore>());
             builder.Services.AddSingleton(
@@ -412,6 +413,28 @@ internal static class AdministrationHost
             }
         );
         api.MapGet("/population", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Population(user));
+        api.MapGet(
+            "/population/directory",
+            async (ClaimsPrincipal user, AdministrationOperations operations, CapsuleerDirectory directory, string? search, int? page) =>
+                Enum.IsDefined(directory)
+                    ? Results.Ok(await operations.BrowsePopulation(user, directory, search, page ?? 0))
+                    : Results.BadRequest()
+        );
+        api.MapGet(
+            "/population/bots/{id:long}",
+            async (ClaimsPrincipal user, AdministrationOperations operations, long id) =>
+                await operations.InspectBot(user, id) is { } bot ? Results.Ok(bot) : Results.NotFound()
+        );
+        api.MapGet(
+            "/population/corporations/{id:int}",
+            async (ClaimsPrincipal user, AdministrationOperations operations, int id) =>
+                await operations.InspectBotCorporation(user, id) is { } corporation ? Results.Ok(corporation) : Results.NotFound()
+        );
+        api.MapGet(
+            "/population/alliances/{id:int}",
+            async (ClaimsPrincipal user, AdministrationOperations operations, int id) =>
+                await operations.InspectBotAlliance(user, id) is { } alliance ? Results.Ok(alliance) : Results.NotFound()
+        );
         api.MapGet(
             "/population/corporations/{id:int}/name",
             (ClaimsPrincipal user, AdministrationOperations operations, int id) => operations.PreviewCorporationName(user, id)
