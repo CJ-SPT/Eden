@@ -40,6 +40,8 @@ internal sealed partial class PilotMissionStore
             StructureKilled(world, catalog, mission, npc, now);
             return;
         }
+        var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        SettleMissionReinforcements(world, catalog, mission, profile, now);
         var member = world.Set<SavedMissionMember>().Find(npc.Id)!;
         _ = world.Set<SavedMissionMember>().Where(m => m.MissionId == mission.Id).ToArray();
         var members = world
@@ -72,7 +74,6 @@ internal sealed partial class PilotMissionStore
                 )
                 .Select(n => n.Id)
         );
-        var profile = MissionCatalog.Find(catalog, mission.MissionId);
         if (
             member.LootQuantity > 0
             && world
@@ -104,12 +105,7 @@ internal sealed partial class PilotMissionStore
         bool allRequiredSpawned = Enumerable
             .Range(0, profile.Definition.Waves.Length)
             .Where(w => profile.Definition.Waves[w].Groups.Any(g => g.Required))
-            .All(w =>
-                (
-                    world.Set<SavedMissionRoom>().Find(mission.Id, profile.WaveRoom(w))?.Wave
-                    ?? (profile.Rooms.Length == 1 ? mission.Wave : -1)
-                ) >= w
-            );
+            .All(w => WaveStarted(world, mission, profile, w));
         var decision = MissionEncounterRules.Killed(
             members.Single(m => m.Id == member.NpcId),
             currentWave,
@@ -120,7 +116,7 @@ internal sealed partial class PilotMissionStore
         );
         if (decision.SpawnNextWave)
         {
-            Spawn(world, catalog, mission, nextWave, now);
+            Spawn(world, catalog, mission, profile, nextWave, now);
         }
         if (decision.Complete && profile.Definition.SalvageObjectId is null && EpicCombatObjectivesReady(world, mission, profile))
         {
@@ -157,7 +153,7 @@ internal sealed partial class PilotMissionStore
             int active = world.Set<SavedMissionRoom>().Find(mission.Id, profile.WaveRoom(index))?.Wave ?? -1;
             if (active < index)
             {
-                Spawn(world, catalog, mission, index, now);
+                Spawn(world, catalog, mission, profile, index, now);
             }
         }
     }
@@ -200,9 +196,8 @@ internal sealed partial class PilotMissionStore
         return true;
     }
 
-    private static void Spawn(WorldAction world, CatalogDbContext catalog, SavedMission mission, int wave, long now)
+    private static void Spawn(WorldAction world, CatalogDbContext catalog, SavedMission mission, MissionProfile profile, int wave, long now)
     {
-        var profile = MissionCatalog.Find(catalog, mission.MissionId);
         int roomId = profile.WaveRoom(wave);
         var room = profile.Rooms.Single(r => r.Id == roomId);
         var groups = profile.Definition.Waves[wave].Groups;
@@ -290,11 +285,14 @@ internal sealed partial class PilotMissionStore
                 }
             );
         }
-        var progress =
-            world.Set<SavedMissionRoom>().Find(mission.Id, roomId)
-            ?? world.Add(new SavedMissionRoom { MissionId = mission.Id, RoomId = roomId }).Entity;
-        progress.Wave = wave;
-        mission.Wave = Math.Max(mission.Wave, wave);
+        if (profile.Definition.Waves[wave].Trigger != MissionWaveTrigger.RoomArrivalDelay)
+        {
+            var progress =
+                world.Set<SavedMissionRoom>().Find(mission.Id, roomId)
+                ?? world.Add(new SavedMissionRoom { MissionId = mission.Id, RoomId = roomId }).Entity;
+            progress.Wave = wave;
+            mission.Wave = Math.Max(mission.Wave, wave);
+        }
     }
 
     internal static IReadOnlyList<NpcLootDrop> KeyLoot(WorldAction world, WorldNpc npc, long now)

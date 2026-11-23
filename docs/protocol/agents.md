@@ -2,6 +2,36 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Timed mission reinforcements — November 23, 2026
+
+Mission definitions can schedule a wave after a positive delay from the first arrival in its room. The resident mission
+owner records the wall-clock deadline with the initial room state. Revisiting the room keeps that deadline. Each timed
+wave settles independently of the room's kill-triggered progression. A required timed wave must arrive and be cleared
+before it can satisfy a gate or combat objective. A gate can open with an optional timed wave still pending.
+
+The simulation uses the resident deadline index to settle due waves during combat and on the server's scheduled tick.
+Spawned members and removal of the pending deadline commit together and persist through the same checkpoint. An overdue
+wave can settle after restart. Optional reinforcements can still arrive while the mission remains accepted. Closing the
+mission clears its pending waves. The feature is exercised with original synthetic encounter profiles.
+
+**Automated validation**
+
+Five synthetic cases passed in 14.98 seconds after a 12.05-second feature build. They cover first arrival, restart,
+discarded transactions, same-frame observer visibility, expiry, required and optional gate clears, and overlapping timed
+and kill-triggered waves.
+
+The affected filter added gate and deadline behavior, warm resident observation, and world initialization. It passed
+84 tests in 66.64 seconds after a 1.71-second feature build. The mission content, catalog, and formatting Python suites
+passed 19, eight, and nine checks. The solution and formatter passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ## Rogue Drone Harassment — November 23, 2026
 
 The level-two definition 1219 uses dungeon 311 and admits twins 1221, 1572, and 1573. Level three definition 1222 uses

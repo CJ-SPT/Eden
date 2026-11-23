@@ -119,9 +119,7 @@ internal sealed partial class PilotMissionStore
                                 .ToArray();
                             bool started =
                                 m.ObjectiveComplete
-                                || !profile.Definition.Waves.Any(w =>
-                                    w.Trigger == MissionWaveTrigger.PreviousWaveCleared && (w.RoomId == room.Id || w.RoomId == 0)
-                                )
+                                || !RoomStartsOnArrival(profile, room.Id)
                                 || progress.ContainsKey(room.Id)
                                 || profile.Rooms.Length == 1 && m.Wave >= 0;
                             return new MissionSite(m.Id, m.PilotId, m.SystemId, position + room.Position, started, objects)
@@ -204,11 +202,7 @@ internal sealed partial class PilotMissionStore
                 if (row is { State: MissionState.Accepted, ObjectiveComplete: false } && !Expire(world, catalog, row, now))
                 {
                     var profile = MissionCatalog.Find(catalog, row.MissionId);
-                    if (world.Set<SavedMissionRoom>().Find(row.Id, site.RoomId) is null && !(profile.Rooms.Length == 1 && row.Wave >= 0))
-                    {
-                        int wave = NextNormalWave(profile, site.RoomId, -1);
-                        Spawn(world, catalog, row, wave, now);
-                    }
+                    StartMissionRoom(world, catalog, row, profile, site.RoomId, now);
                 }
             }
             world.SaveChanges();
@@ -312,7 +306,7 @@ internal sealed partial class PilotMissionStore
         );
         if (decision.SpawnNextWave)
         {
-            Spawn(new SqlWorldAction(world), catalog, mission, nextWave, now);
+            Spawn(new SqlWorldAction(world), catalog, mission, profile, nextWave, now);
         }
         if (decision.Complete)
         {

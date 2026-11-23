@@ -70,6 +70,14 @@ public sealed class SavedMissionRoom
     public int Wave { get; set; } = -1;
 }
 
+public sealed class SavedMissionReinforcement
+{
+    public long MissionId { get; set; }
+    public int Wave { get; set; }
+    public int SystemId { get; set; }
+    public long DueAt { get; set; }
+}
+
 public sealed class SavedMissionProgress
 {
     public long PilotId { get; set; }

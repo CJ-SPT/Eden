@@ -34,6 +34,13 @@ internal static class MissionSchema
         model.Entity<SavedMissionStructure>().HasIndex(s => new { s.MissionId, s.ObjectId }).IsUnique();
         model.Entity<SavedMissionRoom>().ToTable("WorldMissionRoom").HasKey(r => new { r.MissionId, r.RoomId });
         model.Entity<SavedMissionRoom>().HasOne<SavedMission>().WithMany().HasForeignKey(r => r.MissionId).OnDelete(DeleteBehavior.Cascade);
+        model.Entity<SavedMissionReinforcement>().ToTable("WorldMissionReinforcement").HasKey(r => new { r.MissionId, r.Wave });
+        model
+            .Entity<SavedMissionReinforcement>()
+            .HasOne<SavedMission>()
+            .WithMany()
+            .HasForeignKey(r => r.MissionId)
+            .OnDelete(DeleteBehavior.Cascade);
         model
             .Entity<SavedMissionGateUnlock>()
             .ToTable("WorldMissionGateUnlock")
@@ -96,6 +103,10 @@ internal static class MissionSchema
             CREATE TABLE IF NOT EXISTS WorldMissionRoom (
                 MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
                 RoomId INTEGER NOT NULL, Wave INTEGER NOT NULL, PRIMARY KEY(MissionId,RoomId));
+            CREATE TABLE IF NOT EXISTS WorldMissionReinforcement (
+                MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
+                Wave INTEGER NOT NULL, SystemId INTEGER NOT NULL, DueAt INTEGER NOT NULL,
+                PRIMARY KEY(MissionId,Wave));
             CREATE TABLE IF NOT EXISTS WorldMissionGateUnlock (
                 MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
                 GateObjectId INTEGER NOT NULL, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,

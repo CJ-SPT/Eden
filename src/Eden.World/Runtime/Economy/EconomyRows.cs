@@ -934,6 +934,7 @@ internal sealed partial class ResidentEconomy
     private void RegisterTables()
     {
         RegisterBotTables();
+        RegisterMissionReinforcements();
         RegisterActivityRewardTicks();
         RegisterStandardMarketTypes();
         RegisterKillRights();

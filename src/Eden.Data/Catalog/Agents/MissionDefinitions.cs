@@ -31,13 +31,15 @@ public enum MissionWaveTrigger
     Mining,
     HackResolved,
     Delivery,
+    RoomArrivalDelay,
 }
 
 public sealed record MissionWave(
     ImmutableArray<MissionSpawnGroup> Groups,
     int RoomId = 0,
     MissionWaveTrigger Trigger = MissionWaveTrigger.PreviousWaveCleared,
-    long TriggerObjectId = 0
+    long TriggerObjectId = 0,
+    long DelayTicks = 0
 );
 
 public sealed record MissionCareerVisitDefinition(long ObjectId, double Range, bool RemoveObject = false, double ThermalDamage = 0)

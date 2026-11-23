@@ -86,12 +86,7 @@ internal sealed partial class PilotMissionStore
         bool started = Enumerable
             .Range(0, profile.Definition.Waves.Length)
             .Where(w => profile.Definition.Waves[w].Groups.Any(g => g.Required))
-            .All(w =>
-                (
-                    world.Set<SavedMissionRoom>().Find(mission.Id, profile.WaveRoom(w))?.Wave
-                    ?? (profile.Rooms.Length == 1 ? mission.Wave : -1)
-                ) >= w
-            );
+            .All(w => WaveStarted(world, mission, profile, w));
         if (!started)
         {
             return false;

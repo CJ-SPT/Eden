@@ -10,6 +10,7 @@ using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.FactionWarfare;
 using Eden.World.Mining;
@@ -37,6 +38,7 @@ internal sealed class NpcEncounterStore(
     private NpcSceneContacts ReadSceneOwned(int systemId, SpacePosition position, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        PilotMissionStore.AdvanceMissionReinforcements(database, systemId, now);
         militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
@@ -55,6 +57,7 @@ internal sealed class NpcEncounterStore(
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        PilotMissionStore.AdvanceMissionReinforcements(database, systemId, now);
         militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
@@ -79,6 +82,7 @@ internal sealed class NpcEncounterStore(
     private IReadOnlyList<NpcSimulationContact> AdvanceOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        PilotMissionStore.AdvanceMissionReinforcements(database, systemId, now);
         militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {

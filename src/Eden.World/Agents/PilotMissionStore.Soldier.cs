@@ -206,7 +206,7 @@ internal sealed partial class PilotMissionStore
         }
         if (mission.Wave + 1 < definition.Waves.Length)
         {
-            Spawn(world, catalog, mission, mission.Wave + 1, now);
+            Spawn(world, catalog, mission, MissionCatalog.Find(catalog, mission.MissionId), mission.Wave + 1, now);
         }
         else
         {

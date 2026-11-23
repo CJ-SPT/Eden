@@ -135,6 +135,10 @@ internal sealed partial class PilotMissionStore
 
     private static void Close(WorldAction world, SavedMission mission, MissionState state, long now)
     {
+        if (world is EconomyTransaction)
+        {
+            world.RemoveRange(world.Filter<SavedMissionReinforcement>(row => row.MissionId == mission.Id));
+        }
         CloseCareerSalvage(world, mission);
         RetireMissionExploration(world, mission);
         if (MissionCatalog.IsMining(mission.MissionId))

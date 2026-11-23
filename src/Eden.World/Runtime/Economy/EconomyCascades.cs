@@ -251,6 +251,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Filter<Eden.Data.World.Agents.SavedMissionGateUnlock>(child => child.MissionId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMissionMember>().Where(child => child.MissionId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMissionRoom>().Where(child => child.MissionId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Agents.SavedMissionReinforcement>(child => child.MissionId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMissionStructure>().Where(child => child.MissionId == removed.Id));
                 break;
             case Eden.Data.World.Structures.SavedStructure removed:

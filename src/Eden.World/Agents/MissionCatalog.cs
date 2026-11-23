@@ -779,8 +779,24 @@ internal static class MissionCatalog
         {
             throw new InvalidDataException("The career wreck's reserved slot is occupied.");
         }
-        foreach (var wave in definition.Waves.Where(w => w.Trigger != MissionWaveTrigger.PreviousWaveCleared))
+        foreach (var wave in definition.Waves)
         {
+            if (wave.Trigger == MissionWaveTrigger.RoomArrivalDelay)
+            {
+                if (wave.DelayTicks <= 0 || wave.TriggerObjectId != 0 || wave.Groups.IsDefaultOrEmpty || wave.Groups.Any(g => g.Count <= 0))
+                {
+                    throw new InvalidDataException("Timed mission waves require a positive arrival delay and a nonempty roster.");
+                }
+                continue;
+            }
+            if (wave.DelayTicks != 0)
+            {
+                throw new InvalidDataException("Mission wave delays require an arrival timer.");
+            }
+            if (wave.Trigger == MissionWaveTrigger.PreviousWaveCleared)
+            {
+                continue;
+            }
             var waveRoom = rooms.Single(room => room.Id == (wave.RoomId == 0 ? rooms[0].Id : wave.RoomId));
             bool valid = wave.Trigger switch
             {

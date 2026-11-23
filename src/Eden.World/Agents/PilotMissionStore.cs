@@ -36,7 +36,7 @@ internal sealed partial class PilotMissionStore(
     PilotLossSettlement losses,
     SqliteWorld lookup,
     IPilotDamageEvents damageEvents
-) : IPilotMissions, IPilotMissionContainers, IPilotResearch
+) : IPilotMissions, IPilotMissionContainers, IPilotResearch, IMissionReinforcements
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

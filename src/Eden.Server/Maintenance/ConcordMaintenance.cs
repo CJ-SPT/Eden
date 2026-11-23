@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Diagnostics;
@@ -14,7 +15,8 @@ internal sealed class ConcordMaintenance(
     IMilitiaNavy? militiaNavy = null,
     IMilitiaHubs? militiaHubs = null,
     IMilitiaComplexSimulation? militiaComplexes = null,
-    IPilotOperationScope? operations = null
+    IPilotOperationScope? operations = null,
+    IMissionReinforcements? reinforcements = null
 ) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
@@ -35,6 +37,14 @@ internal sealed class ConcordMaintenance(
     {
         using var operation = operations?.Begin();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        try
+        {
+            reinforcements?.Advance();
+        }
+        catch (Exception error)
+        {
+            ServerLog.Console.Error($"Mission reinforcement settlement failed; retrying next interval: {error.Message}");
+        }
         using (synchronization.Enter("Empire enforcement"))
         {
             concord.Sweep(now);
