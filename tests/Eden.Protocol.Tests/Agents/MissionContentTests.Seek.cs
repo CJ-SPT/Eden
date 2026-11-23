@@ -29,21 +29,34 @@ public sealed partial class MissionContentTests
         await VerifyReportedGroupCompletion(id, 3, total, requiredCount, clearOptional);
     }
 
-    private static async Task VerifyReportedGroupCompletion(int id, int level, int total, int requiredCount, bool clearOptional)
+    private static async Task VerifyReportedGroupCompletion(
+        int id,
+        int level,
+        int total,
+        int requiredCount,
+        bool clearOptional,
+        bool gated = true
+    )
     {
         using var f = Create(id, level, MissionRules.SecurityDivision, live: true);
         var offer = f.Accept(f.Request());
         Assert.Equal(id, offer.MissionId);
         Assert.Null(offer.Cargo);
         var sites = f.Missions.Sites(offer.SystemId);
-        Assert.Equal(2, sites.Count);
+        Assert.Equal(gated ? 2 : 1, sites.Count);
         var entrance = sites.Single(s => s.Position == offer.Position);
-        var pocket = sites.Single(s => s.Position != offer.Position);
-        Assert.Equal(pocket.Position, Assert.Single(entrance.Gates).Destination);
-        f.Missions.Arrive(offer.SystemId, entrance.Position);
-        using (WorldDbContext world = new(f.Db.Path))
+        var pocket = entrance;
+        if (gated)
         {
+            pocket = sites.Single(s => s.Position != offer.Position);
+            Assert.Equal(pocket.Position, Assert.Single(entrance.Gates).Destination);
+            f.Missions.Arrive(offer.SystemId, entrance.Position);
+            using WorldDbContext world = new(f.Db.Path);
             Assert.Empty(world.Set<SavedMissionMember>());
+        }
+        else
+        {
+            Assert.Empty(entrance.Gates);
         }
         f.Missions.Arrive(offer.SystemId, pocket.Position);
         f.Missions.Arrive(offer.SystemId, pocket.Position);

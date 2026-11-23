@@ -82,6 +82,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Retribution outpost missions](protocol/agents.md#retribution-outpost-missions--november-15-2026)
 - [Singleton mission cargo](protocol/agents.md#singleton-mission-cargo--november-14-2026)
 - [Catalog mission deadlines](protocol/agents.md#catalog-mission-deadlines--november-14-2026)
+- [Reported security mission targets](protocol/agents.md#reported-security-mission-targets--november-23-2026)
 - [Avenge a Fallen Comrade](protocol/agents.md#avenge-a-fallen-comrade--november-14-2026)
 - [Timed mission bonuses](protocol/agents.md#timed-mission-bonuses--november-14-2026)
 - [Resident mission sites and research agents](protocol/agents.md#resident-mission-sites-and-research-agents)

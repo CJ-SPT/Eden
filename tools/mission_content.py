@@ -20,6 +20,9 @@ UNREPORTED_GROUP_RANGE = 25000
 
 KNOWN_BLOCKERS = {
     895: 'Requires timed reinforcements',
+    1062: 'Requires pinned hull identity for the Blood Raider Spy frigates',
+    1063: 'Requires pinned hull identity for the Blood Raider Spy destroyers',
+    1064: 'Requires pinned hull identity for the Blood Raider Spy battlecruisers',
     929: 'Requires a verified reinforcement trigger',
     934: 'Requires a verified reinforcement trigger',
     1215: 'Requires a verified reinforcement trigger',
@@ -244,6 +247,41 @@ def extend(db, missions, group):
             definition['structures'] = [dict(objectId=targets[0]['objectID'], required=True, completesMission=True)]
         missions.append(definition)
 
+    # Both reports identify group three as the objective. The spies are Corpatis Exorcists.
+    encounter(1065, 500012, 'The_Blood_Raider_Spies_(Level_4)', 208031,
+              [group('Corpatis Bishop/Corpatis Seer', 3, 5000, required=False),
+               group('Corpus Harbinger/Corpus Oracle', 1, 5000, required=False),
+               group('Corpior Visionary/Corpior Converter', 3, 35000, required=False),
+               group('Corpum Shadow Sage/Corpum Dark Priest', 3, 35000, required=False),
+               group('Corpus Archon/Corpus Prophet', 3, 35000, required=False),
+               group('Corpior Cleric/Corpior Friar', 3, 55000),
+               group('Corpatis Exorcist', 3, 55000)], 70433)
+
+    # EVE-Survival identifies the named Angel ships and the optional Rogue Drone group.
+    drone_faction = 500025
+    infester_group = 805
+    cleaners = group('Belphegor Apis/Mammon Apis', 2, 30000, required=False, enemyFaction=drone_faction)
+    cleaners['types'].extend(group('Infester Alvi', 2, 30000, npc_group=infester_group)['types'])
+    encounter(1084, 500011, 'Attack_the_Angel_Hideout', 191574,
+              [cleaners,
+               group('Gistii Outlaw/Gistii Thug', 3, 60000),
+               group('Gistii Ambusher/Gistii Raider', 2, 60000),
+               group('Gistum Predator', 1, 60000)])
+
+    # The reports allow direct warp in normal space and require the boss and escort.
+    encounter(909, 500021, 'The_Seven%27s_Brothel', 232779,
+              [group('Tower Sentry Drone I', 1, 30000, required=False),
+               group('Seven Grunt/Seven Death Dealer', 2, 40000, required=False),
+               group('Rogue Mercenary Thorn', 1, 60000),
+               group('Kruul/Sarrah', 1, 60000),
+               group('Seven Grunt/Seven Death Dealer', 2, 70000, required=False)], deadspace=False)
+    encounter(910, 500021, 'The_Seven%27s_Prison_Facility', 205377,
+              [group('Tower Sentry Angel I', 2, 45000, required=False),
+               group('Tower Sentry Angel II', 1, 50000, required=False),
+               group('Seven Grunt/Seven Death Dealer/Seven Deathguard', 3, 40000, required=False),
+               group('Seven Assassin/Seven Thug', 1, 55000),
+               group('Olufami/Elena Gazky/Schmidt', 1, 55000)], deadspace=False)
+
     hidden = [
         (1227, 500020, 'Serpentis', 1, 192024, 590136, [('Coreli Initiate', 12, 15000)]),
         (1228, 500010, 'Guristas_Pirates', 1, 192019, 590184, [('Pithi Arrogator/Pithi Imputor', 5, 20000)]),
@@ -437,8 +475,6 @@ def extend(db, missions, group):
 
     # These dungeons use the generic mission faction in the pinned catalog. The
     # encounter actors are Rogue Drones. The Silo is the localized name of type 18012.
-    drone_faction = 500025
-    infester_group = 805
     encounter(1237, 500021, 'The_Roving_Rogue_Drones', 203054,
               [group('Belphegor Apis/Mammon Apis', 4, 55000, enemyFaction=drone_faction),
                group('Infester Alvi', 1, 55000, npc_group=infester_group, enemyFaction=drone_faction)], 59191)

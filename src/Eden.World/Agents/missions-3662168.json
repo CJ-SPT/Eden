@@ -1572,6 +1572,265 @@
       "waves": []
     },
     {
+      "missionId": 1065,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Blood_Raider_Spies_(Level_4)",
+      "sourceRevision": "oldid=208031",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24000,
+                24009
+              ],
+              "count": 3,
+              "range": 5000,
+              "required": false
+            },
+            {
+              "types": [
+                24136,
+                16938
+              ],
+              "count": 1,
+              "range": 5000,
+              "required": false
+            },
+            {
+              "types": [
+                23970,
+                23979
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                24099,
+                24100
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                16952,
+                16934
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                23983,
+                23982
+              ],
+              "count": 3,
+              "range": 55000
+            },
+            {
+              "types": [
+                24013
+              ],
+              "count": 3,
+              "range": 55000
+            }
+          ],
+          "roomId": 3535
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3536,
+          "entryObjectId": 70449
+        },
+        {
+          "roomId": 3535,
+          "entryObjectId": 70433
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 70448,
+          "destinationRoomId": 3535
+        }
+      ]
+    },
+    {
+      "missionId": 1084,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Attack_the_Angel_Hideout",
+      "sourceRevision": "oldid=191574",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                10995,
+                10993,
+                3750
+              ],
+              "count": 2,
+              "range": 30000,
+              "required": false,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                16883,
+                16888
+              ],
+              "count": 3,
+              "range": 60000
+            },
+            {
+              "types": [
+                16874,
+                16885
+              ],
+              "count": 2,
+              "range": 60000
+            },
+            {
+              "types": [
+                16884
+              ],
+              "count": 1,
+              "range": 60000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 909,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Seven%27s_Brothel",
+      "sourceRevision": "oldid=232779",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                18028
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                18574,
+                18575
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                18573
+              ],
+              "count": 1,
+              "range": 60000
+            },
+            {
+              "types": [
+                11597,
+                12251
+              ],
+              "count": 1,
+              "range": 60000
+            },
+            {
+              "types": [
+                18574,
+                18575
+              ],
+              "count": 2,
+              "range": 70000,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 910,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Seven%27s_Prison_Facility",
+      "sourceRevision": "oldid=205377",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17147
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17146
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                18574,
+                18575,
+                18576
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                18578,
+                18577
+              ],
+              "count": 1,
+              "range": 55000
+            },
+            {
+              "types": [
+                12253,
+                12255,
+                12252
+              ],
+              "count": 1,
+              "range": 55000
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 1227,
       "level": 1,
       "difficulty": 500,

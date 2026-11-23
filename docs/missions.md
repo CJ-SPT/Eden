@@ -2,11 +2,11 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 audit admits **921 definitions**. That includes **89 combat encounters, 194 ordinary deliveries, 92 delivery
+The build-3662168 audit admits **925 definitions**. That includes **93 combat encounters, 194 ordinary deliveries, 92 delivery
 storylines, four trade storylines, 50 Data Center missions, 23 mining missions, 41 Paragon hull exchanges, five R&D bonus
 missions, 16 militia encounters, 180 career stages, and 227 epic arc stages**.
 The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** records and explains why the other
-**1,971** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
+**1,967** are blocked. Militia missions use their own [enlistment and offer rules](protocol/faction-warfare.md).
 
 Ordinary offers with a base ISK reward include a timed bonus of **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -79,6 +79,9 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Guristas Spies | Levels 1–2 | 2 |
 | Serpentis Spies | Levels 2–3 | 2 |
 | Sansha Spies | Levels 2–4 | 3 |
+| Blood Raider Spies | Level 4 | 1 |
+| Attack the Angel Hideout | Level 2 | 1 |
+| The Seven's Brothel and The Seven's Prison Facility | Levels 2 and 3, respectively | 2 |
 | Eliminate a Pirate Nuisance | Angel, Blood, Guristas, Sansha, Serpentis; level 1 | 5 |
 | The Blockade | Guristas levels 1–2 and Sansha level 1, plus the original level-one reconstruction | 4 |
 | The Assault | Guristas, level 4 | 1 |
@@ -127,6 +130,10 @@ In both Smuggler Interception variants the last of two destroyed transports drop
 
 The level-four Mordus Headhunters requires clearing the first combat pocket to open the second gate. The final objective
 requires the full Mammoth group in pocket two. The three other groups are optional. [Encounter evidence](protocol/agents.md#level-four-mordus-headhunters--november-23-2026)
+
+The Blood Raider Spies requires the six ships in the third group. Attack the Angel Hideout requires the Angel cruiser
+and its five escorts. The Seven's Brothel and Prison Facility each require a named leader and one bodyguard.
+[Encounter evidence](protocol/agents.md#reported-security-mission-targets--november-23-2026)
 
 ## Paragon hull exchanges
 

@@ -15,8 +15,8 @@ missionId,name,template,status,reason
 901,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 902,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 903,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-909,The Seven's Brothel,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-910,The Seven's Prison Facility,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+909,The Seven's Brothel,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+910,The Seven's Prison Facility,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 911,The Right Hand Of Zazzmatazz,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 912,Save a Man's Career,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 913,Stop The Thief,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -46,13 +46,13 @@ missionId,name,template,status,reason
 937,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 938,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 939,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1062,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1063,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1064,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1065,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1062,The Blood Raider Spies,BasicKillMission,blocked,Requires pinned hull identity for the Blood Raider Spy frigates
+1063,The Blood Raider Spies,BasicKillMission,blocked,Requires pinned hull identity for the Blood Raider Spy destroyers
+1064,The Blood Raider Spies,BasicKillMission,blocked,Requires pinned hull identity for the Blood Raider Spy battlecruisers
+1065,The Blood Raider Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1081,Silence The Informant,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1083,Silence The Informant,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1084,Attack the Angel Hideout,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1084,Attack the Angel Hideout,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1085,Angel Extravaganza,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1086,Silence The Informant,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1093,Angel Extravaganza,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
