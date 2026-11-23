@@ -37,14 +37,7 @@ internal sealed class StructurePersonalDeliveryHandler(IStructurePersonalDeliver
             var changes = delivery.Deliver(pilot.PilotId, recipient, structure, BlueRead.PositiveIds(items, "item IDs"));
             foreach (var change in changes)
             {
-                if (change.Item.OwnerId == pilot.PilotId)
-                {
-                    InventoryChangesWire.NotifyItemChange(context, change);
-                }
-                else if (change.Previous is { } previous)
-                {
-                    InventoryChangesWire.NotifyItemChange(context, new(previous with { Quantity = 0 }, previous));
-                }
+                InventoryChangesWire.NotifyOwnedItemChange(context, change);
             }
             return PilotCallResult.None;
         }

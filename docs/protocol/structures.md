@@ -17,7 +17,7 @@ personal Deliveries hangar. An item that has already moved or is unavailable sta
 
 Personal Assets includes the resulting items and locations, so the existing asset-safety path can be reached when docking
 is unavailable. After docking, the owner can move the delivered items into Item Hangar using the native inventory view.
-FLEX fueling, assembled ship custody and courier completion while undocked remain separate features.
+Assembled ship custody and courier completion while undocked remain separate features.
 [Asset safety](https://wiki.eveuniversity.org/Asset_Safety)
 
 **Automated validation.** `NativeDropOffChecksSurfaceRangeAndPreservesPrivateDeliveriesAcrossRestart` passed through
@@ -45,6 +45,43 @@ FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureCargoDropoffTests|Ful
 
 **Optional maintainer checks.** Open **Cargo Deposit** within 10 km of a dockable Upwell structure. Deposit a stack, dock,
 then move the stack from **Deliveries** into **Item Hangar**.
+
+## Cargo Deposit at FLEX navigation structures
+
+The build **3662168** `dropboxController.pyj` switches the Cargo Deposit window to **Fuel Bay** for non-dockable Upwell
+structures and sends the same `DropOffItems` request. `structures/types.pyj` supplies the type filter and
+`inventorycommon/const.pyj` binds the structure fuel bay to flag **172**. EVE.js **261108.1**, build **3396210**, directs
+FLEX deposits to the structure owner's corporate fuel bay in `structureCargoDeliveryService.js` (`ae8c9e10c413`).
+[CCP navigation structures](https://www.eveonline.com/news/view/navigation-structures-inbound) ·
+[EVE University navigation structures](https://wiki.eveuniversity.org/Navigation_structures)
+
+Any pilot within **10 km** of the surface of an anchored Pharolux, Ansiblex or Tenebrex can deposit eligible whole fuel
+block stacks from their active ship, subject to the same cloak, warp and combat restrictions as personal deposits.
+The owning corporation receives the stacks in its fuel bay. The structure's built-in service uses the same resident
+stock for startup and hourly fuel charges. Deposits use Eden's existing **30,000 m³** fuel bay limit and skip stacks
+that cannot fit in full.
+
+Build 3662168 still offers Liquid Ozone in the Cargo Deposit filter. Ansiblex uses capacitor for jumps, and Eden accepts
+fuel blocks for its hourly upkeep. Metenox fueling depends on its automatic harvest and reagent consumption lifecycle.
+[CCP Version 24.01 patch notes](https://www.eveonline.com/news/view/patch-notes-version-24-01)
+
+**Automated validation.** The exact
+`Eden.Protocol.Tests.Structures.StructureFlexCargoDropoffTests.NativeDropOffFuelsPrivateFlexStructuresWithWholeStacksAcrossRestart`
+filter passed for all three hulls in 41.58 s after a 41.71 s build. It covers the surface boundary, public deposit at a
+private structure, capacity and mixed-item checks, sender cache removals, retry and corporate custody after reopen.
+
+The solution built in 31.74 s with zero warnings or errors. This combined filter ran in 219.62 s with 144 passes and
+one skip. The skipped Rhea acquisition replay requires an installed catalog paired with a captured market snapshot.
+The catalog and formatting policy suites passed all 17 Python tests.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureFlexCargoDropoffTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureCargoDropoffTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureDeliveryTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureFuelRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.CapitalTravelTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Approach an anchored navigation structure from another corporation and use **Cargo
+Deposit** to contribute fuel blocks. Confirm the owner can use them to run the built-in service.
 
 ## Personal Deliveries at Upwell structures
 

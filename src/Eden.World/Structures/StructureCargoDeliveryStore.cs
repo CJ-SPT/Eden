@@ -36,9 +36,10 @@ internal sealed class StructureCargoDeliveryStore(WorldDatabase database, TimePr
         }
         var structure = PilotStructureStore.Require(world, structureId);
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
-        if (!profile.Dockable)
+        bool fuelDeposit = StructureCargoDeliveryRules.ReceivesNavigationFuel(profile.Family);
+        if (!profile.Dockable && !fuelDeposit)
         {
-            throw new InvalidDataException("This Cargo Deposit service requires a dockable Upwell structure.");
+            throw new InvalidDataException("This structure does not support Cargo Deposit.");
         }
         int system = CrimewatchPersistence.System(catalog, ship);
         if (system != structure.SystemId)
@@ -55,12 +56,17 @@ internal sealed class StructureCargoDeliveryStore(WorldDatabase database, TimePr
             || structure.DeployEndsAt <= now
             || battle?.RepairAt <= now
             || battle is { PausedUntil: > 0 } && battle.PausedUntil <= now
+            || fuelDeposit
+                && world.Filter<SavedStructureService>(s => s.StructureId == structureId && s.Online == true && s.NextFuelAt <= now).Any()
         )
         {
             PilotStructureStore.Advance(world, catalog, now, system);
             structure = PilotStructureStore.Require(world, structureId);
         }
-        if (!StructureRules.CanDock(profile, structure.State, 0))
+        bool available = fuelDeposit
+            ? StructureCargoDeliveryRules.CanReceiveNavigationFuel(structure.State)
+            : StructureRules.CanDock(profile, structure.State, 0);
+        if (!available)
         {
             throw new InvalidDataException("This structure is not operational for Cargo Deposit.");
         }
@@ -89,6 +95,14 @@ internal sealed class StructureCargoDeliveryStore(WorldDatabase database, TimePr
         {
             throw new InvalidDataException("Approach within Cargo Deposit range of the structure.");
         }
+        long destinationOwner = fuelDeposit ? structure.CorporationId : pilotId;
+        int destinationFlag = fuelDeposit ? StructureRules.FuelBayFlag : (int)InventoryFlag.StructureDeliveries;
+        double fuelUsed = fuelDeposit
+            ? world
+                .Filter<OwnedItem>(i => i.LocationId == structureId && i.FlagId == StructureRules.FuelBayFlag)
+                .AsEnumerable()
+                .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity)
+            : 0;
         List<InventoryChange> changes = [];
         foreach (long id in itemIds.Distinct())
         {
@@ -98,15 +112,29 @@ internal sealed class StructureCargoDeliveryStore(WorldDatabase database, TimePr
                 || item.OwnerId != pilotId
                 || item.LocationId != shipId
                 || !StructureCargoDeliveryRules.CanDropOffFrom(item.FlagId)
-                || catalog.FittingType(item.TypeId) is null
+                || catalog.FittingType(item.TypeId) is not { } type
             )
             {
                 continue;
             }
+            if (fuelDeposit)
+            {
+                if (type.GroupId != StructureRules.FuelBlockGroup || world.ContainedInventoryIds(item.Id).Count != 0)
+                {
+                    continue;
+                }
+                double nextUsed = fuelUsed + PilotInventoryStore.Volume(catalog, item.TypeId, type: type) * item.Quantity;
+                if (nextUsed > profile.FuelCapacity)
+                {
+                    continue;
+                }
+                fuelUsed = nextUsed;
+            }
             var before = PilotInventoryStore.Read(catalog, item);
+            item.OwnerId = destinationOwner;
             item.LocationId = structure.Id;
-            item.FlagId = (int)InventoryFlag.StructureDeliveries;
-            changes.Add(new(before with { LocationId = item.LocationId, FlagId = item.FlagId }, before));
+            item.FlagId = destinationFlag;
+            changes.Add(new(before with { OwnerId = destinationOwner, LocationId = structure.Id, FlagId = destinationFlag }, before));
         }
         world.Commit();
         return changes;

@@ -163,6 +163,10 @@ Pilots within range of a dockable Upwell structure can move eligible ship cargo 
 from space. They can see the deposit in Personal Assets and move it into Item Hangar after docking.
 [Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)
 
+Pilots can supply fuel blocks from space to an anchored Pharolux, Ansiblex or Tenebrex through **Cargo Deposit**. The
+structure's corporation receives the fuel for its built-in service.
+[Cargo Deposit at FLEX navigation structures](protocol/structures.md#cargo-deposit-at-flex-navigation-structures)
+
 While docked at an Upwell structure, pilots can send eligible personal Item Hangar stacks to another pilot's Deliveries
 hangar. The recipient's items and inbox notification persist across restarts.
 [Personal Deliveries at Upwell structures](protocol/structures.md#personal-deliveries-at-upwell-structures)

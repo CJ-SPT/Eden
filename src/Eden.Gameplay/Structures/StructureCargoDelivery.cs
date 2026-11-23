@@ -9,6 +9,20 @@ public interface IStructureCargoDelivery
 
 public static class StructureCargoDeliveryRules
 {
+    public static bool ReceivesNavigationFuel(StructureFamily family) =>
+        family is StructureFamily.JumpBridge or StructureFamily.CynoBeacon or StructureFamily.CynoJammer;
+
+    public static bool CanReceiveNavigationFuel(StructureState state) =>
+        state
+            is StructureState.Fitting
+                or StructureState.Onlining
+                or StructureState.OnlineDeprecated
+                or StructureState.ShieldVulnerable
+                or StructureState.ArmorReinforced
+                or StructureState.ArmorVulnerable
+                or StructureState.HullReinforced
+                or StructureState.HullVulnerable;
+
     // Pinned build 3662168 inventorycommon.const.cargoHoldsValidForDeliveryService.
     public static bool CanDropOffFrom(int flag) =>
         (InventoryFlag)flag

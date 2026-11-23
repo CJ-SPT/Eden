@@ -5,6 +5,19 @@ namespace Eden.Protocol.Docking;
 
 internal static class InventoryChangesWire
 {
+    internal static void NotifyOwnedItemChange(PilotCallContext context, InventoryChange change)
+    {
+        long pilotId = context.Pilot.PilotId;
+        if (change.Item.OwnerId == pilotId)
+        {
+            NotifyItemChange(context, change);
+        }
+        else if (change.Previous is { OwnerId: var priorOwner } previous && priorOwner == pilotId)
+        {
+            NotifyItemChange(context, new(previous with { Quantity = 0 }, previous));
+        }
+    }
+
     internal static void NotifyItemChange(PilotCallContext context, InventoryChange change, bool beforeFlight = false)
     {
         // OnItemChange keys index the inventory DBRow; values describe the old row.

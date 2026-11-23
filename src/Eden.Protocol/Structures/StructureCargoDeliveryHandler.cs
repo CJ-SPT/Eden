@@ -27,23 +27,23 @@ internal sealed class StructureCargoDeliveryHandler(IStructureCargoDelivery carg
             || args is not [List<object?> items, long ship, long structure]
             || ship != context.Pilot.ShipId
             || structure < StructureRules.FirstStructureId
-            || items.Any(item => item is not (long and > 0))
         )
         {
             return new PilotCallResult.Failure("Choose cargo from your active ship and a valid Upwell structure.");
         }
-        var flight = context.Flight;
         try
         {
+            var ids = BlueRead.PositiveIds(items, "item IDs");
+            var flight = context.Flight;
             flight.Checkpoint();
             if (!flight.CanUseSelfModules || flight.InWarp || flight.PreparingWarp || flight.Cloaked)
             {
                 return new PilotCallResult.Failure("Drop off cargo from your active ship in space outside warp and cloak.");
             }
-            var changes = cargo.DropOff(context.Pilot.PilotId, ship, structure, items.Cast<long>().ToArray());
+            var changes = cargo.DropOff(context.Pilot.PilotId, ship, structure, ids);
             foreach (var change in changes)
             {
-                InventoryChangesWire.NotifyItemChange(context, change);
+                InventoryChangesWire.NotifyOwnedItemChange(context, change);
             }
             return new BlueList<long>(changes.Select(change => change.Item.Id).ToArray());
         }
