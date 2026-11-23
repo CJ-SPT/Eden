@@ -16,12 +16,28 @@ public sealed record FittedResourceUsage(
 
 public sealed record RookieResistanceModifier(DogmaAttributeId Bonus, DogmaAttributeId Resonance);
 
-public sealed record FittingOutputSkill(FittingSkill Skill, DogmaAttributeId Attribute);
+public sealed record ShipAttributeSkillBonus(int SkillId, DogmaAttributeId Attribute, double PerLevel)
+{
+    public double Fraction(IReadOnlyDictionary<int, int> levels) => PerLevel * levels.GetValueOrDefault(SkillId);
+}
 
 public static class FittingRules
 {
-    public static IReadOnlyList<FittingOutputSkill> ResourceOutputSkills { get; } =
-    [new(FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput), new(FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput)];
+    private const double StandardSkillBonus = InventoryDefinitions.OutputBonusPerSkillLevel;
+
+    public static IReadOnlyList<ShipAttributeSkillBonus> ShipAttributeSkills { get; } =
+    [
+        new((int)FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput, StandardSkillBonus),
+        new((int)FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput, StandardSkillBonus),
+        new((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity, StandardSkillBonus),
+        new((int)FittingSkill.CapacitorSystemsOperation, DogmaAttributeId.CapacitorRechargeTime, -StandardSkillBonus),
+        new((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange, StandardSkillBonus),
+        new((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution, StandardSkillBonus),
+        new((int)DefenseSkill.Mechanics, DogmaAttributeId.StructureHitPoints, StandardSkillBonus),
+        new((int)DefenseSkill.HullUpgrades, DogmaAttributeId.ArmorHitPoints, StandardSkillBonus),
+        new((int)DefenseSkill.ShieldManagement, DogmaAttributeId.ShieldCapacity, StandardSkillBonus),
+        new((int)DefenseSkill.ShieldOperation, DogmaAttributeId.ShieldRechargeTime, -StandardSkillBonus),
+    ];
 
     // Corvette roles are exempt graph modifiers, before any final resistance override.
     public static IReadOnlyList<RookieResistanceModifier> RookieResistanceModifiers { get; } =
@@ -43,35 +59,10 @@ public static class FittingRules
     )
     {
         var attributes = basis.ToDictionary();
-        // These skills each grant five percent per trained level to their hull attribute.
-        foreach (var bonus in ResourceOutputSkills)
+        foreach (var bonus in ShipAttributeSkills)
         {
-            attributes[bonus.Attribute] =
-                attributes.GetValueOrDefault(bonus.Attribute)
-                * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * levels.GetValueOrDefault((int)bonus.Skill));
+            attributes[bonus.Attribute] = attributes.GetValueOrDefault(bonus.Attribute) * (1 + bonus.Fraction(levels));
         }
-        foreach (
-            var (skill, output) in new[]
-            {
-                ((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity),
-                ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange),
-                ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution),
-                ((int)DefenseSkill.Mechanics, DogmaAttributeId.StructureHitPoints),
-                ((int)DefenseSkill.HullUpgrades, DogmaAttributeId.ArmorHitPoints),
-                ((int)DefenseSkill.ShieldManagement, DogmaAttributeId.ShieldCapacity),
-            }
-        )
-        {
-            attributes[output] =
-                attributes.GetValueOrDefault(output)
-                * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * levels.GetValueOrDefault(skill));
-        }
-        attributes[DogmaAttributeId.CapacitorRechargeTime] =
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime)
-            * (1 - InventoryDefinitions.OutputBonusPerSkillLevel * levels.GetValueOrDefault((int)FittingSkill.CapacitorSystemsOperation));
-        attributes[DogmaAttributeId.ShieldRechargeTime] =
-            attributes.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
-            * (1 - InventoryDefinitions.OutputBonusPerSkillLevel * levels.GetValueOrDefault((int)DefenseSkill.ShieldOperation));
         if (attributes.TryGetValue(DogmaAttributeId.ShieldUniformity, out double uniformity))
         {
             const double uniformityPerLevel = 0.05;

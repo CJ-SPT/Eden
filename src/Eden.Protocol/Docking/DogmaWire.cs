@@ -143,6 +143,16 @@ internal sealed record DogmaShipState(
         };
 }
 
+internal sealed record DogmaFittingBrain(PilotBrainState Brain) : BlueModel
+{
+    // Build 3662168 _GetBrainForGhostFitting passes the character ID followed by two Nones
+    // and consumes charInfo directly. Ordinary Godma Prime passes flags and unpacks charInfo.
+    public static bool IsRequested(long pilotId, object?[] args, Dictionary<string, object?>? keywords) =>
+        args is [long characterId, null, null] && characterId == pilotId && keywords is null or { Count: 0 };
+
+    public override object ToBlue() => new BlueInstance("utillib.KeyVal", new Dictionary<string, object?> { ["charInfo"] = Brain });
+}
+
 internal sealed record DogmaAllInfo(
     DogmaShipState ShipState,
     IReadOnlyDictionary<long, DogmaItemInfo<double>> ShipInfo,

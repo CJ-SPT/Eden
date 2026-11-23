@@ -502,6 +502,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Trained skills in fitting simulation](protocol/fitting.md#trained-skills-in-fitting-simulation)
 - [Multifit rig checkbox on packaged ships](protocol/fitting.md#multifit-rig-checkbox-on-packaged-ships-november-22-2026)
 - [Multifit exhausted-stack notifications](protocol/fitting.md#multifit-exhausted-stack-notifications-november-17-2026)
 - [heat during resident ship transitions](protocol/fitting.md#heat-during-resident-ship-transitions)

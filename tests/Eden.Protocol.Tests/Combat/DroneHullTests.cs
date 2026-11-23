@@ -255,7 +255,7 @@ public sealed class DroneHullTests
     [InlineData(37455, 5, 30_000)]
     [InlineData(645, 5, 60_000)]
     [InlineData(593, 5, 60_000)]
-    public void NativePrimesCarryEffectiveControlAndTrackingWithoutDuplicateBrainControl(int hull, int count, int range)
+    public void NativePrimeAndFittingBrainCarryDroneControlAndTracking(int hull, int count, int range)
     {
         using Fixture fixture = new();
         Prepare(fixture, hull);
@@ -268,10 +268,14 @@ public sealed class DroneHullTests
         Assert.Equal(count, character.Attributes[DogmaAttributeId.MaxActiveDrones]);
         Assert.Equal(range, character.Attributes[DogmaAttributeId.DroneControlDistance]);
         var brain = scope.ServiceProvider.GetRequiredService<PilotBrain>().Read(fixture.Pilot, fixture.Ship);
-        Assert.DoesNotContain(
-            brain.CharacterEffects.Concat(brain.ShipEffects),
-            effect => effect.Attribute is DogmaAttributeId.MaxActiveDrones or DogmaAttributeId.DroneControlDistance
-        );
+        var active = Assert.Single(brain.CharacterEffects, effect => effect.Attribute == DogmaAttributeId.MaxActiveDrones);
+        Assert.Equal(5, active.Value);
+        Assert.Equal(BrainOperation.Add, active.Operation);
+        Assert.Equal([(int)DroneSkill.Drones], active.Skills);
+        var rangeEffects = brain.CharacterEffects.Where(effect => effect.Attribute == DogmaAttributeId.DroneControlDistance).ToArray();
+        Assert.Equal(2, rangeEffects.Length);
+        Assert.All(rangeEffects, effect => Assert.Equal(BrainOperation.Add, effect.Operation));
+        Assert.Equal(40_000, rangeEffects.Sum(effect => effect.Value));
         var profile = fixture.Drones.Profile(fixture.Pilot, Warrior)!;
         var prime = builder.PrimeModule(pilot, item);
         Assert.Equal(profile.Tracking, prime.Attributes[DogmaAttributeId.TrackingSpeed], 8);

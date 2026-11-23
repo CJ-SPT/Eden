@@ -539,6 +539,7 @@ internal sealed class InventoryHandler(
             ("@pilot", "List") => BlueEmpty.List,
             ("@hangar" or "@ship", "Add" or "MultiAdd") => MoveFromWire(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => ShipDogmaBuilder.Item(pilot, service[1..]),
+            ("dogmaIM", "GetAllInfo") when DogmaFittingBrain.IsRequested(pilot.PilotId, args, keywords) => dogma.FittingBrain(pilot),
             ("dogmaIM", "GetAllInfo") when context.ControlledStructureId is null && !pilot.InStructure => dogma.AllInfo(pilot),
             ("dogmaIM", "GetLayerDamageValuesByItems") when args is [HashSet<long> ids] => dogma.DroneBayDamage(pilot, ids),
             ("dogmaIM", "ItemGetInfo")

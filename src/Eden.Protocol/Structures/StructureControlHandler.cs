@@ -1,6 +1,7 @@
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -12,7 +13,7 @@ internal sealed class StructureControlHandler(
     IStructureContacts contacts,
     SharedStructureControl controllers,
     StructureDogmaBuilder dogma,
-    Eden.Protocol.Docking.FittingOperations fitting,
+    FittingOperations fitting,
     Eden.Gameplay.Docking.IPilotLookup pilots
 ) : ISelectedPilotCallHandler
 {
@@ -95,7 +96,7 @@ internal sealed class StructureControlHandler(
                 return PilotCallResult.Unsupported;
             }
             long id = context.Pilot.DockedLocationId;
-            if (method == "GetAllInfo")
+            if (method == "GetAllInfo" && !DogmaFittingBrain.IsRequested(pilot, args, keywords))
             {
                 return dogma.AllInfo(
                     context.Pilot,
