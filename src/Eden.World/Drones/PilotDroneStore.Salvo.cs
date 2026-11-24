@@ -210,7 +210,7 @@ internal sealed partial class PilotDroneStore
         if (FindVictim(world, catalog, pilot, target, system, now) is { } victim && FindContact(world, victim, system, now) is { } contact)
         {
             var decision = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
-            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
+            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim, incursionTime: now);
             return new(
                 target,
                 contact.Position,

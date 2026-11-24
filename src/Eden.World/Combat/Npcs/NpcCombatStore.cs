@@ -379,7 +379,7 @@ internal sealed partial class NpcCombatStore(
         {
             throw new InvalidDataException("Invalid NPC weapon cycle attributes.");
         }
-        var target = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var target = PilotFittingStore.ShipAttributes(world, catalog, pilotId, incursionTime: now);
         var defense = ShipHealth.DefenseFrom(target);
         DamageVector damage = new(
             attributes.GetValueOrDefault(DogmaAttributeId.EmDamage),

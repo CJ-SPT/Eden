@@ -8,6 +8,7 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Drones;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -180,6 +181,7 @@ internal sealed partial class LiveCombatRuntime
         int count = 0;
         double bandwidth = 0;
         bool released = false;
+        double incursionDamage = IncursionSystemEffectStore.At(owner, ship.SystemId, now)?.WeaponDamageMultiplier ?? 1;
         foreach (var original in drones)
         {
             var drone = original;
@@ -321,6 +323,11 @@ internal sealed partial class LiveCombatRuntime
             {
                 continue;
             }
+            double quality = damage.Total / contact.Profile.Damage.Total;
+            if (incursionDamage != 1)
+            {
+                damage = damage.Scale(incursionDamage);
+            }
             if (playerShip is not null)
             {
                 var applied = CombatDamage.Apply(playerShip.Health.At(now), playerShip.Health.Defense, damage, playerShip.ShipId, now);
@@ -349,7 +356,7 @@ internal sealed partial class LiveCombatRuntime
                     applied.Applied,
                     damage,
                     new(playerShip.ShipId, health.Defense, health.Remaining),
-                    damage.Total / contact.Profile.Damage.Total
+                    quality
                 );
                 hits.Add(hit);
                 pilotShots.Add(new(source!, player!, decision!, step.Drone.ReadyAt, hit));
@@ -375,7 +382,7 @@ internal sealed partial class LiveCombatRuntime
                     impact.Applied,
                     damage,
                     new(npc.Id, next.Health.Defense, next.Health.Remaining),
-                    damage.Total / contact.Profile.Damage.Total
+                    quality
                 )
             );
             ship = ship with

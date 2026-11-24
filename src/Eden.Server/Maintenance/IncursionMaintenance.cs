@@ -18,7 +18,7 @@ internal sealed class IncursionMaintenance(IIncursionMaintenance incursions, Tim
         {
             using var operation = operations?.Begin();
             incursions.Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            _timer = new PeriodicTimer(TimeSpan.FromMinutes(1), clock);
+            _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
         }
     }

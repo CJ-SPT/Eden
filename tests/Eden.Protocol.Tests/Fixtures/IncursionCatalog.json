@@ -453,6 +453,317 @@
           "value": 80
         }
       ]
+    },
+    {
+      "id": 2208,
+      "name": "Test type 2208",
+      "groupId": 1054,
+      "groupName": "Test group 1054",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 3524,
+      "name": "Test type 3524",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 3525,
+      "name": "Test type 3525",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 3526,
+      "name": "Test type 3526",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 3527,
+      "name": "Test type 3527",
+      "groupId": 1054,
+      "groupName": "Test group 1054",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 3071,
+      "name": "Test type 3071",
+      "groupId": 1052,
+      "groupName": "Test group 1052",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10000
+        },
+        {
+          "id": 263,
+          "value": 10000
+        },
+        {
+          "id": 265,
+          "value": 10000
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 3500,
+      "name": "Test type 3500",
+      "groupId": 319,
+      "groupName": "Test group 319",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 150,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10000
+        },
+        {
+          "id": 263,
+          "value": 10000
+        },
+        {
+          "id": 265,
+          "value": 10000
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2894,
+      "name": "Test type 2894",
+      "groupId": 227,
+      "groupName": "Test group 227",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 23,
+      "name": "Test type 23",
+      "groupId": 12,
+      "groupName": "Test group 12",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3261,
+      "name": "Logistics Control Array",
+      "groupId": 306,
+      "groupName": "Test group 306",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 755,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 552,
+          "value": 500
+        }
+      ]
+    },
+    {
+      "id": 3498,
+      "name": "Test type 3498",
+      "groupId": 306,
+      "groupName": "Test group 306",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3502,
+      "name": "Test type 3502",
+      "groupId": 952,
+      "groupName": "Test group 952",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3503,
+      "name": "Test type 3503",
+      "groupId": 952,
+      "groupName": "Test group 952",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3495,
+      "name": "Test type 3495",
+      "groupId": 952,
+      "groupName": "Test group 952",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 28620,
+      "name": "Test type 28620",
+      "groupId": 457,
+      "groupName": "Test group 457",
+      "categoryId": 25,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3483,
+      "name": "Test type 3483",
+      "groupId": 283,
+      "groupName": "Test group 283",
+      "categoryId": 17,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3501,
+      "name": "Test type 3501",
+      "groupId": 314,
+      "groupName": "Test group 314",
+      "categoryId": 17,
+      "mass": 1000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": []
     }
   ],
   "records": [
@@ -1171,6 +1482,371 @@
       "key": 30004130,
       "data": {
         "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5188,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 60,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114115,
+        "dungeonID": 5188
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5190,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 60,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114116,
+        "dungeonID": 5190
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5191,
+      "data": {
+        "entryTypeID": 2894,
+        "entryObjectID": 10,
+        "archetypeID": 60,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114114,
+        "dungeonID": 5191
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5165,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 61,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114105,
+        "dungeonID": 5165,
+        "connections": [
+          {
+            "fromObjectID": 11,
+            "allowedShipsList": 486
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5164,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 61,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114107,
+        "dungeonID": 5164,
+        "connections": [
+          {
+            "fromObjectID": 11,
+            "allowedShipsList": 486
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5167,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 62,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114108,
+        "dungeonID": 5167,
+        "connections": [
+          {
+            "fromObjectID": 11,
+            "allowedShipsList": 486
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5172,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 62,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114109,
+        "dungeonID": 5172,
+        "connections": [
+          {
+            "fromObjectID": 1011221,
+            "allowedShipsList": 435
+          },
+          {
+            "fromObjectID": 1011279,
+            "allowedShipsList": 392
+          },
+          {
+            "fromObjectID": 1011240
+          },
+          {
+            "fromObjectID": 1011291
+          },
+          {
+            "fromObjectID": 1011265
+          },
+          {
+            "fromObjectID": 1011293
+          },
+          {
+            "fromObjectID": 1011295
+          },
+          {
+            "fromObjectID": 1011297
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5114,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 63,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114111,
+        "dungeonID": 5114,
+        "connections": [
+          {
+            "fromObjectID": 1009290,
+            "allowedShipsList": 486
+          },
+          {
+            "fromObjectID": 1007044,
+            "allowedShipsList": 474
+          },
+          {
+            "fromObjectID": 1007056,
+            "allowedShipsList": 474
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5175,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 63,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114133,
+        "dungeonID": 5175,
+        "connections": [
+          {
+            "fromObjectID": 11,
+            "allowedShipsList": 486
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5201,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 64,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114128,
+        "dungeonID": 5201,
+        "connections": [
+          {
+            "fromObjectID": 11,
+            "allowedShipsList": 486
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 435,
+      "data": {
+        "includedGroupIDs": [
+          237
+        ]
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 392,
+      "data": {
+        "includedGroupIDs": [
+          27
+        ]
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 474,
+      "data": {
+        "includedGroupIDs": [
+          237
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2208,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3524,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3525,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3526,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3527,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3071,
+      "data": {
+        "volume": 200,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3500,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2894,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 23,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3261,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3498,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3502,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3503,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3495,
+      "data": {
+        "volume": 10,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28620,
+      "data": {
+        "volume": 1.2,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3483,
+      "data": {
+        "volume": 0.5,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3501,
+      "data": {
+        "volume": 10,
+        "published": 1
       }
     }
   ],

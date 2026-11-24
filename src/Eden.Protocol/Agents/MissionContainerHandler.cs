@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
@@ -9,7 +10,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Agents;
 
 [Injectable]
-internal sealed class MissionContainerHandler(IPilotMissionContainers containers) : ISelectedPilotCallHandler
+internal sealed class MissionContainerHandler(IPilotMissionContainers containers, IIncursionCargo? incursions = null)
+    : ISelectedPilotCallHandler
 {
     private const string BindingPrefix = "@missioncontainer:";
 
@@ -34,7 +36,8 @@ internal sealed class MissionContainerHandler(IPilotMissionContainers containers
         {
             return PilotCallResult.Unsupported;
         }
-        if (!MissionContainerRules.IsContainer(id))
+        bool incursion = IncursionObjectIds.IsCargo(id) && incursions is not null;
+        if (!MissionContainerRules.IsContainer(id) && !incursion)
         {
             return PilotCallResult.Unsupported;
         }
@@ -58,14 +61,16 @@ internal sealed class MissionContainerHandler(IPilotMissionContainers containers
                 {
                     return new PilotCallResult.Failure("Choose mission cargo to deliver.");
                 }
-                var changes = containers.Deposit(context.Pilot.PilotId, context.Pilot.ShipId, id, request);
+                var changes = incursion
+                    ? incursions!.Deposit(context.Pilot.PilotId, context.Pilot.ShipId, id, request)
+                    : containers.Deposit(context.Pilot.PilotId, context.Pilot.ShipId, id, request);
                 foreach (var change in changes)
                 {
                     InventoryChangesWire.NotifyItemChange(context, change);
                 }
                 return PilotCallResult.None;
             }
-            var contents = containers.Read(context.Pilot.PilotId, id);
+            var contents = incursion ? incursions!.Read(context.Pilot.PilotId, id) : containers.Read(context.Pilot.PilotId, id);
             if (bind)
             {
                 return context.Reference(BindingPrefix + id.ToString(CultureInfo.InvariantCulture), PilotBindingLifetime.Location);

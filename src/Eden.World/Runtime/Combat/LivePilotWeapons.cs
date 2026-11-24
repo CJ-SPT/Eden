@@ -5,6 +5,7 @@ using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.World.Exploration;
 using Eden.World.Storage;
 
 namespace Eden.World.Runtime.Combat;
@@ -359,7 +360,18 @@ internal sealed partial class LiveCombatRuntime
             other.Position,
             new ResidentMap<Eden.Gameplay.Dogma.DogmaAttributeId, double>()
         );
-        var plan = LiveCombatRules.Fire(ship, adapter, module, banked, velocity, now, draws, activation);
+        double incursionDamage = IncursionSystemEffectStore.At(owner, ship.SystemId, now)?.WeaponDamageMultiplier ?? 1;
+        var plan = LiveCombatRules.Fire(
+            ship,
+            adapter,
+            module,
+            banked,
+            velocity,
+            now,
+            draws,
+            activation,
+            incursionDamageMultiplier: incursionDamage
+        );
         if (plan.Volley.Shot.Destroyed)
         {
             // The ordinary transactional path settles fatal damage, insurance and ownership atomically.

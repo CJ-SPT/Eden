@@ -48,11 +48,30 @@ internal sealed partial class PirateExplorationStore
         StaticSpaceObject Object,
         ExplorationKind Kind,
         int Difficulty,
-        int SystemId
+        int SystemId,
+        bool Training = false,
+        WorldCombatAnomaly? Incursion = null
     );
 
     private static HackingAccess Access(WorldAction world, CatalogDbContext catalog, Pilot pilot, long id, double range, long now)
     {
+        if (IncursionObjectIds.IsArray(id))
+        {
+            var (incursion, arrayBody) = CombatAnomalyStore.AccessIncursionArray(world, catalog, pilot, id, range, now);
+            var array =
+                world.Set<SavedHackingContainer>().Find(id)
+                ?? world
+                    .Add(
+                        new SavedHackingContainer
+                        {
+                            Id = id,
+                            SiteId = incursion.Id,
+                            LootSeed = unchecked((int)NpcSpawnRules.Seed(incursion.SystemId, incursion.Id)),
+                        }
+                    )
+                    .Entity;
+            return new(null, array, arrayBody, ExplorationKind.Data, 1, incursion.SystemId, Incursion: incursion);
+        }
         if (
             MissionContainerRules.IsContainer(id)
             && world is EconomyTransaction
@@ -60,7 +79,7 @@ internal sealed partial class PirateExplorationStore
         )
         {
             var mission = PilotMissionStore.CareerHackAccess(world, catalog, pilot.Id, id, range, now);
-            return new(null, career, mission.Object, mission.Analyzer, 0, mission.System);
+            return new(null, career, mission.Object, mission.Analyzer, 0, mission.System, Training: true);
         }
         var container = HackingRules.IsContainer(id) ? world.Set<SavedHackingContainer>().Find(id) : null;
         var site = container is null ? null : world.Set<SavedExplorationSite>().Find(container.SiteId);
@@ -178,12 +197,13 @@ internal sealed partial class PirateExplorationStore
             throw new InvalidDataException("Invalid fitted analyzer profile.");
         }
         var access = Access(world, catalog, pilot, targetId, module.Range, now);
+        if (access.Incursion is { } incursion && !CombatAnomalyStore.MayOverrideArray(incursion, now))
+        {
+            throw new InvalidDataException("The logistics array has already transmitted its orders.");
+        }
         var kind = access.Kind;
         int skill = kind != ExplorationKind.Relic ? HackingRules.HackingSkill : HackingRules.ArchaeologySkill;
-        if (
-            !HackingCatalog.MatchesAnalyzer(catalog, item.TypeId, skill)
-            || access.Site is not null && HackingCatalog.IsCivilian(item.TypeId)
-        )
+        if (!HackingCatalog.MatchesAnalyzer(catalog, item.TypeId, skill) || !access.Training && HackingCatalog.IsCivilian(item.TypeId))
         {
             throw new InvalidDataException("Use the analyzer appropriate to this data or relic container.");
         }
@@ -211,7 +231,7 @@ internal sealed partial class PirateExplorationStore
             module.Coherence,
             module.Strength,
             module.Slots,
-            training: access.Site is null
+            training: access.Training
         );
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
         long ready = checked(now + (long)Math.Ceiling(module.DurationMs * TimeSpan.TicksPerMillisecond));
@@ -293,6 +313,10 @@ internal sealed partial class PirateExplorationStore
                         site.ExpiresAt = Math.Min(site.ExpiresAt, now + OperationCollapse.Ticks);
                     }
                     CombatAnomalyStore.HackSignal(world, catalog, site.Id, SleeperWaveTrigger.HackResolved, now);
+                }
+                else if (access.Incursion is { } incursion)
+                {
+                    CombatAnomalyStore.CompleteIncursionArrayHack(world, catalog, incursion, now);
                 }
                 else
                 {
@@ -382,7 +406,7 @@ internal sealed partial class PirateExplorationStore
         world.Remove(attempt);
         if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
         {
-            if (MissionContainerRules.IsContainer(container.Id))
+            if (MissionContainerRules.IsContainer(container.Id) || IncursionObjectIds.IsArray(container.Id))
             {
                 container.Failures++;
             }

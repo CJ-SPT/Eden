@@ -314,7 +314,8 @@ internal sealed partial class PilotMissileStore(
             ? new MissileWarhead(DamageVector.None, 1, 1, 1)
             : MissileRules.Warhead(
                 charge,
-                inputs.Snapshot?.Missiles!.DamageMultiplier ?? calculation!.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier)
+                (inputs.Snapshot?.Missiles!.DamageMultiplier ?? calculation!.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier))
+                    * Eden.World.Exploration.IncursionSystemEffectStore.WeaponDamage(world, systemId, now)
             );
         var flight = MissileFlightRules.Launch(
             drive,

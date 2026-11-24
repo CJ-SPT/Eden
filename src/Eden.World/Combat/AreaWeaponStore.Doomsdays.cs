@@ -69,7 +69,7 @@ internal sealed partial class AreaWeaponStore
         {
             return null;
         }
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim, incursionTime: now);
         return PilotHealthStore.Read(world, targetId, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed
             ? null
             : new(targetId, hull.Id, point, hull.Radius ?? 0, attributes, Pilot: victim);

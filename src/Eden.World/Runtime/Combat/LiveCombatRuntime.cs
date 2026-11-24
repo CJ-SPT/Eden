@@ -7,6 +7,7 @@ using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Exploration;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -177,7 +178,19 @@ internal sealed partial class LiveCombatRuntime(
         int count = bank?.Count ?? 1;
         var draws = Enumerable.Range(0, count).Select(index => new TurretDraw(index == 0 ? roll : Draw(), crystalRoll ?? Draw())).ToArray();
         var profiles = overloaded ? OverloadedTurrets(ship, bank ?? [moduleId]) : null;
-        var plan = LiveCombatRules.Fire(ship, target, moduleId, banked, velocity, now, draws, activation, profiles?.Weapons);
+        double incursionDamage = IncursionSystemEffectStore.At(owner, ship.SystemId, now)?.WeaponDamageMultiplier ?? 1;
+        var plan = LiveCombatRules.Fire(
+            ship,
+            target,
+            moduleId,
+            banked,
+            velocity,
+            now,
+            draws,
+            activation,
+            profiles?.Weapons,
+            incursionDamage
+        );
         ShipHeatSnapshot? heat = null;
         if (profiles is not null)
         {
@@ -457,6 +470,26 @@ internal sealed partial class LiveCombatRuntime(
         {
             _savedShips[pilotId] = ship;
             _staleShips.Remove(pilotId);
+        }
+        double multiplier = positioned.Position is null
+            ? 1
+            : IncursionSystemEffectStore.At(owner, positioned.SystemId, now)?.ResonanceMultiplier ?? 1;
+        if (positioned.IncursionResonanceMultiplier != multiplier)
+        {
+            double ratio = multiplier / positioned.IncursionResonanceMultiplier;
+            var defense = positioned.Health.Defense;
+            positioned = positioned with
+            {
+                IncursionResonanceMultiplier = multiplier,
+                Health = positioned.Health with
+                {
+                    Defense = defense with
+                    {
+                        ShieldResonance = defense.ShieldResonance.Scale(ratio),
+                        ArmorResonance = defense.ArmorResonance.Scale(ratio),
+                    },
+                },
+            };
         }
         owner.TrackShip(positioned.ShipId, positioned.SystemId, pilotId);
         _ships[pilotId] = positioned;

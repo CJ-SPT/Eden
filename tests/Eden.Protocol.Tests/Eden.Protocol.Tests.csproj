@@ -73,6 +73,7 @@
     <EmbeddedResource Include="Fixtures/PassiveCatalog.json" />
     <EmbeddedResource Include="Fixtures/AbyssalCatalog.json" />
     <EmbeddedResource Include="Fixtures/IncursionCatalog.json" />
+    <EmbeddedResource Include="Fixtures/IncursionSecurityCatalog.json" />
     <EmbeddedResource Include="Fixtures/WormholeCatalog.json" />
     <EmbeddedResource Include="Fixtures/CommandBurstCatalog.json" />
     <EmbeddedResource Include="Fixtures/InterdictionCatalog.json" />

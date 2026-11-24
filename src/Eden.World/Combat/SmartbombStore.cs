@@ -84,6 +84,11 @@ internal sealed class SmartbombStore(
             calculation
         );
         var module = SmartbombRules.Define(moduleId, item.TypeId, attributes);
+        double incursionDamage = Eden.World.Exploration.IncursionSystemEffectStore.WeaponDamage(world, system, now);
+        if (incursionDamage != 1)
+        {
+            module = module with { Damage = module.Damage.Scale(incursionDamage) };
+        }
         SpacePosition origin = new(saved.X, saved.Y, saved.Z);
         double sourceRadius = catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0;
         double protectedRange = Math.Max(SmartbombRules.MinimumProtectedDistance, module.Range);
@@ -196,7 +201,8 @@ internal sealed class SmartbombStore(
         }
         foreach (var (id, victim) in victims)
         {
-            var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, victim));
+            var target = PilotFittingStore.ShipAttributes(world, catalog, victim, incursionTime: now);
+            var defense = ShipHealth.DefenseFrom(target);
             var result = PilotHealthStore.Apply(world, id, defense, module.Damage, now);
             DroneCombatPersistence.Module(world, shipId, id, true, now);
             DroneCombatPersistence.Incoming(world, id, shipId, now);

@@ -9,6 +9,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Structures;
 using Eden.World.Agents;
 using Eden.World.Catalog;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
@@ -32,6 +33,7 @@ internal sealed partial class PilotMiningStore
         {
             throw new InvalidDataException("Choose an available resource in this system.");
         }
+        CombatAnomalyStore.RequireIncursionOre(world, target, now);
         var type = catalog.RequireItem(rock.TypeId);
         var family = profile.Kind == UtilityDroneKind.IceMining ? MiningFamily.Ice : MiningFamily.Ore;
         if (!MiningDefinitions.MatchesFamily(family, type.CategoryId, type.GroupId) || type.GroupId == MiningDefinitions.MercoxitGroup)

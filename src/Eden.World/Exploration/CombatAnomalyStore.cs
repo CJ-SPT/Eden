@@ -353,31 +353,42 @@ internal sealed partial class CombatAnomalyStore(
         }
     }
 
-    private static CombatAnomaly Contact(WorldCombatAnomaly site, CombatAnomalyDefinition definition)
+    private static CombatAnomaly Contact(
+        WorldCombatAnomaly site,
+        CombatAnomalyDefinition definition,
+        IncursionSiteDefinition? incursion = null
+    )
     {
         var position = new SpacePosition(site.X, site.Y, site.Z);
         var objects = definition
             .Objects.Select(
                 (o, index) =>
-                    o with
+                {
+                    var gate = incursion?.Gates.FirstOrDefault(entry => entry.Body.Id == o.Id);
+                    return o with
                     {
                         Id =
                             o.IncursionBeacon is not null ? site.Id
-                            : site.IncursionTaleId.HasValue && o.GroupId == Eden.Gameplay.Agents.MissionGateRules.AccelerationGateGroup
-                                ? DedGateId(site.Id, 0)
+                            : gate is not null ? DedGateId(site.Id, gate.Slot)
+                            : incursion is not null && o.Id == IncursionObjectIds.LogisticsArray
+                                ? IncursionObjectIds.Object(site.Id, IncursionObjectIds.LogisticsArray)
                             : checked(
                                 CombatAnomalyRules.FirstObjectId
                                 + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
                                 + index
                             ),
                         Position = position + o.Position,
-                        AccelerationGateDirection =
-                            site.IncursionTaleId.HasValue && o.GroupId == Eden.Gameplay.Agents.MissionGateRules.AccelerationGateGroup
-                                ? (IncursionSiteCatalog.CombatOffset - o.Position).Unit
-                                : o.AccelerationGateDirection,
-                    }
+                        AccelerationGateDirection = gate is not null ? (gate.Destination - o.Position).Unit : o.AccelerationGateDirection,
+                    };
+                }
             )
             .ToArray();
+        if (incursion?.Cargo is { } cargo)
+        {
+            objects = cargo.Source is { } source
+                ? [.. objects, cargo.Place(site, cargo.Destination), cargo.Place(site, source)]
+                : [.. objects, cargo.Place(site, cargo.Destination)];
+        }
         return new(
             site.Id,
             ScannerTargetIds.FromCombatSequence(site.Id - CombatAnomalyRules.FirstSiteId),
@@ -427,9 +438,7 @@ internal sealed partial class CombatAnomalyStore(
                 .Where(s =>
                     ((s.Exploration is null && s.Mining is null && !s.Ded && !s.Wormhole) || s.FactionId == SleeperRules.FactionId)
                     && !s.Started
-                    && position.DistanceTo(
-                        s.Position + (IncursionSiteCatalog.IsGated(s.ArchetypeId) ? IncursionSiteCatalog.CombatOffset : SpacePosition.Zero)
-                    ) <= CombatAnomalyRules.ArrivalRange
+                    && NearCombatArrival(s, position)
                 )
                 .ToArray();
             if (nearby.Length == 0)
@@ -453,6 +462,7 @@ internal sealed partial class CombatAnomalyStore(
                 }
                 if (site.Wave < 0 && site.CompletedAt is null)
                 {
+                    StartIncursionOre(world, catalog, site);
                     NextWave(world, catalog, site, now);
                 }
             }
@@ -460,6 +470,13 @@ internal sealed partial class CombatAnomalyStore(
             transaction.Commit();
         }
     }
+
+    private static bool NearCombatArrival(CombatAnomaly site, SpacePosition position) =>
+        IncursionSiteCatalog.IsGated(site.ArchetypeId)
+            ? IncursionSiteCatalog
+                .CombatGrids(site.DungeonId)
+                .Any(grid => position.DistanceTo(site.Position + grid) <= CombatAnomalyRules.ArrivalRange)
+            : position.DistanceTo(site.Position) <= CombatAnomalyRules.ArrivalRange;
 
     internal static void Killed(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long now, long pilot = 0)
     {

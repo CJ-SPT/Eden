@@ -200,7 +200,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             {
                 var npc = world.Set<WorldNpc>().Find(row.SourceShipId)!;
                 var position = pilot.ActiveShip.Position!;
-                var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+                var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId, incursionTime: time);
                 var defense = ShipHealth.DefenseFrom(attributes);
                 double application = MissileRules.Application(
                     payload.Warhead,

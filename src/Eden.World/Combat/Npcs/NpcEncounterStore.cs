@@ -12,6 +12,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Agents;
 using Eden.World.Catalog;
+using Eden.World.Exploration;
 using Eden.World.FactionWarfare;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
@@ -231,7 +232,8 @@ internal sealed class NpcEncounterStore(
             }
         }
         world.SaveChanges();
-        decimal bountyMultiplier = database.Settings.Rewards.BountyMultiplier;
+        decimal bountyMultiplier =
+            database.Settings.Rewards.BountyMultiplier * IncursionSystemEffectStore.Bounties(LiveWorld.Find(database.Path), systemId, now);
         NpcContact[] contacts = buildContacts
             ? npcs.Select(n =>
                 {

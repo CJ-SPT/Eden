@@ -62,7 +62,7 @@ public sealed class IncursionCampaignTests
             }
             Assert.Equal(1, focus.Influence);
             Assert.Equal(opens + IncursionRules.ActiveTicks, focus.EndsAt);
-            Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
+            Assert.Empty(directory.PendingLoyalties(pilotId, clock.Now));
             systemId = focus.Systems.First(system => system.SceneType == IncursionScene.Vanguard).SystemId;
             assaultSystem = Assert.Single(focus.Systems, system => system.SceneType == IncursionScene.Assault).SystemId;
             headquartersSystem = Assert.Single(focus.Systems, system => system.SceneType == IncursionScene.Headquarters).SystemId;
@@ -80,7 +80,7 @@ public sealed class IncursionCampaignTests
                     && payment.CounterpartyId == LoyaltyStoreRules.ConcordCorporation
                     && payment.ContextId == systemId
             );
-            Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+            Assert.Equal(SoloPoints, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
             using var scope = fixture.Db.Services.CreateScope();
             var selected = fixture.Db.Store.FindPilot(1000001)!;
             using PilotCallContext context = new(
@@ -111,10 +111,13 @@ public sealed class IncursionCampaignTests
         {
             Assert.Equal(IncursionRules.Influence(1), Assert.Single(directory.Read(clock.Now)).Influence);
             Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
-            Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+            Assert.Equal(SoloPoints, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
             if (repel)
             {
-                Assert.Single(sites.Incursions(headquartersSystem, clock.Now));
+                Assert.DoesNotContain(
+                    sites.Incursions(headquartersSystem, clock.Now),
+                    site => IncursionSiteCatalog.Kind(site.DungeonId) == IncursionSiteKind.Mothership
+                );
                 Clear(live, scoutSystem, IncursionSiteKind.Scout);
                 Clear(live, assaultSystem, IncursionSiteKind.Assault);
                 for (int total = 3; total < IncursionRules.ClearsToUnlockFinal; total++)
@@ -126,24 +129,32 @@ public sealed class IncursionCampaignTests
                 var contested = Assert.Single(directory.Read(clock.Now));
                 Assert.Equal(0, contested.Influence);
                 Assert.False(contested.HasFinalEncounter);
-                Assert.Single(sites.Incursions(headquartersSystem, clock.Now));
+                Assert.DoesNotContain(
+                    sites.Incursions(headquartersSystem, clock.Now),
+                    site => IncursionSiteCatalog.Kind(site.DungeonId) == IncursionSiteKind.Mothership
+                );
                 Assert.Empty(loyalty.Read(pilotId));
 
                 Clear(live, headquartersSystem, IncursionSiteKind.Headquarters);
                 expectedVictoryLoyalty = (IncursionRules.ClearsToUnlockFinal - 2) * SoloPoints + 51;
-                Assert.Equal(expectedVictoryLoyalty, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
-                Assert.True(directory.AgencyUpdate?.HasFinalEncounter);
+                Assert.Equal(expectedVictoryLoyalty, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
+                Assert.True(Assert.Single(directory.AgencyUpdates).HasFinalEncounter);
                 Assert.True(Assert.Single(directory.Read(clock.Now)).HasFinalEncounter);
                 Assert.Equal(
                     IncursionSiteCatalog.KundaliniManifest,
-                    Assert.Single(sites.Incursions(headquartersSystem, clock.Now)).DungeonId
+                    Assert
+                        .Single(
+                            sites.Incursions(headquartersSystem, clock.Now),
+                            site => site.DungeonId == IncursionSiteCatalog.KundaliniManifest
+                        )
+                        .DungeonId
                 );
             }
             else
             {
                 clock.AdvanceWallTime(TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds));
                 Clear(live, systemId, IncursionSiteKind.Vanguard, onGrid: false);
-                Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+                Assert.Equal(SoloPoints, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
                 clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.ActiveTicks);
                 fixture.Db.Services.GetRequiredService<IIncursionMaintenance>().Advance(clock.Now);
                 Assert.Empty(loyalty.Read(pilotId));
@@ -158,9 +169,9 @@ public sealed class IncursionCampaignTests
             if (repel)
             {
                 Assert.True(Assert.Single(directory.Read(clock.Now)).HasFinalEncounter);
-                Assert.Equal(expectedVictoryLoyalty, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+                Assert.Equal(expectedVictoryLoyalty, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
                 Clear(live, headquartersSystem, IncursionSiteKind.Mothership);
-                Assert.False(directory.AgencyUpdate?.IsActive);
+                Assert.False(Assert.Single(directory.AgencyUpdates).IsActive);
                 Assert.Empty(sites.Incursions(systemId, clock.Now));
                 Assert.Empty(sites.Incursions(headquartersSystem, clock.Now));
                 await live.FlushAsync();
@@ -170,7 +181,7 @@ public sealed class IncursionCampaignTests
         using (LiveWorld live = new(database, clock, _ => { }))
         {
             Assert.Empty(directory.Read(clock.Now));
-            Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
+            Assert.Empty(directory.PendingLoyalties(pilotId, clock.Now));
             Assert.Equal(
                 expectedVictoryLoyalty,
                 loyalty
@@ -187,7 +198,19 @@ public sealed class IncursionCampaignTests
         {
             var contact = Assert.Single(
                 sites.Incursions(targetSystem, clock.Now),
-                site => IncursionSiteCatalog.Kind(site.DungeonId) == kind
+                site =>
+                    site.DungeonId
+                    == (
+                        kind switch
+                        {
+                            IncursionSiteKind.Scout => IncursionSiteCatalog.DistressBeacon,
+                            IncursionSiteKind.Vanguard => IncursionSiteCatalog.NationCommanderOutpost,
+                            IncursionSiteKind.Assault => IncursionSiteCatalog.NationCommanderStronghold,
+                            IncursionSiteKind.Headquarters => IncursionSiteCatalog.NationRebirthFacility,
+                            IncursionSiteKind.Mothership => IncursionSiteCatalog.KundaliniManifest,
+                            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+                        }
+                    )
             );
             var position = contact.Position + (kind == IncursionSiteKind.Scout ? SpacePosition.Zero : IncursionSiteCatalog.CombatOffset);
             if (!onGrid)
@@ -252,14 +275,14 @@ public sealed class IncursionCampaignTests
         if (defeated)
         {
             Assert.Empty(directory.Read(clock.Now));
-            Assert.Null(directory.PendingLoyalty(fixture.PilotId, clock.Now));
+            Assert.Empty(directory.PendingLoyalties(fixture.PilotId, clock.Now));
         }
         else
         {
             var focus = Assert.Single(directory.Read(clock.Now));
             Assert.Equal(IncursionRules.Influence(clears), focus.Influence);
             Assert.False(focus.HasFinalEncounter);
-            Assert.Equal(423, directory.PendingLoyalty(fixture.PilotId, clock.Now)?.Amount);
+            Assert.Equal(423, Assert.Single(directory.PendingLoyalties(fixture.PilotId, clock.Now)).Amount);
         }
     }
 }

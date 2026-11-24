@@ -10,7 +10,7 @@ internal sealed record IncursionReport(IncursionFocus Focus) : BlueModel
     internal const int TemplateNameId = 507300;
 
     // Client build 3662168 talecommon.const and Journal's state labels.
-    private const int TemplateClassId = 2;
+    internal const int TemplateClassId = 2;
     private const int Established = 2;
 
     public override object ToBlue() =>
@@ -30,7 +30,7 @@ internal sealed record IncursionReport(IncursionFocus Focus) : BlueModel
                 ["graceTime"] = 0,
                 ["decayRate"] = 0d,
                 ["hasFinalEncounter"] = Focus.HasFinalEncounter,
-                ["effects"] = BlueEmpty.List,
+                ["effects"] = IncursionEffectIcons.ForConstellation,
                 ["rewardGroupID"] = Focus.TaleId,
                 ["incursedSystems"] = new BlueList<int>(Focus.Systems.Select(system => system.SystemId).ToArray()),
                 ["severity"] = (int)IncursionScene.Staging,
@@ -64,10 +64,10 @@ internal sealed record IncursionSystemRow(IncursionSystem System) : BlueModel
     public override object ToBlue() => new object?[] { System.SystemId, (int)System.SceneType, IncursionReport.TemplateNameId };
 }
 
-internal sealed record IncursionDelayedReward(IncursionPendingLoyalty Loyalty) : BlueModel
+internal sealed record IncursionDelayedRewards(IReadOnlyList<IncursionPendingLoyalty> Rewards) : BlueModel
 {
     public override object ToBlue() =>
-        new Dictionary<long, object?> { [Loyalty.TaleId] = new BlueList<IncursionLoyaltyAmount>([new(Loyalty.Amount)]) };
+        Rewards.ToDictionary(reward => reward.TaleId, reward => (object?)new BlueList<IncursionLoyaltyAmount>([new(reward.Amount)]));
 }
 
 internal sealed record IncursionLoyaltyAmount(long Amount) : BlueModel

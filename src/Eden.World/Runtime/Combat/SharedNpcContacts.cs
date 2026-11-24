@@ -12,6 +12,7 @@ internal sealed partial class LiveCombatRuntime
         long Epoch,
         long From,
         long Until,
+        decimal BountyMultiplier,
         NpcContact Contact
     );
 
@@ -32,6 +33,7 @@ internal sealed partial class LiveCombatRuntime
         int stamp,
         bool bumped,
         long now,
+        decimal bountyMultiplier,
         out NpcContact contact
     )
     {
@@ -42,6 +44,7 @@ internal sealed partial class LiveCombatRuntime
             && ReferenceEquals(cached.Aggression, aggression)
             && cached.Stamp == stamp
             && cached.Bumped == bumped
+            && cached.BountyMultiplier == bountyMultiplier
             && cached.Epoch == _contactEpoch
             && now >= cached.From
             && now < cached.Until
@@ -54,7 +57,15 @@ internal sealed partial class LiveCombatRuntime
         return false;
     }
 
-    private void ShareNpcContact(LiveCombatNpc npc, LiveAggression? aggression, int stamp, bool bumped, long now, NpcContact contact)
+    private void ShareNpcContact(
+        LiveCombatNpc npc,
+        LiveAggression? aggression,
+        int stamp,
+        bool bumped,
+        long now,
+        decimal bountyMultiplier,
+        NpcContact contact
+    )
     {
         if (!CanShareNpcContact(npc) || contact.ElectronicWarfare is { Count: > 0 })
         {
@@ -73,6 +84,6 @@ internal sealed partial class LiveCombatRuntime
         {
             _sharedNpcContacts.Clear();
         }
-        _sharedNpcContacts[npc.Id] = new(npc, aggression, stamp, bumped, _contactEpoch, now, until, contact);
+        _sharedNpcContacts[npc.Id] = new(npc, aggression, stamp, bumped, _contactEpoch, now, until, bountyMultiplier, contact);
     }
 }

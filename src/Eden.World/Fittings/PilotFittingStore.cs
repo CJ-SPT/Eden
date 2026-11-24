@@ -102,17 +102,30 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.fit");
+        if (
+            LiveWorld.Find(database.Path) is { } live
+            && (
+                live.KnownPilotSystem(pilotId) is not int system
+                || live.IncursionEffectForSystem(system, live.SimulationTime) is { ResonanceMultiplier: > 1 }
+            )
+        )
+        {
+            return ShipAttributesSql(pilotId, includeIncursion: true);
+        }
         return LiveReadModels.Find(database.Path) is { } resident
             ? resident.Fit(pilotId, () => ShipAttributesSql(pilotId))
             : ShipAttributesSql(pilotId);
     }
 
-    private IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributesSql(long pilotId)
+    private IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributesSql(long pilotId, bool includeIncursion = false)
     {
         if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
-            return live.Economy.Read(world => ShipAttributes(world, source, pilotId), new(pilots: [pilotId]));
+            return live.Economy.Read(
+                world => ShipAttributes(world, source, world.Pilots.Find(pilotId)!, includeIncursion: includeIncursion),
+                new(pilots: [pilotId])
+            );
         }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();

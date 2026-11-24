@@ -19,16 +19,26 @@ public sealed record IncursionFocus(
     long EndsAt,
     double Influence,
     IReadOnlyList<IncursionSystem> Systems,
-    bool HasFinalEncounter = false
+    bool HasFinalEncounter = false,
+    IncursionSecurity Security = IncursionSecurity.High,
+    long? FinalUnlockAt = null
 );
 
 public sealed record IncursionPendingLoyalty(long TaleId, long Amount);
 
-public sealed record IncursionAgencyUpdate(long TaleId, long LastUpdated, double Influence, bool HasFinalEncounter, bool IsActive);
+public sealed record IncursionAgencyUpdate(
+    long TaleId,
+    long LastUpdated,
+    double Influence,
+    bool HasFinalEncounter,
+    bool IsActive,
+    IReadOnlyList<IncursionSystem>? Systems = null,
+    long? EndsAt = null
+);
 
 public interface IIncursionDirectory
 {
-    IncursionAgencyUpdate? AgencyUpdate => null;
+    IReadOnlyList<IncursionAgencyUpdate> AgencyUpdates => [];
     IReadOnlyList<IncursionFocus> Read(long now);
-    IncursionPendingLoyalty? PendingLoyalty(long pilotId, long now);
+    IReadOnlyList<IncursionPendingLoyalty> PendingLoyalties(long pilotId, long now);
 }

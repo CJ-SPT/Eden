@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
@@ -42,9 +43,15 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
     }
 
     private const int AnySecurityRewardTable = 0;
-    private const int HighSecurityRewardTable = 1;
 
-    private sealed record Placement(int ConstellationId, int Staging, ImmutableArray<int> Vanguards, int Assault, int Headquarters)
+    private sealed record Placement(
+        IncursionSecurity Security,
+        int ConstellationId,
+        int Staging,
+        ImmutableArray<int> Vanguards,
+        int Assault,
+        int Headquarters
+    )
     {
         internal ImmutableArray<IncursionSystem> Systems { get; } =
         [
@@ -53,9 +60,6 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
             new(Assault, IncursionScene.Assault),
             new(Headquarters, IncursionScene.Headquarters),
         ];
-
-        internal bool HasSystem(int system) =>
-            Staging == system || Assault == system || Headquarters == system || Vanguards.Contains(system);
     }
 
     private sealed record Breakpoint(long PilotCount, long Amount);
@@ -72,76 +76,150 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
             row.Damage + row.Repair > 0 && row.Damage * DamageMultiplier + row.Repair * RepairMultiplier >= MinimumContribution;
     }
 
-    // EVE University observed layouts, checked against build 3662168. Each member is high security.
-    private static readonly Placement[] s_placements =
+    // Observed roles from EVE University. System membership and security are checked against the resident catalog.
+    private static readonly Placement[] s_high =
     [
-        new(20000566, 30003881, [30003878, 30003880, 30003879], 30003877, 30003876), // Amdimmah
-        new(20000604, 30004134, [30004133, 30004132, 30004135], 30004131, 30004130), // Ahrnot
-        new(20000209, 30001429, [30001428, 30001426, 30001427], 30001425, 30001424), // Asalola
+        new(IncursionSecurity.High, 20000566, 30003881, [30003878, 30003880, 30003879], 30003877, 30003876), // Amdimmah
+        new(IncursionSecurity.High, 20000604, 30004134, [30004133, 30004132, 30004135], 30004131, 30004130), // Ahrnot
+        new(IncursionSecurity.High, 20000209, 30001429, [30001428, 30001426, 30001427], 30001425, 30001424), // Asalola
     ];
 
-    private static readonly CatalogDefinition<ImmutableDictionary<RewardGroup, PayoutTable>> s_rewards = new(
+    private static readonly Placement[] s_low =
+    [
+        new(IncursionSecurity.Low, 20000398, 30002721, [30002719, 30002723, 30002720], 30002722, 30002718), // Aeman
+        new(IncursionSecurity.Low, 20000620, 30004240, [30004238, 30004241, 30004239], 30004237, 30004236), // Afinoo
+        new(IncursionSecurity.Low, 20000572, 30003920, [30003917, 30003919, 30003922], 30003918, 30003921), // Akar
+    ];
+
+    private static readonly Placement[] s_null =
+    [
+        new(IncursionSecurity.Null, 20000042, 30000300, [30000298, 30000295, 30000296], 30000297, 30000299), // 0-8MWQ
+        new(IncursionSecurity.Null, 20000117, 30000801, [30000798, 30000800, 30000797], 30000799, 30000796), // 0-YMZM
+        new(IncursionSecurity.Null, 20000103, 30000708, [30000707, 30000705, 30000706], 30000703, 30000704), // 02QH-A
+        new(IncursionSecurity.Null, 20000472, 30003232, [30003233, 30003231, 30003234], 30003230, 30003229), // 04-LOF
+    ];
+
+    private static readonly FrozenDictionary<int, Placement> s_placeBySystem = s_high
+        .Concat(s_low)
+        .Concat(s_null)
+        .SelectMany(place => place.Systems.Select(system => (system.SystemId, Place: place)))
+        .ToFrozenDictionary(row => row.SystemId, row => row.Place);
+
+    private static readonly CatalogDefinition<ImmutableDictionary<(RewardGroup, IncursionSecurity), PayoutTable>> s_rewards = new(
         "incursion-site-rewards",
         (catalog, _) =>
-            Enum.GetValues<RewardGroup>()
-                .Select(group => (Group: group, Reward: LoadRewards(catalog, group)))
-                .Where(entry => entry.Reward is not null)
-                .ToImmutableDictionary(entry => entry.Group, entry => entry.Reward!)
+            (
+                from rewardGroup in Enum.GetValues<RewardGroup>()
+                from security in Enum.GetValues<IncursionSecurity>()
+                let reward = LoadRewards(catalog, rewardGroup, security)
+                where reward is not null
+                select (Key: (rewardGroup, security), Reward: reward!)
+            ).ToImmutableDictionary(entry => entry.Key, entry => entry.Reward)
     );
     private static readonly IncursionSiteKind[] s_siteKinds = Enum.GetValues<IncursionSiteKind>();
+    private long _nextReview;
 
-    private static PayoutTable? Rewards(CatalogDbContext catalog, IncursionSiteKind kind) =>
+    private static PayoutTable? Rewards(CatalogDbContext catalog, IncursionSiteKind kind, IncursionSecurity security) =>
         catalog
             .GlobalDefinition(s_rewards)
             .GetValueOrDefault(
-                kind switch
-                {
-                    IncursionSiteKind.Scout => RewardGroup.Scout,
-                    IncursionSiteKind.Vanguard => RewardGroup.Vanguard,
-                    IncursionSiteKind.Assault => RewardGroup.Assault,
-                    IncursionSiteKind.Headquarters => RewardGroup.Headquarters,
-                    IncursionSiteKind.Mothership => RewardGroup.Mothership,
-                    _ => throw new ArgumentOutOfRangeException(nameof(kind)),
-                }
+                (
+                    kind switch
+                    {
+                        IncursionSiteKind.Scout => RewardGroup.Scout,
+                        IncursionSiteKind.Vanguard => RewardGroup.Vanguard,
+                        IncursionSiteKind.Assault => RewardGroup.Assault,
+                        IncursionSiteKind.Headquarters => RewardGroup.Headquarters,
+                        IncursionSiteKind.Mothership => RewardGroup.Mothership,
+                        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+                    },
+                    security
+                )
             );
 
     internal static void PrepareCatalog(CatalogDbContext catalog)
     {
-        _ = IncursionSiteCatalog.Read(catalog);
+        _ = IncursionSiteCatalog.Variants(catalog, IncursionSiteKind.Vanguard, IncursionSecurity.High);
         _ = catalog.GlobalDefinition(s_rewards);
+        IncursionLoot.Prepare(catalog);
     }
 
-    private static Placement ForTale(long taleId) => s_placements[(taleId - 1) % s_placements.Length];
-
-    internal static bool MayHaveSite(int systemId, long now)
+    private static Placement ForTale(long taleId)
     {
-        long taleId = IncursionRules.TaleId(now);
-        return now >= IncursionRules.OpensAt(taleId) && now < IncursionRules.EndsAt(taleId) && ForTale(taleId).HasSystem(systemId);
+        long period = IncursionRules.Period(taleId) - 1;
+        int lane = IncursionRules.Lane(taleId);
+        return lane switch
+        {
+            IncursionRules.HighSecurityLane => s_high[period % s_high.Length],
+            IncursionRules.LowSecurityLane => s_low[period % s_low.Length],
+            _ => s_null[(period + lane - IncursionRules.FirstNullSecurityLane) % s_null.Length],
+        };
     }
 
-    internal static IncursionFocus? ActiveFocus(WorldAction world, CatalogDbContext catalog, long now)
+    internal static bool MayHaveSite(int systemId, long now) => TaleInSystem(systemId, now) is not null;
+
+    private static long? TaleInSystem(int systemId, long now)
     {
-        long taleId = IncursionRules.TaleId(now);
-        long opens = IncursionRules.OpensAt(taleId);
-        long expires = IncursionRules.EndsAt(taleId);
-        var progress = world.Set<SavedIncursionCampaign>().Find(taleId);
-        if (now < opens || now >= expires || progress?.DefeatedAt is not null)
+        if (!s_placeBySystem.TryGetValue(systemId, out var place))
+        {
+            return null;
+        }
+        long primary = IncursionRules.TaleId(now);
+        if (now < IncursionRules.OpensAt(primary) || now >= IncursionRules.EndsAt(primary))
         {
             return null;
         }
 
+        int first = place.Security switch
+        {
+            IncursionSecurity.High => IncursionRules.HighSecurityLane,
+            IncursionSecurity.Low => IncursionRules.LowSecurityLane,
+            _ => IncursionRules.FirstNullSecurityLane,
+        };
+        int lanes = place.Security == IncursionSecurity.Null ? IncursionRules.NullSecurityLanes : 1;
+        for (int lane = first; lane < first + lanes; lane++)
+        {
+            long taleId = IncursionRules.TaleId(now, lane);
+            if (ReferenceEquals(ForTale(taleId), place))
+            {
+                return taleId;
+            }
+        }
+        return null;
+    }
+
+    internal static IncursionFocus? ActiveFocus(WorldAction world, CatalogDbContext catalog, int systemId, long now) =>
+        TaleInSystem(systemId, now) is long taleId ? ResolveFocus(world, catalog, taleId, now) : null;
+
+    private static IncursionFocus? ResolveFocus(WorldAction world, CatalogDbContext catalog, long taleId, long now)
+    {
+        long opens = IncursionRules.OpensAt(taleId);
+        long expires = IncursionRules.EndsAt(taleId);
+        if (now < opens || now >= expires)
+        {
+            return null;
+        }
+
+        var progress = world.Set<SavedIncursionCampaign>().Find(taleId);
+        if (progress?.DefeatedAt is not null)
+        {
+            return null;
+        }
         var place = ForTale(taleId);
         if (
-            s_siteKinds.Any(kind => IncursionSiteCatalog.Read(catalog, kind) is null || Rewards(catalog, kind) is null)
-            || place.Systems.Any(system =>
+            place.Systems.Any(system =>
                 catalog.FindSystem(system.SystemId)?.ConstellationId != place.ConstellationId
-                || catalog.SystemPolitics(system.SystemId).Security is not >= 0.45
+                || Security(catalog.SystemPolitics(system.SystemId).Security) != place.Security
+            )
+            || s_siteKinds.Any(kind =>
+                IncursionSiteCatalog.Variants(catalog, kind, place.Security).Count == 0 || Rewards(catalog, kind, place.Security) is null
             )
         )
         {
             return null;
         }
 
+        long finalAge = IncursionRules.FinalAgeAt(taleId, place.Security);
         return new(
             taleId,
             place.Staging,
@@ -150,12 +228,25 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
             expires,
             IncursionRules.Influence(progress?.Clears ?? 0),
             place.Systems,
-            FinalAvailable(progress)
+            FinalAvailable(progress, place.Security, now),
+            place.Security,
+            now < finalAge ? finalAge : null
         );
     }
 
-    private static bool FinalAvailable(SavedIncursionCampaign? campaign) =>
-        campaign is { DefeatedAt: null } && IncursionRules.FinalAvailable(campaign.Clears, campaign.HeadquartersCleared);
+    private static IncursionSecurity? Security(double? security) =>
+        security switch
+        {
+            >= 0.45 => IncursionSecurity.High,
+            > 0 => IncursionSecurity.Low,
+            <= 0 => IncursionSecurity.Null,
+            _ => null,
+        };
+
+    private static bool FinalAvailable(SavedIncursionCampaign? campaign, IncursionSecurity security, long now) =>
+        campaign is { DefeatedAt: null }
+        && now >= IncursionRules.FinalAgeAt(campaign.TaleId, security)
+        && IncursionRules.FinalAvailable(campaign.Clears, campaign.HeadquartersCleared);
 
     private LiveWorld Live =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Incursions require the resident world.");
@@ -169,48 +260,45 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
         using CatalogDbContext catalog = new(database.CatalogPath);
         return live.Economy.Inspect(world =>
         {
-            var focus = ActiveFocus(world, catalog, now);
-            PublishAgency(live, focus, now);
-            return focus is not null ? new[] { focus } : [];
+            List<IncursionFocus> active = [];
+            for (int lane = 0; lane < IncursionRules.CampaignLanes; lane++)
+            {
+                var focus = ResolveFocus(world, catalog, IncursionRules.TaleId(now, lane), now);
+                live.SetIncursionFocus(lane, focus, now);
+                if (focus is not null)
+                {
+                    active.Add(focus);
+                }
+            }
+            return active.ToArray();
         });
     }
 
-    public IncursionAgencyUpdate? AgencyUpdate => LiveWorld.Find(database.Path)?.IncursionAgency;
+    public IReadOnlyList<IncursionAgencyUpdate> AgencyUpdates => LiveWorld.Find(database.Path)?.IncursionAgencyUpdates ?? [];
 
-    private static void PublishAgency(LiveWorld live, IncursionFocus? focus, long now)
+    public IReadOnlyList<IncursionPendingLoyalty> PendingLoyalties(long pilotId, long now)
     {
-        if (focus is not null)
+        if (now >= IncursionRules.EndsAt(IncursionRules.TaleId(now)) || LiveWorld.Find(database.Path) is not { } live)
         {
-            live.SetIncursionAgency(new(focus.TaleId, focus.LastUpdated, focus.Influence, focus.HasFinalEncounter, IsActive: true));
+            return [];
         }
-        else if (live.IncursionAgency is { IsActive: true } previous)
+
+        return live.Economy.Inspect(world =>
         {
-            live.SetIncursionAgency(
-                previous with
+            List<IncursionPendingLoyalty> pending = [];
+            for (int lane = 0; lane < IncursionRules.CampaignLanes; lane++)
+            {
+                long taleId = IncursionRules.TaleId(now, lane);
+                long points = world
+                    .Filter<SavedIncursionContribution>(row => row.TaleId == taleId)
+                    .Where(row => row.PilotId == pilotId)
+                    .Sum(row => row.PendingLoyalty);
+                if (points > 0)
                 {
-                    IsActive = false,
-                    HasFinalEncounter = false,
-                    LastUpdated = Math.Min(now, IncursionRules.EndsAt(previous.TaleId)),
+                    pending.Add(new(taleId, points));
                 }
-            );
-        }
-    }
-
-    public IncursionPendingLoyalty? PendingLoyalty(long pilotId, long now)
-    {
-        long taleId = IncursionRules.TaleId(now);
-        if (now >= IncursionRules.EndsAt(taleId) || LiveWorld.Find(database.Path) is not { } live)
-        {
-            return null;
-        }
-
-        return live.Economy.Inspect<IncursionPendingLoyalty?>(world =>
-        {
-            long points = world
-                .Filter<SavedIncursionContribution>(row => row.TaleId == taleId)
-                .Where(row => row.PilotId == pilotId)
-                .Sum(row => row.PendingLoyalty);
-            return points > 0 ? new(taleId, points) : null;
+            }
+            return pending.ToArray();
         });
     }
 
@@ -224,6 +312,10 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
 
     public void Advance(long now)
     {
+        if (now < Volatile.Read(ref _nextReview))
+        {
+            return;
+        }
         var live = Live;
         var expired = live.Economy.Inspect(world =>
             world
@@ -248,6 +340,14 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
             world.Commit();
         }
         _ = Read(now);
+        long taleIdNow = IncursionRules.TaleId(now);
+        long ends = IncursionRules.EndsAt(taleIdNow);
+        long lowFinalAge = IncursionRules.FinalAgeAt(IncursionRules.TaleId(now, IncursionRules.LowSecurityLane), IncursionSecurity.Low);
+        long next =
+            now >= ends ? IncursionRules.OpensAt(taleIdNow + 1)
+            : now < lowFinalAge ? lowFinalAge
+            : ends;
+        Volatile.Write(ref _nextReview, next);
     }
 
     internal static SavedIncursionContribution Contribution(WorldAction world, WorldCombatAnomaly site, long pilotId) =>
@@ -292,9 +392,14 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
             || now >= IncursionRules.EndsAt(taleId)
             || world.Set<SavedIncursionCampaign>().Find(taleId) is not { DefeatedAt: null } campaign
             || IncursionSiteCatalog.Kind(site.DungeonId) is not { } kind
-            || (kind == IncursionSiteKind.Mothership && !FinalAvailable(campaign))
-            || Rewards(catalog, kind) is not { } rewards
+            || Rewards(catalog, kind, ForTale(taleId).Security) is not { } rewards
         )
+        {
+            return;
+        }
+
+        var place = ForTale(taleId);
+        if (kind == IncursionSiteKind.Mothership && !FinalAvailable(campaign, place.Security, now))
         {
             return;
         }
@@ -332,10 +437,17 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
 
         world.RemoveRange(contributions.Where(row => row.PendingLoyalty == 0).ToArray());
         world.RemoveRange(world.Filter<SavedIncursionRepairDamage>(row => row.SiteId == site.Id).ToArray());
-        bool wasFinalAvailable = FinalAvailable(campaign);
+        bool wasFinalAvailable = FinalAvailable(campaign, place.Security, now);
         campaign.LastUpdated = Math.Max(campaign.LastUpdated, now);
         if (kind == IncursionSiteKind.Mothership)
         {
+            if (
+                winners.OrderByDescending(winner => winner.Row.Damage).ThenBy(winner => winner.Row.PilotId).FirstOrDefault().Pilot is
+                { } owner
+            )
+            {
+                IncursionLoot.Create(world, catalog, site, owner, place.Security, now);
+            }
             campaign.DefeatedAt = now;
             Repel(world, taleId, now);
         }
@@ -343,21 +455,27 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
         {
             campaign.Clears = Math.Min(IncursionRules.ClearsToUnlockFinal, campaign.Clears + 1);
             campaign.HeadquartersCleared |= kind == IncursionSiteKind.Headquarters;
-            if (!wasFinalAvailable && FinalAvailable(campaign))
+            if (!wasFinalAvailable && FinalAvailable(campaign, place.Security, now))
             {
-                CombatAnomalyStore.Invalidate(world, ForTale(taleId).Headquarters);
+                CombatAnomalyStore.Invalidate(world, place.Headquarters);
             }
         }
         if (LiveWorld.Find(world.WorldPath) is { } live)
         {
-            IncursionAgencyUpdate update = new(
-                taleId,
-                campaign.LastUpdated,
-                IncursionRules.Influence(campaign.Clears),
-                FinalAvailable(campaign),
-                campaign.DefeatedAt is null
-            );
-            world.AfterCommit(() => live.SetIncursionAgency(update));
+            int lane = IncursionRules.Lane(taleId);
+            var focus = ResolveFocus(world, catalog, taleId, now);
+            var terminal = campaign.DefeatedAt is null
+                ? null
+                : new IncursionAgencyUpdate(
+                    taleId,
+                    campaign.LastUpdated,
+                    IncursionRules.Influence(campaign.Clears),
+                    false,
+                    false,
+                    place.Systems,
+                    IncursionRules.EndsAt(taleId)
+                );
+            world.AfterCommit(() => live.SetIncursionFocus(lane, focus, now, terminal));
         }
     }
 
@@ -458,7 +576,7 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
     private static long Amount(int pilots, ImmutableArray<Breakpoint> entries) =>
         entries.LastOrDefault(entry => entry.PilotCount <= pilots)?.Amount ?? 0;
 
-    private static PayoutTable? LoadRewards(CatalogDbContext catalog, RewardGroup rewardGroup)
+    private static PayoutTable? LoadRewards(CatalogDbContext catalog, RewardGroup rewardGroup, IncursionSecurity security)
     {
         var profile = catalog.Read(CatalogData.Client.Grouprewards, (long)rewardGroup);
         if (
@@ -486,7 +604,7 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
         {
             var entries = tables
                 .Where(table =>
-                    table.SecurityCriteria is HighSecurityRewardTable or AnySecurityRewardTable
+                    (table.SecurityCriteria == (int)security || table.SecurityCriteria == AnySecurityRewardTable)
                     && table.RewardType == (int)type
                     && table.Delayed == (delayed ? 1 : 0)
                 )

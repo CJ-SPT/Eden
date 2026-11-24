@@ -77,6 +77,7 @@ internal sealed partial class CombatAnomalyStore
         }
         if (
             site.Wave >= definition.WavesFor(site.DefinitionVersion).Length - 1
+            && PendingCargo(catalog, site) is null
             && alive.Length == 0
             && !world.Set<WorldNpc>().Local.Any(n => n.EncounterId == site.Id && n.DestroyedAt is null && n.RetiredAt is null)
         )
@@ -91,7 +92,7 @@ internal sealed partial class CombatAnomalyStore
             }
             if (site.CompletedAt.HasValue)
             {
-                IncursionStore.CompleteSite(world, catalog, site, now);
+                FinishIncursionSite(world, catalog, site, now);
             }
             return;
         }
@@ -129,6 +130,10 @@ internal sealed partial class CombatAnomalyStore
             site.DefinitionVersion = AnomalyEncounterRules.CurrentDefinitionVersion;
         }
         var waves = definition.WavesFor(site.DefinitionVersion);
+        if (PendingCargo(catalog, site) is { } objective && (objective.UnlockWave ?? waves.Length) == site.Wave + 1)
+        {
+            return;
+        }
         while (site.Wave + 1 < waves.Length)
         {
             if (!AllowsSleeperWave(world, site, waves[site.Wave + 1]))
@@ -186,7 +191,7 @@ internal sealed partial class CombatAnomalyStore
                 : AnomalySpawnRules.Place(
                     site.Wave,
                     members,
-                    site.IncursionTaleId.HasValue ? [definition.SpawnAnchors[site.Wave]] : definition.SpawnAnchors,
+                    site.IncursionTaleId.HasValue ? IncursionDefinition(catalog, site)!.WaveAnchors[site.Wave] : definition.SpawnAnchors,
                     new(definition.Spawner, definition.AcquisitionRange)
                 );
         for (int slot = 0; slot < members.Count; slot++)
@@ -212,7 +217,10 @@ internal sealed partial class CombatAnomalyStore
                     Id = id,
                     SystemId = site.SystemId,
                     TypeId = member.TypeId,
-                    Role = NpcRole.Pirate,
+                    Role =
+                        site.IncursionTaleId.HasValue && member.TypeId == IncursionSiteCatalog.ReinforcedNationOutpost
+                            ? NpcRole.MissionStructure
+                            : NpcRole.Pirate,
                     AnchorKind = site.IncursionTaleId.HasValue ? NpcAnchorKind.Incursion : NpcAnchorKind.Anomaly,
                     EncounterId = site.Id,
                     SpawnSlot = firstSlot + slot,

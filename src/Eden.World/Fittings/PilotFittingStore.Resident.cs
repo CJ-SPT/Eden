@@ -10,6 +10,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -20,6 +21,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
+using Eden.World.Exploration;
 using Eden.World.Inventory;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
@@ -33,15 +35,21 @@ namespace Eden.World.Fittings;
 
 internal sealed partial class PilotFittingStore
 {
-    internal static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldAction world, CatalogDbContext catalog, long pilotId) =>
-        ShipAttributes(world, catalog, world.Pilots.Single(p => p.Id == pilotId));
+    internal static Dictionary<DogmaAttributeId, double> ShipAttributes(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long? incursionTime = null
+    ) => ShipAttributes(world, catalog, world.Pilots.Single(p => p.Id == pilotId), incursionTime: incursionTime);
 
     internal static Dictionary<DogmaAttributeId, double> ShipAttributes(
         WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         Ship? ship = null,
-        FittingCalculation? calculation = null
+        FittingCalculation? calculation = null,
+        bool includeIncursion = true,
+        long? incursionTime = null
     )
     {
         ship ??= pilot.ActiveShip;
@@ -49,7 +57,7 @@ internal sealed partial class PilotFittingStore
         string? revision = calculation?.Transient == true ? null : world.FitRevision(pilot.Id);
         if (world.CachedFit(key, revision) is { } cached)
         {
-            return cached;
+            return WithIncursion(cached);
         }
         calculation ??= FittingCalculation.Read(world, catalog, pilot, ship);
         var attributes = calculation.Graph.Attributes(ship.Id);
@@ -65,7 +73,19 @@ internal sealed partial class PilotFittingStore
         WorldTuningRules.ScaleFitting(world.Settings.ShipFitting, result);
         WorldTuningRules.ScaleTravel(world.Settings.Navigation, result);
         world.StageFit(key, revision, result);
-        return result;
+        return WithIncursion(result);
+
+        Dictionary<DogmaAttributeId, double> WithIncursion(Dictionary<DogmaAttributeId, double> values)
+        {
+            if (
+                includeIncursion
+                && IncursionSystemEffectStore.ForShip(world, catalog, ship, incursionTime)?.ResonanceMultiplier is > 1 and var modifier
+            )
+            {
+                IncursionSystemEffectRules.ApplyResonance(values, modifier);
+            }
+            return values;
+        }
     }
 
     internal static double SignatureRadius(WorldAction world, CatalogDbContext catalog, long itemId, int typeId)

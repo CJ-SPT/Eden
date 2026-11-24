@@ -23,6 +23,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Maps;
@@ -100,7 +101,7 @@ internal sealed partial class PilotCapitalTravelStore(
         }
         if (!CapitalTravelRules.Covert(fieldType))
         {
-            RequireUnjammed(action, catalog, system, now);
+            RequireIgnitionUnjammed(action, catalog, system, now);
             if (Inhibited(action, catalog, system, new(position.X, position.Y, position.Z), now))
             {
                 throw new InvalidDataException("A mobile inhibitor blocks cynosural ignition at this position.");
@@ -570,6 +571,15 @@ internal sealed partial class PilotCapitalTravelStore(
         {
             throw new InvalidDataException("Cynos require eligible low-security or null-security space.");
         }
+    }
+
+    private static void RequireIgnitionUnjammed(WorldAction world, CatalogDbContext catalog, int system, long now)
+    {
+        if (IncursionSystemEffectStore.At(world, system, now)?.JamsStandardCynos == true)
+        {
+            throw new InvalidDataException("Sansha's Nation is jamming standard cynosural fields in this system.");
+        }
+        RequireUnjammed(world, catalog, system, now);
     }
 
     private static void RequireUnjammed(WorldAction world, CatalogDbContext catalog, int system, long now)

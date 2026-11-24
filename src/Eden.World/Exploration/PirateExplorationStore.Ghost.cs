@@ -82,9 +82,18 @@ internal sealed partial class PirateExplorationStore
 
     private TransactionParticipants HackingParticipants(WorldAction world, long pilot, long? target = null)
     {
+        long? containerId = target ?? world.Set<SavedHackingAttempt>().Find(pilot)?.ContainerId;
+        if (
+            containerId is long array
+            && IncursionObjectIds.IsArray(array)
+            && world.Set<WorldCombatAnomaly>().Find(IncursionObjectIds.Site(array)) is { } incursion
+        )
+        {
+            return new(systems: [incursion.SystemId], pilots: [pilot]);
+        }
         if (
             world is EconomyTransaction
-            && (target ?? world.Set<SavedHackingAttempt>().Find(pilot)?.ContainerId) is long id
+            && containerId is long id
             && world.Set<SavedHackingContainer>().Find(id) is { } guardedContainer
             && world.Set<SavedExplorationSite>().Find(guardedContainer.SiteId) is { } guardedSite
             && guardedSite.Kind != (int)ExplorationKind.Ghost

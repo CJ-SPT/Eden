@@ -22,6 +22,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
+using Eden.World.Exploration;
 using Eden.World.FactionWarfare;
 using Eden.World.Fighters;
 using Eden.World.Fittings;
@@ -732,6 +733,7 @@ internal sealed partial class PilotDroneStore(
         int controlledCount = 0;
         double controlledBandwidth = 0;
         bool released = false;
+        double incursionDamage = IncursionSystemEffectStore.WeaponDamage(world, systemId, now);
         bool supportsDrones = DroneRules.SupportsHull(ship.TypeId);
         bool supportsFighters = FighterDeckRules.Supports(catalog.RequireItem(ship.TypeId).GroupId, ship.TypeId);
         foreach (
@@ -1024,7 +1026,7 @@ internal sealed partial class PilotDroneStore(
             var attributes =
                 companion is not null ? catalog.FittingAttributes(companion.Contact.Profile.TypeId)
                 : structure is not null ? catalog.FittingAttributes(structure.TypeId)
-                : npc is null ? PilotFittingStore.ShipAttributes(world, catalog, victim!.Id)
+                : npc is null ? PilotFittingStore.ShipAttributes(world, catalog, victim!.Id, incursionTime: now)
                 : PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
             var damage = DroneRules.Shot(
                 contact,
@@ -1048,40 +1050,40 @@ internal sealed partial class PilotDroneStore(
                     )
                 );
             }
+            double quality = damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize));
+            if (!fighter && incursionDamage != 1)
+            {
+                damage = damage.Scale(incursionDamage);
+            }
             drone.ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
             DroneHit hit;
             if (companion is not null)
             {
                 CrimewatchPersistence.Player(world, catalog, pilot.Id, companion.Owner.Id, systemId, decision!, now, drone.ReadyAt);
                 var result = SmartbombStore.DamageDrone(world, companion.Row, companion.Contact, damage, now);
-                hit = new(
-                    drone.ItemId,
-                    profile.TypeId,
-                    companion.Row.ItemId,
-                    result.Applied,
-                    damage,
-                    result.Health,
-                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
-                );
+                hit = new(drone.ItemId, profile.TypeId, companion.Row.ItemId, result.Applied, damage, result.Health, quality);
             }
             else if (structure is not null)
             {
                 StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, drone.ReadyAt);
                 var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now);
-                hit = new(
-                    drone.ItemId,
-                    profile.TypeId,
-                    structure.Id,
-                    result.Applied,
-                    damage,
-                    result.Health,
-                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
-                );
+                hit = new(drone.ItemId, profile.TypeId, structure.Id, result.Applied, damage, result.Health, quality);
             }
             else if (npc is null)
             {
                 CrimewatchPersistence.Player(world, catalog, pilot.Id, victim!.Id, systemId, decision!, now, drone.ReadyAt);
-                var impact = ApplyPilotDamage(world, catalog, pilot, victim, drone, profile, attributes, damage, now);
+                var impact = ApplyPilotDamage(
+                    world,
+                    catalog,
+                    pilot,
+                    victim,
+                    drone,
+                    profile,
+                    attributes,
+                    damage,
+                    now,
+                    fighter ? null : quality
+                );
                 pilotHits.Add(impact.Damage);
                 hit = impact.Hit;
             }
@@ -1089,15 +1091,7 @@ internal sealed partial class PilotDroneStore(
             {
                 var result = NpcDamagePersistence.Apply(world, catalog, npc, pilot, ship.Id, attributes, damage, now, profile.TypeId);
                 CrimewatchPersistence.Npc(world, pilot.Id, systemId, drone.ReadyAt);
-                hit = new(
-                    drone.ItemId,
-                    profile.TypeId,
-                    npc.Id,
-                    result.Applied,
-                    damage,
-                    result.Health,
-                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
-                );
+                hit = new(drone.ItemId, profile.TypeId, npc.Id, result.Applied, damage, result.Health, quality);
             }
             drone.ShotAt = now;
             drone.ShotTargetId = hit.TargetId;

@@ -99,6 +99,14 @@ internal static class CombatAnomalySchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN IncursionTaleId INTEGER");
         }
+        if (!columns.Contains("IncursionCargoIssued"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN IncursionCargoIssued INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains("IncursionCargoDelivered"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN IncursionCargoDelivered INTEGER NOT NULL DEFAULT 0");
+        }
         world.Database.ExecuteSqlRaw(
             """
             CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_EscalationPilotId ON WorldCombatAnomaly(EscalationPilotId);

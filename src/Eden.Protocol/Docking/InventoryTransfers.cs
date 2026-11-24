@@ -2,6 +2,7 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
@@ -31,7 +32,8 @@ internal sealed class InventoryTransfers(
     Eden.Gameplay.Structures.IPilotStructureFitting? structureFitting = null,
     Eden.Gameplay.Structures.IPilotStructureAmmunition? structureAmmunition = null,
     IPilotShipSharing? sharing = null,
-    IPilotMobileRefitting? mobileRefitting = null
+    IPilotMobileRefitting? mobileRefitting = null,
+    IIncursionCargo? incursionCargo = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -156,6 +158,7 @@ internal sealed class InventoryTransfers(
                     JetcanRules.IsJetcan(source)
                     || context.Flight.VisibleWrecks.Any(w => w.Id == source)
                     || MissionContainerRules.IsContainer(source)
+                    || IncursionObjectIds.IsCargo(source)
                     || Eden.Gameplay.Exploration.HackingRules.IsContainer(source)
                 );
             if (looting && !context.Flight.CanTarget)
@@ -277,6 +280,11 @@ internal sealed class InventoryTransfers(
             {
                 return hacking?.Take(context.Pilot.PilotId, context.Pilot.ShipId, request, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                     ?? throw new InvalidDataException("Exploration transfers are unavailable.");
+            }
+            if (IncursionObjectIds.IsCargo(request.SourceId))
+            {
+                return incursionCargo?.Take(context.Pilot.PilotId, context.Pilot.ShipId, request)
+                    ?? throw new InvalidDataException("Incursion cargo transfers are unavailable.");
             }
             return MissionContainerRules.IsContainer(request.SourceId)
                 ? missionContainers.Take(context.Pilot.PilotId, context.Pilot.ShipId, request)

@@ -123,7 +123,8 @@ internal sealed partial class PilotDroneStore
         DroneProfile profile,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         DamageVector damage,
-        long now
+        long now,
+        double? shotQuality = null
     )
     {
         long shipId = victim.ActiveShipId;
@@ -136,8 +137,10 @@ internal sealed partial class PilotDroneStore
             ? losses.Apply(world, catalog, victim, shipId, drone.SystemId!.Value, victim.ActiveShip.Position!, now, party)
             : null;
         ShipHealth health = new(shipId, defense, result.Remaining);
-        int count = profile.FighterGroup == 0 ? 1 : world.Set<OwnedItem>().Find(drone.ItemId)!.Quantity;
-        double quality = damage.Total / (profile.Damage.Total * count);
+        double quality =
+            shotQuality
+            ?? damage.Total
+                / (profile.Damage.Total * (profile.FighterGroup == 0 ? 1 : world.Set<OwnedItem>().Find(drone.ItemId)!.Quantity));
         world.SaveChanges();
         var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         return new(

@@ -78,6 +78,7 @@ internal static class HackingSchema
                 container.Failures++;
                 container.Destroyed =
                     !MissionContainerRules.IsContainer(container.Id)
+                    && !IncursionObjectIds.IsArray(container.Id)
                     && container.Failures >= GhostSiteRules.MaximumFailures((ExplorationKind?)site?.Kind);
             }
             world.Remove(attempt);

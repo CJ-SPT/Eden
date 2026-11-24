@@ -39,7 +39,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 | Topic | Coverage |
 | --- | --- |
 | [The Agency](protocol/agency.md) | Native activity directories, Agent Finder and mission cards. |
-| [Sansha Incursions](protocol/incursions.md) | High-security focus discovery, all site tiers, logistics qualification and campaign rewards. |
+| [Sansha Incursions](protocol/incursions.md) | Highsec, lowsec and nullsec focuses, site variants, logistics, flagship loot and system effects. |
 | [Agent missions and research](protocol/agents.md) | Offers, objectives, standings, storylines, career chains, epic arcs, militia missions and R&D agents. |
 | [Information modules and salvage](protocol/information.md) | Scanning, hacking, targeting, tractors and salvage. |
 | [Wormholes](protocol/wormholes.md) | Connections, mass and lifetime, Sleeper encounters and native system effects. |
@@ -606,6 +606,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sansha Incursions
 
+- [Security campaigns and system effects](protocol/incursions.md#security-campaigns-and-system-effects)
 - [High-security Incursion campaign](protocol/incursions.md#high-security-incursion-campaign)
 - [High-security Vanguard milestone](protocol/incursions.md#high-security-vanguard-milestone)
 

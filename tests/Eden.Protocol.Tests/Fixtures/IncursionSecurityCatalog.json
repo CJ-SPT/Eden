@@ -1,0 +1,1843 @@
+{
+  "build": 3662168,
+  "types": [
+    {
+      "id": 3260,
+      "name": "Fixture type 3260",
+      "groupId": 186,
+      "groupName": "Fixture group 186",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 13943,
+      "name": "Fixture type 13943",
+      "groupId": 205,
+      "groupName": "Fixture group 205",
+      "categoryId": 7,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 13956,
+      "name": "Fixture type 13956",
+      "groupId": 62,
+      "groupName": "Fixture group 62",
+      "categoryId": 7,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 14140,
+      "name": "Fixture type 14140",
+      "groupId": 43,
+      "groupName": "Fixture group 43",
+      "categoryId": 7,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 2949,
+      "name": "Fixture type 2949",
+      "groupId": 1145,
+      "groupName": "Fixture group 1145",
+      "categoryId": 9,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 3515,
+      "name": "Fixture type 3515",
+      "groupId": 1013,
+      "groupName": "Fixture group 1013",
+      "categoryId": 9,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 17719,
+      "name": "Fixture type 17719",
+      "groupId": 106,
+      "groupName": "Fixture group 106",
+      "categoryId": 9,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 17737,
+      "name": "Fixture type 17737",
+      "groupId": 107,
+      "groupName": "Fixture group 107",
+      "categoryId": 9,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 17925,
+      "name": "Fixture type 17925",
+      "groupId": 105,
+      "groupName": "Fixture group 105",
+      "categoryId": 9,
+      "mass": 1000,
+      "radius": 30,
+      "capacity": 100,
+      "attributes": []
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/systems",
+      "key": 30002721,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30002719,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30002723,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30002720,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30002722,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30002718,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004240,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004238,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004241,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004239,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004237,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004236,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003920,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003917,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003919,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003922,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003918,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003921,
+      "data": {
+        "securityStatus": 0.2
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000300,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000298,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000295,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000296,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000297,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000299,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000801,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000798,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000800,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000797,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000799,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000796,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000708,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000707,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000705,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000706,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000703,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30000704,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003232,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003233,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003231,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003234,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003230,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003229,
+      "data": {
+        "securityStatus": -0.4
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 1,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 1,
+                "quantity": 3143448
+              },
+              {
+                "playerCount": 4,
+                "quantity": 8500000
+              },
+              {
+                "playerCount": 11,
+                "quantity": 6750000
+              },
+              {
+                "playerCount": 20,
+                "quantity": 200000
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 1,
+                "quantity": 423
+              },
+              {
+                "playerCount": 4,
+                "quantity": 950
+              },
+              {
+                "playerCount": 11,
+                "quantity": 725
+              },
+              {
+                "playerCount": 20,
+                "quantity": 25
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1002
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 102
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1003
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 103
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 2,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 6604
+              },
+              {
+                "playerCount": 10,
+                "quantity": 18200000
+              },
+              {
+                "playerCount": 21,
+                "quantity": 16835000
+              },
+              {
+                "playerCount": 30,
+                "quantity": 455000
+              },
+              {
+                "playerCount": 31,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1
+              },
+              {
+                "playerCount": 10,
+                "quantity": 3500
+              },
+              {
+                "playerCount": 21,
+                "quantity": 3238
+              },
+              {
+                "playerCount": 30,
+                "quantity": 88
+              },
+              {
+                "playerCount": 31,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 2002
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 202
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 2003
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 203
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 3,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 11,
+                "quantity": 11431
+              },
+              {
+                "playerCount": 20,
+                "quantity": 31500000
+              },
+              {
+                "playerCount": 41,
+                "quantity": 29137500
+              },
+              {
+                "playerCount": 50,
+                "quantity": 787500
+              },
+              {
+                "playerCount": 51,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 11,
+                "quantity": 3
+              },
+              {
+                "playerCount": 20,
+                "quantity": 7000
+              },
+              {
+                "playerCount": 41,
+                "quantity": 6475
+              },
+              {
+                "playerCount": 50,
+                "quantity": 175
+              },
+              {
+                "playerCount": 51,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 3002
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 302
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 3003
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 303
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 10,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 33,
+                "quantity": 1143072
+              },
+              {
+                "playerCount": 40,
+                "quantity": 63000000
+              },
+              {
+                "playerCount": 81,
+                "quantity": 61425000
+              },
+              {
+                "playerCount": 106,
+                "quantity": 1575000
+              },
+              {
+                "playerCount": 107,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 33,
+                "quantity": 254
+              },
+              {
+                "playerCount": 40,
+                "quantity": 14000
+              },
+              {
+                "playerCount": 81,
+                "quantity": 13650
+              },
+              {
+                "playerCount": 106,
+                "quantity": 350
+              },
+              {
+                "playerCount": 107,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 10002
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 2,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1002
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 2,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 10003
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "securityCriteria": 3,
+            "rewardType": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1003
+              },
+              {
+                "playerCount": 120,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3260,
+      "data": {
+        "groupID": 186,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13943,
+      "data": {
+        "groupID": 205,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13956,
+      "data": {
+        "groupID": 62,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14140,
+      "data": {
+        "groupID": 43,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2949,
+      "data": {
+        "groupID": 1145,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3515,
+      "data": {
+        "groupID": 1013,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17719,
+      "data": {
+        "groupID": 106,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17737,
+      "data": {
+        "groupID": 107,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17925,
+      "data": {
+        "groupID": 105,
+        "published": 1,
+        "volume": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2192,
+      "data": {
+        "groupID": 1056,
+        "published": 0,
+        "wreckTypeID": 3260
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3071,
+      "data": {
+        "groupID": 1056,
+        "published": 0,
+        "wreckTypeID": 3260
+      }
+    }
+  ],
+  "systems": [
+    {
+      "id": 30002721,
+      "name": "Fixture 30002721",
+      "constellationId": 20000398,
+      "constellationName": "Aeman",
+      "regionId": 10000032,
+      "regionName": "Fixture region 10000032"
+    },
+    {
+      "id": 30002719,
+      "name": "Fixture 30002719",
+      "constellationId": 20000398,
+      "constellationName": "Aeman",
+      "regionId": 10000032,
+      "regionName": "Fixture region 10000032"
+    },
+    {
+      "id": 30002723,
+      "name": "Fixture 30002723",
+      "constellationId": 20000398,
+      "constellationName": "Aeman",
+      "regionId": 10000032,
+      "regionName": "Fixture region 10000032"
+    },
+    {
+      "id": 30002720,
+      "name": "Fixture 30002720",
+      "constellationId": 20000398,
+      "constellationName": "Aeman",
+      "regionId": 10000032,
+      "regionName": "Fixture region 10000032"
+    },
+    {
+      "id": 30002722,
+      "name": "Fixture 30002722",
+      "constellationId": 20000398,
+      "constellationName": "Aeman",
+      "regionId": 10000032,
+      "regionName": "Fixture region 10000032"
+    },
+    {
+      "id": 30002718,
+      "name": "Fixture 30002718",
+      "constellationId": 20000398,
+      "constellationName": "Aeman",
+      "regionId": 10000032,
+      "regionName": "Fixture region 10000032"
+    },
+    {
+      "id": 30004240,
+      "name": "Fixture 30004240",
+      "constellationId": 20000620,
+      "constellationName": "Afinoo",
+      "regionId": 10000065,
+      "regionName": "Fixture region 10000065"
+    },
+    {
+      "id": 30004238,
+      "name": "Fixture 30004238",
+      "constellationId": 20000620,
+      "constellationName": "Afinoo",
+      "regionId": 10000065,
+      "regionName": "Fixture region 10000065"
+    },
+    {
+      "id": 30004241,
+      "name": "Fixture 30004241",
+      "constellationId": 20000620,
+      "constellationName": "Afinoo",
+      "regionId": 10000065,
+      "regionName": "Fixture region 10000065"
+    },
+    {
+      "id": 30004239,
+      "name": "Fixture 30004239",
+      "constellationId": 20000620,
+      "constellationName": "Afinoo",
+      "regionId": 10000065,
+      "regionName": "Fixture region 10000065"
+    },
+    {
+      "id": 30004237,
+      "name": "Fixture 30004237",
+      "constellationId": 20000620,
+      "constellationName": "Afinoo",
+      "regionId": 10000065,
+      "regionName": "Fixture region 10000065"
+    },
+    {
+      "id": 30004236,
+      "name": "Fixture 30004236",
+      "constellationId": 20000620,
+      "constellationName": "Afinoo",
+      "regionId": 10000065,
+      "regionName": "Fixture region 10000065"
+    },
+    {
+      "id": 30003920,
+      "name": "Fixture 30003920",
+      "constellationId": 20000572,
+      "constellationName": "Akar",
+      "regionId": 10000052,
+      "regionName": "Fixture region 10000052"
+    },
+    {
+      "id": 30003917,
+      "name": "Fixture 30003917",
+      "constellationId": 20000572,
+      "constellationName": "Akar",
+      "regionId": 10000052,
+      "regionName": "Fixture region 10000052"
+    },
+    {
+      "id": 30003919,
+      "name": "Fixture 30003919",
+      "constellationId": 20000572,
+      "constellationName": "Akar",
+      "regionId": 10000052,
+      "regionName": "Fixture region 10000052"
+    },
+    {
+      "id": 30003922,
+      "name": "Fixture 30003922",
+      "constellationId": 20000572,
+      "constellationName": "Akar",
+      "regionId": 10000052,
+      "regionName": "Fixture region 10000052"
+    },
+    {
+      "id": 30003918,
+      "name": "Fixture 30003918",
+      "constellationId": 20000572,
+      "constellationName": "Akar",
+      "regionId": 10000052,
+      "regionName": "Fixture region 10000052"
+    },
+    {
+      "id": 30003921,
+      "name": "Fixture 30003921",
+      "constellationId": 20000572,
+      "constellationName": "Akar",
+      "regionId": 10000052,
+      "regionName": "Fixture region 10000052"
+    },
+    {
+      "id": 30000300,
+      "name": "Fixture 30000300",
+      "constellationId": 20000042,
+      "constellationName": "0-8MWQ",
+      "regionId": 10000004,
+      "regionName": "Fixture region 10000004"
+    },
+    {
+      "id": 30000298,
+      "name": "Fixture 30000298",
+      "constellationId": 20000042,
+      "constellationName": "0-8MWQ",
+      "regionId": 10000004,
+      "regionName": "Fixture region 10000004"
+    },
+    {
+      "id": 30000295,
+      "name": "Fixture 30000295",
+      "constellationId": 20000042,
+      "constellationName": "0-8MWQ",
+      "regionId": 10000004,
+      "regionName": "Fixture region 10000004"
+    },
+    {
+      "id": 30000296,
+      "name": "Fixture 30000296",
+      "constellationId": 20000042,
+      "constellationName": "0-8MWQ",
+      "regionId": 10000004,
+      "regionName": "Fixture region 10000004"
+    },
+    {
+      "id": 30000297,
+      "name": "Fixture 30000297",
+      "constellationId": 20000042,
+      "constellationName": "0-8MWQ",
+      "regionId": 10000004,
+      "regionName": "Fixture region 10000004"
+    },
+    {
+      "id": 30000299,
+      "name": "Fixture 30000299",
+      "constellationId": 20000042,
+      "constellationName": "0-8MWQ",
+      "regionId": 10000004,
+      "regionName": "Fixture region 10000004"
+    },
+    {
+      "id": 30000801,
+      "name": "Fixture 30000801",
+      "constellationId": 20000117,
+      "constellationName": "0-YMZM",
+      "regionId": 10000009,
+      "regionName": "Fixture region 10000009"
+    },
+    {
+      "id": 30000798,
+      "name": "Fixture 30000798",
+      "constellationId": 20000117,
+      "constellationName": "0-YMZM",
+      "regionId": 10000009,
+      "regionName": "Fixture region 10000009"
+    },
+    {
+      "id": 30000800,
+      "name": "Fixture 30000800",
+      "constellationId": 20000117,
+      "constellationName": "0-YMZM",
+      "regionId": 10000009,
+      "regionName": "Fixture region 10000009"
+    },
+    {
+      "id": 30000797,
+      "name": "Fixture 30000797",
+      "constellationId": 20000117,
+      "constellationName": "0-YMZM",
+      "regionId": 10000009,
+      "regionName": "Fixture region 10000009"
+    },
+    {
+      "id": 30000799,
+      "name": "Fixture 30000799",
+      "constellationId": 20000117,
+      "constellationName": "0-YMZM",
+      "regionId": 10000009,
+      "regionName": "Fixture region 10000009"
+    },
+    {
+      "id": 30000796,
+      "name": "Fixture 30000796",
+      "constellationId": 20000117,
+      "constellationName": "0-YMZM",
+      "regionId": 10000009,
+      "regionName": "Fixture region 10000009"
+    },
+    {
+      "id": 30000708,
+      "name": "Fixture 30000708",
+      "constellationId": 20000103,
+      "constellationName": "02QH-A",
+      "regionId": 10000008,
+      "regionName": "Fixture region 10000008"
+    },
+    {
+      "id": 30000707,
+      "name": "Fixture 30000707",
+      "constellationId": 20000103,
+      "constellationName": "02QH-A",
+      "regionId": 10000008,
+      "regionName": "Fixture region 10000008"
+    },
+    {
+      "id": 30000705,
+      "name": "Fixture 30000705",
+      "constellationId": 20000103,
+      "constellationName": "02QH-A",
+      "regionId": 10000008,
+      "regionName": "Fixture region 10000008"
+    },
+    {
+      "id": 30000706,
+      "name": "Fixture 30000706",
+      "constellationId": 20000103,
+      "constellationName": "02QH-A",
+      "regionId": 10000008,
+      "regionName": "Fixture region 10000008"
+    },
+    {
+      "id": 30000703,
+      "name": "Fixture 30000703",
+      "constellationId": 20000103,
+      "constellationName": "02QH-A",
+      "regionId": 10000008,
+      "regionName": "Fixture region 10000008"
+    },
+    {
+      "id": 30000704,
+      "name": "Fixture 30000704",
+      "constellationId": 20000103,
+      "constellationName": "02QH-A",
+      "regionId": 10000008,
+      "regionName": "Fixture region 10000008"
+    },
+    {
+      "id": 30003232,
+      "name": "Fixture 30003232",
+      "constellationId": 20000472,
+      "constellationName": "04-LOF",
+      "regionId": 10000042,
+      "regionName": "Fixture region 10000042"
+    },
+    {
+      "id": 30003233,
+      "name": "Fixture 30003233",
+      "constellationId": 20000472,
+      "constellationName": "04-LOF",
+      "regionId": 10000042,
+      "regionName": "Fixture region 10000042"
+    },
+    {
+      "id": 30003231,
+      "name": "Fixture 30003231",
+      "constellationId": 20000472,
+      "constellationName": "04-LOF",
+      "regionId": 10000042,
+      "regionName": "Fixture region 10000042"
+    },
+    {
+      "id": 30003234,
+      "name": "Fixture 30003234",
+      "constellationId": 20000472,
+      "constellationName": "04-LOF",
+      "regionId": 10000042,
+      "regionName": "Fixture region 10000042"
+    },
+    {
+      "id": 30003230,
+      "name": "Fixture 30003230",
+      "constellationId": 20000472,
+      "constellationName": "04-LOF",
+      "regionId": 10000042,
+      "regionName": "Fixture region 10000042"
+    },
+    {
+      "id": 30003229,
+      "name": "Fixture 30003229",
+      "constellationId": 20000472,
+      "constellationName": "04-LOF",
+      "regionId": 10000042,
+      "regionName": "Fixture region 10000042"
+    }
+  ],
+  "celestials": [
+    {
+      "id": 40002721,
+      "solarSystemId": 30002721,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40002719,
+      "solarSystemId": 30002719,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40002723,
+      "solarSystemId": 30002723,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40002720,
+      "solarSystemId": 30002720,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40002722,
+      "solarSystemId": 30002722,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40002718,
+      "solarSystemId": 30002718,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40004240,
+      "solarSystemId": 30004240,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40004238,
+      "solarSystemId": 30004238,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40004241,
+      "solarSystemId": 30004241,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40004239,
+      "solarSystemId": 30004239,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40004237,
+      "solarSystemId": 30004237,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40004236,
+      "solarSystemId": 30004236,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003920,
+      "solarSystemId": 30003920,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003917,
+      "solarSystemId": 30003917,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003919,
+      "solarSystemId": 30003919,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003922,
+      "solarSystemId": 30003922,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003918,
+      "solarSystemId": 30003918,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003921,
+      "solarSystemId": 30003921,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000300,
+      "solarSystemId": 30000300,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000298,
+      "solarSystemId": 30000298,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000295,
+      "solarSystemId": 30000295,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000296,
+      "solarSystemId": 30000296,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000297,
+      "solarSystemId": 30000297,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000299,
+      "solarSystemId": 30000299,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000801,
+      "solarSystemId": 30000801,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000798,
+      "solarSystemId": 30000798,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000800,
+      "solarSystemId": 30000800,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000797,
+      "solarSystemId": 30000797,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000799,
+      "solarSystemId": 30000799,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000796,
+      "solarSystemId": 30000796,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000708,
+      "solarSystemId": 30000708,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000707,
+      "solarSystemId": 30000707,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000705,
+      "solarSystemId": 30000705,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000706,
+      "solarSystemId": 30000706,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000703,
+      "solarSystemId": 30000703,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40000704,
+      "solarSystemId": 30000704,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003232,
+      "solarSystemId": 30003232,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003233,
+      "solarSystemId": 30003233,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003231,
+      "solarSystemId": 30003231,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003234,
+      "solarSystemId": 30003234,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003230,
+      "solarSystemId": 30003230,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 40003229,
+      "solarSystemId": 30003229,
+      "typeId": 6,
+      "groupId": 6,
+      "radius": 1000,
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  ]
+}

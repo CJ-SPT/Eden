@@ -8,6 +8,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Thermal;
@@ -227,6 +228,34 @@ public sealed class SmartbombTests
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(pilot, module));
         Assert.Equal([true, false], context.Notifications.OfType<ShipEffectChanged>().Select(effect => effect.Active));
+    }
+
+    [Fact]
+    public void PaidPulseUsesIncursionDamageAndTargetResonance()
+    {
+        using var fixture = Prepare();
+        long module = fixture.Fit(SmallProton);
+        var (_, target) = Place(fixture);
+        using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
+        var health = fixture.Db.Services.GetRequiredService<IPilotHealth>();
+        var baseline = health.Read(target.PilotId, fixture.Clock.Now).Defense;
+        long now = fixture.Clock.Now;
+        int lane = IncursionRules.HighSecurityLane;
+        long tale = IncursionRules.TaleId(now, lane);
+        live.SetIncursionFocus(
+            lane,
+            new(tale, SystemId, 20000020, now, now + TimeSpan.TicksPerSecond, 1, [new(SystemId, IncursionScene.Headquarters)]),
+            now
+        );
+        using CatalogDbContext catalog = new(fixture.CatalogPath);
+        var expected = SmartbombRules.Define(module, SmallProton, catalog.FittingAttributes(SmallProton));
+        var store = fixture.Db.Services.GetRequiredService<IPilotSmartbombs>();
+        var pulse = store.Pulse(fixture.PilotId, fixture.ShipId, module, new([new(target.ShipId, target.Position!)], [], [], [], []), now);
+
+        Assert.Equal(expected.Damage.Scale(0.5), pulse.Module.Damage);
+        var hit = Assert.Single(pulse.Hits);
+        Assert.Equal(baseline.ShieldResonance.Scale(1.5), hit.Health.Defense.ShieldResonance);
+        Assert.Equal(pulse.Module.Damage.Against(hit.Health.Defense.ShieldResonance), hit.Applied, 10);
     }
 
     [Fact]

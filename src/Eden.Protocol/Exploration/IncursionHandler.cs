@@ -27,10 +27,11 @@ internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvid
             {
                 return BlueEmpty.IndexedDictionary;
             }
-            var loyalty = directory.PendingLoyalty(context.Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            return loyalty is { Amount: > 0 } reward && groupIds.Contains(reward.TaleId)
-                ? new IncursionDelayedReward(reward)
-                : BlueEmpty.IndexedDictionary;
+            var rewards = directory
+                .PendingLoyalties(context.Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                .Where(reward => reward.Amount > 0 && groupIds.Contains(reward.TaleId))
+                .ToArray();
+            return new IncursionDelayedRewards(rewards);
         }
         if ((service, method) is not ("map", "GetIncursionGlobalReport" or "GetSystemsInIncursions"))
         {
@@ -43,9 +44,9 @@ internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvid
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         if (method == "GetIncursionGlobalReport")
         {
-            var publication = agency is null ? null : directory.AgencyUpdate;
+            var publication = agency is null ? [] : directory.AgencyUpdates;
             var focuses = directory.Read(now);
-            agency?.Watch(context, focuses.FirstOrDefault(), publication);
+            agency?.Watch(context, focuses, publication);
             return new BlueList<IncursionReport>(focuses.Select(focus => new IncursionReport(focus)).ToArray());
         }
         return new IncursionSystemList(directory.Read(now).SelectMany(focus => focus.Systems).ToArray());

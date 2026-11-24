@@ -282,7 +282,7 @@ internal sealed partial class PilotCombatStore(
             }
             int system = CrimewatchPersistence.System(catalog, victim.ActiveShip);
             aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
-            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
+            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim, incursionTime: now);
             if (PilotHealthStore.Read(world, targetId, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed)
             {
                 throw new InvalidDataException("The target ship is destroyed.");
@@ -639,11 +639,16 @@ internal sealed partial class PilotCombatStore(
             damageAttributes.GetValueOrDefault(DogmaAttributeId.KineticDamage),
             damageAttributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
         );
+        double multiplier = attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier);
+        if (firingEffect != DogmaEffect.Vorton)
+        {
+            multiplier *= Eden.World.Exploration.IncursionSystemEffectStore.WeaponDamage(world, target.SystemId, now);
+        }
         CombatWeapon weapon = new(
             moduleId,
             module.TypeId,
             loadedAmmo?.TypeId ?? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.BuiltInCharge)),
-            damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier)),
+            damage.Scale(multiplier),
             attributes[DogmaAttributeId.WeaponCycleTime],
             attributes.GetValueOrDefault(DogmaAttributeId.MaxRange),
             attributes.GetValueOrDefault(DogmaAttributeId.AccuracyFalloff),
@@ -652,9 +657,7 @@ internal sealed partial class PilotCombatStore(
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
             (int)firingEffect,
             firingEffect == DogmaEffect.Disintegrator ? AdvancedWeaponRules.Spool(attributes) : null,
-            firingEffect == DogmaEffect.Vorton
-                ? AdvancedWeaponRules.Vorton(attributes, damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier)))
-                : null
+            firingEffect == DogmaEffect.Vorton ? AdvancedWeaponRules.Vorton(attributes, damage.Scale(multiplier)) : null
         );
         if (CombatDefinitions.IsAdvancedTurret(group) && distance > weapon.Optimal)
         {

@@ -57,7 +57,8 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
             long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
-            return Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
+            var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId, incursionTime: now);
+            return Read(world, shipId, ShipHealth.DefenseFrom(attributes), now);
         }
     }
 

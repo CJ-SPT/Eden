@@ -31,6 +31,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Loot;
 
+internal sealed record EncounterWreckDrop(int TypeId, int Quantity = 1, bool BlueprintCopy = false);
+
 internal sealed partial class WreckStore
 {
     internal static IReadOnlyList<InventoryChange> Take(
@@ -111,15 +113,24 @@ internal sealed partial class WreckStore
         return (pilot, wreck);
     }
 
-    internal static void Create(WorldAction world, CatalogDbContext catalog, WorldNpc npc, Pilot pilot, long now)
+    internal static void Create(
+        WorldAction world,
+        CatalogDbContext catalog,
+        WorldNpc npc,
+        Pilot pilot,
+        long now,
+        IReadOnlyList<EncounterWreckDrop>? awardedLoot = null
+    )
     {
         const int pirateCapsuleType = 27287; // Build-3662168 Enforcer objective, without a catalog wreck.
         if (npc.AnchorKind == NpcAnchorKind.Mission && npc.TypeId == pirateCapsuleType)
         {
             return;
         }
-        var ded = Eden.World.Exploration.CombatAnomalyStore.DedLoot(world, catalog, npc);
-        if (npc.Role == NpcRole.MissionStructure && ded is null)
+        var ded = awardedLoot is null ? Eden.World.Exploration.CombatAnomalyStore.DedLoot(world, catalog, npc) : null;
+        var authoredLoot =
+            awardedLoot ?? ded?.Select(reward => new EncounterWreckDrop(reward.TypeId, reward.Quantity, reward.BlueprintCopy)).ToArray();
+        if (npc.Role == NpcRole.MissionStructure && authoredLoot is null)
         {
             return;
         }
@@ -128,7 +139,7 @@ internal sealed partial class WreckStore
         var type = definition?.WreckTypeID is long wreckType
             ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
             : militia?.Wreck;
-        bool container = ded is not null && (npc.Role == NpcRole.MissionStructure || type is null);
+        bool container = authoredLoot is not null && (npc.Role == NpcRole.MissionStructure || type is null);
         if (container)
         {
             type = catalog.RequireItem(JetcanRules.TypeId);
@@ -159,7 +170,7 @@ internal sealed partial class WreckStore
         {
             pilot = world.Pilots.Find(mission.PilotId) ?? pilot;
         }
-        else
+        else if (awardedLoot is null)
         {
             pilot =
                 LootRightsRules
@@ -194,9 +205,9 @@ internal sealed partial class WreckStore
         {
             Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
         }
-        if (ded is not null)
+        if (authoredLoot is not null)
         {
-            foreach (var reward in ded)
+            foreach (var reward in authoredLoot)
             {
                 world.Add(
                     new OwnedItem

@@ -53,7 +53,10 @@ public sealed class IncursionLogisticsTests
                 .Single(directory.Read(clock.Now))
                 .Systems.First(entry => entry.SceneType == IncursionScene.Vanguard)
                 .SystemId;
-            var site = Assert.Single(sites.Incursions(system, clock.Now));
+            var site = Assert.Single(
+                sites.Incursions(system, clock.Now),
+                site => site.DungeonId == IncursionSiteCatalog.NationCommanderOutpost
+            );
             siteId = site.Id;
             var center = site.Position + IncursionSiteCatalog.CombatOffset;
             var sourcePosition = onGrid ? center : center + new SpacePosition(NpcEncounterDefinitions.VisibilityRange + 100, 0, 0);
@@ -158,8 +161,8 @@ public sealed class IncursionLogisticsTests
             IncursionStore.CompleteSite(action, catalog, site, clock.Now);
             action.Commit();
         }
-        long targetPoints = Assert.IsType<IncursionPendingLoyalty>(directory.PendingLoyalty(target.PilotId, clock.Now)).Amount;
-        Assert.Equal(sameFleet && onGrid ? targetPoints : 0, directory.PendingLoyalty(source.PilotId, clock.Now)?.Amount ?? 0);
+        long targetPoints = Assert.Single(directory.PendingLoyalties(target.PilotId, clock.Now)).Amount;
+        Assert.Equal(sameFleet && onGrid ? targetPoints : 0, directory.PendingLoyalties(source.PilotId, clock.Now).Sum(row => row.Amount));
 
         double ReadCredit(LiveWorld world) =>
             world.Economy.Inspect(action => action.Set<SavedIncursionContribution>().Find(siteId, source.PilotId)?.Repair ?? 0);

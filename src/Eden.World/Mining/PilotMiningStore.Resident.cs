@@ -22,6 +22,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
@@ -95,6 +96,7 @@ internal sealed partial class PilotMiningStore
         {
             throw new InvalidDataException("Use an online mining laser on an available asteroid while in space.");
         }
+        CombatAnomalyStore.RequireIncursionOre(world, asteroidId, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
         {
@@ -319,6 +321,7 @@ internal sealed partial class PilotMiningStore
         bool droneCargo = false
     )
     {
+        CombatAnomalyStore.RequireIncursionOre(world, asteroidId, now);
         var (pilot, asteroid, laser, attributes) = validated ?? Validate(world, catalog, pilotId, moduleId, asteroidId, now);
         if (cycles < 1 || cycles > 1 && PilotAmmunitionStore.Contents(world, moduleId) is not null)
         {

@@ -118,7 +118,7 @@ internal sealed partial class PilotMissileStore
         bool bypassResistances = false
     )
     {
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim, incursionTime: time);
         var defense = ShipHealth.DefenseFrom(attributes);
         double application = rawDamage is null
             ? MissileRules.Application(

@@ -68,6 +68,7 @@ public sealed record LiveCombatShip(
 )
 {
     public bool AutonomousPilot { get; init; }
+    public double IncursionResonanceMultiplier { get; init; } = 1;
     public IReadOnlyDictionary<long, long> LocalCooldowns { get; init; } = new Dictionary<long, long>();
 
     public LiveCombatShip SettleRepairs(long now)
@@ -171,7 +172,8 @@ public static class LiveCombatRules
         long now,
         IReadOnlyList<TurretDraw> draws,
         WeaponActivation? activation,
-        IReadOnlyDictionary<long, CombatWeapon>? overloadedWeapons = null
+        IReadOnlyDictionary<long, CombatWeapon>? overloadedWeapons = null,
+        double incursionDamageMultiplier = 1
     )
     {
         ship = ship.SettleRepairs(now);
@@ -213,6 +215,10 @@ public static class LiveCombatRules
             }
             var definition = turret.Definition;
             var weapon = overloadedWeapons is null ? definition.Weapon : overloadedWeapons[members[index]];
+            if (incursionDamageMultiplier != 1)
+            {
+                weapon = weapon with { Damage = weapon.Damage.Scale(incursionDamageMultiplier) };
+            }
             if (
                 activation is not null
                 && activation != (definition.AmmoFed && !definition.Energy ? WeaponActivation.AmmoFed : WeaponActivation.Laser)

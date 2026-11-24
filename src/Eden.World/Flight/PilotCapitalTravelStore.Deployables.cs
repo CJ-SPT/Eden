@@ -95,7 +95,7 @@ internal sealed partial class PilotCapitalTravelStore
                 }
                 if (!CapitalTravelRules.Covert(fieldType))
                 {
-                    RequireUnjammed(world, catalog, system, now);
+                    RequireIgnitionUnjammed(world, catalog, system, now);
                     if (Inhibited(world, catalog, system, point, now))
                     {
                         throw new InvalidDataException("Cynosural fields are inhibited at this deployment position.");

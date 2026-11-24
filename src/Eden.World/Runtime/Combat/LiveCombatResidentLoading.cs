@@ -64,7 +64,7 @@ internal sealed partial class LiveCombatRuntime
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation, includeIncursion: false);
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(attributes), now);
         var savedHealth = world.Set<ShipHealthState>().Find(pilot.ActiveShipId);
         var position = pilot.ActiveShip.Position;

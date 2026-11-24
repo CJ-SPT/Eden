@@ -443,18 +443,17 @@ internal sealed partial class CombatAnomalyStore
         using var movement = database.EnterMovement();
         foreach (var contact in IncursionsOwned(systemId, now))
         {
-            var offset = IncursionSiteCatalog.Offset(IncursionSiteCatalog.Kind(contact.DungeonId));
-            if (offset == SpacePosition.Zero)
+            if (!IncursionSiteCatalog.IsGated(contact.ArchetypeId))
             {
                 continue;
             }
-            var pocket = contact.Position + offset;
-            if (pocket.DistanceTo(destination) > NpcEncounterDefinitions.VisibilityRange)
+            var pockets = IncursionSiteCatalog.CombatGrids(contact.DungeonId);
+            if (!pockets.Any(pocket => (contact.Position + pocket).DistanceTo(destination) <= NpcEncounterDefinitions.VisibilityRange))
             {
                 continue;
             }
             if (
-                pocket.DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange
+                pockets.Any(pocket => (contact.Position + pocket).DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange)
                 || contact.Position.DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange
             )
             {

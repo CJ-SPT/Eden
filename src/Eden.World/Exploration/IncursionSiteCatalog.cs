@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Data.World.Exploration;
@@ -9,9 +10,24 @@ using Eden.World.Catalog;
 
 namespace Eden.World.Exploration;
 
-internal sealed record IncursionSiteDefinition(CombatAnomalyDefinition Encounter, StaticSpaceObject? Gate, MissionGateAccess Access);
+internal sealed record IncursionSiteDefinition(
+    CombatAnomalyDefinition Encounter,
+    ImmutableArray<IncursionSiteGate> Gates,
+    ImmutableArray<ImmutableArray<AnomalySpawnAnchor>> WaveAnchors,
+    IncursionSiteKind Kind,
+    int Slot,
+    IncursionCargoObjective? Cargo
+);
 
-internal static class IncursionSiteCatalog
+internal sealed record IncursionSiteGate(
+    int Slot,
+    StaticSpaceObject Body,
+    SpacePosition Destination,
+    int EarliestWave,
+    MissionGateAccess Access
+);
+
+internal static partial class IncursionSiteCatalog
 {
     internal const int DistressBeacon = 5193;
     internal const int NationCommanderOutpost = 5166;
@@ -49,7 +65,9 @@ internal static class IncursionSiteCatalog
 
     internal static SpacePosition CombatOffset { get; } = new(MissionGateRules.RoomSpacing, 0, 0);
 
-    private sealed record Stage(SpacePosition Position, AnomalyEncounterWave Wave);
+    private sealed record Stage(SpacePosition Position, AnomalyEncounterWave Wave, int Grid = 0, int AlternateGrid = -1);
+
+    private sealed record GatePlan(long ObjectId, SpacePosition Position, int Destination, int RequiredWave = -1, int Origin = -1);
 
     private sealed record Design(
         IncursionSiteKind Kind,
@@ -57,7 +75,11 @@ internal static class IncursionSiteCatalog
         int Archetype,
         string Name,
         SpacePosition? GatePosition,
-        ImmutableArray<Stage> Stages
+        ImmutableArray<Stage> Stages,
+        int Slot = 0,
+        int EntryType = EntryBeaconType,
+        ImmutableArray<SpacePosition> Grids = default,
+        ImmutableArray<GatePlan> GatePlans = default
     );
 
     private static readonly ImmutableArray<Design> s_designs =
@@ -170,22 +192,56 @@ internal static class IncursionSiteCatalog
         ),
     ];
 
-    private static readonly CatalogDefinition<ImmutableDictionary<IncursionSiteKind, IncursionSiteDefinition>> s_definitions = new(
-        "incursion-sites",
-        (catalog, _) =>
-            s_designs
-                .Select(design => (design.Kind, Definition: Load(catalog, design)))
-                .Where(entry => entry.Definition is not null)
-                .ToImmutableDictionary(entry => entry.Kind, entry => entry.Definition!)
+    private static readonly Lazy<FrozenDictionary<int, Design>> s_designById = new(() =>
+        s_designs.Concat(s_variants).ToFrozenDictionary(design => design.DungeonId)
     );
 
-    internal static IncursionSiteKind? Kind(int dungeonId) => s_designs.FirstOrDefault(site => site.DungeonId == dungeonId)?.Kind;
+    private static readonly CatalogDefinition<ImmutableDictionary<int, IncursionSiteDefinition>> s_definitions = new(
+        "incursion-sites",
+        (catalog, _) =>
+            s_designById
+                .Value.Values.Select(design => (design.DungeonId, Definition: Load(catalog, design)))
+                .Where(entry => entry.Definition is not null)
+                .ToImmutableDictionary(entry => entry.DungeonId, entry => entry.Definition!)
+    );
+
+    internal static IncursionSiteKind? Kind(int dungeonId) => s_designById.Value.GetValueOrDefault(dungeonId)?.Kind;
 
     internal static IncursionSiteDefinition? Read(CatalogDbContext catalog, IncursionSiteKind kind = IncursionSiteKind.Vanguard) =>
-        catalog.GlobalDefinition(s_definitions).GetValueOrDefault(kind);
+        Read(catalog, s_designs.Single(site => site.Kind == kind).DungeonId);
 
-    internal static SpacePosition CombatCenter(WorldCombatAnomaly site) =>
-        new SpacePosition(site.X, site.Y, site.Z) + Offset(Kind(site.DungeonId));
+    internal static IncursionSiteDefinition? Read(CatalogDbContext catalog, int dungeonId) =>
+        catalog.GlobalDefinition(s_definitions).GetValueOrDefault(dungeonId);
+
+    internal static IReadOnlyList<IncursionSiteDefinition> Variants(
+        CatalogDbContext catalog,
+        IncursionSiteKind kind,
+        IncursionSecurity security
+    )
+    {
+        var definitions = catalog.GlobalDefinition(s_definitions);
+        if (kind == IncursionSiteKind.Mothership)
+        {
+            return definitions.GetValueOrDefault(security == IncursionSecurity.Low ? Uroborus : KundaliniManifest) is { } boss
+                ? [boss]
+                : [];
+        }
+        return definitions.Values.Where(site => site.Kind == kind).OrderBy(site => site.Slot).ToArray();
+    }
+
+    internal static bool IsMothershipFlagship(int dungeonId, int npcTypeId) =>
+        (dungeonId, npcTypeId) is (KundaliniManifest, Kundalini) or (Uroborus, UroborusFlagship);
+
+    internal static SpacePosition CombatCenter(WorldCombatAnomaly site)
+    {
+        var origin = new SpacePosition(site.X, site.Y, site.Z);
+        return s_designById.Value.GetValueOrDefault(site.DungeonId) is { } design ? origin + Grids(design)[design.Stages[^1].Grid] : origin;
+    }
+
+    internal static ImmutableArray<SpacePosition> CombatGrids(int dungeonId) =>
+        s_designById.Value.GetValueOrDefault(dungeonId) is { } design ? Grids(design) : [];
+
+    private static ImmutableArray<SpacePosition> Grids(Design design) => design.Grids.IsDefault ? [Offset(design.Kind)] : design.Grids;
 
     internal static SpacePosition Offset(IncursionSiteKind? kind) =>
         kind is null or IncursionSiteKind.Scout ? SpacePosition.Zero : CombatOffset;
@@ -202,7 +258,7 @@ internal static class IncursionSiteCatalog
         if (
             dungeon.ArchetypeID != design.Archetype
             || dungeon.FactionID != (int)NpcPirateFaction.Sansha
-            || dungeon.EntryTypeID != EntryBeaconType
+            || dungeon.EntryTypeID != design.EntryType
             || dungeon.EntryObjectID is not long entry
             || dungeon.DungeonNameID is not long name
             || dungeon.Difficulty is not long difficulty
@@ -210,37 +266,61 @@ internal static class IncursionSiteCatalog
         {
             throw new InvalidDataException($"The pinned Incursion dungeon profile {design.DungeonId} differs.");
         }
-        var beacon = Body(catalog, entry, EntryBeaconType, SpacePosition.Zero) with
+        var beacon = Body(catalog, entry, design.EntryType, SpacePosition.Zero) with
         {
             IncursionBeacon = new(design.DungeonId, checked((int)name), design.Archetype),
             OwnerId = (int)NpcPirateFaction.Sansha,
             Name = design.Name,
             Solid = false,
-            IsGlobal = true,
+            IsGlobal = design.DungeonId != NationIndustrialProxy,
         };
-        StaticSpaceObject? gate = null;
-        var access = MissionGateAccess.Default;
+        var grids = Grids(design);
+        var gates = ImmutableArray.CreateBuilder<IncursionSiteGate>();
         var objects = ImmutableArray.CreateBuilder<StaticSpaceObject>();
         objects.Add(beacon);
-        if (design.GatePosition is { } position)
+        var connections = dungeon.Connections ?? [];
+        var gatePlans = design.GatePlans;
+        if (gatePlans.IsDefault)
         {
-            var connection = dungeon.Connections?.SingleOrDefault();
-            if (connection?.FromObjectID is not long gateId || connection.AllowedShipsList is not long shipList)
-            {
-                throw new InvalidDataException($"The pinned Incursion gate for {design.DungeonId} differs.");
-            }
-            gate = Body(catalog, gateId, AccelerationGateType, position);
+            gatePlans =
+                design.GatePosition is { } position && connections.Length == 1 && connections[0].FromObjectID is long gateId
+                    ? [new(gateId, position, 0)]
+                    : [];
+        }
+        if (gatePlans.Length != connections.Length)
+        {
+            throw new InvalidDataException($"The pinned Incursion gate count for {design.DungeonId} differs.");
+        }
+        foreach (var plan in gatePlans)
+        {
+            var connection = connections.Single(source => source.FromObjectID == plan.ObjectId);
+            var source = (plan.Origin < 0 ? SpacePosition.Zero : grids[plan.Origin]) + plan.Position;
+            var gate = Body(catalog, plan.ObjectId, AccelerationGateType, source);
             if (gate.GroupId != MissionGateRules.AccelerationGateGroup)
             {
                 throw new InvalidDataException($"The pinned Incursion gate type for {design.DungeonId} differs.");
             }
-            access = access with { AllowedShips = CatalogTypeLists.Read(catalog, shipList) };
+            var access = connection.AllowedShipsList is long shipList
+                ? MissionGateAccess.Default with
+                {
+                    AllowedShips = CatalogTypeLists.Read(catalog, shipList),
+                }
+                : MissionGateAccess.Default;
+            gates.Add(new(gates.Count, gate, grids[plan.Destination], plan.RequiredWave, access));
             objects.Add(gate);
         }
 
-        var combat = Offset(design.Kind);
-        objects.Add(Body(catalog, 1, CombatSceneryType, combat + new SpacePosition(45_000, 0, -32_000)));
-        objects.Add(Body(catalog, 2, CombatSceneryType, combat + new SpacePosition(-38_000, 12_000, 31_000)));
+        if (design.DungeonId == OverrideTransferArray)
+        {
+            objects.Add(
+                Body(catalog, IncursionObjectIds.LogisticsArray, LogisticsArray, grids[0] + new SpacePosition(18_000, 3_000, -14_000))
+            );
+        }
+        for (int grid = 0; grid < grids.Length; grid++)
+        {
+            objects.Add(Body(catalog, 1 + grid * 2, CombatSceneryType, grids[grid] + new SpacePosition(45_000, 0, -32_000)));
+            objects.Add(Body(catalog, 2 + grid * 2, CombatSceneryType, grids[grid] + new SpacePosition(-38_000, 12_000, 31_000)));
+        }
         return new(
             new(
                 design.DungeonId,
@@ -249,22 +329,44 @@ internal static class IncursionSiteCatalog
                 NpcPirateFaction.Sansha,
                 TruePower,
                 design.Name,
-                combat,
+                grids[0],
                 design.Stages.Select(stage => stage.Wave).ToImmutableArray(),
                 objects.ToImmutable()
-            )
-            {
-                SpawnAnchors = design
-                    .Stages.Select(
-                        (stage, index) =>
-                            new AnomalySpawnAnchor(index + 1, combat + stage.Position, NpcEncounterDefinitions.VisibilityRange, true, true)
-                    )
-                    .ToImmutableArray(),
-            },
-            gate,
-            access
+            ),
+            gates.ToImmutable(),
+            design
+                .Stages.Select(
+                    (stage, index) =>
+                    {
+                        var primary = new AnomalySpawnAnchor(
+                            index * 2 + 1,
+                            grids[stage.Grid] + stage.Position,
+                            NpcEncounterDefinitions.VisibilityRange,
+                            true,
+                            true
+                        );
+                        return stage.AlternateGrid < 0
+                            ? ImmutableArray.Create(primary)
+                            : [primary, primary with { ObjectId = index * 2 + 2, Position = grids[stage.AlternateGrid] - stage.Position }];
+                    }
+                )
+                .ToImmutableArray(),
+            design.Kind,
+            design.Slot == 0 ? BaselineSlot(design.Kind) : design.Slot,
+            Cargo(catalog, design.DungeonId)
         );
     }
+
+    private static int BaselineSlot(IncursionSiteKind kind) =>
+        kind switch
+        {
+            IncursionSiteKind.Vanguard => 102,
+            IncursionSiteKind.Scout => 103,
+            IncursionSiteKind.Assault => 104,
+            IncursionSiteKind.Headquarters => 105,
+            IncursionSiteKind.Mothership => 106,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
 
     private static AnomalyNpcGroup Group(int type, int minimum = 1, int maximum = 1, bool trigger = false) =>
         new(minimum, maximum, [type], trigger, false, false);

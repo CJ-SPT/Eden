@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Exploration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Capsuleers;
 using Eden.World.Runtime.Combat;
@@ -257,11 +258,9 @@ internal sealed partial class LiveWorld : IDisposable
         {
             affectedSystems = ParticipantSystems(participants);
         }
-        if (affectedSystems is not null && changes.Any(change => change.Table == "WorldNpc" && change.System is not null))
+        if (affectedSystems is not null && changes.Any(ExplicitCombatSystem))
         {
-            affectedSystems = affectedSystems
-                .Union(changes.Where(change => change.Table == "WorldNpc").Select(c => c.System).OfType<int>())
-                .ToArray();
+            affectedSystems = affectedSystems.Union(changes.Where(ExplicitCombatSystem).Select(change => change.System!.Value)).ToArray();
         }
         ReconcileHeatMembership(changes);
         if (changes.Any(change => change.Table is "WorldTackle" or "WorldNpcEwar" or "schema"))
@@ -388,6 +387,10 @@ internal sealed partial class LiveWorld : IDisposable
             CapsuleerActivity.Wake();
         }
     }
+
+    private static bool ExplicitCombatSystem(CombatRowChange change) =>
+        change.System.HasValue
+        && (change.Table == "WorldNpc" || change.Table == "WorldAsteroidGeometry" && IncursionObjectIds.IsOre(change.Id));
 
     private static void ObserveState(LiveSystemState state, IReadOnlyCollection<CombatRowChange> changes)
     {

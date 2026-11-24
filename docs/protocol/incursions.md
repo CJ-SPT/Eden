@@ -2,6 +2,127 @@
 
 [Documentation index](../README.md) · [Protocol records](../protocol.md)
 
+## Security campaigns and system effects
+
+The Agency and star map show up to **five active focuses**. Eden rotates one highsec focus, one lowsec focus and
+three nullsec focuses. Each has its own sites, influence, victory and CONCORD LP pool. All use the established
+three-day active window and four-day UTC schedule. Lanes rotate independently through observed constellations of
+their security band. A victory closes only that focus and pays only its pool.
+
+Eight regular clears reduce a focus to zero Sansha influence. A Headquarters clear is also required before the
+final site can appear. Lowsec additionally requires **24 hours** since opening. Highsec and nullsec use the
+Kundalini Manifest. Lowsec uses Uroborus. The reward tables use the site's own security band and the
+qualifying fleet size.
+
+| Security | Eligible constellations in the rotation |
+| --- | --- |
+| Highsec | Amdimmah, Ahrnot, Asalola |
+| Lowsec | Aeman, Afinoo, Akar |
+| Nullsec | 0-8MWQ, 0-YMZM, 02QH-A, 04-LOF |
+
+### Remaining site variants
+
+The pinned site IDs below provide beacon identity, archetype and gate admission. Eden uses its own combat rooms,
+NPC waves and objective rules. Existing Vanguard, Scout, Assault and Headquarters sites retain their saved identities.
+Regular variants can run concurrently in their assigned systems. Each replenishes on its own replacement deadline.
+
+| Tier | Playable encounter identities and pinned dungeon IDs |
+| --- | --- |
+| Scout | Distress Beacon (5193), Forward Reconnaissance Outpost (5188), Propaganda Cluster (5190), Industrial Proxy (5191) |
+| Vanguard | Nation Commander Outpost (5166), Nation Mining Colony (5165), Override Transfer Array (5164) |
+| Assault | Nation Commander Stronghold (5168), Overwhelmed Civilian Facility (5167), Nation Consolidation Network (5172) |
+| Headquarters | Nation Rebirth Facility (5171), True Power Provisional Headquarters (5114), True Creations Research Center (5175) |
+| Final | The Kundalini Manifest (5158), Uroborus (5201) |
+
+Industrial Proxy's local beacon is at a Staging asteroid belt when one exists. Nation Mining Colony requires **255
+Lyavite** after the defense waves and provides a mineable deposit. Overwhelmed Civilian Facility requires delivery
+of **40 captured civilians** to the freighter. True Creations Research Center uses **one CONCORD MTAC** at the shield
+transfer control tower to expose the final targets. Cargo pickup and delivery use the normal inventory controls.
+Override Transfer Array's optional data-analyzer hack cancels the opening reinforcement timer so the fleet can clear
+the first wave before the next arrives. Nation Consolidation Network's eight gates connect two hull-restricted lanes,
+and both wings need to clear each stage. True Power Provisional Headquarters unlocks its two interior gates in sequence.
+
+### Flagship cargo
+
+A winning group earns one wreck at the flagship's position. It grants one to three distinct True Sansha modules
+and one single-run Sansha blueprint copy. Succubus, Phantasm, Nightmare and Shadow can drop in each security band.
+Uroborus has an Eden-configured **5%** chance to substitute a Revenant copy. The top eligible damage contributor in
+the winning group receives ownership under normal fleet loot rights. The wreck inventory and the focus settlement
+commit together. Reopening a completed campaign cannot duplicate a wreck or award.
+
+### Constellation effects
+
+| Effect | During an active focus |
+| --- | --- |
+| NPC bounty | Ordinary NPC bounties pay half in affected systems, including Staging. |
+| Cynosural fields | Standard cyno ignition is jammed. Covert cynos and previously lit fields retain their own rules. |
+| Ship weapons | Turret, missile, combat drone and smartbomb damage is reduced according to scene and Sansha influence. |
+| Shield and armor | Damage resonance rises according to the same scene and influence scale. Hull resistance keeps its base value. |
+
+Vanguard, Assault and Headquarters use **10%**, **25%** and **50%** at full Sansha influence. The scalable effects
+reach zero at zero influence. Staging uses the bounty and cyno effects. The resident system index supplies both
+gameplay and the client status. On entry the pinned client receives the current scene's effect descriptors, and an
+influence update refreshes the progress bar. Expiry, victory and departure remove the local status.
+
+The outgoing damage modifier covers regular and precursor turrets, non-Breacher ship missiles, normal combat drones
+and smartbombs. Eden retains existing damage rules for Vorton projectors, fighter abilities, Breachers, doomsdays and
+launched bombs. The focus population is provided by the Incursion sites, including Industrial Proxy. Roaming Sansha
+gate camps and constellation-wide belt replacement remain outside the site rotation.
+
+World schema **225** saves site objective receipts with the encounter generation. The highsec tale IDs from older
+saves still refer to the same rotation. Lowsec and nullsec have disjoint tale ID ranges. Checkpoints retain each focus's
+content, influence, loyalty and combat state.
+
+### Source evidence
+
+The constellation assignments and security-specific flagships were checked against the pinned build **3662168** catalog
+and observed roles. Retail loot probabilities are unpublished. Eden uses an explicit deterministic drop rule.
+[EVE University constellation layouts](https://wiki.eveuniversity.org/Constellation_layouts_for_Incursions) ·
+[EVE University Incursion sites and loot](https://wiki.eveuniversity.org/Incursion_sites) ·
+[CCP Incursion system effects](https://www.eveonline.com/news/view/the-nation-strikes-back-1).
+
+Pinned client examination reused the original inert REA archive extraction. The local HUD and Agency read effect
+dictionaries with `name`, `texturePath`, `hint` and `isScalable`. `OnTaleData`, `OnInfluenceUpdate` and `OnTaleRemove`
+drive the local status. Label IDs are **239122** (damage), **239123** (tanking), **239124** (cyno) and **239134** (bounty).
+The local EVE.js reference supplied behavioral comparisons for phase placement, site mechanics and effect metadata.
+The reference checkout has no Git metadata. The SHA-256 hashes of the inspected effect contract and site mechanics
+are listed here so the specific revisions can be identified.
+
+| Reference file | SHA-256 |
+| --- | --- |
+| incursionSystemEffectContract.js | 9d1d9ae8c61b71bc5711bc662cf3c36dd38700c294292a3fd64501db3c9e766b |
+| incursionSystemEffects.js | 8cbc1fe1599af5ff98ca1c4d4dc81ff94ce613dcd0a82761307e8a88fc24b0dc |
+| incursionSiteMechanics.js | 3e0bf90eddd2b93adf9f03b30cc006810fe902dd49d62da3897ef22834d17c43 |
+
+The pinned catalog assigns damage and tanking effects to source types **3069**, **3493** and **3494**. Dogma effect
+**4728** has no generic modifier payload. The resident simulation applies the pinned profile at the weapon and
+defense boundaries. Historical bounty and cyno evidence is linked above.
+
+### Expansion automated validation
+
+The solution built with **zero warnings and errors**. The exact security and loot methods verified five concurrent
+focuses, security-based payouts, the lowsec final deadline, isolated LP settlement, faction loot and blueprint
+transfer after checkpoint replay. The exact Override Transfer Array method exercised target lock, analyzer
+activation and hack completion. The analyzer test passed in **5 seconds** using the pinned signature radius.
+
+The focused dependency run passed **237 of 237** cases in **122.99 seconds** after a **7.52-second** build. The
+`FullyQualifiedName` filters covered `Exploration.Incursion`, `Exploration.AgencyTests`,
+`Exploration.CombatAnomalyWorldTests`, `Exploration.HackingWorldTests`, `Combat.NpcCombatTests`,
+`Combat.NpcMissileTests`, `Combat.ResidentNpcMissileTests`, `Combat.PilotCombatTests`, `Combat.PilotDroneTests`,
+`Combat.SmartbombTests` and `CapitalTravelTests.IncursionJamsStandardCyno`. Catalog setup (8 cases), formatting policy
+(9 cases), typed catalog access policy and `tools/Format.ps1 -Check` passed. Validation used resident fixtures and a
+read-only inspection of the pinned catalog. It did not launch the client or the full .NET suite.
+
+### Expansion live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Expansion optional maintainer checks
+
+- Check the Agency for simultaneous focuses and inspect how the local effect icons change between Staging and a combat system.
+- Run a cargo or gate objective in one of the newly available sites.
+- Clear Uroborus, then check the flagship wreck and the focus's CONCORD LP settlement.
+
 ## High-security Incursion campaign
 
 Find the current focus in **Agency → Incursions** or the star map. Warp to a site beacon in the listed system.

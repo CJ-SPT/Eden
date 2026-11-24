@@ -284,10 +284,10 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 
 ## Combat and NPC populations
 
-- **Sansha Incursions.** Find a rotating high-security focus in the Agency and star map. Fight Scout, Vanguard,
-  Assault and Headquarters sites. Damage and effective remote repairs earn site ISK and bank CONCORD LP.
-  Clear eight sites including Headquarters to unlock the mothership, then defeat it to release the LP pool.
-  [Sansha Incursions](protocol/incursions.md#high-security-incursion-campaign)
+- **Sansha Incursions.** Find rotating highsec, lowsec and nullsec focuses in the Agency and star map. Fight the
+  Scout, Vanguard, Assault and Headquarters variants under local system effects. Damage and effective remote
+  repairs earn site ISK and bank CONCORD LP. Defeat the mothership to recover its wreck cargo and release the focus's LP.
+  [Sansha Incursions](protocol/incursions.md#security-campaigns-and-system-effects)
 - The administration killboard shows recorded ship and capsule destruction across the server, with independent NPC,
   player and bot filters for final blows and losses. [Server killboard](protocol/combat.md#server-killboard)
 - Belt pirates use regional catalog pools with supported missiles, turrets, electronic warfare and self-repairs.

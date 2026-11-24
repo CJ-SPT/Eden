@@ -214,7 +214,10 @@ internal static partial class NpcDamagePersistence
                 PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
             }
             long originalCents = militiaMission ? 0 : NpcBountyRules.BaseCents(npc.Role, attributes);
-            long cents = WorldTuningRules.Reward(originalCents, world.Settings.Rewards.BountyMultiplier);
+            decimal multiplier =
+                world.Settings.Rewards.BountyMultiplier
+                * IncursionSystemEffectStore.Bounties(LiveWorld.Find(world.WorldPath), npc.SystemId, now);
+            long cents = WorldTuningRules.Reward(originalCents, multiplier);
             long skillPoints = NpcSkillPointRewards.FromBounty(
                 cents,
                 world.Settings.Progression.KillSkillPointMultiplier,

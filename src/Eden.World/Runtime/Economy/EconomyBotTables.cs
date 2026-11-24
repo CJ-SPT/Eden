@@ -2185,7 +2185,9 @@ internal sealed partial class ResidentEconomy
                         row.EscalationPilotId,
                         row.EscalationSourceDungeonId,
                         row.EscalationExpiresAt,
-                        row.IncursionTaleId
+                        row.IncursionTaleId,
+                        row.IncursionCargoIssued,
+                        row.IncursionCargoDelivered
                     ),
                 state => new Eden.Data.World.Exploration.WorldCombatAnomaly
                 {
@@ -2207,10 +2209,13 @@ internal sealed partial class ResidentEconomy
                     EscalationSourceDungeonId = state.EscalationSourceDungeonId,
                     EscalationExpiresAt = state.EscalationExpiresAt,
                     IncursionTaleId = state.IncursionTaleId,
+                    IncursionCargoIssued = state.IncursionCargoIssued,
+                    IncursionCargoDelivered = state.IncursionCargoDelivered,
                 },
                 ProjectWorldCombatAnomaly,
                 "Id,CompletedAt,DefinitionVersion,DungeonId,IsSignature,NextWaveAt,ReplaceAt,Slot,SystemId,Wave,X,Y,Z,"
-                    + "DedVisitedRooms,EscalationPilotId,EscalationSourceDungeonId,EscalationExpiresAt,IncursionTaleId",
+                    + "DedVisitedRooms,EscalationPilotId,EscalationSourceDungeonId,EscalationExpiresAt,IncursionTaleId,"
+                    + "IncursionCargoIssued,IncursionCargoDelivered",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2230,7 +2235,9 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(15) ? null : reader.GetInt64(15),
                         reader.GetInt32(16),
                         reader.IsDBNull(17) ? null : reader.GetInt64(17),
-                        reader.IsDBNull(18) ? null : reader.GetInt64(18)
+                        reader.IsDBNull(18) ? null : reader.GetInt64(18),
+                        reader.GetBoolean(19),
+                        reader.GetBoolean(20)
                     ),
                 state => new(state.Id),
                 indexes:

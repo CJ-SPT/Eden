@@ -2,6 +2,7 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -187,7 +188,8 @@ internal sealed class FlightScene(
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
                         || o.CynoDeployable is not null
-                        || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
+                        || HackingRules.IsContainer(o.Id)
+                        || IncursionObjectIds.IsArray(o.Id)
                     )
                 )
                 is { } targetObject

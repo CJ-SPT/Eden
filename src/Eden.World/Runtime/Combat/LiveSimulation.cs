@@ -708,13 +708,14 @@ internal sealed partial class LiveCombatRuntime
         var effective = Effective(npcs);
         var aggression = Aggression();
         List<NpcContact> contacts = new(npcs.Length);
-        decimal bountyMultiplier = database.Settings.Rewards.BountyMultiplier;
+        decimal bountyMultiplier =
+            database.Settings.Rewards.BountyMultiplier * Eden.World.Exploration.IncursionSystemEffectStore.Bounties(owner, system, now);
         bool motionStamped = database.MotionStamps.TryGetValue(system, out int stamp);
         foreach (var npc in npcs)
         {
             var active = aggression.GetValueOrDefault(npc.Id);
             bool bumped = database.CollisionStamps.GetValueOrDefault(npc.Id, -1) == stamp;
-            if (motionStamped && TrySharedNpcContact(npc, active, stamp, bumped, now, out var shared))
+            if (motionStamped && TrySharedNpcContact(npc, active, stamp, bumped, now, bountyMultiplier, out var shared))
             {
                 contacts.Add(shared);
                 continue;
@@ -774,7 +775,7 @@ internal sealed partial class LiveCombatRuntime
             contacts.Add(contact);
             if (motionStamped)
             {
-                ShareNpcContact(npc, active, stamp, bumped, now, contact);
+                ShareNpcContact(npc, active, stamp, bumped, now, bountyMultiplier, contact);
             }
         }
         return contacts;

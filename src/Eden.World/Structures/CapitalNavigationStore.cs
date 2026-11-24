@@ -3,12 +3,14 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Exploration;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -46,13 +48,17 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
 
     public long? JammerOnlineAt(int systemId)
     {
-        if (LiveWorld.Find(database.Path) is not { Economy: var economy })
+        if (LiveWorld.Find(database.Path) is not { } live)
         {
             return null;
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        return economy.Read(
+        if (live.IncursionEffectForSystem(systemId, now) is { JamsStandardCynos: true } incursion)
+        {
+            return IncursionRules.OpensAt(incursion.TaleId);
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return live.Economy.Read(
             world =>
             {
                 SettleFuel(world, catalog, systemId, now);
@@ -133,6 +139,7 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
     internal static bool CanUseBeacon(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long? pilotId, long now) =>
         structure.TypeId == CapitalTravelRules.Pharolux
         && OnlineService(world, structure, CapitalTravelRules.PharoluxService, now) is not null
+        && IncursionSystemEffectStore.At(world, structure.SystemId, now)?.JamsStandardCynos != true
         && !Jammed(world, catalog, structure.SystemId, now)
         && (pilotId is null || PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId.Value));
 

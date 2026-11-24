@@ -265,7 +265,7 @@ internal sealed partial class PilotStructureWeaponStore(
         var profile = victim is null ? npcProfiles.Read(catalog, target.TypeId) : null;
         var attributes = profile is not null
             ? PlayerEwarStore.NpcAttributes(world, target.Id, profile.Attributes)
-            : PilotFittingStore.ShipAttributes(world, catalog, victim!);
+            : PilotFittingStore.ShipAttributes(world, catalog, victim!, incursionTime: now);
         if (
             profile is not null
                 ? world.Set<WorldNpc>().Find(target.Id)!.StructureDamage >= profile.Defense.Structure

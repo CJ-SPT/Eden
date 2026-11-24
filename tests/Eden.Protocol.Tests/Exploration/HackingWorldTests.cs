@@ -270,6 +270,77 @@ public sealed class HackingWorldTests
             25
         );
 
+    [Fact]
+    public void OverrideTransferArrayHackDefusesReinforcementTimer()
+    {
+        using var f = Prepare();
+        PassiveCatalogFixture.LoadIncursions(f.CatalogPath);
+        var database = new WorldDatabase(f.Db.Path);
+        long module = f.Fit(22175);
+        long ship = f.ShipId;
+        long start = IncursionRules.OpensAt(IncursionRules.TaleId(f.Clock.Now));
+        f.Clock.UtcNow = DateTimeOffset.FromFileTime(start);
+        var sites = f.Db.Services.GetRequiredService<ICombatAnomalies>();
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
+        database.Catalog.PrepareRuntime();
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        ExplorationCatalogPreparation.Prepare(catalog);
+        using LiveWorld live = new(database, f.Clock, _ => { });
+        var focus = Assert.Single(new IncursionStore(database).Read(start), entry => entry.Security == IncursionSecurity.High);
+        int system = focus.Systems.First(row => row.SceneType == IncursionScene.Vanguard).SystemId;
+        var site = Assert.Single(sites.Incursions(system, start), row => row.DungeonId == IncursionSiteCatalog.OverrideTransferArray);
+        var array = Assert.Single(site.Objects, body => IncursionObjectIds.IsArray(body.Id));
+        sites.Arrive(system, array.Position, start);
+        f.Db.Store.SetPosition(ship, array.Position, system);
+
+        Assert.Throws<InvalidDataException>(() => store.Begin(f.PilotId, module, array.Id, new HashSet<long>(), start));
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new SharedSpace(), site.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        using var scope = f.Db.Services.CreateScope();
+        var targets = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
+        Assert.IsType<PilotCallResult.Success>(targets.Call(context, "dogmaIM", "AddTarget", [array.Id]));
+        f.Clock.AdvanceElapsed(TimeSpan.FromMinutes(1));
+        targets.Advance(context);
+        Assert.True(targets.IsLocked(array.Id));
+        Assert.IsType<PilotCallResult.Success>(
+            scope
+                .ServiceProvider.GetRequiredService<ModuleActivationHandler>()
+                .Call(context, "dogmaIM", "Activate", [module, "doHacking", array.Id, 0L])
+        );
+        var contact = Assert.Single(context.Notifications.OfType<HackingTurnCompleted>()).Contact;
+        Assert.Equal(ExplorationKind.Data, contact.Kind);
+        using (var world = live.Economy.Begin())
+        {
+            Assert.Equal(start + TimeSpan.FromSeconds(40).Ticks, world.Set<WorldCombatAnomaly>().Find(site.Id)!.NextWaveAt);
+            var attempt = world.Set<SavedHackingAttempt>().Find(f.PilotId)!;
+            attempt.ContactJson = JsonSerializer.Serialize(contact with { Board = WinningBoard() });
+            world.Commit();
+        }
+
+        var handler = scope.ServiceProvider.GetRequiredService<HackingHandler>();
+        Assert.IsType<PilotCallResult.Success>(handler.Call(context, "hackingMgr", "ClickedOnTile", [new object[] { 1L, 0L }]));
+        Assert.Equal(HackingOutcome.Won, context.Notifications.OfType<HackingTurnCompleted>().Last().Board.Outcome);
+        sites.Incursions(system, start + TimeSpan.FromSeconds(40).Ticks);
+        live.Economy.Inspect(world =>
+        {
+            var saved = world.Set<WorldCombatAnomaly>().Find(site.Id)!;
+            Assert.Equal(0, saved.Wave);
+            Assert.Null(saved.NextWaveAt);
+            Assert.True(world.Set<SavedHackingContainer>().Find(array.Id)!.Hacked);
+            Assert.Null(world.Set<SavedHackingAttempt>().Find(f.PilotId));
+            return true;
+        });
+    }
+
     private static void Finish(PirateExplorationStore store, Fixture f)
     {
         using (WorldDbContext world = new(f.Db.Path))
