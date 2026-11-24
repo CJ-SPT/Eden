@@ -288,9 +288,9 @@ A lone scout reports the contact and can wait briefly for backup. The gang retur
 losses, or exhausting its sortie time. Individual pilots use their own fits, damage application, health, ammunition and
 capacitor to decide how to engage. Kiting ships preserve range while tacklers close. Lost hulls remain lost.
 
-Active gangs keep traveling in unoccupied systems while somebody has a selected character. They pause when the last
-human leaves and while the server is stopped. This is an exception to the ordinary occupied-system population policy;
-no native scene is required for their combat contacts. Disabling gangs orders surviving active members home after restart;
+Active gangs keep traveling in unoccupied systems when unattended simulation is enabled. They pause while the
+server is stopped or when unattended simulation is disabled and the last human leaves. Their combat contacts use
+resident state. Disabling gangs orders surviving active members home after restart;
 disabling all player bots pauses the entire population. New settings follow the ordinary save-and-restart workflow.
 [Implementation and automated evidence](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
 
@@ -308,13 +308,15 @@ its gate cloak. [Fleet interception and visibility checks](protocol/capsuleers.m
 An operation needs available crew and a public objective within three nullsec jumps. **Regional operations per group**
 accepts 1–3, default 1, with a two-minute launch interval. Losses delay further offensive launches for five active minutes;
 defense and escort work remain available. Pressure, rivalries, losses, kills, objectives and deadlines survive restart.
-Lost ships are never granted again. Sparse groups continue their ordinary individual routines.
+Corporations stage offensive deployments during staggered UTC shifts. Escorts and defenses can launch at any hour,
+including gate screens around an allied hub under attack. Recent combat sightings can divert a gang to exposed freight.
+Sparse groups continue their ordinary individual routines.
 
 Escorts are assigned to existing owned freight at the start of its real route. The freighter waits for guards at gates;
 the operation succeeds when the original cargo is actually delivered. Missing cargo, lost guards, retreat and finite
 rendezvous or sortie deadlines can abort it. Escorted shipments share the active-gang exception for unoccupied systems.
-All pause when the last human leaves. Disabling regional conflicts returns its gangs home and releases freight to normal
-travel after restart; saved conflict history remains. Population shows regional groups, pressure and operation outcomes.
+Disabling regional conflicts returns its gangs home and releases freight to normal
+travel after restart. Population shows regional groups, pressure and operation outcomes.
 [Implementation and automated evidence](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026).
 
 ## Pilot awareness

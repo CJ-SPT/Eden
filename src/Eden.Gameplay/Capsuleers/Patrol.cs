@@ -55,7 +55,7 @@ public static class PatrolRules
     {
         // Defenders hold the reported grid long enough for ships on both routes to arrive.
         if (
-            gang is { Phase: RoamingGangPhase.Hunting, Regional: { Objective: RegionalObjective.Defend } order }
+            gang is { Phase: RoamingGangPhase.Hunting, Regional: { Objective: RegionalObjective.Defend or RegionalObjective.Screen } order }
             && order.TargetSystemId == system
             && order.TargetGridId == grid
         )

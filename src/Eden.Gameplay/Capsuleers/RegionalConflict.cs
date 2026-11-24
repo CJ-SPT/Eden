@@ -6,6 +6,7 @@ public enum RegionalObjective
     Intercept,
     Escort,
     Defend,
+    Screen,
 }
 
 public enum RegionalReportKind
@@ -47,7 +48,10 @@ public sealed record RegionalReport(
     RegionalReportKind Kind,
     long SeenAt,
     long ExpiresAt
-);
+)
+{
+    public double ObservedStrength { get; init; }
+}
 
 public sealed record RegionalOperationKey(int RegionId, int GroupId, long Sequence);
 
@@ -81,7 +85,11 @@ public sealed record RegionalConflictRegion(int RegionId, long Revision)
     public long DecayAt { get; init; }
 }
 
-public sealed record RegionalRoute(int GroupId, int StationId, int SystemId, int[] Systems, long GateId, long BeltId);
+public sealed record RegionalRoute(int GroupId, int StationId, int SystemId, int[] Systems, long GateId, long BeltId)
+{
+    public bool FriendlyAllianceSpace { get; init; }
+    public bool ContestedAllianceHub { get; init; }
+}
 
 public sealed record RegionalEscortCandidate(long PilotId, long ShipId, int StationId, int[] Systems, long GateId);
 
@@ -109,6 +117,21 @@ public static class RegionalConflictRules
     public static readonly long ReportingInterval = TimeSpan.FromSeconds(30).Ticks;
     public static readonly long LaunchInterval = TimeSpan.FromMinutes(2).Ticks;
     public static readonly long LossRecovery = TimeSpan.FromMinutes(5).Ticks;
+
+    // A six-hour UTC deployment window with up to two hours of variation around a constellation's common start.
+    private const int OffensiveShiftHours = 6;
+    private const int OffensiveShiftOffsets = 5;
+    private const double UnknownCombatShipStrength = 1;
+
+    public static bool OffensiveShiftOpen(int constellation, int corporation, long utcTicks)
+    {
+        int startHour =
+            (int)(TravelerRoutineRules.Mix((uint)constellation) % 24)
+            + (int)(TravelerRoutineRules.Mix((uint)corporation) % OffensiveShiftOffsets)
+            - OffensiveShiftOffsets / 2;
+        long sinceStart = utcTicks % TimeSpan.TicksPerDay - startHour * TimeSpan.TicksPerHour;
+        return (sinceStart + TimeSpan.TicksPerDay * 2) % TimeSpan.TicksPerDay < OffensiveShiftHours * TimeSpan.TicksPerHour;
+    }
 
     public static bool Rivals(RegionalConflictRegion region, int group, int other) =>
         group != other
@@ -269,7 +292,9 @@ public static class RegionalConflictRules
         IReadOnlyList<RegionalRoute> routes,
         IReadOnlyList<RegionalEscortCandidate> escorts,
         long elapsed,
-        int maximumActive
+        int maximumActive,
+        double force = double.PositiveInfinity,
+        bool offensiveShift = true
     )
     {
         var group = region.Groups.FirstOrDefault(candidate => candidate.Id == groupId);
@@ -352,22 +377,58 @@ public static class RegionalConflictRules
                 Reason = "Escorting an owned freight shipment along its actual route.",
             };
         }
-        if (elapsed < group.NextOffensiveAt)
+        var screen = routes
+            .Where(route => route.ContestedAllianceHub && route.GateId != 0)
+            .Where(route =>
+                !region.Operations.Any(operation =>
+                    operation.Objective == RegionalObjective.Screen
+                    && operation.TargetSystemId == route.SystemId
+                    && operation.ExpiresAt > elapsed
+                )
+            )
+            .MinBy(route => route.Systems.Length);
+        if (screen is not null)
+        {
+            return Create(RegionalObjective.Screen, screen, 0, "Screening the approach to a contested alliance hub.") with
+            {
+                OpponentGroupId = null,
+            };
+        }
+        if (!offensiveShift || elapsed < group.NextOffensiveAt)
         {
             return null;
         }
         var rivals = routes
-            .Where(route => Rivals(region, groupId, route.GroupId))
+            .Where(route => !route.FriendlyAllianceSpace && Rivals(region, groupId, route.GroupId))
             .OrderBy(route => route.Systems.Length)
             .ThenBy(route => TravelerRoutineRules.Mix((ulong)route.StationId ^ (ulong)group.NextSequence))
             .ToArray();
-        var freight = region
-            .Reports.Where(report =>
-                report.ObserverGroupId == groupId && report.Kind == RegionalReportKind.Freight && report.ExpiresAt > elapsed
+        var reports = region
+            .Reports.Where(report => report.ObserverGroupId == groupId && report.SeenAt <= elapsed && report.ExpiresAt > elapsed)
+            .ToArray();
+        var opposition = reports
+            .Where(report => report.Kind == RegionalReportKind.CombatShip)
+            .DistinctBy(report => report.ShipId)
+            .GroupBy(report => (report.SystemId, report.GridId))
+            .ToDictionary(
+                grid => grid.Key,
+                grid => grid.Sum(report => report.ObservedStrength > 0 ? report.ObservedStrength : UnknownCombatShipStrength)
+            );
+        var freight = reports
+            .Where(report => report.Kind == RegionalReportKind.Freight && report.GridId != 0)
+            .Select(report =>
+                (
+                    Report: report,
+                    Route: rivals.FirstOrDefault(route => route.SystemId == report.SystemId && route.GroupId == report.OtherGroupId)
+                )
             )
-            .OrderByDescending(report => report.SeenAt)
-            .Select(report => (Report: report, Route: rivals.FirstOrDefault(route => route.SystemId == report.SystemId)))
-            .FirstOrDefault(pair => pair.Route is not null);
+            .Where(pair => pair.Route is not null)
+            .Select(pair => (pair.Report, pair.Route, Opposition: opposition.GetValueOrDefault((pair.Report.SystemId, pair.Report.GridId))))
+            .Where(pair => pair.Opposition <= force)
+            .OrderBy(pair => pair.Opposition)
+            .ThenBy(pair => pair.Route!.Systems.Length)
+            .ThenByDescending(pair => pair.Report.SeenAt)
+            .FirstOrDefault();
         if (freight.Route is not null)
         {
             return Create(
@@ -378,15 +439,13 @@ public static class RegionalConflictRules
                 freight.Report.GridId
             );
         }
-        var rival = rivals.FirstOrDefault();
-        return rival is null
+        var objective = group.NextSequence % 2 == 0 ? RegionalObjective.Intercept : RegionalObjective.Raid;
+        var rival = rivals
+            .Select(route => (Route: route, Grid: objective == RegionalObjective.Raid && route.BeltId != 0 ? route.BeltId : route.GateId))
+            .FirstOrDefault(pair => pair.Grid != 0 && opposition.GetValueOrDefault((pair.Route.SystemId, pair.Grid)) <= force);
+        return rival.Route is null
             ? null
-            : Create(
-                group.NextSequence % 2 == 0 ? RegionalObjective.Intercept : RegionalObjective.Raid,
-                rival,
-                0,
-                "Patrolling a rival's extraction sites and transport corridor."
-            );
+            : Create(objective, rival.Route, 0, "Patrolling a rival's extraction sites and transport corridor.", rival.Grid);
     }
 
     public static RegionalConflictRegion Launch(RegionalConflictRegion region, RegionalOperation operation, long gang, long sequence)

@@ -2,6 +2,52 @@
 
 [Protocol index](../protocol.md)
 
+## Regional offensive shifts and sovereignty screens
+
+Bot-led corporations stage regional offense around their nullsec headquarters constellation. Their daily
+six-hour UTC form-up windows overlap with neighboring corporations and vary by corporation. Escorts,
+witnessed local defense and screening an allied sovereign hub under attack can launch outside those windows.
+
+The regional planner compares the actual fitted roster's hull strength with recent opposing combat sightings.
+It prioritizes an exposed freight contact when the available gang can contest the grid and passes on known
+stronger opposition. Specialist freight hulls appear in the same reports. The planner uses normal travel,
+visibility and combat rules. An allied hub's active campaign or ongoing valid attack can send a gang to
+screen an approach gate. It returns after the contest ends.
+
+EVE.js 261108.1 references include `server/src/services/faction/factionWarfareAuthority.js` and
+`server/src/services/sovereignty/sovCampaignState.js`. Eden retains the pinned build 3662168 Crimewatch,
+Faction Warfare and Entosis owners. The offensive hours and patrol objective selection are Eden policies.
+[EVE University Faction Warfare](https://wiki.eveuniversity.org/Faction_warfare) ·
+[EVE University sovereignty](https://wiki.eveuniversity.org/Sovereignty)
+
+**Automated validation**
+
+All 19 integrated cases passed in 27.48 seconds after a 6.95-second build. The exact selection included
+`FittedGangChoosesAnExposedHaulerOverAReportedCapitalEscort`,
+`OutmatchedGangInterceptsExposedFreightAndPassesWhenItsSightingExpires`,
+`CorporationsStaggerTheirOffensiveShiftsAndStillScreenAContestedHub`,
+`RivalCommunitiesLaunchOnePaidRaidAndRetainItsObjectiveAcrossRestart`,
+`EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery`,
+`SeededPatrolChoicesVaryOnTheSameFrontAndFollowAChangedOccupation`,
+`PaidAttackReinforcesAndNineAttackerNodesDestroyWithoutTransferringClaim`,
+`RegionalTradePaysForTwoLossesWithBountyTaxAndProductionMargin`,
+`LogisticsUsesALockAndPaidRepairCycleForItsDamagedWingmate`, `RemoteWingmatesRallyThroughRealGateBeforeDeparting`,
+both unattended hunt and freight-warning methods, and `MatchedMaintenanceFramesPreserveJobsAndAssetsWithFewerIdleTurns`.
+
+In the fitted gang replay, the gang chose the exposed hauler over one with a reported carrier escort. The three matched
+maintenance replays preserved jobs, assets and fitting counts and took 10 due turns versus 200 polling turns per case.
+Local checkpoint capture took 0.50–0.79 ms, projection 1.64–2.50 ms and writing 25.73–85.89 ms. The SQL assertion now
+recognizes quoted and unquoted catalog reads. These small matched workloads do not establish sustained server capacity
+or natural fight frequency. The solution build, 17 Python policy cases and formatting check passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Compare regional launches across two shift boundaries and follow a convoy during an active sovereignty campaign.
+
 ## Fleet attrition, replacement stock, and escorts
 
 A player-caused combat hull loss records corporate attrition in the same resident ship-loss action. A bot-led

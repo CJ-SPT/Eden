@@ -669,6 +669,52 @@ public sealed class RegionalConflictWorldTests
         Assert.Equal(0, fixture.Scheduler.Read().Failures);
     }
 
+    [Fact]
+    public void FittedGangChoosesAnExposedHaulerOverAReportedCapitalEscort()
+    {
+        using var fixture = new RoamingGangTests.Fixture(regional: true);
+        int group = fixture.Database.Catalog.Systems[Home].ConstellationId;
+        int rival = fixture.Database.Catalog.Systems[Away].ConstellationId;
+        const long exposedPilot = 123;
+        long gate;
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            var grids = SystemObjects.Geometry(catalog, Away);
+            gate = grids.Single(body => body.DestinationSystemId == Home).Id;
+            RegionalConflictStore.Report(
+                action,
+                catalog,
+                HomeStation,
+                new(group, rival, exposedPilot, 456, Away, gate, RegionalReportKind.Freight, 0, RegionalConflictRules.ReportTicks)
+            );
+            RegionalConflictStore.Report(
+                action,
+                catalog,
+                HomeStation,
+                new(group, rival, 124, 457, Away, AwayStation, RegionalReportKind.Freight, 0, RegionalConflictRules.ReportTicks)
+            );
+            RegionalConflictStore.Report(
+                action,
+                catalog,
+                HomeStation,
+                new(group, rival, 125, 458, Away, AwayStation, RegionalReportKind.CombatShip, 0, RegionalConflictRules.ReportTicks)
+                {
+                    ObservedStrength = PvpTactics.Threat(HullClass.Carrier),
+                }
+            );
+            action.Commit();
+        }
+        var gang = fixture.Form();
+        Assert.True(gang.Members.Sum(member => PvpTactics.Threat(member.Hull)) < PvpTactics.Threat(HullClass.Carrier));
+        var order = Assert.IsType<RegionalOperation>(gang.Regional);
+        Assert.Equal(
+            (RegionalObjective.Intercept, Away, exposedPilot, gate),
+            (order.Objective, order.TargetSystemId, order.TargetPilotId, order.TargetGridId)
+        );
+        Assert.Equal(0, fixture.Scheduler.Read().Failures);
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]

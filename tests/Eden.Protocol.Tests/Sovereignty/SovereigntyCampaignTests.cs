@@ -2,6 +2,7 @@ using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
+using Eden.World.Capsuleers;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,13 +21,17 @@ public sealed class SovereigntyCampaignTests
         SovereigntyDevelopmentTests.AddClaim(fixture, 30003990);
         long hub = Claim(fixture, defender);
         var original = fixture.Claims.Read(SovereigntyCaptureFixture.SystemId)!;
+        Assert.False(Screen(original.AllianceId));
         Reinforce(fixture, attacker, hub);
         var conflict = fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!;
         Assert.Equal(SovereigntyPhase.Reinforced, conflict.Phase);
         Assert.Equal(original, fixture.Claims.Read(SovereigntyCaptureFixture.SystemId));
+        Assert.False(Screen(original.AllianceId));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(conflict.CampaignAt!.Value - fixture.Clock.Now));
         fixture.Entosis.AdvanceAll();
         Assert.Equal(5, Nodes(fixture).Length);
+        Assert.True(Screen(original.AllianceId));
+        Assert.False(Screen(null));
         for (int captured = 0; captured < 9; captured++)
         {
             var node = Nodes(fixture).First();
@@ -38,6 +43,7 @@ public sealed class SovereigntyCampaignTests
             }
         }
         Assert.Null(fixture.Claims.Read(SovereigntyCaptureFixture.SystemId));
+        Assert.False(Screen(original.AllianceId));
         Assert.Null(fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId));
         Assert.Empty(Nodes(fixture));
         fixture.Live.Economy.Inspect(world =>
@@ -57,6 +63,11 @@ public sealed class SovereigntyCampaignTests
         var live = reopened.GetRequiredService<Eden.World.Runtime.LiveWorld>();
         Assert.Empty(live.Economy.Inspect(world => world.Set<SavedSovereigntyNode>().ToArray()));
         Assert.Equal(StructureState.Destroyed, live.Economy.Inspect(world => world.Set<SavedStructure>().Find(hub)!.State));
+
+        bool Screen(int? alliance) =>
+            fixture.Live.Economy.Inspect(world =>
+                RegionalConflictStore.ShouldScreen(world, SovereigntyCaptureFixture.SystemId, alliance, fixture.Clock.Now)
+            );
     }
 
     [Theory]

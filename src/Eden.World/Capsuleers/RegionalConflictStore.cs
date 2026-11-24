@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Sovereignty;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
@@ -9,6 +10,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
@@ -125,18 +127,24 @@ internal static class RegionalConflictStore
         LiveWorld live,
         int station,
         long elapsed,
-        DockedPilot? leader = null
+        DockedPilot? leader = null,
+        long now = 0,
+        double force = double.PositiveInfinity
     )
     {
         var source = catalog.RequireSystem(catalog.RequireStation(station).SolarSystemId);
         var region = Ensure(world, catalog, station, elapsed);
         var journeys = CapsuleerTrafficRoutes.RegionalRoutes(catalog, station, world.Settings.Capsuleers);
+        int? alliance = leader?.Identity.AllianceId;
         List<RegionalRoute> routes = [];
         foreach (var journey in journeys.Prepend(new(station, station, [source.Id])))
         {
             int target = journey.Systems[^1];
             var targetSystem = catalog.RequireSystem(target);
-            if (targetSystem.RegionId != source.RegionId || world.Set<SavedCapsuleerPopulation>().Find(target) is null)
+            var claim = alliance is not null ? world.Set<SavedSovereigntyClaim>().Find(target) : null;
+            bool allied = claim is not null && claim.AllianceId == alliance;
+            bool contested = allied && PilotEntosisStore.ContestedHub(world, claim!, now);
+            if (targetSystem.RegionId != source.RegionId || !contested && world.Set<SavedCapsuleerPopulation>().Find(target) is null)
             {
                 continue;
             }
@@ -148,7 +156,8 @@ internal static class RegionalConflictStore
             var objects = SystemObjects.Geometry(catalog, target);
             long gate = objects
                 .Where(body => body.DestinationGateId is not null)
-                .OrderBy(body => body.Id)
+                .OrderBy(body => journey.Systems.Length > 1 && body.DestinationSystemId != journey.Systems[^2])
+                .ThenBy(body => body.Id)
                 .Select(body => body.Id)
                 .FirstOrDefault();
             long belt = objects
@@ -158,12 +167,18 @@ internal static class RegionalConflictStore
                 .FirstOrDefault();
             if (gate != 0 || belt != 0)
             {
-                routes.Add(new(targetSystem.ConstellationId, journey.DestinationStationId, target, journey.Systems, gate, belt));
+                routes.Add(
+                    new(targetSystem.ConstellationId, journey.DestinationStationId, target, journey.Systems, gate, belt)
+                    {
+                        FriendlyAllianceSpace = allied,
+                        ContestedAllianceHub = contested,
+                    }
+                );
             }
         }
         foreach (
             int rival in routes
-                .Where(route => route.GroupId != source.ConstellationId)
+                .Where(route => !route.FriendlyAllianceSpace && route.GroupId != source.ConstellationId)
                 .Select(route => route.GroupId)
                 .Distinct()
                 .Take(RivalsPerGroup)
@@ -222,13 +237,24 @@ internal static class RegionalConflictStore
             ))
             .ToArray();
         world.Set<SavedRegionalConflict>().Find(source.RegionId)!.State = region;
+        bool offensiveShift = true;
+        if (leader is not null && CapsuleerIndustry.Employer(world, leader.PilotId, leader.CorpId) is { } corporation)
+        {
+            bool localHeadquarters =
+                catalog.Definitions.Stations.TryGetValue(corporation.StationId, out var headquarters)
+                && catalog.Definitions.SystemContentSecurity(headquarters.SolarSystemId) is <= 0;
+            int staging = localHeadquarters ? catalog.RequireSystem(headquarters!.SolarSystemId).ConstellationId : source.ConstellationId;
+            offensiveShift = staging == source.ConstellationId && RegionalConflictRules.OffensiveShiftOpen(staging, corporation.Id, now);
+        }
         return RegionalConflictRules.Plan(
             region,
             source.ConstellationId,
             routes,
             escorts,
             elapsed,
-            world.Settings.Capsuleers.RegionalOperationsPerGroup
+            world.Settings.Capsuleers.RegionalOperationsPerGroup,
+            force,
+            offensiveShift
         );
     }
 
@@ -387,7 +413,13 @@ internal static class RegionalConflictStore
             || contact.RegionalGroupId is { } other
                 && region is not null
                 && RegionalConflictRules.Rivals(region, operation.Key.GroupId, other)
-                && operation.Objective is RegionalObjective.Raid or RegionalObjective.Intercept
+                && operation.Objective is RegionalObjective.Raid or RegionalObjective.Intercept or RegionalObjective.Screen
             || operation.Objective == RegionalObjective.Defend && operation.TargetPilotId == contact.PilotId;
     }
+
+    internal static bool ShouldScreen(WorldAction world, int system, int? alliance, long now) =>
+        alliance is int owner
+        && world.Set<SavedSovereigntyClaim>().Find(system) is { } claim
+        && claim.AllianceId == owner
+        && PilotEntosisStore.ContestedHub(world, claim, now);
 }

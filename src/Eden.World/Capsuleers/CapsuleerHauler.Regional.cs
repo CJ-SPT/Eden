@@ -2,6 +2,7 @@ using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -23,6 +24,7 @@ internal sealed partial class CapsuleerHauler
                 !database.Settings.Capsuleers.RegionalConflicts
                 || current?.Status != RegionalOperationStatus.Active
                 || Work.ActiveTicks >= order.ExpiresAt
+                || order.Objective == RegionalObjective.Screen && !RegionalScreenContinues(order.TargetSystemId)
             )
             {
                 gang = ReturnGang(gang, "The regional operation ended; returning home.");
@@ -47,13 +49,31 @@ internal sealed partial class CapsuleerHauler
         }
     }
 
-    private RegionalOperation? PlanRegional(ref CapsuleerTrafficRoute route)
+    private bool RegionalScreenContinues(int system)
+    {
+        int? alliance = Pilot.Identity.AllianceId;
+        long now = Now;
+        return _operation.HasWorld
+            ? RegionalConflictStore.ShouldScreen(_operation.World, system, alliance, now)
+            : Live?.Economy.Read(world => RegionalConflictStore.ShouldScreen(world, system, alliance, now)) == true;
+    }
+
+    private RegionalOperation? PlanRegional(ref CapsuleerTrafficRoute route, IReadOnlyList<RoamingGangMember> members)
     {
         if (!database.Settings.Capsuleers.RegionalConflicts || Live is not { } live)
         {
             return null;
         }
-        var operation = RegionalConflictStore.Plan(_operation.World, _operation.Catalog, live, Pilot.StationId, Work.ActiveTicks, Pilot);
+        var operation = RegionalConflictStore.Plan(
+            _operation.World,
+            _operation.Catalog,
+            live,
+            Pilot.StationId,
+            Work.ActiveTicks,
+            Pilot,
+            Now,
+            members.Sum(member => PvpTactics.Threat(member.Hull))
+        );
         if (operation is not null)
         {
             route = new(Pilot.StationId, operation.DestinationStationId, operation.Systems);
@@ -254,19 +274,24 @@ internal sealed partial class CapsuleerHauler
         foreach (
             var contact in sightings
                 .Where(contact =>
-                    contact.RegionalGroupId is not null && contact.RegionalGroupId != home.GroupId && !PatrolRules.Friendly(Pilot, contact)
+                    contact.RegionalGroupId is not null
+                    && contact.RegionalGroupId != home.GroupId
+                    && contact.Hull is not (HullClass.Capsule or HullClass.Unclassified)
+                    && !PatrolRules.Friendly(Pilot, contact)
                 )
                 .Take(RoamingGangRules.MaximumMembers)
         )
         {
-            var kind =
-                contact.Hull == Eden.Gameplay.Ships.HullClass.Hauler ? RegionalReportKind.Freight
-                : contact.Hull
-                    is Eden.Gameplay.Ships.HullClass.MiningBarge
-                        or Eden.Gameplay.Ships.HullClass.Exhumer
-                        or Eden.Gameplay.Ships.HullClass.ExpeditionFrigate
-                    ? RegionalReportKind.Mining
-                : RegionalReportKind.CombatShip;
+            var kind = contact.Hull switch
+            {
+                HullClass.Hauler
+                or HullClass.BlockadeRunner
+                or HullClass.DeepSpaceTransport
+                or HullClass.Freighter
+                or HullClass.JumpFreighter => RegionalReportKind.Freight,
+                HullClass.MiningBarge or HullClass.Exhumer or HullClass.ExpeditionFrigate => RegionalReportKind.Mining,
+                _ => RegionalReportKind.CombatShip,
+            };
             var report = new RegionalReport(
                 home.GroupId,
                 contact.RegionalGroupId,
@@ -277,7 +302,10 @@ internal sealed partial class CapsuleerHauler
                 kind,
                 Work.ActiveTicks,
                 checked(Work.ActiveTicks + RegionalConflictRules.ReportTicks)
-            );
+            )
+            {
+                ObservedStrength = kind == RegionalReportKind.CombatShip ? PvpTactics.Threat(contact.Hull) : 0,
+            };
             if (RegionalConflictStore.NeedsReport(database, home.SystemId, report))
             {
                 _regionalReports.Add(report);

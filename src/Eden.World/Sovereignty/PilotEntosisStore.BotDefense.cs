@@ -54,6 +54,15 @@ internal sealed partial class PilotEntosisStore
             );
     }
 
+    internal static bool ContestedHub(WorldAction world, SavedSovereigntyClaim claim, long now) =>
+        world.Set<SavedSovereigntyConflict>().Find(claim.SystemId) is { } conflict
+        && conflict.HubId == claim.HubId
+        && conflict.DefenderAllianceId == claim.AllianceId
+        && (
+            conflict.Phase == SovereigntyPhase.Campaign
+            || conflict.Value < 1 && Target(world, claim.SystemId, claim.HubId) is { } target && Admits(world, target, now)
+        );
+
     internal static StaticSpaceObject? ExpeditionTarget(WorldAction world, CatalogDbContext catalog, int system, long id)
     {
         if (Target(world, system, id) is not { } target || catalog.FittingType(target.TypeId) is not { } type)
