@@ -12,6 +12,7 @@ public enum TrafficJourneyKind
     MilitiaPatrol,
     NullsecExpedition,
     GangRally,
+    ReplacementShopping,
 }
 
 public enum NullsecExpeditionWork

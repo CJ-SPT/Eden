@@ -54,6 +54,12 @@ internal static partial class CapsuleerTrafficRoutes
         Estimate: routes => EntryEstimatedBytes + routes.Sum(r => EntryEstimatedBytes + r.Systems.Length * sizeof(int))
     );
 
+    private static readonly CatalogDefinition<JourneyMap> s_tradeHubPaths = new(
+        "capsuleer-trade-hub-paths",
+        (catalog, system) => LoadJourneyMap(catalog, system, unrestricted: true, maximumJumps: int.MaxValue),
+        Estimate: map => map.EstimatedBytes
+    );
+
     private readonly record struct JourneyNode(int Parent, int Jumps);
 
     private readonly record struct StationSystem(int Id, int Jumps);
@@ -274,6 +280,21 @@ internal static partial class CapsuleerTrafficRoutes
         int maximumJumps = TrafficJourneyRules.MaximumJumps,
         CapsuleerPopulationPolicy? policy = null
     ) => ToSystem(catalog, sourceStation, destinationStation, hull, avoided, maximumJumps, policy: policy);
+
+    internal static CapsuleerTrafficRoute? CapsuleToTradeHub(CatalogDbContext catalog, int sourceStation, int hub)
+    {
+        int source = catalog.RequireStation(sourceStation).SolarSystemId;
+        int destination = catalog.RequireStation(hub).SolarSystemId;
+        // The graph contains reciprocal gates. A single search from each hub serves every refuge station.
+        var map = catalog.Definition(s_tradeHubPaths, destination);
+        if (!map.Nodes.ContainsKey(source))
+        {
+            return null;
+        }
+        var systems = JourneyPath(catalog.Definitions.GlobalDefinition(s_graph), map, source);
+        Array.Reverse(systems);
+        return new(sourceStation, hub, systems);
+    }
 
     internal static CapsuleerTrafficRoute? ToClaimSystem(
         CatalogDbContext catalog,

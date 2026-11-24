@@ -14,8 +14,8 @@ namespace Eden.World.Capsuleers;
 internal sealed partial class CapsuleerIndustry
 {
     private static readonly TimeSpan PvpFitReviewInterval = TimeSpan.FromMinutes(5);
-    private static readonly CatalogDefinition<int[]> s_pvpTradeHubs = new(
-        "pvp-shopping-trade-hubs",
+    private static readonly CatalogDefinition<int[]> s_tradeHubs = new(
+        "capsuleer-shopping-trade-hubs",
         (catalog, _) => catalog.Definitions.Stations.Keys.Where(CapsuleerEncounterRules.IsTradeHubStation).ToArray()
     );
 
@@ -284,7 +284,7 @@ internal sealed partial class CapsuleerIndustry
         }
         var policy = world.Settings.Capsuleers;
         var neighbors = CapsuleerTrafficRoutes.Read(catalog, pilot.SystemId, policy).Routes;
-        var hubs = catalog.Definition(s_pvpTradeHubs, 0);
+        var hubs = catalog.Definition(s_tradeHubs, 0);
         var routes = neighbors
             .SelectMany(route => new[] { route.SourceStationId, route.DestinationStationId })
             .Concat(hubs)

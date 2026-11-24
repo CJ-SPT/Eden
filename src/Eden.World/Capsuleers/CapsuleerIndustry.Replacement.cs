@@ -14,6 +14,7 @@ using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime.Economy;
@@ -24,6 +25,21 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
+    private sealed record ReplacementPurchase(ReplacementKit Kit, ReplacementPart[] Missing, MarketPurchase[] Purchases);
+
+    private static readonly CatalogDefinition<CapsuleerTrafficRoute[]> s_replacementHubRoutes = new(
+        "capsuleer-replacement-trade-hub-routes",
+        (catalog, source) =>
+            catalog
+                .Definition(s_tradeHubs, 0)
+                .Where(station => station != source)
+                .Select(station => CapsuleerTrafficRoutes.CapsuleToTradeHub(catalog, source, station))
+                .OfType<CapsuleerTrafficRoute>()
+                .OrderBy(route => route.Systems.Length)
+                .ThenBy(route => route.DestinationStationId)
+                .ToArray()
+    );
+
     internal bool TryBoardOwnedReplacement(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -65,21 +81,15 @@ internal sealed partial class CapsuleerIndustry
         CapsuleerCareer career,
         long now,
         long? orderDeadline,
-        long[]? orderIds
+        long[]? orderIds,
+        bool hubShopping = false
     )
     {
         long pilotId = docked.PilotId;
         int station = docked.StationId;
         bool funded = CapsuleerRefitFunding.Applies(world, pilotId);
         var corporation = Employer(world, pilotId, docked.CorpId);
-        if (
-            docked.Position is not null
-            || docked.InStructure
-            || docked.ShipGroupId != FleetDefinitions.CapsuleGroup
-            || (!funded && corporation is null)
-            || world.Filter<ShipLoss>(loss => loss.CapsuleId == docked.ShipId).FirstOrDefault(loss => loss.PilotId == pilotId)
-                is not { } loss
-        )
+        if (docked.Position is not null || docked.InStructure || docked.ShipGroupId != FleetDefinitions.CapsuleGroup)
         {
             return new(false, false, orderDeadline, orderIds);
         }
@@ -89,12 +99,18 @@ internal sealed partial class CapsuleerIndustry
             return new(false, false, orderDeadline, orderIds);
         }
 
-        var kit = LostKit(catalog, loss);
+        var loss = ReplacementLoss(world, docked);
+        bool atTradeHub = CapsuleerEncounterRules.IsTradeHubStation(station) && (hubShopping || corporation is null || loss is null);
+        if (!atTradeHub && (loss is null || !funded && corporation is null))
+        {
+            return new(false, false, orderDeadline, orderIds);
+        }
+        var kit = loss is null ? null : LostKit(catalog, loss);
         var parts = kit?.Parts() ?? [];
         // Older recovery checkpoints lack order IDs. Match the saved fit or the previous fixed Merlin kit.
         IReadOnlyList<ReplacementPart> legacyParts =
             orderDeadline.HasValue ? parts
-            : loss.TypeId == (int)TechOneHullType.Merlin ? Rules.MerlinParts
+            : loss?.TypeId == (int)TechOneHullType.Merlin ? Rules.MerlinParts
             : [];
         var bids = corporation is null
             ? []
@@ -111,6 +127,7 @@ internal sealed partial class CapsuleerIndustry
                     orderIds?.Contains(order.Id)
                     ?? (
                         order.DurationDays == Rules.OrderDays
+                        && loss is not null
                         && order.Issued >= loss.Time
                         && order.Issued <= (orderDeadline ?? now)
                         && legacyParts.Any(part => part.TypeId == order.TypeId && order.Entered <= part.Quantity)
@@ -123,6 +140,12 @@ internal sealed partial class CapsuleerIndustry
         bool usable = kit is not null && CanReplaceKit(world, catalog, pilotId, career, kit, parts);
         var hangar = Hangar(world, pilotId, station).ToLookup(item => item.TypeId);
         var missing = MissingParts(parts, hangar);
+        if (atTradeHub)
+        {
+            CancelReplacementBids(world, catalog, bids);
+            var result = ShopReplacement(world, catalog, docked, career, now, now, loss?.TypeId, kit, corporation, hangar, funded, true);
+            return result with { MarketChanged = result.MarketChanged || bids.Length > 0 };
+        }
         if (usable && missing.Length == 0)
         {
             CancelReplacementBids(world, catalog, bids);
@@ -131,7 +154,19 @@ internal sealed partial class CapsuleerIndustry
         }
         if (funded)
         {
-            var result = ShopReplacement(world, catalog, docked, career, now, orderDeadline.Value, loss, kit, corporation, hangar, true);
+            var result = ShopReplacement(
+                world,
+                catalog,
+                docked,
+                career,
+                now,
+                orderDeadline.Value,
+                loss?.TypeId,
+                kit,
+                corporation,
+                hangar,
+                funded: true
+            );
             if (result.Boarded)
             {
                 CancelReplacementBids(world, catalog, bids);
@@ -150,7 +185,7 @@ internal sealed partial class CapsuleerIndustry
                 CancelReplacementBids(world, catalog, bids);
                 return new(false, true, now, []);
             }
-            return ShopReplacement(world, catalog, docked, career, now, orderDeadline.Value, loss, kit, corporation, hangar);
+            return ShopReplacement(world, catalog, docked, career, now, orderDeadline.Value, loss?.TypeId, kit, corporation, hangar, false);
         }
 
         bool marketChanged = false;
@@ -224,6 +259,73 @@ internal sealed partial class CapsuleerIndustry
             .Where(part => part.Quantity > 0)
             .ToArray();
 
+    private static ShipLoss? ReplacementLoss(EconomyTransaction world, DockedPilot pilot) =>
+        world.Filter<ShipLoss>(loss => loss.CapsuleId == pilot.ShipId).FirstOrDefault(loss => loss.PilotId == pilot.PilotId);
+
+    internal CapsuleerTrafficRoute? FindReplacementHub(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        CapsuleerCareer career,
+        IReadOnlySet<int>? avoided = null
+    )
+    {
+        if (pilot.InStructure || catalog.FindStation(pilot.StationId) is null)
+        {
+            return null;
+        }
+        var loss = ReplacementLoss(world, pilot);
+        var original = loss is null ? null : LostKit(catalog, loss);
+        var kits = ReplacementKits(world, catalog, pilot.PilotId, career, loss?.TypeId, original, atTradeHub: true).ToArray();
+        if (kits.Length == 0)
+        {
+            return null;
+        }
+        bool funded = CapsuleerRefitFunding.Applies(world, pilot.PilotId);
+        var corporation = Employer(world, pilot.PilotId, pilot.CorpId);
+        foreach (var route in catalog.Definition(s_replacementHubRoutes, pilot.StationId))
+        {
+            int station = route.DestinationStationId;
+            if (
+                !world.Settings.Capsuleers.CanWorkAtStation(catalog.Definitions, station)
+                || avoided is not null && route.Systems.Skip(1).Any(avoided.Contains)
+            )
+            {
+                continue;
+            }
+            var hangar = Hangar(world, pilot.PilotId, station).ToLookup(item => item.TypeId);
+            var depot = ReplacementDepot(world, corporation, station);
+            if (QuoteReplacement(world, catalog, pilot.PilotId, station, kits, corporation, hangar, depot, funded) is not null)
+            {
+                return route;
+            }
+        }
+        return null;
+    }
+
+    private static IEnumerable<ReplacementKit> ReplacementKits(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilot,
+        CapsuleerCareer career,
+        int? lostHull,
+        ReplacementKit? original,
+        bool atTradeHub
+    ) =>
+        ReadyKits(catalog, lostHull, career, original, atTradeHub)
+            .Where(kit =>
+                CanReplaceKit(world, catalog, pilot, career, kit, kit.Parts())
+                && (
+                    !atTradeHub
+                    || (kit.OnlineSlots.Count > 0 || kit.Supplies.Length > 0) && PilotFittingStore.CanOnlineFit(world, catalog, pilot, kit)
+                )
+            );
+
+    private static ILookup<int, OwnedItem> ReplacementDepot(EconomyTransaction world, SavedCorporation? corporation, int station) =>
+        (
+            corporation is null ? Enumerable.Empty<OwnedItem>() : DepotStacks(world, corporation.Id, station).OrderBy(item => item.Id)
+        ).ToLookup(item => item.TypeId);
+
     private ReplacementResult ShopReplacement(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -231,46 +333,69 @@ internal sealed partial class CapsuleerIndustry
         CapsuleerCareer career,
         long now,
         long orderDeadline,
-        ShipLoss loss,
+        int? lostHull,
         ReplacementKit? original,
         SavedCorporation? corporation,
         ILookup<int, OwnedItem> hangar,
-        bool funded = false
+        bool funded,
+        bool atTradeHub = false
     )
     {
-        var depot = (
-            corporation is null
-                ? Enumerable.Empty<OwnedItem>()
-                : DepotStacks(world, corporation.Id, docked.StationId).OrderBy(item => item.Id)
-        ).ToLookup(item => item.TypeId);
-        foreach (var kit in ReadyKits(catalog, loss, career, original))
+        int station = docked.StationId;
+        long pilot = docked.PilotId;
+        var depot = ReplacementDepot(world, corporation, station);
+        var kits = ReplacementKits(world, catalog, pilot, career, lostHull, original, atTradeHub);
+        if (QuoteReplacement(world, catalog, pilot, station, kits, corporation, hangar, depot, funded) is not { } plan)
         {
-            var parts = kit.Parts();
-            if (!CanReplaceKit(world, catalog, docked.PilotId, career, kit, parts))
+            return new(false, false, Math.Min(now, orderDeadline), []);
+        }
+        foreach (var part in plan.Missing)
+        {
+            TransferReplacementStock(world, catalog, pilot, station, part, depot[part.TypeId]);
+        }
+        if (plan.Purchases.Length > 0)
+        {
+            var bought =
+                funded || corporation is null
+                    ? market.BuyBotRefitSupplies(world, catalog, pilot, station, plan.Purchases)
+                    : market.BuyCorporationStock(world, catalog, pilot, station, corporation, plan.Purchases);
+            if (bought.Trades.Sum(trade => (long)trade.Quantity) != plan.Purchases.Sum(quote => (long)quote.Quantity))
             {
-                continue;
+                throw new InvalidDataException("Replacement offers changed before purchase.");
             }
-            var missing = MissingParts(parts, hangar);
+        }
+        BoardKit(world, catalog, docked, plan.Kit, now, requireOnlineFit: atTradeHub);
+        return new(true, plan.Purchases.Length > 0, null);
+    }
+
+    private ReplacementPurchase? QuoteReplacement(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilot,
+        int station,
+        IEnumerable<ReplacementKit> kits,
+        SavedCorporation? corporation,
+        ILookup<int, OwnedItem> hangar,
+        ILookup<int, OwnedItem> depot,
+        bool funded
+    )
+    {
+        long budget = funded ? long.MaxValue : corporation?.BalanceCents ?? WalletBalance(world, pilot);
+        bool marketAvailable = StationCapabilities.Has(catalog, catalog.RequireStation(station).OperationId, StationService.Market);
+        foreach (var kit in kits)
+        {
+            var missing = MissingParts(kit.Parts(), hangar);
             var toBuy = MissingParts(missing, depot);
-            if (
-                toBuy.Length > 0
-                && (
-                    !StationCapabilities.Has(catalog, docked.OperationId, StationService.Market)
-                    || toBuy.Any(part => !IsMarketSupply(catalog, part.TypeId))
-                )
-            )
+            if (toBuy.Length == 0)
+            {
+                return new(kit, missing, []);
+            }
+            if (!marketAvailable || budget <= 0 || toBuy.Any(part => !IsMarketSupply(catalog, part.TypeId)))
             {
                 continue;
             }
             var asks = market
-                .SupplyOrders(
-                    world,
-                    catalog,
-                    docked.StationId,
-                    toBuy.Select(part => part.TypeId).ToArray(),
-                    docked.PilotId,
-                    corporation?.Id
-                )
+                .SupplyOrders(world, catalog, station, toBuy.Select(part => part.TypeId).ToArray(), pilot, corporation?.Id)
                 .ToLookup(order => order.TypeId);
             List<MarketPurchase> purchases = [];
             foreach (var part in toBuy)
@@ -286,29 +411,14 @@ internal sealed partial class CapsuleerIndustry
             }
             if (
                 purchases.Sum(quote => (long)quote.Quantity) != toBuy.Sum(part => (long)part.Quantity)
-                || !funded && purchases.Sum(quote => (decimal)quote.LimitPriceCents * quote.Quantity) > corporation!.BalanceCents
+                || purchases.Sum(quote => (decimal)quote.LimitPriceCents * quote.Quantity) > budget
             )
             {
                 continue;
             }
-            foreach (var part in missing)
-            {
-                TransferReplacementStock(world, catalog, docked.PilotId, docked.StationId, part, depot[part.TypeId]);
-            }
-            if (purchases.Count > 0)
-            {
-                var bought = funded
-                    ? market.BuyBotRefitSupplies(world, catalog, docked.PilotId, docked.StationId, purchases)
-                    : market.BuyCorporationStock(world, catalog, docked.PilotId, docked.StationId, corporation!, purchases);
-                if (bought.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(quote => (long)quote.Quantity))
-                {
-                    throw new InvalidDataException("Replacement offers changed before purchase.");
-                }
-            }
-            BoardKit(world, catalog, docked, kit, now);
-            return new(true, purchases.Count > 0, null);
+            return new(kit, missing, purchases.ToArray());
         }
-        return new(false, false, Math.Min(now, orderDeadline), []);
+        return null;
     }
 
     private long BoardKit(

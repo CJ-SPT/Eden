@@ -1009,7 +1009,7 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
-        if (Work.Journey?.Kind == TrafficJourneyKind.CapsuleEscape)
+        if (Work.Journey?.Kind is TrafficJourneyKind.CapsuleEscape or TrafficJourneyKind.ReplacementShopping)
         {
             Step(null);
             return;
@@ -1542,7 +1542,7 @@ internal sealed partial class CapsuleerHauler(
                 Work.Gang is { Phase: not RoamingGangPhase.Complete }
                 || Work.RegionalEscort is not null
                 || Work.SovereigntyExpedition is not null
-                || Work.Journey?.Kind == TrafficJourneyKind.PvpShopping
+                || Work.Journey?.Kind is TrafficJourneyKind.PvpShopping or TrafficJourneyKind.ReplacementShopping
                 || Work.CorporationSupply?.FactorySupply is { Mercoxit: true } or { Planetary: not null } or { Refinery: not null }
             )
             {
@@ -1634,6 +1634,7 @@ internal sealed partial class CapsuleerHauler(
                     or TrafficJourneyKind.SovereigntyExpedition
                     or TrafficJourneyKind.CorporationRelocation
                     or TrafficJourneyKind.PvpShopping
+                    or TrafficJourneyKind.ReplacementShopping
                     or TrafficJourneyKind.MilitiaPatrol
                     or TrafficJourneyKind.NullsecExpedition
                     or TrafficJourneyKind.GangRally

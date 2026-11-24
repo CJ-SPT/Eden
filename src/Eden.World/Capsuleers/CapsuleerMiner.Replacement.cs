@@ -1,5 +1,6 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -20,7 +21,8 @@ internal sealed partial class CapsuleerMiner
                 CapsuleerCareer.Mining,
                 now,
                 Work.ReplacementOrderDeadline,
-                Work.ReplacementOrderIds
+                Work.ReplacementOrderIds,
+                hubShopping: Work.ReplacementJourney?.DestinationStationId == Pilot.StationId
             );
             _operation.MarketChanged |= result.MarketChanged;
             _work = Work with { ReplacementOrderDeadline = result.OrderDeadline, ReplacementOrderIds = result.OrderIds };
@@ -28,6 +30,11 @@ internal sealed partial class CapsuleerMiner
             {
                 _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
                 ResetMiningHull();
+                ReturnFromReplacementHub();
+                return;
+            }
+            if (!(result.OrderDeadline > now) && TryTravelToReplacementHub(world))
+            {
                 return;
             }
             if (result.OrderDeadline <= now)
@@ -43,6 +50,67 @@ internal sealed partial class CapsuleerMiner
             DueStamp = Work.Stamp + seconds,
             WaitingReason = waiting,
         };
+    }
+
+    private bool TryTravelToReplacementHub(EconomyTransaction world)
+    {
+        if (industry.FindReplacementHub(world, _operation.Catalog, Pilot, CapsuleerCareer.Mining) is not { } route)
+        {
+            return false;
+        }
+        int home = Work.ReplacementJourney?.HomeStationId ?? Pilot.StationId;
+        _work = Work with { ReplacementOrderDeadline = null, ReplacementOrderIds = null };
+        StartReplacementJourney(
+            new(TrafficJourneyKind.ReplacementShopping, home, route.SourceStationId, route.DestinationStationId, route.Systems, 0)
+        );
+        return true;
+    }
+
+    private void ReturnFromReplacementHub()
+    {
+        if (Work.ReplacementJourney is not { } trip)
+        {
+            return;
+        }
+        _work = Work with { ReplacementJourney = null };
+        if (
+            Pilot.StationId != trip.HomeStationId
+            && CapsuleerTrafficRoutes.ToStation(
+                _operation.Catalog,
+                Pilot.StationId,
+                trip.HomeStationId,
+                (HullClass)Pilot.ShipGroupId,
+                maximumJumps: int.MaxValue,
+                policy: database.Settings.Capsuleers
+            )
+                is { } route
+        )
+        {
+            StartReplacementJourney(
+                trip with
+                {
+                    SourceStationId = route.SourceStationId,
+                    DestinationStationId = route.DestinationStationId,
+                    Systems = route.Systems,
+                }
+            );
+        }
+    }
+
+    private void StartReplacementJourney(TrafficJourney journey)
+    {
+        _work = Work with
+        {
+            ReplacementJourney = journey,
+            WaitingReason = null,
+            WorkingBelt = 0,
+            LeaveAfterCycle = false,
+            Mercoxit = null,
+            FactoryStage = null,
+        };
+        UndockMiner();
+        RefreshObjects();
+        BeginStationLeg(journey.Systems, journey.DestinationStationId);
     }
 
     private void ResetMiningHull()

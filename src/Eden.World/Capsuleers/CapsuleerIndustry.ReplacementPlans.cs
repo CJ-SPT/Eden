@@ -103,9 +103,10 @@ internal sealed partial class CapsuleerIndustry
 
     private static IEnumerable<ReplacementKit> ReadyKits(
         CatalogDbContext catalog,
-        ShipLoss loss,
+        int? lostHull,
         CapsuleerCareer career,
-        ReplacementKit? original
+        ReplacementKit? original,
+        bool atTradeHub = false
     )
     {
         if (original is not null)
@@ -134,9 +135,26 @@ internal sealed partial class CapsuleerIndustry
             yield return new((int)CapsuleerMiningHull.Venture, [new(high, (int)MiningLaserType.MinerI)], new HashSet<int> { high }, [], []);
             yield break;
         }
-        var group = (HullClass?)catalog.FittingType(loss.TypeId)?.GroupId;
-        if (group is HullClass.Hauler or HullClass.DeepSpaceTransport or HullClass.BlockadeRunner or HullClass.Freighter)
+        var group = lostHull is int type ? (HullClass?)catalog.FittingType(type)?.GroupId : null;
+        if (
+            group is HullClass.Hauler or HullClass.DeepSpaceTransport or HullClass.BlockadeRunner or HullClass.Freighter
+            || lostHull is null
+        )
         {
+            if (atTradeHub)
+            {
+                if (group == HullClass.Hauler && lostHull is int workHull && workHull != HaulingRules.BadgerType)
+                {
+                    foreach (var fit in HaulerHubFits(catalog, workHull))
+                    {
+                        yield return fit;
+                    }
+                }
+                foreach (var fit in HaulerHubFits(catalog, HaulingRules.BadgerType))
+                {
+                    yield return fit;
+                }
+            }
             yield return new(HaulingRules.BadgerType, [], new HashSet<int>(), [], []);
             yield break;
         }
@@ -167,6 +185,18 @@ internal sealed partial class CapsuleerIndustry
                 .ToArray();
             yield return new(starter.HullTypeId, slots, slots.Select(slot => slot.FlagId).ToHashSet(), [], magazines);
         }
+    }
+
+    private static IEnumerable<ReplacementKit> HaulerHubFits(CatalogDbContext catalog, int hull)
+    {
+        if (CareerKit(catalog, hull) is { Slots.Length: > 0 } hauler)
+        {
+            yield return hauler;
+        }
+        const int low = (int)InventoryFlag.LowSlot0;
+        // Expanded Cargohold I in the build 3662168 type catalog.
+        const int cargoExpander = 1317;
+        yield return new(hull, [new(low, cargoExpander)], new HashSet<int> { low }, [], []);
     }
 
     private static bool WithinBaseFittingResources(CatalogDbContext catalog, int hull, FittingSlot[] slots)

@@ -169,7 +169,11 @@ internal sealed partial class CapsuleerMiner
         GateCloakPersistence.Cancel(world, Pilot.ShipId);
         _operation.TravelChanged = true;
         RefreshObjects();
-        if (Work.Mercoxit is { } expedition)
+        if (Work.ReplacementJourney is { } replacement)
+        {
+            BeginStationLeg(replacement.Systems, replacement.DestinationStationId);
+        }
+        else if (Work.Mercoxit is { } expedition)
         {
             ContinueExpedition(expedition);
         }

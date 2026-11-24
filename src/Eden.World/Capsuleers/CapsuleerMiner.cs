@@ -1170,6 +1170,7 @@ internal sealed partial class CapsuleerMiner(
                     Mercoxit = null,
                     MoonExtractionId = null,
                     RefineryIceType = null,
+                    ReplacementJourney = Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? Work.ReplacementJourney : null,
                 };
                 FinishCorporationRelocation();
             }
@@ -1369,6 +1370,11 @@ internal sealed partial class CapsuleerMiner(
         if (_objects.Count == 0)
         {
             RefreshObjects();
+        }
+        if (Work.ReplacementJourney is { } replacement)
+        {
+            BeginStationLeg(replacement.Systems, replacement.DestinationStationId);
+            return;
         }
         if (Work.Mercoxit is null && _operation.World is EconomyTransaction world && ContinueCorporationRelocation(world))
         {

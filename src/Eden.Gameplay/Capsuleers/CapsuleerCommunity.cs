@@ -60,6 +60,7 @@ public sealed record MinerProgress(
     public bool EscapingBubble { get; init; }
     public long? ReplacementOrderDeadline { get; init; }
     public long[]? ReplacementOrderIds { get; init; }
+    public TrafficJourney? ReplacementJourney { get; init; }
     public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
     public bool DeepCoreProvisioned { get; init; }

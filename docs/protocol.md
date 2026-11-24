@@ -161,6 +161,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Unattended nullsec PvP and map population](protocol/capsuleers.md#unattended-nullsec-pvp-and-map-population--november-23-2026)
 - [Funded refits for existing pilots](protocol/capsuleers.md#funded-refits-for-existing-pilots)
 - [Funded replacement with personal market orders](protocol/capsuleers.md#funded-replacement-with-personal-market-orders)
+- [Trade hub replacement trips](protocol/capsuleers.md#trade-hub-replacement-trips)
 - [Mercoxit traffic concentration at Y-CWQY](protocol/capsuleers.md#mercoxit-traffic-concentration-at-y-cwqy)
 - [Unattended capsuleer simulation](protocol/capsuleers.md#unattended-capsuleer-simulation--november-23-2026)
 - [Ship state after gate transfers](protocol/capsuleers.md#ship-state-after-gate-transfers)

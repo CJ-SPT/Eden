@@ -26,7 +26,9 @@ internal sealed partial class CapsuleerHauler
                 CapsuleerCareer.Hauling,
                 now,
                 Work.ReplacementOrderDeadline,
-                Work.ReplacementOrderIds
+                Work.ReplacementOrderIds,
+                hubShopping: Work.Journey is { Kind: TrafficJourneyKind.ReplacementShopping } trip
+                    && trip.DestinationStationId == Pilot.StationId
             );
             _operation.MarketChanged |= result.MarketChanged;
             _work = Work with { ReplacementOrderDeadline = result.OrderDeadline, ReplacementOrderIds = result.OrderIds };
@@ -36,6 +38,10 @@ internal sealed partial class CapsuleerHauler
                 ResetTradeHull();
                 return;
             }
+            if (!(result.OrderDeadline > now) && TryTravelToReplacementHub(world))
+            {
+                return;
+            }
             if (result.OrderDeadline <= now)
             {
                 Wait("Waiting for an affordable replacement in stock.", CapsuleerReplacementRules.StockRetrySeconds);
@@ -43,6 +49,39 @@ internal sealed partial class CapsuleerHauler
             }
         }
         Wait("Waiting for a replacement ship.");
+    }
+
+    private bool TryTravelToReplacementHub(EconomyTransaction world)
+    {
+        var avoided = (Work.Routine?.Threats ?? [])
+            .Where(threat => threat.ExpiresAt > Work.ActiveTicks)
+            .Select(threat => threat.SystemId)
+            .ToHashSet();
+        if (ammunitionSupply.FindReplacementHub(world, _operation.Catalog, Pilot, CapsuleerCareer.Hauling, avoided) is not { } route)
+        {
+            return false;
+        }
+        _route = route;
+        _work = Work with
+        {
+            Journey = new(
+                TrafficJourneyKind.ReplacementShopping,
+                Pilot.StationId,
+                route.SourceStationId,
+                route.DestinationStationId,
+                route.Systems,
+                Work.DwellSequence
+            ),
+            RouteIndex = 0,
+            RouteDirection = 1,
+            Resupply = null,
+            TrafficLane = null,
+            ReplacementOrderDeadline = null,
+            ReplacementOrderIds = null,
+        };
+        LaunchActivity();
+        BeginTravel();
+        return true;
     }
 
     private bool TryResumeWorkAfterPvpLoss(EconomyTransaction world, long now)

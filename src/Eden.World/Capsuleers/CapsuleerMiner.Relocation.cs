@@ -21,7 +21,7 @@ internal sealed partial class CapsuleerMiner
         _work = Work with { WorkingBelt = 0, LeaveAfterCycle = false };
         UndockMiner();
         RefreshObjects();
-        BeginRelocationLeg(route.Systems, route.DestinationStationId);
+        BeginStationLeg(route.Systems, route.DestinationStationId);
         return true;
     }
 
@@ -31,16 +31,16 @@ internal sealed partial class CapsuleerMiner
         {
             return false;
         }
-        BeginRelocationLeg(move.Systems, move.DestinationId);
+        BeginStationLeg(move.Systems, move.DestinationId);
         return true;
     }
 
-    private void BeginRelocationLeg(int[] systems, int destination)
+    private void BeginStationLeg(int[] systems, int destination)
     {
         int index = Array.IndexOf(systems, Pilot.SystemId);
         if (index < 0)
         {
-            throw new InvalidDataException("The miner is outside its relocation route.");
+            throw new InvalidDataException("The miner is outside its station route.");
         }
         if (index + 1 < systems.Length)
         {

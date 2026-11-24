@@ -24,6 +24,16 @@ internal sealed partial class CapsuleerInspection
             : "Awaiting work";
         return (miner, hauler, organization) switch
         {
+            ({ ReplacementJourney: { } trip }, _, _) => new(
+                activity,
+                trip.DestinationStationId == trip.HomeStationId ? "Return with replacement ship" : "Buy replacement fit at trade hub",
+                trip.DestinationStationId
+            ),
+            (_, { Journey: { Kind: TrafficJourneyKind.ReplacementShopping } trip, Retreating: false }, _) => new(
+                activity,
+                "Buy replacement fit at trade hub",
+                trip.DestinationStationId
+            ),
             (_, { EscapingBubble: true } or { Retreating: true }, _) or ({ EscapingBubble: true }, _, _) => new(activity, "Escape danger"),
             (_, { SovereigntyExpedition: { } expedition }, _) => SovereigntyWork(activity, expedition),
             (_, { RegionalEscort.Operation: { } escort }, _) => new(activity, Words(escort.Objective), SystemId: escort.TargetSystemId),

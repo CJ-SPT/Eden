@@ -231,7 +231,7 @@ internal sealed partial class CapsuleerIndustry
                 continue;
             }
             var hangar = Hangar(world, pilot.Id, station).ToLookup(item => item.TypeId);
-            var needed = ReadyKits(catalog, loss, agent.Career, LostKit(catalog, loss))
+            var needed = ReadyKits(catalog, loss.TypeId, agent.Career, LostKit(catalog, loss))
                 .Select(kit => (Kit: kit, Parts: kit.Parts()))
                 .Where(fit => CanReplaceKit(world, catalog, pilot.Id, agent.Career, fit.Kit, fit.Parts))
                 .Select(fit => MissingParts(fit.Parts, hangar))
