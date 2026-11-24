@@ -48,6 +48,35 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
             var live = host.GetRequiredService<LiveWorld>();
+            long personalOrderId;
+            using (var setup = live.Economy.Begin())
+            {
+                long buyer = setup.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                var station = catalog.RequireStation(Depot);
+                long issued = fixture.Clock.Now;
+                personalOrderId = setup.Next("WorldPersonalOrder", PersonalMarketRules.FirstOrderId);
+                setup.Add(
+                    new SavedPersonalOrder
+                    {
+                        Id = personalOrderId,
+                        PilotId = buyer,
+                        StationId = Depot,
+                        SystemId = Home,
+                        RegionId = station.RegionId,
+                        TypeId = Tritanium,
+                        PriceCents = 1,
+                        Entered = 1,
+                        Remaining = 1,
+                        Issued = issued,
+                        Modified = issued,
+                        Expires = issued + TimeSpan.TicksPerDay,
+                        DurationDays = 1,
+                        Bid = true,
+                        EscrowCents = 1,
+                    }
+                );
+                setup.Commit();
+            }
             using (var world = live.Economy.Begin())
             {
                 world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
@@ -84,6 +113,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 replaced = world.Pilots.Find(minerId)!.ActiveShipId;
                 Assert.Equal(venture, world.Ships.Find(replaced)!.TypeId);
                 Assert.Equal(0, world.Set<PilotWallet>().Find(minerId)!.Cents);
+                Assert.Equal(PersonalOrderStatus.Open, world.Set<SavedPersonalOrder>().Find(personalOrderId)!.Status);
                 var trades = world.Filter<MarketExecution>(row => row.PilotId == minerId).ToArray();
                 Assert.Equal(2, trades.Length);
                 Assert.All(trades, trade => Assert.Equal(0, trade.WalletAmountCents));

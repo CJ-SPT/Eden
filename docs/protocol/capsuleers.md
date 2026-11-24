@@ -289,6 +289,20 @@ skills and configuration selection passed 101 tests in 46 seconds. The solution 
 
 **Optional maintainer checks.** Observe refits and PvP departures after deployment.
 
+### Funded replacement with personal market orders
+
+After the November 23 HostCram checkpoint repair, miner `90000019` was still retrying in a capsule
+after losing its Venture. The pilot had a personal market order and no qualifying employer. The resident
+corporation-bid query evaluated the missing employer while selecting indexed orders. Funded replacement
+now skips that query when there is no employer and continues to shop from eligible station stock.
+
+**Automated validation.** `FundedReplacementBuysAndBoardsFromStationStockWithAnEmptyWallet` reproduced the
+exception on `d220dab1` in 8.82 seconds with an unrelated personal bid. The repaired case buys and boards
+the replacement, keeps the bid open and reopens with the new active hull. The focused replacement and
+PvP fit selection passed eight cases in 19.64 seconds. The solution built without warnings.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ### Earlier activity-funded behavior
 
 New worlds use the Established Universe profile with the Standard market and **Buy PvP ships with activity

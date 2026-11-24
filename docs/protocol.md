@@ -155,6 +155,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Autonomous capsuleers
 
 - [Funded refits for existing pilots](protocol/capsuleers.md#funded-refits-for-existing-pilots)
+- [Funded replacement with personal market orders](protocol/capsuleers.md#funded-replacement-with-personal-market-orders)
 - [Mercoxit traffic concentration at Y-CWQY](protocol/capsuleers.md#mercoxit-traffic-concentration-at-y-cwqy)
 - [Unattended capsuleer simulation](protocol/capsuleers.md#unattended-capsuleer-simulation--november-23-2026)
 - [Ship state after gate transfers](protocol/capsuleers.md#ship-state-after-gate-transfers)

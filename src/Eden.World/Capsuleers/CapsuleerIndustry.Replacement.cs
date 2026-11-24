@@ -96,28 +96,29 @@ internal sealed partial class CapsuleerIndustry
             orderDeadline.HasValue ? parts
             : loss.TypeId == (int)TechOneHullType.Merlin ? Rules.MerlinParts
             : [];
-        var bids = world
-            .Filter<SavedPersonalOrder>(order => order.PilotId == pilotId)
-            .Where(order =>
-                corporation != null
-                && order.CorporationId == corporation.Id
-                && order.StationId == station
-                && order.Bid
-                && order.Status == PersonalOrderStatus.Open
-            )
-            .AsEnumerable()
-            .Where(order =>
-                orderIds?.Contains(order.Id)
-                ?? (
-                    order.DurationDays == Rules.OrderDays
-                    && order.Issued >= loss.Time
-                    && order.Issued <= (orderDeadline ?? now)
-                    && legacyParts.Any(part => part.TypeId == order.TypeId && order.Entered <= part.Quantity)
-                    && order.PriceCents == Rules.LimitPrice(ReferencePrice(catalog, order.TypeId))
+        var bids = corporation is null
+            ? []
+            : world
+                .Filter<SavedPersonalOrder>(order => order.PilotId == pilotId)
+                .Where(order =>
+                    order.CorporationId == corporation.Id
+                    && order.StationId == station
+                    && order.Bid
+                    && order.Status == PersonalOrderStatus.Open
                 )
-            )
-            .OrderBy(order => order.Id)
-            .ToArray();
+                .AsEnumerable()
+                .Where(order =>
+                    orderIds?.Contains(order.Id)
+                    ?? (
+                        order.DurationDays == Rules.OrderDays
+                        && order.Issued >= loss.Time
+                        && order.Issued <= (orderDeadline ?? now)
+                        && legacyParts.Any(part => part.TypeId == order.TypeId && order.Entered <= part.Quantity)
+                        && order.PriceCents == Rules.LimitPrice(ReferencePrice(catalog, order.TypeId))
+                    )
+                )
+                .OrderBy(order => order.Id)
+                .ToArray();
         orderDeadline ??= checked(bids.Select(bid => bid.Issued).DefaultIfEmpty(now).Min() + Rules.BidWindow.Ticks);
         bool usable = kit is not null && CanReplaceKit(world, catalog, pilotId, career, kit, parts);
         var hangar = Hangar(world, pilotId, station).ToLookup(item => item.TypeId);
