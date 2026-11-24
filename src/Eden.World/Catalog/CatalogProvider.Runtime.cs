@@ -32,7 +32,10 @@ public sealed partial class CatalogProvider
             }
             RequireCurrent();
             using CatalogDbContext catalog = new(Identity.Path);
-            var sources = CatalogRuntimeSources.Load(catalog);
+            // The core type source is pinned for this generation. Its typed table
+            // can serve every runtime lookup without retaining the encoded rows too.
+            _ = Pin(CatalogData.Client.Types);
+            var sources = CatalogRuntimeSources.Load(catalog, CatalogData.Client.Types.Name);
             var attributes = catalog
                 .Set<TypeAttribute>()
                 .Select(attribute => new

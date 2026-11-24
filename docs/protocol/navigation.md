@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Peer movement history](#peer-movement-history)
 - [Peer warp and target locks](#peer-warp-and-target-locks)
 - [Focused interdiction at NPC stargates](#focused-interdiction-at-npc-stargates)
 - [Personal map visit history](#personal-map-visit-history)
@@ -51,6 +52,27 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Peer movement history
+
+The shared flight coordinator discards a hull's movement orders when the hull leaves. The latest sequence is now
+derived from the retained orders, replacing a separate entry that survived for every departed hull.
+An order now carries its preceding sequence for the same hull. The observer reads one immutable batch of orders
+and can distinguish trimmed history from sequence numbers used by other ships. The movement history window remains
+32 ticks. When a previously observed hull reappears between frames with a stale cursor, the observer restores the
+current position and course and can still receive eligible new visual effects from the retained batch.
+
+This changes Eden's internal observer bookkeeping on baseline `3059cadf` and preserves the pinned build 3662168
+Destiny command shapes.
+
+**Automated validation.** The exact `MotionHistoryReleasesDepartedCursorsAndDetectsTrimmedOrdersForTheSameShip` and
+`SameHullReturningBetweenFramesReconcilesItsPoseAndOnlyReplaysFreshVisuals` checks passed all three cases in 17.98 seconds.
+The affected flight selection passed 67 cases in 57.66 seconds, including gate transitions, collision observers,
+movement command stamps, Micro Jump Field effects and repeated translocations.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
 
 ## Focused interdiction at NPC stargates
 

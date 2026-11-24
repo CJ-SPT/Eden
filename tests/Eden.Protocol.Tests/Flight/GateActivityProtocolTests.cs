@@ -13,6 +13,77 @@ namespace Eden.Protocol.Tests.Flight;
 public sealed class GateActivityProtocolTests
 {
     [Fact]
+    public void MotionHistoryReleasesDepartedCursorsAndDetectsTrimmedOrdersForTheSameShip()
+    {
+        const long ship = 91000999;
+        const long other = ship + 1;
+        SharedSpace space = new();
+        space.RecordOrder(ship, new(1, new DestinyCommand.Stop(ship)));
+        long first = space.ReadOrders(ship).Sequence;
+        space.RecordOrder(other, new(1, new DestinyCommand.Stop(other)));
+        space.RecordOrder(ship, new(2, new DestinyCommand.Stop(ship)));
+        var beforeTrim = space.ReadOrders(ship);
+        Assert.False(beforeTrim.MissingOrders(first));
+        Assert.False(beforeTrim.MissingOrders(0));
+
+        space.RecordOrder(other, new(2, new DestinyCommand.Stop(other)));
+        long otherSequence = space.ReadOrders(other).Sequence;
+        space.RecordOrder(ship, new(3 + SharedSpace.MovementHistoryTicks, new DestinyCommand.Stop(ship)));
+        var trimmed = space.ReadOrders(ship);
+        Assert.Single(trimmed.Orders);
+        Assert.True(trimmed.MissingOrders(first));
+        Assert.False(trimmed.MissingOrders(beforeTrim.Sequence));
+
+        space.Leave(ship);
+        var departed = space.ReadOrders(ship);
+        Assert.Empty(departed.Orders);
+        Assert.Equal(0, departed.Sequence);
+        Assert.Equal(otherSequence, space.ReadOrders(other).Sequence);
+
+        space.RecordOrder(ship, new(4 + SharedSpace.MovementHistoryTicks, new DestinyCommand.Stop(ship)));
+        var returned = space.ReadOrders(ship);
+        Assert.True(returned.Sequence > trimmed.Sequence);
+        Assert.False(returned.MissingOrders(trimmed.Sequence));
+        Assert.True(returned.Restarted(trimmed.Sequence));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SameHullReturningBetweenFramesReconcilesItsPoseAndOnlyReplaysFreshVisuals(bool visual)
+    {
+        using Fixture fixture = new();
+        var viewer = fixture.Viewer(1000001);
+        var peer = fixture.Actor(arriving: false) with { DepartureGate = null, DepartureAt = null };
+        var origin = peer.Pilot.Position!;
+        long ship = peer.Pilot.ShipId;
+        int oldStamp = fixture.Space.Stamp(fixture.Clock);
+        fixture.Space.Publish(peer with { Stamp = oldStamp });
+        fixture.Space.RecordOrder(ship, new(oldStamp, new DestinyCommand.MicroJumpVisual(ship, origin)));
+        viewer.Refresh();
+        viewer.Updates.Clear();
+
+        fixture.Space.Leave(ship);
+        fixture.Clock.Seconds = 1;
+        int newStamp = fixture.Space.Stamp(fixture.Clock);
+        var position = origin + new SpacePosition(1000, 0, 0);
+        var effect = new DestinyCommand.MicroJumpVisual(ship, position);
+        fixture.Space.Publish(peer with { Pilot = peer.Pilot with { Position = position }, Stamp = newStamp });
+        if (visual)
+        {
+            fixture.Space.RecordOrder(ship, new(newStamp, effect));
+        }
+
+        viewer.Refresh();
+        Assert.Contains(new DestinyCommand.SetBallPosition(ship, position.X, position.Y, position.Z), viewer.Updates);
+        Assert.DoesNotContain(viewer.Updates, command => command is DestinyCommand.AddBalls or DestinyCommand.RemoveBall);
+        Assert.Equal(visual ? [effect] : [], viewer.Updates.OfType<DestinyCommand.MicroJumpVisual>());
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Empty(viewer.Updates);
+    }
+
+    [Fact]
     public void PeerAlignmentStaysOnGridUntilTheServerPublishesWarpEntry()
     {
         const double astronomicalUnit = 149_597_870_700;

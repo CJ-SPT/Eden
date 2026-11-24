@@ -14,7 +14,7 @@ internal sealed record MapStatisticsPayload(
 );
 
 internal sealed record MapStatisticsCheckpoint(
-    ImmutableSortedDictionary<long, ImmutableList<MapActivityEvent>> Events,
+    IReadOnlyList<MapActivityBatch> Events,
     ImmutableQueue<MapPilotSample> Samples,
     long Cutoff,
     ImmutableDictionary<long, MapVisitHistory> Visits
@@ -43,18 +43,29 @@ internal sealed record MapStatisticsCheckpoint(
         // The detached image contains the prior base. Replace its history in the checkpoint transaction.
         world.Database.ExecuteSqlRaw("DELETE FROM WorldMapActivity");
         int id = 0;
-        foreach (var events in Events.Values.SelectMany(events => events).Where(activity => activity.Time > Cutoff).Chunk(EventsPerBatch))
+        int offset = 0;
+        byte[]? batch = null;
+        foreach (var activity in Events.SelectMany(events => events.Read()))
         {
-            byte[] batch = new byte[events.Length * EventBytes];
-            for (int index = 0; index < events.Length; index++)
+            if (activity.Time <= Cutoff)
             {
-                var activity = events[index];
-                var record = batch.AsSpan(index * EventBytes, EventBytes);
-                BinaryPrimitives.WriteInt64LittleEndian(record, activity.Time);
-                BinaryPrimitives.WriteInt32LittleEndian(record[sizeof(long)..], activity.SystemId);
-                BinaryPrimitives.WriteInt32LittleEndian(record[(sizeof(long) + sizeof(int))..], (int)activity.Kind);
+                continue;
             }
-            world.Database.ExecuteSql($"INSERT INTO WorldMapActivity(Id,Payload) VALUES({++id},{batch})");
+            batch ??= new byte[EventsPerBatch * EventBytes];
+            var record = batch.AsSpan(offset, EventBytes);
+            BinaryPrimitives.WriteInt64LittleEndian(record, activity.Time);
+            BinaryPrimitives.WriteInt32LittleEndian(record[sizeof(long)..], activity.SystemId);
+            BinaryPrimitives.WriteInt32LittleEndian(record[(sizeof(long) + sizeof(int))..], (int)activity.Kind);
+            offset += EventBytes;
+            if (offset == batch.Length)
+            {
+                world.Database.ExecuteSql($"INSERT INTO WorldMapActivity(Id,Payload) VALUES({++id},{batch})");
+                offset = 0;
+            }
+        }
+        if (offset != 0)
+        {
+            world.Database.ExecuteSql($"INSERT INTO WorldMapActivity(Id,Payload) VALUES({++id},{batch![..offset]})");
         }
         if (Samples.IsEmpty && Visits.IsEmpty)
         {

@@ -6,11 +6,28 @@ namespace Eden.World.Maps;
 
 internal readonly record struct MapActivityEvent(long Time, int SystemId, MapActivityKind Kind);
 
+internal readonly struct MapActivityBatch(ImmutableList<MapActivityEvent[]> completed, ReadOnlyMemory<MapActivityEvent> tail)
+{
+    internal IEnumerable<MapActivityEvent> Read()
+    {
+        foreach (var block in completed)
+        {
+            foreach (var activity in block)
+            {
+                yield return activity;
+            }
+        }
+        for (int index = 0; index < tail.Length; index++)
+        {
+            yield return tail.Span[index];
+        }
+    }
+}
+
 internal sealed record MapPilotSample(long Time, IReadOnlyDictionary<int, MapPilotCounts> Systems);
 
 internal sealed record MapVisitHistory(int LastSystem, ImmutableSortedDictionary<int, MapSystemVisit> Systems);
 
-// Index roots are immutable so checkpoint serialization can run outside the world owner.
 internal sealed class MapStatistics
 {
     // Pinned idCheckers.IsKnownSpaceSystem, excluding the base ID that has no system.
@@ -23,11 +40,33 @@ internal sealed class MapStatistics
 
     private sealed record HistoryCache(long Revision, long From, long Until, MapHistorySnapshot Snapshot);
 
+    private sealed class ActivityMinute
+    {
+        private const int InitialBlockSize = 16;
+        private const int MaximumBlockSize = 256;
+
+        private ImmutableList<MapActivityEvent[]> _completed = [];
+        private MapActivityEvent[] _tail = new MapActivityEvent[InitialBlockSize];
+        private int _count;
+
+        internal void Add(MapActivityEvent activity)
+        {
+            if (_count == _tail.Length)
+            {
+                var next = new MapActivityEvent[Math.Min(_tail.Length * 2, MaximumBlockSize)];
+                _completed = _completed.Add(_tail);
+                _tail = next;
+                _count = 0;
+            }
+            _tail[_count++] = activity;
+        }
+
+        // An existing snapshot sees only the prefix written before its capture.
+        internal MapActivityBatch Capture() => new(_completed, _tail.AsMemory(0, _count));
+    }
+
     private readonly object _gate = new();
-    private ImmutableSortedDictionary<long, ImmutableList<MapActivityEvent>> _events = ImmutableSortedDictionary<
-        long,
-        ImmutableList<MapActivityEvent>
-    >.Empty;
+    private readonly SortedDictionary<long, ActivityMinute> _events = [];
     private ImmutableQueue<MapPilotSample> _samples = ImmutableQueue<MapPilotSample>.Empty;
     private ImmutableDictionary<long, MapVisitHistory> _visits = ImmutableDictionary<long, MapVisitHistory>.Empty;
     private long _lastSampleMinute = long.MinValue;
@@ -101,7 +140,12 @@ internal sealed class MapStatistics
         lock (_gate)
         {
             long minute = Minute(activity.Time);
-            _events = _events.SetItem(minute, (_events.GetValueOrDefault(minute) ?? []).Add(activity));
+            if (!_events.TryGetValue(minute, out var events))
+            {
+                events = new();
+                _events.Add(minute, events);
+            }
+            events.Add(activity);
             if (activity.Kind == MapActivityKind.Jump)
             {
                 _jumpsRevision++;
@@ -117,9 +161,10 @@ internal sealed class MapStatistics
     {
         hours = Math.Min(hours, MaximumHistoryHours);
         long window = hours * TimeSpan.TicksPerHour;
+        long cutoff = now - window;
         var key = (statistic, hours);
         HistoryCache? previous;
-        ImmutableSortedDictionary<long, ImmutableList<MapActivityEvent>> snapshotEvents;
+        MapActivityBatch[] snapshotEvents;
         long revision;
         lock (_gate)
         {
@@ -129,19 +174,14 @@ internal sealed class MapStatistics
             {
                 return previous.Snapshot;
             }
-            snapshotEvents = _events;
+            long firstMinute = Minute(cutoff);
+            snapshotEvents = _events.Where(entry => entry.Key >= firstMinute).Select(entry => entry.Value.Capture()).ToArray();
         }
         Dictionary<int, MapActivityCounts> totals = [];
         long until = long.MaxValue;
-        long cutoff = now - window;
-        long firstMinute = Minute(cutoff);
-        foreach (var (minute, events) in snapshotEvents)
+        foreach (var batch in snapshotEvents)
         {
-            if (minute < firstMinute)
-            {
-                continue;
-            }
-            foreach (var activity in events)
+            foreach (var activity in batch.Read())
             {
                 if (activity.Time <= cutoff || Statistic(activity.Kind) != statistic)
                 {
@@ -230,9 +270,13 @@ internal sealed class MapStatistics
         lock (_gate)
         {
             long cutoff = now - HistoryRetention;
-            _events = _events.RemoveRange(_events.Keys.TakeWhile(minute => minute < Minute(cutoff)));
+            long firstMinute = Minute(cutoff);
+            foreach (long expired in _events.Keys.TakeWhile(minute => minute < firstMinute).ToArray())
+            {
+                _events.Remove(expired);
+            }
             TrimSamples(now);
-            return new(_events, _samples, cutoff, _visits);
+            return new(_events.Values.Select(static minute => minute.Capture()).ToArray(), _samples, cutoff, _visits);
         }
     }
 

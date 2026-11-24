@@ -994,17 +994,17 @@ internal sealed partial class ResidentEconomy
                 state => new(state.Id),
                 indexes:
                 [
-                    new("Id", row => row.Id),
-                    new("AnchorKind", row => row.AnchorKind),
-                    new("BeltId", row => row.BeltId),
-                    new("CorporationId", row => row.CorporationId),
-                    new("EncounterId", row => row.EncounterId),
-                    new("FactionId", row => row.FactionId),
-                    new("SpawnSlot", row => row.SpawnSlot),
-                    new("SystemId", row => row.SystemId),
-                    new("TypeId", row => row.TypeId),
+                    new("AnchorKind", row => row.AnchorKind, member: EconomyIndexMember.RowId),
+                    new("BeltId", row => row.BeltId, member: EconomyIndexMember.RowId),
+                    new("CorporationId", row => row.CorporationId, member: EconomyIndexMember.RowId),
+                    new("EncounterId", row => row.EncounterId, member: EconomyIndexMember.RowId),
+                    new("FactionId", row => row.FactionId, member: EconomyIndexMember.RowId),
+                    new("SpawnSlot", row => row.SpawnSlot, member: EconomyIndexMember.RowId),
+                    new("SystemId", row => row.SystemId, member: EconomyIndexMember.RowId),
+                    new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
                 ],
-                primaryColumn: "Id"
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(
@@ -1641,22 +1641,22 @@ internal sealed partial class ResidentEconomy
                 changed: MissileChanged,
                 indexes:
                 [
-                    new("Id", row => row.Id),
-                    new("ChargeTypeId", row => row.ChargeTypeId),
-                    new("CorporationId", row => row.CorporationId),
-                    new("GroupId", row => row.GroupId),
-                    new("LauncherTypeId", row => row.LauncherTypeId),
-                    new("ModuleId", row => row.ModuleId),
-                    new("PilotId", row => row.PilotId),
-                    new("SourceKind", row => row.SourceKind),
-                    new("SourceShipId", row => row.SourceShipId),
-                    new("SourceTypeId", row => row.SourceTypeId),
-                    new("Status", row => row.Status),
-                    new("SystemId", row => row.SystemId),
-                    new("TargetId", row => row.TargetId),
-                    new("TargetKind", row => row.TargetKind),
+                    new("ChargeTypeId", row => row.ChargeTypeId, member: EconomyIndexMember.RowId),
+                    new("CorporationId", row => row.CorporationId, member: EconomyIndexMember.RowId),
+                    new("GroupId", row => row.GroupId, member: EconomyIndexMember.RowId),
+                    new("LauncherTypeId", row => row.LauncherTypeId, member: EconomyIndexMember.RowId),
+                    new("ModuleId", row => row.ModuleId, member: EconomyIndexMember.RowId),
+                    new("PilotId", row => row.PilotId, member: EconomyIndexMember.RowId),
+                    new("SourceKind", row => row.SourceKind, member: EconomyIndexMember.RowId),
+                    new("SourceShipId", row => row.SourceShipId, member: EconomyIndexMember.RowId),
+                    new("SourceTypeId", row => row.SourceTypeId, member: EconomyIndexMember.RowId),
+                    new("Status", row => row.Status, member: EconomyIndexMember.RowId),
+                    new("SystemId", row => row.SystemId, member: EconomyIndexMember.RowId),
+                    new("TargetId", row => row.TargetId, member: EconomyIndexMember.RowId),
+                    new("TargetKind", row => row.TargetKind, member: EconomyIndexMember.RowId),
                 ],
-                primaryColumn: "Id"
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(

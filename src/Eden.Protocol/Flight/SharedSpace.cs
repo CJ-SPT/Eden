@@ -159,7 +159,17 @@ internal sealed record ShipContact(
         Warp is null && AlignTo is { } destination ? this with { AlignTo = null, Heading = (destination - Pilot.Position!).Unit } : this;
 }
 
-internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
+internal sealed record MotionOrder(long Sequence, long PreviousSequence, StampedDestinyUpdate Update);
+
+internal readonly record struct MotionOrderBatch(IReadOnlyList<MotionOrder> Orders)
+{
+    internal long Sequence => Orders.Count == 0 ? 0 : Orders[^1].Sequence;
+
+    internal bool MissingOrders(long after) => Orders.Count > 0 && after < Orders[0].PreviousSequence;
+
+    internal bool Restarted(long after) =>
+        after > 0 && (Orders.Count == 0 || Orders[0] is { PreviousSequence: 0 } first && after < first.Sequence);
+}
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class SharedSpace(
@@ -250,16 +260,10 @@ internal sealed class SharedSpace(
 
     internal bool PreservesGateCloak(long pilot, long ship, long module) => gateCloaks?.PreservesCloak(pilot, ship, module) == true;
 
-    private readonly ConcurrentDictionary<long, IReadOnlyList<MotionOrder>> _orders = new();
-    private readonly ConcurrentDictionary<long, long> _orderSequences = new();
+    private readonly ConcurrentDictionary<long, MotionOrder[]> _orders = new();
+    private long _lastOrderSequence;
 
-    public long OrderSequence(long shipId) => _orderSequences.GetValueOrDefault(shipId);
-
-    public IReadOnlyList<MotionOrder> Orders(long shipId, long after) =>
-        _orders.GetValueOrDefault(shipId)?.Where(o => o.Sequence > after).ToArray() ?? [];
-
-    public bool MissingOrders(long shipId, long after) =>
-        _orders.TryGetValue(shipId, out var orders) && orders.Count > 0 && after < orders[0].Sequence - 1;
+    internal MotionOrderBatch ReadOrders(long shipId) => new(_orders.GetValueOrDefault(shipId) ?? []);
 
     public void RecordOrder(long shipId, StampedDestinyUpdate update)
     {
@@ -290,10 +294,12 @@ internal sealed class SharedSpace(
         }
         using (EnterMotion())
         {
-            long sequence = _orderSequences.GetValueOrDefault(shipId) + 1;
-            _orderSequences[shipId] = sequence;
-            _orders[shipId] = (_orders.GetValueOrDefault(shipId) ?? [])
-                .Append(new MotionOrder(sequence, update))
+            var batch = ReadOrders(shipId);
+            // A cursor from before the same hull left must be older than any new order.
+            // The previous order for this ship tells observers whether pruning lost a command.
+            long sequence = Interlocked.Increment(ref _lastOrderSequence);
+            _orders[shipId] = batch
+                .Orders.Append(new MotionOrder(sequence, batch.Sequence, update))
                 .Where(order => order.Update.Stamp >= update.Stamp - MovementHistoryTicks)
                 .ToArray();
         }

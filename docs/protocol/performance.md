@@ -6,6 +6,59 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Compact resident rows and map history
+
+Resident NPCs, missiles and market executions now use integer primary keys and compact secondary-index memberships.
+Detached checkpoint captures store changed rows inline in a sized array. Three matched table probes on the compacted
+incident save retained 46.5 MiB less managed memory across 102,069 NPCs, 670 missiles and 36,579 market executions.
+Capturing the same 138,648 changed rows allocated 4.23 MiB, down from 8.91 MiB.
+
+Map history now appends exact timestamps, systems and activity kinds to arrays. Captures retain fixed-length prefixes so
+the live world can keep appending while the checkpoint serializes. Projection reuses one 64 KiB buffer and preserves the
+existing checkpoint format. On the last good incident save, the focused probe held all 521,053 events and reported
+17.0 MiB of retained managed memory, down from 34.3 MiB. Loading that map history allocated 31.8 MiB, down from
+557.6 MiB. A separate 1,100,000-event probe retained 17.2 MiB, down from 58.8 MiB, with identical event counts after saving.
+
+Prepared catalog records share 64 KiB payload pages. Planetary records use a lower compression threshold, and runtime
+type lookups share the pinned typed table without retaining another copy of its encoded records. Across three catalog
+probes, median retained managed memory after preparation fell from 559.2 to 528.2 MiB. The same 14,128 catalog reads
+produced identical digests and issued zero gameplay SQL commands or connections. Median Windows working set in the
+isolated catalog probe rose from 1,098 to 1,158 MiB. Catalog preparation times varied from 8.4 to 14.0 seconds on the
+baseline and 8.6 to 20.6 seconds on the candidate while other builds were active.
+
+Ship movement replay keeps cursors with the live movement history and discards departed hulls from the shared journal.
+Observers reconcile trimmed history and hull reappearances. [Peer movement history](navigation.md#peer-movement-history)
+
+### Automated validation
+
+The exact map activity snapshot and legacy checkpoint restore cases passed in 10.67 seconds. The catalog provider,
+fitting reads and planetary selection passed 36 of 37 tests in 49 seconds. The fitting scope SQL-count failure reproduced
+on unchanged `3059cadf` with `CatalogFittingReadTests.HostOperationSharesFittingInputsAndOneConnectionAcrossAwaitAndNestedScopes`.
+
+The combined affected selection passed all 139 cases in 127.53 seconds. The solution build, 17 Python policy tests and
+73.54-second clean-worktree formatting check passed.
+
+```text
+FullyQualifiedName~MapNavigationTests|FullyQualifiedName~CatalogProviderTests|FullyQualifiedName~IncrementalCheckpointTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~MarketHistoryTests|FullyQualifiedName~GateActivityProtocolTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~PilotMissileTests
+```
+
+The Release `ServerPerformanceReplayTests.ReplaySustainedBotThroughput` comparison used the same incident save,
+1,001 communities, one automated observer, a 3.85 GiB managed heap cap and six disk-backed checkpoints per run. Each
+75-second run maintained 5,770 scheduled bots and recorded zero simulation failures, gameplay SQL commands or connections.
+Peak process working set fell from 4.41 to 4.22 GiB. Median managed allocation during checkpoint projection fell from
+49.54 to 35.65 MiB per save. The workload completed 57,373 actions on the baseline and 81,035 on the candidate.
+Post-collection heap samples in the final half had a higher median on the candidate (2.48 vs. 2.29 GiB). Collection timing
+varied. Each build ran once on Windows with concurrent build activity. The control and
+candidate test commands took 175.10 and 218.93 seconds, including setup and final checkpoint.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Resident retention and checkpoint stall on HostCram
 
 On November 24, 2026, HostCram ran `23a4bca1` with a 7 GiB container limit and a 55% managed heap limit.

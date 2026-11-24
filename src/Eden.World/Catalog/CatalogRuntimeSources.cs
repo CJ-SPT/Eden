@@ -82,23 +82,25 @@ internal sealed class CatalogRuntimeSources
 
     private CatalogRuntimeSources(FrozenDictionary<string, FrozenDictionary<string, Payload>> datasets) => _datasets = datasets;
 
-    internal static CatalogRuntimeSources Load(CatalogDbContext catalog)
+    internal static CatalogRuntimeSources Load(CatalogDbContext catalog, string pinnedSource)
     {
-        var datasets = Names.ToDictionary(
-            name => name,
-            _ => new Dictionary<string, Payload>(StringComparer.Ordinal),
-            StringComparer.Ordinal
-        );
-        string names = JsonSerializer.Serialize(Names);
+        var datasets = Names
+            .Where(name => name != pinnedSource)
+            .ToDictionary(name => name, _ => new Dictionary<string, Payload>(StringComparer.Ordinal), StringComparer.Ordinal);
+        string names = JsonSerializer.Serialize(datasets.Keys);
         var records = catalog.Database.SqlQuery<SourcePayload>(
             $"""
             SELECT Dataset, Key, CAST(Data AS BLOB) AS Data FROM SourceRecord
             WHERE Dataset IN (SELECT value FROM json_each({names}))
             """
         );
+        PayloadPages pages = new();
         foreach (var record in records)
         {
-            datasets[record.Dataset].Add(record.Key, Payload.Store(record.Data));
+            // Planet definitions are numerous and contain similar fields even
+            // below the general threshold. Gameplay reads one system's planets.
+            bool planet = record.Dataset == CatalogData.Sde.MapPlanets.Name;
+            datasets[record.Dataset].Add(record.Key, Payload.Store(record.Data, pages, planet));
         }
         return new(datasets.ToFrozenDictionary(pair => pair.Key, pair => pair.Value.ToFrozenDictionary(StringComparer.Ordinal)));
     }
@@ -110,16 +112,43 @@ internal sealed class CatalogRuntimeSources
 
     private sealed record SourcePayload(string Dataset, string Key, byte[] Data);
 
-    internal readonly record struct Payload(byte[] Data, int UncompressedLength = 0)
+    // Most rows are small. Pack their bytes into pages so the source index does
+    // not retain a separate managed array for each record.
+    internal sealed class PayloadPages
+    {
+        private const int PageSize = 64 * 1024;
+        private byte[] _page = [];
+        private int _used;
+
+        internal ReadOnlyMemory<byte> Store(ReadOnlySpan<byte> data)
+        {
+            if (data.Length > PageSize)
+            {
+                return data.ToArray();
+            }
+            if (data.Length > _page.Length - _used)
+            {
+                _page = new byte[PageSize];
+                _used = 0;
+            }
+            var stored = _page.AsMemory(_used, data.Length);
+            data.CopyTo(stored.Span);
+            _used += data.Length;
+            return stored;
+        }
+    }
+
+    internal readonly record struct Payload(ReadOnlyMemory<byte> Data, int UncompressedLength = 0)
     {
         private const int CompressionThreshold = 2048;
+        private const int PlanetCompressionThreshold = 512;
         internal int Length => UncompressedLength == 0 ? Data.Length : UncompressedLength;
 
-        internal static Payload Store(byte[] data)
+        internal static Payload Store(byte[] data, PayloadPages pages, bool planet)
         {
-            if (data.Length < CompressionThreshold)
+            if (data.Length < (planet ? PlanetCompressionThreshold : CompressionThreshold))
             {
-                return new(data);
+                return new(pages.Store(data));
             }
             byte[] compressed = ArrayPool<byte>.Shared.Rent(data.Length);
             try
@@ -127,8 +156,8 @@ internal sealed class CatalogRuntimeSources
                 return
                     BrotliEncoder.TryCompress(data, compressed.AsSpan(0, data.Length), out int written, quality: 1, window: 20)
                     && written < data.Length * 3 / 4
-                    ? new(compressed.AsSpan(0, written).ToArray(), data.Length)
-                    : new(data);
+                    ? new(pages.Store(compressed.AsSpan(0, written)), data.Length)
+                    : new(pages.Store(data));
             }
             finally
             {
@@ -140,12 +169,12 @@ internal sealed class CatalogRuntimeSources
         {
             if (UncompressedLength == 0)
             {
-                return Parse(Data);
+                return Parse(Data.Span);
             }
             byte[] decoded = ArrayPool<byte>.Shared.Rent(UncompressedLength);
             try
             {
-                if (!BrotliDecoder.TryDecompress(Data, decoded, out int written) || written != UncompressedLength)
+                if (!BrotliDecoder.TryDecompress(Data.Span, decoded, out int written) || written != UncompressedLength)
                 {
                     throw new InvalidDataException($"Invalid prepared {dataset} record {key}.");
                 }

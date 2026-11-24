@@ -290,6 +290,61 @@ public sealed class CatalogProviderTests
     }
 
     [Fact]
+    public void PreparedSourcePagesPreservePackedRowsAndPinnedTypes()
+    {
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        const int firstKey = 78000;
+        const long planet = 420000000;
+        var beltIds = Enumerable.Range(420001000, 100).Select(id => (long)id).ToArray();
+        var expected = Enumerable
+            .Range(firstKey, 160)
+            .ToDictionary(
+                key => (long)key,
+                key => key.ToString(CultureInfo.InvariantCulture) + new string(key == firstKey ? 'é' : '雪', key == firstKey ? 500 : 120)
+            );
+        using (CatalogDbContext writable = new(path, writable: true))
+        {
+            writable.Add(
+                new SourceRecord
+                {
+                    Dataset = CatalogData.Sde.MapPlanets.Name,
+                    Key = CatalogKey.Encode(planet),
+                    Data = JsonSerializer.Serialize(new { asteroidBeltIDs = beltIds }),
+                }
+            );
+            foreach (var (key, value) in expected)
+            {
+                writable.Add(
+                    new SourceRecord
+                    {
+                        Dataset = CatalogData.Client.LocalizationFsdEnUs.Name,
+                        Key = CatalogKey.Encode(key),
+                        Data = JsonSerializer.Serialize(new { text = value }),
+                    }
+                );
+            }
+            writable.SaveChanges();
+        }
+        var provider = CatalogProvider.Open(path, new() { MaximumEstimatedBytes = 4096 });
+        provider.PrepareRuntime();
+
+        using var sql = GameplaySqlGuard.Begin();
+        using var metrics = SessionPerformance.Begin("prepared source pages", _ => { }, force: true)!;
+        var actual = provider.FindMany(CatalogData.Client.LocalizationFsdEnUs, expected.Keys.Append(long.MaxValue));
+        Assert.Equal(expected.Count, actual.Count);
+        foreach (var (key, value) in expected)
+        {
+            Assert.Equal(value, actual[key].Text);
+        }
+        Assert.Equal(expected[firstKey], provider.Get(CatalogData.Client.LocalizationFsdEnUs, firstKey).Text);
+        Assert.Equal(beltIds, provider.Get(CatalogData.Sde.MapPlanets, planet).AsteroidBeltIDs!.Value);
+        Assert.Equal(15000, provider.Get(CatalogData.Client.Types, 601L).Volume);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
     public void GameplayRejectsDirectCatalogQueriesBeforeOpeningSqlite()
     {
         using TestWorld world = new();

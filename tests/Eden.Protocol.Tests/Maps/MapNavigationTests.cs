@@ -220,6 +220,31 @@ public sealed class MapNavigationTests
     }
 
     [Fact]
+    public void MapActivityCaptureKeepsItsExactPrefixAcrossRotationAndExpiry()
+    {
+        const int count = 300;
+        long now = CalendarTestData.Clock().Now;
+        MapStatistics statistics = new();
+        var activity = Enumerable
+            .Range(0, count * 3)
+            .Select(index => new MapActivityEvent(
+                now + index,
+                30000142 + index % 3,
+                index % 2 == 0 ? MapActivityKind.Jump : MapActivityKind.NpcShipLoss
+            ))
+            .ToArray();
+        statistics.RestoreEvents(activity.Take(count), now);
+        var first = statistics.Capture(now);
+        statistics.RestoreEvents(activity.Skip(count), now);
+        var second = statistics.Capture(now);
+        var empty = statistics.Capture(now + 2 * TimeSpan.TicksPerDay);
+
+        Assert.Equal(activity.Take(count), first.Events.SelectMany(batch => batch.Read()));
+        Assert.Equal(activity, second.Events.SelectMany(batch => batch.Read()));
+        Assert.Empty(empty.Events);
+    }
+
+    [Fact]
     public async Task CheckpointBatchesMapActivityAndRestoresLegacyHistoryWithoutDuplicates()
     {
         const int system = 30000142;

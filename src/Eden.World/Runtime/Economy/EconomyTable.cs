@@ -13,7 +13,7 @@ namespace Eden.World.Runtime.Economy;
 
 internal readonly record struct EconomyKey(long Id, long Part = 0, string? Name = null);
 
-internal sealed record EconomyChange<T>(EconomyKey Key, T? Value)
+internal readonly record struct EconomyChange<T>(EconomyKey Key, T? Value)
     where T : class;
 
 internal interface IEconomyProjection
@@ -338,12 +338,20 @@ internal sealed partial class EconomyTable<TRow, TState>(
         ReadRows(world, rowIds);
     }
 
-    public IEconomyProjection Capture() =>
-        new EconomyProjection<TState>(
-            name,
-            _sqlBaselines.Keys.Select(id => new EconomyChange<TState>(id, Snapshot(id))).ToArray(),
-            project
-        );
+    public IEconomyProjection Capture()
+    {
+        if (_sqlBaselines.Count == 0)
+        {
+            return new EconomyProjection<TState>(name, [], project);
+        }
+        var rows = new EconomyChange<TState>[_sqlBaselines.Count];
+        int index = 0;
+        foreach (var id in _sqlBaselines.Keys)
+        {
+            rows[index++] = new(id, Snapshot(id));
+        }
+        return new EconomyProjection<TState>(name, rows, project);
+    }
 
     internal bool HasPendingProjection(EconomyChange<TState> row) => _sqlBaselines.ContainsKey(row.Key) && Same(row.Key, row.Value);
 

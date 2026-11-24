@@ -701,7 +701,7 @@ internal sealed class FlightScene(
         _peerOrderSequences.Clear();
         foreach (var peer in peers)
         {
-            _peerOrderSequences[peer.Pilot.ShipId] = space.OrderSequence(peer.Pilot.ShipId);
+            _peerOrderSequences[peer.Pilot.ShipId] = space.ReadOrders(peer.Pilot.ShipId).Sequence;
         }
         int stamp = space.Stamp(clock);
         var visible = VisibleObjects(context);
@@ -794,7 +794,7 @@ internal sealed class FlightScene(
                         new DestinyCommand.SpecialEffect(ship.Pilot.ShipId, null, null, null, null, "effects.Uncloak", false, true, false)
                     );
                 }
-                _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
+                _peerOrderSequences[ship.Pilot.ShipId] = space.ReadOrders(ship.Pilot.ShipId).Sequence;
                 effects.Replay(ship, null);
                 ObserveGateArrival(ship);
                 ObserveGateDeparture(ship);
@@ -831,9 +831,11 @@ internal sealed class FlightScene(
                 NotifyHealth(currentHealth);
             }
             long after = _peerOrderSequences.GetValueOrDefault(ship.Pilot.ShipId);
-            bool missing = space.MissingOrders(ship.Pilot.ShipId, after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
+            var orders = space.ReadOrders(ship.Pilot.ShipId);
+            long latest = orders.Sequence;
+            bool missing = orders.MissingOrders(after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
             bool changedWarp = ship.Warp != previous.Warp;
-            bool refreshCourse = missing || changedWarp || ship.AlignTo != previous.AlignTo;
+            bool refreshCourse = missing || orders.Restarted(after) || changedWarp || ship.AlignTo != previous.AlignTo;
             if (refreshCourse && ship.Warp is not null)
             {
                 // Native AddBalls resynchronizes the existing ball with the authoritative warp stamp.
@@ -844,10 +846,14 @@ internal sealed class FlightScene(
                 CorrectPosition(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity, ship.Stamp);
                 ApplyCourse(context, ship.ForObserver());
             }
-            if (!missing)
+            if (!missing && after < latest)
             {
-                foreach (var order in space.Orders(ship.Pilot.ShipId, after))
+                foreach (var order in orders.Orders)
                 {
+                    if (order.Sequence <= after)
+                    {
+                        continue;
+                    }
                     bool replay = order.Update.Command switch
                     {
                         DestinyCommand.WarpTo => false,
@@ -862,7 +868,7 @@ internal sealed class FlightScene(
                     }
                 }
             }
-            _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
+            _peerOrderSequences[ship.Pilot.ShipId] = latest;
             if (changedWarp)
             {
                 effects.WarpEffect(ship.Pilot.ShipId, ship.Warp is not null);

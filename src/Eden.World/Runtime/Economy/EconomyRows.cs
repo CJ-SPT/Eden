@@ -1542,12 +1542,13 @@ internal sealed partial class ResidentEconomy
                 readOnly: false,
                 indexes:
                 [
-                    new("PilotId", row => row.PilotId),
-                    new("OrderId", row => row.OrderId),
-                    new("StationId", row => row.StationId),
-                    new("TypeId", row => row.TypeId),
+                    new("PilotId", row => row.PilotId, member: EconomyIndexMember.RowId),
+                    new("OrderId", row => row.OrderId, member: EconomyIndexMember.RowId),
+                    new("StationId", row => row.StationId, member: EconomyIndexMember.RowId),
+                    new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
                 ],
-                primaryColumn: "Id"
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(
