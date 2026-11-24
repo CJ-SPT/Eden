@@ -181,7 +181,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     int runs = (int)Math.Ceiling(parts[product.TypeID] / (double)product.Quantity);
                     foreach (var material in recipe.Materials)
                     {
-                        materials[material.TypeID] = materials.GetValueOrDefault(material.TypeID) + material.Quantity * runs * cycles;
+                        materials[material.TypeID] = materials.GetValueOrDefault(material.TypeID) + material.Quantity * runs * (cycles + 1);
                     }
                 }
                 setup.Pilots.Find(Customer)!.ActiveShip.StationId = FactoryStation;
@@ -225,6 +225,8 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             using (var loss = live.Economy.Begin())
             {
                 Assert.Empty(loss.Filter<OwnedItem>(item => item.OwnerId == buyer));
+                var launch = ships.FindPilot(loss, -1, patrol)!;
+                Assert.Equal(cycle == 0, CapsuleerIndustry.CanLaunchOffensiveFleet(loss, catalog, launch, fixture.Clock.Now));
                 Assert.Equal(buyerBalance, loss.Set<SavedCorporation>().Find(buyer)!.BalanceCents);
                 var fighter = loss.Pilots.Find(patrol)!;
                 Assert.Equal(merlin, fighter.ActiveShip.TypeId);
@@ -313,7 +315,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 var jobs = work.Filter<IndustryJob>(job => job.OutputCorporationId == supplier)
                     .Where(job => job.Status == IndustryJobStatus.Installed)
                     .ToArray();
-                if (attempt == 0)
+                if (cycle == 0 && attempt == 0)
                 {
                     Assert.Equal(2, jobs.Length);
                     Assert.Contains(jobs, job => job.PilotId == producer && job.ProductTypeId == merlin);
@@ -329,6 +331,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             live.Economy.Inspect(world =>
             {
                 var bids = orderIds.Select(id => world.Set<SavedPersonalOrder>().Find(id)!).ToArray();
+                Assert.Equal(
+                    Replacement.MerlinParts.Select(part => (part.TypeId, Quantity: part.Quantity * (cycle + 1))).Order(),
+                    bids.Select(bid => (bid.TypeId, Quantity: bid.Entered)).Order()
+                );
                 var jobs = world
                     .Filter<IndustryJob>(job => job.OutputCorporationId == supplier)
                     .AsEnumerable()
@@ -351,7 +357,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     .Where(item => item.LocationId == Depot && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag)
                     .ToArray();
                 Assert.Equal(
-                    Replacement.MerlinParts.Select(part => (part.TypeId, part.Quantity)).Order(),
+                    Replacement.MerlinParts.Select(part => (part.TypeId, Quantity: part.Quantity * (cycle + 1))).Order(),
                     kit.Select(item => (item.TypeId, item.Quantity)).Order()
                 );
                 var fighter = ships.FindPilot(recover, -1, patrol)!;
@@ -375,7 +381,20 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     2,
                     recover.Filter<OwnedItem>(item => item.LocationId == newHull).Count(item => item.Online && item.TypeId == railgun)
                 );
-                Assert.Empty(recover.Filter<OwnedItem>(item => item.OwnerId == buyer));
+                foreach (var part in Replacement.MerlinParts)
+                {
+                    Assert.Equal(cycle * part.Quantity, Stock(recover, buyer, Depot, part.TypeId));
+                }
+                var staged = ships.FindPilot(recover, -1, patrol)!;
+                Assert.Equal(cycle > 0, CapsuleerIndustry.CanLaunchOffensiveFleet(recover, catalog, staged, fixture.Clock.Now));
+                Assert.True(
+                    CapsuleerIndustry.CanLaunchOffensiveFleet(
+                        recover,
+                        catalog,
+                        staged,
+                        fixture.Clock.Now + CapsuleerRegionalStockRules.FleetLossMemory.Ticks
+                    )
+                );
                 long paidBuyer = recover.Set<SavedCorporation>().Find(buyer)!.BalanceCents;
                 long paidSeller = recover.Set<SavedCorporation>().Find(supplier)!.BalanceCents;
                 Assert.True(paidBuyer > buyerBalance);
@@ -393,6 +412,8 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             .Economy.Inspect(world =>
             {
                 Assert.Equal(cycles, world.Filter<ShipLoss>(loss => loss.PilotId == patrol).Count());
+                Assert.Equal(cycles, CapsuleerCorporations.Organization(world, patrol).FleetLosses?.Length);
+                Assert.All(Replacement.MerlinParts, part => Assert.Equal(part.Quantity, Stock(world, buyer, Depot, part.TypeId)));
                 Assert.Equal(cycles, world.Filter<NpcBounty>(bounty => bounty.PilotId == patrol).Count());
                 Assert.Equal(
                     allOrders.Order(),
@@ -406,11 +427,13 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                             (world.Set<SavedPersonalOrder>().Find(id)!.Status, world.Set<SavedPersonalOrder>().Find(id)!.EscrowCents)
                         )
                 );
-                Assert.Equal(
-                    cycles * 3,
-                    world
-                        .Filter<IndustryJob>(job => job.OutputCorporationId == supplier)
-                        .Count(job => job.Status == IndustryJobStatus.Delivered && job.CostCents > 0)
+                var productionJobs = world
+                    .Filter<IndustryJob>(job => job.OutputCorporationId == supplier)
+                    .Where(job => job.Status == IndustryJobStatus.Delivered && job.CostCents > 0)
+                    .ToLookup(job => job.ProductTypeId);
+                Assert.All(
+                    Replacement.MerlinParts,
+                    part => Assert.True(productionJobs[part.TypeId].Sum(job => job.OutputQuantity) >= part.Quantity * (cycles + 1))
                 );
                 var income = world.Filter<SavedWalletLedger>(entry => entry.OwnerId == buyer).ToArray();
                 Assert.Equal(cycles, income.Count(entry => entry.EntryType == CorporationWalletRules.BountyTaxEntry));

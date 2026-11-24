@@ -1,8 +1,11 @@
+using System.Text.Json;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -12,6 +15,7 @@ using Eden.Gameplay.Skills;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -666,20 +670,23 @@ public sealed class RegionalConflictWorldTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery(bool missingCargo)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery(bool missingCargo, bool corporateRestock)
     {
         using var fixture = new RoamingGangTests.Fixture(regional: true);
         long pilotId;
         long cargoId;
         long shipId;
+        int restockCorporation = 0;
         using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
         using (var action = fixture.Live.Economy.Begin())
         {
             var agent = action
                 .Set<SavedCapsuleerAgent>()
-                .Where(agent => agent.CommunitySystemId == Home)
+                .Where(agent => agent.CommunitySystemId == (corporateRestock ? Away : Home))
                 .OrderBy(agent => agent.PilotId)
                 .AsEnumerable()
                 .First(agent => action.Set<SavedCapsuleerSuspension>().Find(agent.PilotId) is not null);
@@ -689,6 +696,38 @@ public sealed class RegionalConflictWorldTests
             pilot.ActiveShip.TypeId = HaulingRules.BadgerType;
             pilot.ActiveShip.StationId = HomeStation;
             action.Remove(action.Set<SavedCapsuleerSuspension>().Find(pilotId)!);
+            if (corporateRestock)
+            {
+                var guards = action
+                    .Set<SavedCapsuleerAgent>()
+                    .AsEnumerable()
+                    .Where(member => action.Set<SavedCapsuleerSuspension>().Find(member.PilotId) is null && member.PilotId != pilotId)
+                    .Select(member => action.Pilots.Find(member.PilotId)!)
+                    .OrderBy(member => member.Id)
+                    .ToArray();
+                var details = PlayerCorporationTests.Details("Away Supply", "AWSP") with { ApplicationsEnabled = false };
+                restockCorporation = CorporationRules.FirstCorporationId;
+                action.Add(
+                    new SavedCorporation
+                    {
+                        Id = restockCorporation,
+                        Name = details.Name,
+                        Ticker = details.Ticker,
+                        DetailsJson = JsonSerializer.Serialize(details),
+                        CeoId = guards[0].Id,
+                        CreatorId = guards[0].Id,
+                        MemberLimit = guards.Length + 1,
+                        StationId = AwayStation,
+                        SystemId = Away,
+                        CreatedAt = fixture.Clock.Now,
+                    }
+                );
+                foreach (var guard in guards)
+                {
+                    guard.CorporationId = restockCorporation;
+                }
+                pilot.CorporationId = restockCorporation;
+            }
             var gate = SystemObjects.Geometry(catalog, Home).Single(body => body.Id == 50009991);
             SqliteWorld.SetPosition(action, catalog, shipId, gate.Position + new SpacePosition(200_000, 0, 0), Home, fixture.Clock.Now);
             cargoId = InventoryPersistence.NextId(action);
@@ -706,7 +745,10 @@ public sealed class RegionalConflictWorldTests
             var work = new HaulerProgress(HaulerActivity.Waiting, 0, 0, shipId, 60003760, 50009991, new NavigationState().Capture())
             {
                 Journey = new(TrafficJourneyKind.Regional, HomeStation, HomeStation, 60003760, [Home, Away], 1),
-                Freight = new(1, 60003760, [new(cargoId, 215, 10)]),
+                Freight = new(1, AwayStation, [new(cargoId, 215, 10)]),
+                CorporationSupply = corporateRestock
+                    ? new(restockCorporation, 0) { RegionalStock = new(AwayStation, HomeStation, []) }
+                    : null,
             };
             var row = action.Set<SavedCapsuleerHauler>().Single(row => row.PilotId == pilotId);
             row.SourceStationId = HomeStation;
@@ -761,6 +803,18 @@ public sealed class RegionalConflictWorldTests
         );
         Assert.True(reachedUnobserved);
         Assert.Null(fixture.Live.Economy.Read(world => world.Set<OwnedItem>().Find(cargoId)));
+        if (corporateRestock)
+        {
+            Assert.Equal(
+                missingCargo ? 0 : 10,
+                fixture.Live.Economy.Read(world =>
+                    world
+                        .Filter<OwnedItem>(item => item.OwnerId == restockCorporation)
+                        .Where(item => item.LocationId == AwayStation && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag)
+                        .Sum(item => item.Quantity)
+                )
+            );
+        }
         Assert.Null(fixture.Live.HaulerCheckpoints[pilotId].Work.RegionalEscort);
         Assert.Equal(0, fixture.Scheduler.Read().Failures);
     }

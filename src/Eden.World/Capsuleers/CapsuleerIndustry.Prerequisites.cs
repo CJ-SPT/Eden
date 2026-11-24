@@ -54,7 +54,7 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var depot = DepotStacks(world, corporation.Id, factory.StationId).ToLookup(item => item.TypeId);
-        var targets = FleetStockTargets(world, catalog, factory.StationId, headquarters: true, members);
+        var targets = FleetStockTargets(world, catalog, corporation.Id, factory.StationId, headquarters: true, members, now);
         foreach (var target in targets.Where(target => !stocked.Contains(target.TypeId)))
         {
             var quantity = (int)Math.Max(0, target.Quantity - depot[target.TypeId].Sum(item => (long)item.Quantity));

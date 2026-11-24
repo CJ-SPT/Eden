@@ -1,6 +1,8 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
@@ -169,11 +171,19 @@ internal static class RegionalConflictStore
         {
             region = RegionalConflictRules.Compete(region, source.ConstellationId, rival);
         }
-        var escorts = world
+        var localCouriers = world
             .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == source.Id && agent.Career == CapsuleerCareer.Hauling)
             .Select(agent => agent.PilotId)
-            .Take(RegionalConflictRules.MaximumReports)
+            .Take(RegionalConflictRules.MaximumReports);
+        var corporateCouriers = leader is { CorpId: >= CorporationRules.FirstCorporationId }
+            ? world
+                .Filter<Pilot>(pilot => pilot.CorporationId == leader.CorpId)
+                .Select(pilot => pilot.Id)
+                .Take(RegionalConflictRules.MaximumReports)
+            : Enumerable.Empty<long>();
+        var escorts = localCouriers
             .AsEnumerable()
+            .Union(corporateCouriers)
             .Select(pilot => live.HaulerCheckpoints.GetValueOrDefault(pilot))
             .OfType<HaulerCheckpoint>()
             .Where(checkpoint =>
@@ -190,8 +200,12 @@ internal static class RegionalConflictStore
                 && trip.Systems.All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
             )
             .Where(checkpoint =>
-                GroupForPilot(live, catalog.Definitions, checkpoint.PilotId) == source.ConstellationId
-                && (leader is null || CapsuleerCorporations.CanFlyTogether(live, leader, checkpoint.PilotId))
+                (
+                    GroupForPilot(live, catalog.Definitions, checkpoint.PilotId) == source.ConstellationId
+                    || checkpoint.Work.CorporationSupply is { RegionalStock: not null } restock
+                        && restock.CorporationId == leader?.CorpId
+                        && world.Pilots.Find(checkpoint.PilotId)?.CorporationId == restock.CorporationId
+                ) && (leader is null || CapsuleerCorporations.CanFlyTogether(live, leader, checkpoint.PilotId))
             )
             .OrderBy(checkpoint => checkpoint.PilotId)
             .Take(RegionalConflictRules.MaximumReports)

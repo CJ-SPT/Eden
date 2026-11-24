@@ -140,6 +140,7 @@ internal static partial class ShipLossPersistence
         var reportItems = PilotInteractionHistoryStore.LostShipItems(shipId, items, storedManifests, survivors);
         if (playerAttacker is { } final)
         {
+            CapsuleerIndustry.RecordFleetLoss(world, catalog, pilot, shipId, now);
             MilitiaPlayerKills.Settle(world, catalog, pilot, old, final, system, new(position.X, position.Y, position.Z), reportItems, now);
         }
         PilotInteractionHistoryStore.Destroyed(

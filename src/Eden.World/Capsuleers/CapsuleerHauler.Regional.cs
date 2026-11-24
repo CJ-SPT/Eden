@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
 using Eden.World.Runtime.Economy;
@@ -203,6 +204,17 @@ internal sealed partial class CapsuleerHauler
             );
         }
     }
+
+    private bool EscortedFreightIntact(FreightManifest freight) =>
+        Work.RegionalEscort is null
+        || freight.Stacks.Length > 0
+            && freight.Stacks.All(stack =>
+                _operation.World.Set<OwnedItem>().Find(stack.ItemId) is { } item
+                && item.OwnerId == pilotId
+                && item.LocationId == Pilot.ShipId
+                && item.TypeId == stack.TypeId
+                && item.Quantity >= stack.Quantity
+            );
 
     private void DeliverRegionalShipment(bool intact)
     {

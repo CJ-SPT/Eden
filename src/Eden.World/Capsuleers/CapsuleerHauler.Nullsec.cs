@@ -157,7 +157,10 @@ internal sealed partial class CapsuleerHauler
         }
 
         ratting = ratting && !TrafficRules.LightHull(hull) && (replacement is not null || supplies.Requirements.All(need => need.Drone));
-        roaming = roaming && CapsuleerIndustry.HasPvpShip(world, pilotId, replacement?.Id ?? Pilot.ShipId);
+        roaming =
+            roaming
+            && CapsuleerIndustry.HasPvpShip(world, pilotId, replacement?.Id ?? Pilot.ShipId)
+            && CapsuleerIndustry.CanLaunchOffensiveFleet(world, catalog, Pilot, Now, replacement);
         if (!(ratting || roaming))
         {
             return false;

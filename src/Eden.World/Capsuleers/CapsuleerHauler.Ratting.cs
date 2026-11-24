@@ -183,6 +183,7 @@ internal sealed partial class CapsuleerHauler
         {
             return CanStartLocalPvp
                 && HasPvpShip
+                && CanLaunchOffensiveFleet
                 && (
                     CapsuleerIndustry.RequiresEarnedPvp(_operation.World) && TryLaunchCamp(sequence, profile)
                     || policy.RoamPercent > 0 && TryLaunchPatrol(sequence, intentional: !_background)
@@ -193,6 +194,7 @@ internal sealed partial class CapsuleerHauler
             && CanStartLocalPvp
             && HasPvpShip
             && (_operation.World is not Eden.World.Runtime.Economy.EconomyTransaction work || !DynamicWorkPilot(work))
+            && CanLaunchOffensiveFleet
             && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))
         )
         {

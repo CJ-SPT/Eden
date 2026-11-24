@@ -226,7 +226,7 @@ internal sealed partial class CapsuleerIndustry
         var procurement = orders
             .Where(order => order.Bid && order.CorporationId == corporation && order.EscrowCents >= order.PriceCents)
             .ToLookup(order => order.TypeId, order => Math.Min(order.Remaining, order.EscrowCents / order.PriceCents));
-        return FleetStockTargets(world, catalog, station, headquarters: true, members)
+        return FleetStockTargets(world, catalog, corporation, station, headquarters: true, members, now)
             .Any(part =>
                 products.Contains(part.TypeId)
                 && ManufacturingCatalog.Allowed(catalog, part.TypeId, security)

@@ -341,7 +341,10 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         var regional = PlanRegional(ref route);
-        if (regional is null && (route.Systems.Length == 1 || RegionalLaunchBlocked()))
+        if (
+            regional is null && (route.Systems.Length == 1 || RegionalLaunchBlocked())
+            || regional?.Objective is not (RegionalObjective.Defend or RegionalObjective.Escort) && !CanLaunchOffensiveFleet
+        )
         {
             return false;
         }

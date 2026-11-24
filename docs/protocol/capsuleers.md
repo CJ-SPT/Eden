@@ -2,6 +2,41 @@
 
 [Protocol index](../protocol.md)
 
+## Fleet attrition, replacement stock, and escorts
+
+A player-caused combat hull loss records corporate attrition in the same resident ship-loss action. A bot-led
+corporation's headquarters stocks complete recent loss kits, up to two per hull within the last 24 hours.
+The local depot and personal hangar must contain a spare kit for a headquarters pilot to lead an elective
+operation in a recently lost hull type. The pilot can keep working while existing corporate production,
+buy orders and freight replenish the depot. Defense, escorts, and ordinary paid recovery still operate.
+The Standard market and funded refits continue to support personal purchases.
+
+A corporation can assign an ordinary convoy escort to a loaded restock courier at a reachable nullsec supplier
+where the gang stages. The ships follow the courier's real route. Only intact delivered cargo satisfies the depot's
+requirements. Loss records, paid stock and assignments persist through existing checkpoints.
+
+EVE.js 261108.1 provides a market ownership reference in `server/src/services/market/marketProxyService.js`.
+Eden owns fleet reserve policy and uses the pinned build 3662168 fittings and charges in individual kits.
+[EVE University ship replacement](https://wiki.eveuniversity.org/Ship_Replacement_Program)
+
+**Automated validation**
+
+All 12 focused cases passed in 24.87 seconds after a 12.05-second build. The filter selected
+`RegionalTradePaysForTwoLossesWithBountyTaxAndProductionMargin`, `BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts`,
+`FundedReplacementBuysAndBoardsFromStationStockWithAnEmptyWallet`, `LostMerlinBuysPaidReplacementsAndReturnsToDutyAcrossRestarts`,
+`EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery`, `GangFormsInUnattendedNullsec`,
+and `RemoteWingmatesRallyThroughRealGateBeforeDeparting`. A second paid Merlin loss doubled the procurement target,
+and the arriving shipment left a full spare kit after replacement. The escort replays compared intact and missing
+cargo for ordinary and restock freight. The solution build and formatting check passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Compare ship losses, replacement orders and staged fleet composition at two adjacent corporate depots.
+
 ## Roaming gang rallies, scout commitment, and logistics
 
 A station can recruit compatible combat pilots already docked at staging or up to two reciprocal nullsec jumps away.

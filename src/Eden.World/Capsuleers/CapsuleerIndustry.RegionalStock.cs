@@ -87,7 +87,7 @@ internal sealed partial class CapsuleerIndustry
     )
     {
         bool headquarters = delivery.Id == buyer.StationId;
-        var targets = FleetStockTargets(world, catalog, delivery.Id, headquarters, members);
+        var targets = FleetStockTargets(world, catalog, buyer.Id, delivery.Id, headquarters, members, now);
         if (targets.Length == 0)
         {
             return null;
@@ -185,13 +185,16 @@ internal sealed partial class CapsuleerIndustry
     private static ReplacementPart[] FleetStockTargets(
         EconomyTransaction world,
         CatalogDbContext catalog,
+        int corporation,
         int station,
         bool headquarters,
-        Pilot[] members
+        Pilot[] members,
+        long now
     )
     {
         Dictionary<int, int> reserve = [];
         Dictionary<int, long> recovery = [];
+        Dictionary<int, long> attrition = [];
         foreach (var pilot in members)
         {
             if (
@@ -242,15 +245,50 @@ internal sealed partial class CapsuleerIndustry
                 recovery[part.TypeId] = recovery.GetValueOrDefault(part.TypeId) + part.Quantity;
             }
         }
+        if (headquarters)
+        {
+            var losses = RecentFleetLosses(world, corporation, members, now)
+                .GroupBy(loss => loss.TypeId)
+                .SelectMany(hull =>
+                    hull.OrderByDescending(loss => loss.Time).ThenByDescending(loss => loss.ShipId).Take(Rules.MaximumLossesPerHull)
+                );
+            foreach (var loss in losses)
+            {
+                if (LostKit(catalog, loss) is not { } kit || kit.OnlineSlots.Count == 0)
+                {
+                    continue;
+                }
+
+                var parts = kit.Parts();
+                if (!SupportedKit(catalog, kit, parts) || parts.Any(part => !IsMarketSupply(catalog, part.TypeId)))
+                {
+                    continue;
+                }
+                foreach (var part in parts)
+                {
+                    attrition[part.TypeId] = attrition.GetValueOrDefault(part.TypeId) + part.Quantity;
+                }
+            }
+        }
+
         return recovery
             .Keys.Concat(reserve.Keys)
+            .Concat(attrition.Keys)
             .Distinct()
             .Where(type => IsMarketSupply(catalog, type))
             .OrderByDescending(type => recovery.ContainsKey(type))
+            .ThenByDescending(type => attrition.ContainsKey(type))
             .ThenBy(type => type)
             .Select(type => new ReplacementPart(
                 type,
-                (int)Math.Min(int.MaxValue, Math.Max(recovery.GetValueOrDefault(type), reserve.GetValueOrDefault(type)))
+                (int)
+                    Math.Min(
+                        int.MaxValue,
+                        Math.Max(
+                            recovery.GetValueOrDefault(type),
+                            Math.Max(reserve.GetValueOrDefault(type), attrition.GetValueOrDefault(type))
+                        )
+                    )
             ))
             .ToArray();
     }

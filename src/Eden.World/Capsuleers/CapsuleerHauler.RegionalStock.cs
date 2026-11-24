@@ -8,6 +8,10 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
+    private bool CanLaunchOffensiveFleet =>
+        _operation.World is not EconomyTransaction world
+        || CapsuleerIndustry.CanLaunchOffensiveFleet(world, _operation.Catalog, Pilot, Now);
+
     private CapsuleerIndustry.Collection? PlanRegionalStock(EconomyTransaction world, LiveWorld live, IReadOnlySet<int> avoided)
     {
         if (Work.RegionalStockRetryAt > Now)
@@ -29,7 +33,9 @@ internal sealed partial class CapsuleerHauler
             {
                 return ContinueFactoryFreight(destination, Rules.MaximumJumps);
             }
+            bool intact = EscortedFreightIntact(freight);
             CapsuleerIndustry.Deliver(world, catalog, Pilot, run, freight);
+            DeliverRegionalShipment(intact);
             _work = Work with { RegionalStockRetryAt = checked(Now + Rules.ReviewInterval.Ticks) };
             return CompleteFactorySupply();
         }

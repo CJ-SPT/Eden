@@ -1216,16 +1216,7 @@ internal sealed partial class CapsuleerHauler(
         {
             if (freight is not null)
             {
-                bool intact =
-                    Work.RegionalEscort is null
-                    || freight.Stacks.Length > 0
-                        && freight.Stacks.All(stack =>
-                            _operation.World.Set<OwnedItem>().Find(stack.ItemId) is { } item
-                            && item.OwnerId == pilotId
-                            && item.LocationId == Pilot.ShipId
-                            && item.TypeId == stack.TypeId
-                            && item.Quantity >= stack.Quantity
-                        );
+                bool intact = EscortedFreightIntact(freight);
                 CapsuleerFreight.Deliver(_operation.World, pilotId, Pilot.ShipId, freight);
                 DeliverRegionalShipment(intact);
             }

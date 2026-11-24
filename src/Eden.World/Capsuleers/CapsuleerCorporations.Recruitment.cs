@@ -38,6 +38,10 @@ internal sealed record CapsuleerOrganization(long DueTicks = 0, long? Applicatio
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? PvpWorkShipId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CapsuleerFleetLoss[]? FleetLosses { get; init; }
+
     public int? OperatingStationId { get; init; }
     public CapsuleerRelocation? Relocation { get; init; }
     public CapsuleerEmployment? Employment { get; init; }
