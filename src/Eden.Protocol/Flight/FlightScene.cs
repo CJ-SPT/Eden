@@ -40,6 +40,8 @@ internal sealed class FlightScene(
     ICooperativeFleets? fleets = null
 )
 {
+    private const long GateArrivalWindow = FlightTravel.ArrivalDurationTicks * TimeSpan.TicksPerSecond;
+    private const long GateDepartureWindow = FlightTravel.JumpDurationTicks * TimeSpan.TicksPerSecond;
     private FlightNpcScene? _npcScene;
     private FlightDroneScene? _droneScene;
     private ShipContact[] _peers = [];
@@ -48,6 +50,7 @@ internal sealed class FlightScene(
     private readonly Dictionary<long, long> _gateArrivals = new();
     private readonly Dictionary<long, long> _gateDepartures = new();
     private long? _observingSince;
+    private long _latestGateObservation;
     private StaticSpaceObject[] _visibleAsteroids = [];
     private IReadOnlyList<StaticSpaceObject>? _asteroidSource;
     private IReadOnlyList<StaticSpaceObject> _objects = objects;
@@ -76,6 +79,8 @@ internal sealed class FlightScene(
     internal IReadOnlyList<MissileContact> VisibleMissiles => _missiles;
     internal IReadOnlyList<ShipContact> VisiblePeers => _peers;
     internal IReadOnlyList<DroneContact> VisibleDrones => Drones.Contacts;
+    internal (int Arrivals, int Departures, int Cloaks) RetainedPeerEvents =>
+        (_gateArrivals.Count, _gateDepartures.Count, _cloakedPeers.Count);
 
     internal IEnumerable<BallMotion> DiagnosticMotion(FlightSceneContext context) =>
         VisibleObjects(context)
@@ -139,6 +144,7 @@ internal sealed class FlightScene(
         _gateArrivals.Clear();
         _gateDepartures.Clear();
         _observingSince = null;
+        _latestGateObservation = 0;
         _visibleAsteroids = [];
         ForgetMissiles();
         Npcs.Clear();
@@ -695,8 +701,10 @@ internal sealed class FlightScene(
 
     internal void Snapshot(FlightSceneContext context, ShipContact[] peers, ShipContact? own)
     {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         bool entering = _observingSince is null;
-        _observingSince ??= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        _observingSince ??= now;
+        PruneGateEvents(context.Pilot.SystemId, now);
         _peers = peers;
         _peerOrderSequences.Clear();
         foreach (var peer in peers)
@@ -742,10 +750,11 @@ internal sealed class FlightScene(
             effects.Replay(peer, null);
             if (!entering)
             {
-                ObserveGateArrival(peer);
-                ObserveGateDeparture(peer);
+                ObserveGateArrival(peer, now);
+                ObserveGateDeparture(peer, now);
             }
         }
+        PruneCloakedPeers(context.Pilot.SystemId);
         if (own is not null && (own.Warp is not null || own.AlignTo is not null))
         {
             effects.WarpEffect(context.Pilot.ShipId, true);
@@ -759,9 +768,11 @@ internal sealed class FlightScene(
 
     internal void RefreshPeers(FlightSceneContext context)
     {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        PruneGateEvents(context.Pilot.SystemId, now);
         foreach (var arrival in space.GateArrivals(context.Pilot.SystemId, context.EntityId, context.Position))
         {
-            ObserveGateArrival(arrival);
+            ObserveGateArrival(arrival, now);
         }
         var current = Peers(context);
         var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
@@ -796,8 +807,8 @@ internal sealed class FlightScene(
                 }
                 _peerOrderSequences[ship.Pilot.ShipId] = space.ReadOrders(ship.Pilot.ShipId).Sequence;
                 effects.Replay(ship, null);
-                ObserveGateArrival(ship);
-                ObserveGateDeparture(ship);
+                ObserveGateArrival(ship, now);
+                ObserveGateDeparture(ship, now);
                 if (ship.Arriving)
                 {
                     effects.ArrivalEffect(ship.Pilot.ShipId);
@@ -805,8 +816,8 @@ internal sealed class FlightScene(
                 // The client plays the arrival flash when it loads a ship already in warp.
                 continue;
             }
-            ObserveGateArrival(ship);
-            ObserveGateDeparture(ship);
+            ObserveGateArrival(ship, now);
+            ObserveGateDeparture(ship, now);
             effects.Replay(ship, previous);
             if (
                 ship.DirtTime != previous.DirtTime
@@ -875,51 +886,75 @@ internal sealed class FlightScene(
             }
         }
         _peers = current;
+        PruneCloakedPeers(context.Pilot.SystemId);
     }
 
-    private void ObserveGateArrival(ShipContact ship)
+    private void PruneCloakedPeers(int system)
     {
-        if (ship.GateArrival is not { } arrival || _gateArrivals.GetValueOrDefault(ship.Pilot.ShipId) >= arrival.OccurredAt)
+        if (_cloakedPeers.Count != 0)
         {
-            return;
+            // A cloak can end beyond the observer's grid. Keep its marker while
+            // the hull still belongs to this system's published scene.
+            _cloakedPeers.RemoveWhere(ship => !space.HasPublishedShip(system, ship));
         }
-        _gateArrivals[ship.Pilot.ShipId] = arrival.OccurredAt;
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        if (
-            _observingSince is not long observing
-            || arrival.OccurredAt <= observing
-            || arrival.OccurredAt > now
-            || now - arrival.OccurredAt >= TimeSpan.FromSeconds(FlightTravel.ArrivalDurationTicks).Ticks
-            || !Objects.Any(body => body.Id == arrival.GateId && body.DestinationGateId is not null)
-        )
-        {
-            return;
-        }
-        effects.GateActivity(arrival.GateId, arriving: true);
     }
 
-    private void ObserveGateDeparture(ShipContact ship)
+    private long ExpiredGateArrival => _latestGateObservation - GateArrivalWindow;
+
+    // Departure remains eligible at its final tick.
+    private long ExpiredGateDeparture => _latestGateObservation - GateDepartureWindow - 1;
+
+    private void PruneGateEvents(int system, long now)
+    {
+        // A backward wall-clock adjustment must not replay events whose windows closed.
+        _latestGateObservation = Math.Max(_latestGateObservation, now);
+        Prune(_gateArrivals, ExpiredGateArrival);
+        Prune(_gateDepartures, ExpiredGateDeparture);
+
+        void Prune(Dictionary<long, long> events, long expired)
+        {
+            foreach (var (ship, at) in events)
+            {
+                if (at <= expired || at > _latestGateObservation && !space.HasPublishedShip(system, ship))
+                {
+                    events.Remove(ship);
+                }
+            }
+        }
+    }
+
+    private bool RememberGateEvent(Dictionary<long, long> events, long ship, long at, long expired, long now)
+    {
+        if (_observingSince is not long observing || at <= observing || at <= expired || events.GetValueOrDefault(ship) >= at)
+        {
+            return false;
+        }
+        events[ship] = at;
+        return at <= now;
+    }
+
+    private void ObserveGateArrival(ShipContact ship, long now)
     {
         if (
-            ship.DepartureGate is not long departure
-            || ship.DepartureAt is not long departed
-            || _gateDepartures.GetValueOrDefault(ship.Pilot.ShipId) >= departed
+            ship.GateArrival is { } arrival
+            && RememberGateEvent(_gateArrivals, ship.Pilot.ShipId, arrival.OccurredAt, ExpiredGateArrival, now)
+            && Objects.Any(body => body.Id == arrival.GateId && body.DestinationGateId is not null)
         )
         {
-            return;
+            effects.GateActivity(arrival.GateId, arriving: true);
         }
-        _gateDepartures[ship.Pilot.ShipId] = departed;
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+    }
+
+    private void ObserveGateDeparture(ShipContact ship, long now)
+    {
         if (
-            _observingSince is not long observing
-            || departed <= observing
-            || departed > now
-            || now - departed > TimeSpan.FromSeconds(FlightTravel.JumpDurationTicks).Ticks
-            || Objects.FirstOrDefault(body => body.Id == departure && body.DestinationSystemId is not null) is not { } gate
+            ship.DepartureGate is long departure
+            && ship.DepartureAt is long departed
+            && RememberGateEvent(_gateDepartures, ship.Pilot.ShipId, departed, ExpiredGateDeparture, now)
+            && Objects.FirstOrDefault(body => body.Id == departure && body.DestinationSystemId is not null) is { } gate
         )
         {
-            return;
+            effects.DepartureEffect(ship.Pilot.ShipId, departure, gate.DestinationSystemId!.Value, FlightTravel.JumpDurationTicks * 1000);
         }
-        effects.DepartureEffect(ship.Pilot.ShipId, departure, gate.DestinationSystemId!.Value, FlightTravel.JumpDurationTicks * 1000);
     }
 }

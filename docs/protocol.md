@@ -722,6 +722,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Navigation and travel
 
+- [Peer gate and cloak history](protocol/navigation.md#peer-gate-and-cloak-history)
 - [Peer movement history](protocol/navigation.md#peer-movement-history)
 - [Peer warp and target locks](protocol/navigation.md#peer-warp-and-target-locks)
 - [Distant warping ships](protocol/navigation.md#distant-warping-ships-in-the-overview-november-17-2026)
@@ -733,6 +734,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026)
 - [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026)
 - [Star map statistics](protocol/navigation.md#star-map-statistics-november-20-2026)
+- [Memory reclamation after runtime churn](protocol/performance.md#memory-reclamation-after-runtime-churn)
 - [Compact resident rows and map history](protocol/performance.md#compact-resident-rows-and-map-history)
 - [Resident retention and checkpoint stall on HostCram](protocol/performance.md#resident-retention-and-checkpoint-stall-on-hostcram)
 - [Sustained map activity checkpoints](protocol/performance.md#sustained-map-activity-checkpoints)

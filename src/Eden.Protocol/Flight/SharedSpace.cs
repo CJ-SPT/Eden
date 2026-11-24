@@ -254,6 +254,12 @@ internal sealed class SharedSpace(
 
     internal bool IsGateCloaked(long ship) => SpatialStatus(ship).GateCloaked(Now);
 
+    internal bool HasPublishedShip(int system, long ship) =>
+        _ships.TryGetValue(ship, out var contact)
+        && contact.Pilot.SystemId == system
+        && contact.Pilot.Position is not null
+        && contact.Health?.Remaining.Destroyed != true;
+
     private bool ArrivalProtected(ShipContact ship) => ship.Arriving && (ship.GateCloakUntil == 0 || IsGateCloaked(ship.Pilot.ShipId));
 
     internal void CancelGateCloak(long pilot, long ship) => gateCloaks?.Cancel(pilot, ship);

@@ -11,8 +11,6 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
-    private const int MaximumIncrementalMarketTypes = 8;
-
     private sealed record StandardBook(
         long PilotId,
         long ShipId,
@@ -72,7 +70,7 @@ internal sealed partial class PilotMarketStore
             publish && scope == MarketScope.Region
                 ? live.MarketSummaries.ReadDirtyRegion(pilotId, catalogGeneration, settings, now, active)
                 : null;
-        if (changed is { } previous && (previous.Summary.RegionId != region || previous.Types.Count > MaximumIncrementalMarketTypes))
+        if (changed is { } previous && previous.Summary.RegionId != region)
         {
             changed = null;
         }

@@ -101,11 +101,14 @@ internal sealed partial class EconomyTable<TRow, TState>(
     where TRow : class
     where TState : class
 {
+    private const int MinimumBaselineCapacityToReclaim = 4096;
+    private const int BaselineSparseRatio = 8;
+
     private readonly Dictionary<EconomyKey, TState>? _rows = rowIdIsKey || groupedRows is not null ? null : [];
     private readonly Dictionary<long, TState>? _integerRows = rowIdIsKey ? [] : null;
 
     // Keep the SQLite baseline only until a resident change is projected or reverted.
-    private readonly Dictionary<EconomyKey, TState?> _sqlBaselines = [];
+    private Dictionary<EconomyKey, TState?> _sqlBaselines = [];
 
     // INTEGER PRIMARY KEY tables can use SQLite's update-hook row ID directly.
     private readonly Dictionary<long, EconomyKey>? _rowIds = rowIdIsKey ? null : [];
@@ -271,7 +274,14 @@ internal sealed partial class EconomyTable<TRow, TState>(
         }
     }
 
-    internal void CompleteWrites() => groupedRows?.CompleteWrites();
+    internal void CompleteWrites()
+    {
+        groupedRows?.CompleteWrites();
+        if (_sqlBaselines.Count == 0)
+        {
+            ReclaimSparseBaselines();
+        }
+    }
 
     public void Load(WorldDbContext world)
     {
@@ -283,6 +293,7 @@ internal sealed partial class EconomyTable<TRow, TState>(
             index.Clear();
         }
         _sqlBaselines.Clear();
+        ReclaimSparseBaselines();
         _rowIds?.Clear();
         ReadRows(world, null);
     }
@@ -336,10 +347,12 @@ internal sealed partial class EconomyTable<TRow, TState>(
             }
         }
         ReadRows(world, rowIds);
+        ReclaimSparseBaselines();
     }
 
     public IEconomyProjection Capture()
     {
+        ReclaimSparseBaselines();
         if (_sqlBaselines.Count == 0)
         {
             return new EconomyProjection<TState>(name, [], project);
@@ -389,6 +402,26 @@ internal sealed partial class EconomyTable<TRow, TState>(
         {
             _rowIds.Clear();
             ReadRows(world, null);
+        }
+        ReclaimSparseBaselines();
+    }
+
+    private void ReclaimSparseBaselines()
+    {
+        int capacity = _sqlBaselines.Capacity;
+        if (capacity < MinimumBaselineCapacityToReclaim || _sqlBaselines.Count > capacity / BaselineSparseRatio)
+        {
+            return;
+        }
+        // Rebased and reverted keys can leave a large, mostly empty allocation.
+        // Keep the old dictionary valid until the smaller copy is ready.
+        try
+        {
+            _sqlBaselines = _sqlBaselines.Count == 0 ? [] : new(_sqlBaselines);
+        }
+        catch (OutOfMemoryException)
+        {
+            // Reclamation is optional. Projection still owns every pending baseline.
         }
     }
 

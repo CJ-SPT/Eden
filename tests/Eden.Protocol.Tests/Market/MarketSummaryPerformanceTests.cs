@@ -19,6 +19,82 @@ namespace Eden.Protocol.Tests.Market;
 public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
 {
     [Fact]
+    public void SummaryOrderBudgetEvictsTheLeastRecentlyUsedViewAcrossScopes()
+    {
+        LiveMarketSummaries cache = new();
+        WorldSettings settings = new();
+        const int orderCount = LiveMarketSummaries.MaximumRetainedOrders / 4;
+        Store(1, MarketScope.Region, orderCount);
+        var evicted = Store(2, MarketScope.System, orderCount);
+        Store(3, MarketScope.Station, orderCount);
+        Store(4, MarketScope.Region, orderCount);
+        Assert.True(Read(1, MarketScope.Region));
+
+        Store(5, MarketScope.System, orderCount);
+        Assert.False(Read(2, MarketScope.System));
+        Assert.True(Read(1, MarketScope.Region));
+        Assert.True(Read(5, MarketScope.System));
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true);
+        Assert.False(evicted.TryGetTarget(out _));
+
+        Store(1, MarketScope.Region, LiveMarketSummaries.MaximumRetainedOrders + 1);
+        Assert.False(Read(1, MarketScope.Region));
+        Assert.True(Read(3, MarketScope.Station));
+        Store(2, MarketScope.System, orderCount);
+        Assert.True(Read(2, MarketScope.System));
+        Assert.True(Read(4, MarketScope.Region));
+
+        bool Read(int pilot, MarketScope scope) => cache.TryRead(pilot, scope, 1, settings, 0, 0, out _);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        WeakReference<IReadOnlyList<MarketOrder>> Store(int pilot, MarketScope scope, int count)
+        {
+            var summary = Summary(pilot, count);
+            cache.Publish(summary, scope, 1, settings, 0, 0);
+            return new(summary.Orders);
+        }
+    }
+
+    [Fact]
+    public void RegionViewIsReleasedWhenChangesRequireAFullRefresh()
+    {
+        LiveMarketSummaries cache = new();
+        WorldSettings settings = new();
+        var summary = Summary(1, 20);
+        cache.Publish(summary, MarketScope.Region, 1, settings, 0, 0);
+
+        for (int type = 1; type <= LiveMarketSummaries.MaximumIncrementalTypes; type++)
+        {
+            cache.Observe([], [new(summary.StationId, summary.SystemId, summary.RegionId, false, type)]);
+        }
+        Assert.Equal(LiveMarketSummaries.MaximumIncrementalTypes, cache.ReadDirtyRegion(1, 1, settings, 0, 0)!.Value.Types.Count);
+
+        long captured = cache.CaptureLocation(1, summary.ShipId, summary.StationId, summary.SystemId, summary.RegionId);
+        cache.Observe(
+            [],
+            [new(summary.StationId, summary.SystemId, summary.RegionId, false, LiveMarketSummaries.MaximumIncrementalTypes + 1)]
+        );
+        Assert.Null(cache.ReadDirtyRegion(1, 1, settings, 0, 0));
+        cache.Publish(summary, MarketScope.Region, 1, settings, 0, 0, captured);
+        Assert.False(cache.TryRead(1, MarketScope.Region, 1, settings, 0, 0, out _));
+
+        long current = cache.CaptureLocation(1, summary.ShipId, summary.StationId, summary.SystemId, summary.RegionId);
+        cache.Publish(summary, MarketScope.Region, 1, settings, 0, 0, current);
+        Assert.True(cache.TryRead(1, MarketScope.Region, 1, settings, 0, 0, out var refreshed));
+        Assert.Same(summary.Orders, refreshed);
+    }
+
+    private static MarketSummary Summary(int pilot, int orderCount)
+    {
+        int station = 60003760 + pilot;
+        int system = 30000142 + pilot;
+        int region = 10000002 + pilot;
+        MarketOrder[] orders = new MarketOrder[orderCount];
+        Array.Fill(orders, new(1, station, system, region, pilot, 215, false, 100, 5, 5, 0));
+        return new(pilot, 7000000000000 + pilot, station, system, region, orders, 10, 10);
+    }
+
+    [Fact]
     public void InvalidatingAViewReleasesItsOrdersWhileThePilotLocationIsRetained()
     {
         LiveMarketSummaries summaries = new();

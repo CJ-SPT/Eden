@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Peer gate and cloak history](#peer-gate-and-cloak-history)
 - [Peer movement history](#peer-movement-history)
 - [Peer warp and target locks](#peer-warp-and-target-locks)
 - [Focused interdiction at NPC stargates](#focused-interdiction-at-npc-stargates)
@@ -52,6 +53,27 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Peer gate and cloak history
+
+An observer now drops gate arrival and departure history after the existing presentation windows close. An arrival
+expires after eight seconds. A departure remains eligible at the exact three-second deadline. The observer keeps
+recent history across a hull's brief absence and uses its latest observed time to prevent expired effects from
+replaying after the wall clock moves backwards.
+
+A cloak marker stays available while the hull remains published in the observer's system, including when the hull
+uncloaks outside the grid. A visible return consumes the marker after adding the ball. A refresh or snapshot releases
+markers for hulls that have left the published system scene. The server continues to use the pinned build 3662168
+gate and cloak commands. The prior retention reproduced on `0f02b85a`.
+
+**Automated validation.** All seven exact cases passed in 14.64 seconds. The churn tests retired 256 hulls with
+gate events and 128 cloaked hulls. Tests also covered the gate deadlines, hidden arrival deduplication, an off-grid
+uncloak, and a wall-clock rollback after expiry. Four retention checks failed on the unchanged coordinator in
+8.87 seconds, and its three presentation checks passed. The affected flight selection passed 79 cases in 54.03 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
 
 ## Peer movement history
 

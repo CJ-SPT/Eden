@@ -1,6 +1,9 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -316,6 +319,171 @@ public sealed class GateActivityProtocolTests
     }
 
     [Fact]
+    public void GateHistoryRetentionIgnoresRetiredHullChurnOutsideTheReplayWindows()
+    {
+        using Fixture fixture = new();
+        var viewer = fixture.Viewer(1000001);
+        var arrival = fixture.Actor(arriving: true);
+        var departure = fixture.Actor(arriving: false);
+        for (int second = 1; second <= 128; second++)
+        {
+            fixture.Clock.Seconds = second;
+            long arriving = arrival.Pilot.ShipId + 2 * second;
+            long departing = arriving + 1;
+            fixture.Space.Publish(
+                arrival with
+                {
+                    Pilot = arrival.Pilot with { ShipId = arriving },
+                    GateArrival = new(fixture.Gate.Id, fixture.Clock.Now),
+                }
+            );
+            fixture.Space.Publish(departure with { Pilot = departure.Pilot with { ShipId = departing }, DepartureAt = fixture.Clock.Now });
+            viewer.Refresh();
+            Assert.Equal(2, viewer.Updates.OfType<DestinyCommand.GateActivity>().Count());
+            Assert.InRange(viewer.RetainedPeerEvents.Arrivals, 1, FlightTravel.ArrivalDurationTicks);
+            Assert.InRange(viewer.RetainedPeerEvents.Departures, 1, FlightTravel.JumpDurationTicks + 1);
+            fixture.Space.Leave(arriving);
+            fixture.Space.Leave(departing);
+            viewer.Updates.Clear();
+        }
+
+        fixture.Clock.Seconds = 150;
+        viewer.Snapshot();
+        Assert.Equal((0, 0, 0), viewer.RetainedPeerEvents);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void GateHistorySurvivesBriefAbsenceAndDoesNotReplayAfterItsWindowCloses(bool arriving)
+    {
+        using Fixture fixture = new();
+        var viewer = fixture.Viewer(1000001);
+        fixture.Clock.Seconds = 1;
+        var actor = fixture.Actor(arriving);
+        long ship = actor.Pilot.ShipId;
+        fixture.Space.Publish(actor);
+        viewer.Refresh();
+        Assert.Single(viewer.Updates.OfType<DestinyCommand.GateActivity>());
+
+        fixture.Space.Leave(ship);
+        viewer.Refresh();
+        fixture.Clock.Seconds = 2;
+        fixture.Space.Publish(actor);
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.GateActivity>());
+
+        fixture.Clock.Seconds = 12;
+        viewer.Snapshot();
+        Assert.Equal((0, 0, 0), viewer.RetainedPeerEvents);
+        fixture.Clock.Seconds = 2;
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.GateActivity>());
+        Assert.Equal((0, 0, 0), viewer.RetainedPeerEvents);
+
+        fixture.Clock.Seconds = 13;
+        fixture.Space.Publish(fixture.Actor(arriving));
+        viewer.Refresh();
+        Assert.Single(viewer.Updates.OfType<DestinyCommand.GateActivity>());
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void GateEffectsUseTheirExactArrivalAndDepartureWindows(bool arriving, bool presented)
+    {
+        using Fixture fixture = new();
+        var viewer = fixture.Viewer(1000001);
+        fixture.Clock.Seconds = 1;
+        var actor = fixture.Actor(arriving);
+        fixture.Clock.Seconds += arriving ? FlightTravel.ArrivalDurationTicks : FlightTravel.JumpDurationTicks;
+        fixture.Space.Publish(actor);
+        viewer.Refresh();
+        Assert.Equal(presented, viewer.Updates.OfType<DestinyCommand.GateActivity>().Any());
+    }
+
+    [Fact]
+    public void HiddenGateArrivalIsDeduplicatedWhenItsHullBecomesVisible()
+    {
+        PeerSpatialStatus spatial = new();
+        using Fixture fixture = new(spatial: spatial);
+        var viewer = fixture.Viewer(1000001);
+        fixture.Clock.Seconds = 1;
+        var actor = fixture.Actor(arriving: true);
+        long ship = actor.Pilot.ShipId;
+        spatial.Statuses[ship] = new(GateCloakUntil: fixture.Clock.Now + TimeSpan.FromSeconds(60).Ticks);
+        fixture.Space.Publish(actor);
+        viewer.Refresh();
+        Assert.Single(viewer.Updates.OfType<DestinyCommand.GateActivity>());
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.AddBalls>());
+
+        spatial.Statuses.Remove(ship);
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Single(viewer.Updates.OfType<DestinyCommand.AddBalls>());
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.GateActivity>());
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.UncloakBall>());
+    }
+
+    [Fact]
+    public void CloakedPeerMarkersSurviveAnOffGridUncloakAndReleaseDepartedHulls()
+    {
+        PeerSpatialStatus spatial = new();
+        using Fixture fixture = new(spatial: spatial);
+        var viewer = fixture.Viewer(1000001);
+        var peer = fixture.Actor(arriving: false) with { DepartureGate = null, DepartureAt = null };
+        long ship = peer.Pilot.ShipId;
+        fixture.Space.Publish(peer);
+        viewer.Refresh();
+        viewer.Updates.Clear();
+        spatial.Statuses[ship] = new(CloakModuleId: 1);
+        viewer.Refresh();
+        Assert.Equal(new DestinyCommand.CloakBall(ship), Assert.Single(viewer.Updates.OfType<DestinyCommand.CloakBall>()));
+        Assert.Equal(ship, Assert.Single(viewer.Updates.OfType<DestinyCommand.RemoveBall>()).Id);
+        Assert.Equal(1, viewer.RetainedPeerEvents.Cloaks);
+
+        var distant = peer.Pilot.Position! + new SpacePosition(2 * NavigationDefinitions.MaximumTargetDistance, 0, 0);
+        fixture.Space.Publish(peer with { Pilot = peer.Pilot with { Position = distant } });
+        spatial.Statuses.Remove(ship);
+        fixture.Clock.Seconds = 300;
+        viewer.Refresh();
+        Assert.Equal(1, viewer.RetainedPeerEvents.Cloaks);
+        fixture.Space.Publish(peer);
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        var added = Assert.Single(viewer.Updates.OfType<DestinyCommand.AddBalls>());
+        var uncloaked = Assert.Single(viewer.Updates.OfType<DestinyCommand.UncloakBall>());
+        Assert.Equal(ship, uncloaked.Id);
+        Assert.True(viewer.Updates.IndexOf(added) < viewer.Updates.IndexOf(uncloaked));
+        Assert.Equal(0, viewer.RetainedPeerEvents.Cloaks);
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Empty(viewer.Updates);
+
+        for (int replacement = 1; replacement <= 128; replacement++)
+        {
+            long id = ship + replacement;
+            fixture.Space.Publish(peer with { Pilot = peer.Pilot with { ShipId = id } });
+            viewer.Refresh();
+            spatial.Statuses[id] = new(CloakModuleId: 1);
+            viewer.Refresh();
+            Assert.Equal(1, viewer.RetainedPeerEvents.Cloaks);
+            fixture.Space.Leave(id);
+            spatial.Statuses.Remove(id);
+            viewer.Refresh();
+            Assert.Equal(0, viewer.RetainedPeerEvents.Cloaks);
+            viewer.Updates.Clear();
+        }
+
+        fixture.Space.Publish(peer with { Pilot = peer.Pilot with { ShipId = ship + 1 } });
+        viewer.Refresh();
+        Assert.Single(viewer.Updates.OfType<DestinyCommand.AddBalls>());
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.UncloakBall>());
+    }
+
+    [Fact]
     public async Task GateHandoffWaitsForDepartureOutputAndKeepsTheSourceSceneDuringRetries()
     {
         const long accountId = 1000001;
@@ -458,12 +626,18 @@ public sealed class GateActivityProtocolTests
         Assert.DoesNotContain(session.Updates, update => update.Command is DestinyCommand.GateActivity);
     }
 
-    private sealed class Fixture(bool liveWorld = false) : IDisposable
+    private sealed class Fixture : IDisposable
     {
-        private readonly TestWorld _world = new(liveWorld: liveWorld);
+        private readonly TestWorld _world;
         internal TestClock Clock { get; } = new();
-        internal SharedSpace Space { get; } = new();
+        internal SharedSpace Space { get; }
         internal StaticSpaceObject Gate => _world.Objects.Single(body => body.DestinationGateId is not null);
+
+        internal Fixture(bool liveWorld = false, PeerSpatialStatus? spatial = null)
+        {
+            _world = new(liveWorld: liveWorld);
+            Space = new(clock: Clock, spatial: spatial);
+        }
 
         internal Viewer Viewer(long account) => new(this, _world.Store.FindPilot(account)!);
 
@@ -491,6 +665,36 @@ public sealed class GateActivityProtocolTests
         public void Dispose() => _world.Dispose();
     }
 
+    private sealed class PeerSpatialStatus : IPilotSpatialModules
+    {
+        internal Dictionary<long, SpatialStatus> Statuses { get; } = [];
+
+        public SpatialStatus Status(long shipId) => Statuses.GetValueOrDefault(shipId) ?? new();
+
+        public SpatialActivation Activate(
+            long pilotId,
+            long moduleId,
+            DogmaEffect effect,
+            SpacePosition heading,
+            SpacePosition velocity,
+            long now
+        ) => throw new NotSupportedException();
+
+        public IReadOnlyDictionary<DogmaAttributeId, double> Stop(long pilotId, long shipId, long moduleId, long now) =>
+            throw new NotSupportedException();
+
+        public bool Available(long pilotId, long shipId, long moduleId) => throw new NotSupportedException();
+
+        public MicroJumpResult? CompleteJump(
+            long pilotId,
+            long shipId,
+            long moduleId,
+            long startedAt,
+            long now,
+            IReadOnlyList<MicroJumpPassenger>? candidates = null
+        ) => throw new NotSupportedException();
+    }
+
     private sealed class Viewer
     {
         private readonly Fixture _fixture;
@@ -498,6 +702,7 @@ public sealed class GateActivityProtocolTests
         private readonly FlightSceneContext _context;
         private readonly ShipContact _own;
         internal List<DestinyCommand> Updates { get; } = [];
+        internal (int Arrivals, int Departures, int Cloaks) RetainedPeerEvents => _scene.RetainedPeerEvents;
 
         internal Viewer(Fixture fixture, DockedPilot pilot)
         {

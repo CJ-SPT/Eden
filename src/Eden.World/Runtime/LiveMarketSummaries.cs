@@ -11,13 +11,23 @@ namespace Eden.World.Runtime;
 internal sealed class LiveMarketSummaries
 {
     private const int MaximumEntries = 512;
+    internal const int MaximumRetainedOrders = 128 * 1024;
+    internal const int MaximumIncrementalTypes = 8;
     private readonly Lock _gate = new();
     private readonly Dictionary<long, PilotLocation> _locations = [];
     private readonly Dictionary<(MarketScope Scope, int Location), Entry> _views = [];
+    private readonly LinkedList<(MarketScope Scope, int Location)> _recency = new();
+    private int _retainedOrders;
     private long _catalog;
     private long _ordersRevision;
 
-    private sealed record Entry(MarketSummary Summary, long Catalog, WorldSettings Settings, long At, long ActiveAt)
+    private sealed record Entry(
+        MarketSummary Summary,
+        WorldSettings Settings,
+        long At,
+        long ActiveAt,
+        LinkedListNode<(MarketScope Scope, int Location)> Recency
+    )
     {
         internal HashSet<int> DirtyTypes { get; } = [];
     }
@@ -55,18 +65,28 @@ internal sealed class LiveMarketSummaries
         return false;
     }
 
-    private Entry? Current(long pilot, MarketScope scope, long catalog, WorldSettings settings, long now, long active) =>
-        _catalog == catalog
-        && _locations.TryGetValue(pilot, out var location)
-        && _views.TryGetValue((scope, Location(location, scope)), out var entry)
-        && entry.Catalog == catalog
-        && entry.Settings == settings
-        && now >= entry.At
-        && now < entry.Summary.ExpiresAt
-        && active >= entry.ActiveAt
-        && active < entry.Summary.ActiveUntil
-            ? entry
-            : null;
+    private Entry? Current(long pilot, MarketScope scope, long catalog, WorldSettings settings, long now, long active)
+    {
+        if (
+            _catalog != catalog
+            || !_locations.TryGetValue(pilot, out var location)
+            || !_views.TryGetValue((scope, Location(location, scope)), out var entry)
+            || entry.Settings != settings
+            || now < entry.At
+            || now >= entry.Summary.ExpiresAt
+            || active < entry.ActiveAt
+            || active >= entry.Summary.ActiveUntil
+        )
+        {
+            return null;
+        }
+        if (entry.Recency.Next is not null)
+        {
+            _recency.Remove(entry.Recency);
+            _recency.AddLast(entry.Recency);
+        }
+        return entry;
+    }
 
     internal (MarketSummary Summary, HashSet<int> Types)? ReadDirtyRegion(
         long pilot,
@@ -98,13 +118,18 @@ internal sealed class LiveMarketSummaries
     {
         lock (_gate)
         {
-            if (_locations.Count >= MaximumEntries && !_locations.ContainsKey(pilot))
-            {
-                _locations.Clear();
-            }
-            _locations[pilot] = new(ship, station, system, region);
+            TrackLocation(pilot, new(ship, station, system, region));
             return _ordersRevision;
         }
+    }
+
+    private void TrackLocation(long pilot, PilotLocation location)
+    {
+        if (_locations.Count >= MaximumEntries && !_locations.ContainsKey(pilot))
+        {
+            _locations.Clear();
+        }
+        _locations[pilot] = location;
     }
 
     internal void Publish(
@@ -127,15 +152,47 @@ internal sealed class LiveMarketSummaries
             {
                 return;
             }
-            if (_catalog != catalog || _views.Count >= MaximumEntries || _locations.Count >= MaximumEntries)
+            if (_catalog != catalog)
             {
-                _views.Clear();
+                ClearViews();
                 _locations.Clear();
             }
             _catalog = catalog;
-            _locations[summary.PilotId] = location;
-            _views[(scope, Location(location, scope))] = new(summary, catalog, settings, now, active);
+            TrackLocation(summary.PilotId, location);
+
+            var key = (scope, Location(location, scope));
+            RemoveView(key);
+            int count = summary.Orders.Count;
+            if (count > MaximumRetainedOrders)
+            {
+                // The completed reply still belongs to the caller. It can exceed the cache budget.
+                return;
+            }
+            while (_views.Count >= MaximumEntries || _retainedOrders > MaximumRetainedOrders - count)
+            {
+                RemoveView(_recency.First!.Value);
+            }
+            var recency = new LinkedListNode<(MarketScope Scope, int Location)>(key);
+            _views.Add(key, new(summary, settings, now, active, recency));
+            _recency.AddLast(recency);
+            _retainedOrders += count;
         }
+    }
+
+    private void RemoveView((MarketScope Scope, int Location) key)
+    {
+        if (_views.Remove(key, out var entry))
+        {
+            _recency.Remove(entry.Recency);
+            _retainedOrders -= entry.Summary.Orders.Count;
+        }
+    }
+
+    private void ClearViews()
+    {
+        _views.Clear();
+        _recency.Clear();
+        _retainedOrders = 0;
     }
 
     internal bool HasViews
@@ -183,7 +240,7 @@ internal sealed class LiveMarketSummaries
             )
             {
                 _ordersRevision++;
-                _views.Clear();
+                ClearViews();
             }
             else if (locations is not null)
             {
@@ -193,11 +250,16 @@ internal sealed class LiveMarketSummaries
                 }
                 foreach (var location in locations.Where(location => !location.Bid))
                 {
-                    _views.Remove((MarketScope.Station, location.Station));
-                    _views.Remove((MarketScope.System, location.System));
-                    if (_views.TryGetValue((MarketScope.Region, location.Region), out var region))
+                    RemoveView((MarketScope.Station, location.Station));
+                    RemoveView((MarketScope.System, location.System));
+                    var key = (MarketScope.Region, location.Region);
+                    if (
+                        _views.TryGetValue(key, out var region)
+                        && region.DirtyTypes.Add(location.TypeId)
+                        && region.DirtyTypes.Count > MaximumIncrementalTypes
+                    )
                     {
-                        region.DirtyTypes.Add(location.TypeId);
+                        RemoveView(key);
                     }
                 }
             }

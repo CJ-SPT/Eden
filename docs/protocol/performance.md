@@ -6,6 +6,64 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Memory reclamation after runtime churn
+
+Best-ask summaries now retain at most 131,072 order rows across regional, system and station views. At capacity the
+cache evicts the least recently used views and their weakly keyed encoded replies. The service still returns a complete
+reply when a single view exceeds the budget. A regional view releases its previous rows as soon as its dirty type count
+passes the existing eight-type incremental refresh limit. The regional best-ask contract was checked against EVE.js's
+`marketProxyService.js` and the regional market description. [EVE University trading](https://wiki.eveuniversity.org/Trading)
+
+A matched probe generated and encoded the same 298,794 rows across 163 views, using the order counts from the frozen
+HostCram checkpoint. After a full collection the cache retained 130,539 rows and used 70.6 MiB of managed memory,
+down from 140.8 MiB. The response bytes generated across the workload matched. The probe exercises cache retention with
+saved-world view sizes and synthetic order values.
+
+Asteroid and celestial snapshots allocate their feature-specific metadata only when populated. In three matched probes
+on 879,221 asteroid bodies across 1,024 systems, retained managed memory fell from 255.15 to 127.72 MiB and geometry
+digests matched. Build allocations fell from 475.19 to 284.62 MiB. A synthetic mix of one- and two-feature bodies allocated
+112 more bytes per body with the new layout.
+
+Checkpoint overlays reclaim sparse backing storage after pending changes drain. Empty oversized overlays release their
+capacity after the committing action, and nonempty ones compact at capture or after SQL acknowledgement. Matched probes
+on 953,823 dirty-then-reverted market keys freed 58.5 MiB in the empty case and 57.8 MiB with 8,192 updates and 8,192
+deletions still pending. The larger sparse-case capture took 7.47 ms with compaction, up from 6.49 ms.
+
+Flight observers release old gate-event identifiers and remove cloak markers for hulls that are no longer published in
+the system. The tests cover retired hulls, off-grid uncloaking and the exact gate deadlines.
+[Peer gate and cloak history](navigation.md#peer-gate-and-cloak-history)
+
+### Automated validation
+
+The exact market order budget and regional invalidation cases passed in 6.01 seconds. The geometry selection passed
+70 cases in 20 seconds, the checkpoint selection passed seven cases in 21.86 seconds, and 79 flight cases passed in
+54.03 seconds. The market wire digests matched across all 163 probes. The geometry digest matched on every run.
+
+The combined selection passed 96 cases in 27.97 seconds. The installed-catalog Rhea acquisition case was skipped
+because its opt-in fixture path was unset. The solution build, all 17 Python policy cases and the 38.89-second
+clean-worktree formatting check passed.
+
+```text
+FullyQualifiedName~MarketSummaryPerformanceTests|FullyQualifiedName~StandardMarket|FullyQualifiedName~TrafficGeometryTests|FullyQualifiedName~StaticCollisionGeometryTests|FullyQualifiedName~StaticCollisionAllocationTests|FullyQualifiedName~GateActivityProtocolTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~IncrementalCheckpointTests|FullyQualifiedName~ResidentQueryIndexTests
+```
+
+The `ServerPerformanceReplayTests.ReplaySustainedBotThroughput` Release comparison used the same incident save and
+3.85 GiB managed heap cap. Each 75-second workload kept 5,770 bots scheduled and wrote six disk-backed checkpoints,
+with zero simulation failures, gameplay SQL commands or connections. Peak process working set fell from 4.15 to
+4.02 GiB and peak managed committed memory fell from 3.43 to 3.32 GiB. Full collections around 61 seconds left
+2.50 GiB on the baseline and 2.38 GiB on the candidate. The final-half medians were 2.10 and 2.57 GiB because the
+sampler carries the last full collection forward and those collections occurred at different times. The candidate
+completed 71,469 actions and the baseline completed 73,058. Each build ran once on Windows with other validation
+active. The control and candidate commands took 188.53 and 141.23 seconds including setup and final checkpoint.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Compact resident rows and map history
 
 Resident NPCs, missiles and market executions now use integer primary keys and compact secondary-index memberships.

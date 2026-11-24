@@ -217,11 +217,7 @@ internal sealed partial class PilotMarketStore
 
     private MarketSummary? ChangedRegionAsks(LiveWorld live, long pilot, long catalog, long now, long active)
     {
-        const int maximumIncrementalTypes = 8;
-        if (
-            live.MarketSummaries.ReadDirtyRegion(pilot, catalog, database.Settings, now, active) is not { } changed
-            || changed.Types.Count > maximumIncrementalTypes
-        )
+        if (live.MarketSummaries.ReadDirtyRegion(pilot, catalog, database.Settings, now, active) is not { } changed)
         {
             return null;
         }

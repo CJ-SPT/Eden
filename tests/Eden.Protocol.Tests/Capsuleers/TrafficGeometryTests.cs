@@ -1,6 +1,7 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Structures;
 using Eden.World.Runtime;
 
 namespace Eden.Protocol.Tests.Capsuleers;
@@ -11,6 +12,31 @@ public sealed class TrafficGeometryTests
     private const int FirstSystem = 30000141;
     private const int FirstBelt = 40000001;
     private const long Catalog = 1;
+
+    [Fact]
+    public void GeometryDetailsPreserveRecordEqualityAndIndependentCopies()
+    {
+        StaticSpaceObject plain = new(FirstBelt, 15, AsteroidDefinitions.BeltGroup, 2, 0, new(100, 0, 0), 10);
+        StructureContact structure = new(StructureState.ShieldVulnerable, 100, null, null, true);
+        var decorated = plain with { Structure = structure, HackingState = 0, InterdictionRadius = 25 };
+        var equivalent = plain with { InterdictionRadius = 25, HackingState = 0, Structure = structure with { } };
+        var changed = decorated with { HackingState = 2, Structure = null };
+        var cleared = decorated with { InterdictionRadius = null, HackingState = null, Structure = null };
+
+        Assert.Equal(plain, plain with { Structure = null });
+        Assert.Equal(decorated, equivalent);
+        Assert.Equal(decorated.GetHashCode(), equivalent.GetHashCode());
+        Assert.NotEqual(decorated, changed);
+        Assert.Same(structure, decorated.Structure);
+        Assert.Equal(0, decorated.HackingState);
+        Assert.Equal(2, changed.HackingState);
+        Assert.Null(changed.Structure);
+        Assert.Equal(25, changed.InterdictionRadius);
+        Assert.Equal(plain, cleared);
+        Assert.Equal(plain.GetHashCode(), cleared.GetHashCode());
+        Assert.True(cleared.Solid);
+        Assert.True(cleared.IsGlobal);
+    }
 
     [Fact]
     public void FullResourceCachePreservesOtherSystemsOnReplacementAndEvictsOnlyTheLeastRecentView()
