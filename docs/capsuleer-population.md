@@ -276,13 +276,14 @@ escorts and defensive objectives retain their narrower targeting policy. Friends
 
 With **Persistent roaming gangs** enabled (default on), eligible nullsec pilots can assemble existing ships into a
 three-to-six-ship hunting gang. **Roaming gang size** defaults to four. The ordinary roam chance also controls formation.
-A gang needs at least three available combat ships at a station, including separate scout and tackle pilots, and a
-connected nullsec station route within three jumps, or a witnessed local defensive objective. Sparse communities
-continue using individual roams.
+A gang needs at least three available combat ships, including separate scout and tackle pilots, and a connected nullsec
+station route within three jumps or a witnessed local defensive objective. Wingmates can rally from docks up to two
+nullsec jumps away. The gang returns if its members miss the rally deadline. Sparse communities continue using solo roams.
 
 Gangs retain their home, roster, leader, roles and route across checkpoints and restarts. The scout departs first;
 the main body regroups at gates and shares short-lived target reports. A fitted scout can hold a player or rival bot
-when a damage-capable wingmate is visible within 30 km of the target and the local matchup is favorable.
+when damage support is near the target or is already in warp and can arrive before the scout expects to lose tackle.
+Logistics pilots can lock and repair a damaged wingmate with fitted remote armor or shield modules.
 A lone scout reports the contact and can wait briefly for backup. The gang returns after reaching its endpoint, suffering
 losses, or exhausting its sortie time. Individual pilots use their own fits, damage application, health, ammunition and
 capacitor to decide how to engage. Kiting ships preserve range while tacklers close. Lost hulls remain lost.

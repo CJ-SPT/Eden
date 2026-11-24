@@ -329,7 +329,7 @@ internal sealed partial class CapsuleerIndustry
                 (effects[charge.Flag] is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles)
                 && catalog.FittingType(module)?.GroupId != InterdictionRules.LauncherGroup;
         }
-        if (!dealsDamage && !effects.Values.Any(PvpSupport.Supported))
+        if (!dealsDamage && !effects.Values.Any(effect => PvpSupport.Supported(effect) || PvpSupport.RemoteRepair(effect)))
         {
             return null;
         }

@@ -69,6 +69,8 @@ public sealed record CapsuleerDefenseState
     public CapsuleerLock[] Locks { get; init; } = [];
     public CapsuleerModuleCycle[] Cycles { get; init; } = [];
     public CapsuleerModuleBudget[] Budgets { get; init; } = [];
+    public CapsuleerLock? RepairLock { get; init; }
+    public RemoteRepairCycle[] RemoteRepairs { get; init; } = [];
 }
 
 public static class CapsuleerDefenseRules

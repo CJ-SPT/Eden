@@ -73,6 +73,10 @@ internal sealed partial class CapsuleerHauler
         {
             gang = ReturnGang(gang, "Withdrawing to preserve the surviving ships.");
         }
+        if (gang.Phase == RoamingGangPhase.Forming && gang.RallyUntil > 0 && Work.ActiveTicks >= gang.RallyUntil)
+        {
+            gang = ReturnGang(gang, "The roaming gang could not assemble before its rally deadline.");
+        }
         _work = Work with { Gang = gang };
     }
 
@@ -106,7 +110,14 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        if (gang.Phase == RoamingGangPhase.Returning && Pilot.StationId == gang.HomeStationId)
+        if (TryGangRally(ref gang, member))
+        {
+            return true;
+        }
+        if (
+            gang.Phase == RoamingGangPhase.Returning
+            && (Pilot.StationId == gang.HomeStationId || Pilot.StationId == member.Rally?.StationId)
+        )
         {
             var members = gang
                 .Members.Select(other => other.PilotId == pilotId ? other with { Status = RoamingGangMemberStatus.Returned } : other)
@@ -124,6 +135,7 @@ internal sealed partial class CapsuleerHauler
                 GangReturning = false,
                 Retreating = false,
                 Ratting = null,
+                Journey = Work.Journey?.Kind == TrafficJourneyKind.GangRally ? null : Work.Journey,
                 Activity = HaulerActivity.Docked,
                 WaitingReason = "Roaming gang recovering at home.",
                 DueTicks = checked(Work.ActiveTicks + RoamingGangRules.RecoveryTicks),
@@ -230,13 +242,7 @@ internal sealed partial class CapsuleerHauler
         RoamingGangMember[] members = [];
         int? regionalGroup = policy.RegionalConflicts ? RegionalConflictStore.GroupForPilot(Live!, database.Catalog, pilotId) : null;
         var world = _operation.World;
-        var roster = world
-            .Set<SavedCapsuleerHauler>()
-            .Where(row => row.SourceStationId == Pilot.StationId && row.PilotId != pilotId)
-            .OrderBy(row => row.PilotId)
-            .Take(MaximumFormationCandidates)
-            .ToArray();
-        foreach (var row in roster)
+        foreach (var (row, rally) in GangRecruits(world))
         {
             var saved = world.Pilots.SingleOrDefault(other => other.Id == row.PilotId);
             if (
@@ -244,7 +250,7 @@ internal sealed partial class CapsuleerHauler
                 || (CapsuleerCorporations.Organization(world, row.PilotId).ActiveWorker ?? CapsuleerCareer.Hauling)
                     != CapsuleerCareer.Hauling
                 || saved.ActiveShip.Position is not null
-                || saved.ActiveShip.StationId != Pilot.StationId
+                || saved.ActiveShip.StationId != (rally?.StationId ?? Pilot.StationId)
                 || !CapsuleerIndustry.HasPvpShip(world, saved.Id, saved.ActiveShipId)
                 || world.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is not null
                 || regionalGroup is not null
@@ -267,6 +273,10 @@ internal sealed partial class CapsuleerHauler
                 work is { Gang.Phase: not RoamingGangPhase.Complete }
                 || work?.Freight?.Stacks.Length > 0
                 || work?.Ratting is not null
+                || work?.Exploration is not null
+                || work?.MilitiaPatrol is not null
+                || work?.RegionalEscort is not null
+                || work?.Journey?.Kind is TrafficJourneyKind.PvpShopping or TrafficJourneyKind.CorporationRelocation
                 || work?.Resupply?.DestinationStationId is not null
                 || work?.CorporationSupply is not null
                 || work?.SovereigntyExpedition is not null
@@ -310,7 +320,8 @@ internal sealed partial class CapsuleerHauler
                 ActiveTicks: Work.ActiveTicks,
                 ClockOffsetTicks: Work.ActiveTicks
             );
-            candidates.Add(Recruit(other, fit));
+            var recruit = Recruit(other, fit);
+            candidates.Add(recruit with { Member = recruit.Member with { Rally = rally } });
             schedules.Add(other.PilotId, work);
             if (candidates.Count >= policy.RoamingGangSize)
             {
@@ -350,6 +361,7 @@ internal sealed partial class CapsuleerHauler
         {
             Regional = regional,
             Reason = regional?.Reason ?? "Hunting along a connected nullsec route.",
+            RallyUntil = members.Any(member => member.Rally is not null) ? checked(Work.ActiveTicks + RoamingGangRules.RallyTicks) : 0,
         };
         LaunchRegional(gang);
         foreach (var member in members.Where(member => member.PilotId != pilotId))
@@ -372,6 +384,12 @@ internal sealed partial class CapsuleerHauler
             || Work.Activity == HaulerActivity.Jumping
         )
         {
+            return;
+        }
+        if (Work.Journey is { Kind: TrafficJourneyKind.GangRally })
+        {
+            _work = Work with { GangReturning = true, Retreating = true, RouteDirection = -1 };
+            BeginTravel();
             return;
         }
         _route = new(gang.HomeStationId, gang.DestinationStationId, gang.Systems);
@@ -401,7 +419,7 @@ internal sealed partial class CapsuleerHauler
 
     private bool WaitForGangAtGate(StaticSpaceObject gate)
     {
-        if (!InActiveGang || Work.GangReturning || GangMember?.Role == PvpRole.Scout)
+        if (!InActiveGang || Work.GangReturning || Work.Journey?.Kind == TrafficJourneyKind.GangRally || GangMember?.Role == PvpRole.Scout)
         {
             return false;
         }

@@ -37,6 +37,8 @@ public static class PvpSupport
     public static bool Supported(DogmaEffect effect) =>
         Independent(effect) || effect is DogmaEffect.TargetPainter or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler;
 
+    public static bool RemoteRepair(DogmaEffect effect) => effect is DogmaEffect.RemoteArmorRepair or DogmaEffect.RemoteShieldBoost;
+
     public static double Priority(HullClass hull) =>
         hull switch
         {

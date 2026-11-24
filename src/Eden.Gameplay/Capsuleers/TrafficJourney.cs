@@ -11,6 +11,7 @@ public enum TrafficJourneyKind
     PvpShopping,
     MilitiaPatrol,
     NullsecExpedition,
+    GangRally,
 }
 
 public enum NullsecExpeditionWork

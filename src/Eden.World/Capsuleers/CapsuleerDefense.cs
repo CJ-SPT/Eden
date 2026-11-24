@@ -56,6 +56,7 @@ internal sealed partial class CapsuleerDefense(
     IPilotHardening hardeners,
     IPilotShieldBoosting shields,
     IPilotLocalRepairing repairs,
+    IPilotRemoteRepairing remoteRepairs,
     IPilotCapacitorBoosting boosters,
     IPilotSupportModules support,
     IPilotSignatureSuppression suppression,
@@ -219,6 +220,7 @@ internal sealed partial class CapsuleerDefense(
         var state = saved?.ShipId == pilot.ShipId ? saved : new CapsuleerDefenseState { ShipId = pilot.ShipId };
         if (saved is not null && saved.ShipId != pilot.ShipId)
         {
+            StopLogistics(pilot.PilotId, saved);
             locks.RemoveShip(saved.ShipId);
             overloading.Clear(pilot.PilotId, saved.ShipId);
         }
@@ -230,6 +232,15 @@ internal sealed partial class CapsuleerDefense(
                 drones.Release(pilot.PilotId, pilot.ShipId);
             }
             return new(pilot, null, false, false, false);
+        }
+        if (world is not null && pvpRole == PvpRole.Logistics && gang is { Phase: RoamingGangPhase.Hunting } && !forceRetreat)
+        {
+            return AdvanceLogistics(world, pilot, state, gang, now);
+        }
+        if (state.RepairLock is not null || state.RemoteRepairs.Length > 0)
+        {
+            StopLogistics(pilot.PilotId, state);
+            state = state with { RepairLock = null, RemoteRepairs = [] };
         }
         CapsuleerModuleCycle[]? cycles = null;
         for (int index = 0; index < state.Cycles.Length; index++)
@@ -1105,6 +1116,7 @@ internal sealed partial class CapsuleerDefense(
 
     private void Stop(long pilot, CapsuleerDefenseState state)
     {
+        StopLogistics(pilot, state);
         overloading.Clear(pilot, state.ShipId);
         // Defense owns outgoing locks. Clearing incoming locks here makes peaceful pilots
         // lose every player's lock on each maintenance update, including during alignment.

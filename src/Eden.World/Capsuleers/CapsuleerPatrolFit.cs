@@ -256,16 +256,18 @@ internal static partial class CapsuleerPatrolFit
                 return patrol;
             }
         }
-        return imported?.Invoke() is { } profile && ArmedRoamingFit(catalog, profile) ? profile : interdictor ?? Starter(catalog);
+        return imported?.Invoke() is { } profile && RoamingFit(catalog, profile, policy.RoamingGangs)
+            ? profile
+            : interdictor ?? Starter(catalog);
     }
 
-    private static bool ArmedRoamingFit(CatalogDbContext catalog, TrafficProfile profile)
+    private static bool RoamingFit(CatalogDbContext catalog, TrafficProfile profile, bool allowFleetRepair)
     {
         if (!CombatHull(catalog, profile.HullTypeId))
         {
             return false;
         }
-        bool weapon = false;
+        bool contributes = false;
         foreach (var item in profile.Equipment.Where(item => InventoryDefinitions.IsHighSlot(item.Flag)))
         {
             var effect = FittingCatalog.DefaultEffect(catalog, item.TypeId);
@@ -273,10 +275,13 @@ internal static partial class CapsuleerPatrolFit
             {
                 return false;
             }
-            weapon |=
-                effect is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles
+            contributes |=
+                (
+                    effect is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles
+                    || allowFleetRepair && effect is { } active && PvpSupport.RemoteRepair(active)
+                )
                 && catalog.FittingType(item.TypeId)?.GroupId != InterdictionRules.LauncherGroup;
         }
-        return weapon;
+        return contributes;
     }
 }

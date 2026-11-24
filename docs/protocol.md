@@ -154,6 +154,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Autonomous capsuleers
 
+- [Roaming gang rallies, scout commitment, and logistics](protocol/capsuleers.md#roaming-gang-rallies-scout-commitment-and-logistics)
+
 - [Nullsec scouting and freight warnings](protocol/capsuleers.md#nullsec-scouting-and-freight-warnings)
 
 - [Unattended nullsec PvP and map population](protocol/capsuleers.md#unattended-nullsec-pvp-and-map-population--november-23-2026)

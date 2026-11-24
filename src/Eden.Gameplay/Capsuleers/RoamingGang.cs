@@ -10,6 +10,7 @@ public enum PvpRole
     Kiter,
     Brawler,
     ElectronicWarfare,
+    Logistics,
 }
 
 public enum RoamingGangPhase
@@ -32,9 +33,14 @@ public sealed record RoamingGangMember(long PilotId, long ShipId, PvpRole Role)
     public RoamingGangMemberStatus Status { get; init; }
     public Eden.Gameplay.Ships.HullClass Hull { get; init; }
     public bool DamageCapable { get; init; } = true;
+    public GangRallyRoute? Rally { get; init; }
 }
 
+public sealed record GangRallyRoute(int StationId, int[] Systems);
+
 public sealed record RoamingGangRecruit(RoamingGangMember Member, double Speed, bool HasTackle);
+
+public sealed record GangBackup(long ShipId, double ArrivalSeconds);
 
 public sealed record GangSighting(long ShipId, int SystemId, long GridId, long SeenAt, long ExpiresAt);
 
@@ -56,6 +62,7 @@ public sealed record RoamingGang(
     public GangSighting? Sighting { get; init; }
     public string Reason { get; init; } = "Forming a hunting patrol.";
     public RegionalOperation? Regional { get; init; }
+    public long RallyUntil { get; init; }
 }
 
 public static class RoamingGangRules
@@ -63,15 +70,25 @@ public static class RoamingGangRules
     public const int MinimumMembers = 3;
     public const int MaximumMembers = 6;
     public const int MaximumJumps = 3;
+    public const int MaximumRallyJumps = 2;
     public static readonly long FormationTicks = TimeSpan.FromSeconds(30).Ticks;
+    public static readonly long RallyTicks = TimeSpan.FromMinutes(4).Ticks;
     public static readonly long ScoutLeadTicks = TimeSpan.FromSeconds(8).Ticks;
     public static readonly long ReportTicks = TimeSpan.FromSeconds(12).Ticks;
     public static readonly long SortieTicks = TimeSpan.FromMinutes(10).Ticks;
     public static readonly long RecoveryTicks = TimeSpan.FromMinutes(2).Ticks;
     public static readonly long RendezvousTicks = TimeSpan.FromMinutes(2).Ticks;
 
-    // Eden small-gang policy: damage support must be on grid and within 30 km of the intended opponent.
+    // Eden small-gang policy: approximate the range at which incoming damage support can help.
     public const double ScoutBackupMeters = 30_000;
+    private const double MaximumScoutHoldSeconds = 24;
+    private const double BackupArrivalMargin = 2;
+
+    public static double ScoutHoldSeconds(double shieldAndArmorFraction, double opposition, double scoutThreat, double capacitorSeconds) =>
+        Math.Min(
+            Math.Clamp(shieldAndArmorFraction, 0, 1) * MaximumScoutHoldSeconds / Math.Max(1, opposition / scoutThreat),
+            capacitorSeconds
+        );
 
     public static RoamingGangMember[] SelectRoster(IReadOnlyList<RoamingGangRecruit> available, int size)
     {
@@ -84,7 +101,7 @@ public static class RoamingGangRules
             return [];
         }
         var ranked = available
-            .OrderBy(recruit => recruit.Member.Role == PvpRole.ElectronicWarfare)
+            .OrderBy(recruit => recruit.Member.Role is PvpRole.ElectronicWarfare or PvpRole.Logistics)
             .ThenByDescending(recruit => recruit.Speed)
             .ThenBy(recruit => recruit.Member.PilotId)
             .ToArray();
@@ -143,7 +160,9 @@ public static class RoamingGangRules
         double tackleRange,
         PilotSighting target,
         IReadOnlyList<PilotSighting> visible,
-        double opposition
+        double opposition,
+        IReadOnlyList<GangBackup>? inbound = null,
+        double holdSeconds = 0
     )
     {
         if (
@@ -162,9 +181,13 @@ public static class RoamingGangRules
                 continue;
             }
             var contact = visible.FirstOrDefault(ship => ship.ShipId == member.ShipId && ship.PilotId == member.PilotId);
-            if (contact is not null && contact.Position.DistanceTo(target.Position) <= ScoutBackupMeters)
+            if (
+                contact is not null && contact.Position.DistanceTo(target.Position) <= ScoutBackupMeters
+                || inbound?.Any(arrival => arrival.ShipId == member.ShipId && arrival.ArrivalSeconds + BackupArrivalMargin < holdSeconds)
+                    == true
+            )
             {
-                backup += PvpTactics.Threat(contact.Hull);
+                backup += PvpTactics.Threat(contact?.Hull ?? member.Hull);
             }
         }
         return backup > 0 && opposition <= backup + PvpTactics.Threat(scout.Hull);

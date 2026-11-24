@@ -2,6 +2,45 @@
 
 [Protocol index](../protocol.md)
 
+## Roaming gang rallies, scout commitment, and logistics
+
+A station can recruit compatible combat pilots already docked at staging or up to two reciprocal nullsec jumps away.
+Remote recruits use their saved ships and ordinary gate travel. The gang waits up to four active minutes for its roster
+to arrive and uses the existing checkpoint on both sides of a gate. A missed deadline sends surviving members home.
+
+A scout can tackle when its damage wing is near the intended target, or when wingmates already in warp to that grid
+can arrive within the scout's estimated hold time. The estimate uses the scout's tank, capacitor budget and observed
+opposition. A ship merely assigned to help supplies no arrival estimate.
+
+Logistics-only armor and shield repair fits can join gangs, including complete supported snapshot fits. A logistics
+pilot treats a nearby wingmate's reported damage as a repair request, waits for the regular lock deadline, and pays
+the native remote repair cycle. Friendly visibility, assistance and faction rules still apply. The native restart rule
+cancels unfinished armor cycles without refund and the pilot can reacquire its target afterward.
+
+EVE.js 261108.1 fleet warp followers in `server/src/services/fleets/fleetWarpFollowers.js` and player remote repairs
+provide behavior references. Rally timing, scout risk estimates and simulated repair requests are Eden policies.
+[EVE University scouting](https://wiki.eveuniversity.org/Scouting) ·
+[EVE University fleet roles](https://wiki.eveuniversity.org/Fleet_and_Gang_Types) ·
+[EVE University logistics](https://wiki.eveuniversity.org/Logistics)
+
+**Automated validation**
+
+All 14 focused cases passed in 18.08 seconds after a 1.60-second build. The filter selected `PatrolHuntTests`,
+`RemoteWingmatesRallyThroughRealGateBeforeDeparting`, `ScoutCommitsWhenHelpCanArriveBeforeItsHoldGivesOut`,
+`LogisticsUsesALockAndPaidRepairCycleForItsDamagedWingmate`, `ScoutCommitsOnlyWithVisibleActiveDamageSupportWithinReachOfTheOpponent`,
+`GangFormsInUnattendedNullsec`, `GangFormsTravelsWithoutAnObserverAndReturnsAfterRestart`,
+`OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang`, and `WarmRemoteRepairPaysAndSettlesOnceOnResidentWorld`.
+The remote recruits crossed a real gate and reached Hunting after reopening while unattended. The logistics replay
+paid for and settled a native armor repair cycle. The solution build, 17 Python policy cases, CSharpier and line width passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Follow a formed gang on the Population inspector across a rally, and compare the scout and logistics roles.
+
 ## Nullsec scouting and freight warnings
 
 Independent roams prefer systems with recent sampled in-space activity from the public star map. The bias is capped

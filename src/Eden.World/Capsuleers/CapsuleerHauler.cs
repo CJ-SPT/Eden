@@ -1078,6 +1078,10 @@ internal sealed partial class CapsuleerHauler(
     private void TradeAndLaunch(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
+        if (InActiveGang && TryGangDeparture())
+        {
+            return;
+        }
         if (WaitForHuntReserve())
         {
             return;
@@ -1641,6 +1645,7 @@ internal sealed partial class CapsuleerHauler(
                     or TrafficJourneyKind.PvpShopping
                     or TrafficJourneyKind.MilitiaPatrol
                     or TrafficJourneyKind.NullsecExpedition
+                    or TrafficJourneyKind.GangRally
             || !TryRegionalGrid()
         )
         {

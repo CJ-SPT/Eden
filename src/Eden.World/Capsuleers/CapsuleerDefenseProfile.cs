@@ -35,7 +35,8 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
     internal double TargetRange { get; init; }
     internal bool HasDamage => RattingWeapons.Any(source => source.AvailableShots > 0 && source.Weapon.Damage.Total > 0);
     internal bool HasSupport => Modules.Any(module => PvpSupport.Supported(module.Effect));
-    internal bool CanContribute => HasDamage || HasSupport;
+    internal bool HasRemoteRepair => Modules.Any(module => PvpSupport.RemoteRepair(module.Effect));
+    internal bool CanContribute => HasDamage || HasSupport || HasRemoteRepair;
     internal double SupportRange =>
         Modules
             .Where(module => PvpSupport.Supported(module.Effect))
@@ -52,19 +53,19 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
             .DefaultIfEmpty(0)
             .Max();
     internal PvpRole PvpRole =>
-        !HasDamage && TackleRange > 0 && !Modules.Any(module => PvpSupport.Independent(module.Effect))
-            ? PvpRole.Tackle
-            : PvpTactics.Role(
-                PvpRange,
-                TackleRange,
-                Modules.Any(module =>
-                    module.Effect
-                        is DogmaEffect.PlayerEcm
-                            or DogmaEffect.SensorDampener
-                            or DogmaEffect.TrackingDisruptor
-                            or DogmaEffect.GuidanceDisruptor
-                )
-            );
+        !HasDamage && HasRemoteRepair ? PvpRole.Logistics
+        : !HasDamage && TackleRange > 0 && !Modules.Any(module => PvpSupport.Independent(module.Effect)) ? PvpRole.Tackle
+        : PvpTactics.Role(
+            PvpRange,
+            TackleRange,
+            Modules.Any(module =>
+                module.Effect
+                    is DogmaEffect.PlayerEcm
+                        or DogmaEffect.SensorDampener
+                        or DogmaEffect.TrackingDisruptor
+                        or DogmaEffect.GuidanceDisruptor
+            )
+        );
 
     internal static CapsuleerDefenseProfile Read(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {
