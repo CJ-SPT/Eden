@@ -148,7 +148,14 @@ internal sealed partial class CapsuleerHauler
     )
     {
         var policy = database.Settings.Capsuleers;
-        if (!policy.BeltRatting && (_background || !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps))
+        if (
+            !policy.BeltRatting
+            && (
+                _background
+                    ? !CanStartLocalPvp || !CapsuleerIndustry.CanStagePvp(_operation.World, _operation.Catalog, Pilot.SystemId)
+                    : !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps
+            )
+        )
         {
             return false;
         }
@@ -174,16 +181,16 @@ internal sealed partial class CapsuleerHauler
         _work = Work with { ActivitySequence = sequence };
         if (intentionalHunt)
         {
-            return !_background
+            return CanStartLocalPvp
                 && HasPvpShip
                 && (
                     CapsuleerIndustry.RequiresEarnedPvp(_operation.World) && TryLaunchCamp(sequence, profile)
-                    || policy.RoamPercent > 0 && TryLaunchPatrol(sequence, intentional: true)
+                    || policy.RoamPercent > 0 && TryLaunchPatrol(sequence, intentional: !_background)
                 );
         }
         if (
             !fundingFit
-            && !_background
+            && CanStartLocalPvp
             && HasPvpShip
             && (_operation.World is not Eden.World.Runtime.Economy.EconomyTransaction work || !DynamicWorkPilot(work))
             && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))

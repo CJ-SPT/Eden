@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
@@ -13,7 +14,9 @@ using Eden.Protocol.Tests.Capsuleers;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Docking;
 using Eden.World.Maps;
 using Eden.World.Runtime;
@@ -499,6 +502,52 @@ public sealed class MapNavigationTests
         Assert.Equal(new(1, 0), restored.Population().Systems[Perimeter]);
         clock.Seconds += 60;
         Assert.Empty(restored.Population().Systems);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PopulationSamplesOffscreenBotsWhenUnattendedSimulationIsActive(bool runWithoutPlayers)
+    {
+        const int Perimeter = 30000144;
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        var clock = fixture.Clock;
+        WorldConfigurationStore settings = new(fixture.Database, clock);
+        var configuration = settings.Read();
+        var draft = configuration.Active.Draft;
+        settings.Save(
+            configuration.Generation,
+            draft with
+            {
+                Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { RunWithoutPlayers = runWithoutPlayers } },
+            },
+            "test"
+        );
+        WorldInitialization.Initialize(fixture.Database, clock);
+
+        using var host = ServerServices.Build(fixture.Database, clock, liveWorld: true);
+        var activity = host.GetRequiredService<CapsuleerActivitySource>();
+        var live = host.GetRequiredService<LiveWorld>();
+        var statistics = host.GetRequiredService<IMapStatistics>();
+        var ships = host.GetRequiredService<SqliteWorld>();
+        var founder = live.Economy.Inspect(world =>
+            world.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining)
+        );
+        ships.SetPosition(founder.FounderShipId, SpacePosition.Zero, Perimeter);
+        activity.StartUnattended();
+        var beforeSelection = activity.Read();
+        Assert.Empty(beforeSelection.Pilots);
+        Assert.Equal(runWithoutPlayers, beforeSelection.Active);
+        live.SampleMapPilots();
+        Assert.Equal(new MapPilotCounts(runWithoutPlayers ? 1 : 0, 0), statistics.Population().Systems.GetValueOrDefault(Perimeter));
+
+        clock.Seconds += 60;
+        var player = ships.FindPilot(1000001)!;
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(player.PilotId, player.SystemId);
+        live.SampleMapPilots();
+        var counts = statistics.Population();
+        Assert.Equal(2, counts.Samples);
+        Assert.Equal(new MapPilotCounts(runWithoutPlayers ? 2 : 1, 0), counts.Systems[Perimeter]);
     }
 
     private static object?[] ClusterArguments() => ["EVE", new object?[] { BlueEmpty.Dictionary, BlueEmpty.Dictionary, 0L }];

@@ -14,6 +14,38 @@ public sealed class CapsuleerTrafficRoutesTests
     private const int FirstStation = 60001001;
 
     [Fact]
+    public void RoamingExpeditionsFavorSystemsWithCapsuleersAndAvoidReportedThreats()
+    {
+        using Fixture fixture = new();
+        int busy = FirstSystem + 2;
+        int quiet = FirstSystem + 5;
+        fixture.Connect(FirstSystem, busy);
+        fixture.Connect(FirstSystem, quiet);
+        using CatalogDbContext catalog = new(fixture.Path);
+        CapsuleerPopulationPolicy policy = new();
+        var destinations = Enumerable.Range(1, 128).Select(seed => Destination((ulong)seed, [])).ToArray();
+
+        Assert.InRange(destinations.Count(system => system == busy), 100, 127);
+        Assert.Contains(quiet, destinations);
+        Assert.Equal(quiet, Destination(1, [busy]));
+
+        int Destination(ulong seed, HashSet<int> avoided) =>
+            CapsuleerTrafficRoutes
+                .NullsecExpedition(
+                    catalog,
+                    FirstSystem,
+                    HullClass.Frigate,
+                    policy,
+                    avoided,
+                    ratting: false,
+                    roaming: true,
+                    TravelerRoutineRules.Mix(seed),
+                    system => system == busy ? 10 : 0
+                )!
+                .Systems[^1];
+    }
+
+    [Fact]
     public void ExpeditionPathsDiversifyAcrossSeedsAndReplanAroundObservedThreats()
     {
         using Fixture fixture = new();

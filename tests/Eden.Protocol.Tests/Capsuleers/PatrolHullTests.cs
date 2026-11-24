@@ -1,9 +1,12 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Maps;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Flight;
@@ -216,6 +219,73 @@ public sealed class PatrolHullTests
         Assert.True(pointed);
         Assert.True(Remaining() < before);
         Assert.Equal(0, fixture.Scheduler.Read().Failures);
+    }
+
+    [Fact]
+    public async Task UnattendedPatrolDestroysRivalAndPersistsKillboardAndMapActivity()
+    {
+        using var fixture = new RoamingGangTests.Fixture(
+            regional: true,
+            patrolSeed: RoamingGangTests.Fixture.DestroyerSeed,
+            soloHull: CapsuleerPatrolFit.Catalyst,
+            unattended: true
+        );
+        var activity = fixture.Host.GetRequiredService<IHumanPresence>().Read();
+        Assert.Empty(activity.ActiveSystems);
+        Assert.True(activity.Active);
+        long hunter = fixture.Live.Economy.Read(world =>
+            world
+                .Set<SavedCapsuleerHauler>()
+                .AsEnumerable()
+                .Single(row => world.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is null)
+                .PilotId
+        );
+        for (int turn = 0; turn < 300 && fixture.Scheduler.Hauler(hunter)?.Work.Ratting?.Phase != RattingPhase.Searching; turn++)
+        {
+            fixture.Tick();
+        }
+        var patrol = fixture.Scheduler.Hauler(hunter)!;
+        Assert.Equal(PatrolKind.Roam, patrol.Work.Ratting?.Patrol?.Kind);
+        Assert.Equal(RattingPhase.Searching, patrol.Work.Ratting?.Phase);
+        Assert.False(fixture.Live.IsDetailedSystem(patrol.Pilot.SystemId));
+
+        var victim = PlaceTarget(fixture, patrol.Pilot, rival: true, patrol.Work.Ratting!.StationId, solo: true);
+        var health = fixture.Host.GetRequiredService<IPilotHealth>();
+        var defense = health.Read(victim.PilotId, fixture.Clock.Now).Defense;
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            var state =
+                action.Set<ShipHealthState>().Find(victim.ShipId) ?? action.Add(new ShipHealthState { ShipId = victim.ShipId }).Entity;
+            state.ShieldCharge = 0;
+            state.ArmorDamage = defense.Armor;
+            state.StructureDamage = defense.Structure - 1;
+            state.UpdatedAt = fixture.Clock.Now;
+            action.Commit();
+        }
+        for (int turn = 0; turn < 45 && !health.WasDestroyed(victim.ShipId); turn++)
+        {
+            fixture.Tick();
+        }
+        Assert.True(health.WasDestroyed(victim.ShipId));
+        Assert.Equal(0, fixture.Scheduler.Read().Failures);
+        var report = AssertKill();
+        await fixture.Live.FlushAsync();
+        fixture.Restart();
+        Assert.Equal(report, AssertKill());
+
+        KillboardEntry AssertKill()
+        {
+            var board = fixture.Host.GetRequiredService<IServerKillboard>();
+            var kill = Assert.Single(board.Read(new(KillboardPartyKind.Bot, KillboardPartyKind.Bot))!.Entries);
+            Assert.Equal(patrol.Pilot.Name, kill.Killer.Name);
+            Assert.Equal(victim.Name, kill.Victim.Name);
+            var statistics = fixture.Host.GetRequiredService<IMapStatistics>();
+            Assert.Equal(
+                new MapHistoryRow(victim.SystemId, new(0, 1, 0, 0)),
+                Assert.Single(statistics.History(MapHistoryStatistic.Kills, 1).Rows)
+            );
+            return kill;
+        }
     }
 
     private static DockedPilot PlaceTarget(

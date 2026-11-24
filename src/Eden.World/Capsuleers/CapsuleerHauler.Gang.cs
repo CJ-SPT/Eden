@@ -205,7 +205,7 @@ internal sealed partial class CapsuleerHauler
             !policy.Enabled
             || !policy.RoamingGangs
             || !policy.RoamingPvp
-            || _background
+            || !CanStartLocalPvp
             || !HasPvpShip
             || !authorizedHunt && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident && DynamicWorkPilot(resident)
             || Work.Retreating

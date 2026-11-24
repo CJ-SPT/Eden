@@ -27,8 +27,8 @@ internal sealed partial class LiveWorld
         {
             return;
         }
-        var players = CapsuleerActivity.Read().Pilots;
-        if (MapStatistics.Sample(SimulationTime, Economy.MapPopulation(players)))
+        var activity = CapsuleerActivity.Read();
+        if (MapStatistics.Sample(SimulationTime, Economy.MapPopulation(activity)))
         {
             EconomicObjectsChanged();
         }

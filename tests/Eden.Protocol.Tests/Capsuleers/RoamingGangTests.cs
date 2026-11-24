@@ -164,6 +164,23 @@ public sealed class RoamingGangTests
     }
 
     [Fact]
+    public void GangFormsInUnattendedNullsec()
+    {
+        using var fixture = new Fixture(unattended: true);
+        var activity = fixture.Host.GetRequiredService<IHumanPresence>();
+        Assert.True(activity.Read().Active);
+        Assert.Empty(activity.Read().ActiveSystems);
+
+        var gang = fixture.Form();
+
+        Assert.Equal(HomeStation, gang.HomeStationId);
+        Assert.Equal(4, gang.Members.Length);
+        Assert.Equal(RoamingGangPhase.Forming, gang.Phase);
+        Assert.Empty(activity.Read().ActiveSystems);
+        Assert.Equal(0, fixture.Scheduler.Read().Failures);
+    }
+
+    [Fact]
     public async Task GangFormsTravelsWithoutAnObserverAndReturnsAfterRestart()
     {
         using var fixture = new Fixture();
@@ -541,7 +558,8 @@ public sealed class RoamingGangTests
             int gangSize = 4,
             int? patrolSeed = null,
             int? soloHull = null,
-            TrafficProfile[]? snapshot = null
+            TrafficProfile[]? snapshot = null,
+            bool unattended = false
         )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
@@ -756,7 +774,15 @@ public sealed class RoamingGangTests
                 }
                 action.Commit();
             }
-            SelectHome();
+            if (unattended)
+            {
+                Host.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
+                Scheduler.PopulationPrepared(Home);
+            }
+            else
+            {
+                SelectHome();
+            }
         }
 
         internal void Tick()

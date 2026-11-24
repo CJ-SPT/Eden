@@ -2,6 +2,61 @@
 
 [Protocol index](../protocol.md)
 
+## Unattended nullsec PvP and map population — November 23, 2026
+
+A read-only HostCram checkpoint capture at 11:23 p.m. Eastern on `8c8dd74a` found 5,749 scheduled bots. Over the
+preceding 24 hours, the map journal recorded 632,475 jumps across 3,318 systems. Combat reports recorded 8,565 NPC
+ships killed by bots, 642 bot ships killed by NPCs, and five bot ships killed by players. The retained combat reports
+contained zero bot-on-bot kills. Roaming, gangs, gate camps, and nullsec expeditions were enabled. The checkpoint had
+780 bots in their acquired PvP hulls, 17 solo roaming journeys, three active patrols, and no active gangs or gate camps.
+
+The 11:17 p.m. checkpoint held 29 empty population samples. The sampler returned early when there were no selected
+human pilots, before counting the active bot roster. It now counts unsuspended resident bots during unattended operation.
+The rolling jump and kill histories come from their separate event records.
+
+Local PvP departures previously required the observer-dependent simulation tier. Eligible resident bots can now start
+solo patrols, gate camps, or gangs from nullsec without a human in the system. A launched patrol uses detailed simulation
+for navigation and combat. Offscreen solo patrols use the configured roam chance. Fit, affiliation, visibility, and
+legality checks continue to govern engagements.
+
+Independent nullsec roams give all eligible populated destinations the same weight and divide the route draw for an
+unpopulated destination by four. Quiet destinations remain eligible, and the picker still favors paths through multiple
+nullsec systems. Belt-ratting expeditions still give quieter systems more weight. EVE.js scene ticking in
+`server/src/space/runtime/scene/tick.js` was checked for the simulation boundary. Nullsec departure and destination
+selection are Eden policy. [EVE University solo PvP](https://wiki.eveuniversity.org/Solo_PvP)
+
+**Automated validation**
+
+`UnattendedPatrolDestroysRivalAndPersistsKillboardAndMapActivity` and `GangFormsInUnattendedNullsec` passed in
+12.40 seconds after a 10.38-second build. In the solo case, a normally scheduled patrol in an unobserved system
+acquired and destroyed a damaged rival placed on its grid. The resulting bot-on-bot kill appeared on the killboard
+and in the map's ship-loss history and survived reopening. The gang case formed four eligible pilots without a
+selected player. The route regression covered the preference for populated systems and continued threat avoidance.
+Both [star map population cases](navigation.md#star-map-statistics-november-20-2026) passed with unattended simulation
+enabled and disabled.
+
+The final exact-method selection for those five cases and the corporate replacement trade case passed all six in
+16.15 seconds after a 5.79-second build.
+
+The 221-case focused run completed in 286.70 seconds with 218 passing cases. The filter selected `MapNavigationTests`,
+`RoamingGangTests`, `PatrolHullTests`, `CapsuleerTrafficRoutesTests`, `RegionalConflictWorldTests`,
+`CapsuleerAmmunitionSupplyTests`, `PilotSpaceActivitiesTests` and `Capsuleers.PatrolTests` with `FullyQualifiedName~`.
+All three failures reproduced on `8c8dd74a`. The corporate replacement trade fixture now explicitly disables automatic
+refit funding so it exercises corporate payment, and passed on rerun. The existing overpriced resupply case of
+`ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` and the bounty payout assertion in
+`ActualCombatFitCanClearAnOrdinaryPirateAndCannotCollectItsBountyTwice` remain baseline failures. The final solution build
+passed without warnings or errors. All 17 Python policy checks passed. Style, CSharpier, line width and local document
+links passed with the local worktree recovery archive excluded from the CSharpier scan.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+After deployment, compare several unattended checkpoints for populated star map samples, nullsec PvP departures
+and bot-on-bot killboard entries.
+
 ## Unattended capsuleer simulation — November 23, 2026
 
 A production log from the November 23 incident showed active background jobs before the last player disconnected and almost
@@ -60,8 +115,8 @@ Not performed; agent client testing is disabled.
 
 Eligible armed travelers can choose an independent expedition from a station using the build 3662168 catalog's
 reciprocal stargates, the world seed and the resident pilot's ship and work settings. The departure draw combines
-the seed, pilot and saved station visit. The picker favors multi-system nullsec routes and gives quieter eligible
-destinations more weight.
+the seed, pilot and saved station visit. The picker favors multi-system nullsec routes. Belt ratting gives quieter
+eligible destinations more weight. Roaming uses the [population preference documented above](#unattended-nullsec-pvp-and-map-population--november-23-2026).
 
 Independent roams use the configured roam chance at the station departure. The existing 10% belt-ratting draw is
 independent and can provide belt work when a roam cannot launch. A ready roaming gang departs before the solo

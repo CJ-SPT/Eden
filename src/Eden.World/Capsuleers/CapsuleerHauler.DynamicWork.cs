@@ -59,7 +59,7 @@ internal sealed partial class CapsuleerHauler
         bool eligibleHuntSystem = earnedPvp
             ? CapsuleerIndustry.CanStagePvp(world, catalog, Pilot.SystemId)
             : database.Settings.Capsuleers.RoamPercent > 0 && PatrolAllowed(new(PatrolKind.Roam, Pilot.SystemId));
-        bool canHunt = eligibleHuntSystem && !_background;
+        bool canHunt = eligibleHuntSystem && CanStartLocalPvp;
         if (!(earnedPvp && canHunt) && !DynamicWorkPilot(world))
         {
             return false;

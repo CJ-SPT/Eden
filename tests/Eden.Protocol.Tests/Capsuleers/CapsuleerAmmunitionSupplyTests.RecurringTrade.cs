@@ -62,7 +62,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 """
             );
         }
-        UseLocalOrders(fixture);
+        UseLocalOrders(fixture, fundRefits: false);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         long producer;
         long ammunitionOperator;

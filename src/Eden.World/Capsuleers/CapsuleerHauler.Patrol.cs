@@ -6,6 +6,8 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
+    private bool CanStartLocalPvp => !_background || Live is not null && CapsuleerTrafficRoutes.IsNullsec(database.Catalog, Pilot.SystemId);
+
     private bool TryLaunchPatrol(long sequence, bool intentional = false)
     {
         var policy = database.Settings.Capsuleers;
@@ -94,6 +96,8 @@ internal sealed partial class CapsuleerHauler
         };
         LaunchActivity();
         FlyToBelt();
+        // Launch needs only static geometry. The first flight turn prepares the active patrol's resource geometry.
+        _background = false;
     }
 
     private bool PatrolAllowed(PatrolProgress patrol) =>

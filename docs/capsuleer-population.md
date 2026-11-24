@@ -43,6 +43,8 @@ cross empty systems.
 
 **Run bots without players** is on by default. Background travel and work continue while the server runs. Turning it off pauses
 the bot clock whenever no player has selected a character. Server restarts resume from saved time without replaying downtime.
+[Eligible nullsec patrols, gate camps and roaming gangs](protocol/capsuleers.md#unattended-nullsec-pvp-and-map-population--november-23-2026)
+can start in unobserved systems. Active bots also contribute to the star map's sampled in-space and docked populations.
 [Unattended capsuleer traffic](protocol/capsuleers.md#unattended-capsuleer-simulation--november-23-2026)
 
 A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.

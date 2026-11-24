@@ -1314,8 +1314,9 @@ All eight filters in the native **Statistics** menu read known-space activity. E
 selected player characters and enabled, unsuspended autonomous capsuleers once a minute from
 resident ship locations. The 30-minute averages use the samples available since collection
 started, then roll forward. A character is counted once across simultaneous connections.
-Bots contribute from observed and offscreen systems while a player is selected. NPC stations
-and dockable structures both contribute to the docked count.
+Bots contribute from observed and offscreen systems whenever capsuleer simulation is active,
+including unattended operation when enabled. NPC stations and dockable structures both
+contribute to the docked count.
 
 Completed stargate transfers count once in the destination system. Committed combat records
 capsuleer ship and capsule losses by victim and NPC pirate, navy, customs and CONCORD ship
@@ -1376,6 +1377,10 @@ The final run excluded only the three baseline-reproduced method names
 `FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` with `FullyQualifiedName!~`.
 Both Python policy suites passed all 17 cases in 1.66 seconds combined. Style, CSharpier, the 140-character
 width check and Git whitespace verification passed. Formatting verification took 41.39 seconds.
+
+On November 23, `FullyQualifiedName=Eden.Protocol.Tests.Maps.MapNavigationTests.PopulationSamplesOffscreenBotsWhenUnattendedSimulationIsActive`
+passed two cases in 9.01 seconds. It verifies that an offscreen bot contributes before the first player selects a character
+when unattended simulation is active, and that a paused world begins counting the bot after character selection.
 
 ### Live acceptance
 

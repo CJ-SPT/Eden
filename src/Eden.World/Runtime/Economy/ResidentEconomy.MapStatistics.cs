@@ -10,10 +10,10 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class ResidentEconomy
 {
-    internal IReadOnlyDictionary<int, MapPilotCounts> MapPopulation(IReadOnlyList<SelectedHumanPilot> players)
+    internal IReadOnlyDictionary<int, MapPilotCounts> MapPopulation(HumanActivitySnapshot activity)
     {
         Dictionary<int, MapPilotCounts> counts = [];
-        if (players.Count == 0)
+        if (!activity.Active)
         {
             return counts;
         }
@@ -23,7 +23,7 @@ internal sealed partial class ResidentEconomy
         var agents = (EconomyTable<SavedCapsuleerAgent, EconomySavedCapsuleerAgent>)_tables[typeof(SavedCapsuleerAgent)];
         var suspensions = _tables[typeof(SavedCapsuleerSuspension)];
         var catalog = _database.Catalog;
-        foreach (var pilot in players.DistinctBy(pilot => pilot.PilotId))
+        foreach (var pilot in activity.Pilots.DistinctBy(pilot => pilot.PilotId))
         {
             Count(new(pilot.PilotId));
         }
