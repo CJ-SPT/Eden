@@ -155,7 +155,7 @@ internal sealed class FlightScene(
         {
             return null;
         }
-        if (Peers(context).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
+        if (space.FindTargetablePeer(context.Pilot.SystemId, context.EntityId, context.Position, id) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
@@ -192,8 +192,7 @@ internal sealed class FlightScene(
     internal PilotWeaponTarget? FindPilotWeaponTarget(FlightSceneContext context, long id) =>
         context.CanTarget
         && !space.TetherProtected(id)
-        && space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null && !s.Arriving)
-            is { } ship
+        && space.FindTargetablePeer(context.Pilot.SystemId, context.EntityId, context.Position, id) is { } ship
             ? new(id, ship.Velocity)
             : null;
 
@@ -787,7 +786,7 @@ internal sealed class FlightScene(
             if (previous is null)
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
-                update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, space.Stamp(clock))));
+                update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship.ForObserver(), space.Stamp(clock))));
                 if (_cloakedPeers.Remove(ship.Pilot.ShipId))
                 {
                     update(new DestinyCommand.UncloakBall(ship.Pilot.ShipId));
@@ -833,47 +832,40 @@ internal sealed class FlightScene(
             }
             long after = _peerOrderSequences.GetValueOrDefault(ship.Pilot.ShipId);
             bool missing = space.MissingOrders(ship.Pilot.ShipId, after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
-            bool missedWarp = ship.Warp is { } warp && previous.Warp != warp && previous.AlignTo != warp.Destination;
-            if (missing && ship.Warp is null)
+            bool changedWarp = ship.Warp != previous.Warp;
+            bool refreshCourse = missing || changedWarp || ship.AlignTo != previous.AlignTo;
+            if (refreshCourse && ship.Warp is not null)
+            {
+                // Native AddBalls resynchronizes the existing ball with the authoritative warp stamp.
+                update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, space.Stamp(clock))));
+            }
+            else if (refreshCourse)
             {
                 CorrectPosition(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity, ship.Stamp);
-                ApplyCourse(context, ship);
+                ApplyCourse(context, ship.ForObserver());
             }
-            else if (!missing)
+            if (!missing)
             {
                 foreach (var order in space.Orders(ship.Pilot.ShipId, after))
                 {
-                    if (
-                        order.Update.Command is not DestinyCommand.CommandBurstVisual visual
-                        || visual.Id == context.Pilot.ShipId
-                        || current.Any(peer => peer.Pilot.ShipId == visual.Id)
-                    )
+                    bool replay = order.Update.Command switch
+                    {
+                        DestinyCommand.WarpTo => false,
+                        DestinyCommand.CommandBurstVisual visual => visual.Id == context.Pilot.ShipId
+                            || current.Any(peer => peer.Pilot.ShipId == visual.Id),
+                        DestinyCommand.MicroJumpVisual => true,
+                        _ => !refreshCourse,
+                    };
+                    if (replay)
                     {
                         send(order.Update);
                     }
                 }
             }
-            if (ship.Warp is not null && (missing || missedWarp))
-            {
-                // Native AddBalls applies partial full state to an existing ID, including its original warp start stamp.
-                update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, space.Stamp(clock))));
-            }
             _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
-            if (ship.Warp is not null)
+            if (changedWarp)
             {
-                if (ship.Warp != previous.Warp)
-                {
-                    effects.WarpEffect(ship.Pilot.ShipId, true);
-                }
-                continue;
-            }
-            if (ship.AlignTo is not null)
-            {
-                continue;
-            }
-            if (previous.Warp is not null)
-            {
-                effects.WarpEffect(ship.Pilot.ShipId, false);
+                effects.WarpEffect(ship.Pilot.ShipId, ship.Warp is not null);
             }
         }
         _peers = current;

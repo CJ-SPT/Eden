@@ -152,7 +152,12 @@ internal sealed record ShipContact(
     long ConnectionId = 0,
     Eden.Gameplay.Structures.PilotTether? Tether = null,
     IReadOnlyList<ShipCompressionFacility>? Compression = null
-);
+)
+{
+    // A remote client may only enter warp once the simulation has started the course.
+    internal ShipContact ForObserver() =>
+        Warp is null && AlignTo is { } destination ? this with { AlignTo = null, Heading = (destination - Pilot.Position!).Unit } : this;
+}
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
 
@@ -698,6 +703,50 @@ internal sealed class SharedSpace(
 
     internal ShipContact[] Peers(int system, long viewerId, SpacePosition? viewer) =>
         viewer is null ? [] : RunMotion(system, () => PeersOwned(system, viewerId, viewer), nameof(Peers));
+
+    internal ShipContact? FindTargetablePeer(int system, long viewer, SpacePosition? origin, long id)
+    {
+        return origin is null || id == viewer
+            ? null
+            : RunMotion(system, () => FindTargetablePeerOwned(system, origin, id), nameof(FindTargetablePeer));
+    }
+
+    private ShipContact? FindTargetablePeerOwned(int system, SpacePosition origin, long id)
+    {
+        using var ownership = EnterMotion(systemId: system);
+        var ship = _ships.GetValueOrDefault(id);
+        if (ship is null && crimewatch?.LoggedOff(system).FirstOrDefault(p => p.Pilot.ShipId == id) is { } offline)
+        {
+            ship = new(PilotContact.From(offline.Pilot), SpacePosition.Zero, null, 0, null);
+        }
+        if (
+            ship?.Pilot.Position is not { } position
+            || ship.Pilot.SystemId != system
+            || ship.Warp is not null
+            || ship.DepartureGate is not null
+            || ArrivalProtected(ship)
+            || ship.Health?.Remaining.Destroyed == true
+            || IsCloaked(id)
+            || origin.DistanceTo(position) > NavigationDefinitions.MaximumTargetDistance
+        )
+        {
+            return null;
+        }
+        if (autonomous?.Owns(id) != true)
+        {
+            return ship;
+        }
+        // The published ball can lag a committed bot flight step.
+        return
+            autonomous.Read(system, id) is { Protected: false, Sighting: var current }
+            && origin.DistanceTo(current.Position) <= NavigationDefinitions.MaximumTargetDistance
+            ? ship with
+            {
+                Pilot = ship.Pilot with { Position = current.Position },
+                Velocity = current.Velocity,
+            }
+            : null;
+    }
 
     internal IEnumerable<ShipContact> GateArrivals(DockedPilot pilot) => GateArrivals(pilot.SystemId, pilot.ShipId, pilot.Position);
 

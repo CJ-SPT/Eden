@@ -721,6 +721,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Navigation and travel
 
+- [Peer warp and target locks](protocol/navigation.md#peer-warp-and-target-locks)
 - [Distant warping ships](protocol/navigation.md#distant-warping-ships-in-the-overview-november-17-2026)
 - [Gate-arrival cloak](protocol/navigation.md#gate-arrival-cloak-november-17-2026)
 - [observer grid updates](protocol/navigation.md#observing-a-loss-and-a-warp-in-the-same-update--november-17-2026)

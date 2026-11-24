@@ -8,6 +8,7 @@ using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.FactionWarfare;
@@ -18,7 +19,9 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Ammunition;
+using Eden.Protocol.Tests.FactionWarfare;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
@@ -402,6 +405,65 @@ public sealed class PilotTurretTests
         combat.Advance(source);
         monitor.Advance(target);
         Assert.Equal(2, target.NotificationsBeforeFlight.OfType<DamageMessageNotification>().Count());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ResidentBotWarpOrDistanceClearsLocksAndStopsRepeatWithStaleScene(bool enteringWarp)
+    {
+        const double astronomicalUnit = 149_597_870_700;
+        using var f = Prepare(live: true);
+        var services = f.Db.Services;
+        var live = services.GetRequiredService<LiveWorld>();
+        var scene = services.GetRequiredService<ICapsuleerScene>();
+        var bot = f.Db.Store.FindPilot(1000002)!;
+        var origin = bot.Position!;
+        var destination = origin + new SpacePosition(54.73 * astronomicalUnit, 0, 0);
+        var navigation = new NavigationState().Capture();
+        HaulerProgress work = new(HaulerActivity.Flying, scene.Stamp, 0, bot.ShipId, bot.StationId, 0, navigation);
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            MilitiaComplexTests.RegisterCapsuleer(action, bot.PilotId, bot.HomeSystemId, (int)bot.Home.Id);
+            action.Commit();
+        }
+        using (live.EnterPersistence("test autonomous contact", TransactionParticipants.None))
+        {
+            live.CapsuleerJobs.Add(bot.PilotId, new(bot.PilotId, 1, 1, 0, CapsuleerAction.Lock));
+            live.HaulerCheckpoints[bot.PilotId] = new(bot.PilotId, work);
+        }
+        scene.Publish(new HaulerObservation(bot, work, f.Health.Read(bot.PilotId, f.Clock.Now)));
+
+        using var source = Client(f, 1000001);
+        using var scope = services.CreateScope();
+        var targeting = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
+        var combat = scope.ServiceProvider.GetRequiredService<CombatHandler>();
+        _ = targeting.Call(source, "dogmaIM", "AddTarget", [bot.ShipId]);
+        f.Clock.Seconds += 10;
+        targeting.Advance(source);
+        Assert.True(targeting.IsLocked(bot.ShipId));
+        Assert.Same(PilotCallResult.None, combat.Call(source, "dogmaIM", "Activate", [f.Module, "targetAttack", bot.ShipId, 100L]));
+        Assert.NotNull(combat.ActiveEffect(source.Pilot, f.Module));
+        Assert.Single(source.NotificationsBeforeFlight.OfType<DamageMessageNotification>());
+
+        if (enteringWarp)
+        {
+            var warp = new WarpFrame(origin, destination, work.Stamp, 0);
+            using var ownership = live.EnterPersistence("test autonomous warp", TransactionParticipants.None);
+            live.HaulerCheckpoints[bot.PilotId] = new(bot.PilotId, work with { Navigation = navigation with { Warp = warp } });
+        }
+        else
+        {
+            live.CombatForSystem(bot.SystemId)!.PublishPilotPosition(bot.ShipId, bot.SystemId, destination);
+        }
+        Assert.Equal(origin, Assert.Single(source.Flight.VisiblePeers).Pilot.Position);
+        f.Clock.Seconds += 3;
+        targeting.Advance(source);
+        combat.Advance(source);
+        Assert.False(targeting.IsLocked(bot.ShipId));
+        Assert.Contains(new TargetChanged(TargetChange.Lost, bot.ShipId), source.Notifications);
+        Assert.Null(combat.ActiveEffect(source.Pilot, f.Module));
+        Assert.Single(source.NotificationsBeforeFlight.OfType<DamageMessageNotification>());
     }
 
     [Fact]

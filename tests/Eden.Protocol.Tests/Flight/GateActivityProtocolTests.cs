@@ -5,12 +5,65 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Targeting;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Flight;
 
 public sealed class GateActivityProtocolTests
 {
+    [Fact]
+    public void PeerAlignmentStaysOnGridUntilTheServerPublishesWarpEntry()
+    {
+        const double astronomicalUnit = 149_597_870_700;
+        using Fixture fixture = new(liveWorld: true);
+        var viewer = fixture.Viewer(1000001);
+        var peer = fixture.Actor(arriving: false) with { DepartureGate = null, DepartureAt = null };
+        var origin = peer.Pilot.Position!;
+        var destination = origin + new SpacePosition(54.73 * astronomicalUnit, 0, 0);
+        var heading = (destination - origin).Unit;
+        fixture.Space.Publish(peer);
+        viewer.Refresh();
+        viewer.Updates.Clear();
+
+        fixture.Clock.Seconds = 1;
+        int stamp = fixture.Space.Stamp(fixture.Clock);
+        fixture.Space.RecordOrder(
+            peer.Pilot.ShipId,
+            new(stamp, new DestinyCommand.WarpTo(peer.Pilot.ShipId, destination.X, destination.Y, destination.Z, 0, 3000))
+        );
+        var aligning = peer with { AlignTo = destination, AlignStamp = stamp, Stamp = stamp, SpeedFraction = 1 };
+        fixture.Space.Publish(aligning);
+        viewer.Refresh();
+        Assert.DoesNotContain(viewer.Updates, command => command is DestinyCommand.WarpTo);
+        Assert.Contains(new DestinyCommand.GotoDirection(peer.Pilot.ShipId, heading.X, heading.Y, heading.Z), viewer.Updates);
+        Assert.NotNull(viewer.FindTarget(peer.Pilot.ShipId));
+
+        viewer.Updates.Clear();
+        viewer.Snapshot();
+        var aligningBall = Assert.Single(
+            Assert.IsType<DestinyCommand.SetState>(Assert.Single(viewer.Updates)).Snapshot.Slims.OfType<ShipSlimItem>(),
+            item => item.Ship.Pilot.ShipId == peer.Pilot.ShipId
+        );
+        Assert.Null(aligningBall.Ship.AlignTo);
+        Assert.Equal(heading, aligningBall.Ship.Heading);
+
+        fixture.Clock.Seconds = 30;
+        stamp = fixture.Space.Stamp(fixture.Clock);
+        var warp = new WarpCourse(origin, destination, stamp, peer.Pilot.Flight, 0);
+        fixture.Space.Publish(aligning with { AlignTo = null, Warp = warp, Stamp = stamp });
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        var entry = Assert.Single(viewer.Updates.OfType<DestinyCommand.AddBalls>());
+        Assert.Equal(warp, Assert.IsType<ShipSlimItem>(Assert.Single(entry.Addition.Slims)).Ship.Warp);
+        Assert.Null(viewer.FindTarget(peer.Pilot.ShipId));
+
+        fixture.Clock.Seconds = 60;
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Equal(peer.Pilot.ShipId, Assert.Single(viewer.Updates.OfType<DestinyCommand.RemoveBall>()).Id);
+    }
+
     [Fact]
     public void WarpingPeerLeavesTheObserversGridEvenWhenItsLastPositionHasNotBeenRepublished()
     {
@@ -334,9 +387,9 @@ public sealed class GateActivityProtocolTests
         Assert.DoesNotContain(session.Updates, update => update.Command is DestinyCommand.GateActivity);
     }
 
-    private sealed class Fixture : IDisposable
+    private sealed class Fixture(bool liveWorld = false) : IDisposable
     {
-        private readonly TestWorld _world = new();
+        private readonly TestWorld _world = new(liveWorld: liveWorld);
         internal TestClock Clock { get; } = new();
         internal SharedSpace Space { get; } = new();
         internal StaticSpaceObject Gate => _world.Objects.Single(body => body.DestinationGateId is not null);
@@ -401,5 +454,7 @@ public sealed class GateActivityProtocolTests
         internal void Snapshot() => _scene.Snapshot(_context, _fixture.Space.Peers(_context.Pilot), _own);
 
         internal void Refresh() => _scene.RefreshPeers(_context);
+
+        internal TargetContact? FindTarget(long id) => _scene.FindTarget(_context, id);
     }
 }

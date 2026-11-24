@@ -69,7 +69,7 @@ internal static partial class Ballpark
         }
         foreach (var peer in peers)
         {
-            items.Add(WriteShip(writer, peer, stamp));
+            items.Add(WriteShip(writer, peer.ForObserver(), stamp));
         }
         foreach (var npc in npcs)
         {

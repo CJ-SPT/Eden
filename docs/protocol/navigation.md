@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Peer warp and target locks](#peer-warp-and-target-locks)
 - [Focused interdiction at NPC stargates](#focused-interdiction-at-npc-stargates)
 - [Personal map visit history](#personal-map-visit-history)
 - [Subcapital Micro Jump Field Generator](#subcapital-micro-jump-field-generator)
@@ -235,6 +236,49 @@ Added documentation links/anchors and `git diff --check` passed. The full .NET s
 
 **Optional maintainer checks.** Jump through a gate and wait for expiry; repeat and move immediately.
 From another pilot, verify the receiving gate flashes while the arriving ship stays hidden.
+
+## Peer warp and target locks
+
+The reported overview showed a locked Monitor at 54.73 AU alongside a damage message. The observer replay reproduced a
+server-side path to this state. The server streamed a remote ship's `WarpTo` command during alignment. Destiny could
+then start the remote warp locally while Eden still placed the ship within lock range.
+
+Observers now receive subwarp movement while a peer aligns. When the simulation commits warp entry, the observer
+receives the existing `AddBalls` update with the authoritative warp start stamp if the ship is still on grid. The
+normal `RemoveBalls` update takes it off the overview as it leaves range. Pilot targeting also checks resident bot
+travel state and position when the published scene is stale. Entering warp or leaving targeting range clears the
+lock and stops repeating weapons before another damage event.
+
+Inert inspection of the original build-3662168 `code.ccp`
+(SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`) confirmed the existing client
+`OnActivatingWarp`, `AddBalls`, `RemoveBalls` and `OnTargetLost` handlers. The older local EVE.js
+`server/src/space/runtime/scene/targeting.js` (SHA-256
+`94CA0673881896A6845EFD48A03522DE7E8788AD1F9A518E1F59C3981F36E672`) revalidates lock range and active warp against
+simulation entities. Carbon's `EvolveWarp` shows that an aligning ball can transition into warp as Destiny advances.
+[Carbon Destiny revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+· [EVE University targeting](https://wiki.eveuniversity.org/Targeting)
+
+**Automated validation.** The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.GateActivityProtocolTests.PeerAlignmentStaysOnGridUntilTheServerPublishesWarpEntry`
+failed on the unexpected remote `WarpTo` (40.54 s build, 9.38 s tests). The corrected exact-method run added
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.PilotTurretTests.ResidentBotWarpOrDistanceClearsLocksAndStopsRepeatWithStaleScene`
+and passed all three cases (6.37 s build, 9.39 s tests). The resident replay covers both warp entry and an AU-scale
+position change with the last published contact still on grid.
+
+The solution restored and built in 2.09 s with zero warnings or errors. The affected-class run passed 173/173
+cases in 94.79 s with this filter:
+
+```text
+FullyQualifiedName~.GateActivityProtocolTests.|FullyQualifiedName~.FlightSessionTests.|FullyQualifiedName~.TargetingTests.|FullyQualifiedName~.TargetLockSessionTests.|FullyQualifiedName~.PilotTurretTests.|FullyQualifiedName~.CapsuleerDefenseTests.|FullyQualifiedName~.MissileCombatTests.|FullyQualifiedName~.CapsuleerTrafficNavigationTests.|FullyQualifiedName~.CommandBurstTests.|FullyQualifiedName~.CapsuleerPresentationTests.
+```
+
+Both Python policy suites and the .NET style check passed. The default CSharpier scan flagged generated files in the
+local `.artifacts` recovery directory. CSharpier and the line-width check passed in 9.27 s with that directory excluded.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** With a turret repeating against a locked pilot, observe that alignment preserves
+the lock and confirmed warp entry drops the lock before the next cycle.
 
 ## Distant warping ships in the overview, November 17, 2026
 
