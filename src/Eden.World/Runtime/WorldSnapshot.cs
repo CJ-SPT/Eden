@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Maps;
 using Eden.World.Runtime.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Eden.World.Runtime;
 
@@ -31,6 +33,10 @@ internal sealed class WorldSnapshot(
     string? captureFile = null
 ) : IDisposable
 {
+    private const int SqliteConstraintForeignKey = 787;
+    private const int MaximumReportedViolations = 4;
+    private const string ForeignKeyDiagnostics = "CheckpointForeignKeyViolations";
+
     internal SqliteConnection Database => database;
     internal string? CaptureFile => captureFile;
     internal long Generation => generation;
@@ -97,7 +103,7 @@ internal sealed class WorldSnapshot(
                 routines?.Apply(world);
                 activity?.Apply(world);
                 mapStatistics?.Apply(world);
-                transaction.Commit();
+                CommitProjection(transaction);
                 ProjectionTables = metrics?.Tables;
             }
             return Stopwatch.GetElapsedTime(started);
@@ -107,6 +113,48 @@ internal sealed class WorldSnapshot(
             ProjectionAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
         }
     }
+
+    private void CommitProjection(IDbContextTransaction transaction)
+    {
+        try
+        {
+            transaction.Commit();
+        }
+        catch (SqliteException error) when (error.SqliteExtendedErrorCode == SqliteConstraintForeignKey)
+        {
+            // The detached transaction is still active here. The rollback removes the
+            // failing rows, so the durable checkpoint cannot explain the rejection.
+            try
+            {
+                using var command = database.CreateCommand();
+                command.Transaction = (SqliteTransaction)transaction.GetDbTransaction();
+                command.CommandText = "PRAGMA foreign_key_check";
+                SessionPerformance.CheckpointMetadataCommand(command.CommandText);
+                using var violations = command.ExecuteReader();
+                List<string> details = [];
+                while (details.Count < MaximumReportedViolations && violations.Read())
+                {
+                    string row = violations.IsDBNull(1) ? "" : $" row {violations.GetInt64(1)}";
+                    details.Add($"{violations.GetString(0)}{row} references {violations.GetString(2)} (FK {violations.GetInt64(3)})");
+                }
+                if (details.Count != 0)
+                {
+                    error.Data[ForeignKeyDiagnostics] = string.Join(", ", details);
+                }
+            }
+            catch (Exception)
+            {
+                // Diagnostic failure must preserve the original checkpoint exception.
+            }
+            throw;
+        }
+    }
+
+    internal static string DescribeFailure(Exception error) =>
+        error is SqliteException { SqliteExtendedErrorCode: SqliteConstraintForeignKey }
+        && error.Data[ForeignKeyDiagnostics] is string details
+            ? $"{error.Message} {details}."
+            : error.Message;
 
     public void Dispose() => DisposeDatabase(database, captureFile);
 

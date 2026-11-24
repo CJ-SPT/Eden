@@ -133,6 +133,48 @@ public sealed class NpcCombatTests
     }
 
     [Fact]
+    public void ResidentNpcCacheOnlyRetainsActiveProfilesAndTheirInvalidations()
+    {
+        using Fixture f = new(liveWorld: true, useTestClock: true);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        int system = f.Npc.SystemId;
+        long now = f.Clock.Now;
+        using var ownership = live.EnterShared("NPC retention test");
+        using var context = live.UseSystem(system);
+        using var simulation = live.Enter();
+        var runtime = live.Combat!;
+        var participants = new TransactionParticipants(systems: [system]);
+
+        Assert.True(runtime.RattingNpc(f.Npc.Id, now)!.Available);
+        int warmedDetails = runtime.DetailedEntries;
+        using var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin("NPC retention", _ => { }, force: true)!;
+        using (var write = live.Economy.Begin(participants))
+        {
+            for (int index = 0; index < 64; index++)
+            {
+                write.Add(new WorldNpc { SystemId = system, RetiredAt = now });
+            }
+            write.Set<WorldNpc>().Find(f.Npc.Id)!.X += 100;
+            write.Commit();
+        }
+        Assert.Equal(1, runtime.StaleNpcEntries);
+        Assert.Equal(f.Npc.Position.X + 100, runtime.RattingNpc(f.Npc.Id, now)!.Position.X);
+        Assert.Equal(0, runtime.StaleNpcEntries);
+
+        using (var retire = live.Economy.Begin(participants))
+        {
+            retire.Set<WorldNpc>().Find(f.Npc.Id)!.RetiredAt = now;
+            retire.Commit();
+        }
+        Assert.Equal(warmedDetails - 1, runtime.DetailedEntries);
+        Assert.False(runtime.RattingNpc(f.Npc.Id, now)!.Available);
+        Assert.Equal(warmedDetails - 1, runtime.DetailedEntries);
+        Assert.Equal(0, runtime.StaleNpcEntries);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
     public void ResidentNpcLossParticipantsUseIndexedTargetsAndSeePrivateChanges()
     {
         using Fixture f = new(liveWorld: true);

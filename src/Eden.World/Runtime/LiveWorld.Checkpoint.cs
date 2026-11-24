@@ -49,12 +49,18 @@ internal sealed partial class LiveWorld
         {
             return EnterPersistence("SQLite connection", participants);
         }
-        IDisposable lease;
-        using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("persistence.writerWait"))
+        IDisposable? lease = null;
+        try
         {
+            using var phase = SessionPerformance.Phase("persistence.writerWait");
             lease = EnterPersistence("SQLite connection", participants);
+            return lease;
         }
-        return lease;
+        catch
+        {
+            lease?.Dispose();
+            throw;
+        }
     }
 
     private WorldResidentCapture? CaptureResidents()
@@ -77,10 +83,21 @@ internal sealed partial class LiveWorld
             {
                 Heat.Advance(SimulationTime);
                 Nanites.Advance(SimulationTime);
-                foreach (var entry in entries.Where(e => e.State.SimulationEntered))
+                foreach (var entry in entries)
                 {
+                    if (!entry.State.SimulationEntered && !entry.State.HasPendingChanges)
+                    {
+                        continue;
+                    }
                     using var context = UseSystem(entry.Id);
-                    using var ownership = EnterSimulation("checkpoint deadlines", entry.Id);
+                    if (entry.State.SimulationEntered)
+                    {
+                        using var ownership = EnterSimulation("checkpoint deadlines", entry.Id);
+                    }
+                    else
+                    {
+                        ApplyPendingChanges(entry.State);
+                    }
                 }
             }
             if (!_systems.Snapshot().Select(e => e.Id).SequenceEqual(entries.Select(e => e.Id)))

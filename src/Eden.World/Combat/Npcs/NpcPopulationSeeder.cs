@@ -92,6 +92,7 @@ internal sealed partial class NpcPopulationSeeder(
 
     public void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
+        RetiredNpcTraffic.Prune(world, systemId, now);
         int rookie = NpcEncounterDefinitions.GuristasRookieType;
         var legacy = NpcPopulationMember
             .InSystem(world, systemId)

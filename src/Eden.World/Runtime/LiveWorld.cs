@@ -272,17 +272,6 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 CapsuleerInputReset++;
             }
-            if (change.Table is "WorldPilot" or "WorldFitRevision" && CapsuleerJobs.ContainsKey(change.Id))
-            {
-                CapsuleerInputRevisions[change.Id] = CapsuleerInputRevisions.GetValueOrDefault(change.Id) + 1;
-            }
-            if (
-                change.Table is "WorldShip" or "WorldPosition" or "WorldPositionMembership"
-                && (_shipSystems.ContainsKey(change.Id) || _shipOwners.ContainsKey(change.Id))
-            )
-            {
-                CapsuleerShipRevisions[change.Id] = CapsuleerShipRevisions.GetValueOrDefault(change.Id) + 1;
-            }
             if (change.Table == "WorldPilot" && CapsuleerJobs.ContainsKey(change.Id))
             {
                 CapsuleerHullRevisions[change.Id] = CapsuleerHullRevisions.GetValueOrDefault(change.Id) + 1;
@@ -320,7 +309,6 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 _pilotSystems.Clear();
                 _shipSystems.Clear();
-                _npcSystems.Clear();
                 _shipOwners.Clear();
             }
             else if (change.Table == "WorldPilot")
@@ -333,6 +321,10 @@ internal sealed partial class LiveWorld : IDisposable
                 if (_shipOwners.TryGetValue(change.Id, out long pilot))
                 {
                     _pilotSystems.TryRemove(pilot, out _);
+                    if (change.Table == "WorldShip" && Economy.IsLoaded && !Economy.IsShip(change.Id))
+                    {
+                        _shipOwners.TryRemove(change.Id, out _);
+                    }
                 }
             }
         }
@@ -354,7 +346,7 @@ internal sealed partial class LiveWorld : IDisposable
         {
             ObserveState(_shared, changes);
         }
-        var committed = changes.ToArray();
+        CombatRowChange[]? deferred = null;
         var recipients = affectedSystems is null ? _systems.Snapshot() : _systems.Existing(affectedSystems);
         if (affectedSystems is null || changes.Any(change => change.Table is "schema" or "WorldConfigurationState" or "WorldAccount"))
         {
@@ -368,12 +360,21 @@ internal sealed partial class LiveWorld : IDisposable
                 if (entry.Ownership.IsEntered)
                 {
                     using var context = UseSystem(entry.Id);
-                    ObserveState(entry.State, committed);
+                    ApplyPendingChanges(entry.State);
+                    ObserveState(entry.State, changes);
+                    continue;
                 }
-                else
+                // A scoped commit can discover additional recipients after it acquires
+                // its participants. Deliver to an idle owner without waiting on it.
+                using var ownership = resident && affectedSystems is not null ? entry.TryEnter("committed system changes") : null;
+                if (ownership is null)
                 {
-                    entry.State.PendingChanges.Enqueue(committed);
+                    entry.State.DeferChanges(deferred ??= changes.ToArray());
+                    continue;
                 }
+                using var recipient = UseSystem(entry.Id);
+                ApplyPendingChanges(entry.State);
+                ObserveState(entry.State, changes);
             }
         }
         if (changes.Count != 0)
@@ -409,8 +410,6 @@ internal sealed partial class LiveWorld : IDisposable
     internal long HostilityRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
     internal long CapsuleerInputReset { get; private set; }
-    internal Dictionary<long, long> CapsuleerInputRevisions { get; } = [];
-    internal Dictionary<long, long> CapsuleerShipRevisions { get; } = [];
     internal Eden.World.Runtime.Economy.ResidentEconomy Economy { get; }
     internal LiveCapsuleerRoutines CapsuleerRoutines { get; }
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
@@ -603,14 +602,15 @@ internal sealed partial class LiveWorld : IDisposable
     {
         if (systemId is int specified && CurrentSystem != specified)
         {
-            var context = UseSystem(specified);
+            var coordinated = new CoordinatedLease { First = UseSystem(specified) };
             try
             {
-                return new CoordinatedLease(context, EnterSimulation(operation, specified));
+                coordinated.Second = EnterSimulation(operation, specified);
+                return coordinated;
             }
             catch
             {
-                context.Dispose();
+                coordinated.Dispose();
                 throw;
             }
         }
@@ -660,30 +660,32 @@ internal sealed partial class LiveWorld : IDisposable
 
     private IDisposable Acquire([CallerMemberName] string operation = "", int? systemId = null)
     {
-        bool nested = Monitor.IsEntered(_gate);
-        var ownership = _ownershipMonitor.Enter(operation, systemId);
-        if (nested)
+        if (Monitor.IsEntered(_gate))
         {
-            return ownership;
+            return _ownershipMonitor.Enter(operation, systemId);
         }
+        var lease = new Lease(this);
+        lease.Ownership = _ownershipMonitor.Enter(operation, systemId);
         Volatile.Write(ref _ownerDescription, SessionLatency.CurrentDescription ?? operation);
-        return new Lease(this, ownership, Stopwatch.GetTimestamp());
+        lease.Started = Stopwatch.GetTimestamp();
+        return lease;
     }
 
-    private sealed class Lease(LiveWorld world, IDisposable ownership, long started) : IDisposable
+    private sealed class Lease(LiveWorld world) : IDisposable
     {
-        private LiveWorld? _world = world;
+        internal IDisposable? Ownership;
+        internal long Started;
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref _world, null) is { } held)
+            if (Interlocked.Exchange(ref Ownership, null) is { } ownership)
             {
-                string? operation = held._ownerDescription;
-                CapsuleerJob? job = held._trafficJob;
-                int system = held._trafficSystem;
-                held._trafficJob = null;
-                Volatile.Write(ref held._ownerDescription, null);
-                var elapsed = Stopwatch.GetElapsedTime(started);
+                string? operation = world._ownerDescription;
+                CapsuleerJob? job = world._trafficJob;
+                int system = world._trafficSystem;
+                world._trafficJob = null;
+                Volatile.Write(ref world._ownerDescription, null);
+                var elapsed = Stopwatch.GetElapsedTime(Started);
                 ownership.Dispose();
                 if (elapsed.TotalMilliseconds >= SlowOwnershipMilliseconds)
                 {
@@ -955,7 +957,7 @@ internal sealed partial class LiveWorld : IDisposable
         catch (Exception exception)
         {
             Volatile.Write(ref _lastSaveFailure, exception);
-            Report($"World checkpoint failed; resident changes remain pending: {exception.Message}", failure: true);
+            Report($"World checkpoint failed; resident changes remain pending: {WorldSnapshot.DescribeFailure(exception)}", failure: true);
             return exception;
         }
     }

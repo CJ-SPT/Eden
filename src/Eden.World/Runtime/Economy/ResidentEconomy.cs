@@ -192,6 +192,7 @@ internal sealed partial class ResidentEconomy
         {
             return;
         }
+        using var ownership = _owner.EnterPersistence("combat participant selection");
         using var action = Begin(new(systems: _owner.CombatSystems(checkpoint)));
         action.ImportCheckpoint(checkpoint);
         action.Commit();

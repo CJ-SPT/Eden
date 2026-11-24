@@ -30,6 +30,31 @@ public sealed class OwnershipTimingTests
     }
 
     [Fact]
+    public void FailedWaitMeasurementReleasesSqlOwnership()
+    {
+        using TestWorld fixture = new();
+        using LiveWorld live = new(new(fixture.Path), new TestClock(), _ => { });
+        using (
+            SessionPerformance.Capture(
+                "ownership test",
+                sample =>
+                {
+                    if (sample.Name == "persistence.writerWait")
+                    {
+                        throw new OutOfMemoryException("Simulated allocation failure while recording the wait.");
+                    }
+                }
+            )
+        )
+        {
+            Assert.Throws<OutOfMemoryException>(() => live.EnterSql(null));
+            Assert.False(live.HasPersistenceOwnership);
+        }
+        using var next = live.EnterSql(null);
+        Assert.True(live.HasPersistenceOwnership);
+    }
+
+    [Fact]
     public async Task SessionHandoffSelectsTheRuntimeWithoutOwningTheCompleteFrame()
     {
         using TestWorld fixture = new();

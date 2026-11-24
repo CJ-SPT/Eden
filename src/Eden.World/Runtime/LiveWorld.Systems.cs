@@ -146,7 +146,6 @@ internal sealed partial class LiveWorld
     }
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<long, int> _shipSystems = new();
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<long, int> _npcSystems = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<long, long> _shipOwners = new();
 
     internal void TrackShip(long ship, int system, long pilot = 0)
@@ -158,8 +157,6 @@ internal sealed partial class LiveWorld
             _shipOwners[ship] = pilot;
         }
     }
-
-    internal void TrackNpc(long npc, int system) => _npcSystems[npc] = system;
 
     internal void BeforeSharedSql(string sql, bool readsResidentNpcTimer)
     {
@@ -327,44 +324,36 @@ internal sealed partial class LiveWorld
 
     internal IDisposable UseSystem(int system)
     {
-        int? previous = _currentSystem.Value;
+        var context = new SystemContext(this, _currentSystem.Value);
         _currentSystem.Value = system;
-        return new SystemContext(this, previous);
+        return context;
     }
 
     private IDisposable UseShared()
     {
-        int? previous = _currentSystem.Value;
+        var context = new SystemContext(this, _currentSystem.Value);
         _currentSystem.Value = null;
-        return new SystemContext(this, previous);
+        return context;
     }
 
     internal IDisposable EnterShared(string operation = "shared world", TransactionParticipants? participants = null)
     {
-        var context = UseShared();
+        var lease = new CoordinatedLease { First = UseShared() };
         bool nested = _ownershipMonitor.IsEntered;
         try
         {
-            var persistence = EnterPersistence(operation, participants);
-            try
+            lease.Second = EnterPersistence(operation, participants);
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (Volatile.Read(ref _stopping) && !nested)
             {
-                ObjectDisposedException.ThrowIf(_disposed, this);
-                if (Volatile.Read(ref _stopping) && !nested)
-                {
-                    throw new InvalidOperationException("The resident world is shutting down.");
-                }
-                AdvanceEffects(_shared);
-                return new CoordinatedLease(context, persistence);
+                throw new InvalidOperationException("The resident world is shutting down.");
             }
-            catch
-            {
-                persistence.Dispose();
-                throw;
-            }
+            AdvanceEffects(_shared);
+            return lease;
         }
         catch
         {
-            context.Dispose();
+            lease.Dispose();
             throw;
         }
     }
@@ -375,15 +364,25 @@ internal sealed partial class LiveWorld
         {
             return null;
         }
+        var lease = new CoordinatedLease();
         if (_ownershipMonitor.TryEnter(operation) is not { } persistence)
         {
             return null;
         }
+        lease.Second = persistence;
         // Persistence serializes scheduler metadata and publication. Each actual
         // observation/scene operation enters its participating system separately.
         // Acquiring dormant runtimes here stalls unrelated resident frames.
-        var context = UseShared();
-        return new CoordinatedLease(context, persistence);
+        try
+        {
+            lease.First = UseShared();
+            return lease;
+        }
+        catch
+        {
+            lease.Dispose();
+            throw;
+        }
     }
 
     internal IDisposable? TryEnterSystems(string operation, IReadOnlyCollection<int> systems)
@@ -466,7 +465,15 @@ internal sealed partial class LiveWorld
         {
             long started = System.Diagnostics.Stopwatch.GetTimestamp();
             var lease = Acquire(operation);
-            RecordPersistenceWait(operation, System.Diagnostics.Stopwatch.GetElapsedTime(started));
+            try
+            {
+                RecordPersistenceWait(operation, System.Diagnostics.Stopwatch.GetElapsedTime(started));
+            }
+            catch
+            {
+                lease.Dispose();
+                throw;
+            }
             return lease;
         }
         return Acquire(operation);
@@ -474,25 +481,34 @@ internal sealed partial class LiveWorld
 
     private IDisposable EnterCoordinated(string operation, TransactionParticipants? participants = null)
     {
-        var persistence = EnterPersistence(operation);
+        var lease = new CoordinatedLease { First = EnterPersistence(operation) };
         try
         {
-            var systems = _systems.Enter(ParticipantSystems(participants), operation);
-            return new CoordinatedLease(persistence, systems);
+            lease.Second = _systems.Enter(ParticipantSystems(participants), operation);
+            return lease;
         }
         catch
         {
-            persistence.Dispose();
+            lease.Dispose();
             throw;
         }
     }
 
-    private sealed class CoordinatedLease(IDisposable persistence, IDisposable systems) : IDisposable
+    private sealed class CoordinatedLease : IDisposable
     {
+        internal IDisposable? First;
+        internal IDisposable? Second;
+
         public void Dispose()
         {
-            systems.Dispose();
-            persistence.Dispose();
+            try
+            {
+                Second?.Dispose();
+            }
+            finally
+            {
+                First?.Dispose();
+            }
         }
     }
 
@@ -508,7 +524,11 @@ internal sealed partial class LiveWorld
             throw new InvalidOperationException("The resident world is shutting down.");
         }
         var entry = _systems.Get(system);
-        var lease = new SimulationLease(this, entry.Enter(operation), system);
+        var heldSystems = _heldSystems.Value!;
+        heldSystems.EnsureCapacity(heldSystems.Count + 1);
+        var lease = new SimulationLease(heldSystems);
+        lease.Ownership = entry.Enter(operation);
+        heldSystems.Push(system);
         try
         {
             entry.State.SimulationEntered = true;
@@ -543,32 +563,17 @@ internal sealed partial class LiveWorld
         }
     }
 
-    private static void ApplyPendingChanges(LiveSystemState state)
-    {
-        while (state.PendingChanges.TryPeek(out var changes))
-        {
-            ObserveState(state, changes);
-            state.PendingChanges.TryDequeue(out _);
-        }
-    }
+    private static void ApplyPendingChanges(LiveSystemState state) => state.ApplyPendingChanges(ObserveState);
 
-    private sealed class SimulationLease : IDisposable
+    private sealed class SimulationLease(Stack<int> heldSystems) : IDisposable
     {
-        private readonly LiveWorld _world;
-        private IDisposable? _ownership;
-
-        internal SimulationLease(LiveWorld world, IDisposable ownership, int system)
-        {
-            _world = world;
-            _ownership = ownership;
-            world._heldSystems.Value!.Push(system);
-        }
+        internal IDisposable? Ownership;
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref _ownership, null) is { } ownership)
+            if (Interlocked.Exchange(ref Ownership, null) is { } ownership)
             {
-                _world._heldSystems.Value!.Pop();
+                heldSystems.Pop();
                 ownership.Dispose();
             }
         }

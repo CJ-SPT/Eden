@@ -71,10 +71,13 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
     {
         if (IsEntered)
         {
+            var nested = new Lease(this, null, null, null);
             Monitor.Enter(_gate);
-            return new Lease(this, null, 0, default, null, null);
+            return nested;
         }
         string? blocker = Volatile.Read(ref _operation);
+        string description = systemId is { } system ? $"{operation} system={system}" : operation;
+        var lease = new Lease(this, operation, systemId, blocker);
         long started = Stopwatch.GetTimestamp();
         using (SessionLatency.Measure(SessionLatencyPhase.WorldWait))
         {
@@ -106,11 +109,11 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
                 _occupied = true;
             }
         }
-        TimeSpan wait = Stopwatch.GetElapsedTime(started);
         SessionLatency.ObserveWorldWait(blocker, started);
-        Volatile.Write(ref _operation, systemId is { } system ? $"{operation} system={system}" : operation);
+        Volatile.Write(ref _operation, description);
         _system = systemId;
-        return new Lease(this, operation, Stopwatch.GetTimestamp(), wait, systemId, blocker);
+        lease.Start(Stopwatch.GetElapsedTime(started));
+        return lease;
     }
 
     public IDisposable? TryEnter(string operation, int? systemId = null)
@@ -119,18 +122,23 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
         {
             return Enter(operation, systemId);
         }
+        Lease lease;
+        string description;
         lock (_admission)
         {
             if (_occupied || _waiting.Count != 0)
             {
                 return null;
             }
+            description = systemId is { } system ? $"{operation} system={system}" : operation;
+            lease = new(this, operation, systemId, null);
             Monitor.Enter(_gate);
             _occupied = true;
         }
-        Volatile.Write(ref _operation, systemId is { } system ? $"{operation} system={system}" : operation);
+        Volatile.Write(ref _operation, description);
         _system = systemId;
-        return new Lease(this, operation, Stopwatch.GetTimestamp(), TimeSpan.Zero, systemId, null);
+        lease.Start(TimeSpan.Zero);
+        return lease;
     }
 
     private sealed class Observation(Action<OwnershipTiming>? previous) : IDisposable
@@ -143,10 +151,17 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
         public void Dispose() => Interlocked.Exchange(ref owner._observer, null);
     }
 
-    private sealed class Lease(OwnershipMonitor owner, string? operation, long started, TimeSpan wait, int? system, string? blocker)
-        : IDisposable
+    private sealed class Lease(OwnershipMonitor owner, string? operation, int? system, string? blocker) : IDisposable
     {
         private OwnershipMonitor? _owner = owner;
+        private long _started;
+        private TimeSpan _wait;
+
+        internal void Start(TimeSpan wait)
+        {
+            _wait = wait;
+            _started = Stopwatch.GetTimestamp();
+        }
 
         public void Dispose()
         {
@@ -154,7 +169,7 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
             {
                 return;
             }
-            TimeSpan hold = operation is null ? default : Stopwatch.GetElapsedTime(started);
+            TimeSpan hold = operation is null ? default : Stopwatch.GetElapsedTime(_started);
             int? observedSystem = held._system ?? system;
             if (operation is not null)
             {
@@ -169,11 +184,11 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
                     held._occupied = false;
                     Monitor.PulseAll(held._admission);
                 }
-                SessionLatency.ObserveOwnership(started);
                 try
                 {
+                    SessionLatency.ObserveOwnership(_started);
                     (Volatile.Read(ref held._observer) ?? s_observer.Value)?.Invoke(
-                        new(held._boundary, operation, observedSystem, wait, hold, blocker, SessionLatency.CurrentDescription, started)
+                        new(held._boundary, operation, observedSystem, _wait, hold, blocker, SessionLatency.CurrentDescription, _started)
                     );
                 }
                 catch (Exception)

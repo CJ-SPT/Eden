@@ -6,6 +6,61 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Resident retention and checkpoint stall on HostCram
+
+On November 24, 2026, HostCram ran `23a4bca1` with a 7 GiB container limit and a 55% managed heap limit.
+The last successful checkpoint finished at 04:46:37 Eastern. The capsuleer scheduler began reporting a missing resident
+`OwnedItem` at 04:50:53, followed by repeated checkpoint foreign-key failures and managed out-of-memory exceptions at 06:21:16.
+The saved image passed `foreign_key_check`. The failed projection rolled back before it reached that image.
+
+At 11:35 Eastern the container used 5.20 GiB of its 7 GiB limit and recorded zero cgroup OOM kills. A subsequent
+managed stack capture showed the scheduler waiting for a system owner and 311 map-population timer callbacks waiting for
+the world owner. Checkpoint and other maintenance workers were also waiting for that owner.
+
+World and system acquisition prepare leases before taking ownership or release ownership if post-acquisition work fails.
+The map population sampler allows one pending callback when the owner is busy. Idle systems can apply scoped resident invalidations
+immediately. Checkpoint capture drains remaining invalidations, including those of runtimes that have never simulated a frame.
+The combat runtime forgets retired NPC profiles and ignores invalidations for uncached NPCs. Deleted ship owner mappings,
+unused capsuleer revision maps and departed heat-condition views are released. Failed detached projections report sample
+foreign-key violations from the transaction before rollback.
+
+Schema 222 reclaims unreferenced retired convoy and mining hauler rows before resident hydration. The same eligibility rules
+apply during resident population refreshes, with bounded removals per system. Recent traffic and referenced NPCs remain
+available through the existing wreck lifetime and combat records. In a private copy of the 04:46 checkpoint, reclamation
+removed 297,265 rows and kept all 64,211 active NPCs. SQLite's `quick_check` and `foreign_key_check` passed. The compacted
+checkpoint was 426.1 MiB, down from 554.7 MiB. The delete and compaction took 10.37 and 5.19 seconds locally.
+
+### Automated validation
+
+The affected selection passed 267 of 268 tests in 166.08 seconds. It covered map sampling, ownership and system isolation,
+detached saves, retired traffic, NPC combat and population, heat, handoff and migration. The failing resident pirate reward
+assertion reproduced on unchanged `23a4bca1` in a six-case control that finished in 24.72 seconds including build.
+The exact `OwnershipTimingTests.FailedWaitMeasurementReleasesSqlOwnership` regression passed in 6.62 seconds. It injects
+an allocation failure after taking the database owner and checks that another acquisition succeeds.
+The final ownership and detached checkpoint selection passed all 14 cases. The solution build, 17 Python policy checks and
+the 36.60-second format check in a clean worktree passed.
+
+```text
+FullyQualifiedName~MapNavigationTests|FullyQualifiedName~OwnershipTimingTests|FullyQualifiedName~SystemRuntimeIsolationTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~RetiredNpcTrafficTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~ResidentHandoffTests|FullyQualifiedName~CapsuleerTierTests|FullyQualifiedName~ElectronicSupportResidentCheckpointTests|FullyQualifiedName~NpcConvoyTests|FullyQualifiedName~NpcMiningTests|FullyQualifiedName~WorldMigrationTests
+```
+
+The `ServerPerformanceReplayTests.ReplaySustainedBotThroughput` Release comparison used the same copied 04:46 save,
+1,001 communities, one automated observer and a 3.85 GiB managed heap cap. Both five-minute runs maintained 5,770
+scheduled bots and completed more than 277,000 actions, with zero simulation failures, gameplay SQL commands or
+connections. Both runs wrote two checkpoints. Peak process working set fell from 5.44 to 4.73 GiB, and median
+live heap after full collections in the final half fell from 2.96 to 2.65 GiB. The candidate command took 374.53 seconds.
+The replay used in-memory checkpoint capture on Windows. HostCram uses disk-backed capture. The replay did not reproduce
+the production foreign-key failure on either build. The final SQL wait allocation guard was verified separately by the
+injected failure test above.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Sustained map activity checkpoints
 
 On November 23, 2026, HostCram was running `b0a708a0` with a 7 GiB container limit and a 55% .NET heap limit.

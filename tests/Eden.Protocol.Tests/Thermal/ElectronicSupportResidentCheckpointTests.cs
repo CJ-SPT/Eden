@@ -12,6 +12,38 @@ namespace Eden.Protocol.Tests.Thermal;
 
 public sealed partial class ElectronicSupportHeatTests
 {
+    [Fact]
+    public void ModuleConditionViewsFollowHeatOwnerLifetime()
+    {
+        const int destinationSystem = 30000144;
+        using Fixture f = new(Neutralizer);
+        f.Pay();
+        var heat = f.Read();
+        var baseline = heat.Modules.Select(module => new FittedModuleCondition(module.Condition, module.Online, 0)).ToArray();
+        using var owner = f.Live.EnterShared("condition view lifetime test");
+        var source = f.Live.HeatForKnownShip(f.Ship);
+        var before = source.Conditions(f.Ship, baseline);
+        Assert.NotSame(baseline, before);
+        Assert.Equal(1, source.CachedConditionViews);
+
+        using (var transfer = f.Live.Economy.Begin(new(systems: [System, destinationSystem], ships: [f.Ship])))
+        {
+            transfer.Positions.Find(f.Ship)!.SystemId = destinationSystem;
+            transfer.Commit();
+        }
+
+        Assert.Equal(0, source.CachedConditionViews);
+        var destination = f.Live.HeatForKnownShip(f.Ship);
+        Assert.NotSame(source, destination);
+        _ = f.Read();
+        var after = destination.Conditions(f.Ship, baseline);
+        Assert.NotSame(before, after);
+        Assert.Equal(before, after);
+        Assert.Equal(1, destination.CachedConditionViews);
+        destination.Forget(f.Ship);
+        Assert.Equal(0, destination.CachedConditionViews);
+    }
+
     [Theory]
     [InlineData(Neutralizer, false)]
     [InlineData(Neutralizer, true)]

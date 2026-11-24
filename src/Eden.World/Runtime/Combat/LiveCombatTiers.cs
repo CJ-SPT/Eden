@@ -4,6 +4,7 @@ internal sealed partial class LiveCombatRuntime
 {
     internal int CompactPositions => _positions.Count;
     internal int DetailedEntries => _ships.Count + _npcs.Count + _contacts.Count + _npcSceneIndices.Count;
+    internal int StaleNpcEntries => _staleNpcs.Count;
 
     internal bool HasDetailedInteraction(long now) =>
         _ships.Values.Any(s => s.NpcAggression?.ActiveUntil > now)
@@ -59,9 +60,6 @@ internal sealed partial class LiveCombatRuntime
         foreach (long id in _npcs.Values.Where(n => systems.Contains(n.SystemId)).Select(n => n.Id).ToArray())
         {
             RemoveNpc(id);
-            _savedNpcs.Remove(id);
-            _staleNpcs.Remove(id);
-            _effectiveNpcs.Remove(id);
             _aggressions?.Remove(id);
         }
         foreach (int system in systems)

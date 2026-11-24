@@ -214,8 +214,10 @@ public sealed class DetachedCheckpointTests
         }
     }
 
-    [Fact]
-    public async Task FailedDetachedProjectionRollsBackItsPaymentsAndLeavesResidentStatePending()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FailedDetachedProjectionRollsBackItsPaymentsAndLeavesResidentStatePending(bool deferredForeignKey)
     {
         using AmmunitionTests.Fixture f = new(liveWorld: true);
         f.Load(quantity: 400);
@@ -227,10 +229,20 @@ public sealed class DetachedCheckpointTests
         using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
         using (var command = snapshot.Database.CreateCommand())
         {
-            command.CommandText = "CREATE TRIGGER RejectProjection BEFORE UPDATE ON WorldNpc BEGIN SELECT RAISE(ABORT,'test'); END";
+            command.CommandText = deferredForeignKey
+                ? """
+                    CREATE TRIGGER RejectProjection BEFORE UPDATE ON WorldNpc
+                    BEGIN INSERT INTO WorldWeaponCooldown(ModuleId,ReadyAt,Kind) VALUES(-1,0,0); END
+                    """
+                : "CREATE TRIGGER RejectProjection BEFORE UPDATE ON WorldNpc BEGIN SELECT RAISE(ABORT,'test'); END";
             command.ExecuteNonQuery();
         }
-        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => snapshot.Project());
+        var error = Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => snapshot.Project());
+        if (deferredForeignKey)
+        {
+            Assert.Equal(787, error.SqliteExtendedErrorCode);
+            Assert.Contains("WorldWeaponCooldown row -1 references WorldItem", WorldSnapshot.DescribeFailure(error));
+        }
         using (WorldDbContext captured = new(snapshot.Database))
         {
             Assert.Equal(200, captured.Set<OwnedItem>().Single(i => i.LocationId == f.Gun).Quantity);

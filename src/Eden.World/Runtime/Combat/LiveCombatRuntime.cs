@@ -209,7 +209,6 @@ internal sealed partial class LiveCombatRuntime(
                 _ships.Remove(pilotId);
                 _savedShips.Remove(pilotId);
                 RemoveNpc(targetId);
-                _savedNpcs.Remove(targetId);
                 _aggressions?.Remove(targetId);
                 _dirtyAggressions.Remove(targetId);
                 RefreshAggression();
@@ -473,7 +472,7 @@ internal sealed partial class LiveCombatRuntime(
             {
                 return null;
             }
-            if (npc is not null)
+            if (npc is not null && (npc.Available || _dirtyNpcs.Contains(id)))
             {
                 SetNpc(npc);
                 _savedNpcs[id] = npc;
@@ -481,7 +480,6 @@ internal sealed partial class LiveCombatRuntime(
             else
             {
                 RemoveNpc(id);
-                _savedNpcs.Remove(id);
             }
             _staleNpcs.Remove(id);
         }
@@ -490,6 +488,10 @@ internal sealed partial class LiveCombatRuntime(
             var repaired = RepairNpc(npc, now);
             if (repaired != npc)
             {
+                if (!npc.Available)
+                {
+                    _savedNpcs.TryAdd(id, npc);
+                }
                 SetNpc(repaired);
                 _dirtyNpcs.Add(id);
                 owner.ObjectsChanged();
@@ -797,14 +799,32 @@ internal sealed partial class LiveCombatRuntime(
                 case "WorldNpcMiningMember":
                     ObserveNpcPopulation(change.Id, change.Table, change.Resident);
                     _contactEpoch++;
-                    _staleNpcs.Add(change.Id);
+                    if (_npcs.ContainsKey(change.Id))
+                    {
+                        _staleNpcs.Add(change.Id);
+                    }
                     break;
                 case "WorldNpc":
                     ObserveNpcPopulation(change.Id, change.Table, change.Resident, change.KeepNpcPopulationDeadline);
                     _effectiveNpcs.Remove(change.Id);
                     _acquisitions.Clear();
                     _contactEpoch++;
-                    _staleNpcs.Add(change.Id);
+                    if (_npcs.ContainsKey(change.Id))
+                    {
+                        if (
+                            owner.HasPersistenceOwnership
+                            && owner.Economy.IsLoaded
+                            && !_dirtyNpcs.Contains(change.Id)
+                            && !owner.Economy.NpcAvailable(change.Id)
+                        )
+                        {
+                            RemoveNpc(change.Id);
+                        }
+                        else
+                        {
+                            _staleNpcs.Add(change.Id);
+                        }
+                    }
                     break;
                 case "WorldNpcAggression":
                     _acquisitions.Clear();

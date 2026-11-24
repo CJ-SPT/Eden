@@ -19,9 +19,7 @@ internal sealed partial class LiveWorld
             .Ships.Select(c => c.After.SystemId)
             .Concat(checkpoint.Npcs.Select(c => c.After.SystemId))
             .Concat(
-                checkpoint.Aggressions.SelectMany(a =>
-                    new[] { _npcSystems.GetValueOrDefault(a.NpcId), _shipSystems.GetValueOrDefault(a.ShipId) }
-                )
+                checkpoint.Aggressions.SelectMany(a => new[] { Economy.NpcSystem(a.NpcId) ?? 0, _shipSystems.GetValueOrDefault(a.ShipId) })
             )
             .Concat(checkpoint.Drones.Select(d => d.Contact.SystemId))
             .Concat(checkpoint.DroneTimers.Select(t => t.SystemId))

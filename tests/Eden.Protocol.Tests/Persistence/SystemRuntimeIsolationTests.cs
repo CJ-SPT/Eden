@@ -32,6 +32,72 @@ public sealed class SystemRuntimeIsolationTests
     }
 
     [Fact]
+    public async Task ScopedPublicationDrainsDeferredChangesWhenTheRecipientBecomesIdle()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        long ship = Assert.Single(fixture.Store.ListPilots(1000001)).ShipId;
+        var combat = live.CombatForSystem(RemoteSystem)!;
+        SpacePosition position = new(100, 0, 0);
+        combat.PublishPilotPosition(ship, RemoteSystem, position);
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var remote = Task.Run(() =>
+        {
+            using var ownership = live.Enter("paused recipient", RemoteSystem);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+            await Task.Run(() => Publish("WorldPosition")).WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            await remote;
+        }
+
+        Assert.Equal(position, combat.InformationPosition(ship));
+        Publish("WorldWreck");
+        Assert.Null(combat.InformationPosition(ship));
+        combat.PublishPilotPosition(ship, RemoteSystem, position);
+        Publish("WorldPosition");
+        Assert.Null(combat.InformationPosition(ship));
+
+        void Publish(string table)
+        {
+            using var ownership = live.EnterShared("scoped publication");
+            live.PublishEconomic([new(table, ship, Resident: true)], new(systems: [RemoteSystem]), []);
+        }
+    }
+
+    [Fact]
+    public void CheckpointDrainsBroadcastsForSystemsThatHaveNeverEnteredSimulation()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock, liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        LiveNaniteRepairs repairs;
+        using (live.UseSystem(RemoteSystem))
+        {
+            repairs = live.Nanites;
+            repairs.Advance(clock.Now);
+        }
+
+        Assert.True(repairs.TryRepairing(1, clock.Now, out _));
+        using (live.EnterShared("unscoped publication"))
+        {
+            live.PublishEconomic([new("WorldNaniteRepair", 1, Resident: true)], null, []);
+            live.EconomicObjectsChanged();
+        }
+        Assert.True(repairs.TryRepairing(1, clock.Now, out _));
+        using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        Assert.False(repairs.TryRepairing(1, clock.Now, out _));
+    }
+
+    [Fact]
     public void PopulationSqlDoesNotGrowWithUnrelatedResidentSystems()
     {
         var baseline = Measure(0);

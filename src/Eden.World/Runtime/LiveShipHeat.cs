@@ -332,6 +332,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
     );
 
     private readonly ResidentMap<long, ConditionView> _conditionViews = [];
+    internal int CachedConditionViews => _conditionViews.Count;
 
     internal IReadOnlyList<FittedModuleCondition> Conditions(long ship, IReadOnlyList<FittedModuleCondition> baseline)
     {
@@ -547,6 +548,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void TransferShipTo(LiveShipHeat destination, long ship, int system)
     {
+        _conditionViews.Remove(ship);
         if (_ships.Remove(ship, out var loaded))
         {
             destination._ships[ship] = loaded with { SystemId = system };
@@ -589,6 +591,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
     internal void Forget(long ship)
     {
         ForgetRequests(ship);
+        _conditionViews.Remove(ship);
         _ships.Remove(ship);
         _active.Remove(ship);
         _dirty.Remove(ship);

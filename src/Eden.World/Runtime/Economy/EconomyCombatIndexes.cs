@@ -131,6 +131,8 @@ internal sealed partial class ResidentEconomy
 
     internal int? NpcSystem(long id) => NpcTable.Snapshot(new(id))?.SystemId;
 
+    internal bool NpcAvailable(long id) => NpcTable.Snapshot(new(id)) is { DestroyedAt: null, RetiredAt: null };
+
     internal IEnumerable<EconomyWorldNpc> PopulationMembers(int system)
     {
         var npcs = NpcTable;
