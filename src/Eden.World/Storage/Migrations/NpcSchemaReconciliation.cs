@@ -10,6 +10,10 @@ internal static class NpcSchemaReconciliation
 {
     internal static void Apply(WorldDbContext world, int version)
     {
+        if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpc')").Contains("ExpiresAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldNpc ADD COLUMN ExpiresAt INTEGER");
+        }
         if (version < 81)
         {
             // Historical interaction backfills materialize WorldNpc with the

@@ -2,7 +2,9 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Mining;
+using Eden.World.Exploration;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -30,16 +32,27 @@ internal static class NpcPopulationSchedule
             ? resident
                 .IndexedSnapshots(nameof(WorldNpcEncounter.SystemId), system)
                 .Where(e => e.SystemId == system)
-                .Select(e => new EncounterDeadline(e.Id, e.Role, e.Occupied, e.NextSpawnAt))
+                .Select(e => new EncounterDeadline(e.Id, e.Role, e.AnchorKind, e.Generation, e.Occupied, e.NextSpawnAt))
             : world
                 .Filter<WorldNpcEncounter>(e => e.SystemId == system)
                 .AsEnumerable()
-                .Select(e => new EncounterDeadline(e.Id, e.Role, e.Occupied, e.NextSpawnAt))
+                .Select(e => new EncounterDeadline(e.Id, e.Role, e.AnchorKind, e.Generation, e.Occupied, e.NextSpawnAt))
                 .ToArray();
+        bool beltsReplaced =
+            IncursionStore.MayHaveSite(system, now)
+            && encounters.Any(encounter =>
+                encounter.AnchorKind == NpcAnchorKind.IncursionBelt
+                && now >= IncursionRules.OpensAt(encounter.Generation)
+                && now < IncursionRules.EndsAt(encounter.Generation)
+            );
         long due = long.MaxValue;
         foreach (var encounter in encounters)
         {
-            if (!encounter.Occupied || encounter.NextSpawnAt is not long next)
+            if (
+                !encounter.Occupied
+                || encounter.NextSpawnAt is not long next
+                || beltsReplaced && encounter is { AnchorKind: NpcAnchorKind.Belt, Role: NpcRole.Pirate }
+            )
             {
                 continue;
             }
@@ -94,11 +107,20 @@ internal static class NpcPopulationSchedule
                 or NpcAnchorKind.GhostSite
                 or NpcAnchorKind.Abyssal
                 or NpcAnchorKind.Incursion
+                or NpcAnchorKind.IncursionBelt
+                or NpcAnchorKind.IncursionCamp
                 or NpcAnchorKind.MilitiaComplex
                 or NpcAnchorKind.MilitiaHub
                 or NpcAnchorKind.MilitiaObjective;
 
-    private readonly record struct EncounterDeadline(long Id, NpcRole Role, bool Occupied, long? NextSpawnAt);
+    private readonly record struct EncounterDeadline(
+        long Id,
+        NpcRole Role,
+        NpcAnchorKind AnchorKind,
+        int Generation,
+        bool Occupied,
+        long? NextSpawnAt
+    );
 
     private readonly record struct MiningDeadline(long NpcId, long? MiningDueAt, long? WarpStartedAt);
 

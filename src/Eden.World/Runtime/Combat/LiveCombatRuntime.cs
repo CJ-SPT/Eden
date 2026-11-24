@@ -826,6 +826,9 @@ internal sealed partial class LiveCombatRuntime(
                 case "WorldNpcMiningOperation":
                     ObserveEncounterPopulation(change.Id, change.Table, change.Resident);
                     break;
+                case "WorldMiningSite" when change.System is int miningSystem && IncursionStore.IsPopulationSystem(miningSystem):
+                    InvalidatePopulationDeadline(miningSystem, "Incursion ice field");
+                    break;
                 case "WorldNpcStanding":
                     InvalidatePopulationDeadlines("standings");
                     break;

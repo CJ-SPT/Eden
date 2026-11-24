@@ -7,7 +7,7 @@ namespace Eden.World.Exploration;
 
 internal static class IncursionSchema
 {
-    internal const int Version = 225;
+    internal const int Version = 226;
     internal const string CampaignTable = "WorldIncursionCampaign";
     internal const string ContributionTable = "WorldIncursionContribution";
     internal const string RepairDamageTable = "WorldIncursionRepairDamage";

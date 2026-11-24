@@ -113,6 +113,7 @@ internal sealed partial class NpcCombatStore(
                 && n.Role == NpcRole.Pirate
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
+                && (n.ExpiresAt == null || n.ExpiresAt > now)
                 && n.Navigation == NpcNavigationState.Idle
                 && !Enumerable.Contains(occupied, n.Id)
             )
@@ -273,6 +274,7 @@ internal sealed partial class NpcCombatStore(
         var npc = world.Set<WorldNpc>().Find(npcId);
         if (
             npc?.Navigation == NpcNavigationState.Warping
+            || npc?.ExpiresAt <= now
             || npc is { AnchorKind: NpcAnchorKind.Incursion } && !CombatAnomalyStore.IncursionNpcActive(world, npc, now)
         )
         {

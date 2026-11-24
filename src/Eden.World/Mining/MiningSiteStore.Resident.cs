@@ -1,5 +1,6 @@
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Mining;
+using Eden.World.Combat.Npcs;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Mining;
@@ -28,6 +29,10 @@ internal sealed partial class MiningSiteStore
         site.ReplaceAt = checked(
             now + (site.Family == MiningFamily.Ice ? MiningSiteRules.IceReplacementDelay : MiningSiteRules.ReplacementDelay)
         );
+        if (site.Family == MiningFamily.Ice)
+        {
+            IncursionRoamingPopulation.RetireIce(world, site.Id, now);
+        }
         Eden.World.Exploration.CombatAnomalyStore.RetireGuarded(world, site.Id, now);
         var members = world.Filter<SavedMiningDeposit>(d => d.SiteId == site.Id).ToArray();
         world.RemoveRange(members.Select(d => world.Set<WorldAsteroid>().Find(d.Id)).OfType<WorldAsteroid>());

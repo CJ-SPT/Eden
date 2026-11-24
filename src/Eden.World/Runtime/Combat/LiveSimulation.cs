@@ -13,6 +13,7 @@ using Eden.Gameplay.Propulsion;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
+using Eden.World.Exploration;
 using Eden.World.Propulsion;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -25,7 +26,10 @@ internal sealed partial class LiveCombatRuntime
     private readonly NpcProfileCatalog _simulationProfiles = new();
     private readonly ResidentMap<int, long[]> _systemNpcs = [];
     private readonly ResidentMap<int, IReadOnlyList<NpcSimulationContact>> _simulationContacts = [];
-    private readonly ResidentMap<int, long> _populationDue = [];
+
+    private readonly record struct PopulationDeadline(long Due, long? IncursionTale);
+
+    private readonly ResidentMap<int, PopulationDeadline> _populationDue = [];
     private int? _populationRefreshSystem;
 
     private void InvalidatePopulationDeadline(int system, string reason)
@@ -500,17 +504,19 @@ internal sealed partial class LiveCombatRuntime
             }
             : ship;
 
-    private LiveCombatNpc[] AdvanceSimulationNpcs(int system, long now, Func<long> refreshPopulation)
+    private LiveCombatNpc[] AdvanceSimulationNpcs(int system, long now, Func<bool, long> refreshPopulation)
     {
-        bool scheduled = _populationDue.TryGetValue(system, out long due);
-        if (!scheduled || now >= due)
+        long? tale = owner.IncursionEffectForSystem(system, now)?.TaleId;
+        bool scheduled = _populationDue.TryGetValue(system, out var deadline);
+        bool changedFocus = scheduled ? deadline.IncursionTale != tale : tale.HasValue || IncursionStore.MayHaveSite(system, now);
+        if (!scheduled || now >= deadline.Due || changedFocus)
         {
             owner.CountNpcPopulation(scheduled ? "deadline reached" : "deadline missing");
             int? previousScope = _populationRefreshSystem;
             _populationRefreshSystem = system;
             try
             {
-                _populationDue[system] = refreshPopulation();
+                _populationDue[system] = new(refreshPopulation(changedFocus), tale);
             }
             finally
             {
@@ -565,7 +571,12 @@ internal sealed partial class LiveCombatRuntime
     internal bool QuietMiningBelt(int system, long ship, SpacePosition position, double radius, long now, out bool populationDue)
     {
         using var ownership = owner.Enter();
-        if (!_populationDue.TryGetValue(system, out long due) || due <= now || !_systemNpcs.TryGetValue(system, out var members))
+        if (
+            !_populationDue.TryGetValue(system, out var deadline)
+            || deadline.Due <= now
+            || deadline.IncursionTale != owner.IncursionEffectForSystem(system, now)?.TaleId
+            || !_systemNpcs.TryGetValue(system, out var members)
+        )
         {
             populationDue = true;
             return false;
@@ -636,12 +647,12 @@ internal sealed partial class LiveCombatRuntime
         return true;
     }
 
-    internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Func<long> refreshPopulation)
+    internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Func<bool, long> refreshPopulation)
     {
         return Execute(() => SimulateOwned(system, now, refreshPopulation), nameof(Simulate));
     }
 
-    private IReadOnlyList<NpcSimulationContact>? SimulateOwned(int system, long now, Func<long> refreshPopulation)
+    private IReadOnlyList<NpcSimulationContact>? SimulateOwned(int system, long now, Func<bool, long> refreshPopulation)
     {
         using var ownership = owner.Enter();
         if (!simulationObjects || !CanRun)
@@ -694,7 +705,12 @@ internal sealed partial class LiveCombatRuntime
         database.MotionStamps.TryRemove(system, out _);
     }
 
-    private IReadOnlyList<NpcContact> SimulationContacts(int system, long now, Func<long> refreshPopulation, SpacePosition? position = null)
+    private IReadOnlyList<NpcContact> SimulationContacts(
+        int system,
+        long now,
+        Func<bool, long> refreshPopulation,
+        SpacePosition? position = null
+    )
     {
         var npcs = AdvanceSimulationNpcs(system, now, refreshPopulation);
         if (position is not null)
@@ -770,7 +786,7 @@ internal sealed partial class LiveCombatRuntime
                 AnchorKind = npc.AnchorKind,
                 AnchorId = npc.AnchorId,
                 StandingThresholds = npc.StandingThresholds,
-                BountyCents = WorldTuningRules.Reward(NpcBountyRules.BaseCents(npc.Role, npc.Attributes), bountyMultiplier),
+                BountyCents = WorldTuningRules.Reward(NpcBountyRules.BaseCents(npc.Role, npc.Attributes, npc.AnchorKind), bountyMultiplier),
             };
             contacts.Add(contact);
             if (motionStamped)

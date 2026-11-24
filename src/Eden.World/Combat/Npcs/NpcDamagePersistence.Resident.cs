@@ -48,8 +48,8 @@ internal static partial class NpcDamagePersistence
         {
             throw new InvalidDataException("The NPC is no longer available.");
         }
-        bool incursion = npc.AnchorKind == NpcAnchorKind.Incursion;
-        if (incursion && !CombatAnomalyStore.IncursionNpcActive(world, npc, now))
+        bool incursionSite = npc.AnchorKind == NpcAnchorKind.Incursion;
+        if (npc.ExpiresAt <= now || incursionSite && !CombatAnomalyStore.IncursionNpcActive(world, npc, now))
         {
             var savedDefense = ShipHealth.DefenseFrom(attributes);
             HullDamage savedHealth = new(
@@ -151,10 +151,17 @@ internal static partial class NpcDamagePersistence
                 Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
-            if (incursion)
+            if (incursionSite || NpcPopulationRules.IsIncursionPatrol(npc.AnchorKind))
             {
                 Maps.MapStatisticsStore.Record(world, npc.SystemId, now, Eden.Gameplay.Maps.MapActivityKind.NpcShipLoss);
-                CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
+                if (incursionSite)
+                {
+                    CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
+                }
+                else
+                {
+                    NpcPopulationSeeder.RecordKill(world, npc, now);
+                }
                 PilotInteractionHistoryStore.Destroyed(
                     world,
                     pilot.Id,

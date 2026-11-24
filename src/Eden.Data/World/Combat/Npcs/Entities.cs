@@ -27,6 +27,7 @@ public sealed class WorldNpc
     public double? HomeY { get; set; }
     public double? HomeZ { get; set; }
     public long? RetiredAt { get; set; }
+    public long? ExpiresAt { get; set; }
     public double X { get; set; }
     public double Y { get; set; }
     public double Z { get; set; }

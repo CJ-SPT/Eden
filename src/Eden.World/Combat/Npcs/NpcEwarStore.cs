@@ -101,7 +101,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
             int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
             var target = new SpacePosition(position.X, position.Y, position.Z);
             IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null;
-            sources ??= Sources(world, catalog, shipId);
+            sources ??= Sources(world, catalog, shipId, now);
             foreach (var source in sources.OrderBy(s => s.Id))
             {
                 if (
@@ -177,7 +177,8 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
                     row.AbilityJson = JsonSerializer.Serialize(ability);
                     row.AppliedJson = applied is null ? null : JsonSerializer.Serialize(applied);
                     row.StartedAt = now;
-                    row.ReadyAt = checked(now + (long)Math.Ceiling(ability.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+                    long cycleEnd = checked(now + (long)Math.Ceiling(ability.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+                    row.ReadyAt = Math.Min(cycleEnd, source.AvailableUntil);
                     if (applied is not null)
                     {
                         CrimewatchPersistence.Npc(world, pilotId, system, row.ReadyAt);
@@ -191,7 +192,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
         return current.Select(e => e.Contact()).OfType<NpcEwarContact>().ToArray();
     }
 
-    private IReadOnlyList<NpcEwarSource> Sources(WorldAction world, CatalogDbContext catalog, long shipId)
+    private IReadOnlyList<NpcEwarSource> Sources(WorldAction world, CatalogDbContext catalog, long shipId, long now)
     {
         var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId).ToDictionary(a => a.NpcId);
         var ids = aggression.Keys.ToArray();
@@ -201,6 +202,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
                 Enumerable.Contains(ids, n.Id)
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
+                && (n.ExpiresAt == null || n.ExpiresAt > now)
                 && n.Navigation != NpcNavigationState.Warping
                 && n.Role != NpcRole.MissionStructure
                 && n.Role != NpcRole.Convoy
@@ -220,7 +222,8 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
                     profile.Type.Radius ?? 0,
                     NpcPopulationRules.Leash(profile.Attributes, acquisitionRange: n.AcquisitionRange),
                     aggression[n.Id].ReadyAt,
-                    profile.ElectronicWarfare
+                    profile.ElectronicWarfare,
+                    n.ExpiresAt ?? long.MaxValue
                 );
             })
             .ToArray();

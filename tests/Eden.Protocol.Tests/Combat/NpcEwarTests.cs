@@ -228,6 +228,33 @@ public sealed partial class NpcEwarTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void IncursionCampTackleEndsWithThePatrol(bool simulationObjects)
+    {
+        const int scrambler = 13032;
+        using Fixture fixture = new(scrambler, resident: true, simulationObjects: simulationObjects);
+        var live = LiveWorld.Find(fixture.Combat.Db.Path)!;
+        long deadline = fixture.Now + TimeSpan.TicksPerSecond;
+        using (var world = live.Economy.Begin())
+        {
+            var npc = world.Set<WorldNpc>().Find(fixture.Combat.Npc.Id)!;
+            npc.AnchorKind = NpcAnchorKind.IncursionCamp;
+            npc.ExpiresAt = deadline;
+            world.Commit();
+        }
+        var applied = Assert.Single(fixture.Advance(), effect => effect.Ability.Kind == NpcEwarKind.WarpDisruption);
+        Assert.Equal(1, applied.Applied.WarpStrength);
+        Assert.Equal(deadline, applied.ReadyAt);
+
+        using var guard = GameplaySqlGuard.Begin();
+        fixture.Combat.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        Assert.Empty(fixture.Advance());
+        Assert.Empty(fixture.Warfare.Incoming(NpcCombatTests.Fixture.ShipId));
+        Assert.Null(live.Economy.Inspect(world => world.Set<WorldNpc>().Find(fixture.Combat.Npc.Id)!.RetiredAt));
+    }
+
+    [Theory]
     [InlineData(2385, NpcEwarKind.Jamming, false)]
     [InlineData(2385, NpcEwarKind.Jamming, true)]
     [InlineData(10015, NpcEwarKind.TargetPainting, false)]

@@ -914,7 +914,8 @@ internal sealed partial class ResidentEconomy
                         row.VelocityZ,
                         row.X,
                         row.Y,
-                        row.Z
+                        row.Z,
+                        row.ExpiresAt
                     ),
                 state => new Eden.Data.World.Combat.Npcs.WorldNpc
                 {
@@ -950,12 +951,13 @@ internal sealed partial class ResidentEconomy
                     X = state.X,
                     Y = state.Y,
                     Z = state.Z,
+                    ExpiresAt = state.ExpiresAt,
                 },
                 ProjectWorldNpc,
                 "Id,AcquisitionRange,AnchorKind,ArmorDamage,ArmorRepairAt,BeltId,CorporationId,DestroyedAt,"
                     + "EncounterId,FactionId,HomeX,HomeY,HomeZ,MotionAt,Name,Navigation,RepairRevision,RetiredAt,Role,"
                     + "ShieldCharge,ShieldRepairAt,SpawnSlot,StructureDamage,SystemId,TypeId,UpdatedAt,VelocityX,VelocityY,"
-                    + "VelocityZ,X,Y,Z",
+                    + "VelocityZ,X,Y,Z,ExpiresAt",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -989,7 +991,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(29),
                         reader.GetDouble(30),
                         reader.GetDouble(31),
-                        reader.GetDouble(32)
+                        reader.GetDouble(32),
+                        reader.IsDBNull(33) ? null : reader.GetInt64(33)
                     ),
                 state => new(state.Id),
                 indexes:

@@ -25,7 +25,12 @@ internal sealed partial class LiveCombatRuntime
     private const int RetainedAcquisitions = 128;
     private readonly List<AcquisitionSnapshot> _acquisitions = [];
 
-    internal IReadOnlyList<NpcContact>? Contacts(int system, long now, Func<IReadOnlyList<NpcContact>> read, Func<long> refreshPopulation)
+    internal IReadOnlyList<NpcContact>? Contacts(
+        int system,
+        long now,
+        Func<IReadOnlyList<NpcContact>> read,
+        Func<bool, long> refreshPopulation
+    )
     {
         return Execute(() => ContactsOwned(system, now, read, refreshPopulation), nameof(Contacts));
     }
@@ -34,7 +39,7 @@ internal sealed partial class LiveCombatRuntime
         int system,
         long now,
         Func<IReadOnlyList<NpcContact>> read,
-        Func<long> refreshPopulation
+        Func<bool, long> refreshPopulation
     )
     {
         using var ownership = owner.Enter();

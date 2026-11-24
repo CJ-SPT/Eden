@@ -37,7 +37,8 @@ internal sealed record EconomyWorldNpc(
     double VelocityZ,
     double X,
     double Y,
-    double Z
+    double Z,
+    long? ExpiresAt
 );
 
 internal sealed partial class ResidentEconomy
@@ -64,7 +65,7 @@ internal sealed partial class ResidentEconomy
                     Id,AcquisitionRange,AnchorKind,ArmorDamage,ArmorRepairAt,BeltId,CorporationId,DestroyedAt,
                     EncounterId,FactionId,HomeX,HomeY,HomeZ,MotionAt,Name,Navigation,RepairRevision,RetiredAt,Role,
                     ShieldCharge,ShieldRepairAt,SpawnSlot,StructureDamage,SystemId,TypeId,UpdatedAt,VelocityX,VelocityY,
-                    VelocityZ,X,Y,Z
+                    VelocityZ,X,Y,Z,ExpiresAt
                 )
                 WITH payload(value) AS MATERIALIZED (SELECT jsonb(value) FROM json_each({values}))
                 SELECT
@@ -81,7 +82,7 @@ internal sealed partial class ResidentEconomy
                     json_extract(value,'$.StructureDamage'),json_extract(value,'$.SystemId'),
                     json_extract(value,'$.TypeId'),json_extract(value,'$.UpdatedAt'),json_extract(value,'$.VelocityX'),
                     json_extract(value,'$.VelocityY'),json_extract(value,'$.VelocityZ'),json_extract(value,'$.X'),
-                    json_extract(value,'$.Y'),json_extract(value,'$.Z')
+                    json_extract(value,'$.Y'),json_extract(value,'$.Z'),json_extract(value,'$.ExpiresAt')
                 FROM payload WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                     AcquisitionRange=excluded.AcquisitionRange,AnchorKind=excluded.AnchorKind,
@@ -93,7 +94,8 @@ internal sealed partial class ResidentEconomy
                     Role=excluded.Role,ShieldCharge=excluded.ShieldCharge,ShieldRepairAt=excluded.ShieldRepairAt,
                     SpawnSlot=excluded.SpawnSlot,StructureDamage=excluded.StructureDamage,SystemId=excluded.SystemId,
                     TypeId=excluded.TypeId,UpdatedAt=excluded.UpdatedAt,VelocityX=excluded.VelocityX,
-                    VelocityY=excluded.VelocityY,VelocityZ=excluded.VelocityZ,X=excluded.X,Y=excluded.Y,Z=excluded.Z
+                    VelocityY=excluded.VelocityY,VelocityZ=excluded.VelocityZ,X=excluded.X,Y=excluded.Y,Z=excluded.Z,
+                    ExpiresAt=excluded.ExpiresAt
                 """
             );
         }

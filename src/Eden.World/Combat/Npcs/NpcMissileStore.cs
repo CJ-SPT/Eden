@@ -163,6 +163,10 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = now;
             }
+            else if (npc.ExpiresAt is long deadline)
+            {
+                (incursionDeadlines ??= []).Add(row.Id, deadline);
+            }
             else if (npc.AnchorKind == NpcAnchorKind.Incursion)
             {
                 (incursionDeadlines ??= []).Add(row.Id, CombatAnomalyStore.IncursionNpcDeadline(world, npc));

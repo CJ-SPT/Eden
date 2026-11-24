@@ -23,6 +23,7 @@ internal sealed partial class NpcPopulationSeeder
         if (
             encounter is null
             || encounter.Role is not (NpcRole.Pirate or NpcRole.Convoy)
+            || encounter.AnchorKind == NpcAnchorKind.IncursionCamp
             || world
                 .Set<WorldNpc>()
                 .Where(n => n.EncounterId == encounter.Id && n.Id != npc.Id && n.DestroyedAt == null && n.RetiredAt == null)
@@ -32,7 +33,10 @@ internal sealed partial class NpcPopulationSeeder
         {
             return;
         }
-        encounter.Generation = checked(encounter.Generation + 1);
+        if (encounter.AnchorKind != NpcAnchorKind.IncursionBelt)
+        {
+            encounter.Generation = checked(encounter.Generation + 1);
+        }
         int delay = encounter.Role == NpcRole.Convoy ? NpcConvoyRules.CooldownSeconds : NpcEncounterDefinitions.RespawnSeconds;
         encounter.NextSpawnAt = checked(now + delay * TimeSpan.TicksPerSecond);
     }

@@ -25,13 +25,13 @@ internal static class RetiredNpcTraffic
         var candidates = NpcPopulationMember
             .InSystem(world, system)
             .Where(npc =>
-                npc.DestroyedAt is null
-                && npc.RetiredAt is long retired
-                && retired <= cutoff
-                && (
-                    npc is { Role: NpcRole.Convoy, AnchorKind: NpcAnchorKind.Station }
-                    || npc is { Role: NpcRole.MiningHauler, AnchorKind: NpcAnchorKind.Belt }
-                )
+                NpcPopulationRules.IsIncursionPatrol(npc.AnchorKind) && (npc.RetiredAt ?? npc.DestroyedAt) <= cutoff
+                || npc.DestroyedAt is null
+                    && npc.RetiredAt <= cutoff
+                    && (
+                        npc is { Role: NpcRole.Convoy, AnchorKind: NpcAnchorKind.Station }
+                        || npc is { Role: NpcRole.MiningHauler or NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt }
+                    )
             )
             .Select(npc => npc.Id)
             .Where(id => !Referenced(world, id))

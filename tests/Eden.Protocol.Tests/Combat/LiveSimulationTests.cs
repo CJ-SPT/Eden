@@ -52,7 +52,7 @@ public sealed partial class LiveSimulationTests
             runtime.Simulate(
                 system,
                 now,
-                () =>
+                _ =>
                 {
                     localRefreshes++;
                     return now + TimeSpan.TicksPerDay;
@@ -62,7 +62,7 @@ public sealed partial class LiveSimulationTests
             runtime.Simulate(
                 remote,
                 now,
-                () =>
+                _ =>
                 {
                     remoteRefreshes++;
                     return now + TimeSpan.TicksPerDay;

@@ -64,7 +64,8 @@ public sealed record NpcEwarSource(
     double Radius,
     double Leash,
     long ReactionAt,
-    IReadOnlyList<NpcEwarAbility> Abilities
+    IReadOnlyList<NpcEwarAbility> Abilities,
+    long AvailableUntil = long.MaxValue
 );
 
 public interface INpcElectronicWarfare

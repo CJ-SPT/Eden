@@ -68,7 +68,7 @@ public sealed class NpcPopulationValidationTests(ITestOutputHelper output)
         using var metrics = SessionPerformance.Begin("population participant discovery", output.WriteLine, force: true)!;
         live.Economy.Inspect(world =>
         {
-            var participants = NpcEncounterStore.PopulationParticipants(world, System);
+            var participants = NpcEncounterStore.PopulationParticipants(world, System, DateTime.UtcNow.ToFileTimeUtc());
             Assert.Equal([System], participants.Systems);
             Assert.Equal(expected.Order(), participants.Resources.Select(resource => resource.Id).Order());
             Assert.All(participants.Resources, resource => Assert.Equal(SharedSimulationResource.Npc, resource.Kind));

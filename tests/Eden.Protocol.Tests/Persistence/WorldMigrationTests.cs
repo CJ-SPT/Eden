@@ -1,9 +1,11 @@
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Tests.Structures;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -101,6 +103,25 @@ public sealed class WorldMigrationTests
             Assert.Equal(0, battle.HullCapacity);
             Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         }
+    }
+
+    [Fact]
+    public void Version225KeepsExistingNpcRowsWhenAddingPatrolExpiry()
+    {
+        using Eden.Protocol.Tests.Combat.NpcCombatTests.Fixture fixture = new(useTestClock: true);
+        long npcId = fixture.Npc.Id;
+        var database = new WorldDatabase(fixture.Db.Path);
+        using (WorldDbContext world = new(database.Path))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldNpc DROP COLUMN ExpiresAt; PRAGMA user_version=225;");
+        }
+        WorldInitialization.Initialize(database);
+        using LiveWorld live = new(database, fixture.Clock, _ => { });
+        var npc = live.Economy.Inspect(world => world.Set<WorldNpc>().Find(npcId)!);
+        Assert.Null(npc.ExpiresAt);
+        Assert.Equal(fixture.Npc.TypeId, npc.TypeId);
+        Assert.Equal(fixture.Npc.SystemId, npc.SystemId);
+        Assert.Equal(fixture.Npc.Position, new SpacePosition(npc.X, npc.Y, npc.Z));
     }
 
     [Fact]

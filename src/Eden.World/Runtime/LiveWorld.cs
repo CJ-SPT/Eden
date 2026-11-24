@@ -390,7 +390,10 @@ internal sealed partial class LiveWorld : IDisposable
 
     private static bool ExplicitCombatSystem(CombatRowChange change) =>
         change.System.HasValue
-        && (change.Table == "WorldNpc" || change.Table == "WorldAsteroidGeometry" && IncursionObjectIds.IsOre(change.Id));
+        && (
+            change.Table is "WorldNpc" or "WorldMiningSite"
+            || change.Table == "WorldAsteroidGeometry" && IncursionObjectIds.IsOre(change.Id)
+        );
 
     private static void ObserveState(LiveSystemState state, IReadOnlyCollection<CombatRowChange> changes)
     {

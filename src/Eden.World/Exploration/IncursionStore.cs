@@ -17,6 +17,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -157,6 +158,11 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
     }
 
     internal static bool MayHaveSite(int systemId, long now) => TaleInSystem(systemId, now) is not null;
+
+    internal static bool IsPopulationSystem(int systemId) => s_placeBySystem.ContainsKey(systemId);
+
+    internal static long NextPopulationOpening(int systemId, long now) =>
+        IsPopulationSystem(systemId) ? IncursionRules.OpensAt(IncursionRules.TaleId(now) + 1) : long.MaxValue;
 
     private static long? TaleInSystem(int systemId, long now)
     {
@@ -334,6 +340,7 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
             }
 
             CombatAnomalyStore.RetireIncursion(world, taleId, now);
+            IncursionRoamingPopulation.Retire(world, ForTale(taleId).Systems, taleId, now);
             world.RemoveRange(world.Filter<SavedIncursionContribution>(row => row.TaleId == taleId).ToArray());
             world.RemoveRange(world.Filter<SavedIncursionRepairDamage>(row => row.TaleId == taleId).ToArray());
             world.Remove(campaign);
@@ -571,6 +578,7 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
         world.RemoveRange(contributions);
         world.RemoveRange(world.Filter<SavedIncursionRepairDamage>(row => row.TaleId == taleId).ToArray());
         CombatAnomalyStore.RetireIncursion(world, taleId, now);
+        IncursionRoamingPopulation.Retire(world, ForTale(taleId).Systems, taleId, now);
     }
 
     private static long Amount(int pilots, ImmutableArray<Breakpoint> entries) =>

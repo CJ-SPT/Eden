@@ -13,9 +13,11 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed partial class NpcMissileTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void IncursionExpiryStopsOutgoingNpcLaunchAndPendingMissileImpact(bool incursion)
+    [InlineData(NpcAnchorKind.Belt)]
+    [InlineData(NpcAnchorKind.Incursion)]
+    [InlineData(NpcAnchorKind.IncursionCamp)]
+    [InlineData(NpcAnchorKind.IncursionBelt)]
+    public void IncursionExpiryStopsOutgoingNpcLaunchAndPendingMissileImpact(NpcAnchorKind anchor)
     {
         using Fixture fixture = new(useTestClock: true);
         Prepare(fixture);
@@ -24,7 +26,7 @@ public sealed partial class NpcMissileTests
         long deadline = IncursionRules.EndsAt(taleId);
         clock.UtcNow = DateTimeOffset.FromFileTime(deadline - TimeSpan.TicksPerSecond).ToUniversalTime();
         using LiveWorld live = new(new(fixture.Db.Path), clock, _ => { });
-        if (incursion)
+        if (anchor == NpcAnchorKind.Incursion)
         {
             using var action = live.Economy.Begin();
             long siteId = CombatAnomalyRules.FirstSiteId;
@@ -42,6 +44,16 @@ public sealed partial class NpcMissileTests
             action.Commit();
         }
 
+        if (NpcPopulationRules.IsIncursionPatrol(anchor))
+        {
+            using var action = live.Economy.Begin();
+            var npc = action.Set<WorldNpc>().Find(fixture.Npc.Id)!;
+            npc.AnchorKind = anchor;
+            npc.ExpiresAt = deadline;
+            action.Commit();
+        }
+
+        bool incursion = anchor != NpcAnchorKind.Belt;
         long pilotId = fixture.Pilot.PilotId;
         long shipId = fixture.Pilot.ShipId;
         var before = fixture.Health.Read(pilotId, clock.Now).Remaining;

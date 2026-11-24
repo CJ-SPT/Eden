@@ -43,7 +43,9 @@ internal sealed class NpcEncounterStore(
         militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
-            return LiveCombatRuntime.Find(database.Path)?.ReadScene(systemId, position, now, () => RefreshPopulation(systemId, now))
+            return LiveCombatRuntime
+                    .Find(database.Path)
+                    ?.ReadScene(systemId, position, now, force => RefreshPopulation(systemId, now, force))
                 ?? NpcSceneContacts.From(List(systemId, now), systemId, position);
         }
     }
@@ -65,7 +67,12 @@ internal sealed class NpcEncounterStore(
             if (
                 LiveCombatRuntime
                     .Find(database.Path)
-                    ?.Contacts(systemId, now, () => Read(systemId, now), () => RefreshPopulation(systemId, now)) is
+                    ?.Contacts(
+                        systemId,
+                        now,
+                        () => Read(systemId, now, force: IncursionStore.MayHaveSite(systemId, now)),
+                        force => RefreshPopulation(systemId, now, force)
+                    ) is
                 { } resident
             )
             {
@@ -87,7 +94,10 @@ internal sealed class NpcEncounterStore(
         militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
-            if (LiveCombatRuntime.Find(database.Path)?.Simulate(systemId, now, () => RefreshPopulation(systemId, now)) is { } resident)
+            if (
+                LiveCombatRuntime.Find(database.Path)?.Simulate(systemId, now, force => RefreshPopulation(systemId, now, force)) is
+                { } resident
+            )
             {
                 return resident;
             }
@@ -97,7 +107,12 @@ internal sealed class NpcEncounterStore(
                 world =>
                     world
                         .Set<WorldNpc>()
-                        .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
+                        .Where(n =>
+                            n.SystemId == systemId
+                            && n.DestroyedAt == null
+                            && n.RetiredAt == null
+                            && (n.ExpiresAt == null || n.ExpiresAt > now)
+                        )
                         .OrderBy(n => n.Id)
                         .AsEnumerable()
                         .Select(n => new NpcSimulationContact(n.Id, new(n.X, n.Y, n.Z), n.Navigation == NpcNavigationState.Warping))
@@ -106,7 +121,7 @@ internal sealed class NpcEncounterStore(
         }
     }
 
-    private long RefreshPopulation(int systemId, long now)
+    private long RefreshPopulation(int systemId, long now, bool force)
     {
         if (population is null)
         {
@@ -114,19 +129,20 @@ internal sealed class NpcEncounterStore(
         }
         if (LiveWorld.Find(database.Path) is not { } live)
         {
-            Read(systemId, now, false);
+            Read(systemId, now, buildContacts: false, force);
             return database.PopulationDeadlines[systemId];
         }
         using var phase = SessionPerformance.Phase("resident.npcPopulation");
         long stamp = now / TimeSpan.TicksPerSecond;
         bool seed =
-            database.PopulationStamps.GetValueOrDefault(systemId, -1) != stamp
+            force
+            || database.PopulationStamps.GetValueOrDefault(systemId, -1) != stamp
             || database.PopulationDeadlines.GetValueOrDefault(systemId, long.MaxValue) <= now;
         using var shared = live.EnterShared("resident population participants", TransactionParticipants.None);
         var participants =
             live.Economy.IsLoaded && !live.Economy.HasActiveAction
-                ? PopulationParticipants(NpcPopulationMember.FromSnapshots(live.Economy.PopulationMembers(systemId)), systemId)
-                : live.Economy.Inspect(world => PopulationParticipants(world, systemId));
+                ? PopulationParticipants(NpcPopulationMember.FromSnapshots(live.Economy.PopulationMembers(systemId)), systemId, now)
+                : live.Economy.Inspect(world => PopulationParticipants(world, systemId, now));
         long due;
         if (seed)
         {
@@ -145,17 +161,20 @@ internal sealed class NpcEncounterStore(
         return due;
     }
 
-    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system) =>
-        PopulationParticipants(NpcPopulationMember.InSystem(world, system), system);
+    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system, long now) =>
+        PopulationParticipants(NpcPopulationMember.InSystem(world, system), system, now);
 
-    private static TransactionParticipants PopulationParticipants(IEnumerable<NpcPopulationMember> members, int system)
+    private static TransactionParticipants PopulationParticipants(IEnumerable<NpcPopulationMember> members, int system, long now)
     {
+        bool replacesBeltPirates = IncursionStore.MayHaveSite(system, now);
         var npcs = members
             .Where(n =>
                 n.Active
                 && (
                     NpcPopulationRules.IsMining(n.Role)
                     || n.Role == NpcRole.Convoy
+                    || NpcPopulationRules.IsIncursionPatrol(n.AnchorKind)
+                    || replacesBeltPirates && IncursionRoamingPopulation.IsNativeBeltPirate(n)
                     || n.TypeId == NpcEncounterDefinitions.GuristasRookieType
                     || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)
                 )
@@ -165,16 +184,17 @@ internal sealed class NpcEncounterStore(
         return new(systems: [system], resources: npcs);
     }
 
-    private IReadOnlyList<NpcContact> Read(int systemId, long now, bool buildContacts = true)
+    private IReadOnlyList<NpcContact> Read(int systemId, long now, bool buildContacts = true, bool force = false)
     {
-        using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId));
+        using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId, now));
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         long populationStamp = now / TimeSpan.TicksPerSecond;
         if (
             population is not null
             && (
-                database.PopulationStamps.GetValueOrDefault(systemId, -1) != populationStamp
+                force
+                || database.PopulationStamps.GetValueOrDefault(systemId, -1) != populationStamp
                 || database.PopulationDeadlines.GetValueOrDefault(systemId, long.MaxValue) <= now
             )
         )
@@ -184,7 +204,9 @@ internal sealed class NpcEncounterStore(
         world.SaveChanges();
         var npcs = world
             .Set<WorldNpc>()
-            .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
+            .Where(n =>
+                n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null && (n.ExpiresAt == null || n.ExpiresAt > now)
+            )
             .OrderBy(n => n.Id)
             .ToArray();
         var ids = npcs.Select(n => n.Id).ToArray();
@@ -308,7 +330,7 @@ internal sealed class NpcEncounterStore(
                         AnchorKind = n.AnchorKind,
                         AnchorId = n.BeltId,
                         StandingThresholds = profiles[n.TypeId].StandingThresholds,
-                        BountyCents = WorldTuningRules.Reward(NpcBountyRules.BaseCents(n.Role, attributes), bountyMultiplier),
+                        BountyCents = WorldTuningRules.Reward(NpcBountyRules.BaseCents(n.Role, attributes, n.AnchorKind), bountyMultiplier),
                     };
                 })
                 .ToArray()

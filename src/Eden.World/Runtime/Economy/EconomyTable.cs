@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Combat.Npcs;
 using Eden.World.Storage;
@@ -521,11 +523,18 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                 // A final site clear can retire NPCs in other systems outside the weapon action's participant set.
                 int? retirementSystem =
                     beforeRow is WorldNpc { RetiredAt: null }
-                    && afterRow is WorldNpc { AnchorKind: NpcAnchorKind.Incursion, RetiredAt: not null } incursion
-                        ? incursion.SystemId
+                    && afterRow is WorldNpc { RetiredAt: not null } retired
+                    && (
+                        retired.AnchorKind == NpcAnchorKind.Incursion
+                        || NpcPopulationRules.IsIncursionPatrol(retired.AnchorKind)
+                        || retired is { Role: NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt }
+                    )
+                        ? retired.SystemId
                         : null;
+                var miningSite = (afterRow as SavedMiningSite) ?? (beforeRow as SavedMiningSite);
+                int? changedSystem = miningSite is { Family: MiningFamily.Ice } ? miningSite.SystemId : retirementSystem;
                 changes.Add(
-                    new(table.Name, key.Id, Resident: true, System: retirementSystem, KeepNpcPopulationDeadline: keepPopulationDeadline)
+                    new(table.Name, key.Id, Resident: true, System: changedSystem, KeepNpcPopulationDeadline: keepPopulationDeadline)
                 );
                 changes.AddRange(transaction.FitChanges(beforeRow, afterRow));
                 if (typeof(TRow) == typeof(Eden.Data.World.Mining.WorldAsteroid))

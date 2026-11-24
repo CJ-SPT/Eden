@@ -110,8 +110,7 @@ internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gamep
                 )
             )
             .ToArray();
-        var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault();
-        if (eligible.Length == 0 || anchor is null)
+        if (eligible.Length == 0 || catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault() is not { } anchor)
         {
             return new(long.MaxValue, []);
         }

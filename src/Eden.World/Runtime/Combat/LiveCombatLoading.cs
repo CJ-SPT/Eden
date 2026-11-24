@@ -179,7 +179,8 @@ internal sealed partial class LiveCombatRuntime
             AnchorKind = npc.AnchorKind,
             AnchorId = npc.AnchorKind is NpcAnchorKind.Anomaly or NpcAnchorKind.Incursion ? npc.EncounterId : npc.BeltId,
             AvailableUntil =
-                npc.AnchorKind == NpcAnchorKind.Incursion ? CombatAnomalyStore.IncursionNpcDeadline(world, npc) : long.MaxValue,
+                npc.ExpiresAt
+                ?? (npc.AnchorKind == NpcAnchorKind.Incursion ? CombatAnomalyStore.IncursionNpcDeadline(world, npc) : long.MaxValue),
             RequiresMissionDamageSettlement = PilotMissionStore.RequiresHealthWaveSettlement(world, catalog, npc),
             StandingThresholds = profile.StandingThresholds,
             MissileRange = missileRange,

@@ -19,12 +19,17 @@ internal readonly record struct NpcPopulationMember(
 {
     internal bool Active => DestroyedAt is null && RetiredAt is null;
 
-    // Belt pirates affect population through membership and availability. Their
-    // combat motion and damage still refresh the owning combat and contact views.
+    // Pirates affect population through membership and availability. Their combat
+    // motion and damage still refresh the owning combat and contact views.
     internal static bool RetainsBeltPirateDeadline(WorldNpc before, WorldNpc after) =>
-        before
-            is { Role: NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt, DestroyedAt: null, RetiredAt: null, BeltId: > 0, EncounterId: > 0 }
-        && after is { Role: NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt, DestroyedAt: null, RetiredAt: null }
+        before is { Role: NpcRole.Pirate, DestroyedAt: null, RetiredAt: null }
+        && (
+            before is { AnchorKind: NpcAnchorKind.Belt, BeltId: > 0, EncounterId: > 0 }
+            || NpcPopulationRules.IsIncursionPatrol(before.AnchorKind)
+        )
+        && after is { Role: NpcRole.Pirate, DestroyedAt: null, RetiredAt: null }
+        && before.AnchorKind == after.AnchorKind
+        && before.ExpiresAt == after.ExpiresAt
         && before.TypeId != NpcEncounterDefinitions.GuristasRookieType
         && !NpcSpecialTypes.Excluded.Contains(before.TypeId)
         && before.SystemId == after.SystemId

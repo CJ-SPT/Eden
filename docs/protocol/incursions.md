@@ -2,6 +2,61 @@
 
 [Documentation index](../README.md) · [Protocol records](../protocol.md)
 
+## Roaming Sansha populations
+
+While a focus is active, Sansha patrols take over ordinary asteroid belts and active ice fields in its systems
+across all three security bands. Ordinary belts get a Tama Cerebellum and a Romi Thalamus. Ice fields get an
+additional Romi. The patrols use the existing NPC combat and electronic warfare behavior. The ore and ice remain
+available, and empire guards, mining fleets and scripted encounter populations keep their own schedules.
+
+Lowsec and nullsec systems get one camp wherever the system has eligible stargates. Each camp brings a
+Schmaeel Medulla, a Tama Cerebellum and a Romi Thalamus. Each ten-minute shift assembles a new camp at the next gate in a
+stable order per system and focus. Clearing a camp keeps the gate clear until the next shift. A belt patrol that
+is completely destroyed can return after the normal ten-minute belt delay. Ambient kills yield no bounty or
+Incursion site credit. The exact group sizes, gate rotation and timing are Eden rules.
+
+On early victory or expiry, ambient NPCs withdraw and the ordinary belt population resumes under its normal
+seeder. Camps and patrols share the existing NPC contact and combat paths. Their saved rows carry their exact
+expiry times and survive checkpoint replay. World schema **226** adds the optional NPC expiry. If a campaign
+system has no asteroid belts, only its eligible ice fields and stargates can host ambient groups.
+
+### Population source evidence
+
+CCP describes replacing celestial pirates while keeping CONCORD and empire navies. The EVE University account
+identifies the lowsec and nullsec gate-camp rule and ice-field replacement. In the pinned **3662168** catalog,
+Schmaeel (2907) and Tama (2939) supply warp disruption and Romi (2859) supplies cruiser firepower. None has
+an entity kill bounty. The local EVE.js belt runtime has regional populations and its Incursion implementation
+covers site gates. The ambient extensions use Eden's resident population scheduler and existing wire shapes.
+[CCP Incursion design](https://www.eveonline.com/news/view/the-nation-strikes-back-1) ·
+[EVE University Incursions](https://wiki.eveuniversity.org/Incursions#Effects_of_Incursions).
+
+| Local EVE.js reference | SHA-256 |
+| --- | --- |
+| server/src/space/npc/beltRatRuntime.js | 82f911de0bc228f8d9f00f1d43fa94f28260fa8f43efa27833eb6d1f2a773c78 |
+| server/src/space/asteroids/naturalBeltAuthority.js | 1f3934873e619db6f781dfd2a04dd65d23575dc9976dbe3fbf05dee632fc9d81 |
+
+### Population automated validation
+
+The solution built with zero warnings and errors. The final targeted run passed **19 of 19** cases in **17.82
+seconds**. Its filters selected Incursion ambient populations, population deadline allocation, camp tackle and
+NPC missile expiry, and the schema-225 upgrade. Coverage includes the warm and fallback population paths,
+same-tick mothership victory, checkpoint recovery, and belt and camp cooldowns.
+
+The broader focused run passed **276 of 277** cases in **121.11 seconds**. It covered Incursion, NPC population,
+encounter, combat, electronic warfare and missile tests, simulation and system isolation, world migration,
+gate activity and retired NPC cleanup. The resident pirate case in `NpcPopulationTests.KillRewardsUseRoleAndActualCorporation`
+failed identically on the unchanged base `febf4c8c`. Catalog setup (8 cases), formatting policy (9 cases),
+typed catalog access, documentation links and `tools/Format.ps1 -Check` passed.
+
+### Population live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Population optional maintainer checks
+
+- Visit a lowsec gate before and after a camp shift and verify the Sansha warp disruption indicators.
+- Visit an active belt and recheck it after the mothership falls to confirm the regional rats return.
+
 ## Security campaigns and system effects
 
 The Agency and star map show up to **five active focuses**. Eden rotates one highsec focus, one lowsec focus and
@@ -66,8 +121,7 @@ influence update refreshes the progress bar. Expiry, victory and departure remov
 
 The outgoing damage modifier covers regular and precursor turrets, non-Breacher ship missiles, normal combat drones
 and smartbombs. Eden retains existing damage rules for Vorton projectors, fighter abilities, Breachers, doomsdays and
-launched bombs. The focus population is provided by the Incursion sites, including Industrial Proxy. Roaming Sansha
-gate camps and constellation-wide belt replacement remain outside the site rotation.
+launched bombs. [Roaming Sansha populations](#roaming-sansha-populations) cover the systems' ambient gates and belts.
 
 World schema **225** saves site objective receipts with the encounter generation. The highsec tale IDs from older
 saves still refer to the same rotation. Lowsec and nullsec have disjoint tale ID ranges. Checkpoints retain each focus's

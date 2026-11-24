@@ -47,7 +47,7 @@ internal static partial class NpcDamagePersistence
         {
             throw new InvalidDataException("The NPC is no longer available.");
         }
-        if (npc.AnchorKind == NpcAnchorKind.Incursion)
+        if (npc.AnchorKind == NpcAnchorKind.Incursion || NpcPopulationRules.IsIncursionPatrol(npc.AnchorKind))
         {
             throw new InvalidDataException("Incursion combat requires the resident world.");
         }

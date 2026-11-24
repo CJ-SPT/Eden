@@ -7,12 +7,12 @@ internal sealed partial class LiveCombatRuntime
 {
     private readonly ResidentMap<int, NpcSceneIndex> _npcSceneIndices = [];
 
-    internal NpcSceneContacts? ReadScene(int system, SpacePosition position, long now, Func<long> refreshPopulation)
+    internal NpcSceneContacts? ReadScene(int system, SpacePosition position, long now, Func<bool, long> refreshPopulation)
     {
         return Execute(() => ReadSceneOwned(system, position, now, refreshPopulation), nameof(ReadScene));
     }
 
-    private NpcSceneContacts? ReadSceneOwned(int system, SpacePosition position, long now, Func<long> refreshPopulation)
+    private NpcSceneContacts? ReadSceneOwned(int system, SpacePosition position, long now, Func<bool, long> refreshPopulation)
     {
         using var ownership = owner.Enter();
         if (!simulationObjects || !CanRun)
