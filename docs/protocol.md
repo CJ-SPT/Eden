@@ -39,6 +39,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 | Topic | Coverage |
 | --- | --- |
 | [The Agency](protocol/agency.md) | Native activity directories, Agent Finder and mission cards. |
+| [Sansha Incursions](protocol/incursions.md) | High-security focus discovery, Vanguard encounters and campaign rewards. |
 | [Agent missions and research](protocol/agents.md) | Offers, objectives, standings, storylines, career chains, epic arcs, militia missions and R&D agents. |
 | [Information modules and salvage](protocol/information.md) | Scanning, hacking, targeting, tractors and salvage. |
 | [Wormholes](protocol/wormholes.md) | Connections, mass and lifetime, Sleeper encounters and native system effects. |
@@ -602,6 +603,10 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - <a id="fitting-expansion-milestone-20-paid-missile-firing-and-shared-npc-impacts"></a>[Fitting expansion milestone 20: paid missile firing and shared NPC impacts](protocol/fitting.md#fitting-expansion-milestone-20-paid-missile-firing-and-shared-npc-impacts)
 - <a id="fitting-expansion-milestone-21-scripted-tracking-guidance-and-sensor-modules"></a>[Fitting expansion milestone 21: scripted tracking, guidance and sensor modules](protocol/fitting.md#fitting-expansion-milestone-21-scripted-tracking-guidance-and-sensor-modules)
 - <a id="fitting-expansion-milestone-22-tackle-and-warp-navigation"></a>[Fitting expansion milestone 22: tackle and warp navigation](protocol/fitting.md#fitting-expansion-milestone-22-tackle-and-warp-navigation)
+
+### Sansha Incursions
+
+- [High-security Vanguard milestone](protocol/incursions.md#high-security-vanguard-milestone)
 
 ### Information modules and salvage
 

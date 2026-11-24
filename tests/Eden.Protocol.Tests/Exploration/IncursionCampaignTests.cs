@@ -1,0 +1,170 @@
+using Eden.Data.World.Exploration;
+using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Flight;
+using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Market;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.World.Catalog;
+using Eden.World.Characters;
+using Eden.World.Exploration;
+using Eden.World.Runtime;
+using Eden.World.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
+
+namespace Eden.Protocol.Tests.Exploration;
+
+public sealed class IncursionCampaignTests
+{
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SitePayoutAndDelayedLoyaltySurviveCheckpointAndSettleOnlyOnVictory(bool repel)
+    {
+        using Fixture fixture = new();
+        PassiveCatalogFixture.LoadIncursions(fixture.CatalogPath);
+        WorldDatabase database = new(fixture.Db.Path);
+        var clock = fixture.Clock;
+        var opens = IncursionRules.OpensAt(IncursionRules.TaleId(clock.Now));
+        clock.UtcNow = DateTimeOffset.FromFileTime(opens);
+        var directory = fixture.Db.Services.GetRequiredService<IIncursionDirectory>();
+        var sites = fixture.Db.Services.GetRequiredService<ICombatAnomalies>();
+        var wallet = fixture.Db.Services.GetRequiredService<IPilotWalletReader>();
+        var loyalty = fixture.Db.Services.GetRequiredService<IPilotLoyaltyWallet>();
+        long pilotId = fixture.PilotId;
+        long shipId = fixture.ShipId;
+        long initialBalance;
+        int systemId;
+        const long SoloIskCents = 314_344_800;
+        const long SoloPoints = 423;
+
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            var focus = Assert.Single(directory.Read(clock.Now));
+            Assert.Equal(1, focus.Influence);
+            Assert.Equal(opens + IncursionRules.ActiveTicks, focus.EndsAt);
+            Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
+            systemId = focus.Systems.First(system => system.SceneType == IncursionScene.Vanguard).SystemId;
+            initialBalance = wallet.Balance(pilotId);
+
+            Clear(live);
+            Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
+            Assert.Contains(
+                wallet.Journal(pilotId).ServicePayments!,
+                payment =>
+                    payment.Kind == WalletEntryType.CorporateRewardPayout
+                    && payment.AmountCents == SoloIskCents
+                    && payment.CounterpartyId == LoyaltyStoreRules.ConcordCorporation
+                    && payment.ContextId == systemId
+            );
+            Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+            using var scope = fixture.Db.Services.CreateScope();
+            var selected = fixture.Db.Store.FindPilot(1000001)!;
+            using PilotCallContext context = new(
+                1000001,
+                selected.Account,
+                [selected],
+                pilot => new(fixture.Db.Store, pilot, clock, new(), fixture.Db.Objects),
+                1,
+                SignedSettings.Empty
+            );
+            context.Select(selected);
+            var handler = scope.ServiceProvider.GetRequiredService<WalletHandler>();
+            var result = Assert.IsType<PilotCallResult.Success>(
+                handler.Call(context, "account", "GetTransactions", [(long)WalletAccountKey.Cash, null, null, false])
+            );
+            var entries = Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(result.Reply)));
+            var payout = Assert.Single(
+                entries.Select(entry => BlueRead.Fields(Assert.IsType<BlueInstance>(entry).State)),
+                fields => Equals(fields["entryTypeID"], (long)WalletEntryType.CorporateRewardPayout)
+            );
+            Assert.Equal((long)LoyaltyStoreRules.ConcordCorporation, payout["ownerID1"]);
+            Assert.Equal(pilotId, payout["ownerID2"]);
+            Assert.Empty(loyalty.Read(pilotId));
+            await live.FlushAsync();
+        }
+
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            Assert.Equal(IncursionRules.Influence(1), Assert.Single(directory.Read(clock.Now)).Influence);
+            Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
+            Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+            if (repel)
+            {
+                for (int remaining = 1; remaining < IncursionRules.ClearsToRepel; remaining++)
+                {
+                    clock.AdvanceWallTime(TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds));
+                    Clear(live);
+                }
+
+                Assert.Equal(initialBalance + IncursionRules.ClearsToRepel * SoloIskCents, wallet.Balance(pilotId));
+                Assert.Equal(
+                    IncursionRules.ClearsToRepel * SoloPoints,
+                    Assert
+                        .Single(loyalty.Read(pilotId), balance => balance.IssuerCorporationId == LoyaltyStoreRules.ConcordCorporation)
+                        .Points
+                );
+                Assert.Empty(sites.Incursions(systemId, clock.Now));
+            }
+            else
+            {
+                clock.AdvanceWallTime(TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds));
+                Clear(live, onGrid: false);
+                Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+                clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.ActiveTicks);
+                fixture.Db.Services.GetRequiredService<IIncursionMaintenance>().Advance(clock.Now);
+                Assert.Empty(loyalty.Read(pilotId));
+                Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
+                Assert.Empty(live.Economy.Inspect(world => world.Set<SavedIncursionContribution>().ToArray()));
+            }
+            Assert.Empty(directory.Read(clock.Now));
+            Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
+            await live.FlushAsync();
+        }
+
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            Assert.Empty(directory.Read(clock.Now));
+            Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
+            Assert.Equal(
+                repel ? IncursionRules.ClearsToRepel * SoloPoints : 0,
+                loyalty
+                    .Read(pilotId)
+                    .Where(balance => balance.IssuerCorporationId == LoyaltyStoreRules.ConcordCorporation)
+                    .Sum(balance => balance.Points)
+            );
+            clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.RotationTicks);
+            var replacement = Assert.Single(directory.Read(clock.Now));
+            Assert.DoesNotContain(replacement.Systems, system => system.SystemId == systemId);
+        }
+
+        void Clear(LiveWorld live, bool onGrid = true)
+        {
+            var contact = Assert.Single(sites.Incursions(systemId, clock.Now));
+            var position = contact.Position + IncursionSiteCatalog.CombatOffset;
+            if (!onGrid)
+            {
+                position += new SpacePosition(0, NpcEncounterDefinitions.VisibilityRange + 1_000, 0);
+            }
+            fixture.Db.Store.SetPosition(shipId, position, systemId);
+            using var guard = GameplaySqlGuard.Begin();
+            Assert.Equal(contact.Id, Assert.Single(sites.Incursions(systemId, clock.Now)).Id);
+            using var world = live.Economy.Begin(new(pilots: [pilotId], systems: [systemId]));
+            using CatalogDbContext catalog = new(fixture.CatalogPath);
+            var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
+            CombatParty attacker = new(shipId, pilotId, 0, null, null, null, null, 0);
+            PilotInteractionHistoryStore.Damage(world, site.Id, attacker, 500);
+            IncursionStore.RecordKill(world, site, site.Id, clock.Now);
+            world.Remove(world.Set<Eden.Data.World.Characters.SavedCombatDamage>().Find(site.Id, shipId)!);
+            site.CompletedAt = clock.Now;
+            site.ReplaceAt = clock.Now + TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds).Ticks;
+            CombatAnomalyStore.Invalidate(world, systemId);
+            IncursionStore.CompleteSite(world, catalog, site, clock.Now);
+            world.Commit();
+        }
+    }
+}

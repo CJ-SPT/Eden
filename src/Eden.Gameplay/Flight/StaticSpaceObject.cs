@@ -22,6 +22,13 @@ public sealed record StaticSpaceObject(
     private readonly OptionalDetails? _details;
     private OptionalDetails Details => _details ?? s_emptyDetails;
 
+    public IncursionBeacon? IncursionBeacon
+    {
+        get => _details?.IncursionBeacon;
+        init =>
+            _details = value is null && _details?.IncursionBeacon is null ? _details : (Details with { IncursionBeacon = value }).OrNull();
+    }
+
     public Eden.Gameplay.Exploration.WormholeContact? Wormhole
     {
         get => _details?.Wormhole;
@@ -151,6 +158,7 @@ public sealed record StaticSpaceObject(
     }
 
     private sealed record OptionalDetails(
+        IncursionBeacon? IncursionBeacon = null,
         Eden.Gameplay.Exploration.WormholeContact? Wormhole = null,
         Eden.Gameplay.Exploration.AbyssalContact? Abyssal = null,
         SpacePosition? AccelerationGateDirection = null,
@@ -174,6 +182,8 @@ public sealed record StaticSpaceObject(
         internal OptionalDetails? OrNull() => this == s_emptyDetails ? null : this;
     }
 }
+
+public sealed record IncursionBeacon(int DungeonId, int DungeonNameId, int ArchetypeId);
 
 public interface ISystemObjects
 {

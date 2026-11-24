@@ -257,6 +257,12 @@ internal sealed partial class LiveWorld : IDisposable
         {
             affectedSystems = ParticipantSystems(participants);
         }
+        if (affectedSystems is not null && changes.Any(change => change.Table == "WorldNpc" && change.System is not null))
+        {
+            affectedSystems = affectedSystems
+                .Union(changes.Where(change => change.Table == "WorldNpc").Select(c => c.System).OfType<int>())
+                .ToArray();
+        }
         ReconcileHeatMembership(changes);
         if (changes.Any(change => change.Table is "WorldTackle" or "WorldNpcEwar" or "schema"))
         {

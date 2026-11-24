@@ -93,6 +93,7 @@ internal static class NpcPopulationSchedule
                 or NpcAnchorKind.Mission
                 or NpcAnchorKind.GhostSite
                 or NpcAnchorKind.Abyssal
+                or NpcAnchorKind.Incursion
                 or NpcAnchorKind.MilitiaComplex
                 or NpcAnchorKind.MilitiaHub
                 or NpcAnchorKind.MilitiaObjective;

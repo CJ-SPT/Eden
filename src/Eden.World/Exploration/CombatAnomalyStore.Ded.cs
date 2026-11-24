@@ -357,6 +357,10 @@ internal sealed partial class CombatAnomalyStore
         long id = CombatAnomalyRules.FirstSiteId + sequence / DedComplexRules.GatesPerSite;
         int slot = (int)(sequence % DedComplexRules.GatesPerSite);
         var site = world.Set<WorldCombatAnomaly>().Find(id);
+        if (site is { IncursionTaleId: not null })
+        {
+            return ValidateIncursionGate(world, catalog, pilotId, gateId, now, site);
+        }
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown DED pilot.");
         var ship = pilot.ActiveShip;
         if (
@@ -437,6 +441,22 @@ internal sealed partial class CombatAnomalyStore
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using var movement = database.EnterMovement();
+        foreach (var contact in IncursionsOwned(systemId, now))
+        {
+            var pocket = contact.Position + IncursionSiteCatalog.CombatOffset;
+            if (pocket.DistanceTo(destination) > NpcEncounterDefinitions.VisibilityRange)
+            {
+                continue;
+            }
+            if (
+                pocket.DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange
+                || contact.Position.DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange
+            )
+            {
+                throw new InvalidDataException("Use the acceleration gate to enter the Incursion combat pocket.");
+            }
+            return contact.Position;
+        }
         foreach (var contact in DedSignatures(systemId, now))
         {
             if (RedirectDedWarp(contact, _dedViews[systemId].Profile!, origin, destination) is { } entry)

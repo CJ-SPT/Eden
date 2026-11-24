@@ -127,6 +127,7 @@ public sealed record LiveCombatNpc(
 {
     public NpcAnchorKind AnchorKind { get; init; }
     public long AnchorId { get; init; }
+    public long AvailableUntil { get; init; } = long.MaxValue;
     public bool RequiresMissionDamageSettlement { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
     public IReadOnlyList<ElectronicWarfareContact> IncomingElectronicWarfare { get; init; } = [];

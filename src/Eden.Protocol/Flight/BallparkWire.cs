@@ -101,6 +101,12 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.IncursionBeacon is { } site)
+        {
+            fields["dungeonID"] = site.DungeonId;
+            fields["dungeonNameID"] = site.DungeonNameId;
+            fields["archetypeID"] = site.ArchetypeId;
+        }
         if (Body.JumpBridge is { } bridge)
         {
             fields["targetSolarsystemID"] = bridge.DestinationSystemId;

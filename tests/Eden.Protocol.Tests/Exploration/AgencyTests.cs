@@ -3,6 +3,7 @@ using Eden.Data.World.Mining;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Exploration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
@@ -261,6 +262,81 @@ public sealed class AgencyTests
         using WorldDbContext world = new(f.Db.Path);
         Assert.Empty(world.Set<SavedMiningSite>());
         Assert.Empty(world.Set<SavedExplorationSite>());
+    }
+
+    [Fact]
+    public void ActiveIncursionUsesNativeAgencyMapAndPendingLoyaltyShapes()
+    {
+        using Fixture fixture = new(select: false);
+        const long taleId = 5_000_000_000;
+        const int staging = 30000001;
+        const int vanguard = 30000002;
+        var focus = new IncursionFocus(
+            taleId,
+            staging,
+            20000001,
+            fixture.Clock.Now - TimeSpan.TicksPerMinute,
+            fixture.Clock.Now + TimeSpan.TicksPerHour,
+            0.75,
+            [new(staging, IncursionScene.Staging), new(vanguard, IncursionScene.Vanguard)]
+        );
+        var pilot = fixture.Db.Store.FindPilot(1000001)!;
+        PilotCallRouter router = new([], [new IncursionHandler(new IncursionDirectory(focus, pilot.PilotId), fixture.Clock)]);
+        PilotCallResult Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+            router.Call(fixture.Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+        static object? Reply(PilotCallResult result) =>
+            BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(result).Reply));
+
+        Assert.Same(PilotCallResult.Unsupported, Call("map", "GetIncursionGlobalReport", []));
+        fixture.Context.Select(pilot);
+        Assert.IsType<PilotCallResult.Failure>(Call("map", "GetSystemsInIncursions", [staging]));
+        Assert.IsType<PilotCallResult.Failure>(Call("rewardMgr", "GetDelayedRewardsByGroupIDs", [new List<object?> { taleId }]));
+
+        var report = Assert.IsType<List<object?>>(Reply(Call("map", "GetIncursionGlobalReport", [], new() { ["machoVersion"] = 1L })));
+        var nativeReport = Assert.IsType<BlueInstance>(Assert.Single(report));
+        Assert.Equal("util.KeyVal", nativeReport.Name);
+        var fields = Fields(nativeReport);
+        Assert.Equal(taleId, fields["taleID"]);
+        Assert.Equal(taleId, fields["rewardGroupID"]);
+        Assert.Equal((long)staging, fields["stagingSolarSystemID"]);
+        Assert.Equal(500019L, fields["aggressorFactionID"]);
+        Assert.Equal(2L, fields["templateClassID"]);
+        Assert.Equal(2L, fields["state"]);
+        Assert.Equal(false, fields["hasFinalEncounter"]);
+        Assert.Equal(0.25, fields["influence"]);
+        Assert.Equal(focus.LastUpdated, fields["lastUpdated"]);
+        Assert.Equal(0L, fields["graceTime"]);
+        Assert.Equal(0d, fields["decayRate"]);
+        Assert.Equal(new object?[] { (long)staging, (long)vanguard }, Assert.IsType<List<object?>>(fields["incursedSystems"]));
+
+        var systemRowset = Assert.IsType<BlueInstance>(Reply(Call("map", "GetSystemsInIncursions", [])));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", systemRowset.Name);
+        var systems = Fields(systemRowset);
+        Assert.Equal(
+            new[] { "locationID", "sceneType", "templateNameID" },
+            Assert.IsType<List<object?>>(systems["header"]).Select(BlueMarshal.Text)
+        );
+        Assert.Equal(new BlueGlobal("util.Row"), systems["RowClass"]);
+        Assert.Collection(
+            Assert.IsType<List<object?>>(systems["lines"]),
+            row => Assert.Equal(new object?[] { (long)staging, 4L, fields["templateNameID"] }, Assert.IsType<object?[]>(row)),
+            row => Assert.Equal(new object?[] { (long)vanguard, 3L, fields["templateNameID"] }, Assert.IsType<object?[]>(row))
+        );
+
+        var rewards = Assert.IsType<Dictionary<long, object?>>(
+            Reply(Call("rewardMgr", "GetDelayedRewardsByGroupIDs", [new object?[] { 123L, taleId }]))
+        );
+        var loyalty = Fields(Assert.Single(Assert.IsType<List<object?>>(rewards[taleId])));
+        Assert.Equal(1L, loyalty["rewardTypeID"]);
+        Assert.Equal(1400L, loyalty["rewardQuantity"]);
+    }
+
+    private sealed class IncursionDirectory(IncursionFocus focus, long ownerId) : IIncursionDirectory
+    {
+        public IReadOnlyList<IncursionFocus> Read(long now) => now < focus.EndsAt ? [focus] : [];
+
+        public IncursionPendingLoyalty? PendingLoyalty(long pilotId, long now) =>
+            pilotId == ownerId && now < focus.EndsAt ? new(focus.TaleId, 1400) : null;
     }
 
     private static int AddIceSystem(string path)

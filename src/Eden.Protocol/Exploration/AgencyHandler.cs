@@ -1,7 +1,6 @@
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
-using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -42,8 +41,6 @@ internal sealed class AgencyHandler(IAgencyDirectory directory, TimeProvider clo
                 or
                 ("custom_agency_provider", "get_content_data")
                 or
-                ("map", "GetIncursionGlobalReport" or "GetSystemsInIncursions")
-                or
                 ("dynamicResourceCacheMgr", "GetESSAgencyData" or "GetDynamicResourceSettings" or "GetDBSMapData")
             )
         )
@@ -64,10 +61,8 @@ internal sealed class AgencyHandler(IAgencyDirectory directory, TimeProvider clo
             "GetIceBeltInstances" => new AnomalyDirectory(directory.Ice(now).Known),
             "GetIceBeltsCount" => new AgencyCounts(directory.Ice(now).Available),
             "GetDynamicResourceSettings" => new AgencyEssSettings(),
-            "get_content_data" or "GetIncursionGlobalReport" => BlueEmpty.List,
-            "GetSystemsInIncursions" => new CompatibilityRowset(["locationID", "sceneType", "templateNameID"], []),
-            // No corresponding shared sites, custom campaigns, incursions or ESS
-            // banks exist in Eden. Preserve each native provider's collection shape.
+            "get_content_data" => BlueEmpty.List,
+            // Preserve the native collection shape of dormant providers.
             _ => BlueEmpty.IndexedDictionary,
         };
     }

@@ -83,13 +83,14 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
         }
         foreach (var payment in journal.ServicePayments ?? [])
         {
+            bool payout = payment.Kind == WalletEntryType.CorporateRewardPayout;
             entries.Add(
                 new WalletJournalEntry(
                     EconomicRules.FirstPaymentJournalId + payment.Id,
                     payment.Time,
                     payment.Kind,
-                    payment.PilotId,
-                    payment.CounterpartyId,
+                    payout ? payment.CounterpartyId : payment.PilotId,
+                    payout ? payment.PilotId : payment.CounterpartyId,
                     payment.ContextId,
                     payment.AmountCents,
                     payment.BalanceCents

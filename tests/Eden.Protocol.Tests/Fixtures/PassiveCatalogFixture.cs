@@ -92,6 +92,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadAbyssal(string path) => Load(path, "AbyssalCatalog.json", null);
 
+    internal static void LoadIncursions(string path) => Load(path, "IncursionCatalog.json", null);
+
     internal static void LoadWormholes(string path) => Load(path, "WormholeCatalog.json", null);
 
     internal static void LoadPlayerEwar(string path, IReadOnlySet<int>? types = null) => Load(path, "PlayerEwarCatalog.json", types);

@@ -33,6 +33,7 @@ public enum NpcAnchorKind
     MilitiaComplex,
     MilitiaHub,
     MilitiaObjective,
+    Incursion,
 }
 
 public static class NpcPopulationRules

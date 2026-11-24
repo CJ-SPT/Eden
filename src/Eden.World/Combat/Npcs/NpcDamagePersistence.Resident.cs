@@ -15,6 +15,7 @@ using Eden.Gameplay.Ships;
 using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Exploration;
 using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Loot;
@@ -46,6 +47,17 @@ internal static partial class NpcDamagePersistence
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
             throw new InvalidDataException("The NPC is no longer available.");
+        }
+        bool incursion = npc.AnchorKind == NpcAnchorKind.Incursion;
+        if (incursion && !CombatAnomalyStore.IncursionNpcActive(world, npc, now))
+        {
+            var savedDefense = ShipHealth.DefenseFrom(attributes);
+            HullDamage savedHealth = new(
+                npc.ShieldCharge,
+                Math.Max(0, savedDefense.Armor - npc.ArmorDamage),
+                Math.Max(0, savedDefense.Structure - npc.StructureDamage)
+            );
+            return new(new(npc.Id, savedDefense, savedHealth), 0, false, null);
         }
         if (npc.Role == NpcRole.MilitiaHub)
         {
@@ -137,6 +149,22 @@ internal static partial class NpcDamagePersistence
             if (npc.AnchorKind == NpcAnchorKind.Abyssal)
             {
                 Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
+                return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
+            }
+            if (incursion)
+            {
+                Maps.MapStatisticsStore.Record(world, npc.SystemId, now, Eden.Gameplay.Maps.MapActivityKind.NpcShipLoss);
+                CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
+                PilotInteractionHistoryStore.Destroyed(
+                    world,
+                    pilot.Id,
+                    $"npc:{npc.Id}:{now}",
+                    now,
+                    npc.SystemId,
+                    PilotInteractionHistoryStore.Npc(npc),
+                    attacker,
+                    []
+                );
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
             if (

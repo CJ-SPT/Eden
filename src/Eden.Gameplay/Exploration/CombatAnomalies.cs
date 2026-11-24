@@ -31,6 +31,7 @@ public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomal
 public interface ICombatAnomalies
 {
     IReadOnlyList<CombatAnomaly> List(int systemId, long now);
+    IReadOnlyList<CombatAnomaly> Incursions(int systemId, long now) => [];
     IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => [];
     void Arrive(int systemId, SpacePosition position, long now);
     void ArriveUncloaked(int systemId, SpacePosition position, long now) { }

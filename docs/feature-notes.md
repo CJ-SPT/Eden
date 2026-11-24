@@ -5,7 +5,7 @@
 ## Gameplay overview
 
 - **Flight and combat.** Fit a ship, join a fleet, take agent missions, and fight NPCs or other pilots.
-  [Fitting and modules](#fitting-weapons-and-modules) · [Supported missions](missions.md)
+  [Fitting and modules](#fitting-weapons-and-modules) · [Supported missions](missions.md) · [Sansha Incursions](protocol/incursions.md)
 - **Exploration.** Scan and hack data and relic sites, explore wormholes with mass and lifetime limits, and run Abyssal pockets.
   [Scanning and hacking](protocol/information.md) · [Wormholes](protocol/wormholes.md) · [Abyssal Deadspace](protocol/abyssal.md)
 - **Industry and trade.** Mine resources, operate planetary colonies and moon refineries, run blueprint and production jobs,
@@ -284,6 +284,10 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 
 ## Combat and NPC populations
 
+- **Sansha Incursions.** Find a rotating high-security focus in the Agency and star map, then warp to a
+  Nation Commander Outpost and take its acceleration gate. Clear four Vanguard waves to earn site ISK.
+  Eligible contributors earn pooled CONCORD LP, which pays out when pilots clear eight sites in the active focus.
+  [Sansha Incursions](protocol/incursions.md#high-security-vanguard-milestone)
 - The administration killboard shows recorded ship and capsule destruction across the server, with independent NPC,
   player and bot filters for final blows and losses. [Server killboard](protocol/combat.md#server-killboard)
 - Belt pirates use regional catalog pools with supported missiles, turrets, electronic warfare and self-repairs.

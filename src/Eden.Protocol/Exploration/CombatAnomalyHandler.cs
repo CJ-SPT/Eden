@@ -159,12 +159,15 @@ internal sealed class CombatAnomalyHandler(
                 .Concat(missionSites.SelectMany(s => s.Objects))
                 .Where(o =>
                     position is not null
-                    && position.DistanceTo(o.Position)
-                        <= (
-                            MissionMiningRules.IsDeposit(o.Id)
-                                ? AsteroidDefinitions.VisibilityRange
-                                : Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
-                        )
+                    && (
+                        o.IncursionBeacon is not null
+                        || position.DistanceTo(o.Position)
+                            <= (
+                                MissionMiningRules.IsDeposit(o.Id)
+                                    ? AsteroidDefinitions.VisibilityRange
+                                    : Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
+                            )
+                    )
                 )
                 .Concat(position is null ? [] : missionSites.Select(site => site.PublicBeacon).OfType<StaticSpaceObject>())
                 .ToArray()
@@ -197,8 +200,9 @@ internal sealed class CombatAnomalyHandler(
     {
         var ordinary = sites.List(system, now);
         var militia = complexes?.Sites(system, now);
-        return training.Count != 0 || militia is { Count: > 0 }
-            ? ordinary.Concat(militia ?? []).Concat(training.Where(site => !site.IsSignature)).ToArray()
+        var incursions = sites.Incursions(system, now);
+        return training.Count != 0 || militia is { Count: > 0 } || incursions.Count != 0
+            ? ordinary.Concat(militia ?? []).Concat(incursions).Concat(training.Where(site => !site.IsSignature)).ToArray()
             : ordinary;
     }
 

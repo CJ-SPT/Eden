@@ -1,0 +1,755 @@
+{
+  "build": 3662168,
+  "types": [
+    {
+      "id": 2190,
+      "name": "Test type 2190",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 2859,
+      "name": "Test type 2859",
+      "groupId": 1054,
+      "groupName": "Test group 1054",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 2907,
+      "name": "Test type 2907",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 2909,
+      "name": "Test type 2909",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 2936,
+      "name": "Test type 2936",
+      "groupId": 1054,
+      "groupName": "Test group 1054",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 2939,
+      "name": "Test type 2939",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 2966,
+      "name": "Test type 2966",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 3492,
+      "name": "Test type 3492",
+      "groupId": 1053,
+      "groupName": "Test group 1053",
+      "categoryId": 11,
+      "mass": 1000,
+      "radius": 50,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100
+        },
+        {
+          "id": 263,
+          "value": 100
+        },
+        {
+          "id": 265,
+          "value": 100
+        },
+        {
+          "id": 552,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": 10645,
+      "name": "Test type 10645",
+      "groupId": 310,
+      "groupName": "Test group 310",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 1000,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 17831,
+      "name": "Test type 17831",
+      "groupId": 366,
+      "groupName": "Test group 366",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 1000,
+      "capacity": 100,
+      "attributes": []
+    },
+    {
+      "id": 29603,
+      "name": "Test type 29603",
+      "groupId": 226,
+      "groupName": "Test group 226",
+      "categoryId": 2,
+      "mass": 1000,
+      "radius": 1000,
+      "capacity": 100,
+      "attributes": []
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/types",
+      "key": 2190,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2859,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2907,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2909,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2936,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2939,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2966,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3492,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 10645,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17831,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 29603,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5166,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 61,
+        "connections": [
+          {
+            "allowedShipsList": 486,
+            "fromObjectID": 11
+          }
+        ],
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114106,
+        "dungeonID": 5166
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 486,
+      "data": {
+        "includedGroupIDs": [
+          25,
+          26,
+          27,
+          237
+        ]
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 1,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 1,
+                "quantity": 3143448
+              },
+              {
+                "playerCount": 4,
+                "quantity": 8500000
+              },
+              {
+                "playerCount": 11,
+                "quantity": 6750000
+              },
+              {
+                "playerCount": 20,
+                "quantity": 200000
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 1,
+                "quantity": 423
+              },
+              {
+                "playerCount": 4,
+                "quantity": 950
+              },
+              {
+                "playerCount": 11,
+                "quantity": 725
+              },
+              {
+                "playerCount": 20,
+                "quantity": 25
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30001426,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30001427,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30001428,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30001429,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003878,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003879,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003880,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003881,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004132,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004133,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004134,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004135,
+      "data": {
+        "securityStatus": 0.8
+      }
+    }
+  ],
+  "systems": [
+    {
+      "id": 30001426,
+      "name": "Test Incursion system 1",
+      "constellationId": 20000209,
+      "constellationName": "Test Incursion constellation 1",
+      "regionId": 10000016,
+      "regionName": "Test region 1"
+    },
+    {
+      "id": 30001427,
+      "name": "Test Incursion system 2",
+      "constellationId": 20000209,
+      "constellationName": "Test Incursion constellation 1",
+      "regionId": 10000016,
+      "regionName": "Test region 1"
+    },
+    {
+      "id": 30001428,
+      "name": "Test Incursion system 3",
+      "constellationId": 20000209,
+      "constellationName": "Test Incursion constellation 1",
+      "regionId": 10000016,
+      "regionName": "Test region 1"
+    },
+    {
+      "id": 30001429,
+      "name": "Test Incursion system 4",
+      "constellationId": 20000209,
+      "constellationName": "Test Incursion constellation 1",
+      "regionId": 10000016,
+      "regionName": "Test region 1"
+    },
+    {
+      "id": 30003878,
+      "name": "Test Incursion system 5",
+      "constellationId": 20000566,
+      "constellationName": "Test Incursion constellation 2",
+      "regionId": 10000049,
+      "regionName": "Test region 2"
+    },
+    {
+      "id": 30003879,
+      "name": "Test Incursion system 6",
+      "constellationId": 20000566,
+      "constellationName": "Test Incursion constellation 2",
+      "regionId": 10000049,
+      "regionName": "Test region 2"
+    },
+    {
+      "id": 30003880,
+      "name": "Test Incursion system 7",
+      "constellationId": 20000566,
+      "constellationName": "Test Incursion constellation 2",
+      "regionId": 10000049,
+      "regionName": "Test region 2"
+    },
+    {
+      "id": 30003881,
+      "name": "Test Incursion system 8",
+      "constellationId": 20000566,
+      "constellationName": "Test Incursion constellation 2",
+      "regionId": 10000049,
+      "regionName": "Test region 2"
+    },
+    {
+      "id": 30004132,
+      "name": "Test Incursion system 9",
+      "constellationId": 20000604,
+      "constellationName": "Test Incursion constellation 3",
+      "regionId": 10000052,
+      "regionName": "Test region 3"
+    },
+    {
+      "id": 30004133,
+      "name": "Test Incursion system 10",
+      "constellationId": 20000604,
+      "constellationName": "Test Incursion constellation 3",
+      "regionId": 10000052,
+      "regionName": "Test region 3"
+    },
+    {
+      "id": 30004134,
+      "name": "Test Incursion system 11",
+      "constellationId": 20000604,
+      "constellationName": "Test Incursion constellation 3",
+      "regionId": 10000052,
+      "regionName": "Test region 3"
+    },
+    {
+      "id": 30004135,
+      "name": "Test Incursion system 12",
+      "constellationId": 20000604,
+      "constellationName": "Test Incursion constellation 3",
+      "regionId": 10000052,
+      "regionName": "Test region 3"
+    }
+  ],
+  "celestials": [
+    {
+      "id": 41000000,
+      "solarSystemId": 30001426,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 1000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000001,
+      "solarSystemId": 30001427,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 2000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000002,
+      "solarSystemId": 30001428,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 3000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000003,
+      "solarSystemId": 30001429,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 4000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000004,
+      "solarSystemId": 30003878,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 5000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000005,
+      "solarSystemId": 30003879,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 6000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000006,
+      "solarSystemId": 30003880,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 7000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000007,
+      "solarSystemId": 30003881,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 8000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000008,
+      "solarSystemId": 30004132,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 9000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000009,
+      "solarSystemId": 30004133,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 10000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000010,
+      "solarSystemId": 30004134,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 11000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000011,
+      "solarSystemId": 30004135,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 12000000000.0,
+      "y": 0,
+      "z": 0
+    }
+  ]
+}

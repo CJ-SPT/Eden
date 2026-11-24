@@ -24,6 +24,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Mining;
@@ -176,7 +177,9 @@ internal sealed partial class LiveCombatRuntime
             CategoryId = type.CategoryId,
             Name = npc.Name ?? type.Name,
             AnchorKind = npc.AnchorKind,
-            AnchorId = npc.AnchorKind == NpcAnchorKind.Anomaly ? npc.EncounterId : npc.BeltId,
+            AnchorId = npc.AnchorKind is NpcAnchorKind.Anomaly or NpcAnchorKind.Incursion ? npc.EncounterId : npc.BeltId,
+            AvailableUntil =
+                npc.AnchorKind == NpcAnchorKind.Incursion ? CombatAnomalyStore.IncursionNpcDeadline(world, npc) : long.MaxValue,
             RequiresMissionDamageSettlement = PilotMissionStore.RequiresHealthWaveSettlement(world, catalog, npc),
             StandingThresholds = profile.StandingThresholds,
             MissileRange = missileRange,

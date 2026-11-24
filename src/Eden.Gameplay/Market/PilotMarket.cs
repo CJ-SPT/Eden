@@ -179,6 +179,10 @@ public enum WalletEntryType
     JumpCloneActivation = 128,
     BountyPrizes = 85,
 
+    // Build 3662168 accountingentrytypes: Corporate Reward Payout and Tax.
+    CorporateRewardPayout = 99,
+    CorporateRewardTax = 103,
+
     // Build 3662168 accountingentrytypes / appConst.refRedeemedISKToken.
     RedeemedIskToken = 147,
 }

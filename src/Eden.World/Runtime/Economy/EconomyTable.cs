@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Combat.Npcs;
 using Eden.World.Storage;
@@ -517,7 +518,15 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                     beforeRow is WorldNpc beforeNpc
                     && afterRow is WorldNpc afterNpc
                     && NpcPopulationMember.RetainsBeltPirateDeadline(beforeNpc, afterNpc);
-                changes.Add(new(table.Name, key.Id, Resident: true, KeepNpcPopulationDeadline: keepPopulationDeadline));
+                // A final site clear can retire NPCs in other systems outside the weapon action's participant set.
+                int? retirementSystem =
+                    beforeRow is WorldNpc { RetiredAt: null }
+                    && afterRow is WorldNpc { AnchorKind: NpcAnchorKind.Incursion, RetiredAt: not null } incursion
+                        ? incursion.SystemId
+                        : null;
+                changes.Add(
+                    new(table.Name, key.Id, Resident: true, System: retirementSystem, KeepNpcPopulationDeadline: keepPopulationDeadline)
+                );
                 changes.AddRange(transaction.FitChanges(beforeRow, afterRow));
                 if (typeof(TRow) == typeof(Eden.Data.World.Mining.WorldAsteroid))
                 {

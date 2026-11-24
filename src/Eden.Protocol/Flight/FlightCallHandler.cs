@@ -147,6 +147,7 @@ internal sealed class FlightCallHandler(
                 training
                 ?? anomalies
                     .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    .Concat(anomalies.Incursions(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
                     .Concat(anomalies.Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
                     .Concat(complexes?.Sites(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                     .Concat(missions?.TrainingSites(context.Pilot.PilotId, context.Pilot.SystemId) ?? [])

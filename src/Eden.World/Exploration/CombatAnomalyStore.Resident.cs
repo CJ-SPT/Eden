@@ -19,7 +19,7 @@ internal sealed partial class CombatAnomalyStore
 
     internal static void Killed(WorldAction world, CatalogDbContext catalog, WorldNpc npc, long now, long pilot = 0)
     {
-        if (npc.AnchorKind != NpcAnchorKind.Anomaly)
+        if (npc.AnchorKind is not (NpcAnchorKind.Anomaly or NpcAnchorKind.Incursion))
         {
             return;
         }
@@ -27,6 +27,10 @@ internal sealed partial class CombatAnomalyStore
         if (site.CompletedAt is not null)
         {
             return;
+        }
+        if (site.IncursionTaleId.HasValue)
+        {
+            IncursionStore.RecordKill(world, site, npc.Id, now);
         }
         if (DedComplexRules.IsSite(site.Slot))
         {
@@ -51,9 +55,7 @@ internal sealed partial class CombatAnomalyStore
             .ToArray()
             .Where(n => n.DestroyedAt is null && n.RetiredAt is null)
             .ToArray();
-        var definition =
-            CombatAnomalyCatalog.Find(catalog, site.DungeonId)
-            ?? throw new InvalidDataException($"Anomaly definition {site.DungeonId} is missing.");
+        var definition = SiteDefinition(catalog, site);
         var member = world.Set<WorldAnomalyMember>().Find(npc.Id);
         if (site.DefinitionVersion == 0)
         {
@@ -79,6 +81,15 @@ internal sealed partial class CombatAnomalyStore
         )
         {
             Complete(site, now);
+        }
+        if (site.IncursionTaleId.HasValue)
+        {
+            if (site.CompletedAt.HasValue)
+            {
+                Invalidate(world, site.SystemId);
+                IncursionStore.CompleteSite(world, catalog, site, now);
+            }
+            return;
         }
         Invalidate(world, site.SystemId);
         if (site.CompletedAt.HasValue)
@@ -106,7 +117,7 @@ internal sealed partial class CombatAnomalyStore
             Spawn(world, catalog, site, legacy, now);
             return;
         }
-        var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
+        var definition = SiteDefinition(catalog, site);
         if (site.Wave < 0)
         {
             // Unvisited sites adopt corrections; started version-one sites retain
@@ -163,7 +174,7 @@ internal sealed partial class CombatAnomalyStore
         {
             throw new InvalidDataException("Anomaly members exceed their reserved wave identities.");
         }
-        var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
+        var definition = SiteDefinition(catalog, site);
         var origin = new SpacePosition(site.X, site.Y, site.Z) + definition.Spawner;
         var placements =
             site.DefinitionVersion == 0
@@ -171,7 +182,7 @@ internal sealed partial class CombatAnomalyStore
                 : AnomalySpawnRules.Place(
                     site.Wave,
                     members,
-                    definition.SpawnAnchors,
+                    site.IncursionTaleId.HasValue ? [definition.SpawnAnchors[site.Wave]] : definition.SpawnAnchors,
                     new(definition.Spawner, definition.AcquisitionRange)
                 );
         for (int slot = 0; slot < members.Count; slot++)
@@ -198,7 +209,7 @@ internal sealed partial class CombatAnomalyStore
                     SystemId = site.SystemId,
                     TypeId = member.TypeId,
                     Role = NpcRole.Pirate,
-                    AnchorKind = NpcAnchorKind.Anomaly,
+                    AnchorKind = site.IncursionTaleId.HasValue ? NpcAnchorKind.Incursion : NpcAnchorKind.Anomaly,
                     EncounterId = site.Id,
                     SpawnSlot = firstSlot + slot,
                     AcquisitionRange = site.DefinitionVersion == 0 ? definition.AcquisitionRange : placements[slot].AcquisitionRange,

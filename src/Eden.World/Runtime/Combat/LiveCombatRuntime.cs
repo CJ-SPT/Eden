@@ -483,7 +483,7 @@ internal sealed partial class LiveCombatRuntime(
             }
             _staleNpcs.Remove(id);
         }
-        if (npc is not null)
+        if (npc is not null && now < npc.AvailableUntil)
         {
             var repaired = RepairNpc(npc, now);
             if (repaired != npc)
@@ -809,6 +809,15 @@ internal sealed partial class LiveCombatRuntime(
                     _effectiveNpcs.Remove(change.Id);
                     _acquisitions.Clear();
                     _contactEpoch++;
+                    if (change.System is not null)
+                    {
+                        // Incursion retirement discards unfinished NPC damage and aggression from the encounter being removed.
+                        _dirtyNpcs.Remove(change.Id);
+                        _dirtyAggressions.Remove(change.Id);
+                        _aggressions?.Remove(change.Id);
+                        RemoveNpc(change.Id);
+                        break;
+                    }
                     if (_npcs.ContainsKey(change.Id))
                     {
                         if (

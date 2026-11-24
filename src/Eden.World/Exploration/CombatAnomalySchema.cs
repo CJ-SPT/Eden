@@ -29,6 +29,7 @@ internal static class CombatAnomalySchema
                 s.Id,
             });
         model.Entity<WorldCombatAnomaly>().HasIndex(s => new { s.SystemId, s.CompletedAt });
+        model.Entity<WorldCombatAnomaly>().HasIndex(s => s.IncursionTaleId);
         model
             .Entity<WorldCombatAnomaly>()
             .HasIndex(s => new
@@ -94,8 +95,15 @@ internal static class CombatAnomalySchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationExpiresAt INTEGER");
         }
+        if (!columns.Contains("IncursionTaleId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN IncursionTaleId INTEGER");
+        }
         world.Database.ExecuteSqlRaw(
-            "CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_EscalationPilotId ON WorldCombatAnomaly(EscalationPilotId)"
+            """
+            CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_EscalationPilotId ON WorldCombatAnomaly(EscalationPilotId);
+            CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_IncursionTaleId ON WorldCombatAnomaly(IncursionTaleId);
+            """
         );
         var npcColumns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpc')").ToHashSet();
         if (!npcColumns.Contains("AcquisitionRange"))

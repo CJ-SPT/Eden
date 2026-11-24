@@ -224,6 +224,7 @@ internal sealed partial class CombatAnomalyStore(
                     && s.IsSignature == signature
                     && s.Slot != DedComplexRules.SiteSlot
                     && s.Slot != DedComplexRules.EscalationSlot
+                    && s.Slot != IncursionSlot
                     && s.Slot != SleeperRules.GuardedSiteSlot
                 )
                 .Select(s => new SiteSlotIdentity(s.Id, s.Slot))
@@ -360,12 +361,20 @@ internal sealed partial class CombatAnomalyStore(
                 (o, index) =>
                     o with
                     {
-                        Id = checked(
-                            CombatAnomalyRules.FirstObjectId
-                            + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
-                            + index
-                        ),
+                        Id =
+                            o.IncursionBeacon is not null ? site.Id
+                            : site.IncursionTaleId.HasValue && o.GroupId == Eden.Gameplay.Agents.MissionGateRules.AccelerationGateGroup
+                                ? DedGateId(site.Id, 0)
+                            : checked(
+                                CombatAnomalyRules.FirstObjectId
+                                + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
+                                + index
+                            ),
                         Position = position + o.Position,
+                        AccelerationGateDirection =
+                            site.IncursionTaleId.HasValue && o.GroupId == Eden.Gameplay.Agents.MissionGateRules.AccelerationGateGroup
+                                ? (IncursionSiteCatalog.CombatOffset - o.Position).Unit
+                                : o.AccelerationGateDirection,
                     }
             )
             .ToArray();
@@ -381,7 +390,10 @@ internal sealed partial class CombatAnomalyStore(
             objects,
             (int)definition.Faction,
             site.IsSignature
-        );
+        )
+        {
+            ArchetypeId = site.IncursionTaleId.HasValue ? IncursionSiteCatalog.VanguardArchetype : null,
+        };
     }
 
     public void ArriveUncloaked(int systemId, SpacePosition position, long now) => exploration?.ArriveUncloaked(systemId, position, now);
@@ -409,10 +421,18 @@ internal sealed partial class CombatAnomalyStore(
             }
             var nearby = List(systemId, now)
                 .Concat(signatures)
+                .Concat(IncursionsOwned(systemId, now))
                 .Where(s =>
                     ((s.Exploration is null && s.Mining is null && !s.Ded && !s.Wormhole) || s.FactionId == SleeperRules.FactionId)
                     && !s.Started
-                    && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange
+                    && position.DistanceTo(
+                        s.Position
+                            + (
+                                s.ArchetypeId == IncursionSiteCatalog.VanguardArchetype
+                                    ? IncursionSiteCatalog.CombatOffset
+                                    : SpacePosition.Zero
+                            )
+                    ) <= CombatAnomalyRules.ArrivalRange
                 )
                 .ToArray();
             if (nearby.Length == 0)
@@ -476,7 +496,7 @@ internal sealed partial class CombatAnomalyStore(
             }
             int[] systems = WorldActionScope.Inspect(
                 database,
-                world => world.Filter<WorldCombatAnomaly>(_ => true).Select(s => s.SystemId).Distinct().ToArray()
+                world => world.Filter<WorldCombatAnomaly>(s => s.Slot != IncursionSlot).Select(s => s.SystemId).Distinct().ToArray()
             );
             _directory = systems.Order().Select(id => new AnomalySystemSites(id, ListCore(id, now, false))).ToArray();
             _directoryDeadline = systems.Select(id => _views[(id, false)].Deadline).DefaultIfEmpty(long.MaxValue).Min();

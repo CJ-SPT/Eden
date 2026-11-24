@@ -780,6 +780,7 @@ internal sealed partial class LiveWorld
         {
             using var context = UseSystem(entry.Id);
             using var ownership = entry.Enter("resident capture");
+            ApplyPendingChanges(entry.State);
             if (entry.State.Combat?.CaptureCheckpoint(participants) is { } capture)
             {
                 captures.Add(capture);

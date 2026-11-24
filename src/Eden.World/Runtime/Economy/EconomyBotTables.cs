@@ -2184,7 +2184,8 @@ internal sealed partial class ResidentEconomy
                         row.DedVisitedRooms,
                         row.EscalationPilotId,
                         row.EscalationSourceDungeonId,
-                        row.EscalationExpiresAt
+                        row.EscalationExpiresAt,
+                        row.IncursionTaleId
                     ),
                 state => new Eden.Data.World.Exploration.WorldCombatAnomaly
                 {
@@ -2205,10 +2206,11 @@ internal sealed partial class ResidentEconomy
                     EscalationPilotId = state.EscalationPilotId,
                     EscalationSourceDungeonId = state.EscalationSourceDungeonId,
                     EscalationExpiresAt = state.EscalationExpiresAt,
+                    IncursionTaleId = state.IncursionTaleId,
                 },
                 ProjectWorldCombatAnomaly,
                 "Id,CompletedAt,DefinitionVersion,DungeonId,IsSignature,NextWaveAt,ReplaceAt,Slot,SystemId,Wave,X,Y,Z,"
-                    + "DedVisitedRooms,EscalationPilotId,EscalationSourceDungeonId,EscalationExpiresAt",
+                    + "DedVisitedRooms,EscalationPilotId,EscalationSourceDungeonId,EscalationExpiresAt,IncursionTaleId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2227,7 +2229,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(14),
                         reader.IsDBNull(15) ? null : reader.GetInt64(15),
                         reader.GetInt32(16),
-                        reader.IsDBNull(17) ? null : reader.GetInt64(17)
+                        reader.IsDBNull(17) ? null : reader.GetInt64(17),
+                        reader.IsDBNull(18) ? null : reader.GetInt64(18)
                     ),
                 state => new(state.Id),
                 indexes:
@@ -2236,6 +2239,7 @@ internal sealed partial class ResidentEconomy
                     new("DungeonId", row => row.DungeonId),
                     new("SystemId", row => row.SystemId),
                     new("EscalationPilotId", row => row.EscalationPilotId),
+                    new("IncursionTaleId", row => row.IncursionTaleId),
                 ],
                 primaryColumn: "Id"
             )
