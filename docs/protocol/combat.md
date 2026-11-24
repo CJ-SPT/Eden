@@ -17,6 +17,10 @@ selected ID. Career salvage cleanup follows its wreck's source reference, keepin
 ID. This lets saved encounters advance with existing NPC identities intact. EVE.js
 `server/src/space/npc/nativeNpcStore.js` also uses a persistent counter to allocate NPC entities.
 
+Automatically allocated NPCs also skip occupied IDs if an interrupted resident publication left rows ahead of
+the sequence. A retry preserves those rows and advances the sequence with the successful allocation. The
+checkpoint regression covers rollback, retry and reopen with an intentionally stale resident sequence.
+
 **Automated validation**
 
 `TimedWaveSpawnsWhenAnotherNpcAlreadyOwnsItsFirstIdentity` reproduced the disconnect exception before the fix

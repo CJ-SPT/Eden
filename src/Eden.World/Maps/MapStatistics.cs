@@ -239,15 +239,24 @@ internal sealed class MapStatistics
     internal void Restore(MapStatisticsPayload saved, long now)
     {
         _visits = saved.Visits ?? ImmutableDictionary<long, MapVisitHistory>.Empty;
-        foreach (var activity in saved.Events.Where(activity => activity.Time > now - HistoryRetention))
-        {
-            Record(activity);
-        }
+        RestoreEvents(saved.Events, now);
         foreach (var sample in saved.Samples)
         {
             if (sample.Time > now - PopulationRetention)
             {
                 Sample(sample.Time, sample.Systems);
+            }
+        }
+    }
+
+    internal void RestoreEvents(IEnumerable<MapActivityEvent> events, long now)
+    {
+        long cutoff = now - HistoryRetention;
+        foreach (var activity in events)
+        {
+            if (activity.Time > cutoff)
+            {
+                Record(activity);
             }
         }
     }

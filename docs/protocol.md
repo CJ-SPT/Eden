@@ -724,6 +724,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026)
 - [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026)
 - [Star map statistics](protocol/navigation.md#star-map-statistics-november-20-2026)
+- [Sustained map activity checkpoints](protocol/performance.md#sustained-map-activity-checkpoints)
 - [Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026)
 - [Personal map visit history](protocol/navigation.md#personal-map-visit-history)
 - [Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026)

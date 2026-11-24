@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 220;
+    internal const int CurrentVersion = 221;
 
     public static void Open(
         WorldDbContext world,
@@ -252,7 +252,10 @@ internal static class WorldMigration
             CapsuleerCheckpointMigration.RemoveEmbeddedCollision(world);
         }
         world.Database.ExecuteSqlRaw(
-            "CREATE TABLE IF NOT EXISTS WorldMapStatistics(Id INTEGER PRIMARY KEY CHECK (Id=1), Payload TEXT NOT NULL)"
+            """
+            CREATE TABLE IF NOT EXISTS WorldMapStatistics(Id INTEGER PRIMARY KEY CHECK (Id=1), Payload TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldMapActivity(Id INTEGER PRIMARY KEY, Payload BLOB NOT NULL);
+            """
         );
         world.Database.ExecuteSqlRaw(
             """

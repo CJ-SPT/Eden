@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
@@ -16,6 +17,8 @@ using Eden.World.Catalog;
 using Eden.World.Docking;
 using Eden.World.Maps;
 using Eden.World.Runtime;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Maps;
@@ -211,6 +214,64 @@ public sealed class MapNavigationTests
         Assert.Empty(Assert.IsType<List<object?>>(jobs["lines"]));
         Assert.Contains(30000142L, Assert.IsType<Dictionary<long, object?>>(replies[12]).Keys);
         Assert.Equal(before, world.Store.FindPilot(1000001));
+    }
+
+    [Fact]
+    public async Task CheckpointBatchesMapActivityAndRestoresLegacyHistoryWithoutDuplicates()
+    {
+        const int system = 30000142;
+        const int newJumps = 10_000;
+        var clock = CalendarTestData.Clock();
+        using TestWorld fixture = new(clock: clock);
+        long cutoff = clock.Now - TimeSpan.TicksPerDay;
+        using (WorldDbContext legacy = new(fixture.Path))
+        {
+            legacy.Database.ExecuteSqlRaw("DROP TABLE WorldMapActivity; PRAGMA user_version=220;");
+            var payload = new MapStatisticsPayload(
+                [new(cutoff, system, MapActivityKind.Jump), new(cutoff + 1, system, MapActivityKind.Jump)],
+                []
+            );
+            string json = JsonSerializer.Serialize(payload);
+            legacy.Database.ExecuteSql($"INSERT INTO WorldMapStatistics(Id,Payload) VALUES(1,{json})");
+        }
+
+        WorldDatabase database = new(fixture.Path);
+        WorldInitialization.Initialize(database);
+        using (var host = ServerServices.Build(database, clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var statistics = host.GetRequiredService<IMapStatistics>();
+            Assert.Equal(1, Assert.Single(statistics.History(MapHistoryStatistic.Jumps, 24).Rows).Counts.Jumps);
+            using (var action = live.Economy.Begin())
+            {
+                for (int index = 0; index < newJumps; index++)
+                {
+                    MapStatisticsStore.Record(action, system, clock.Now, MapActivityKind.Jump);
+                }
+                action.Commit();
+            }
+            await live.FlushAsync();
+            using (var action = live.Economy.Begin())
+            {
+                MapStatisticsStore.Record(action, system, clock.Now, MapActivityKind.NpcShipLoss);
+                action.Commit();
+            }
+            await live.FlushAsync();
+        }
+
+        using (WorldDbContext checkpoint = new(fixture.Path))
+        {
+            int[] batchSizes = checkpoint.Database.SqlQueryRaw<int>("SELECT length(Payload) AS Value FROM WorldMapActivity").ToArray();
+            Assert.True(batchSizes.Length > 1);
+            Assert.All(batchSizes, size => Assert.InRange(size, 1, 64 * 1024));
+        }
+        using var reopened = ServerServices.Build(new(fixture.Path), clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<IMapStatistics>();
+        Assert.Equal(newJumps + 1, Assert.Single(restored.History(MapHistoryStatistic.Jumps, 24).Rows).Counts.Jumps);
+        Assert.Equal(newJumps, Assert.Single(restored.History(MapHistoryStatistic.Jumps, 1).Rows).Counts.Jumps);
+        Assert.Equal(1, Assert.Single(restored.History(MapHistoryStatistic.Kills, 24).Rows).Counts.NpcShips);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+        Assert.Equal(newJumps, Assert.Single(restored.History(MapHistoryStatistic.Jumps, 24).Rows).Counts.Jumps);
     }
 
     [Fact]

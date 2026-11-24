@@ -6,6 +6,39 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Sustained map activity checkpoints
+
+On November 23, 2026, HostCram was running `b0a708a0` with a 7 GiB container limit and a 55% .NET heap limit.
+The successful save at 6:16:31 p.m. Eastern was generation `39791715`. Its map history held 558,311 events in
+a 31,825,955-byte JSON payload. A later EventPipe capture recorded an `OutOfMemoryException` in
+`MapStatisticsCheckpoint.Apply` while serializing the event array. Docker recorded zero OOM kills. The same
+process completed two more saves at 10:56 p.m. Eastern. The second save held 637,784 events, passed SQLite's
+integrity check on a copy, and left the recurring NPC identity error visible in the server log.
+
+World schema 221 writes activity in binary batches of up to 64 KiB in the detached checkpoint transaction.
+Each record preserves the exact event time, solar system and kind. The reader imports legacy JSON activity and
+reads the new batches one at a time. A successful checkpoint replaces the legacy event payload. The population
+samples, personal visits and rolling history windows retain their behavior.
+
+In a local projection probe using 558,311 synthetic events on both paths, the previous writer allocated 197 MiB
+and took 251 ms. The batched writer allocated 18 MiB, took 70 ms and restored all events. At 1,100,000 events
+under a 192 MiB managed heap cap, the previous writer exhausted the heap. The batched writer projected the
+checkpoint in 122 ms and restored all events. The probe measures map persistence on its own.
+
+### Automated validation
+
+The exact map history and resident NPC sequence regressions passed in 7.37 seconds of test command time.
+They cover legacy map history import, batch size, repeated checkpoint writes, exact expiry, occupied NPC IDs,
+rollback and checkpoint reopen.
+
+The affected map, migration, detached checkpoint, NPC population, convoy and timed wave selection passed
+97 of 98 cases in 58.04 seconds. The resident pirate reward assertion also failed on unchanged `b0a708a0`
+in an exact six-case control run. The solution build and 17 Python policy checks passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
 ## SQL-free gameplay and cold market preparation
 
 November 23, 2026. The installed server prepares a resident catalog generation before gameplay begins. It loads the

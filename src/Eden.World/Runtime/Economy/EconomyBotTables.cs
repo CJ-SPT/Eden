@@ -3417,7 +3417,8 @@ internal sealed partial class EconomyTransaction
                 Reserve("WorldNpcBounty", value.Id);
                 break;
             case Eden.Data.World.Combat.Npcs.WorldNpc value:
-                value.Id = value.Id == 0 ? Next("WorldNpc") : value.Id;
+                // An interrupted publication can leave a committed row ahead of the sequence.
+                value.Id = value.Id == 0 ? AvailableNpcId(Next("WorldNpc")) : value.Id;
                 Reserve("WorldNpc", value.Id);
                 break;
             case Eden.Data.World.Combat.SavedSecurityTransaction value:

@@ -1,4 +1,5 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Exploration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime;
@@ -13,6 +14,44 @@ public sealed class ResidentIdentityMaximumTests
     private const int Count = 4096;
     private const int Local = 30000144;
     private const int Remote = 30000142;
+
+    [Fact]
+    public async Task NpcAllocationSkipsRowsAheadOfAnInterruptedSequence()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        var first = new WorldNpc { SystemId = Local };
+        var second = new WorldNpc { SystemId = Remote };
+        using (var setup = live.Economy.Begin())
+        {
+            setup.Add(first);
+            setup.Add(second);
+            setup.Commit();
+        }
+        using (live.Enter())
+        {
+            // Model rows published by a transaction that failed before publishing the sequence.
+            live.Economy.Committed(new Dictionary<string, long> { [nameof(WorldNpc)] = first.Id - 1 }, [], null, [], []);
+        }
+
+        using (var rejected = live.Economy.Begin())
+        {
+            Assert.Equal(second.Id + 1, rejected.Add(new WorldNpc { SystemId = Remote }).Entity.Id);
+        }
+        using (var retry = live.Economy.Begin())
+        {
+            Assert.Equal(second.Id + 1, retry.Add(new WorldNpc { SystemId = Remote }).Entity.Id);
+            Assert.Throws<InvalidDataException>(() => retry.Add(new WorldNpc { Id = first.Id, SystemId = Remote }));
+            Assert.Equal(Local, retry.Set<WorldNpc>().Find(first.Id)!.SystemId);
+            Assert.Equal(Remote, retry.Set<WorldNpc>().Find(second.Id)!.SystemId);
+            retry.Commit();
+        }
+        await live.FlushAsync();
+        fixture.Services.Dispose();
+        using var reopened = Eden.Server.ServerServices.Build(new(fixture.Path), liveWorld: true);
+        using var resumed = reopened.GetRequiredService<LiveWorld>().Economy.Begin();
+        Assert.Equal(second.Id + 2, resumed.Add(new WorldNpc { SystemId = Local }).Entity.Id);
+    }
 
     [Fact]
     public void PilotIdentityMaximumKeepsPrivateActiveShipOwnershipVisibility()

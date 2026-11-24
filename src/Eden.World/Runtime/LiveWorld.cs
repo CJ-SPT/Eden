@@ -564,10 +564,7 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 using var directoryPhase = SessionPerformance.Phase("startup.ownerDirectory");
                 OwnerDirectory = new(directory);
-                if (Eden.World.Maps.MapStatisticsCheckpoint.Read(directory) is { } mapStatistics)
-                {
-                    MapStatistics.Restore(mapStatistics, SimulationTime);
-                }
+                Eden.World.Maps.MapStatisticsCheckpoint.Restore(directory, MapStatistics, SimulationTime);
             }
             if (!s_worlds.TryAdd(_path, this))
             {
