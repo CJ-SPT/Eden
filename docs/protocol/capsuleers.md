@@ -2,6 +2,43 @@
 
 [Protocol index](../protocol.md)
 
+## Nullsec scouting and freight warnings
+
+Independent roams prefer systems with recent sampled in-space activity from the public star map. The bias is capped
+and quiet systems remain eligible. At the destination, a fresh report from the pilot's regional group can put its
+recorded gate or belt first. The pilot uses Eden's directional scanner ship visibility and range to pick a public gate
+or belt for its next search. The scan cannot generate a warp point at a ship. After arrival, normal on-grid observation,
+affiliation, tackle, and combat legality control the engagement. A grid receives one search per sortie, and a contact
+that leaves may be gone by the time the hunter arrives.
+
+Loaded freight can turn back before a nullsec jump if its own group's fresh attack or loss report names the receiving
+gate. The hauler remembers the threatened system through the existing route memory. An expired report allows travel.
+The checks use resident positions and reports. Search order and return travel use their existing checkpoints.
+
+EVE.js 261108.1 uses local interaction scope before acquiring combat targets in `server/src/space/npc/npcBehaviorLoop.js`.
+Eden reuses the scan visibility and catalog ranges for pinned build 3662168. The decision to investigate a known public
+grid and the weight given to public map activity are Eden policies.
+[EVE University directional scanning](https://wiki.eveuniversity.org/Directional_scanning) ·
+[EVE University scouting](https://wiki.eveuniversity.org/Scouting)
+
+**Automated validation**
+
+The focused selection passed all six cases in 18.72 seconds after a 14.62-second build. It selected
+`PatrolHuntTests`, `DirectionalScanningFindsAnOffGridShipButNeverReturnsSelfOrRemoteCargo`,
+`UnattendedPatrolDestroysRivalAndPersistsKillboardAndMapActivity`, and
+`RoamingExpeditionsFavorSystemsWithCapsuleersAndAvoidReportedThreats`. An unattended patrol redirected from
+a seeded lead to a separate watched gate with independently routed healthy freight. Two docked freight journeys
+compared a fresh receiving-gate warning with an expired one. The older kill persistence replay still plants a
+damaged target for the lethal case. Natural encounter rates and dedicated-host checkpoint load remain unmeasured.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Compare unattended sightings, escapes, and engagement locations across two HostCram checkpoints after deployment.
+
 ## Unattended nullsec PvP and map population — November 23, 2026
 
 A read-only HostCram checkpoint capture at 11:23 p.m. Eastern on `8c8dd74a` found 5,749 scheduled bots. Over the

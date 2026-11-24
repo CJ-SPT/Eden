@@ -28,6 +28,18 @@ public static class PatrolRules
     public const int MaximumGrids = 4;
     public const double PursuitMeters = 75_000;
 
+    // A narrow bearing alone cannot distinguish two grids in the same direction.
+    public const double SearchConeRadians = Math.PI / 36;
+
+    public static int ContactInterest(HullClass hull) =>
+        hull switch
+        {
+            HullClass.Hauler or HullClass.BlockadeRunner or HullClass.DeepSpaceTransport => 2,
+            HullClass.MiningBarge or HullClass.Exhumer or HullClass.ExpeditionFrigate => 2,
+            HullClass.Capsule or HullClass.Unclassified => 0,
+            _ => 1,
+        };
+
     public static bool Choose(long pilot, long sequence, int percent) =>
         TravelerRoutineRules.Mix((ulong)pilot ^ TravelerRoutineRules.Mix((ulong)sequence)) % 100 < (ulong)percent;
 

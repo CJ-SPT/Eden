@@ -1484,20 +1484,22 @@ internal sealed partial class CapsuleerHauler(
         }
         if (_target.DestinationGateId is not null)
         {
-            if (CanWorkHere && !_background && GateIsDangerous())
+            bool inRange = GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target);
+            bool reported = CanWorkHere && inRange && HeardFreightWarning(_target);
+            if (CanWorkHere && (reported || !_background && GateIsDangerous()))
             {
                 _work = Work with
                 {
                     Routine = TravelerRoutineRules.Threatened(
                         Work.Routine ?? TravelerRoutineRules.Create(pilotId),
-                        Pilot.SystemId,
+                        reported ? _target.DestinationSystemId!.Value : Pilot.SystemId,
                         Work.ActiveTicks
                     ),
                 };
                 BeginRetreat();
                 return;
             }
-            if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
+            if (inRange)
             {
                 if (WaitForGangAtGate(_target) || WaitForEscortAtGate(_target))
                 {

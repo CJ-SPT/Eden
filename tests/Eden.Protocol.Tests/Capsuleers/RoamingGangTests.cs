@@ -534,7 +534,7 @@ public sealed class RoamingGangTests
 
     internal sealed class Fixture : IDisposable
     {
-        private readonly CapsuleerHaulerTests.Fixture _world = new(legacyFounders: false, isolateRoute: true);
+        private readonly CapsuleerHaulerTests.Fixture _world;
         private IDisposable? _presence;
         internal WorldDatabase Database => _world.Database;
         internal TestClock Clock => _world.Clock;
@@ -559,9 +559,11 @@ public sealed class RoamingGangTests
             int? patrolSeed = null,
             int? soloHull = null,
             TrafficProfile[]? snapshot = null,
-            bool unattended = false
+            bool unattended = false,
+            Action<string>? additionalCatalogData = null
         )
         {
+            _world = new(legacyFounders: false, isolateRoute: true, additionalCatalogData: additionalCatalogData);
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
             PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath);

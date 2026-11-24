@@ -1,6 +1,5 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
-using Eden.Gameplay.Mining;
 
 namespace Eden.World.Capsuleers;
 
@@ -16,12 +15,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var grids = Objects
-            .Where(o => o.DestinationGateId is not null || o.GroupId == AsteroidDefinitions.BeltGroup)
-            .OrderBy(o => TravelerRoutineRules.Mix((ulong)o.Id ^ (ulong)pilotId ^ (ulong)sequence))
-            .Take(PatrolRules.MaximumGrids)
-            .Select(o => o.Id)
-            .ToArray();
+        long[] grids = HuntGrids(sequence);
         if (grids.Length == 0)
         {
             return false;
