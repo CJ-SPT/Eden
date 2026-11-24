@@ -20,6 +20,7 @@ using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Flight;
 using Eden.World.Information;
@@ -616,6 +617,8 @@ internal sealed partial class PilotDroneStore
             kind,
             profile.Amount * attributes.GetValueOrDefault(DogmaAttributeId.RemoteRepairImpedance, 1)
         );
+        double restored = RemoteRepairRules.RestoredHp(kind, before.Remaining, after.Remaining);
+        IncursionStore.RecordRepair(world, catalog, source, pilot, kind, restored, now);
         var saved = world.Set<ShipHealthState>().Find(after.ShipId) ?? world.Add(new ShipHealthState { ShipId = after.ShipId }).Entity;
         saved.ShieldCharge = after.Remaining.Shield;
         saved.ArmorDamage = after.Defense.Armor - after.Remaining.Armor;

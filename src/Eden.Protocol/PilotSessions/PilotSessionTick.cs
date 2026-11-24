@@ -25,7 +25,8 @@ internal sealed class PilotSessionTick(
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
     Eden.Protocol.FactionWarfare.FactionWarzoneUpdates? warzoneUpdates = null,
-    ExpertSystemHandler? expertSystems = null
+    ExpertSystemHandler? expertSystems = null,
+    Eden.Protocol.Exploration.IncursionAgencyMonitor? incursionAgency = null
 )
 {
     public async Task AdvanceAsync(
@@ -135,10 +136,13 @@ internal sealed class PilotSessionTick(
             {
                 entosis.Advance(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
+            // Sample before refreshing beacons so the Agency can only rebuild for a publication the ballpark has seen.
+            var incursion = incursionAgency?.Sample(context);
             using (SessionLatency.Measure(SessionLatencyPhase.Exploration))
             {
                 anomalies?.Advance(context);
             }
+            incursionAgency?.Publish(context, incursion);
             warzoneUpdates?.Advance(context);
             abyss?.Advance(context);
             environments?.Advance(context);

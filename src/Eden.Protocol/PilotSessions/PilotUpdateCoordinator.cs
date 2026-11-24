@@ -103,7 +103,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null,
     Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null,
     ShipCloneMonitor? shipClones = null,
-    Eden.Protocol.Structures.StructureWeaponHandler? structureWeapons = null
+    Eden.Protocol.Structures.StructureWeaponHandler? structureWeapons = null,
+    Eden.Protocol.Exploration.IncursionAgencyMonitor? incursionAgency = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -117,6 +118,7 @@ internal sealed class PilotUpdateCoordinator(
         || accessGroups.IsMonitoring
         || corporationContacts.IsMonitoring
         || savedFittings.IsMonitoring
+        || incursionAgency?.IsMonitoring == true
         || missionTracker.IsMonitoring
         || industry.IsMonitoring
         || guests.IsDocked
@@ -193,6 +195,7 @@ internal sealed class PilotUpdateCoordinator(
         bookmarks.Reset();
         accessGroups.Reset();
         savedFittings.Reset();
+        incursionAgency?.Reset();
         corporationContacts.Reset();
         chat.Dispose();
         fleets.Dispose();

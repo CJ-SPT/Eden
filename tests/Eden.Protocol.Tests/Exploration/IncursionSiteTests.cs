@@ -22,6 +22,120 @@ namespace Eden.Protocol.Tests.Exploration;
 public sealed class IncursionSiteTests
 {
     [Fact]
+    public async Task ScoutAssaultAndHeadquartersUseTierObjectivesAcrossCheckpoint()
+    {
+        var clock = ActiveClock();
+        using TestWorld fixture = new(clock: clock);
+        var database = new WorldDatabase(fixture.Path);
+        PassiveCatalogFixture.LoadIncursions(database.CatalogPath);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = fixture.Store.FindPilot(1000001)!;
+        CombatAnomalyStore sites = new(database);
+        IncursionStore campaigns = new(database);
+        CombatAnomaly headquarters;
+        long deadline;
+
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            var focus = Assert.Single(campaigns.Read(clock.Now));
+            var scout = Assert.Single(sites.Incursions(focus.StagingSystemId, clock.Now));
+            AssertSite(scout, 5193, 60, 114117);
+            Assert.DoesNotContain(scout.Objects, o => o.GroupId == MissionGateRules.AccelerationGateGroup);
+            sites.Arrive(scout.SystemId, scout.Position, clock.Now);
+            Assert.Equal(0, Wave(live, scout.Id));
+            Assert.NotEmpty(Npcs(live, scout.Id));
+
+            int assaultSystem = Assert.Single(focus.Systems, s => s.SceneType == IncursionScene.Assault).SystemId;
+            var assault = Assert.Single(sites.Incursions(assaultSystem, clock.Now));
+            AssertSite(assault, 5168, 62, 114110);
+            sites.Arrive(assault.SystemId, assault.Position, clock.Now);
+            Assert.Empty(Npcs(live, assault.Id));
+            sites.Arrive(assault.SystemId, assault.Position + IncursionSiteCatalog.CombatOffset, clock.Now);
+            var screen = Npcs(live, assault.Id);
+            var triggers = screen.Where(n => n.TypeId == 2936).ToArray();
+            Assert.Equal(2, triggers.Length);
+            Assert.True(Hit(live, catalog, triggers[0].Id, pilot.PilotId, clock.Now).Destroyed);
+            Assert.Equal(0, Wave(live, assault.Id));
+            Assert.True(Hit(live, catalog, triggers[1].Id, pilot.PilotId, clock.Now).Destroyed);
+            Assert.Equal(1, Wave(live, assault.Id));
+            Assert.Contains(Npcs(live, assault.Id), n => screen.Any(prior => prior.Id == n.Id));
+
+            int headquartersSystem = Assert.Single(focus.Systems, s => s.SceneType == IncursionScene.Headquarters).SystemId;
+            headquarters = Assert.Single(sites.Incursions(headquartersSystem, clock.Now));
+            AssertSite(headquarters, 5171, 63, 114112);
+            sites.Arrive(headquarters.SystemId, headquarters.Position + IncursionSiteCatalog.CombatOffset, clock.Now);
+            deadline = checked(clock.Now + 45 * TimeSpan.TicksPerSecond);
+            Assert.Equal(deadline, live.Economy.Inspect(w => w.Set<WorldCombatAnomaly>().Find(headquarters.Id)!.NextWaveAt));
+            await live.FlushAsync();
+        }
+
+        using LiveWorld reopened = new(database, clock, _ => { });
+        sites = new(database);
+        var initial = Npcs(reopened, headquarters.Id).Select(n => n.Id).ToArray();
+        Assert.NotEmpty(initial);
+        Assert.Equal(headquarters.Id, Assert.Single(sites.Incursions(headquarters.SystemId, deadline - 1)).Id);
+        Assert.Equal(0, Wave(reopened, headquarters.Id));
+        Assert.Equal(headquarters.Id, Assert.Single(sites.Incursions(headquarters.SystemId, deadline)).Id);
+        Assert.Equal(1, Wave(reopened, headquarters.Id));
+        var reinforced = Npcs(reopened, headquarters.Id).Select(n => n.Id).ToArray();
+        Assert.All(initial, id => Assert.Contains(id, reinforced));
+        Assert.True(reinforced.Length > initial.Length);
+        Assert.Single(sites.Incursions(headquarters.SystemId, deadline));
+        Assert.Equal(reinforced.Order(), Npcs(reopened, headquarters.Id).Select(n => n.Id).Order());
+    }
+
+    [Fact]
+    public void UnlockedMothershipRequiresFlagshipAndRemainingGuards()
+    {
+        var clock = ActiveClock();
+        using TestWorld fixture = new(clock: clock);
+        var database = new WorldDatabase(fixture.Path);
+        PassiveCatalogFixture.LoadIncursions(database.CatalogPath);
+        using LiveWorld live = new(database, clock, _ => { });
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = fixture.Store.FindPilot(1000001)!;
+        IncursionStore campaigns = new(database);
+        CombatAnomalyStore sites = new(database);
+        var focus = Assert.Single(campaigns.Read(clock.Now));
+        int system = Assert.Single(focus.Systems, s => s.SceneType == IncursionScene.Headquarters).SystemId;
+        var hq = Assert.Single(sites.Incursions(system, clock.Now));
+        using (var action = live.Economy.Begin(new(systems: [system])))
+        {
+            var campaign = action.Set<SavedIncursionCampaign>().Find(focus.TaleId)!;
+            campaign.Clears = IncursionRules.ClearsToUnlockFinal;
+            campaign.HeadquartersCleared = true;
+            CombatAnomalyStore.Invalidate(action, system);
+            action.Commit();
+        }
+
+        Assert.True(Assert.Single(campaigns.Read(clock.Now)).HasFinalEncounter);
+        var flagshipSite = Assert.Single(sites.Incursions(system, clock.Now), s => s.Id != hq.Id);
+        AssertSite(flagshipSite, 5158, 64, 114113);
+        Assert.NotEqual(hq.Position, flagshipSite.Position);
+        sites.Arrive(system, flagshipSite.Position + IncursionSiteCatalog.CombatOffset, clock.Now);
+        for (int wave = 0; wave < 2; wave++)
+        {
+            var screen = Npcs(live, flagshipSite.Id);
+            Assert.NotEmpty(screen);
+            Assert.DoesNotContain(screen, n => n.TypeId == 2192);
+            foreach (var npc in screen)
+            {
+                Assert.True(Hit(live, catalog, npc.Id, pilot.PilotId, clock.Now).Destroyed);
+            }
+        }
+        var final = Npcs(live, flagshipSite.Id);
+        var flagship = Assert.Single(final, n => n.TypeId == 2192);
+        Assert.True(Hit(live, catalog, flagship.Id, pilot.PilotId, clock.Now).Destroyed);
+        Assert.Single(sites.Incursions(system, clock.Now), s => s.Id == flagshipSite.Id);
+        foreach (var guard in final.Where(n => n.Id != flagship.Id))
+        {
+            Assert.True(Hit(live, catalog, guard.Id, pilot.PilotId, clock.Now).Destroyed);
+        }
+        Assert.Empty(campaigns.Read(clock.Now));
+        Assert.Empty(sites.Incursions(system, clock.Now));
+    }
+
+    [Fact]
     public void ScopedRetirementInvalidatesWarmedNpcViewsInAnotherVanguardSystem()
     {
         TestClock clock = new(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
@@ -76,7 +190,7 @@ public sealed class IncursionSiteTests
         {
             focus = Assert.Single(campaigns.Read(clock.Now));
             system = focus.Systems.First(s => s.SceneType == IncursionScene.Vanguard).SystemId;
-            Assert.Empty(sites.Incursions(focus.StagingSystemId, clock.Now));
+            Assert.Equal(IncursionSiteCatalog.DistressBeacon, Assert.Single(sites.Incursions(focus.StagingSystemId, clock.Now)).DungeonId);
             first = Assert.Single(sites.Incursions(system, clock.Now));
             Assert.DoesNotContain(sites.List(system, clock.Now), s => s.Id == first.Id);
             Assert.Equal(IncursionSiteCatalog.NationCommanderOutpost, first.DungeonId);
@@ -168,6 +282,22 @@ public sealed class IncursionSiteTests
             var flight = scope.ServiceProvider.GetRequiredService<FlightCallHandler>();
             Assert.IsType<PilotCallResult.Success>(flight.Call(context, "beyonce", "CmdWarpToStuff", [subject, target]));
         }
+    }
+
+    private static TestClock ActiveClock()
+    {
+        TestClock clock = new(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        clock.UtcNow = DateTimeOffset.FromFileTime(IncursionRules.OpensAt(IncursionRules.TaleId(clock.Now))).ToUniversalTime();
+        return clock;
+    }
+
+    private static void AssertSite(CombatAnomaly site, int dungeon, int archetype, int name)
+    {
+        Assert.Equal(dungeon, site.DungeonId);
+        Assert.Equal(archetype, site.ArchetypeId);
+        var beacon = Assert.Single(site.Objects, o => o.IncursionBeacon is not null);
+        Assert.Equal(site.Id, beacon.Id);
+        Assert.Equal(new IncursionBeacon(dungeon, name, archetype), beacon.IncursionBeacon);
     }
 
     private static WorldNpc[] Npcs(LiveWorld world, long site) =>

@@ -284,10 +284,10 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
 
 ## Combat and NPC populations
 
-- **Sansha Incursions.** Find a rotating high-security focus in the Agency and star map, then warp to a
-  Nation Commander Outpost and take its acceleration gate. Clear four Vanguard waves to earn site ISK.
-  Eligible contributors earn pooled CONCORD LP, which pays out when pilots clear eight sites in the active focus.
-  [Sansha Incursions](protocol/incursions.md#high-security-vanguard-milestone)
+- **Sansha Incursions.** Find a rotating high-security focus in the Agency and star map. Fight Scout, Vanguard,
+  Assault and Headquarters sites. Damage and effective remote repairs earn site ISK and bank CONCORD LP.
+  Clear eight sites including Headquarters to unlock the mothership, then defeat it to release the LP pool.
+  [Sansha Incursions](protocol/incursions.md#high-security-incursion-campaign)
 - The administration killboard shows recorded ship and capsule destruction across the server, with independent NPC,
   player and bot filters for final blows and losses. [Server killboard](protocol/combat.md#server-killboard)
 - Belt pirates use regional catalog pools with supported missiles, turrets, electronic warfare and self-repairs.

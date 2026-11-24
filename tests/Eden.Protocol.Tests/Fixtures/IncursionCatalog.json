@@ -257,6 +257,202 @@
       "radius": 1000,
       "capacity": 100,
       "attributes": []
+    },
+    {
+      "id": 2191,
+      "name": "Test type 2191",
+      "groupId": 1054,
+      "groupName": "Test group 1054",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 80,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2192,
+      "name": "Test type 2192",
+      "groupId": 1052,
+      "groupName": "Test group 1052",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 500,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10000
+        },
+        {
+          "id": 263,
+          "value": 10000
+        },
+        {
+          "id": 265,
+          "value": 10000
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2845,
+      "name": "Test type 2845",
+      "groupId": 1056,
+      "groupName": "Test group 1056",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 80,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2855,
+      "name": "Test type 2855",
+      "groupId": 1056,
+      "groupName": "Test group 1056",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 80,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2932,
+      "name": "Test type 2932",
+      "groupId": 1056,
+      "groupName": "Test group 1056",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 80,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2933,
+      "name": "Test type 2933",
+      "groupId": 1056,
+      "groupName": "Test group 1056",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 80,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": 2935,
+      "name": "Test type 2935",
+      "groupId": 1056,
+      "groupName": "Test group 1056",
+      "categoryId": 11,
+      "mass": 2000,
+      "radius": 80,
+      "capacity": 100,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150
+        },
+        {
+          "id": 263,
+          "value": 150
+        },
+        {
+          "id": 265,
+          "value": 150
+        },
+        {
+          "id": 552,
+          "value": 80
+        }
+      ]
     }
   ],
   "records": [
@@ -432,7 +628,9 @@
               }
             ]
           }
-        ]
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
       }
     },
     {
@@ -515,6 +713,462 @@
     {
       "dataset": "client/systems",
       "key": 30004135,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2191,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2192,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2845,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2855,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2932,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2933,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2935,
+      "data": {
+        "volume": 100,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5193,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 60,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114117,
+        "dungeonID": 5193
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5168,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 62,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114110,
+        "dungeonID": 5168,
+        "connections": [
+          {
+            "allowedShipsList": 486,
+            "fromObjectID": 11
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5171,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 63,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114112,
+        "dungeonID": 5171,
+        "connections": [
+          {
+            "allowedShipsList": 486,
+            "fromObjectID": 11
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 5158,
+      "data": {
+        "entryTypeID": 10645,
+        "entryObjectID": 10,
+        "archetypeID": 64,
+        "difficulty": 5,
+        "factionID": 500019,
+        "dungeonNameID": 114113,
+        "dungeonID": 5158,
+        "connections": [
+          {
+            "allowedShipsList": 486,
+            "fromObjectID": 11
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 2,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 6604
+              },
+              {
+                "playerCount": 10,
+                "quantity": 18200000
+              },
+              {
+                "playerCount": 21,
+                "quantity": 16835000
+              },
+              {
+                "playerCount": 30,
+                "quantity": 455000
+              },
+              {
+                "playerCount": 31,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1
+              },
+              {
+                "playerCount": 10,
+                "quantity": 3500
+              },
+              {
+                "playerCount": 21,
+                "quantity": 3238
+              },
+              {
+                "playerCount": 30,
+                "quantity": 88
+              },
+              {
+                "playerCount": 31,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 3,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 11,
+                "quantity": 11431
+              },
+              {
+                "playerCount": 20,
+                "quantity": 31500000
+              },
+              {
+                "playerCount": 41,
+                "quantity": 29137500
+              },
+              {
+                "playerCount": 50,
+                "quantity": 787500
+              },
+              {
+                "playerCount": 51,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 11,
+                "quantity": 3
+              },
+              {
+                "playerCount": 20,
+                "quantity": 7000
+              },
+              {
+                "playerCount": 41,
+                "quantity": 6475
+              },
+              {
+                "playerCount": 50,
+                "quantity": 175
+              },
+              {
+                "playerCount": 51,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 8,
+      "data": {
+        "minimumContribution": 0,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 0,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 1000000
+              },
+              {
+                "playerCount": 2,
+                "quantity": 2000000
+              },
+              {
+                "playerCount": 3,
+                "quantity": 3500000
+              },
+              {
+                "playerCount": 6,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 0,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 1,
+                "quantity": 50
+              },
+              {
+                "playerCount": 2,
+                "quantity": 200
+              },
+              {
+                "playerCount": 3,
+                "quantity": 400
+              },
+              {
+                "playerCount": 6,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/grouprewards",
+      "key": 10,
+      "data": {
+        "minimumContribution": 1,
+        "rewardingNpcCorporationID": 1000125,
+        "tables": [
+          {
+            "rewardType": 2,
+            "securityCriteria": 1,
+            "delayed": 0,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 33,
+                "quantity": 1143072
+              },
+              {
+                "playerCount": 40,
+                "quantity": 63000000
+              },
+              {
+                "playerCount": 81,
+                "quantity": 61425000
+              },
+              {
+                "playerCount": 106,
+                "quantity": 1575000
+              },
+              {
+                "playerCount": 107,
+                "quantity": 0
+              }
+            ]
+          },
+          {
+            "rewardType": 1,
+            "securityCriteria": 1,
+            "delayed": 1,
+            "entries": [
+              {
+                "playerCount": 0,
+                "quantity": 0
+              },
+              {
+                "playerCount": 33,
+                "quantity": 254
+              },
+              {
+                "playerCount": 40,
+                "quantity": 14000
+              },
+              {
+                "playerCount": 81,
+                "quantity": 13650
+              },
+              {
+                "playerCount": 106,
+                "quantity": 350
+              },
+              {
+                "playerCount": 107,
+                "quantity": 0
+              }
+            ]
+          }
+        ],
+        "damageContributionMultiplier": 1.0,
+        "repairContributionMultiplier": 1.0
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30001425,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30001424,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003877,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30003876,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004131,
+      "data": {
+        "securityStatus": 0.8
+      }
+    },
+    {
+      "dataset": "client/systems",
+      "key": 30004130,
       "data": {
         "securityStatus": 0.8
       }
@@ -612,6 +1266,54 @@
     {
       "id": 30004135,
       "name": "Test Incursion system 12",
+      "constellationId": 20000604,
+      "constellationName": "Test Incursion constellation 3",
+      "regionId": 10000052,
+      "regionName": "Test region 3"
+    },
+    {
+      "id": 30001425,
+      "name": "Test Incursion Assault system 13",
+      "constellationId": 20000209,
+      "constellationName": "Test Incursion constellation 1",
+      "regionId": 10000016,
+      "regionName": "Test region 1"
+    },
+    {
+      "id": 30001424,
+      "name": "Test Incursion Headquarters system 14",
+      "constellationId": 20000209,
+      "constellationName": "Test Incursion constellation 1",
+      "regionId": 10000016,
+      "regionName": "Test region 1"
+    },
+    {
+      "id": 30003877,
+      "name": "Test Incursion Assault system 15",
+      "constellationId": 20000566,
+      "constellationName": "Test Incursion constellation 2",
+      "regionId": 10000049,
+      "regionName": "Test region 2"
+    },
+    {
+      "id": 30003876,
+      "name": "Test Incursion Headquarters system 16",
+      "constellationId": 20000566,
+      "constellationName": "Test Incursion constellation 2",
+      "regionId": 10000049,
+      "regionName": "Test region 2"
+    },
+    {
+      "id": 30004131,
+      "name": "Test Incursion Assault system 17",
+      "constellationId": 20000604,
+      "constellationName": "Test Incursion constellation 3",
+      "regionId": 10000052,
+      "regionName": "Test region 3"
+    },
+    {
+      "id": 30004130,
+      "name": "Test Incursion Headquarters system 18",
       "constellationId": 20000604,
       "constellationName": "Test Incursion constellation 3",
       "regionId": 10000052,
@@ -748,6 +1450,72 @@
       "radius": 10000,
       "orbitId": null,
       "x": 12000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000012,
+      "solarSystemId": 30001425,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 13000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000013,
+      "solarSystemId": 30001424,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 14000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000014,
+      "solarSystemId": 30003877,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 15000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000015,
+      "solarSystemId": 30003876,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 16000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000016,
+      "solarSystemId": 30004131,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 17000000000.0,
+      "y": 0,
+      "z": 0
+    },
+    {
+      "id": 41000017,
+      "solarSystemId": 30004130,
+      "typeId": 8,
+      "groupId": 6,
+      "radius": 10000,
+      "orbitId": null,
+      "x": 18000000000.0,
       "y": 0,
       "z": 0
     }

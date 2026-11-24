@@ -15,7 +15,11 @@ namespace Eden.World.Exploration;
 
 internal sealed partial class CombatAnomalyStore
 {
-    private const int IncursionSlot = 102;
+    private const int VanguardIncursionSlot = 102;
+    private const int ScoutIncursionSlot = 103;
+    private const int AssaultIncursionSlot = 104;
+    private const int HeadquartersIncursionSlot = 105;
+    private const int MothershipIncursionSlot = 106;
     private const int IncursionPlacementSlot = 25;
 
     private sealed record IncursionSiteView(long Version, long Catalog, long Deadline, IReadOnlyList<CombatAnomaly> Sites);
@@ -60,58 +64,103 @@ internal sealed partial class CombatAnomalyStore
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var focus = live.Economy.Inspect(world => IncursionStore.ActiveFocus(world, catalog, now));
-        if (focus?.Systems.Any(s => s.SystemId == systemId && s.SceneType == IncursionScene.Vanguard) != true)
+        if (focus?.Systems.SingleOrDefault(s => s.SystemId == systemId) is not { } system)
         {
-            return [];
+            _incursionViews[systemId] = new(version, generation, IncursionRules.EndsAt(IncursionRules.TaleId(now)), []);
+            return _incursionViews[systemId].Sites;
         }
-        if (IncursionSiteCatalog.Read(catalog) is not { } definition)
+        IncursionSiteKind[] kinds = system.SceneType switch
         {
-            return [];
-        }
+            IncursionScene.Staging => [IncursionSiteKind.Scout],
+            IncursionScene.Vanguard => [IncursionSiteKind.Vanguard],
+            IncursionScene.Assault => [IncursionSiteKind.Assault],
+            IncursionScene.Headquarters when focus.HasFinalEncounter => [IncursionSiteKind.Headquarters, IncursionSiteKind.Mothership],
+            IncursionScene.Headquarters => [IncursionSiteKind.Headquarters],
+            _ => [],
+        };
         using var transaction = live.Economy.Begin(new(systems: [systemId]));
         WorldAction world = transaction;
-        long? id = world
+        var previousSites = world
             .Filter<WorldCombatAnomaly>(s => s.IncursionTaleId == focus.TaleId && s.SystemId == systemId)
-            .Select(s => (long?)s.Id)
-            .OrderByDescending(id => id)
-            .FirstOrDefault();
-        var site = id is long previous ? world.Set<WorldCombatAnomaly>().Find(previous) : null;
-        if (site is null || site.ReplaceAt <= now)
+            .Select(s => new { s.DungeonId, s.Id })
+            .AsEnumerable()
+            .GroupBy(s => s.DungeonId)
+            .ToDictionary(group => group.Key, group => group.Max(s => s.Id));
+        List<CombatAnomaly> contacts = [];
+        long deadline = focus.EndsAt;
+        foreach (var kind in kinds)
         {
-            var anchor = catalog.CelestialsInSystem(systemId).MinBy(c => c.Id);
-            if (anchor is null)
+            if (IncursionSiteCatalog.Read(catalog, kind) is not { } definition)
             {
-                return [];
+                continue;
             }
-            double offset = CombatAnomalyRules.PlacementOffset * IncursionPlacementSlot;
-            site = new()
+            int dungeonId = definition.Encounter.DungeonId;
+            var site = previousSites.TryGetValue(dungeonId, out long previous) ? world.Set<WorldCombatAnomaly>().Find(previous) : null;
+            if (site is null || (kind != IncursionSiteKind.Mothership && site.ReplaceAt <= now))
             {
-                Id = NextSiteId(world),
-                SystemId = systemId,
-                Slot = IncursionSlot,
-                DungeonId = definition.Encounter.DungeonId,
-                DefinitionVersion = AnomalyEncounterRules.CurrentDefinitionVersion,
-                IncursionTaleId = focus.TaleId,
-                X = anchor.X + offset,
-                Y = anchor.Y - offset,
-                Z = anchor.Z + offset,
-            };
-            IncursionStore.Track(world, focus);
-            world.Add(site);
+                var anchor = catalog.CelestialsInSystem(systemId).MinBy(c => c.Id);
+                if (anchor is null)
+                {
+                    continue;
+                }
+                int slot = IncursionSlot(kind);
+                double offset = CombatAnomalyRules.PlacementOffset * (IncursionPlacementSlot + slot - VanguardIncursionSlot);
+                site = new()
+                {
+                    Id = NextSiteId(world),
+                    SystemId = systemId,
+                    Slot = slot,
+                    DungeonId = dungeonId,
+                    DefinitionVersion = AnomalyEncounterRules.CurrentDefinitionVersion,
+                    IncursionTaleId = focus.TaleId,
+                    X = anchor.X + offset,
+                    Y = anchor.Y - offset,
+                    Z = anchor.Z + offset,
+                };
+                IncursionStore.Track(world, focus);
+                world.Add(site);
+            }
+            while (site.CompletedAt is null && site.NextWaveAt is long due && due <= now)
+            {
+                site.NextWaveAt = null;
+                NextWave(world, catalog, site, due);
+            }
+            if (site.CompletedAt is null)
+            {
+                contacts.Add(Contact(site, definition.Encounter));
+            }
+            if (kind != IncursionSiteKind.Mothership)
+            {
+                deadline = Math.Min(deadline, site.ReplaceAt ?? long.MaxValue);
+            }
+            deadline = Math.Min(deadline, site.NextWaveAt ?? long.MaxValue);
         }
         transaction.Commit();
-        IReadOnlyList<CombatAnomaly> contacts = site.CompletedAt is null ? [Contact(site, definition.Encounter)] : [];
-        _incursionViews[systemId] = new(version, generation, Math.Min(site.ReplaceAt ?? long.MaxValue, focus.EndsAt), contacts);
-        return contacts;
+        _incursionViews[systemId] = new(version, generation, deadline, contacts.ToArray());
+        return _incursionViews[systemId].Sites;
     }
+
+    private static int IncursionSlot(IncursionSiteKind kind) =>
+        kind switch
+        {
+            IncursionSiteKind.Vanguard => VanguardIncursionSlot,
+            IncursionSiteKind.Scout => ScoutIncursionSlot,
+            IncursionSiteKind.Assault => AssaultIncursionSlot,
+            IncursionSiteKind.Headquarters => HeadquartersIncursionSlot,
+            IncursionSiteKind.Mothership => MothershipIncursionSlot,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
 
     private static CombatAnomalyDefinition SiteDefinition(CatalogDbContext catalog, WorldCombatAnomaly site)
     {
         var definition = site.IncursionTaleId.HasValue
-            ? IncursionSiteCatalog.Read(catalog)?.Encounter
+            ? IncursionDefinition(catalog, site)?.Encounter
             : CombatAnomalyCatalog.Find(catalog, site.DungeonId);
         return definition ?? throw new InvalidDataException($"Anomaly definition {site.DungeonId} is missing.");
     }
+
+    private static IncursionSiteDefinition? IncursionDefinition(CatalogDbContext catalog, WorldCombatAnomaly site) =>
+        IncursionSiteCatalog.Kind(site.DungeonId) is { } kind ? IncursionSiteCatalog.Read(catalog, kind) : null;
 
     internal static bool IncursionNpcActive(WorldAction world, WorldNpc npc, long now)
     {
@@ -172,18 +221,16 @@ internal sealed partial class CombatAnomalyStore
         {
             throw new InvalidDataException("The Incursion acceleration gate is unavailable in your current room.");
         }
-        var definition = IncursionSiteCatalog.Read(catalog) ?? throw new InvalidDataException("The Incursion site profile is unavailable.");
+        var definition = IncursionDefinition(catalog, site);
+        if (definition?.Gate is not { } body)
+        {
+            throw new InvalidDataException("The Incursion site does not have this acceleration gate.");
+        }
         var origin = DedOrigin(site);
-        MissionGate gate = new(
-            gateId,
-            origin + definition.Gate.Position,
-            definition.Gate.Radius,
-            origin + IncursionSiteCatalog.CombatOffset,
-            false
-        )
+        MissionGate gate = new(gateId, origin + body.Position, body.Radius, IncursionSiteCatalog.CombatCenter(site), false)
         {
             Access = definition.Access,
-            DungeonObjectId = definition.Gate.Id,
+            DungeonObjectId = body.Id,
         };
         var type = catalog.RequireItem(ship.TypeId);
         if (!MissionGateAccessRules.AllowsShip(gate.Access, type.Id, type.GroupId, type.CategoryId, 0))

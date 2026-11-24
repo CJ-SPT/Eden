@@ -15,5 +15,6 @@ internal static class ExplorationCatalogPreparation
         _ = WormholeCatalog.Read(catalog);
         _ = WormholeEnvironmentStore.Environments(catalog);
         _ = AgencyDirectory.IceSystems(catalog);
+        IncursionStore.PrepareCatalog(catalog);
     }
 }

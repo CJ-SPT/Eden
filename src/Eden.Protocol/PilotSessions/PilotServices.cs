@@ -37,7 +37,8 @@ internal sealed class PilotServices(
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
     SessionFrameMonitor? frames = null,
     Eden.Gameplay.FactionWarfare.IFactionWarzones? warzones = null,
-    ExpertSystemHandler? expertSystems = null
+    ExpertSystemHandler? expertSystems = null,
+    Eden.Protocol.Exploration.IncursionAgencyMonitor? incursionAgency = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -98,7 +99,8 @@ internal sealed class PilotServices(
             abyss: abyss,
             environments: environments,
             warzoneUpdates: warzones is null ? null : new Eden.Protocol.FactionWarfare.FactionWarzoneUpdates(warzones),
-            expertSystems: expertSystems
+            expertSystems: expertSystems,
+            incursionAgency: incursionAgency
         );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {

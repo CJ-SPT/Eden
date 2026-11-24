@@ -18,6 +18,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -195,7 +196,8 @@ internal sealed partial class PilotRemoteRepairStore(WorldDatabase database, IRe
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = end;
-        RemoteRepairApplied? applied = module.Kind == RemoteRepairKind.Shield ? Apply(world, target, module, distance, now) : null;
+        RemoteRepairApplied? applied =
+            module.Kind == RemoteRepairKind.Shield ? Apply(world, catalog, pilot, target, module, distance, now) : null;
         var heat = calculation is null ? null : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end);
         world.SaveChanges();
         transaction.Commit();
@@ -250,7 +252,7 @@ internal sealed partial class PilotRemoteRepairStore(WorldDatabase database, IRe
                 throw new InvalidDataException("The mutadaptive repair target has left optimal range.");
             }
             AssistancePersistence.Apply(world, catalog, pilot, target.Pilot, now, now);
-            applied = Apply(world, target, cycle.Module, distance, now);
+            applied = Apply(world, catalog, pilot, target, cycle.Module, distance, now);
         }
         if (cycle.Module.Effect == DogmaEffect.MutadaptiveRemoteArmorRepair)
         {
@@ -341,7 +343,15 @@ internal sealed partial class PilotRemoteRepairStore(WorldDatabase database, IRe
         );
     }
 
-    private static RemoteRepairApplied Apply(WorldAction world, RepairTarget target, RemoteRepairModule module, double distance, long now)
+    private static RemoteRepairApplied Apply(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot source,
+        RepairTarget target,
+        RemoteRepairModule module,
+        double distance,
+        long now
+    )
     {
         double impedance = target.Attributes.GetValueOrDefault(DogmaAttributeId.RemoteRepairImpedance, 1);
         if (LanceDisruption.Active(world, target.Health.ShipId, now))
@@ -350,6 +360,8 @@ internal sealed partial class PilotRemoteRepairStore(WorldDatabase database, IRe
         }
         double amount = RemoteRepairRules.Amount(module, distance, impedance);
         var health = RemoteRepairRules.Apply(target.Health, module.Kind, amount);
+        double restored = RemoteRepairRules.RestoredHp(module.Kind, target.Health.Remaining, health.Remaining);
+        IncursionStore.RecordRepair(world, catalog, source, target.Pilot, module.Kind, restored, now);
         var saved = world.Set<ShipHealthState>().Find(health.ShipId) ?? world.Add(new ShipHealthState { ShipId = health.ShipId }).Entity;
         saved.ShieldCharge = health.Remaining.Shield;
         if (module.Kind == RemoteRepairKind.Armor)

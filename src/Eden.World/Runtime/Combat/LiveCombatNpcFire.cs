@@ -100,6 +100,11 @@ internal sealed partial class LiveCombatRuntime
         {
             return false;
         }
+        if (npc.AnchorKind == NpcAnchorKind.Incursion)
+        {
+            // Incursion-origin damage and the amount fleet logistics may restore commit together.
+            return false;
+        }
         if (!PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, shipId))
         {
             return true;

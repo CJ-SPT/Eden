@@ -34,6 +34,7 @@ internal sealed class CatalogRuntimeSources
         "client/fighterabilitiesbytype",
         "client/graphicids",
         "client/graphiclocations",
+        "client/grouprewards",
         "client/groups",
         "client/iconids",
         "client/localization_fsd_en-us",

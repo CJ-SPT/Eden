@@ -208,4 +208,13 @@ public static class RemoteRepairRules
             },
         };
     }
+
+    public static double RestoredHp(RemoteRepairKind kind, HullDamage before, HullDamage after) =>
+        kind switch
+        {
+            RemoteRepairKind.Shield => after.Shield - before.Shield,
+            RemoteRepairKind.Armor => after.Armor - before.Armor,
+            RemoteRepairKind.Hull => after.Structure - before.Structure,
+            _ => throw new InvalidDataException("Unsupported remote repair kind."),
+        };
 }

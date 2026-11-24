@@ -15,6 +15,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -138,6 +139,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             .ThenBy(m => m.Id)
             .ToArray();
         List<NpcShot> shots = [];
+        Dictionary<long, long>? incursionDeadlines = null;
         foreach (var row in rows)
         {
             var npc = world.Set<WorldNpc>().Find(row.SourceShipId);
@@ -161,6 +163,10 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = now;
             }
+            else if (npc.AnchorKind == NpcAnchorKind.Incursion)
+            {
+                (incursionDeadlines ??= []).Add(row.Id, CombatAnomalyStore.IncursionNpcDeadline(world, npc));
+            }
         }
         MissilePayload AdvanceFlight(WorldMissile row)
         {
@@ -175,6 +181,12 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             {
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = time;
+                continue;
+            }
+            if (incursionDeadlines?.TryGetValue(row.Id, out long deadline) == true && time >= deadline)
+            {
+                row.Status = MissileFlightStatus.Expired;
+                row.EndedAt = Math.Max(row.UpdatedAt, deadline);
                 continue;
             }
             row.Save(payload);
@@ -201,7 +213,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                     world.Settings.Capsuleers.RatDamageReductionPercent
                 );
                 var damage = payload.Warhead.Damage.Scale(application * reduction);
-                var result = PilotHealthStore.Apply(world, shipId, defense, damage, row.UpdatedAt);
+                var result = NpcCombatStore.ApplyPlayerDamage(world, catalog, npc, pilot, defense, damage, row.UpdatedAt);
                 PilotInteractionHistoryStore.Damage(world, shipId, PilotInteractionHistoryStore.Npc(npc, row.ChargeTypeId), result.Applied);
                 var insurance = result.Remaining.Destroyed
                     ? ShipLossPersistence.Apply(world, catalog, pilot, npc.Id, shipId, row.SystemId, position, row.UpdatedAt, lootRoll)
@@ -222,6 +234,21 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 );
                 row.Reported = true;
                 world.SaveChanges();
+            }
+        }
+        if (incursionDeadlines is not null)
+        {
+            foreach (var row in rows)
+            {
+                if (
+                    row.Status == MissileFlightStatus.Flying
+                    && incursionDeadlines.TryGetValue(row.Id, out long deadline)
+                    && now >= deadline
+                )
+                {
+                    row.Status = MissileFlightStatus.Expired;
+                    row.EndedAt = Math.Max(row.UpdatedAt, deadline);
+                }
             }
         }
         world.SaveChanges();

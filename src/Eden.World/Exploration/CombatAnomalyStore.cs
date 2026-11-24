@@ -224,7 +224,7 @@ internal sealed partial class CombatAnomalyStore(
                     && s.IsSignature == signature
                     && s.Slot != DedComplexRules.SiteSlot
                     && s.Slot != DedComplexRules.EscalationSlot
-                    && s.Slot != IncursionSlot
+                    && s.IncursionTaleId == null
                     && s.Slot != SleeperRules.GuardedSiteSlot
                 )
                 .Select(s => new SiteSlotIdentity(s.Id, s.Slot))
@@ -392,7 +392,9 @@ internal sealed partial class CombatAnomalyStore(
             site.IsSignature
         )
         {
-            ArchetypeId = site.IncursionTaleId.HasValue ? IncursionSiteCatalog.VanguardArchetype : null,
+            ArchetypeId = site.IncursionTaleId.HasValue
+                ? objects.Single(o => o.IncursionBeacon is not null).IncursionBeacon!.ArchetypeId
+                : null,
         };
     }
 
@@ -426,12 +428,7 @@ internal sealed partial class CombatAnomalyStore(
                     ((s.Exploration is null && s.Mining is null && !s.Ded && !s.Wormhole) || s.FactionId == SleeperRules.FactionId)
                     && !s.Started
                     && position.DistanceTo(
-                        s.Position
-                            + (
-                                s.ArchetypeId == IncursionSiteCatalog.VanguardArchetype
-                                    ? IncursionSiteCatalog.CombatOffset
-                                    : SpacePosition.Zero
-                            )
+                        s.Position + (IncursionSiteCatalog.IsGated(s.ArchetypeId) ? IncursionSiteCatalog.CombatOffset : SpacePosition.Zero)
                     ) <= CombatAnomalyRules.ArrivalRange
                 )
                 .ToArray();
@@ -496,7 +493,7 @@ internal sealed partial class CombatAnomalyStore(
             }
             int[] systems = WorldActionScope.Inspect(
                 database,
-                world => world.Filter<WorldCombatAnomaly>(s => s.Slot != IncursionSlot).Select(s => s.SystemId).Distinct().ToArray()
+                world => world.Filter<WorldCombatAnomaly>(s => s.IncursionTaleId == null).Select(s => s.SystemId).Distinct().ToArray()
             );
             _directory = systems.Order().Select(id => new AnomalySystemSites(id, ListCore(id, now, false))).ToArray();
             _directoryDeadline = systems.Select(id => _views[(id, false)].Deadline).DefaultIfEmpty(long.MaxValue).Min();

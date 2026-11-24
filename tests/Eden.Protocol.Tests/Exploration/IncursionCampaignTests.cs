@@ -13,6 +13,7 @@ using Eden.World.Characters;
 using Eden.World.Exploration;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
@@ -39,19 +40,37 @@ public sealed class IncursionCampaignTests
         long shipId = fixture.ShipId;
         long initialBalance;
         int systemId;
+        int assaultSystem;
+        int headquartersSystem;
+        int scoutSystem;
+        long expectedVictoryLoyalty = 0;
         const long SoloIskCents = 314_344_800;
         const long SoloPoints = 423;
 
+        database.Catalog.PrepareRuntime();
+        using (CatalogDbContext catalog = new(fixture.CatalogPath))
+        {
+            ExplorationCatalogPreparation.Prepare(catalog);
+        }
         using (LiveWorld live = new(database, clock, _ => { }))
         {
-            var focus = Assert.Single(directory.Read(clock.Now));
+            IncursionFocus focus;
+            using (GameplaySqlGuard.Begin())
+            {
+                fixture.Db.Services.GetRequiredService<IIncursionMaintenance>().Advance(clock.Now);
+                focus = Assert.Single(directory.Read(clock.Now));
+            }
             Assert.Equal(1, focus.Influence);
             Assert.Equal(opens + IncursionRules.ActiveTicks, focus.EndsAt);
             Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
             systemId = focus.Systems.First(system => system.SceneType == IncursionScene.Vanguard).SystemId;
+            assaultSystem = Assert.Single(focus.Systems, system => system.SceneType == IncursionScene.Assault).SystemId;
+            headquartersSystem = Assert.Single(focus.Systems, system => system.SceneType == IncursionScene.Headquarters).SystemId;
+            scoutSystem = focus.StagingSystemId;
+            Assert.False(focus.HasFinalEncounter);
             initialBalance = wallet.Balance(pilotId);
 
-            Clear(live);
+            Clear(live, systemId, IncursionSiteKind.Vanguard);
             Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
             Assert.Contains(
                 wallet.Journal(pilotId).ServicePayments!,
@@ -95,25 +114,35 @@ public sealed class IncursionCampaignTests
             Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
             if (repel)
             {
-                for (int remaining = 1; remaining < IncursionRules.ClearsToRepel; remaining++)
+                Assert.Single(sites.Incursions(headquartersSystem, clock.Now));
+                Clear(live, scoutSystem, IncursionSiteKind.Scout);
+                Clear(live, assaultSystem, IncursionSiteKind.Assault);
+                for (int total = 3; total < IncursionRules.ClearsToUnlockFinal; total++)
                 {
                     clock.AdvanceWallTime(TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds));
-                    Clear(live);
+                    Clear(live, systemId, IncursionSiteKind.Vanguard);
                 }
 
-                Assert.Equal(initialBalance + IncursionRules.ClearsToRepel * SoloIskCents, wallet.Balance(pilotId));
+                var contested = Assert.Single(directory.Read(clock.Now));
+                Assert.Equal(0, contested.Influence);
+                Assert.False(contested.HasFinalEncounter);
+                Assert.Single(sites.Incursions(headquartersSystem, clock.Now));
+                Assert.Empty(loyalty.Read(pilotId));
+
+                Clear(live, headquartersSystem, IncursionSiteKind.Headquarters);
+                expectedVictoryLoyalty = (IncursionRules.ClearsToUnlockFinal - 2) * SoloPoints + 51;
+                Assert.Equal(expectedVictoryLoyalty, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+                Assert.True(directory.AgencyUpdate?.HasFinalEncounter);
+                Assert.True(Assert.Single(directory.Read(clock.Now)).HasFinalEncounter);
                 Assert.Equal(
-                    IncursionRules.ClearsToRepel * SoloPoints,
-                    Assert
-                        .Single(loyalty.Read(pilotId), balance => balance.IssuerCorporationId == LoyaltyStoreRules.ConcordCorporation)
-                        .Points
+                    IncursionSiteCatalog.KundaliniManifest,
+                    Assert.Single(sites.Incursions(headquartersSystem, clock.Now)).DungeonId
                 );
-                Assert.Empty(sites.Incursions(systemId, clock.Now));
             }
             else
             {
                 clock.AdvanceWallTime(TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds));
-                Clear(live, onGrid: false);
+                Clear(live, systemId, IncursionSiteKind.Vanguard, onGrid: false);
                 Assert.Equal(SoloPoints, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
                 clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.ActiveTicks);
                 fixture.Db.Services.GetRequiredService<IIncursionMaintenance>().Advance(clock.Now);
@@ -121,9 +150,21 @@ public sealed class IncursionCampaignTests
                 Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
                 Assert.Empty(live.Economy.Inspect(world => world.Set<SavedIncursionContribution>().ToArray()));
             }
-            Assert.Empty(directory.Read(clock.Now));
-            Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
             await live.FlushAsync();
+        }
+
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            if (repel)
+            {
+                Assert.True(Assert.Single(directory.Read(clock.Now)).HasFinalEncounter);
+                Assert.Equal(expectedVictoryLoyalty, directory.PendingLoyalty(pilotId, clock.Now)?.Amount);
+                Clear(live, headquartersSystem, IncursionSiteKind.Mothership);
+                Assert.False(directory.AgencyUpdate?.IsActive);
+                Assert.Empty(sites.Incursions(systemId, clock.Now));
+                Assert.Empty(sites.Incursions(headquartersSystem, clock.Now));
+                await live.FlushAsync();
+            }
         }
 
         using (LiveWorld live = new(database, clock, _ => { }))
@@ -131,7 +172,7 @@ public sealed class IncursionCampaignTests
             Assert.Empty(directory.Read(clock.Now));
             Assert.Null(directory.PendingLoyalty(pilotId, clock.Now));
             Assert.Equal(
-                repel ? IncursionRules.ClearsToRepel * SoloPoints : 0,
+                expectedVictoryLoyalty,
                 loyalty
                     .Read(pilotId)
                     .Where(balance => balance.IssuerCorporationId == LoyaltyStoreRules.ConcordCorporation)
@@ -142,18 +183,21 @@ public sealed class IncursionCampaignTests
             Assert.DoesNotContain(replacement.Systems, system => system.SystemId == systemId);
         }
 
-        void Clear(LiveWorld live, bool onGrid = true)
+        void Clear(LiveWorld live, int targetSystem, IncursionSiteKind kind, bool onGrid = true)
         {
-            var contact = Assert.Single(sites.Incursions(systemId, clock.Now));
-            var position = contact.Position + IncursionSiteCatalog.CombatOffset;
+            var contact = Assert.Single(
+                sites.Incursions(targetSystem, clock.Now),
+                site => IncursionSiteCatalog.Kind(site.DungeonId) == kind
+            );
+            var position = contact.Position + (kind == IncursionSiteKind.Scout ? SpacePosition.Zero : IncursionSiteCatalog.CombatOffset);
             if (!onGrid)
             {
                 position += new SpacePosition(0, NpcEncounterDefinitions.VisibilityRange + 1_000, 0);
             }
-            fixture.Db.Store.SetPosition(shipId, position, systemId);
+            fixture.Db.Store.SetPosition(shipId, position, targetSystem);
             using var guard = GameplaySqlGuard.Begin();
-            Assert.Equal(contact.Id, Assert.Single(sites.Incursions(systemId, clock.Now)).Id);
-            using var world = live.Economy.Begin(new(pilots: [pilotId], systems: [systemId]));
+            Assert.Contains(sites.Incursions(targetSystem, clock.Now), candidate => candidate.Id == contact.Id);
+            using var world = live.Economy.Begin(new(pilots: [pilotId], systems: [targetSystem]));
             using CatalogDbContext catalog = new(fixture.CatalogPath);
             var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
             CombatParty attacker = new(shipId, pilotId, 0, null, null, null, null, 0);
@@ -162,9 +206,60 @@ public sealed class IncursionCampaignTests
             world.Remove(world.Set<Eden.Data.World.Characters.SavedCombatDamage>().Find(site.Id, shipId)!);
             site.CompletedAt = clock.Now;
             site.ReplaceAt = clock.Now + TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds).Ticks;
-            CombatAnomalyStore.Invalidate(world, systemId);
+            CombatAnomalyStore.Invalidate(world, targetSystem);
             IncursionStore.CompleteSite(world, catalog, site, clock.Now);
             world.Commit();
+        }
+    }
+
+    [Theory]
+    [InlineData(3, false)]
+    [InlineData(8, true)]
+    public void Schema223KeepsPartialFocusAndDoesNotReopenAnAlreadyPaidCampaign(int clears, bool defeated)
+    {
+        using Fixture fixture = new();
+        PassiveCatalogFixture.LoadIncursions(fixture.CatalogPath);
+        WorldDatabase database = new(fixture.Db.Path);
+        var clock = fixture.Clock;
+        long taleId = IncursionRules.TaleId(clock.Now);
+        long opens = IncursionRules.OpensAt(taleId);
+        clock.UtcNow = DateTimeOffset.FromFileTime(opens).AddMinutes(1);
+        using (WorldDbContext file = new(database.Path))
+        {
+            file.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldIncursionCampaign DROP COLUMN HeadquartersCleared;
+                ALTER TABLE WorldIncursionCampaign DROP COLUMN DefeatedAt;
+                ALTER TABLE WorldIncursionContribution DROP COLUMN Repair;
+                PRAGMA user_version=223;
+                """
+            );
+            file.Database.ExecuteSql($"INSERT INTO WorldIncursionCampaign(TaleId,Clears,LastUpdated) VALUES ({taleId},{clears},{opens})");
+            if (!defeated)
+            {
+                file.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldIncursionContribution(SiteId,PilotId,TaleId,Damage,PendingLoyalty)
+                    VALUES (1,{fixture.PilotId},{taleId},6,423)
+                    """
+                );
+            }
+        }
+
+        WorldInitialization.Open(database);
+        using LiveWorld live = new(database, clock, _ => { });
+        var directory = fixture.Db.Services.GetRequiredService<IIncursionDirectory>();
+        if (defeated)
+        {
+            Assert.Empty(directory.Read(clock.Now));
+            Assert.Null(directory.PendingLoyalty(fixture.PilotId, clock.Now));
+        }
+        else
+        {
+            var focus = Assert.Single(directory.Read(clock.Now));
+            Assert.Equal(IncursionRules.Influence(clears), focus.Influence);
+            Assert.False(focus.HasFinalEncounter);
+            Assert.Equal(423, directory.PendingLoyalty(fixture.PilotId, clock.Now)?.Amount);
         }
     }
 }

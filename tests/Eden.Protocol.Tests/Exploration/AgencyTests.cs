@@ -264,13 +264,17 @@ public sealed class AgencyTests
         Assert.Empty(world.Set<SavedExplorationSite>());
     }
 
-    [Fact]
-    public void ActiveIncursionUsesNativeAgencyMapAndPendingLoyaltyShapes()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ActiveIncursionUsesNativeAgencyMapAndPendingLoyaltyShapes(bool hasFinalEncounter)
     {
         using Fixture fixture = new(select: false);
         const long taleId = 5_000_000_000;
         const int staging = 30000001;
         const int vanguard = 30000002;
+        const int assault = 30000003;
+        const int headquarters = 30000004;
         var focus = new IncursionFocus(
             taleId,
             staging,
@@ -278,7 +282,13 @@ public sealed class AgencyTests
             fixture.Clock.Now - TimeSpan.TicksPerMinute,
             fixture.Clock.Now + TimeSpan.TicksPerHour,
             0.75,
-            [new(staging, IncursionScene.Staging), new(vanguard, IncursionScene.Vanguard)]
+            [
+                new(staging, IncursionScene.Staging),
+                new(vanguard, IncursionScene.Vanguard),
+                new(assault, IncursionScene.Assault),
+                new(headquarters, IncursionScene.Headquarters),
+            ],
+            hasFinalEncounter
         );
         var pilot = fixture.Db.Store.FindPilot(1000001)!;
         PilotCallRouter router = new([], [new IncursionHandler(new IncursionDirectory(focus, pilot.PilotId), fixture.Clock)]);
@@ -302,12 +312,15 @@ public sealed class AgencyTests
         Assert.Equal(500019L, fields["aggressorFactionID"]);
         Assert.Equal(2L, fields["templateClassID"]);
         Assert.Equal(2L, fields["state"]);
-        Assert.Equal(false, fields["hasFinalEncounter"]);
+        Assert.Equal(hasFinalEncounter, fields["hasFinalEncounter"]);
         Assert.Equal(0.25, fields["influence"]);
         Assert.Equal(focus.LastUpdated, fields["lastUpdated"]);
         Assert.Equal(0L, fields["graceTime"]);
         Assert.Equal(0d, fields["decayRate"]);
-        Assert.Equal(new object?[] { (long)staging, (long)vanguard }, Assert.IsType<List<object?>>(fields["incursedSystems"]));
+        Assert.Equal(
+            new object?[] { (long)staging, (long)vanguard, (long)assault, (long)headquarters },
+            Assert.IsType<List<object?>>(fields["incursedSystems"])
+        );
 
         var systemRowset = Assert.IsType<BlueInstance>(Reply(Call("map", "GetSystemsInIncursions", [])));
         Assert.Equal("eve.common.script.sys.rowset.Rowset", systemRowset.Name);
@@ -320,7 +333,9 @@ public sealed class AgencyTests
         Assert.Collection(
             Assert.IsType<List<object?>>(systems["lines"]),
             row => Assert.Equal(new object?[] { (long)staging, 4L, fields["templateNameID"] }, Assert.IsType<object?[]>(row)),
-            row => Assert.Equal(new object?[] { (long)vanguard, 3L, fields["templateNameID"] }, Assert.IsType<object?[]>(row))
+            row => Assert.Equal(new object?[] { (long)vanguard, 3L, fields["templateNameID"] }, Assert.IsType<object?[]>(row)),
+            row => Assert.Equal(new object?[] { (long)assault, 2L, fields["templateNameID"] }, Assert.IsType<object?[]>(row)),
+            row => Assert.Equal(new object?[] { (long)headquarters, 1L, fields["templateNameID"] }, Assert.IsType<object?[]>(row))
         );
 
         var rewards = Assert.IsType<Dictionary<long, object?>>(
@@ -331,8 +346,66 @@ public sealed class AgencyTests
         Assert.Equal(1400L, loyalty["rewardQuantity"]);
     }
 
+    [Fact]
+    public void IncursionAgencyInvalidatesForCommittedUnlockAndRetirementOnce()
+    {
+        using Fixture fixture = new();
+        const long taleId = 8510;
+        const int staging = 30000001;
+        var focus = new IncursionFocus(
+            taleId,
+            staging,
+            20000001,
+            fixture.Clock.Now,
+            fixture.Clock.Now + TimeSpan.TicksPerHour,
+            0.125,
+            [new(staging, IncursionScene.Staging)]
+        );
+        IncursionAgencyUpdate initial = new(taleId, focus.LastUpdated, focus.Influence, HasFinalEncounter: false, IsActive: true);
+        var directory = new IncursionDirectory(focus, fixture.Context.Pilot.PilotId) { AgencyUpdate = initial };
+        IncursionAgencyMonitor monitor = new(directory);
+        IncursionHandler handler = new(directory, fixture.Clock, monitor);
+        void Advance() => monitor.Publish(fixture.Context, monitor.Sample(fixture.Context));
+
+        Assert.Null(monitor.Sample(fixture.Context));
+        Assert.IsType<PilotCallResult.Success>(handler.Call(fixture.Context, "map", "GetIncursionGlobalReport", []));
+        Advance();
+        Assert.Empty(fixture.Context.Notifications);
+
+        var unlocked = initial with { LastUpdated = focus.LastUpdated + 1, Influence = 0, HasFinalEncounter = true };
+        directory.AgencyUpdate = unlocked;
+        Advance();
+        Advance();
+        var update = Assert.Single(fixture.Context.Notifications);
+        Assert.Equal("OnInfluenceUpdate", update.Name);
+        var args = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(update.Arguments)));
+        Assert.Equal(taleId, args[0]);
+        var state = Fields(args[1]);
+        Assert.Equal(1d, state["influence"]);
+        Assert.Equal(focus.LastUpdated + 1, state["lastUpdated"]);
+
+        fixture.Context.Notifications.Clear();
+        directory.AgencyUpdate = unlocked with { LastUpdated = focus.EndsAt, IsActive = false, HasFinalEncounter = false };
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromHours(1));
+        Advance();
+        Assert.Equal(taleId, Assert.Single(fixture.Context.Notifications).Arguments[0]);
+        fixture.Context.Notifications.Clear();
+        Assert.IsType<PilotCallResult.Success>(handler.Call(fixture.Context, "map", "GetIncursionGlobalReport", []));
+        Advance();
+        Assert.Empty(fixture.Context.Notifications);
+
+        directory.AgencyUpdate = initial with { TaleId = taleId + 1 };
+        Advance();
+        Assert.Equal(taleId + 1, Assert.Single(fixture.Context.Notifications).Arguments[0]);
+
+        monitor.Reset();
+        Assert.False(monitor.IsMonitoring);
+    }
+
     private sealed class IncursionDirectory(IncursionFocus focus, long ownerId) : IIncursionDirectory
     {
+        public IncursionAgencyUpdate? AgencyUpdate { get; set; }
+
         public IReadOnlyList<IncursionFocus> Read(long now) => now < focus.EndsAt ? [focus] : [];
 
         public IncursionPendingLoyalty? PendingLoyalty(long pilotId, long now) =>

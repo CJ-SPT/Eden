@@ -6,7 +6,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Exploration;
 
 [Injectable]
-internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvider clock, IncursionAgencyMonitor? agency = null)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -39,9 +40,14 @@ internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvid
         {
             return new PilotCallResult.Failure("Incursion directory requests do not accept arguments.");
         }
-        var focuses = directory.Read(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-        return method == "GetIncursionGlobalReport"
-            ? new BlueList<IncursionReport>(focuses.Select(focus => new IncursionReport(focus)).ToArray())
-            : new IncursionSystemList(focuses.SelectMany(focus => focus.Systems).ToArray());
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (method == "GetIncursionGlobalReport")
+        {
+            var publication = agency is null ? null : directory.AgencyUpdate;
+            var focuses = directory.Read(now);
+            agency?.Watch(context, focuses.FirstOrDefault(), publication);
+            return new BlueList<IncursionReport>(focuses.Select(focus => new IncursionReport(focus)).ToArray());
+        }
+        return new IncursionSystemList(directory.Read(now).SelectMany(focus => focus.Systems).ToArray());
     }
 }

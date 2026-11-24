@@ -29,7 +29,7 @@ internal sealed record IncursionReport(IncursionFocus Focus) : BlueModel
                 ["lastUpdated"] = Focus.LastUpdated,
                 ["graceTime"] = 0,
                 ["decayRate"] = 0d,
-                ["hasFinalEncounter"] = false,
+                ["hasFinalEncounter"] = Focus.HasFinalEncounter,
                 ["effects"] = BlueEmpty.List,
                 ["rewardGroupID"] = Focus.TaleId,
                 ["incursedSystems"] = new BlueList<int>(Focus.Systems.Select(system => system.SystemId).ToArray()),

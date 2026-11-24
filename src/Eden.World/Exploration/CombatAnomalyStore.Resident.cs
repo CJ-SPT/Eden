@@ -57,6 +57,7 @@ internal sealed partial class CombatAnomalyStore
             .ToArray();
         var definition = SiteDefinition(catalog, site);
         var member = world.Set<WorldAnomalyMember>().Find(npc.Id);
+        long? previousDeadline = site.NextWaveAt;
         if (site.DefinitionVersion == 0)
         {
             if (alive.Length == 0)
@@ -84,9 +85,12 @@ internal sealed partial class CombatAnomalyStore
         }
         if (site.IncursionTaleId.HasValue)
         {
-            if (site.CompletedAt.HasValue)
+            if (site.CompletedAt.HasValue || previousDeadline != site.NextWaveAt)
             {
                 Invalidate(world, site.SystemId);
+            }
+            if (site.CompletedAt.HasValue)
+            {
                 IncursionStore.CompleteSite(world, catalog, site, now);
             }
             return;
