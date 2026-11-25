@@ -1066,7 +1066,8 @@ internal sealed partial class PilotDroneStore(
             else if (structure is not null)
             {
                 StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, drone.ReadyAt);
-                var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now);
+                var attacker = PilotInteractionHistoryStore.Player(world, pilot, pilot.ActiveShipId, profile.TypeId);
+                var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now, attacker);
                 hit = new(drone.ItemId, profile.TypeId, structure.Id, result.Applied, damage, result.Health, quality);
             }
             else if (npc is null)

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Corporations;
@@ -26,14 +27,56 @@ internal sealed record CorporationWarReply(CorporationWar War) : BlueModel
             ["retractedBy"] = war.RetractedBy,
             ["billID"] = war.BillId,
             ["mutual"] = war.Mutual,
-            ["openForAllies"] = false,
+            ["openForAllies"] = war.OpenForAllies,
             ["canBeRetracted"] = war.CanBeRetracted,
             ["reasonEnded"] = (int?)war.ReasonEnded,
             ["reasonStarted"] = war.InheritedFromWarId.HasValue ? Inherited : PlayerDeclared,
-            ["noOfAllies"] = 0,
+            ["noOfAllies"] = war.Allies.Count,
             ["createdFromWarID"] = war.InheritedFromWarId,
-            ["allies"] = BlueEmpty.IndexedDictionary,
+            ["allies"] = AllyEntries(war.Allies),
         };
+
+    internal static BlueMap<long, CorporationWarAllyReply> AllyEntries(IReadOnlyList<CorporationWarAlly> allies) =>
+        new(allies.ToDictionary(ally => (long)ally.OwnerId, ally => new CorporationWarAllyReply(ally)));
+}
+
+internal sealed record CorporationWarAllyReply(CorporationWarAlly Ally) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["allyID"] = Ally.OwnerId,
+                ["timeStarted"] = Ally.StartsAt,
+                ["timeFinished"] = Ally.EndsAt,
+            }
+        );
+}
+
+internal sealed record CorporationWarNegotiationReply(CorporationWarNegotiation Negotiation) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["warNegotiationID"] = Negotiation.Id,
+                ["warID"] = Negotiation.WarId,
+                ["warNegotiationTypeID"] = (int)Negotiation.Kind,
+                ["ownerID1"] = Negotiation.FromOwnerId,
+                ["ownerID2"] = Negotiation.ToOwnerId,
+                ["declaredByID"] = Negotiation.AttackerId,
+                ["againstID"] = Negotiation.DefenderId,
+                ["iskValue"] = (double)Negotiation.AmountCents / MarketDefinitions.CentsPerIsk,
+                ["description"] = new BlueUnicode(Negotiation.Description),
+                ["negotiationState"] = (int)Negotiation.State,
+                ["createdDateTime"] = Negotiation.CreatedAt,
+                ["timeAccepted"] = Negotiation.AcceptedAt,
+                ["timeDeclined"] = Negotiation.DeclinedAt,
+                ["timeRetracted"] = Negotiation.RetractedAt,
+            }
+        );
 }
 
 internal sealed record CorporationWarHistoryReply(IReadOnlyList<CorporationWar> Wars) : BlueModel
@@ -140,9 +183,6 @@ internal sealed record CorporationWarOwnerReply(int Id, string Name, bool Allian
 
 internal sealed record CorporationWarPeaceTreatiesReply(IReadOnlyList<CorporationWarPeaceTreaty> Treaties) : BlueModel
 {
-    // The first implemented peace-treaty reason is PEACE_REASON_HQ_REMOVED in evewar.const.
-    private const int HeadquartersRemoved = 1;
-
     public override object ToBlue()
     {
         var header = BlueRows.Descriptor([
@@ -165,9 +205,9 @@ internal sealed record CorporationWarPeaceTreatiesReply(IReadOnlyList<Corporatio
                     {
                         treaty.OtherOwnerId,
                         treaty.ExpiresAt,
-                        HeadquartersRemoved,
+                        (int)treaty.Reason,
                         treaty.WarId,
-                        (int)CorporationWarEndReason.HeadquartersLost,
+                        (int)treaty.EndReason,
                         treaty.HeadquartersId,
                     },
                 ]

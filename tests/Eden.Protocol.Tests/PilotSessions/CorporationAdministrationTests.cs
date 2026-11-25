@@ -171,11 +171,11 @@ internal sealed class CorporationTestClient : IDisposable
     public PilotCallContext Context { get; }
     public IServiceProvider Services => _scope.ServiceProvider;
 
-    public CorporationTestClient(TestWorld world, long account)
+    public CorporationTestClient(TestWorld world, long account, long? pilotId = null)
     {
         _scope = world.Services.CreateScope();
         var services = _scope.ServiceProvider;
-        var pilot = world.Store.FindPilot(account)!;
+        var pilot = (pilotId is long id ? world.Store.FindPilot(account, id) : world.Store.FindPilot(account))!;
         Context = new(
             account,
             pilot.Account,

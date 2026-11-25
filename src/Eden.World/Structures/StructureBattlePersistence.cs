@@ -130,7 +130,9 @@ internal static class StructureBattlePersistence
                 context.Security >= StructureRules.HighSecurityBoundary
                 && CorporationWarStore.IsActiveWarHeadquarters(world, structure.Id, now),
         };
-        var hit = StructureCombatRules.Apply(context, before, damage, now);
+        var settled = before.RepairAt <= now ? StructureCombatRules.Advance(context, before, now) : before;
+        ClearRepairedContributions(world, structure.Id, before, settled);
+        var hit = StructureCombatRules.Apply(context, settled, damage, now);
         if (hit.Battle.State == StructureState.Onlining && structure.HasCore)
         {
             hit = hit with { Battle = hit.Battle with { EndsAt = hit.Battle.RepairAt } };
@@ -168,12 +170,22 @@ internal static class StructureBattlePersistence
         var after = StructureCombatRules.Advance(Context(world, catalog, structure, now), before, now);
         if (before != after)
         {
+            ClearRepairedContributions(world, structure.Id, before, after);
             Write(world, catalog, structure, after);
+        }
+    }
+
+    private static void ClearRepairedContributions(WorldAction world, long structureId, StructureBattle before, StructureBattle restored)
+    {
+        if (before.RepairAt.HasValue && restored.RepairAt is null && restored.State == StructureState.ShieldVulnerable)
+        {
+            StructureCombatTargets.ClearContributions(world, structureId);
         }
     }
 
     internal static void Restore(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
     {
+        StructureCombatTargets.ClearContributions(world, structure.Id);
         if (world.Set<SavedStructureBattle>().Find(structure.Id) is not null)
         {
             Write(

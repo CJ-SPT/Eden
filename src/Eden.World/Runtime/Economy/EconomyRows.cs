@@ -960,6 +960,7 @@ internal sealed partial class ResidentEconomy
         RegisterCapsuleerOrganizations();
         RegisterCorporationVoting();
         RegisterCorporationWars();
+        RegisterWarReports();
         RegisterCorporationBlueprintLocks();
         RegisterCorporationRemovals();
         RegisterAlliances();

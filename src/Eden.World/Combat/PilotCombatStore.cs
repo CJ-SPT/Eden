@@ -418,7 +418,8 @@ internal sealed partial class PilotCombatStore(
         }
         else if (structure is not null)
         {
-            settlement = StructureCombatTargets.Apply(world, catalog, structure, combined, now);
+            var attacker = PilotInteractionHistoryStore.Player(world, pilot, pilot.ActiveShipId, paid[0].Weapon.TypeId);
+            settlement = StructureCombatTargets.Apply(world, catalog, structure, combined, now, attacker);
         }
         else
         {

@@ -97,7 +97,8 @@ internal sealed class PilotLossSettlement(PilotTrainingStore training, IShipLoot
             PilotInteractionHistoryStore.Player(world, pilot, shipId),
             attacker,
             lostItems,
-            shareWithAttackers: true
+            shareWithAttackers: true,
+            catalog: catalog
         );
         world.Add(
             new SavedHomeCloneTransfer

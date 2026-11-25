@@ -26,7 +26,8 @@ internal sealed partial class ResidentEconomy
         bool Mutual,
         CorporationWarEndReason? ReasonEnded,
         long? InheritedFromWarId,
-        long? InheritedAt
+        long? InheritedAt,
+        bool OpenForAllies
     );
 
     private sealed record WarInvitationState(int FromOwnerId, int ToOwnerId, long SentAt);
@@ -40,6 +41,7 @@ internal sealed partial class ResidentEconomy
 
     private void RegisterCorporationWars()
     {
+        RegisterCorporationWarNegotiations();
         Register(
             new EconomyTable<SavedCorporationWar, WarState>(
                 CorporationWarSchema.WarTable,
@@ -62,7 +64,8 @@ internal sealed partial class ResidentEconomy
                         row.Mutual,
                         row.ReasonEnded,
                         row.InheritedFromWarId,
-                        row.InheritedAt
+                        row.InheritedAt,
+                        row.OpenForAllies
                     ),
                 row =>
                     new()
@@ -84,10 +87,11 @@ internal sealed partial class ResidentEconomy
                         ReasonEnded = row.ReasonEnded,
                         InheritedFromWarId = row.InheritedFromWarId,
                         InheritedAt = row.InheritedAt,
+                        OpenForAllies = row.OpenForAllies,
                     },
                 ProjectWars,
                 "Id,AttackerId,DefenderId,HeadquartersId,DeclaredAt,StartsAt,EndingAt,EndsAt,RetractedAt,RetractedBy,"
-                    + "BillId,BillIssuedAt,BillDueAt,Mutual,ReasonEnded,InheritedFromWarId,InheritedAt",
+                    + "BillId,BillIssuedAt,BillDueAt,Mutual,ReasonEnded,InheritedFromWarId,InheritedAt,OpenForAllies",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -106,7 +110,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetBoolean(14),
                         reader.IsDBNull(15) ? null : (CorporationWarEndReason)reader.GetInt32(15),
                         reader.IsDBNull(16) ? null : reader.GetInt64(16),
-                        reader.IsDBNull(17) ? null : reader.GetInt64(17)
+                        reader.IsDBNull(17) ? null : reader.GetInt64(17),
+                        reader.GetBoolean(18)
                     ),
                 row => new(row.Id),
                 indexes:
@@ -117,6 +122,7 @@ internal sealed partial class ResidentEconomy
                     new("HeadquartersId", row => row.HeadquartersId),
                     new("BillId", row => row.BillId),
                     new("EndsAt", row => row.EndsAt),
+                    new("OpenForAllies", row => row.OpenForAllies),
                 ],
                 rowIdIsKey: true
             )
@@ -168,18 +174,18 @@ internal sealed partial class ResidentEconomy
                 $"""
                 INSERT INTO WorldCorporationWar(
                     Id,AttackerId,DefenderId,HeadquartersId,DeclaredAt,StartsAt,EndingAt,EndsAt,
-                    RetractedAt,RetractedBy,BillId,BillIssuedAt,BillDueAt,Mutual,ReasonEnded,InheritedFromWarId,InheritedAt)
+                    RetractedAt,RetractedBy,BillId,BillIssuedAt,BillDueAt,Mutual,ReasonEnded,InheritedFromWarId,InheritedAt,OpenForAllies)
                 SELECT value->>'$.Id',value->>'$.AttackerId',value->>'$.DefenderId',value->>'$.HeadquartersId',
                     value->>'$.DeclaredAt',value->>'$.StartsAt',value->>'$.EndingAt',value->>'$.EndsAt',
                     value->>'$.RetractedAt',value->>'$.RetractedBy',value->>'$.BillId',
                     value->>'$.BillIssuedAt',value->>'$.BillDueAt',value->>'$.Mutual',value->>'$.ReasonEnded',
-                    value->>'$.InheritedFromWarId',value->>'$.InheritedAt'
+                    value->>'$.InheritedFromWarId',value->>'$.InheritedAt',value->>'$.OpenForAllies'
                 FROM json_each({rows}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                     DefenderId=excluded.DefenderId,
                     EndingAt=excluded.EndingAt,EndsAt=excluded.EndsAt,RetractedAt=excluded.RetractedAt,
                     RetractedBy=excluded.RetractedBy,BillId=excluded.BillId,BillIssuedAt=excluded.BillIssuedAt,
-                    BillDueAt=excluded.BillDueAt,ReasonEnded=excluded.ReasonEnded
+                    BillDueAt=excluded.BillDueAt,ReasonEnded=excluded.ReasonEnded,OpenForAllies=excluded.OpenForAllies
                 """
             );
         }

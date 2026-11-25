@@ -12,6 +12,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -80,7 +81,8 @@ internal sealed partial class PilotInteractionHistoryStore
         CombatParty victim,
         CombatParty final,
         IReadOnlyList<CombatLostItem> items,
-        bool shareWithAttackers = false
+        bool shareWithAttackers = false,
+        CatalogDbContext? catalog = null
     )
     {
         // Include tracked entries for a fatal first shot before SaveChanges.
@@ -89,24 +91,25 @@ internal sealed partial class PilotInteractionHistoryStore
         var attackers = rows.Select(RecordedAttacker).ToArray();
         final = attackers.SingleOrDefault(a => a.EntityId == final.EntityId) ?? final;
         long? killRightSupplier = shareWithAttackers ? PilotKillRightStore.Consume(world, pilotId, final.CharacterId, now) : null;
-        Save(
-            world,
-            sourceKey,
-            new(
-                0,
-                pilotId,
-                now,
-                systemId,
-                victim with
-                {
-                    Damage = attackers.Sum(a => a.Damage),
-                },
-                final,
-                attackers.Where(a => a.EntityId != final.EntityId).ToArray(),
-                items,
-                KillRightSupplierId: killRightSupplier
-            )
+        ShipCombatReport report = new(
+            0,
+            pilotId,
+            now,
+            systemId,
+            victim with
+            {
+                Damage = attackers.Sum(a => a.Damage),
+            },
+            final,
+            attackers.Where(a => a.EntityId != final.EntityId).ToArray(),
+            items,
+            KillRightSupplierId: killRightSupplier
         );
+        var saved = Save(world, sourceKey, report);
+        if (catalog is not null && CorporationWarStore.WarForLoss(world, catalog, report) is { } war)
+        {
+            CorporationWarReportStore.Save(world, catalog, report with { Id = saved.Id }, war);
+        }
         world.RemoveRange(rows);
         if (shareWithAttackers)
         {
@@ -114,24 +117,7 @@ internal sealed partial class PilotInteractionHistoryStore
             {
                 if (participant != pilotId)
                 {
-                    Save(
-                        world,
-                        $"{sourceKey}:pilot:{participant}",
-                        new(
-                            0,
-                            participant,
-                            now,
-                            systemId,
-                            victim with
-                            {
-                                Damage = attackers.Sum(a => a.Damage),
-                            },
-                            final,
-                            attackers.Where(a => a.EntityId != final.EntityId).ToArray(),
-                            items,
-                            KillRightSupplierId: killRightSupplier
-                        )
-                    );
+                    Save(world, $"{sourceKey}:pilot:{participant}", report with { PilotId = participant });
                 }
             }
         }
@@ -183,15 +169,17 @@ internal sealed partial class PilotInteractionHistoryStore
         }
     }
 
-    internal static void Save(WorldAction world, string sourceKey, ShipCombatReport report) =>
-        world.Add(
-            new SavedCombatReport
-            {
-                PilotId = report.PilotId,
-                SourceKey = sourceKey,
-                Time = report.Time,
-                IsLoss = report.Victim.CharacterId == report.PilotId,
-                Data = JsonSerializer.Serialize(report),
-            }
-        );
+    internal static SavedCombatReport Save(WorldAction world, string sourceKey, ShipCombatReport report) =>
+        world
+            .Add(
+                new SavedCombatReport
+                {
+                    PilotId = report.PilotId,
+                    SourceKey = sourceKey,
+                    Time = report.Time,
+                    IsLoss = report.Victim.CharacterId == report.PilotId,
+                    Data = JsonSerializer.Serialize(report),
+                }
+            )
+            .Entity;
 }

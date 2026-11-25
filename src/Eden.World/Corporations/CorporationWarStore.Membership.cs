@@ -19,6 +19,7 @@ internal sealed partial class CorporationWarStore
             if (Finish(war) is not long finish || finish > now)
             {
                 war.DefenderId = allianceId;
+                DropWarAllies(world, war.Id, now);
             }
         }
     }

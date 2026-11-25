@@ -11,7 +11,7 @@
 | [Wallets](protocol/corporations.md#shared-corporation-isk-wallets-and-bounty-taxation) | Seven shared ISK divisions, journals, transfers, bounty tax, LP and EverMark balances. The client can read bills and corporate market history and save autopay preferences. |
 | [Office and asset storage](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026) | Rent offices, use division hangars, transfer and stack assets by role, and read corporate asset reports. |
 | [Shares and governance](protocol/corporations.md#general-and-share-creation-votes-november-15-2026) | Transfer shares, pay dividends, hold polls and share-creation votes, vote on member expulsion and blueprint locks, elect successors and close a corporation. |
-| [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars) | Declare eligible wars, pay weekly bills, send and accept mutual war invitations, and fight opposing ships and structures. |
+| [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars) | Declare and fund wars, accept mutual invitations, hire defender allies, negotiate surrender, and review War Report losses. |
 
 Recurring office billing, impound recovery and corporate market orders remain open. See the
 [inventory ownership notes](inventory-ownership.md) for the schema-78 migration and isolation rules. See

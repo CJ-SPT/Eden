@@ -20,13 +20,16 @@ internal sealed partial class CorporationWarStore
         }
         int first = Organization(world, firstCorporationId);
         int second = Organization(world, secondCorporationId);
-        return first != second && resident.ActiveCorporationWar(first, second, now);
+        return first != second && (resident.ActiveCorporationWar(first, second, now) || resident.ActiveWarAgainstAlly(first, second, now));
     }
 
     internal static bool ParticipatesInActiveWar(WorldAction world, int corporationId, long now) =>
         world is EconomyTransaction resident
         && resident.MayHaveCorporationWars()
-        && resident.ParticipatesInCorporationWar(Organization(world, corporationId), now);
+        && ParticipatesInWar(resident, Organization(world, corporationId), now);
+
+    private static bool ParticipatesInWar(EconomyTransaction world, int owner, long now) =>
+        world.ParticipatesInCorporationWar(owner, now) || world.ParticipatesAsWarAlly(owner, now);
 
     internal static bool IsActiveWarHeadquarters(WorldAction world, long structureId, long now) =>
         world is not SqlWorldAction
@@ -44,7 +47,7 @@ internal sealed partial class CorporationWarStore
 
     private static long? Finish(SavedCorporationWar war) => war.EndsAt ?? war.BillDueAt + CorporationWarRules.Cooldown;
 
-    private static CorporationWar Snapshot(SavedCorporationWar war, long now)
+    private static CorporationWar Snapshot(WorldAction world, SavedCorporationWar war, long now)
     {
         return new(
             war.Id,
@@ -61,7 +64,11 @@ internal sealed partial class CorporationWarStore
             war.Mutual,
             war.ReasonEnded,
             war.InheritedFromWarId
-        );
+        )
+        {
+            OpenForAllies = war.OpenForAllies && war.EndingAt is null,
+            Allies = WarAllyViews(world, war, now),
+        };
     }
 
     private static SavedCorporationWar NewWar(long id, int owner, int target, long now) =>
@@ -121,6 +128,10 @@ internal sealed partial class CorporationWarStore
         if (target == owner || !IsOrganization(world, target))
         {
             throw new InvalidDataException("Choose another player corporation or alliance.");
+        }
+        if (SurrenderTreaties(world, owner, now).Any(offer => offer.FromOwnerId == target || offer.ToOwnerId == target))
+        {
+            throw new InvalidDataException("The 14-day surrender peace treaty between these organizations is still active.");
         }
         foreach (var existing in ForPair(world, owner, target).ToArray())
         {

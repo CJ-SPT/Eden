@@ -3,6 +3,7 @@ using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Mail;
 using Eden.Data.World.Structures;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Notifications;
 using Eden.World.Mail;
 using Eden.World.Runtime.Economy;
@@ -61,14 +62,60 @@ internal static class CorporationWarNotifications
         Add(world, inbox, type, sender, new(0, from, to, null, null), at, recipients);
     }
 
+    internal static void Negotiation(
+        WorldAction world,
+        InboxChangeSignal inbox,
+        CorporationWarNegotiation offer,
+        long actorId,
+        long now,
+        CorporationWarAlly? ally = null,
+        long? warEndsAt = null
+    )
+    {
+        var content = new CorporationWarNotificationContent(offer.WarId, offer.AttackerId, offer.DefenderId, ally?.StartsAt, warEndsAt)
+        {
+            Negotiation = new(offer.FromOwnerId, offer.ToOwnerId, actorId, offer.AmountCents),
+        };
+        void Notify(InboxNotificationType type, int[] owners) =>
+            Add(world, inbox, type, actorId, content, now, owners, includeShareholders: false);
+
+        switch (offer.Kind, offer.State)
+        {
+            case (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationState.Pending):
+                Notify(InboxNotificationType.WarMercenaryOffer, [offer.ToOwnerId]);
+                Notify(InboxNotificationType.WarOfferedToAlly, [offer.FromOwnerId]);
+                break;
+            case (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationState.Accepted):
+                Notify(InboxNotificationType.WarAllyAccepted, [offer.FromOwnerId, offer.ToOwnerId, offer.AttackerId]);
+                break;
+            case (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationState.Declined):
+                Notify(InboxNotificationType.WarAllyOfferDeclined, [offer.FromOwnerId]);
+                break;
+            case (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationState.Retracted):
+                Notify(InboxNotificationType.WarMercenaryOfferRetracted, [offer.ToOwnerId]);
+                Notify(InboxNotificationType.WarOfferToAllyRetracted, [offer.FromOwnerId]);
+                break;
+            case (CorporationWarNegotiationKind.Surrender, CorporationWarNegotiationState.Pending):
+                Notify(InboxNotificationType.WarSurrenderOffer, [offer.ToOwnerId]);
+                break;
+            case (CorporationWarNegotiationKind.Surrender, CorporationWarNegotiationState.Accepted):
+                Notify(InboxNotificationType.WarSurrenderAccepted, [offer.FromOwnerId, offer.ToOwnerId]);
+                break;
+            case (CorporationWarNegotiationKind.Surrender, CorporationWarNegotiationState.Declined):
+                Notify(InboxNotificationType.WarSurrenderDeclined, [offer.FromOwnerId]);
+                break;
+        }
+    }
+
     private static void Add(
         WorldAction world,
         InboxChangeSignal inbox,
         InboxNotificationType type,
-        int sender,
+        long sender,
         CorporationWarNotificationContent content,
         long created,
-        int[] owners
+        int[] owners,
+        bool includeShareholders = true
     )
     {
         HashSet<int> corporations = [.. owners];
@@ -77,15 +124,18 @@ internal static class CorporationWarNotifications
             corporations.UnionWith(world.Filter<SavedAllianceMember>(m => m.AllianceId == owner).Select(m => m.CorporationId));
         }
         var recipients = corporations.SelectMany(c => world.MembershipChangeAudience(c, c).Recipients).ToHashSet();
-        foreach (int corporation in corporations)
+        if (includeShareholders)
         {
-            recipients.UnionWith(
-                world
-                    .Filter<SavedCorporationShareHolding>(s => s.CorporationId == corporation && s.Shares > 0)
-                    .AsEnumerable()
-                    .Select(s => s.ShareholderId)
-                    .Where(world.PilotExists)
-            );
+            foreach (int corporation in corporations)
+            {
+                recipients.UnionWith(
+                    world
+                        .Filter<SavedCorporationShareHolding>(s => s.CorporationId == corporation && s.Shares > 0)
+                        .AsEnumerable()
+                        .Select(s => s.ShareholderId)
+                        .Where(world.PilotExists)
+                );
+            }
         }
         string message = JsonSerializer.Serialize(content);
         foreach (long recipient in recipients.Order())

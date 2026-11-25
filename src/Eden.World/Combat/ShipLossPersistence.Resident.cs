@@ -152,7 +152,8 @@ internal static partial class ShipLossPersistence
             PilotInteractionHistoryStore.Player(world, pilot, shipId),
             playerAttacker ?? PilotInteractionHistoryStore.Npc(world.Set<WorldNpc>().Find(npcId!.Value)!),
             reportItems,
-            shareWithAttackers: true
+            shareWithAttackers: true,
+            catalog: catalog
         );
         var wreck = WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
         RegionalConflictStore.Loss(

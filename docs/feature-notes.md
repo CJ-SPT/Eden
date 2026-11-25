@@ -154,7 +154,9 @@ executor, and the executor can transfer EverMarks to member corporations.
 Player corporations and alliances can declare wars from the native Corporation window. Standard wars require structure
 ownership on both sides, an eligible high-security War HQ, and 500 million ISK per week. Mutual wars use invitations and
 have no fee or HQ requirement. Combat becomes legal after 24 hours and remains legal through the 24-hour cooldown.
-[Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
+Defenders can hire eligible allies, either principal can negotiate surrender, and War Reports show attributed losses and
+killmails. [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars) ·
+[Allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports)
 
 ## Travel and navigation
 

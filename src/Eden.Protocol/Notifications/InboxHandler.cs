@@ -229,6 +229,10 @@ internal sealed record InboxCorporationWarData(InboxNotificationType Type, Corpo
 {
     public override object ToBlue()
     {
+        if (Content.Negotiation is { } offer)
+        {
+            return Negotiation(offer);
+        }
         var fields = new Dictionary<string, object?> { ["declaredByID"] = Content.AttackerId, ["againstID"] = Content.DefenderId };
         if (Content.WarId > 0)
         {
@@ -260,6 +264,59 @@ internal sealed record InboxCorporationWarData(InboxNotificationType Type, Corpo
             fields["endDate"] = end;
         }
         return fields;
+    }
+
+    private Dictionary<string, object?> Negotiation(WarNegotiationNotificationContent offer)
+    {
+        double amount = (double)offer.AmountCents / MarketDefinitions.CentsPerIsk;
+        return Type switch
+        {
+            InboxNotificationType.WarMercenaryOffer or InboxNotificationType.WarMercenaryOfferRetracted => new()
+            {
+                ["mercID"] = offer.FromOwnerId,
+                ["defenderID"] = Content.DefenderId,
+                ["aggressorID"] = Content.AttackerId,
+                ["iskValue"] = amount,
+            },
+            InboxNotificationType.WarOfferedToAlly or InboxNotificationType.WarOfferToAllyRetracted => new()
+            {
+                ["allyID"] = offer.FromOwnerId,
+                ["defenderID"] = Content.DefenderId,
+                ["enemyID"] = Content.AttackerId,
+                ["charID"] = offer.ActorId,
+                ["iskValue"] = amount,
+            },
+            InboxNotificationType.WarAllyOfferDeclined => new()
+            {
+                ["defenderID"] = Content.DefenderId,
+                ["aggressorID"] = Content.AttackerId,
+                ["allyID"] = offer.FromOwnerId,
+                ["charID"] = offer.ActorId,
+            },
+            InboxNotificationType.WarAllyAccepted => new()
+            {
+                ["allyID"] = offer.FromOwnerId,
+                ["enemyID"] = Content.AttackerId,
+                ["charID"] = offer.ActorId,
+                ["iskValue"] = amount,
+                ["time"] = CreatedAt,
+            },
+            InboxNotificationType.WarSurrenderOffer => new()
+            {
+                ["ownerID1"] = offer.FromOwnerId,
+                ["ownerID2"] = offer.ToOwnerId,
+                ["iskValue"] = amount,
+            },
+            InboxNotificationType.WarSurrenderDeclined => new() { ["ownerID"] = offer.ToOwnerId, ["iskValue"] = amount },
+            _ => new()
+            {
+                ["entityID"] = offer.ToOwnerId,
+                ["offeringID"] = offer.FromOwnerId,
+                ["charID"] = offer.ActorId,
+                ["iskValue"] = amount,
+                ["endDate"] = Content.EndsAt,
+            },
+        };
     }
 }
 

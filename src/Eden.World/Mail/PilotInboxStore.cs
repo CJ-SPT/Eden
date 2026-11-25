@@ -100,6 +100,13 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
                 (n.Type >= InboxNotificationType.WarMutualInvitation && n.Type <= InboxNotificationType.WarDeclared)
                 || n.Type == InboxNotificationType.WarMutualRetracted
                 || n.Type == InboxNotificationType.WarRetractedByConcord
+                || (n.Type >= InboxNotificationType.WarMercenaryOffer && n.Type <= InboxNotificationType.WarSurrenderDeclined)
+                || n.Type == InboxNotificationType.WarAllyOfferDeclined
+                || n.Type == InboxNotificationType.WarSurrenderAccepted
+                || n.Type == InboxNotificationType.WarOfferedToAlly
+                || n.Type == InboxNotificationType.WarAllyAccepted
+                || n.Type == InboxNotificationType.WarMercenaryOfferRetracted
+                || n.Type == InboxNotificationType.WarOfferToAllyRetracted
             ),
             InboxGroup.Miscellaneous => rows.Where(n =>
                 n.Type == InboxNotificationType.StructureItemsDelivered

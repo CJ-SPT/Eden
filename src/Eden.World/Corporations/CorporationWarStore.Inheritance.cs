@@ -45,6 +45,7 @@ internal sealed partial class CorporationWarStore
                 RetractedAt = source.RetractedAt,
                 RetractedBy = source.RetractedBy,
                 Mutual = source.Mutual,
+                OpenForAllies = source.OpenForAllies,
                 ReasonEnded = source.ReasonEnded,
                 InheritedFromWarId = source.Id,
                 InheritedAt = now,
@@ -54,6 +55,39 @@ internal sealed partial class CorporationWarStore
                 ApplyInheritedBilling(world, inherited, source, eligible, aggressorLeaves, now);
             }
             world.Add(inherited);
+            foreach (var ally in AlliesForWar(world, source.Id, now).ToArray())
+            {
+                CopyAlly(world, ally, inherited, ally.OwnerId, now);
+            }
+        }
+        foreach (var ally in world.Filter<SavedCorporationWarAlly>(row => row.OwnerId == allianceId && row.EndsAt > now).ToArray())
+        {
+            if (world.Set<SavedCorporationWar>().Find(ally.WarId) is { } war && Finish(war) > now)
+            {
+                CopyAlly(world, ally, war, corporationId, now);
+            }
+        }
+    }
+
+    private static void CopyAlly(WorldAction world, SavedCorporationWarAlly source, SavedCorporationWar war, int owner, long now)
+    {
+        if (owner == war.AttackerId || owner == war.DefenderId || world.Set<SavedCorporationWarAlly>().Find(war.Id, owner) is not null)
+        {
+            return;
+        }
+        long endsAt = Math.Min(source.EndsAt, war.EndsAt ?? long.MaxValue);
+        if (endsAt > Math.Max(now, source.StartsAt))
+        {
+            world.Add(
+                new SavedCorporationWarAlly
+                {
+                    WarId = war.Id,
+                    OwnerId = owner,
+                    AttackerId = war.AttackerId,
+                    StartsAt = source.StartsAt,
+                    EndsAt = endsAt,
+                }
+            );
         }
     }
 

@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Corporation and alliance wars](#corporation-and-alliance-wars)
+- [Defender allies, surrender and War Reports](#defender-allies-surrender-and-war-reports)
 - [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
 - [Ordinary member auto-removal, November 15, 2026](#ordinary-member-auto-removal-november-15-2026)
 - [Blueprint lock and unlock votes, November 15, 2026](#blueprint-lock-and-unlock-votes-november-15-2026)
@@ -74,8 +75,8 @@ reinforcement window. The resident economy owns war, invitation and invoice stat
 Declaration and end notifications reach members and shareholders through the saved inbox.
 
 Native service coverage includes declaration, target and HQ selection, public and cached war records, bill payment,
-eligibility, peace treaties, mutual invitation settings and war-change notifications. Defender ally contracts, negotiated
-surrender and the War Report kill breakdown are separate work.
+eligibility, peace treaties, mutual invitation settings and war-change notifications. See the follow-up for
+[defender allies, surrender and War Reports](#defender-allies-surrender-and-war-reports).
 
 ### Source evidence
 
@@ -127,6 +128,78 @@ Not performed; agent client testing is disabled.
 
 1. Declare a standard war from **Corporation → Wars**, then verify the next bill, the War HQ's Show Info and the defender's inbox.
 2. Accept a mutual war invitation and verify a green-safety tackle succeeds after warmup and is blocked again after cooldown.
+
+## Defender allies, surrender and War Reports
+
+Defenders in a declared war can advertise for assistance. Eligible corporations and alliances can offer assistance on
+the defender's side for a quoted one-time payment or for free. The defender can accept or decline, and the offering
+organization can retract an outstanding offer. A contract opens legal combat against the aggressor after four hours,
+provided the war has started, and expires two weeks after acceptance or when the war ends. Existing safety and third-party
+assistance rules use the same war relationship. Accepted fees and CONCORD registration charges settle with the contract
+in the same resident transaction.
+
+Either principal can propose surrender for zero ISK or a payment to the recipient. Acceptance transfers the agreed ISK,
+starts the 24-hour combat cooldown and sets a 14-day bilateral redeclaration restriction. Expired, declined and private
+offers cannot be accepted by another organization. The War inbox records offers, responses and withdrawals for the
+appropriate parties. Checkpoint schema 228 preserves negotiations, active ally contracts and war losses.
+
+The public War Report shows ship and structure losses, estimated ISK losses by side, the ship-class graph and a filtered
+list of linked killmails. Eden assigns an opposing loss to one active war at destruction and saves its participants and
+valuation with the loss. The latest qualifying war wins when a loss qualifies for several wars. The report uses local
+market reference prices and catalog prices for available hull and item valuations. Losses from before schema 228 have
+no recorded war attribution and do not populate the report retroactively.
+
+### Contract and report evidence
+
+The original build **3662168** archive has SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Inert inspection of `war_cso.pyj` and
+`warWindows.pyj` verified the negotiation methods, argument order, floating ISK offers and private offer IDs.
+`eveMoniker.GetWarStatistic` binds a numeric war ID. The bound `GetBaseInfo` returns the war, kills by
+organization, ISK by organization and the ally dictionary. `GetKills` filters by side and ship class.
+`GetKillsByGroup` uses raw inventory group IDs, which `cfg.GetShipClassTypeByGroupID` maps to graph classes.
+`crimewatch.util.GetKillReportHashValue` uses SHA-1 of the victim pilot, final pilot, victim type and FILETIME fields
+in that order. The service checks this hash before returning a linked killmail.
+
+EVE.js **261108.1** references under `server/src/services/` were consulted for independent behavior comparison.
+
+| File | SHA-256 |
+| --- | --- |
+| `corporation/warNegotiationRuntimeState.js` | `79fb2eb65e51f8fde5530b50ca68e7f4805cbf29ec113e13f528a8b85cd4a1eb` |
+| `corporation/warStatisticMgrService.js` | `54d81629f93eafc508d6958f9114614c252371844f4582aeb0096ea8b52e8809` |
+| `killmail/killmailState.js` | `920fca640077c858230c273b7fdb52bd5869196fd1d5ffad316ad27e871451cd` |
+
+[CCP Wars](https://support.eveonline.com/hc/en-us/articles/115004152745-Wars) ·
+[War Notifications](https://support.eveonline.com/hc/en-us/articles/203279981-War-Notifications) ·
+[CCP ally registration fee schedule](https://www.eveonline.com/ko/news/view/inferno-1.1-changes-to-the-war-dec-system) ·
+[UniWiki War declarations](https://wiki.eveuniversity.org/War_declarations)
+
+### Automated validation
+
+The integrated filter selected 555 cases across `Alliances`, `CapsuleCombatTests`, `CrimewatchTests`,
+`RemoteAssistanceTests`, `PilotCombatTests`, `MissileCombatTests`, `CombatDroneTests`, `ExpandedCombatDroneTests`,
+`InsuranceLossTests`, `StructureAttackTests`, `StructureWeaponTests`, `InteractionHistoryPersistenceTests`,
+`CharacterInteractionHistoryTests`, `CorporationShowInfoTests`, `CorporationPublicInfoTests`,
+`CorporationFinancialPanelTests`, `CommandBurstTests`, `ServerServicesTests`, and the exact schema 226 and 227
+war upgrade tests. It passed 554 cases in 305.48 seconds. Two known logistics assertions from the initial wars
+milestone were excluded.
+
+The resident case of `FailedCapsuleSettlementRollsBackBodyTrainingHealthPaymentAndNotifications` reproduced its
+failure on main `76298346`. The fixture now projects the seeded queue into the in-memory checkpoint base before testing
+rollback. Both cases passed the exact retest, followed by 63 passing affected combat and report cases in 25 seconds.
+The final solution build had zero warnings or errors. The final 20-case filter covering `CorporationWar`, the exact
+capsule rollback and two fatal war loss cases, and the schema 227 upgrade passed in 15.08 seconds. Catalog setup
+and formatting policy passed all 8 and 9 cases in 1.382 and 0.016 seconds respectively. The style, CSharpier,
+line-width, local-link and diff checks passed. The full .NET suite was outside this validation scope.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Accept a paid ally offer, inspect the defender and aggressor views, and check that combat becomes legal after the ally warmup.
+2. Open a War Report after an opposing loss, filter by ship class, and open its killmail.
+3. Accept surrender and confirm the payment, the cooldown and the peace treaty in the native window.
 
 ## Edit member private identity reply, November 16, 2026
 

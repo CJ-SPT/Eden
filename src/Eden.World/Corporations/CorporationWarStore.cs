@@ -41,7 +41,7 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         return LiveWorld
                 .Find(database.Path)
                 ?.Economy.Inspect(world =>
-                    ForOrganization(world, ownerId).OrderByDescending(war => war.Id).Select(war => Snapshot(war, now)).ToArray()
+                    WarsInvolving(world, ownerId, now).OrderByDescending(war => war.Id).Select(war => Snapshot(world, war, now)).ToArray()
                 )
             ?? [];
     }
@@ -55,7 +55,7 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
                 .OrderByDescending(war => war.Id)
                 .Take(50)
                 .AsEnumerable()
-                .Select(war => Snapshot(war, now))
+                .Select(war => Snapshot(world, war, now))
                 .ToArray()
         );
     }
@@ -63,7 +63,9 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
     public CorporationWar? War(long warId)
     {
         long now = Now;
-        return Resident.Economy.Inspect(world => world.Set<SavedCorporationWar>().Find(warId) is { } war ? Snapshot(war, now) : null);
+        return Resident.Economy.Inspect(world =>
+            world.Set<SavedCorporationWar>().Find(warId) is { } war ? Snapshot(world, war, now) : null
+        );
     }
 
     public IReadOnlyList<CorporationWar> WarsForStructure(long structureId)
@@ -71,7 +73,9 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         long now = Now;
         return LiveWorld
                 .Find(database.Path)
-                ?.Economy.Inspect(world => CurrentHeadquartersWars(world, structureId, now).Select(war => Snapshot(war, now)).ToArray())
+                ?.Economy.Inspect(world =>
+                    CurrentHeadquartersWars(world, structureId, now).Select(war => Snapshot(world, war, now)).ToArray()
+                )
             ?? [];
     }
 
@@ -104,7 +108,7 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         return Resident.Economy.Inspect(world =>
         {
             int owner = Organization(world, world.Pilots.Find(pilotId)?.CorporationId ?? 0);
-            return ForOrganization(world, owner)
+            var headquartersTreaties = ForOrganization(world, owner)
                 .Where(war =>
                     war.ReasonEnded == CorporationWarEndReason.HeadquartersLost
                     && war.EndingAt + CorporationWarRules.HeadquartersLossTruce > now
@@ -116,8 +120,20 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
                     war.Id,
                     war.HeadquartersId!.Value,
                     war.AttackerId == owner
-                ))
-                .ToArray();
+                ));
+            var surrenderTreaties = SurrenderTreaties(world, owner, now)
+                .SelectMany(offer =>
+                    new[] { true, false }.Select(outgoing => new CorporationWarPeaceTreaty(
+                        offer.FromOwnerId == owner ? offer.ToOwnerId : offer.FromOwnerId,
+                        offer.AcceptedAt!.Value + CorporationWarRules.SurrenderTruce,
+                        offer.WarId,
+                        world.Set<SavedCorporationWar>().Find(offer.WarId)?.HeadquartersId,
+                        outgoing,
+                        CorporationWarPeaceReason.Surrender,
+                        CorporationWarEndReason.Surrender
+                    ))
+                );
+            return headquartersTreaties.Concat(surrenderTreaties).OrderByDescending(treaty => treaty.ExpiresAt).ToArray();
         });
     }
 
@@ -201,8 +217,9 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         declared.BillDueAt = checked(now + CorporationWarRules.BillingPeriod);
         world.Add(declared);
         NotifyDeclared(world, declared);
+        var result = Snapshot(world, declared, now);
         world.Commit();
-        return Snapshot(declared, now);
+        return result;
     }
 
     public void RetractMutual(long pilotId, long warId)
@@ -324,7 +341,11 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         war.BillId = null;
         war.BillIssuedAt = null;
         war.BillDueAt = null;
-        CorporationWarNotifications.Ending(world, inbox, war.Id, war.AttackerId, war.DefenderId, at, finish, war.Mutual);
+        war.OpenForAllies = false;
+        if (reason != CorporationWarEndReason.Surrender)
+        {
+            CorporationWarNotifications.Ending(world, inbox, war.Id, war.AttackerId, war.DefenderId, at, finish, war.Mutual);
+        }
     }
 
     private static void Renew(WorldAction world, SavedCorporationWar war, long due)

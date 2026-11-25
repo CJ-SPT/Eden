@@ -11,7 +11,8 @@ internal sealed record ShipCombatHistoryReply(IReadOnlyList<ShipCombatReport> Re
     public override object ToBlue() => Reports.Select(r => (object?)new ShipCombatReportRow(r)).ToList();
 }
 
-internal sealed record ShipCombatReportRow(ShipCombatReport Report) : BlueModel
+internal sealed record ShipCombatReportRow(ShipCombatReport Report, long? WarId = null, double? IskLost = null, double? IskDestroyed = null)
+    : BlueModel
 {
     public override object ToBlue() =>
         new BlueInstance(
@@ -37,9 +38,9 @@ internal sealed record ShipCombatReportRow(ShipCombatReport Report) : BlueModel
                 ["finalSecurityStatus"] = Report.FinalBlow.SecurityStatus ?? 0,
                 ["finalDamageDone"] = Report.FinalBlow.Damage,
                 ["killBlob"] = KillBlob(),
-                ["warID"] = null,
-                ["iskLost"] = null,
-                ["iskDestroyed"] = null,
+                ["warID"] = WarId,
+                ["iskLost"] = IskLost,
+                ["iskDestroyed"] = IskDestroyed,
                 ["bountyClaimed"] = null,
                 ["loyaltyPoints"] = null,
                 ["killRightSupplied"] = Report.KillRightSupplierId,

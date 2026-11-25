@@ -454,6 +454,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Corporations
 
 - [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
+- [Defender allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports)
 - [Corporation Edit Member identity](protocol/corporations.md#edit-member-private-identity-reply-november-16-2026)
 - [Ordinary corporation member auto-removal](protocol/corporations.md#ordinary-member-auto-removal-november-15-2026)
 - [Corporation blueprint lock/unlock votes](protocol/corporations.md#blueprint-lock-and-unlock-votes-november-15-2026)

@@ -132,7 +132,7 @@ public sealed class WorldMigrationTests
             WorldInitialization.Initialize(database, fixture.Clock);
             using (WorldDbContext world = new(database.Path))
             {
-                Assert.Equal(227, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+                Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
                 var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporationWar')");
                 Assert.Contains("InheritedFromWarId", columns);
                 Assert.Contains("InheritedAt", columns);
@@ -151,6 +151,49 @@ public sealed class WorldMigrationTests
                 Assert.Empty(world.Set<SavedCorporationWar>());
                 Assert.Empty(world.Set<SavedCorporationWarInvitation>());
                 Assert.Empty(world.Set<SavedCorporationWarInvitationSettings>());
+                return true;
+            });
+        }
+    }
+
+    [Fact]
+    public void Version227PreservesExistingWarsAndAddsNegotiationAndReportTables()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock, freshInitialization: true);
+        var database = new WorldDatabase(fixture.Path);
+        using (WorldDbContext world = new(database.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldCorporationWar DROP COLUMN OpenForAllies;
+                DROP TABLE WorldCorporationWarNegotiation;
+                DROP TABLE WorldCorporationWarAlly;
+                DROP TABLE WorldCorporationWarKill;
+                PRAGMA user_version=227;
+                """
+            );
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldCorporationWar(Id,AttackerId,DefenderId,DeclaredAt,StartsAt,Mutual)
+                VALUES (41,98000000,98000001,{clock.Now - TimeSpan.TicksPerDay},{clock.Now},1);
+                """
+            );
+        }
+
+        for (int reopen = 0; reopen < 2; reopen++)
+        {
+            WorldInitialization.Initialize(database, clock);
+            using LiveWorld live = new(database, clock, _ => { });
+            live.Economy.Inspect(world =>
+            {
+                var war = Assert.Single(world.Set<SavedCorporationWar>());
+                Assert.Equal((41L, 98000000, 98000001, clock.Now), (war.Id, war.AttackerId, war.DefenderId, war.StartsAt));
+                Assert.True(war.Mutual);
+                Assert.False(war.OpenForAllies);
+                Assert.Empty(world.Set<SavedCorporationWarNegotiation>());
+                Assert.Empty(world.Set<SavedCorporationWarAlly>());
+                Assert.Empty(world.Set<SavedCorporationWarKill>());
                 return true;
             });
         }

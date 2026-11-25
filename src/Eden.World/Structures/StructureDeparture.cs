@@ -4,6 +4,7 @@ using Eden.Data.World.Drones;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
@@ -22,7 +23,8 @@ internal static class StructureDeparture
         SavedStructure structure,
         long now,
         bool destroyed,
-        IShipLootRoll? lootRoll = null
+        IShipLootRoll? lootRoll = null,
+        List<CombatLostItem>? warReportItems = null
     )
     {
         if (world is not EconomyTransaction)
@@ -125,7 +127,12 @@ internal static class StructureDeparture
             {
                 bool builtin = item.TypeId == profile.BuiltinCoreTypeId || item.TypeId == profile.BuiltinModuleTypeId;
                 bool core = item.TypeId == profile.CoreTypeId;
-                if (builtin || InventoryDefinitions.IsRigSlot(item.FlagId) || !core && !loot.Survives())
+                bool lost = builtin || InventoryDefinitions.IsRigSlot(item.FlagId) || !core && !loot.Survives();
+                if (warReportItems is not null && !builtin)
+                {
+                    warReportItems.Add(ReportItem(world, item, lost));
+                }
+                if (lost)
                 {
                     StructureLootStore.DestroyContents(world, item.Id);
                     world.Remove(item);
@@ -145,5 +152,19 @@ internal static class StructureDeparture
         {
             extraction.Ended = true;
         }
+        if (!destroyed)
+        {
+            StructureCombatTargets.ClearContributions(world, structure.Id);
+        }
     }
+
+    private static CombatLostItem ReportItem(WorldAction world, OwnedItem item, bool lost) =>
+        new(
+            item.TypeId,
+            item.FlagId,
+            item.Singleton,
+            lost ? 0 : item.Quantity,
+            lost ? item.Quantity : 0,
+            world.Filter<OwnedItem>(row => row.LocationId == item.Id).AsEnumerable().Select(row => ReportItem(world, row, lost)).ToArray()
+        );
 }

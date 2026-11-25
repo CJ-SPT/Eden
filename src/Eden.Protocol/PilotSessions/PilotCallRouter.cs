@@ -5,6 +5,7 @@ using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
@@ -245,6 +246,7 @@ internal sealed class PilotCallRouter(
                 or "allianceRegistry"
                 or "crimewatch"
                 or "warRegistry"
+                or "warStatisticMgr"
                 or "ship"
                 or "insuranceSvc"
                 or "beyonce"
@@ -340,6 +342,19 @@ internal sealed class PilotCallRouter(
                 return new PilotCallResult.Failure("Bind your current war registry.");
             }
             if (
+                service == "warStatisticMgr"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    keywords is { Count: > 0 }
+                    || args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || args[0] is not long warId
+                    || warId <= 0
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind a war report by war ID.");
+            }
+            if (
                 service == "officeManager"
                 && method is "MachoResolveObject" or "MachoBindObject"
                 && (
@@ -423,6 +438,7 @@ internal sealed class PilotCallRouter(
                     : service == "agentMgr" ? $"@agent:{args[0]}"
                     : service == "planetMgr" ? $"@planet:{args[0]}"
                     : service == "planetOrbitalRegistryBroker" ? $"@planetorbit:{args[0]}"
+                    : service == "warStatisticMgr" ? $"{CorporationWarReportHandler.BoundPrefix}{args[0]}"
                     : service;
                 if (args[1] is object?[] { Length: >= 2 } first && first[1] is object?[] innerArgs)
                 {
@@ -458,6 +474,7 @@ internal sealed class PilotCallRouter(
                             or "corpRegistry"
                             or "allianceRegistry"
                             or "warRegistry"
+                            or "warStatisticMgr"
                         ? PilotBindingLifetime.Pilot
                         : PilotBindingLifetime.Location
                 );

@@ -1,6 +1,8 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Economy;
 using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
@@ -8,6 +10,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -180,6 +183,84 @@ public sealed class CapsuleCombatTests
         Assert.Equal(0, saved.Database.SqlQueryRaw<long>("SELECT COUNT(*) AS Value FROM pragma_foreign_key_check").Single());
     }
 
+    [Fact]
+    public async Task FatalWarCapsuleAttackSavesItsKillmailAndArchivedValue()
+    {
+        using var f = Prepare(resident: true, security: .8);
+        AddBodies(f);
+        AlmostLost(f);
+        var live = f.Db.Services.GetRequiredService<LiveWorld>();
+        const int attacker = 98000077;
+        const int defender = 98000078;
+        using (var action = live.Economy.Begin(new(pilots: [Fixture.PilotId, Victim])))
+        {
+            action.Pilots.Find(Fixture.PilotId)!.CorporationId = attacker;
+            action.Pilots.Find(Victim)!.CorporationId = defender;
+            action.Add(
+                new SavedCorporationWar
+                {
+                    Id = 71,
+                    AttackerId = attacker,
+                    DefenderId = defender,
+                    Mutual = true,
+                    DeclaredAt = f.Clock.Now - TimeSpan.TicksPerDay,
+                    StartsAt = f.Clock.Now,
+                }
+            );
+            action.Add(
+                new SavedCorporationWar
+                {
+                    Id = 72,
+                    AttackerId = attacker,
+                    DefenderId = defender,
+                    Mutual = true,
+                    DeclaredAt = f.Clock.Now,
+                    StartsAt = f.Clock.Now + TimeSpan.TicksPerDay,
+                }
+            );
+            SetPrice(FleetDefinitions.CapsuleType, 10.25m);
+            SetPrice(OcularImplant, 123.45m);
+            action.Commit();
+
+            void SetPrice(int type, decimal value)
+            {
+                var row = action.Set<SavedAdjustedPrice>().Find(type) ?? action.Add(new SavedAdjustedPrice { TypeId = type }).Entity;
+                row.PriceIsk = value;
+            }
+        }
+        Assert.True(Fire(f).Destroyed);
+        var reports = f.Db.Services.GetRequiredService<ICorporationWarReports>();
+        var prior = Assert.Single(reports.Kills(71, attacker, WarReportGroup.Capsules));
+        Assert.Empty(reports.Kills(71, defender, WarReportGroup.Capsules));
+        Assert.Empty(reports.Kills(72, null, null));
+        Assert.Equal(Victim, prior.Report.Victim.CharacterId);
+        Assert.Equal(Fixture.PilotId, prior.Report.FinalBlow.CharacterId);
+        Assert.Equal(133.70m, prior.IskLost);
+        Assert.Equal(133.70m, prior.IskDestroyed);
+        string hash = WarReportRules.Hash(prior.Report);
+        Assert.Null(reports.Kill(72, prior.Report.Id, hash));
+        Assert.Null(reports.Kill(71, prior.Report.Id, "invalid hash"));
+
+        using (var action = live.Economy.Begin(new(pilots: [Fixture.PilotId, Victim])))
+        {
+            action.Pilots.Find(Fixture.PilotId)!.CorporationId = defender;
+            action.Pilots.Find(Victim)!.CorporationId = attacker;
+            action.Set<SavedAdjustedPrice>().Find(OcularImplant)!.PriceIsk = 400m;
+            action.Commit();
+        }
+        await live.FlushAsync();
+        live.Dispose();
+        using LiveWorld reopened = new(new(f.Db.Path), f.Clock, _ => { });
+        var archived = Assert.IsType<CorporationWarKill>(reports.Kill(null, prior.Report.Id, hash));
+        Assert.Equal(attacker, archived.Report.FinalBlow.CorporationId);
+        Assert.Equal(defender, archived.Report.Victim.CorporationId);
+        Assert.Equal(prior.IskLost, archived.IskLost);
+        var totals = reports.Read(71);
+        Assert.Equal(1, totals.ShipsKilled[attacker]);
+        Assert.Equal(133.70m, totals.IskKilled[attacker]);
+        Assert.Equal(new(0, 0, 1, 133.70m), totals.KillsByGroup[FleetDefinitions.CapsuleGroup]);
+    }
+
     [Theory]
     [InlineData(0, ShipSafetyLevel.Full, false, true)]
     [InlineData(.2, ShipSafetyLevel.Full, false, false)]
@@ -290,6 +371,10 @@ public sealed class CapsuleCombatTests
         const string remove = "DROP TRIGGER reject_capsule_transfer";
         if (LiveWorld.Find(f.Db.Path) is { } live)
         {
+            using (live.EnterShared("capsule rollback baseline"))
+            {
+                live.Economy.Flush();
+            }
             Assert.True(Fire(f).Destroyed);
             using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
             using WorldDbContext world = new(snapshot.Database);

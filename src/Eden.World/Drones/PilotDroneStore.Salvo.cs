@@ -8,6 +8,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.FactionWarfare;
@@ -292,6 +293,7 @@ internal sealed partial class PilotDroneStore
             return hit.Health.Remaining.Destroyed;
         }
         StructureCombatTargets.Aggress(world, pilot.Id, target.Structure!.Id, system, now, end);
-        return StructureCombatTargets.Apply(world, catalog, target.Structure!, damage, now).Health.Remaining.Destroyed;
+        var attacker = PilotInteractionHistoryStore.Player(world, pilot, pilot.ActiveShipId, contact.Profile.TypeId);
+        return StructureCombatTargets.Apply(world, catalog, target.Structure!, damage, now, attacker).Health.Remaining.Destroyed;
     }
 }

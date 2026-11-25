@@ -1,6 +1,7 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -34,13 +35,30 @@ internal sealed class CorporationWarsHandler(
 
                 ("corpRegistry" or "allianceRegistry", "DeclareWarAgainst")
                 or
+                ("corpRegistry", "CharGetAllyBaseCost")
+                or
                 ("structureDirectory", "GetValidWarHQs")
                 or
                 ("lookupSvc", "LookupWarableCorporationsOrAlliances")
                 or
                 ("peaceTreatyMgr", "GetPeaceTreatiesForSession")
                 or
-                ("warRegistry", "GetWars" or "GetNegotiations" or "RetractMutualWar" or "IsAllianceOrCorpLocal")
+                (
+                    "warRegistry",
+                    "GetWars"
+                        or "GetNegotiations"
+                        or "GetWarNegotiation"
+                        or "SetOpenForAllies"
+                        or "CreateWarAllyOffer"
+                        or "RetractWarAllyOffer"
+                        or "AcceptAllyNegotiation"
+                        or "DeclineAllyOffer"
+                        or "CreateSurrenderNegotiation"
+                        or "AcceptSurrender"
+                        or "DeclineSurrender"
+                        or "RetractMutualWar"
+                        or "IsAllianceOrCorpLocal"
+                )
                 or
                 (
                     "warsInfoMgr",
@@ -80,6 +98,8 @@ internal sealed class CorporationWarsHandler(
                     var declared = wars.Declare(pilot, (int)target, headquarters, service == "allianceRegistry");
                     monitor.Advance(context);
                     return new CorporationWarReply(declared);
+                case ("CharGetAllyBaseCost", []):
+                    return (double)wars.AllyBaseCost(pilot) / MarketDefinitions.CentsPerIsk;
                 case ("GetValidWarHQs", []):
                     return Headquarters(pilot, wars.Organization(pilot));
                 case ("GetValidWarHQs", [long owner]) when OwnerId(owner):
@@ -97,8 +117,42 @@ internal sealed class CorporationWarsHandler(
                     monitor.Watch(context);
                     return Registry(wars.Wars((int)owner));
                 case ("GetNegotiations", []):
+                    return new BlueList<CorporationWarNegotiationReply>(
+                        monitor.WatchNegotiations(context).Select(negotiation => new CorporationWarNegotiationReply(negotiation)).ToArray()
+                    );
+                case ("GetWarNegotiation", [long id]) when id > 0:
+                    return wars.Negotiation(pilot, id) is { } negotiation
+                        ? new CorporationWarNegotiationReply(negotiation)
+                        : PilotCallResult.None;
+                case ("SetOpenForAllies", [long war, var open]) when war > 0:
+                    monitor.Watch(context);
+                    wars.SetOpenForAllies(pilot, war, Flag(open));
+                    monitor.Advance(context);
+                    return PilotCallResult.None;
+                case ("CreateWarAllyOffer", [long war, var amount, long defender, var description]) when war > 0 && OwnerId(defender):
+                    monitor.WatchNegotiations(context);
+                    wars.CreateAllyOffer(pilot, war, (int)defender, OfferCents(amount), BlueRead.Text(description));
+                    monitor.Advance(context);
+                    return PilotCallResult.None;
+                case ("CreateSurrenderNegotiation", [long war, var amount, var description]) when war > 0:
+                    monitor.WatchNegotiations(context);
+                    wars.CreateSurrenderOffer(pilot, war, OfferCents(amount), BlueRead.Text(description));
+                    monitor.Advance(context);
+                    return PilotCallResult.None;
+                case (
+                    "RetractWarAllyOffer"
+                        or "AcceptAllyNegotiation"
+                        or "DeclineAllyOffer"
+                        or "AcceptSurrender"
+                        or "DeclineSurrender",
+                    [long id]
+                ) when id > 0:
+                    ResolveNegotiation(context, pilot, id, method);
+                    return PilotCallResult.None;
                 case ("GetWarsRequiringAssistance", []):
-                    return BlueEmpty.List;
+                    return new BlueList<CorporationWarReply>(
+                        wars.WarsRequiringAssistance().Select(war => new CorporationWarReply(war)).ToArray()
+                    );
                 case ("GetWarsByOwnerID", [long owner]) when OwnerId(owner):
                     RequireOwner((int)owner);
                     return new CorporationWarHistoryReply(wars.Wars((int)owner));
@@ -166,6 +220,25 @@ internal sealed class CorporationWarsHandler(
             return new PilotCallResult.Failure(error.Message);
         }
     }
+
+    private void ResolveNegotiation(PilotCallContext context, long pilot, long id, string method)
+    {
+        var (kind, action) = method switch
+        {
+            "RetractWarAllyOffer" => (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationAction.Retract),
+            "AcceptAllyNegotiation" => (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationAction.Accept),
+            "DeclineAllyOffer" => (CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationAction.Decline),
+            "AcceptSurrender" => (CorporationWarNegotiationKind.Surrender, CorporationWarNegotiationAction.Accept),
+            "DeclineSurrender" => (CorporationWarNegotiationKind.Surrender, CorporationWarNegotiationAction.Decline),
+            _ => throw new InvalidDataException("Choose a negotiation action."),
+        };
+        monitor.Watch(context);
+        monitor.WatchNegotiations(context);
+        wars.ResolveNegotiation(pilot, id, kind, action);
+        monitor.Advance(context);
+    }
+
+    private static long OfferCents(object? value) => value is 0d or 0L ? 0 : CorporationWalletHandler.Cents(value);
 
     private BlueList<CorporationWarHeadquartersReply> Headquarters(long pilot, int owner) =>
         new(wars.Headquarters(pilot, owner).Select(headquarters => new CorporationWarHeadquartersReply(headquarters)).ToArray());

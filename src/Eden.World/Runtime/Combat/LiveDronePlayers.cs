@@ -7,6 +7,7 @@ using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Corporations;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -95,7 +96,8 @@ internal sealed partial class LiveCombatRuntime
                     victim.Outlaw,
                     engagement > now,
                     security > 0
-                        && MilitiaRules.AreEnemies(affiliations.PilotMilitia(source.PilotId), affiliations.PilotMilitia(victim.PilotId))
+                        && MilitiaRules.AreEnemies(affiliations.PilotMilitia(source.PilotId), affiliations.PilotMilitia(victim.PilotId)),
+                    security > 0 && CorporationWarTargets(source.PilotId, victim.PilotId, now)
                 )
             );
         }
@@ -103,6 +105,22 @@ internal sealed partial class LiveCombatRuntime
         {
             return null;
         }
+    }
+
+    private bool CorporationWarTargets(long source, long victim, long now)
+    {
+        if (!owner.Economy.MayHaveCorporationWars())
+        {
+            return false;
+        }
+        int sourceCorporation = owner.Economy.CorporationAffiliation(source).Corporation;
+        int targetCorporation = owner.Economy.CorporationAffiliation(victim).Corporation;
+        return sourceCorporation > 0
+            && targetCorporation > 0
+            && sourceCorporation != targetCorporation
+            && Loading(() =>
+                owner.Economy.Inspect(world => CorporationWarStore.HasActiveWar(world, sourceCorporation, targetCorporation, now))
+            );
     }
 
     private PilotCombatPresence? DronePresence(DronePlayer victim, IPilotCombatPresence presence, int system, long now)

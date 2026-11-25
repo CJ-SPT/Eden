@@ -5,6 +5,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
@@ -17,6 +18,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Structures;
 using Eden.Protocol.Targeting;
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -175,10 +177,10 @@ public sealed class StructureAttackTests
             const string system = "{\"securityStatus\":0.9}";
             catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30001392',{system})");
         }
+        const int opposing = 98000719;
         long opposingCeo = f.Db.Store.FindPilot(1000002)!.PilotId;
         using (var prepare = Scope(f))
         {
-            const int opposing = 98000719;
             var owner = prepare.World.Set<SavedStructure>().Find(structure.Id)!.CorporationId;
             prepare.World.Add(
                 new SavedCorporation
@@ -217,15 +219,33 @@ public sealed class StructureAttackTests
         var combat = f.Db.Services.GetRequiredService<IPilotCombat>();
         var shot = combat.Fire(f.PilotId, module, structure.Id, SpacePosition.Zero, f.Clock.Now, 0.5);
         Assert.True(shot.Applied > 0);
-        using var read = Scope(f);
-        var headquarters = read.World.Set<SavedStructure>().Find(structure.Id)!;
-        Assert.Equal(StructureState.ArmorReinforced, headquarters.State);
-        Assert.InRange(
-            headquarters.StateEndsAt!.Value - f.Clock.Now,
-            TimeSpan.TicksPerDay - StructureCombatRules.MediumExitJitter,
-            2 * TimeSpan.TicksPerDay + StructureCombatRules.MediumExitJitter
-        );
-        Assert.Equal(CrimewatchFlag.None, read.World.Set<SavedCrimewatch>().Find(f.PilotId)!.Timers().Flag(f.Clock.Now));
+        using (var read = Scope(f))
+        {
+            var headquarters = read.World.Set<SavedStructure>().Find(structure.Id)!;
+            Assert.Equal(StructureState.ArmorReinforced, headquarters.State);
+            Assert.InRange(
+                headquarters.StateEndsAt!.Value - f.Clock.Now,
+                TimeSpan.TicksPerDay - StructureCombatRules.MediumExitJitter,
+                2 * TimeSpan.TicksPerDay + StructureCombatRules.MediumExitJitter
+            );
+            Assert.Equal(CrimewatchFlag.None, read.World.Set<SavedCrimewatch>().Find(f.PilotId)!.Timers().Flag(f.Clock.Now));
+            headquarters.State = StructureState.HullVulnerable;
+            headquarters.StateEndsAt = null;
+            var battle = read.World.Set<SavedStructureBattle>().Find(structure.Id)!;
+            battle.Armor = 0;
+            battle.Hull = 0.1;
+            read.Commit();
+        }
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(10));
+        Assert.True(combat.Fire(f.PilotId, module, structure.Id, SpacePosition.Zero, f.Clock.Now, 0.5).Destroyed);
+        var reports = f.Db.Services.GetRequiredService<ICorporationWarReports>();
+        var loss = Assert.Single(reports.Kills(1, opposing, WarReportGroup.Structures));
+        Assert.Null(loss.Report.Victim.CharacterId);
+        Assert.Equal(f.CorporationId, loss.Report.Victim.CorporationId);
+        Assert.Equal(structure.Id, loss.Report.Victim.EntityId);
+        Assert.Equal(f.PilotId, loss.Report.FinalBlow.CharacterId);
+        Assert.Contains(loss.Report.Items, item => item.TypeId == structure.Profile.CoreTypeId && item.Dropped == 1);
+        Assert.Equal(1, reports.Read(1).KillsByGroup[structure.Profile.GroupId].AttackerShipLoss);
     }
 
     [Theory]
@@ -470,6 +490,7 @@ public sealed class StructureAttackTests
         using Fixture f = Prepare();
         var structure = f.Online();
         long personal = f.Item(34, 20);
+        long ship = f.ShipId;
         using (WorldActionScope prepare = Scope(f))
         {
             prepare.World.Set<OwnedItem>().Find(personal)!.LocationId = structure.Id;
@@ -487,7 +508,8 @@ public sealed class StructureAttackTests
                 catalog,
                 rollback.World.Set<SavedStructure>().Find(structure.Id)!,
                 new(10, 0, 0, 0),
-                f.Clock.Now
+                f.Clock.Now,
+                PilotInteractionHistoryStore.Player(rollback.World, rollback.World.Pilots.Find(f.PilotId)!, ship)
             );
             Assert.True(result.Destroyed);
         }

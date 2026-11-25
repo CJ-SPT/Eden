@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Eden.Data.World.Combat;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Runtime.Economy;
 
@@ -69,7 +71,14 @@ internal static class StructureMissileSettlement
                 0
             );
             var damage = payload.Warhead.Damage.Scale(application);
-            var result = StructureCombatTargets.Apply(world, catalog, structure, damage, time);
+            CombatParty attacker =
+                payload.Source
+                ?? (
+                    world.Pilots.Find(row.PilotId) is { } pilot
+                        ? PilotInteractionHistoryStore.Player(world, pilot, row.SourceShipId, row.LauncherTypeId)
+                        : new(row.SourceShipId, row.PilotId, row.CorporationId, null, row.SourceTypeId, row.LauncherTypeId, null, 0)
+                );
+            var result = StructureCombatTargets.Apply(world, catalog, structure, damage, time, attacker);
             MissileImpact outcome = new(
                 row.Id,
                 row.PilotId,

@@ -157,6 +157,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Exploration.SleeperSiteSchema.Configure(model);
         Eden.World.Exploration.IncursionSchema.Configure(model);
         Eden.World.Corporations.CorporationWarSchema.Configure(model);
+        Eden.World.Corporations.WarReportSchema.Configure(model);
         Eden.World.Inventory.MutationSchema.Configure(model);
         Eden.World.Inventory.CargoContainerSchema.Configure(model);
         Eden.World.Exploration.AbyssalSchema.Configure(model);

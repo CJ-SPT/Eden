@@ -18,6 +18,7 @@ public sealed class SavedCorporationWar
     public long? BillIssuedAt { get; set; }
     public long? BillDueAt { get; set; }
     public bool Mutual { get; set; }
+    public bool OpenForAllies { get; set; }
     public CorporationWarEndReason? ReasonEnded { get; set; }
     public long? InheritedFromWarId { get; set; }
     public long? InheritedAt { get; set; }

@@ -12,16 +12,18 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
     private int _organization;
     private Dictionary<long, CorporationWar>? _wars;
     private IReadOnlyList<CorporationWarInvitation>? _invitations;
+    private IReadOnlyList<CorporationWarNegotiation>? _negotiations;
     private bool _blocked;
     private DateTimeOffset _nextPoll;
 
-    internal bool IsMonitoring => _wars is not null || _invitations is not null;
+    internal bool IsMonitoring => _wars is not null || _invitations is not null || _negotiations is not null;
 
     internal void Reset()
     {
         _organization = 0;
         _wars = null;
         _invitations = null;
+        _negotiations = null;
         _nextPoll = default;
     }
 
@@ -41,6 +43,14 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
         }
     }
 
+    internal IReadOnlyList<CorporationWarNegotiation> WatchNegotiations(PilotCallContext context)
+    {
+        Select(context);
+        var current = wars.Negotiations(context.Pilot.PilotId);
+        _negotiations ??= current;
+        return current;
+    }
+
     internal void Poll(PilotCallContext context)
     {
         var now = clock.GetUtcNow();
@@ -55,23 +65,60 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
 
     internal void Advance(PilotCallContext context)
     {
-        if (_wars is null)
+        if (_wars is null && _negotiations is null)
         {
             return;
         }
-        Watch(context);
-        var current = wars.Wars(_organization);
-        var changes = current.Where(war => war != _wars!.GetValueOrDefault(war.Id)).ToArray();
-        if (changes.Length == 0 && _wars!.Count == current.Count)
+        Select(context);
+        HashSet<long> notified = [];
+        if (_wars is { } previousWars)
         {
-            return;
+            var current = wars.Wars(_organization);
+            foreach (var war in current)
+            {
+                var previous = previousWars.GetValueOrDefault(war.Id);
+                if (!Equivalent(previous, war))
+                {
+                    context.Notifications.Add(new CorporationWarChanged(previous, war));
+                    notified.Add(war.Id);
+                }
+            }
+            if (notified.Count > 0 || previousWars.Count != current.Count)
+            {
+                _wars = current.ToDictionary(war => war.Id);
+            }
         }
-        foreach (var war in changes)
+        if (_negotiations is { } previousNegotiations)
         {
-            context.Notifications.Add(new CorporationWarChanged(_wars.GetValueOrDefault(war.Id), war));
+            var current = wars.Negotiations(context.Pilot.PilotId);
+            if (!previousNegotiations.SequenceEqual(current))
+            {
+                _negotiations = current;
+                RefreshNegotiationWars(context, previousNegotiations, current, notified);
+            }
         }
-        _wars = current.ToDictionary(war => war.Id);
     }
+
+    private void RefreshNegotiationWars(
+        PilotCallContext context,
+        IReadOnlyList<CorporationWarNegotiation> before,
+        IReadOnlyList<CorporationWarNegotiation> after,
+        HashSet<long> notified
+    )
+    {
+        // The native Wars panel refreshes negotiations when OnWarChanged reaches its local war service.
+        foreach (long id in before.Except(after).Concat(after.Except(before)).Select(offer => offer.WarId).Distinct())
+        {
+            if (notified.Add(id) && wars.War(id) is { } war)
+            {
+                context.Notifications.Add(new CorporationWarChanged(war, war));
+            }
+        }
+    }
+
+    private static bool Equivalent(CorporationWar? previous, CorporationWar current) =>
+        previous == current
+        || previous is not null && previous == current with { Allies = previous.Allies } && previous.Allies.SequenceEqual(current.Allies);
 
     internal void AdvanceInvitations(PilotCallContext context)
     {
@@ -106,6 +153,10 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
                 _invitations = wars.Invitations(context.Pilot.PilotId);
                 _blocked = wars.InvitationsBlocked(context.Pilot.PilotId);
             }
+            if (_negotiations is not null)
+            {
+                _negotiations = wars.Negotiations(context.Pilot.PilotId);
+            }
         }
     }
 }
@@ -119,14 +170,19 @@ internal sealed record CorporationWarChanged(CorporationWar? Previous, Corporati
             var before = Previous is { } previous ? CorporationWarReply.Fields(previous) : [];
             var fields = CorporationWarReply.Fields(Current);
             var changes = fields
-                .Where(entry => !Equals(entry.Value, before.GetValueOrDefault(entry.Key)))
+                .Where(entry => entry.Key != "allies" && !Equals(entry.Value, before.GetValueOrDefault(entry.Key)))
                 .ToDictionary(entry => entry.Key, entry => (object?)new object?[] { before.GetValueOrDefault(entry.Key), entry.Value });
-            return
-            [
-                new CorporationWarReply(Current),
-                new BlueConstructor("__builtin__.set", [new List<object?> { Current.AttackerId, Current.DefenderId }]),
-                changes,
-            ];
+            IReadOnlyList<CorporationWarAlly> previousAllies = Previous?.Allies ?? [];
+            if (!previousAllies.SequenceEqual(Current.Allies))
+            {
+                changes["allies"] = new object?[] { CorporationWarReply.AllyEntries(previousAllies), fields["allies"] };
+            }
+            var owners = new long[] { Current.AttackerId, Current.DefenderId }
+                .Concat(previousAllies.Concat(Current.Allies).Select(ally => (long)ally.OwnerId))
+                .Distinct()
+                .Select(owner => (object?)owner)
+                .ToList();
+            return [new CorporationWarReply(Current), new BlueConstructor("__builtin__.set", [owners]), changes];
         }
     }
 }
