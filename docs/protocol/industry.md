@@ -7,6 +7,40 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Remote personal order management
+
+Pilots can reprice their own NPC-station buy and sell orders across the current region. Without effective Daytrading,
+the pilot must be docked at the order's station. Levels I through V allow the same system, 5 jumps, 10 jumps, 20 jumps,
+and anywhere in the region respectively. The resident world reads the ship's current system or docked location, the
+pilot's clone grade and trained skill, and the pinned stargate graph. Alpha pilots use the station limit.
+
+The owner can cancel from another region. Cancellation validates the order's saved region from the native request and
+returns remaining sell inventory to the originating station or refunds buy escrow. The five-minute reprice delay, stale
+quote checks, relist fees, price priority and owner notifications use the existing settlement transaction.
+
+In build **3662168**, `marketutil/skilllimits.pyj` reads Daytrading **16595** and supplies the `mod` range from
+`JUMPS_PER_SKILL_LEVEL`. `market/quote.pyj` sends the order's region for cancellation. `marketsvc.pyj` uses the existing
+`CancelCharOrder` and `ModifyCharOrder` shapes. The stock archive SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. EVE.js **261108.1**
+`marketProxyService.js` (SHA-256 `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`)
+also applies Daytrading to repricing and authorizes cancellation with the saved owner's order.
+[EVE University trade skills](https://wiki.eveuniversity.org/Skills:Trade#Daytrading) ·
+[CCP brokerage rules](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+**Automated validation.** `NativeModificationUsesEffectiveDaytradingAndCurrentSystem` and
+`NativeCancellationFromAnotherRegionRestoresInventoryAndEscrowOnce` passed in 0.90 seconds of combined case time.
+They cover clone grade, same-system and gate range, cross-region limits, order ownership, returned assets, wallet escrow,
+owner notifications and checkpoint reopen.
+
+The milestone's affected market, fitting, ammunition, map, NPC population, Incursion, and wreck selections passed
+295 tests in 127.50 seconds. Two test methods were excluded from this run after their failures reproduced on `d958de15`.
+`ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes` measured 10 warm SQL commands with a limit
+of nine. The resident pirate case in `KillRewardsUseRoleAndActualCorporation` expected an immediate payout.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Reprice from a nearby system with Daytrading, then cancel an order while in another region.
+
 ## Browsing industry facilities from any station
 
 `facilityManager.GetFacilities` now resolves the browsing region from the pilot's in-space system or dock location.

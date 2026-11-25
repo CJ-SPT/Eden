@@ -51,6 +51,10 @@ internal static partial class NpcDamagePersistence
         {
             throw new InvalidDataException("Incursion combat requires the resident world.");
         }
+        if (npc.AnchorKind == NpcAnchorKind.CloneSoldierBelt)
+        {
+            throw new InvalidDataException("Clone Soldier combat requires the resident world.");
+        }
         // A paid missile already checked safety and recorded CONCORD hostility
         // at launch. Its impact cannot recheck a later safety setting or hull.
         if (!paidProjectile || npc.Role != NpcRole.Concord)

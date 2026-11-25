@@ -36,6 +36,7 @@ public enum NpcAnchorKind
     Incursion,
     IncursionBelt,
     IncursionCamp,
+    CloneSoldierBelt,
 }
 
 public static class NpcPopulationRules
@@ -53,6 +54,8 @@ public static class NpcPopulationRules
         ) > 0;
 
     public static bool IsIncursionPatrol(NpcAnchorKind kind) => kind is NpcAnchorKind.IncursionBelt or NpcAnchorKind.IncursionCamp;
+
+    public static bool IsNativeBelt(NpcAnchorKind kind) => kind is NpcAnchorKind.Belt or NpcAnchorKind.CloneSoldierBelt;
 
     public static bool DetectsPilots(NpcRole role) => role == NpcRole.Pirate;
 

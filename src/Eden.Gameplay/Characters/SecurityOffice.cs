@@ -3,6 +3,14 @@ using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Characters;
 
+public enum SecurityTagType
+{
+    CloneSoldierTrainer = 33138,
+    CloneSoldierRecruiter = 33139,
+    CloneSoldierTransporter = 33140,
+    CloneSoldierNegotiator = 33141,
+}
+
 public sealed record SecurityTagRequest(double Target, double QuotedStatus);
 
 public sealed record SecurityTagRequirement(int TypeId, int Quantity);
@@ -20,13 +28,19 @@ public static class SecurityOfficeRules
     private const double GainPerTag = 0.5;
     private const double RoundingTolerance = 1e-9;
     private const int DedCorporation = 1000137;
-    private static readonly (int Type, double Upper)[] s_bands = [(33138, -8), (33139, -5), (33140, -2), (33141, 0)];
+    private static readonly (SecurityTagType Type, double Upper)[] s_bands =
+    [
+        (SecurityTagType.CloneSoldierTrainer, -8),
+        (SecurityTagType.CloneSoldierRecruiter, -5),
+        (SecurityTagType.CloneSoldierTransporter, -2),
+        (SecurityTagType.CloneSoldierNegotiator, 0),
+    ];
 
     // securityOfficeSvc and eveuniverse.security classify stations by owner and raw system security.
     public static bool Available(int ownerId, double systemSecurity) =>
         ownerId is ConcordRules.Corporation or DedCorporation && systemSecurity is > 0 and < CrimewatchRules.HighSecurity;
 
-    public static bool IsTag(int typeId) => s_bands.Any(band => band.Type == typeId);
+    public static bool IsTag(int typeId) => s_bands.Any(band => (int)band.Type == typeId);
 
     public static SecurityTagPlan Plan(double current, SecurityTagRequest request)
     {
@@ -53,7 +67,7 @@ public static class SecurityOfficeRules
             }
             if (quantity != 0)
             {
-                tags.Add(new(type, quantity));
+                tags.Add(new((int)type, quantity));
             }
         }
         if (tags.Count == 0 || request.Target - status > RoundingTolerance)

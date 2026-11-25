@@ -24,10 +24,18 @@ internal static class HardenerCatalog
             return false;
         }
         var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
+        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
+        bool flex = HardenerDefinitions.IsFlex(group);
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
-            || InventoryDefinitions.RequiresSpecificShip(PilotFittingStore.ReadAttributes(catalog, typeId))
+            || !flex && InventoryDefinitions.RequiresSpecificShip(attributes)
+            || flex
+                && (
+                    attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) != SupportModuleDefinitions.ScriptGroup(group)
+                    || attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != SupportModuleDefinitions.ScriptChargeSize
+                    || attributes.GetValueOrDefault(DogmaAttributeId.MaxGroupFitted) != 1
+                )
         )
         {
             return false;

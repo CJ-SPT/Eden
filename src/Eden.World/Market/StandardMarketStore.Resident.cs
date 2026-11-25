@@ -86,18 +86,23 @@ internal sealed partial class PilotMarketStore
         {
             return false;
         }
-        if (order.SystemId == incoming.SystemId)
+        return StandardMarketRules.Reaches(order.Range, false, MarketJumpDistance(catalog, incoming.SystemId, order.SystemId));
+    }
+
+    private static int? MarketJumpDistance(CatalogDbContext catalog, int source, int target)
+    {
+        if (source == target)
         {
-            return StandardMarketRules.Reaches(order.Range, false, 0);
+            return 0;
         }
         var definitions = catalog.Definitions;
         var graph = definitions.GlobalDefinition(StandardMarketGraph);
-        if (!graph.Systems.ContainsKey(incoming.SystemId) || !graph.Systems.TryGetValue(order.SystemId, out int destination))
+        if (!graph.Systems.ContainsKey(source) || !graph.Systems.TryGetValue(target, out int destination))
         {
-            return false;
+            return null;
         }
-        int distance = definitions.Definition(StandardMarketDistances, incoming.SystemId)[destination];
-        return distance >= 0 && StandardMarketRules.Reaches(order.Range, false, distance);
+        int distance = definitions.Definition(StandardMarketDistances, source)[destination];
+        return distance >= 0 ? distance : null;
     }
 
     private static EconomyTransaction ResidentStandardMarket(WorldAction world) =>

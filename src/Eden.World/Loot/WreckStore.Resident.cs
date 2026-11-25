@@ -278,6 +278,10 @@ internal sealed partial class WreckStore
         {
             return [];
         }
+        if (npc.AnchorKind == NpcAnchorKind.CloneSoldierBelt && NpcCloneSoldierRules.TagFor(npc.TypeId) is { } securityTag)
+        {
+            return [new((int)securityTag, 1)];
+        }
         // Retained solely for the injected Rookie encounter fixture. Normal
         // populations retire this type and never select it from asteroid pools.
         if (

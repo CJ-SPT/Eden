@@ -26,7 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Maps;
 
-public sealed class MapNavigationTests
+public sealed partial class MapNavigationTests
 {
     [Fact]
     public void StructureMapCacheUsesCurrentFileTimeOnEveryRefresh()

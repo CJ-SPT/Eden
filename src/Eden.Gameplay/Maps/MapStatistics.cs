@@ -4,14 +4,19 @@ public enum MapHistoryStatistic
 {
     Jumps,
     Kills,
+    FactionWarfareKills,
 }
 
+// The checkpoint stores these numeric values. Append new activity kinds.
 public enum MapActivityKind
 {
     Jump,
     ShipLoss,
     NpcShipLoss,
     CapsuleLoss,
+    MilitiaShipLoss,
+    MilitiaNpcShipLoss,
+    MilitiaComplexDefenderLoss,
 }
 
 public readonly record struct MapPilotCounts(int InSpace, int Docked)
@@ -25,8 +30,11 @@ public readonly record struct MapActivityCounts(int Jumps, int Ships, int NpcShi
         kind switch
         {
             MapActivityKind.Jump => this with { Jumps = Jumps + 1 },
-            MapActivityKind.ShipLoss => this with { Ships = Ships + 1 },
-            MapActivityKind.NpcShipLoss => this with { NpcShips = NpcShips + 1 },
+            MapActivityKind.ShipLoss or MapActivityKind.MilitiaShipLoss => this with { Ships = Ships + 1 },
+            MapActivityKind.NpcShipLoss or MapActivityKind.MilitiaNpcShipLoss or MapActivityKind.MilitiaComplexDefenderLoss => this with
+            {
+                NpcShips = NpcShips + 1,
+            },
             MapActivityKind.CapsuleLoss => this with { Capsules = Capsules + 1 },
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };

@@ -73,6 +73,7 @@ internal sealed class MapStatistics
     private readonly Dictionary<(MapHistoryStatistic Statistic, int Hours), HistoryCache> _history = [];
     private long _jumpsRevision;
     private long _killsRevision;
+    private long _militiaKillsRevision;
     private long _populationFrom;
     private long _populationUntil;
     private MapPilotPopulation _population = MapPilotPopulation.Empty;
@@ -146,13 +147,17 @@ internal sealed class MapStatistics
                 _events.Add(minute, events);
             }
             events.Add(activity);
-            if (activity.Kind == MapActivityKind.Jump)
+            if (Includes(MapHistoryStatistic.Jumps, activity.Kind))
             {
                 _jumpsRevision++;
             }
-            else
+            if (Includes(MapHistoryStatistic.Kills, activity.Kind))
             {
                 _killsRevision++;
+            }
+            if (Includes(MapHistoryStatistic.FactionWarfareKills, activity.Kind))
+            {
+                _militiaKillsRevision++;
             }
         }
     }
@@ -183,7 +188,7 @@ internal sealed class MapStatistics
         {
             foreach (var activity in batch.Read())
             {
-                if (activity.Time <= cutoff || Statistic(activity.Kind) != statistic)
+                if (activity.Time <= cutoff || !Includes(statistic, activity.Kind))
                 {
                     continue;
                 }
@@ -315,8 +320,24 @@ internal sealed class MapStatistics
 
     private static long Minute(long time) => time / TimeSpan.TicksPerMinute;
 
-    private long Revision(MapHistoryStatistic statistic) => statistic == MapHistoryStatistic.Jumps ? _jumpsRevision : _killsRevision;
+    private long Revision(MapHistoryStatistic statistic) =>
+        statistic switch
+        {
+            MapHistoryStatistic.Jumps => _jumpsRevision,
+            MapHistoryStatistic.Kills => _killsRevision,
+            MapHistoryStatistic.FactionWarfareKills => _militiaKillsRevision,
+            _ => throw new ArgumentOutOfRangeException(nameof(statistic)),
+        };
 
-    private static MapHistoryStatistic Statistic(MapActivityKind kind) =>
-        kind == MapActivityKind.Jump ? MapHistoryStatistic.Jumps : MapHistoryStatistic.Kills;
+    private static bool Includes(MapHistoryStatistic statistic, MapActivityKind kind) =>
+        statistic switch
+        {
+            MapHistoryStatistic.Jumps => kind == MapActivityKind.Jump,
+            MapHistoryStatistic.Kills => kind is not (MapActivityKind.Jump or MapActivityKind.MilitiaComplexDefenderLoss),
+            MapHistoryStatistic.FactionWarfareKills => kind
+                is MapActivityKind.MilitiaShipLoss
+                    or MapActivityKind.MilitiaNpcShipLoss
+                    or MapActivityKind.MilitiaComplexDefenderLoss,
+            _ => throw new ArgumentOutOfRangeException(nameof(statistic)),
+        };
 }

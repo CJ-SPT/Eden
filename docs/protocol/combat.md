@@ -890,8 +890,8 @@ References: inert inspection of build **3662168** `code.ccp` (SHA-256 **37FB2AF4
 At a low-security CONCORD or DED NPC station, the Security Office exchanges Clone Soldier tags from the pilot's personal Item
 Hangar to raise negative security status. The four tag bands begin at -10, -8, -5 and -2. Each tag raises security status by
 0.5, so the last tag can take a pilot slightly above zero. The pinned catalog's processing fees are 3, 4, 5 and 6 million ISK
-per tag, respectively. The Testing market and the installed Standard market snapshot sell the four tag types. Clone Soldier
-belt encounters and their tag drops remain a separate feature gap.
+per tag, respectively. The Testing market and the installed Standard market snapshot sell the four tag types. Pilots can also
+recover them from [Clone Soldier belt wrecks](#clone-soldier-belt-encounters).
 
 Build 3662168 calls `crimewatch.ApplyTagsForSecStatus(targetSecurityStatus, currentSecurityStatus)` through the location
 moniker and expects Python None. The server recomputes the required tags and fees, and rejects stale quotes. The tag stacks,
@@ -913,6 +913,41 @@ the native bound request, mixed tag bands, committed notifications, checkpoint r
 
 **Optional maintainer checks.** Exchange tags in the native Jan Security Office and check refreshed inventory, wallet and
 character-sheet history.
+
+## Clone Soldier belt encounters
+
+Occupied native asteroid belts in ordinary low-security systems can host one pirate Clone Soldier for their current
+encounter generation. Eden uses a deterministic one-in-twenty roll per occupied generation. Displayed security selects the
+tier. A 0.4 system selects a Trainer, 0.3 a Recruiter, 0.2 a Transporter, and 0.1 a Negotiator. The system's regional pirate
+faction selects the ship from the Angel, Blood Raider, Guristas, Sansha or Serpentis variants. Highsec, nullsec, ice fields
+and ordinary regional cruiser pools retain their existing admission rules. Incursions displace the Clone Soldier along with
+other native belt pirates and restore the same native encounter roll after the focus withdraws.
+
+The 20 pinned ships retain their catalog weapons, movement, defenses, bounties and racial wrecks. Transporters web at up to
+10 km and Negotiators disrupt warp at up to 24 km through the ordinary NPC electronic warfare rules. A kill puts exactly one
+corresponding security tag in the wreck. Existing rules assign loot rights by damage contribution and settle the bounty and
+security gain. Destruction, wreck cargo and the next encounter deadline commit together in the resident world. Reconnecting
+preserves the current occupant, and a checkpoint retains the loot and exact deadline. Legacy ordinary Clone Soldier spawns
+still retire without a reward. The recorded population correction explains why ordinary cruiser-group admission was unsafe.
+[Original population correction](navigation.md#npc-spawn-and-translocation-follow-up)
+
+Build 3662168 catalog records for types **33132–33189** supply the faction hull and wreck links. The four security tags are
+**33138–33141** in group **1206**. EVE.js **261108.1** `beltRatRuntime.js` and `npcLoot.js` were checked for regional belt
+selection and wreck loot. Eden's rarity and encounter placement use local policy.
+[CCP design record](https://www.eveonline.com/news/view/wanttotrade-tags-for-security-status) ·
+[EVE University security tags](https://wiki.eveuniversity.org/Security_tags)
+
+**Automated validation.** The exact `CloneSoldierTests.ResidentCloneSoldierWreckCarriesOneSecurityTagAcrossCheckpoint`
+case passed in 2.53 seconds. It exercises tag pickup, the saved spawn deadline and checkpoint reopen through resident services.
+All 6 `CloneSoldierTests`, 34 `RegionalNpcTests` and 11 `IncursionAmbientPopulationTests` cases passed in the combined run.
+Clone Soldier coverage includes all faction and security mappings and the pinned electronic-warfare ranges. The combined
+run's resident Pirate case in `NpcPopulationTests.KillRewardsUseRoleAndActualCorporation` also failed on untouched `d958de15`
+in an exact six-case run. Its immediate-payment assertion predates resident bounty ticks.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Find a Clone Soldier in a lowsec asteroid belt, defeat it and exchange its tag at a Security
+Office.
 
 <a id="character-kill-right-lookup"></a>
 

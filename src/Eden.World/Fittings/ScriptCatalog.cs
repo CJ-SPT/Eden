@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.World.Catalog;
 
 namespace Eden.World.Fittings;
@@ -24,6 +25,7 @@ internal static class ScriptCatalog
         MissileVelocity = 6130,
         MissileLifetime = 6131,
         SensorStrength = 6488,
+        Resistance = 6629,
     }
 
     // Build 3662168 fitted script effects: target is the containing module (otherID).
@@ -57,6 +59,10 @@ internal static class ScriptCatalog
                 ScriptEffect.ExplosionVelocity,
                 ScriptEffect.MissileVelocity,
                 ScriptEffect.MissileLifetime,
+            },
+            HardenerDefinitions.ArmorScriptGroup or HardenerDefinitions.ShieldScriptGroup => new HashSet<ScriptEffect>
+            {
+                ScriptEffect.Resistance,
             },
             _ => new HashSet<ScriptEffect>(),
         };

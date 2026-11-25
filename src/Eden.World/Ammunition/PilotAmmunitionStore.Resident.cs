@@ -120,6 +120,12 @@ internal sealed partial class PilotAmmunitionStore
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(RemoteAssistanceCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(
+                    (
+                        group == HardenerDefinitions.CapitalArmorGroup && InventoryDefinitions.IsLowSlot(module.FlagId)
+                        || group == HardenerDefinitions.CapitalShieldGroup && InventoryDefinitions.IsMediumSlot(module.FlagId)
+                    ) && HardenerCatalog.Supported(catalog, module.TypeId, group)
+                )
+                && !(
                     RemoteRepairRules.AncillaryKind(group) is not null
                     && RemoteRepairCatalog.Supported(catalog, module.TypeId, group)
                     && InventoryDefinitions.IsHighSlot(module.FlagId)
@@ -153,10 +159,11 @@ internal sealed partial class PilotAmmunitionStore
                     SupportModuleDefinitions.Effect(group) is not null
                     || PlayerEwarRules.Groups.Contains(group)
                     || RemoteAssistanceRules.Effect(group) is not null
+                    || HardenerDefinitions.IsFlex(group)
                 ) && world.Set<ActiveFittedModule>().Find(module.Id) is not null
             )
             {
-                throw new InvalidDataException("Deactivate the support module and finish its paid cycle before changing scripts.");
+                throw new InvalidDataException("Deactivate the module and finish its paid cycle before changing scripts.");
             }
             if (world.Set<ModuleCooldown>().Find(module.Id) is { } cooldown && now < cooldown.ReadyAt)
             {

@@ -216,6 +216,7 @@ internal sealed partial record FittingCalculation(
                     || SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                     || PlayerEwarCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                     || RemoteAssistanceCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                    || HardenerDefinitions.IsFlex(parent.GroupId) && HardenerCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                 )
                 || !ScriptCatalog.Supported(catalog, charge.Item.TypeId, charge.GroupId)
                 || !SupportModuleDefinitions.CompatibleScript(
@@ -563,6 +564,7 @@ internal sealed partial record FittingCalculation(
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
+            .Concat(modules.Any(m => HardenerDefinitions.IsFlex(m.GroupId)) ? [HardenerDefinitions.ResistancePhasingSkill] : [])
             .Concat(hullSkills)
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<Eden.Gameplay.Information.InformationSkill>().Select(s => (int)s))

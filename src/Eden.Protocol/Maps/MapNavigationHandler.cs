@@ -66,6 +66,7 @@ internal sealed class MapNavigationHandler(IMapStatistics statistics) : ISelecte
         {
             MapHistoryStatId.Jumps => statistics.History(MapHistoryStatistic.Jumps, (int)hours),
             MapHistoryStatId.Kills => statistics.History(MapHistoryStatistic.Kills, (int)hours),
+            MapHistoryStatId.FactionWarfareKills => statistics.History(MapHistoryStatistic.FactionWarfareKills, (int)hours),
             _ => MapHistorySnapshot.Empty,
         };
         return new MapHistoryReply(id, snapshot);

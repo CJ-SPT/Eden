@@ -14,7 +14,9 @@
   [Fleets](#cooperative-fleets) · [Corporations](corporations.md) · [Structures](protocol/structures.md) · [Sovereignty](protocol/sovereignty.md)
 - **Faction Warfare.** Enlist a pilot, corporation or alliance. Run militia missions, earn ranks and LP, capture complexes and
   battlefields, and contest infrastructure hubs in both warzones. Optional militia bots select reachable Frontlines and
-  contest shared complexes. [Faction Warfare](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
+  contest shared complexes. The map shows recent militia ship losses.
+  [Faction Warfare](protocol/faction-warfare.md#dynamic-faction-warfare-patrols) ·
+  [Faction Warfare map kills](protocol/navigation.md#faction-warfare-map-kills)
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. On established worlds, eligible
   bots buy and fit separate PvP ships. The server funds bot refits by default. Corporate pilots can take paid production work,
   replace lost ships and fund first sovereignty claims. Stranded pilots can travel to a stocked trade hub for a replacement
@@ -323,6 +325,10 @@ Originals support ME/TE research and copying at laboratory stations. Copies inhe
 
 Eden's default testing market sells all **19,727 published market types** in the pinned client catalog for **1 ISK per unit**. Each station with a market service is populated when a docked pilot accesses it, with **1,000,000 units per type** and replenishing supply. Existing and new pilots receive **1,000,000 ISK once**, recorded as a GM Cash Transfer in their wallet journal; restarting never repeats the grant. Ships, modules, ammunition, skillbooks, blueprint originals and other published market items can be purchased into Item Hangar. Purchasing an item does not implement its missing gameplay: the assembly, fitting, activation and industry limits described below still apply. NPC buyback orders for Veldspar, Scordite, Tritanium and Pyerite retain their finite demand, original prices and sales tax. The native Regional Market browser displays stock and history from actual regional trades. Personal immediate trades require docking at the selling station. Personal station-local buy/sell listings now reserve goods and fully funded ISK escrow, match partial fills across orders, charge broker/relist fees and sales tax, and support modification, cancellation and expiry while the owner is offline. Orders, payments, delivery and notifications survive save/reopen. Personal station-buy listings can set a minimum quantity. A seller can fill the entire remainder once the order drops below the original minimum. [Buy order minimum volume](protocol/industry.md#personal-buy-order-minimum-volume). New worlds can explicitly disable testing supply and grants; see [personal market orders](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
 
+Daytrading extends the range for repricing personal orders within your current region. You can cancel your own order
+from another region. Remaining sell inventory returns to the original station, and buy escrow returns to your wallet.
+[Remote personal order management](protocol/industry.md#remote-personal-order-management)
+
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 
 Catalog-backed belts now renew at a saved daily UTC boundary (11:00 by default), including when no pilot visits the system. Startup catches up overdue belts once; reconnecting does not reset depletion. New economy worlds save configurable material price inputs and industry indices, charge atomic industry/reprocessing fees, and value the manufactured starter hulls for insurance from their material recipes. See [resource renewal and economic charges](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026).
@@ -363,8 +369,10 @@ insurance. The hull must be undamaged and free of cargo and rigs.
   available. Eligible Upwell structures also provide tether repair and asset safety.
   [NPC station repair](protocol/combat.md#native-station-repair-november-2-2026) · [Upwell repair](protocol/structures.md#native-upwell-repair-shop)
 - Pilots with negative security status can exchange Clone Soldier tags and pay the processing fee at low-security CONCORD
-  and DED stations. The wallet debit and security history persist with the inventory changes.
-  [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges)
+  and DED stations. Rare Clone Soldiers in lowsec asteroid belts always drop a tag for their tier. The wallet debit and
+  security history persist with the exchange's inventory changes.
+  [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges) ·
+  [Clone Soldier belt encounters](protocol/combat.md#clone-soldier-belt-encounters)
 
 ## Fitting, weapons and modules
 
@@ -401,8 +409,10 @@ insurance. The hull must be undamaged and free of cargo and rigs.
   [Cargo scans through containers](protocol/information.md#cargo-scans-through-containers) ·
   [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - **Capital and Upwell roles.** Supported capitals have ship-specific jump, fighter, fleet hangar, maintenance, refitting and clone
-  services. Upwell gunners can lock targets and launch and recall Standup fighter squadrons.
-  [Capital logistics](protocol/capital-logistics.md) · [Upwell structures](protocol/structures.md)
+  services. Capital Flex Armor and Shield Hardeners support all nine published variants and their resistance scripts.
+  Upwell gunners can lock targets and launch and recall Standup fighter squadrons.
+  [Capital logistics](protocol/capital-logistics.md) · [Capital Flex hardeners](protocol/fitting.md#capital-flex-armor-and-shield-hardeners) ·
+  [Upwell structures](protocol/structures.md)
 
 ### Ship and module completion program
 

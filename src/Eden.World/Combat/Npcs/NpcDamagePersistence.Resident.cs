@@ -11,6 +11,7 @@ using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Maps;
 using Eden.Gameplay.Ships;
 using Eden.World.Agents;
 using Eden.World.Catalog;
@@ -19,6 +20,7 @@ using Eden.World.Exploration;
 using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Maps;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -153,7 +155,7 @@ internal static partial class NpcDamagePersistence
             }
             if (incursionSite || NpcPopulationRules.IsIncursionPatrol(npc.AnchorKind))
             {
-                Maps.MapStatisticsStore.Record(world, npc.SystemId, now, Eden.Gameplay.Maps.MapActivityKind.NpcShipLoss);
+                MapStatisticsStore.Record(world, npc.SystemId, now, MapActivityKind.NpcShipLoss);
                 if (incursionSite)
                 {
                     CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
@@ -174,12 +176,25 @@ internal static partial class NpcDamagePersistence
                 );
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
+            bool militiaMission = MilitiaMissionCatalog.IsMilitia(world, npc);
             if (
-                npc.Role is NpcRole.Pirate or NpcRole.Navy or NpcRole.Customs or NpcRole.Concord or NpcRole.MilitiaNavy
+                npc.Role
+                    is NpcRole.Pirate
+                        or NpcRole.Navy
+                        or NpcRole.Customs
+                        or NpcRole.Concord
+                        or NpcRole.MilitiaNavy
+                        or NpcRole.MilitiaComplexDefender
                 && !NpcMotionRules.IsStationary(catalog.RequireItem(npc.TypeId).GroupId, npc.Role)
             )
             {
-                Maps.MapStatisticsStore.Record(world, npc.SystemId, now, Eden.Gameplay.Maps.MapActivityKind.NpcShipLoss);
+                var kind = npc.Role switch
+                {
+                    NpcRole.MilitiaComplexDefender => MapActivityKind.MilitiaComplexDefenderLoss,
+                    NpcRole.MilitiaNavy => MapActivityKind.MilitiaNpcShipLoss,
+                    _ => militiaMission ? MapActivityKind.MilitiaNpcShipLoss : MapActivityKind.NpcShipLoss,
+                };
+                MapStatisticsStore.Record(world, npc.SystemId, now, kind);
                 if (npc.Role == NpcRole.Pirate)
                 {
                     Eden.World.Sovereignty.SovereigntyDevelopmentPersistence.Record(
@@ -215,7 +230,6 @@ internal static partial class NpcDamagePersistence
                 attacker,
                 loot
             );
-            bool militiaMission = Eden.World.Agents.MilitiaMissionCatalog.IsMilitia(world, npc);
             if (!militiaMission && npc.AnchorKind is not (NpcAnchorKind.MilitiaComplex or NpcAnchorKind.MilitiaObjective))
             {
                 PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);

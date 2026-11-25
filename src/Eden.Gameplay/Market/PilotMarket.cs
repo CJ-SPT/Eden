@@ -103,6 +103,7 @@ public enum MarketSkill
     Wholesale = 16596,
     Tycoon = 18580,
     BrokerRelations = 3446,
+    Daytrading = 16595,
     AdvancedBrokerRelations = 16597,
 }
 

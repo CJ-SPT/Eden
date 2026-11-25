@@ -621,7 +621,11 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     internal static void CheckHull(CatalogDbContext catalog, int moduleType, int hullType)
     {
-        if (!InventoryDefinitions.CanFitShip(ReadAttributes(catalog, moduleType), hullType, catalog.FittingType(hullType)!.GroupId))
+        int hullGroup = catalog.RequireItem(hullType).GroupId;
+        if (
+            !InventoryDefinitions.CanFitShip(ReadAttributes(catalog, moduleType), hullType, hullGroup)
+            || !Eden.Gameplay.Repair.HardenerDefinitions.CanFitHull(catalog.RequireItem(moduleType).GroupId, hullGroup)
+        )
         {
             throw new InvalidDataException("This module is restricted to a different ship type or class.");
         }

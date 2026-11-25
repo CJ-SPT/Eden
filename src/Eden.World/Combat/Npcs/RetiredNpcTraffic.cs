@@ -30,7 +30,7 @@ internal static class RetiredNpcTraffic
                     && npc.RetiredAt <= cutoff
                     && (
                         npc is { Role: NpcRole.Convoy, AnchorKind: NpcAnchorKind.Station }
-                        || npc is { Role: NpcRole.MiningHauler or NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt }
+                        || npc.Role is NpcRole.MiningHauler or NpcRole.Pirate && NpcPopulationRules.IsNativeBelt(npc.AnchorKind)
                     )
             )
             .Select(npc => npc.Id)

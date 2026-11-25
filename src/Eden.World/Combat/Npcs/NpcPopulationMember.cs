@@ -18,20 +18,24 @@ internal readonly record struct NpcPopulationMember(
 )
 {
     internal bool Active => DestroyedAt is null && RetiredAt is null;
+    internal bool ExcludedPirate => Role == NpcRole.Pirate && ExcludedType(TypeId, AnchorKind);
+
+    private static bool ExcludedType(int type, NpcAnchorKind anchor) =>
+        NpcSpecialTypes.Excluded.Contains(type) && (anchor != NpcAnchorKind.CloneSoldierBelt || NpcCloneSoldierRules.TagFor(type) is null);
 
     // Pirates affect population through membership and availability. Their combat
     // motion and damage still refresh the owning combat and contact views.
     internal static bool RetainsBeltPirateDeadline(WorldNpc before, WorldNpc after) =>
         before is { Role: NpcRole.Pirate, DestroyedAt: null, RetiredAt: null }
         && (
-            before is { AnchorKind: NpcAnchorKind.Belt, BeltId: > 0, EncounterId: > 0 }
+            before is { BeltId: > 0, EncounterId: > 0 } && NpcPopulationRules.IsNativeBelt(before.AnchorKind)
             || NpcPopulationRules.IsIncursionPatrol(before.AnchorKind)
         )
         && after is { Role: NpcRole.Pirate, DestroyedAt: null, RetiredAt: null }
         && before.AnchorKind == after.AnchorKind
         && before.ExpiresAt == after.ExpiresAt
         && before.TypeId != NpcEncounterDefinitions.GuristasRookieType
-        && !NpcSpecialTypes.Excluded.Contains(before.TypeId)
+        && !ExcludedType(before.TypeId, before.AnchorKind)
         && before.SystemId == after.SystemId
         && before.BeltId == after.BeltId
         && before.EncounterId == after.EncounterId

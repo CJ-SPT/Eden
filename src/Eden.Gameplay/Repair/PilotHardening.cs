@@ -1,5 +1,7 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Repair;
 
@@ -17,6 +19,11 @@ public static class HardenerDefinitions
 {
     public const int ShieldGroup = 77;
     public const int ArmorGroup = 328;
+    public const int CapitalArmorGroup = 1699;
+    public const int CapitalShieldGroup = 1700;
+    public const int ArmorScriptGroup = 1701;
+    public const int ShieldScriptGroup = 1702;
+    public const int ResistancePhasingSkill = 32797;
     public const int EmShieldTechOne = 2293;
     public const int EmArmorTechOne = 11301;
     public const int TacticalShieldManipulationSkill = (int)Eden.Gameplay.Combat.DefenseSkill.TacticalShieldManipulation;
@@ -24,10 +31,18 @@ public static class HardenerDefinitions
     public static DogmaEffect? Effect(int group) =>
         group switch
         {
-            ShieldGroup => DogmaEffect.ActiveShieldResistance,
-            ArmorGroup => DogmaEffect.ActiveArmorResistance,
+            ShieldGroup or CapitalShieldGroup => DogmaEffect.ActiveShieldResistance,
+            ArmorGroup or CapitalArmorGroup => DogmaEffect.ActiveArmorResistance,
             _ => null,
         };
+
+    public static bool IsFlex(int group) => group is CapitalArmorGroup or CapitalShieldGroup;
+
+    // The armor module description restricts it to capitals. Shield profiles also declare a more specific list.
+    public static bool CanFitHull(int group, int hullGroup) =>
+        !IsFlex(group)
+        || CapitalTravelRules.RestrictedCapital(hullGroup)
+        || hullGroup is (int)HullClass.Freighter or (int)HullClass.JumpFreighter;
 
     public static Hardener Define(long itemId, int typeId, int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {

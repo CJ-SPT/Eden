@@ -212,9 +212,9 @@ internal static partial class ShipLossPersistence
         world.SaveChanges();
         world.Remove(old);
         var kind =
-            catalog.RequireItem(old.TypeId).GroupId == FleetDefinitions.CapsuleGroup
-                ? MapActivityKind.CapsuleLoss
-                : MapActivityKind.ShipLoss;
+            catalog.RequireItem(old.TypeId).GroupId == FleetDefinitions.CapsuleGroup ? MapActivityKind.CapsuleLoss
+            : MilitiaEnlistmentStore.Effective(world, pilot).HasValue ? MapActivityKind.MilitiaShipLoss
+            : MapActivityKind.ShipLoss;
         MapStatisticsStore.Record(world, system, now, kind);
         return insurance;
     }

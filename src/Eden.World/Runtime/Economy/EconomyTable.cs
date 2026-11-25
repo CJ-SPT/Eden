@@ -527,7 +527,7 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                     && (
                         retired.AnchorKind == NpcAnchorKind.Incursion
                         || NpcPopulationRules.IsIncursionPatrol(retired.AnchorKind)
-                        || retired is { Role: NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt }
+                        || retired.Role == NpcRole.Pirate && NpcPopulationRules.IsNativeBelt(retired.AnchorKind)
                     )
                         ? retired.SystemId
                         : null;

@@ -167,8 +167,12 @@ public static class ModuleFittingRules
                 HullRepairDefinitions.Group => LocalRepairDefinitions.IsSupported(attributes)
                     && effects.Contains(DogmaEffect.StructureRepair),
                 ArmorRepairDefinitions.Group => ArmorRepairDefinitions.IsSupported(attributes) && effects.Contains(DogmaEffect.ArmorRepair),
-                HardenerDefinitions.ShieldGroup => effects.Contains(DogmaEffect.ActiveShieldResistance),
-                HardenerDefinitions.ArmorGroup => effects.Contains(DogmaEffect.ActiveArmorResistance),
+                HardenerDefinitions.ShieldGroup or HardenerDefinitions.CapitalShieldGroup => effects.Contains(
+                    DogmaEffect.ActiveShieldResistance
+                ),
+                HardenerDefinitions.ArmorGroup or HardenerDefinitions.CapitalArmorGroup => effects.Contains(
+                    DogmaEffect.ActiveArmorResistance
+                ),
                 PropulsionDefinitions.AfterburnerGroup => (
                     effects.Contains(DogmaEffect.Afterburner)
                     && !effects.Contains(DogmaEffect.Microwarpdrive)

@@ -176,7 +176,7 @@ internal sealed class NpcEncounterStore(
                     || NpcPopulationRules.IsIncursionPatrol(n.AnchorKind)
                     || replacesBeltPirates && IncursionRoamingPopulation.IsNativeBeltPirate(n)
                     || n.TypeId == NpcEncounterDefinitions.GuristasRookieType
-                    || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)
+                    || n.ExcludedPirate
                 )
             )
             .Select(n => new SimulationResource(SharedSimulationResource.Npc, n.Id))

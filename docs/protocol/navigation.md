@@ -13,6 +13,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Peer warp and target locks](#peer-warp-and-target-locks)
 - [Focused interdiction at NPC stargates](#focused-interdiction-at-npc-stargates)
 - [Personal map visit history](#personal-map-visit-history)
+- [Faction Warfare map kills](#faction-warfare-map-kills)
 - [Subcapital Micro Jump Field Generator](#subcapital-micro-jump-field-generator)
 - [Insider QA tab, November 21, 2026](#insider-qa-tab-november-21-2026)
 - [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
@@ -1426,6 +1427,35 @@ Gameplay reference was checked against [EVE University stargates](https://wiki.e
 
 **Optional maintainer checks.** After restarting with the new build, verify the shortened tunnel and arrival camera while following traffic through a gate.
 
+
+## Faction Warfare map kills
+
+The **Militia Ships Destroyed** filters highlight known-space systems where capsuleers lost ships while enlisted
+in the last hour or 24 hours. Eden uses the victim's effective militia at the moment the loss commits. Both players
+and autonomous capsuleers count. Capsules have their own general map statistic, and militia navy, complex and
+mission NPC losses supply the separate NPC count in the reply.
+
+Build **3662168** uses `map.GetHistory(5, hours)` with a one-hour or 24-hour window. Inert inspection of the pinned client archive, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, verified `mapHistoryStatFacWarKills`
+in `appConst.pyj` and the `value1 - value2` calculation in `mapFilterKills.pyj`, `mapViewColorHandler.pyj` and
+`starModeHandler.pyj`. EVE.js **261108.1**'s `mapService.js`, SHA-256
+`6c06a8e47c57e514381da2d0b35cc7aad6fbf39c3da480fa6d2b1baa90fafbb1`, returns the same columns with total militia
+ship losses in `value1`, militia NPC ship losses in `value2` and zero in `value3`. Eden identifies NPC affiliation
+from militia encounter roles and mission ownership. [EVE University Faction Warfare tactics](https://wiki.eveuniversity.org/Faction_warfare_strategy_and_tactics)
+
+Committed combat publishes one event per loss. Militia losses use the existing resident history, retention and
+checkpoint format. Ordinary map kill counts retain their existing coverage. Collection begins with this update,
+so earlier events age out under their existing classifications.
+
+**Automated validation.** `MilitiaKillHistoryUsesCommittedVictimsAndSurvivesCheckpointReopen` passed in
+0.78 seconds of case time. It covers enlisted and neutral victim losses, militia navy and complex NPC losses,
+rollback, native row and cache-version stability, both expiry deadlines and checkpoint reopen. A warmed native
+read used zero SQL commands, connections or fitting calculations.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After an enlisted pilot's ship is destroyed, inspect the one-hour and 24-hour
+**Militia Ships Destroyed** filters in the native map.
 
 ## Star map statistics, November 20, 2026
 

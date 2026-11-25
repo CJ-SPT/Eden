@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Infrastructure.Diagnostics;
@@ -32,7 +33,8 @@ internal readonly record struct NpcSpawnPoolKey(NpcPirateFaction Faction, NpcHul
 
 internal sealed record NpcSpawnDefinitions(
     ImmutableArray<NpcSpawnProfile> Profiles,
-    FrozenDictionary<NpcSpawnPoolKey, ImmutableArray<NpcSpawnProfile>> Pools
+    FrozenDictionary<NpcSpawnPoolKey, ImmutableArray<NpcSpawnProfile>> Pools,
+    FrozenDictionary<NpcCloneSoldierType, NpcSpawnProfile> CloneSoldiers
 );
 
 [Injectable(InjectionType.Singleton)]
@@ -40,8 +42,8 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
 {
     private static readonly CatalogDefinition<NpcSpawnDefinitions> s_profiles = new(
         "npc-spawn-profiles",
-        (catalog, _) => Index(Load(catalog)),
-        Estimate: values => 128 + values.Profiles.Length * 8192L
+        (catalog, _) => Load(catalog),
+        Estimate: values => 128 + (values.Profiles.Length + values.CloneSoldiers.Count) * 8192L
     );
 
     private readonly object _gate = new();
@@ -72,23 +74,19 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
     internal IReadOnlyList<NpcSpawnProfile> Pool(NpcPirateFaction faction, NpcHullClass hull) =>
         Definitions.Pools.GetValueOrDefault(new(faction, hull), []);
 
-    private static NpcSpawnDefinitions Index(ImmutableArray<NpcSpawnProfile> profiles) =>
-        new(
-            profiles,
-            profiles
-                .GroupBy(profile => new NpcSpawnPoolKey(profile.Faction, profile.Hull))
-                .ToFrozenDictionary(group => group.Key, group => group.OrderBy(profile => profile.TypeId).ToImmutableArray())
-        );
+    internal NpcSpawnProfile? CloneSoldier(NpcCloneSoldierType type) => Definitions.CloneSoldiers.GetValueOrDefault(type);
 
-    private static ImmutableArray<NpcSpawnProfile> Load(CatalogDbContext catalog)
+    private static NpcSpawnDefinitions Load(CatalogDbContext catalog)
     {
         var groups = NpcPirateGroups.All.ToDictionary(g => g.GroupId);
         int[] groupIds = groups.Keys.ToArray();
         var types = groupIds.SelectMany(group => catalog.Definitions.TypesInGroup(group)).Select(catalog.RequireItem).OrderBy(t => t.Id);
         List<NpcSpawnProfile> profiles = [];
+        Dictionary<NpcCloneSoldierType, NpcSpawnProfile> cloneSoldiers = [];
         foreach (var type in types)
         {
-            if (NpcSpecialTypes.Excluded.Contains(type.Id))
+            var tag = NpcCloneSoldierRules.TagFor(type.Id);
+            if (tag is { } securityTag ? !HasTag(catalog, securityTag) : NpcSpecialTypes.Excluded.Contains(type.Id))
             {
                 continue;
             }
@@ -151,27 +149,43 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
                 {
                     throw new InvalidDataException("NPC has no supported weapon.");
                 }
-                profiles.Add(
-                    new(
-                        type.Id,
-                        type.Name,
-                        type.GroupId,
-                        group.Faction,
-                        group.Hull,
-                        corporation,
-                        type.Mass.Value,
-                        type.Radius.Value,
-                        wreck,
-                        missileRange,
-                        attributes.ToImmutableDictionary()
-                    )
+                NpcSpawnProfile profile = new(
+                    type.Id,
+                    type.Name,
+                    type.GroupId,
+                    group.Faction,
+                    group.Hull,
+                    corporation,
+                    type.Mass.Value,
+                    type.Radius.Value,
+                    wreck,
+                    missileRange,
+                    attributes.ToImmutableDictionary()
                 );
+                if (tag.HasValue)
+                {
+                    cloneSoldiers.Add((NpcCloneSoldierType)type.Id, profile);
+                }
+                else
+                {
+                    profiles.Add(profile);
+                }
             }
             catch (InvalidDataException error)
             {
                 ServerLog.Console.Warning($"NPC population skips type {type.Id}: {error.Message}");
             }
         }
-        return profiles.ToImmutableArray();
+        return new(
+            profiles.ToImmutableArray(),
+            profiles
+                .GroupBy(profile => new NpcSpawnPoolKey(profile.Faction, profile.Hull))
+                .ToFrozenDictionary(group => group.Key, group => group.ToImmutableArray()),
+            cloneSoldiers.ToFrozenDictionary()
+        );
     }
+
+    private static bool HasTag(CatalogDbContext catalog, SecurityTagType tag) =>
+        catalog.FittingType((int)tag)?.GroupId == NpcCloneSoldierRules.TagGroup
+        && catalog.Read(CatalogData.Client.Types, (long)tag) is { Published: 1, Volume: > 0 };
 }

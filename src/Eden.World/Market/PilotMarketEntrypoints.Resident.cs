@@ -60,7 +60,7 @@ internal sealed partial class PilotMarketStore
         Expire();
         using var world = live.Economy.Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var order = OwnedOrder(world, catalog, pilotId, request.OrderId);
+        var order = OwnedOrder(world, pilotId, request.OrderId);
         if (
             order.PriceCents != request.PreviousPriceCents
             || order.Remaining != request.Remaining
@@ -78,6 +78,7 @@ internal sealed partial class PilotMarketStore
             throw new InvalidDataException("Wait five minutes before modifying this order.");
         }
         var station = Station(catalog, order.StationId);
+        RequireModificationRange(world, catalog, Pilot(world, pilotId), station);
         Seed(world, catalog, station, order.TypeId);
         Payment(
             world,
@@ -129,7 +130,7 @@ internal sealed partial class PilotMarketStore
         Expire();
         using var world = live.Economy.Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var order = OwnedOrder(world, catalog, pilotId, orderId);
+        var order = OwnedOrder(world, pilotId, orderId);
         if (order.RegionId != regionId)
         {
             throw new InvalidDataException("Choose the order's region.");

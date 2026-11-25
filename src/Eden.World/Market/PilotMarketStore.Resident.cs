@@ -4,6 +4,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
@@ -26,6 +27,39 @@ internal sealed partial class PilotMarketStore
     private static int MarketSystem(WorldAction world, CatalogDbContext catalog, Ship ship) =>
         ship.Position?.SystemId
         ?? (ship.StructureId is long structure ? world.StructureSystemId(structure) : Station(catalog, ship.StationId).SolarSystemId);
+
+    private static void RequireModificationRange(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogStationDefinition station)
+    {
+        if (!HasMarket(catalog, station))
+        {
+            throw new InvalidDataException("This station does not provide a market.");
+        }
+        var ship = pilot.ActiveShip;
+        if (ship.Position is null && ship.DockedLocationId == station.Id)
+        {
+            return;
+        }
+        int system = MarketSystem(world, catalog, ship);
+        if (catalog.RequireSystem(system).RegionId != station.RegionId)
+        {
+            throw new InvalidDataException("Modify orders from their current market region.");
+        }
+        int level =
+            world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega
+                ? PilotSkillReader.Level(world, catalog, pilot.Id, (int)MarketSkill.Daytrading)
+                : 0;
+        int range = PersonalMarketRules.ModificationRange(level);
+        int? jumps = range switch
+        {
+            0 when system == station.SolarSystemId => 0,
+            > 0 and < StandardMarketRules.RegionRange => MarketJumpDistance(catalog, system, station.SolarSystemId),
+            _ => null,
+        };
+        if (!StandardMarketRules.Reaches(range, false, jumps))
+        {
+            throw new InvalidDataException("Your Daytrading skill does not let you modify that order from here.");
+        }
+    }
 
     private static CatalogStationDefinition PurchaseStation(WorldAction world, CatalogDbContext catalog, Pilot pilot, int stationId)
     {

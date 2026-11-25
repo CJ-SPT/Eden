@@ -374,6 +374,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [Clone Soldier belt encounters](protocol/combat.md#clone-soldier-belt-encounters)
 - [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges)
 - [Server killboard](protocol/combat.md#server-killboard)
 - [NPC identities for encounter waves](protocol/combat.md#npc-identities-for-encounter-waves)
@@ -538,6 +539,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Capital Flex Armor and Shield Hardeners](protocol/fitting.md#capital-flex-armor-and-shield-hardeners)
 - [Dragging loaded charges between fitting slots](protocol/fitting.md#dragging-loaded-charges-between-fitting-slots)
 - [Module online state in space](protocol/fitting.md#module-online-state-in-space)
 - [Trained skills in fitting simulation](protocol/fitting.md#trained-skills-in-fitting-simulation)
@@ -679,6 +681,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Remote personal order management](protocol/industry.md#remote-personal-order-management)
 - [Browsing industry facilities from any station](protocol/industry.md#browsing-industry-facilities-from-any-station)
 - [Regional market location while docked at Upwell structures](protocol/industry.md#regional-market-location-while-docked-at-upwell-structures)
 - [Market preset changes and demand batching](protocol/industry.md#market-preset-changes-and-demand-batching)
@@ -750,6 +753,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Navigation and travel
 
+- [Faction Warfare map kills](protocol/navigation.md#faction-warfare-map-kills)
 - [Bookmark approach](protocol/navigation.md#bookmark-approach)
 - [Peer gate and cloak history](protocol/navigation.md#peer-gate-and-cloak-history)
 - [Peer movement history](protocol/navigation.md#peer-movement-history)

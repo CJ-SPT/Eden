@@ -38,7 +38,7 @@ internal sealed class PilotHardenerStore(WorldDatabase database, TimeProvider cl
         var module = world.Set<OwnedItem>().Find(moduleId);
         int group = module is null ? 0 : catalog.RequireItem(module.TypeId).GroupId;
         bool correctSlot =
-            group == HardenerDefinitions.ShieldGroup
+            HardenerDefinitions.Effect(group) == DogmaEffect.ActiveShieldResistance
                 ? module is not null && InventoryDefinitions.IsMediumSlot(module.FlagId)
                 : module is not null && InventoryDefinitions.IsLowSlot(module.FlagId);
         if (
@@ -55,6 +55,14 @@ internal sealed class PilotHardenerStore(WorldDatabase database, TimeProvider cl
         )
         {
             throw new InvalidDataException("Use an online fitted hardener on your active ship in space.");
+        }
+        if (HardenerDefinitions.IsFlex(group))
+        {
+            if (world is not EconomyTransaction)
+            {
+                throw new InvalidOperationException("Capital flex hardeners require the resident world.");
+            }
+            PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);

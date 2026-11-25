@@ -48,6 +48,8 @@ public static class SupportModuleDefinitions
             RemoteAssistanceRules.TrackingGroup => TrackingScriptGroup,
             RemoteAssistanceRules.SensorGroup => SensorScriptGroup,
             PlayerEwarRules.SensorDampenerGroup => PlayerEwarRules.DampeningScriptGroup,
+            HardenerDefinitions.CapitalArmorGroup => HardenerDefinitions.ArmorScriptGroup,
+            HardenerDefinitions.CapitalShieldGroup => HardenerDefinitions.ShieldScriptGroup,
             _ => 0,
         };
 
@@ -57,6 +59,8 @@ public static class SupportModuleDefinitions
                 or TrackingScriptGroup
                 or SensorScriptGroup
                 or GuidanceScriptGroup
+                or HardenerDefinitions.ArmorScriptGroup
+                or HardenerDefinitions.ShieldScriptGroup
                 or PlayerEwarRules.TrackingDisruptionScriptGroup
                 or PlayerEwarRules.DampeningScriptGroup
                 or PlayerEwarRules.GuidanceDisruptionScriptGroup;

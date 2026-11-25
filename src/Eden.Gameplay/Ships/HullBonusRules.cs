@@ -468,6 +468,7 @@ public static class HullBonusRules
                 or HullCapability.EnergyWarfare
                 or HullCapability.ArmorPlates
                 or HullCapability.ShieldExtenders
+                or HullCapability.CapitalFlexShieldHardening
                 or HullCapability.ReinforcedBulkheads
                 or HullCapability.CombatDrones
                 or HullCapability.MiningDrones

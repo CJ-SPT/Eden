@@ -97,12 +97,9 @@ internal sealed partial class NpcPopulationSeeder(
         int rookie = NpcEncounterDefinitions.GuristasRookieType;
         var legacy = NpcPopulationMember
             .InSystem(world, systemId)
-            .Where(n => n.Active && (n.TypeId == rookie || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)))
+            .Where(n => n.Active && (n.TypeId == rookie || n.ExcludedPirate))
             .ToArray();
-        var retired = legacy
-            .Where(n => n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId))
-            .Select(n => world.Set<WorldNpc>().Find(n.Id)!)
-            .ToArray();
+        var retired = legacy.Where(n => n.ExcludedPirate).Select(n => world.Set<WorldNpc>().Find(n.Id)!).ToArray();
         foreach (var npc in retired)
         {
             npc.RetiredAt = now;
@@ -222,20 +219,15 @@ internal sealed partial class NpcPopulationSeeder(
                 continue;
             }
             uint seed = NpcSpawnRules.Seed(systemId, belt.Id, encounter.Generation);
-            var composition = NpcSpawnRules.Composition(band, seed);
-            List<NpcSpawnProfile> members = [];
-            foreach (var hull in composition)
-            {
-                var pool = profiles.Pool(faction.Value, hull);
-                if (pool.Count == 0)
-                {
-                    Report($"no valid {faction.Value} {hull} profiles for system {systemId}; encounter {belt.Id} skipped.");
-                    break;
-                }
-                uint choice = NpcSpawnRules.Seed(systemId, belt.Id + members.Count, encounter.Generation);
-                members.Add(pool[(int)(choice % (uint)pool.Count)]);
-            }
-            if (members.Count != composition.Count)
+            var clone =
+                world is EconomyTransaction && NpcCloneSoldierRules.Select(faction.Value, security, seed) is { } specialType
+                    ? profiles.CloneSoldier(specialType)
+                    : null;
+            var anchorKind = clone is null ? NpcAnchorKind.Belt : NpcAnchorKind.CloneSoldierBelt;
+            IReadOnlyList<NpcSpawnProfile> members = clone is null
+                ? OrdinaryBeltMembers(systemId, belt.Id, encounter.Generation, faction.Value, band, seed)
+                : [clone];
+            if (members.Count == 0)
             {
                 continue;
             }
@@ -248,6 +240,7 @@ internal sealed partial class NpcPopulationSeeder(
                         BeltId = belt.Id,
                         EncounterId = encounter.Id,
                         SystemId = systemId,
+                        AnchorKind = anchorKind,
                         TypeId = member.TypeId,
                         Role = NpcRole.Pirate,
                         FactionId = (int)member.Faction,
@@ -266,6 +259,30 @@ internal sealed partial class NpcPopulationSeeder(
             }
             encounter.NextSpawnAt = null;
         }
+    }
+
+    private IReadOnlyList<NpcSpawnProfile> OrdinaryBeltMembers(
+        int systemId,
+        int beltId,
+        int generation,
+        NpcPirateFaction faction,
+        NpcSecurityBand band,
+        uint seed
+    )
+    {
+        List<NpcSpawnProfile> members = [];
+        foreach (var hull in NpcSpawnRules.Composition(band, seed))
+        {
+            var pool = profiles.Pool(faction, hull);
+            if (pool.Count == 0)
+            {
+                Report($"no valid {faction} {hull} profiles for system {systemId}; encounter {beltId} skipped.");
+                return [];
+            }
+            uint choice = NpcSpawnRules.Seed(systemId, beltId + members.Count, generation);
+            members.Add(pool[(int)(choice % (uint)pool.Count)]);
+        }
+        return members;
     }
 
     internal static void RecordKill(WorldDbContext world, WorldNpc npc, long now)

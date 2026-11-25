@@ -63,7 +63,11 @@ internal sealed class CapsuleerRatting(
             .Visible.Where(n =>
                 n.Role == NpcRole.Pirate
                 && n.AnchorId == site.Id
-                && n.AnchorKind == (site.Id >= CombatAnomalyRules.FirstSiteId ? NpcAnchorKind.Anomaly : NpcAnchorKind.Belt)
+                && (
+                    site.Id >= CombatAnomalyRules.FirstSiteId
+                        ? n.AnchorKind == NpcAnchorKind.Anomaly
+                        : NpcPopulationRules.IsNativeBelt(n.AnchorKind)
+                )
                 && WithinSite(site, n.Position)
                 && WithinSite(site, pilot.Position!)
                 && !n.Health.Remaining.Destroyed

@@ -620,7 +620,7 @@ internal sealed partial class PilotMarketStore
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
-    private SavedPersonalOrder OwnedOrder(WorldAction world, CatalogDbContext catalog, long pilotId, long id)
+    private SavedPersonalOrder OwnedOrder(WorldAction world, long pilotId, long id)
     {
         var order = world.Set<SavedPersonalOrder>().Find(id);
         if (
@@ -633,7 +633,6 @@ internal sealed partial class PilotMarketStore
         {
             throw new InvalidDataException("This personal order is no longer available.");
         }
-        _ = TradeStation(catalog, Pilot(world, pilotId), order.StationId);
         return order;
     }
 

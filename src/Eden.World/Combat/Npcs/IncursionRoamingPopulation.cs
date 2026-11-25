@@ -123,7 +123,7 @@ internal static class IncursionRoamingPopulation
     }
 
     internal static bool IsNativeBeltPirate(NpcPopulationMember npc) =>
-        npc is { Active: true, AnchorKind: NpcAnchorKind.Belt, Role: NpcRole.Pirate, BeltId: > 0 };
+        npc is { Active: true, Role: NpcRole.Pirate, BeltId: > 0 } && NpcPopulationRules.IsNativeBelt(npc.AnchorKind);
 
     internal static long NextUpdate(WorldAction world, int systemId, long now)
     {
