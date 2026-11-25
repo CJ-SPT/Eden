@@ -278,6 +278,18 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
                 }
                 continue;
             }
+            if (contact.Module.Effect == DogmaEffect.StructureEcm)
+            {
+                if (
+                    contact.ExpiresAt <= now
+                    || world.TargetLocks?.Contains(contact.SourceShipId, row.TargetId) == false
+                    || ReadTarget(world, catalog, contact.Target, row.SystemId, now) is null
+                )
+                {
+                    world.Remove(row);
+                }
+                continue;
+            }
             var source = world.Pilots.SingleOrDefault(p => p.Id == row.PilotId);
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // Paid rows belong to the source controller, including at repeat

@@ -133,6 +133,7 @@ public enum WalletEntryType
 
     // Build 3662168 appConst.refKillRightBuy.
     KillRightPurchase = 116,
+    SecurityTagProcessingFee = 117,
     CorporationAccountWithdrawal = 37,
     BountyPrizeCorporationTax = 92,
     CorporationRegistration = 39,

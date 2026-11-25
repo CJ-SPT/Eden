@@ -885,6 +885,35 @@ References: inert inspection of build **3662168** `code.ccp` (SHA-256 **37FB2AF4
 
 **Optional maintainer checks.** Kill a pirate, wait through the reward window and inspect the native character-sheet status/history. Reconnect across a pending deadline and confirm the native display refreshes once. Native presentation and gameplay feel remain unverified.
 
+## Security Office tag exchanges
+
+At a low-security CONCORD or DED NPC station, the Security Office exchanges Clone Soldier tags from the pilot's personal Item
+Hangar to raise negative security status. The four tag bands begin at -10, -8, -5 and -2. Each tag raises security status by
+0.5, so the last tag can take a pilot slightly above zero. The pinned catalog's processing fees are 3, 4, 5 and 6 million ISK
+per tag, respectively. The Testing market and the installed Standard market snapshot sell the four tag types. Clone Soldier
+belt encounters and their tag drops remain a separate feature gap.
+
+Build 3662168 calls `crimewatch.ApplyTagsForSecStatus(targetSecurityStatus, currentSecurityStatus)` through the location
+moniker and expects Python None. The server recomputes the required tags and fees, and rejects stale quotes. The tag stacks,
+wallet debit (reference **117**) and security history (event **385**) commit together in the resident world and persist through
+checkpoints. Inventory, wallet and security updates use the existing owner notification paths. The security revision publishes
+after commit so other readers observe the updated value.
+
+The client evidence is `securityOfficeWindow.pyj`, `securityOfficeSvc.pyj`, `crimewatch/const.pyj` and `crimewatch/util.pyj` in
+the pinned `code.ccp` identified above. Catalog type IDs **33138–33141** carry dogma attribute **1904**. The stock client checks
+low security and the NPC station's owner when enabling the office. EVE.js **261108.1** maps service **27** in
+`npcStationDirectory.js` (SHA-256 `556c5cfebc2bcbdb25144b87f8b659ef5b364f49d77487d6bbc45eb6502ec2ab`). Its crimewatch handler
+served as a compatibility reference. [CCP design record](https://www.eveonline.com/news/view/wanttotrade-tags-for-security-status) ·
+[EVE University security tags](https://wiki.eveuniversity.org/Security_tags)
+
+**Automated validation.** Both exact `SecurityOfficeTests` methods passed in 10.93 seconds. The resident test world exercises
+the native bound request, mixed tag bands, committed notifications, checkpoint reopen and rejected exchanges.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Exchange tags in the native Jan Security Office and check refreshed inventory, wallet and
+character-sheet history.
+
 <a id="character-kill-right-lookup"></a>
 
 ## Character kill rights

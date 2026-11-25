@@ -120,6 +120,9 @@ public static class BookmarkRules
     public const int RegionTypeId = 3;
     public const int ConstellationTypeId = 4;
 
+    // Build 3662168 appConst.maxApproachDistance used by BookmarkChecker.OfferApproachLocation.
+    public const double MaximumApproachDistance = 10_000_000;
+
     public static void CheckName(string name)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Length > MaximumNameLength || name.Contains('\0'))

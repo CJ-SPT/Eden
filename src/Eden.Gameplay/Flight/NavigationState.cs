@@ -7,6 +7,7 @@ public sealed class NavigationState
     public const double MaximumWarpRange = 100_000;
     public SpacePosition LastHeading { get; private set; } = new(1, 0, 0);
     public SpacePosition? Direction { get; private set; }
+    public SpacePosition? DestinationPoint { get; private set; }
     public SpacePosition Velocity { get; private set; } = new(0, 0, 0);
     public StaticSpaceObject? FollowTarget { get; private set; }
     public NavigationMode FollowMode { get; private set; } = NavigationMode.Follow;
@@ -30,7 +31,8 @@ public sealed class NavigationState
             WarpOrder?.Range ?? 0,
             AlignStamp,
             SpeedFraction,
-            Warp is null ? null : new(Warp.Origin, Warp.Destination, Warp.StartStamp, Warp.EntrySpeed)
+            Warp is null ? null : new(Warp.Origin, Warp.Destination, Warp.StartStamp, Warp.EntrySpeed),
+            DestinationPoint
         );
 
     public static NavigationState Restore(NavigationFrame frame, FlightProperties hull) =>
@@ -38,6 +40,7 @@ public sealed class NavigationState
         {
             LastHeading = frame.LastHeading,
             Direction = frame.Direction,
+            DestinationPoint = frame.DestinationPoint,
             Velocity = frame.Velocity,
             FollowTarget = frame.FollowTarget,
             FollowMode = frame.FollowMode,
@@ -129,6 +132,7 @@ public sealed class NavigationState
         LastHeading = Direction;
         SpeedFraction = 1;
         FollowTarget = null;
+        DestinationPoint = null;
         return true;
     }
 
@@ -151,6 +155,7 @@ public sealed class NavigationState
             return false;
         }
         FollowTarget = null;
+        DestinationPoint = null;
         LastHeading = new(x / length, y / length, z / length);
         Direction = LastHeading;
         if (SpeedFraction == 0)
@@ -158,6 +163,22 @@ public sealed class NavigationState
             SpeedFraction = 1;
         }
         return true;
+    }
+
+    public void GoToPoint(SpacePosition origin, SpacePosition point)
+    {
+        var direction = point - origin;
+        FollowTarget = null;
+        DestinationPoint = point;
+        if (direction.Length > 0)
+        {
+            LastHeading = direction.Unit;
+        }
+        Direction = LastHeading;
+        if (SpeedFraction == 0)
+        {
+            SpeedFraction = 1;
+        }
     }
 
     public NavigationOrderResult Follow(
@@ -188,6 +209,7 @@ public sealed class NavigationState
                     : (follow.Position - position) * (sign / separation);
             LastHeading = Direction;
             FollowTarget = follow;
+            DestinationPoint = null;
             FollowRange = standOff;
             SpeedFraction = 1;
         }
@@ -213,6 +235,7 @@ public sealed class NavigationState
     {
         Direction = null;
         FollowTarget = null;
+        DestinationPoint = null;
         SpeedFraction = 0;
     }
 
@@ -292,13 +315,19 @@ public sealed class NavigationState
                     var radial = position - current.Position;
                     double error = radial.Length - current.Radius - hull.ShipRadius - FollowRange;
                     Direction = radial.Length == 0 ? new SpacePosition(1, 0, 0) : radial.Unit * -Math.Sign(error);
-                    if (cruise > 0 && Math.Abs(error) < cruise)
-                    {
-                        // Destiny GotoThrust tapers within one tick's travel distance.
-                        cruise *= Math.Pow(error / cruise, 4);
-                    }
+                    cruise = HomingSpeed(cruise, Math.Abs(error));
                 }
             }
+        }
+        if (DestinationPoint is { } point)
+        {
+            var offset = point - position;
+            double distance = offset.Length;
+            if (distance > 0)
+            {
+                Direction = LastHeading = offset.Unit;
+            }
+            cruise = HomingSpeed(cruise, distance);
         }
         // Build 3662168 accepts the legacy free-ball layout (no orientation fields).
         // EvolveStop damps Y before drag on each STOP tick, except the warp-exit integration.
@@ -328,9 +357,14 @@ public sealed class NavigationState
     {
         Direction = null;
         FollowTarget = null;
+        DestinationPoint = null;
         Velocity = new(0, 0, 0);
         SpeedFraction = 0;
     }
+
+    // Carbon Destiny GotoThrust tapers within one tick's travel distance.
+    private static double HomingSpeed(double cruise, double distance) =>
+        distance < cruise ? cruise * Math.Pow(distance / cruise, 4) : cruise;
 }
 
 public sealed record NavigationTick(SpacePosition Position, IReadOnlyList<NavigationChange> Changes, SpacePosition InitialVelocity);
@@ -365,5 +399,6 @@ public sealed record NavigationFrame(
     double WarpRange,
     int AlignStamp,
     double SpeedFraction,
-    WarpFrame? Warp
+    WarpFrame? Warp,
+    SpacePosition? DestinationPoint = null
 );

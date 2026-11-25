@@ -32,6 +32,10 @@ public abstract record FlightCommand
 
     public sealed record AlignToPoint(SpacePosition Position) : FlightCommand;
 
+    public sealed record GoToBookmark(long BookmarkId) : FlightCommand;
+
+    public sealed record ApproachBookmark(long? ItemId, SpacePosition Position) : FlightCommand;
+
     public sealed record AutopilotWarp(long TargetId) : FlightCommand;
 
     public sealed record Follow(long TargetId, double Range, bool Orbit) : FlightCommand;

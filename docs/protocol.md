@@ -374,6 +374,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges)
 - [Server killboard](protocol/combat.md#server-killboard)
 - [NPC identities for encounter waves](protocol/combat.md#npc-identities-for-encounter-waves)
 - [Aggression box indicators](protocol/combat.md#aggression-box-indicators--november-15-2026)
@@ -749,6 +750,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Navigation and travel
 
+- [Bookmark approach](protocol/navigation.md#bookmark-approach)
 - [Peer gate and cloak history](protocol/navigation.md#peer-gate-and-cloak-history)
 - [Peer movement history](protocol/navigation.md#peer-movement-history)
 - [Peer warp and target locks](protocol/navigation.md#peer-warp-and-target-locks)
@@ -844,6 +846,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm)
 - [Warp disruption and Upwell docking](protocol/structures.md#warp-disruption-and-upwell-docking)
 - [Structures gap audit](protocol/structures.md#structures-gap-audit)
 - [Cargo Deposit at dockable Upwell structures](protocol/structures.md#cargo-deposit-at-dockable-upwell-structures)

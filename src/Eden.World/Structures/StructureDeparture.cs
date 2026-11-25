@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Industry;
@@ -34,6 +35,15 @@ internal static class StructureDeparture
         if (world.Set<SavedStructureEnergy>().Find(structure.Id) is { } energy)
         {
             world.Remove(energy);
+        }
+        foreach (
+            var module in world
+                .Filter<OwnedItem>(item => item.LocationId == structure.Id)
+                .AsEnumerable()
+                .Where(item => InventoryDefinitions.IsMediumSlot(item.FlagId))
+        )
+        {
+            world.RemoveRange(world.Filter<WorldPlayerEwar>(effect => effect.ModuleId == module.Id).ToArray());
         }
         bool eject =
             !AssetSafetyStore.SafetyEnabled(catalog, structure.SystemId)

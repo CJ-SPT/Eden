@@ -167,20 +167,20 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, targeted stasis webifiers and focused warp tackle implemented. Other EWAR and area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress. Resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, targeted ECM, stasis webifiers and focused warp tackle are implemented. Other EWAR and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
 ### Structures gap audit
 
 The defense branch covers resident gunner leases, fitting, target locks, ammunition, defensive missiles against ships and
-drones, capacitor warfare and targeted webs. The integration uses that lease for Standup fighter assignment and automatic
+drones, capacitor warfare, targeted ECM and targeted webs. The integration uses that lease for Standup fighter assignment and automatic
 recall. Ship locks on the structure survive a change of gunner. Controlled flight snapshots use the structure as the
 ballpark ego while the pilot's personal ship stays docked. Schema 214 adds structure tackle source support to main's
 schema 213 and also accepts the earlier structure-branch format.
 
 | Area | Existing coverage and remaining gaps |
 | --- | --- |
-| Defense | Launch and recall of Standup fighters, guided missiles, webs, neutralizers and scripted warp tackle work. Other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Defense | Launch and recall of Standup fighters, guided missiles, ECM, webs, neutralizers and scripted warp tackle work. Other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
 | Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
 | Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
 | Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
@@ -213,6 +213,50 @@ Not performed; agent client testing is disabled.
 
 Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
 the other ship retains its lock on the Astrahus.
+
+### Standup Variable Spectrum ECM
+
+A gunner can use all three Standup Variable Spectrum ECM variants against locked ships and NPCs. Structure green safety
+applies. Each 20-second attempt pays structure capacitor when it starts, including misses. Repeats pay and roll again at the
+next cycle boundary. The target can keep or acquire a lock on the jamming structure while jammed. The effects and lock
+restrictions use the existing resident electronic warfare contacts. The system tick expires paid jams, and release of
+the structure control lease or departure of the structure clears them early. A checkpoint retains capacitor and the
+paid cooldown. Restart clears live jams.
+
+| Variant | Type | Base cost | Base strength per sensor | Base optimal and falloff |
+| --- | --- | --- | --- | --- |
+| Standup Variable Spectrum ECM I | 35940 | 3,000 GJ | 30 | 75 km each |
+| Standup Variable Spectrum ECM II | 47338 | 3,600 GJ | 36 | 90 km each |
+| Dread Guristas Standup Variable Spectrum ECM | 46577 | 3,000 GJ | 39 | 97.5 km each |
+
+Build 3662168 assigns group 1332 and the default effect 6685, `structureModuleEffectECM`, with the `effects.Laser` GUID.
+Structure Electronic Systems reduces capacitor cost by 3% per level. Script effects 6322–6325 double the selected racial
+strength and halve the other three. The loaded script stays in the magazine. In falloff, chance scales with surface
+distance and the target's ECM resistance (attribute 2253). The effect uses the target's strongest racial sensor and the
+structure's strength against that sensor. Its activation range ends at optimal plus one falloff, following the EVE.js
+reference. EVE.js 261108.1 was checked in local `space/modules/jammerModuleRuntime.js`, SHA-256
+`4F88C0DABC3859E97F0E9F3A1E425F5B7256C4831C2E4BE195814F36B5D7F531`.
+[CCP targeting change](https://www.eveonline.com/news/view/patch-notes-for-october-2018-release) ·
+[EVE University Upwell fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures) ·
+[EVE University ECM scripts](https://wiki.eveuniversity.org/Scripts#Standup_Variable_Spectrum_ECM)
+
+**Automated validation**
+
+The affected selection passed all 319 cases in 143.37 seconds, including all five `StructureEcmTests` cases. Those cases
+cover the three catalog variants, script strength and custody, one capacitor payment per cycle, repeat and expiry,
+release, green safety, native victim notifications, jammer lock permission and chance at the falloff boundary. The exact
+development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureEcmTests.EcmFalloffUsesRacialStrengthAndResistanceBeforeClampingChance`.
+Three exact unanchoring and evacuation regressions passed in 9.13 seconds after adding departure cleanup.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Apply a racial ECM script, activate the module against a hostile ship and verify the victim's jam indicator, allowed
+lock on the structure and timer removal on release.
 
 ### Standup Focused Warp Disruptors
 

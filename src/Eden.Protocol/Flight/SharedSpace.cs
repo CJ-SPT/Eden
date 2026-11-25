@@ -151,7 +151,8 @@ internal sealed record ShipContact(
     long GateCloakUntil = 0,
     long ConnectionId = 0,
     Eden.Gameplay.Structures.PilotTether? Tether = null,
-    IReadOnlyList<ShipCompressionFacility>? Compression = null
+    IReadOnlyList<ShipCompressionFacility>? Compression = null,
+    SpacePosition? DestinationPoint = null
 )
 {
     // A remote client may only enter warp once the simulation has started the course.
@@ -532,6 +533,7 @@ internal sealed class SharedSpace(
                             Pilot = contact.Pilot with { Position = ship.Position },
                             Velocity = ship.Navigation.Velocity,
                             Heading = ship.Navigation.Direction,
+                            DestinationPoint = ship.Navigation.DestinationPoint,
                             SpeedFraction = ship.Navigation.SpeedFraction,
                             FollowRange = ship.Navigation.FollowTarget is null ? null : ship.Navigation.FollowRange,
                             FollowTargetId = ship.Navigation.FollowTarget?.Id ?? 0,

@@ -34,7 +34,8 @@ internal sealed partial class PilotStructureWeaponStore(
     IPilotStructureControl control,
     PilotStructureTargetStore targeting,
     NpcProfileCatalog npcProfiles,
-    ICapacitorEvents capacitorEvents
+    ICapacitorEvents capacitorEvents,
+    INpcEwarRoll ewarRolls
 ) : IPilotStructureWeapons
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -113,6 +114,10 @@ internal sealed partial class PilotStructureWeaponStore(
                     {
                         EndTackle(cycle);
                     }
+                    if (cycle.Effect == DogmaEffect.StructureEcm)
+                    {
+                        EndEcm(cycle);
+                    }
                     if (!targetLost && !cycle.Stopping && cycle.Repeats > 0)
                     {
                         try
@@ -182,7 +187,7 @@ internal sealed partial class PilotStructureWeaponStore(
             || module.OwnerId != source.CorporationId
             || !module.Online
             || !(
-                TackleDefinitions.StructureTackle(effect)
+                TackleDefinitions.StructureTackle(effect) || effect == DogmaEffect.StructureEcm
                     ? InventoryDefinitions.IsMediumSlot(module.FlagId)
                     : InventoryDefinitions.IsHighSlot(module.FlagId)
             )
@@ -213,6 +218,10 @@ internal sealed partial class PilotStructureWeaponStore(
         else if (TackleDefinitions.StructureTackle(effect) && StructureWeaponRules.UsesElectronicSystems(profile.GroupId))
         {
             result = ApplyTackle(world, catalog, token, source, module, target, victim, fit, effect, now);
+        }
+        else if (effect == DogmaEffect.StructureEcm && profile.GroupId == StructureWeaponRules.EcmGroup)
+        {
+            result = Jam(world, catalog, token, source, module, target, victim, fit, repeats, now);
         }
         else if (effect == DogmaEffect.UseMissiles && StructureWeaponRules.MissileLauncher(profile.GroupId))
         {

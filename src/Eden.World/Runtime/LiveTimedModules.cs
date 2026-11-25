@@ -11,14 +11,14 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
         var bursts = economy.DueCommandBursts(system, now);
         var modules = economy.DueModules(system, now);
         var structureTackles = economy.DueStructureTackles(system, now);
-        var areaContacts = economy.DueAreaContacts(system, now);
-        if (bursts.Length != 0 || modules.Length != 0 || areaContacts.Length != 0 || structureTackles.Length != 0)
+        var independentEwar = economy.DueIndependentEwar(system, now);
+        if (bursts.Length != 0 || modules.Length != 0 || independentEwar.Length != 0 || structureTackles.Length != 0)
         {
-            ExpireDue(now, bursts, modules, structureTackles, areaContacts);
+            ExpireDue(now, bursts, modules, structureTackles, independentEwar);
         }
     }
 
-    private void ExpireDue(long now, long[] bursts, long[] modules, long[] structureTackles, (long Module, long Target)[] areaContacts)
+    private void ExpireDue(long now, long[] bursts, long[] modules, long[] structureTackles, (long Module, long Target)[] independentEwar)
     {
         var economy = owner.Economy;
         var ships = economy.Inspect(world =>
@@ -33,7 +33,7 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
                         .Select(row => (long?)row!.TargetId)
                 )
                 .Concat(
-                    areaContacts
+                    independentEwar
                         .Select(contact => world.Set<Eden.Data.World.Combat.WorldPlayerEwar>().Find(contact.Module, contact.Target))
                         .Where(row => row?.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship)
                         .Select(row => (long?)row!.TargetId)
@@ -50,7 +50,7 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
                 action.Remove(tackle);
             }
         }
-        foreach (var contact in areaContacts)
+        foreach (var contact in independentEwar)
         {
             if (action.Set<Eden.Data.World.Combat.WorldPlayerEwar>().Find(contact.Module, contact.Target) is { } row)
             {

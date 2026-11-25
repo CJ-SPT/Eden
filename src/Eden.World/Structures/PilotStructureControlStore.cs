@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
+using Eden.Data.World.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Structures;
 using Eden.Gameplay.Targeting;
@@ -113,13 +115,22 @@ internal sealed class ResidentStructureControl(
             {
                 return;
             }
-            var tackles = Weapons.Values.Where(cycle => TackleDefinitions.StructureTackle(cycle.Effect)).ToArray();
-            if (tackles.Length > 0)
+            var electronic = Weapons
+                .Values.Where(cycle => TackleDefinitions.StructureTackle(cycle.Effect) || cycle.Effect == DogmaEffect.StructureEcm)
+                .ToArray();
+            if (electronic.Length > 0)
             {
-                using var action = owner.Economy.Begin(new(ships: tackles.Select(cycle => cycle.TargetId)));
-                foreach (var cycle in tackles)
+                using var action = owner.Economy.Begin(new(ships: electronic.Select(cycle => cycle.TargetId)));
+                foreach (var cycle in electronic)
                 {
-                    if (action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(cycle.ModuleId) is { } row)
+                    if (cycle.Effect == DogmaEffect.StructureEcm)
+                    {
+                        if (action.Set<WorldPlayerEwar>().Find(cycle.ModuleId, cycle.TargetId) is { } jam)
+                        {
+                            action.Remove(jam);
+                        }
+                    }
+                    else if (action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(cycle.ModuleId) is { } row)
                     {
                         action.Remove(row);
                     }

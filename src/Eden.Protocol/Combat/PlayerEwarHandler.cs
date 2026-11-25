@@ -176,7 +176,7 @@ internal sealed class PlayerEwarHandler(
         foreach (var contact in _received)
         {
             context.NotificationsBeforeFlight.Add(new PlayerEwarChanged(contact, false));
-            if (contact.Module.Effect == DogmaEffect.PlayerEcm)
+            if (contact.Module.Kind == NpcEwarKind.Jamming)
             {
                 context.NotificationsBeforeFlight.Add(new PlayerJamChanged(contact, false));
             }

@@ -50,7 +50,7 @@ internal sealed partial class ResidentEconomy
         _npcEwarSources.Clear();
         _tackleTargets.Clear();
         _playerEwarTargets.Clear();
-        _areaContactEnds.Clear();
+        _independentEwarEnds.Clear();
         _structureTackleEnds.Clear();
         _effectRevision = 0;
         _tackleRows = 0;
@@ -384,13 +384,13 @@ internal sealed partial class ResidentEconomy
             .Select(row => row.Module)
             .ToArray();
 
-    private readonly SortedSet<(long End, long Module, long Target, int System)> _areaContactEnds = [];
+    private readonly SortedSet<(long End, long Module, long Target, int System)> _independentEwarEnds = [];
 
-    internal (long Module, long Target)[] DueAreaContacts(int? system, long now) =>
-        _areaContactEnds.Count == 0 || _areaContactEnds.Min.End > now ? [] : CollectAreaContacts(system, now);
+    internal (long Module, long Target)[] DueIndependentEwar(int? system, long now) =>
+        _independentEwarEnds.Count == 0 || _independentEwarEnds.Min.End > now ? [] : CollectIndependentEwar(system, now);
 
-    private (long Module, long Target)[] CollectAreaContacts(int? system, long now) =>
-        _areaContactEnds
+    private (long Module, long Target)[] CollectIndependentEwar(int? system, long now) =>
+        _independentEwarEnds
             .TakeWhile(row => row.End <= now)
             .Where(row => system is null || row.System == system)
             .Select(row => (row.Module, row.Target))
@@ -405,16 +405,19 @@ internal sealed partial class ResidentEconomy
                 return;
             }
             var contact = System.Text.Json.JsonSerializer.Deserialize<Eden.Gameplay.Combat.ElectronicWarfareContact>(row.ContactJson)!;
-            if (Eden.Gameplay.Combat.AreaWeaponRules.IsProjector(contact.Module.Effect))
+            if (
+                Eden.Gameplay.Combat.AreaWeaponRules.IsProjector(contact.Module.Effect)
+                || contact.Module.Effect == Eden.Gameplay.Inventory.DogmaEffect.StructureEcm
+            )
             {
                 var key = (contact.ExpiresAt, row.ModuleId, row.TargetId, row.SystemId);
                 if (add)
                 {
-                    _areaContactEnds.Add(key);
+                    _independentEwarEnds.Add(key);
                 }
                 else
                 {
-                    _areaContactEnds.Remove(key);
+                    _independentEwarEnds.Remove(key);
                 }
             }
         }

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
@@ -381,6 +382,9 @@ internal sealed partial class FlightSession(
 
     private StaticSpaceObject? NavigationTarget(long id) => Scene.NavigationTarget(SceneContext, id);
 
+    // Global celestials can have a nearby surface even when their center is outside the local tracking range.
+    private StaticSpaceObject? ApproachTarget(long id) => Scene.GlobalNavigationTarget(id) ?? NavigationTarget(id);
+
     public void RefreshWrecks() => Scene.RefreshWrecks(SceneContext);
 
     internal void AddWreck(Eden.Gameplay.Loot.WreckContact contact) => Scene.AddWreck(SceneContext, contact);
@@ -456,7 +460,7 @@ internal sealed partial class FlightSession(
             Pilot.Flight,
             _navigation,
             _travel.Gate is null && !_destroying && !Cloaked,
-            _navigation.FollowTarget is { } target ? NavigationTarget(target.Id) : null
+            _navigation.FollowTarget is { } target ? ApproachTarget(target.Id) : null
         );
 
     private void PublishMotion()
@@ -613,7 +617,7 @@ internal sealed partial class FlightSession(
             _simulatedStamp,
             Pilot.Flight,
             position,
-            NavigationTarget,
+            ApproachTarget,
             Scene.Objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray()
         );
         Pilot = Pilot with { Position = tick.Position };
@@ -690,7 +694,8 @@ internal sealed partial class FlightSession(
             GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0,
             ConnectionId: _connectionId,
             Tether: _tether,
-            Compression: _compressionFacilities
+            Compression: _compressionFacilities,
+            DestinationPoint: _navigation.DestinationPoint
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -1703,6 +1708,8 @@ internal sealed partial class FlightSession(
                 return alignTarget is null ? PilotCallResult.Unsupported : AlignTo(alignTarget.Position);
             case FlightCommand.AlignToPoint align:
                 return AlignTo(align.Position);
+            case FlightCommand.ApproachBookmark bookmark:
+                return ApproachBookmark(bookmark);
             case FlightCommand.Heading(var x, var y, var z):
                 if (!_navigation.SetHeading(x, y, z))
                 {
@@ -1712,26 +1719,7 @@ internal sealed partial class FlightSession(
                 Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _navigation.SpeedFraction));
                 return PilotCallResult.None;
             case FlightCommand.Follow(var target, var standOff, var orbit) when NavigationTarget(target) is { } follow:
-                var followed = _navigation.Follow(
-                    Pilot.ShipId,
-                    _simulatedStamp,
-                    Pilot.Position!,
-                    Pilot.Flight.ShipRadius,
-                    follow,
-                    standOff,
-                    orbit,
-                    InBallpark
-                );
-                if (followed == NavigationOrderResult.Rejected)
-                {
-                    return PilotCallResult.Unsupported;
-                }
-                if (followed == NavigationOrderResult.Applied)
-                {
-                    Update(new DestinyCommand.Follow(_navigation.FollowMode, Pilot.ShipId, target, standOff));
-                    Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, 1d));
-                }
-                return PilotCallResult.None;
+                return Follow(follow, standOff, orbit);
             case FlightCommand.Speed(var fraction):
                 bool resumeHeading = _navigation.Direction is null && fraction > 0;
                 if (!_navigation.SetSpeed(fraction))
@@ -1793,6 +1781,55 @@ internal sealed partial class FlightSession(
         var heading = _navigation.LastHeading;
         Update(new DestinyCommand.GotoDirection(Pilot.ShipId, heading.X, heading.Y, heading.Z));
         Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _navigation.SpeedFraction));
+        return PilotCallResult.None;
+    }
+
+    private PilotCallResult ApproachBookmark(FlightCommand.ApproachBookmark bookmark)
+    {
+        if (!InBallpark || Pilot.Position is not { } position)
+        {
+            return new PilotCallResult.Failure("Enter space before approaching a bookmark.");
+        }
+        var target = bookmark.ItemId is long item ? ApproachTarget(item) : null;
+        double distance = target is null
+            ? position.DistanceTo(bookmark.Position)
+            : position.DistanceTo(target.Position) - target.Radius - Pilot.Flight.ShipRadius;
+        if (distance >= BookmarkRules.MaximumApproachDistance)
+        {
+            return new PilotCallResult.Failure("This bookmark is too far away to approach.");
+        }
+        if (target is not null)
+        {
+            return Follow(target, 0, orbit: false);
+        }
+        var point = bookmark.Position;
+        _navigation.GoToPoint(position, point);
+        Update(new DestinyCommand.GotoPoint(Pilot.ShipId, point.X, point.Y, point.Z));
+        Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _navigation.SpeedFraction));
+        return PilotCallResult.None;
+    }
+
+    private PilotCallResult Follow(StaticSpaceObject target, double standOff, bool orbit)
+    {
+        var followed = _navigation.Follow(
+            Pilot.ShipId,
+            _simulatedStamp,
+            Pilot.Position!,
+            Pilot.Flight.ShipRadius,
+            target,
+            standOff,
+            orbit,
+            InBallpark
+        );
+        if (followed == NavigationOrderResult.Rejected)
+        {
+            return PilotCallResult.Unsupported;
+        }
+        if (followed == NavigationOrderResult.Applied)
+        {
+            Update(new DestinyCommand.Follow(_navigation.FollowMode, Pilot.ShipId, target.Id, standOff));
+            Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, 1d));
+        }
         return PilotCallResult.None;
     }
 }

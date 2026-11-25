@@ -208,7 +208,12 @@ read the world's sovereignty claims. [Map startup](protocol/navigation.md#native
 
 Undocking now uses each NPC station model's catalogued exit lane and launches with the pinned client's initial velocity. Static collisions retain thrust and tangential movement instead of cancelling the course. All 44 NPC station models have automated coverage, including Amsen VI - AIR Laboratories. Launches remain outside Eden's spherical station collision boundary, so exact placement at the visible hangar mouth remains approximate. See the [undocking correction](protocol/navigation.md#station-exit-lanes-and-collision-response).
 
-Personal Locations now saves private folders, subfolders and bookmarks across reconnects and restarts. Save stations or map destinations, or save your authoritative position in space and warp back within that solar system. Edit, move, copy, delete, activate/forget folders, and use automatic expiry. Personal warps accept the native `fleet=False` flag, fixing **Unexpected bookmark warp arguments**; see the [compatibility fix](protocol/navigation.md#bookmark-warp-personal-fleet-flag). Shared access-group folders and scan-result bookmarks remain pending. Native bookmark-window presentation remains unverified; see the [personal bookmark notes](protocol/navigation.md#personal-bookmarks-and-saved-location-warp).
+Personal Locations saves private and shared folders and bookmarks across reconnects and restarts. Save stations, map
+destinations, scan results or your current position in space. Same-system locations support warp, and **Approach Location**
+brings the ship toward a saved point or a visible object within 10,000 km. Pilots can manage folders, entries and automatic
+expiry. [Personal bookmarks](protocol/navigation.md#personal-bookmarks-and-saved-location-warp) ·
+[Shared folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) ·
+[Bookmark approach](protocol/navigation.md#bookmark-approach)
 
 The station directory returns every catalog station for remote station lookup and map consumers, with catalog names, locations, owners and service masks. The pinned client assigns mask bits by sorted service IDs. Native map/window presentation remains unverified; see the [station directory notes](protocol/navigation.md#catalog-station-directory).
 
@@ -237,11 +242,11 @@ hangar. The recipient's items and inbox notification persist across restarts.
 [Personal Deliveries at Upwell structures](protocol/structures.md#personal-deliveries-at-upwell-structures)
 
 Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
-missiles, neutralize capacitor, slow ships and disrupt warp. Loading the Standup scrambling script also blocks
+missiles, neutralize capacitor, slow ships, jam sensors and disrupt warp. Loading the Standup scrambling script also blocks
 microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner
 releases control. The structure audit tracks the remaining defensive effects, service-specific access and fees,
 player markets, clone bays, corporation offices, and specialized hull behavior.
-[Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
+[Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm) · [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
 
 High GMs can force all native Upwell operating states, set operating and deployment timers, start or cancel unanchoring,
 and change an eligible structure's abandonment deadline. [Structure GM commands](protocol/structures.md#structure-gm-commands)
@@ -357,6 +362,9 @@ insurance. The hull must be undamaged and free of cargo and rigs.
 - Docked pilots can insure eligible ships and repair at NPC station facilities or the native Upwell repair shop where
   available. Eligible Upwell structures also provide tether repair and asset safety.
   [NPC station repair](protocol/combat.md#native-station-repair-november-2-2026) · [Upwell repair](protocol/structures.md#native-upwell-repair-shop)
+- Pilots with negative security status can exchange Clone Soldier tags and pay the processing fee at low-security CONCORD
+  and DED stations. The wallet debit and security history persist with the inventory changes.
+  [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges)
 
 ## Fitting, weapons and modules
 

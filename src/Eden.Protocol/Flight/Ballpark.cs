@@ -413,7 +413,7 @@ internal static partial class Ballpark
         }
         else if (ship.Heading is { } heading)
         {
-            WritePosition(writer, pilot.Position! + heading * 1e17);
+            WritePosition(writer, ship.DestinationPoint ?? (pilot.Position! + heading * 1e17));
         }
 
         return new ShipSlimItem(ship);

@@ -98,7 +98,7 @@ public static class PlayerEwarRules
     public static NpcEwarKind? Kind(DogmaEffect effect) =>
         effect switch
         {
-            DogmaEffect.PlayerEcm => NpcEwarKind.Jamming,
+            DogmaEffect.PlayerEcm or DogmaEffect.StructureEcm => NpcEwarKind.Jamming,
             DogmaEffect.SensorDampener => NpcEwarKind.SensorDampening,
             DogmaEffect.TrackingDisruptor => NpcEwarKind.TrackingDisruption,
             DogmaEffect.GuidanceDisruptor => NpcEwarKind.GuidanceDisruption,

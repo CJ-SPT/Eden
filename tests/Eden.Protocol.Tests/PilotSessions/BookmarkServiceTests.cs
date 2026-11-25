@@ -336,9 +336,9 @@ public sealed partial class BookmarkServiceTests
         public PilotCallContext Context { get; }
         public IPilotBookmarks Store => Db.Services.GetRequiredService<IPilotBookmarks>();
 
-        public Fixture(IReadOnlyList<StaticSpaceObject>? objects = null)
+        public Fixture(IReadOnlyList<StaticSpaceObject>? objects = null, bool liveWorld = false)
         {
-            Db = new(clock: Clock);
+            Db = new(clock: Clock, liveWorld: liveWorld);
             _scope = Db.Services.CreateScope();
             var pilot = Db.Store.FindPilot(1000001)!;
             Context = new(

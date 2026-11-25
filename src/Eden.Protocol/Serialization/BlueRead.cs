@@ -8,6 +8,14 @@ internal static class BlueRead
 
     internal static byte[] Bytes(object? value) => value as byte[] ?? throw new InvalidDataException("Expected bytes.");
 
+    internal static double Number(object? value) =>
+        value switch
+        {
+            double number when double.IsFinite(number) => number,
+            long integer => integer,
+            _ => throw new InvalidDataException("Expected a finite number."),
+        };
+
     internal static Dictionary<string, object?> Fields(object? value) =>
         value as Dictionary<string, object?> ?? throw new InvalidDataException("Expected fields.");
 

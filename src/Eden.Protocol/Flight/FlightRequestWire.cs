@@ -45,6 +45,9 @@ internal static class FlightRequestWire
                 (null, long bookmark) when bookmark > 0 => new FlightCommand.AlignToBookmark(bookmark),
                 _ => null,
             },
+            ("CmdGotoBookmark", [long bookmark]) when bookmark > 0 && keywords is null or { Count: 0 } => new FlightCommand.GoToBookmark(
+                bookmark
+            ),
             ("CmdWarpToStuffAutopilot", [long target]) when keywords is null or { Count: 0 } => new FlightCommand.AutopilotWarp(target),
             ("CmdStargateJump", [long source, long exit, long ship]) => new FlightCommand.Jump(source, exit, ship),
             ("CmdWarpToStuff", [string or byte[], string or byte[]])

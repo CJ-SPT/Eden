@@ -10,6 +10,7 @@ public enum SecurityEvent
     // Build 3662168 appLogConst.eventSecStatusKillPirateNpc, read by the native history panel.
     PirateNpcKilled = 378,
     IllegalAggression = 379,
+    TagsHandedIn = 385,
 }
 
 public sealed record SecurityStatusView(double Value, long? PendingAt);

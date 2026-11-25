@@ -32,6 +32,7 @@ internal sealed partial class FlightSession
                 or FlightCommand.AlignTo
                 or FlightCommand.AlignToBookmark
                 or FlightCommand.AlignToPoint
+                or FlightCommand.ApproachBookmark
                 or FlightCommand.Follow
                 or FlightCommand.Speed
         && MobileSiege;

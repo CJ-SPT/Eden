@@ -126,7 +126,7 @@ internal sealed partial class PilotSecurityStatusStore
         pending.Maximum = reward.Maximum;
     }
 
-    private static bool Settle(WorldAction world, long pilotId, long now)
+    internal static bool Settle(WorldAction world, long pilotId, long now)
     {
         var pending = world.Set<PendingSecurityReward>().Find(pilotId);
         if (pending is null || pending.Due > now)

@@ -1,0 +1,77 @@
+using System.Text.Json;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Structures;
+using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
+using Eden.World.Storage;
+
+namespace Eden.World.Structures;
+
+internal sealed partial class PilotStructureWeaponStore
+{
+    private StructureWeaponActivation Jam(
+        WorldAction world,
+        CatalogDbContext catalog,
+        StructureControlToken token,
+        SavedStructure source,
+        OwnedItem item,
+        StructureTarget target,
+        Pilot? victim,
+        StructureFittingState fit,
+        int repeats,
+        long now
+    )
+    {
+        if (target.Kind is not (StructureTargetKind.Npc or StructureTargetKind.Pilot))
+        {
+            throw new InvalidDataException("Choose a ship or NPC for the structure ECM.");
+        }
+        var attributes = TargetAttributes(world, catalog, target, victim, now);
+        var module = PlayerEwarRules.Define(item.Id, item.TypeId, DogmaEffect.StructureEcm, fit.Equipment[item.Id]);
+        double cost =
+            module.CapacitorNeed
+            * StructureEnergy.CostMultiplier(world, catalog, token.PilotId, StructureWeaponRules.ElectronicSystemsSkill);
+        module = module with { CapacitorNeed = cost };
+        double charge = StructureEnergy.Read(world, source.Id, fit.Attributes, now).Charge - cost;
+        if (charge < 0)
+        {
+            throw new InvalidDataException("The structure has insufficient capacitor for ECM.");
+        }
+        long ready = StructureWeaponRules.ReadyAt(module.DurationMilliseconds, now);
+        var applied = StructureWeaponRules.Jam(module, attributes, SurfaceDistance(catalog, source, target), ewarRolls.Next());
+        TackleTarget identity = new(target.Id, victim is null ? TackleTargetKind.Npc : TackleTargetKind.Ship);
+        ElectronicWarfareContact contact = new(token.PilotId, source.Id, module, identity, applied, now, ready);
+        StructureEnergy.Write(world, source.Id, charge, now);
+        var row =
+            world.Set<WorldPlayerEwar>().Find(item.Id, target.Id)
+            ?? world.Add(new WorldPlayerEwar { ModuleId = item.Id, TargetId = target.Id }).Entity;
+        row.PilotId = token.PilotId;
+        // The existing row's ship foreign key follows the gunner's docked hull. The contact names the structure on grid.
+        row.SourceShipId = world.Pilots.Find(token.PilotId)!.ActiveShipId;
+        row.SystemId = source.SystemId;
+        row.TargetKind = identity.Kind;
+        row.ContactJson = JsonSerializer.Serialize(contact);
+        return new(
+            new(item.Id, target.Id, item.TypeId, now, ready, module.DurationMilliseconds, repeats, Effect: module.Effect),
+            null,
+            Ecm: new(module, identity, charge, [contact])
+        );
+    }
+
+    private void EndEcm(StructureWeaponCycle cycle)
+    {
+        using WorldActionScope transaction = new(database, new(ships: [cycle.TargetId]));
+        var world = transaction.World;
+        if (world.Set<WorldPlayerEwar>().Find(cycle.ModuleId, cycle.TargetId) is { } row && row.Contact().StartedAt == cycle.StartedAt)
+        {
+            world.Remove(row);
+        }
+        transaction.Commit();
+    }
+}

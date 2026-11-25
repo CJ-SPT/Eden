@@ -697,4 +697,7 @@ public enum DogmaAttributeId
 
     // Build 3662168: modules with this attribute retain gate cloak on activation.
     CanActivateInGateCloak = 3123,
+
+    // Build 3662168 dogma.const: Security Office processing fee per tag.
+    SecurityProcessingFee = 1904,
 }

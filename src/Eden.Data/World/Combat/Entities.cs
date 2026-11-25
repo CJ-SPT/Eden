@@ -155,17 +155,12 @@ public sealed class SavedSecurityTransaction
     public long? AggressedPilotId { get; set; }
 
     public SecurityStatusTransaction Snapshot() =>
-        new(
-            Id,
-            Time,
-            AggressedPilotId.HasValue ? SecurityEvent.IllegalAggression : SecurityEvent.PirateNpcKilled,
-            AggressedPilotId ?? CorporationId,
-            SystemId,
-            Modification,
-            NewValue,
-            NpcId,
-            TypeId
-        );
+        new(Id, Time, Event(), AggressedPilotId ?? CorporationId, SystemId, Modification, NewValue, NpcId, TypeId);
+
+    private SecurityEvent Event() =>
+        AggressedPilotId.HasValue ? SecurityEvent.IllegalAggression
+        : NpcId == 0 && SecurityOfficeRules.IsTag(TypeId) ? SecurityEvent.TagsHandedIn
+        : SecurityEvent.PirateNpcKilled;
 }
 
 public sealed class SavedWeaponLink

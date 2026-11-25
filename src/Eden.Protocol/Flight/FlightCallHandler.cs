@@ -125,6 +125,26 @@ internal sealed class FlightCallHandler(
                 return new PilotCallResult.Failure(error.Message);
             }
         }
+        if (command is FlightCommand.GoToBookmark approach)
+        {
+            try
+            {
+                var target = bookmarks.Find(context.Pilot.PilotId, approach.BookmarkId).Target;
+                if (target.LocationId != context.Pilot.SystemId)
+                {
+                    throw new InvalidDataException("Travel to the bookmarked solar system before approaching this location.");
+                }
+                if (target.ItemId == target.LocationId || target.TypeId is BookmarkRules.RegionTypeId or BookmarkRules.ConstellationTypeId)
+                {
+                    throw new InvalidDataException("This bookmark is a map destination rather than an approach target.");
+                }
+                command = new FlightCommand.ApproachBookmark(target.ItemId, target.Position);
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+        }
         var training =
             command is FlightCommand.WarpTo trainingWarp && MissionRules.IsSiteId(trainingWarp.TargetId)
                 ? missions

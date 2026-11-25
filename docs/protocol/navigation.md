@@ -47,6 +47,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Catalog station directory](#catalog-station-directory)
 - [Station exit lanes and collision response](#station-exit-lanes-and-collision-response)
 - [Personal bookmarks and saved-location warp](#personal-bookmarks-and-saved-location-warp)
+- [Bookmark approach](#bookmark-approach)
 - [Bookmark warp personal fleet flag](#bookmark-warp-personal-fleet-flag)
 - [Within-system warp and braking, November 2, 2026](#within-system-warp-and-braking-november-2-2026)
 - [Shared flight ticks and celestial warp-ins, November 2, 2026](#shared-flight-ticks-and-celestial-warp-ins-november-2-2026)
@@ -1278,6 +1279,36 @@ References: inert inspection of unchanged build-3662168 `code.ccp` SHA-256 **37F
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Save a station and an in-space point, reconnect and warp to each. Move/copy a location between personal folders and verify the native lists. Edit expiry and confirm its native presentation/removal. Rendering, input and flight feel remain unverified.
+
+## Bookmark approach
+
+Use **Approach Location** on an available bookmark in the current solar system. Eden checks the active folder,
+access, expiry and the client's **10,000 km** approach limit. A visible bookmarked item uses the ordinary
+zero-range follow course, with the approach limit measured from its surface. A saved point uses `GotoPoint`
+and the existing sublight motion and collisions.
+Thrust tapers as the ship closes on the point, and the finite destination appears in observer snapshots and
+course recovery. Stop or issue another movement order to cancel the approach.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirmed the single-argument
+`beyonce.CmdGotoBookmark(bookmarkID)` call in `movementFunctions.pyj`, the menu conditions in
+`bookmarkChecker.pyj` and the distance in `appConst.pyj`. EVE.js **261108.1** uses zero-range follow for
+visible targets and `GotoPoint` for saved coordinates in `beyonceService.js`, SHA-256
+`5c13b78749bd02c31d7844d631fc88b818b299deff4ac49058a860eeb3f9027d`.
+Carbon's `EvolveGoto` and `GotoThrust` use the exact point and taper acceleration within one tick of travel.
+[EVE University bookmarks](https://wiki.eveuniversity.org/Bookmark) ·
+[Carbon Destiny Ballpark.cpp at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+
+**Automated validation.** `NativeApproachBookmarkHomesToTheSavedPointAndCanBeStopped` and
+`NativeApproachBookmarkFollowsVisibleItemsAndRejectsUnavailableDestinations` passed all four resident-world
+cases in 1.70 seconds of combined case time. They exercise the native point and follow commands, sublight
+braking, stopping, the surface limit for large objects, and rejection of unavailable or malformed requests.
+The follow-up `Bookmark`, `FlightSessionTests` and `ShipCollisionTests` selection passed all 104 cases in 59.61 seconds
+after the static-target lookup began caching the current target for subsequent motion ticks.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Approach a nearby saved point and a visible station bookmark using the native menu.
 
 ## Bookmark warp personal fleet flag
 

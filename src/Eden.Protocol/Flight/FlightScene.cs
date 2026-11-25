@@ -55,6 +55,7 @@ internal sealed class FlightScene(
     private StaticSpaceObject[] _visibleAsteroids = [];
     private IReadOnlyList<StaticSpaceObject>? _asteroidSource;
     private IReadOnlyList<StaticSpaceObject> _objects = objects;
+    private (long Id, StaticSpaceObject? Target) _lastGlobalNavigationTarget;
     private IReadOnlyList<StaticSpaceObject> _anomalies = [];
     private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
@@ -73,6 +74,7 @@ internal sealed class FlightScene(
         {
             _objects = value;
             _asteroidSource = null;
+            _lastGlobalNavigationTarget = default;
         }
     }
     internal IReadOnlyList<NpcContact> VisibleNpcs => Npcs.Contacts;
@@ -262,6 +264,19 @@ internal sealed class FlightScene(
             }
         }
         _missiles = current;
+    }
+
+    internal StaticSpaceObject? GlobalNavigationTarget(long id)
+    {
+        if (id is <= 0 or > int.MaxValue)
+        {
+            return null;
+        }
+        if (_lastGlobalNavigationTarget.Id != id)
+        {
+            _lastGlobalNavigationTarget = (id, Objects.FirstOrDefault(body => body.Id == id && body.IsGlobal));
+        }
+        return _lastGlobalNavigationTarget.Target;
     }
 
     internal StaticSpaceObject? NavigationTarget(FlightSceneContext context, long id)
@@ -690,6 +705,10 @@ internal sealed class FlightScene(
             if (ship.FollowRange is double range)
             {
                 Send(new DestinyCommand.Follow(ship.FollowMode, id, ship.FollowTargetId, range));
+            }
+            else if (ship.DestinationPoint is { } point)
+            {
+                Send(new DestinyCommand.GotoPoint(id, point.X, point.Y, point.Z));
             }
             else
             {
