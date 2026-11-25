@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation Kill Reports](#corporation-kill-reports)
 - [Corporation and alliance wars](#corporation-and-alliance-wars)
 - [Defender allies, surrender and War Reports](#defender-allies-surrender-and-war-reports)
 - [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
@@ -50,6 +51,40 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation Kill Reports
+
+**Corporation → General → Kill Reports** shows recent capsuleer ship and capsule kills and losses for the selected pilot's
+corporation. A kill is credited to the final-blow pilot's corporation, and a loss is credited to the victim's corporation.
+NPC-inflicted capsuleer losses appear in the loss view. Attribution uses the saved combat parties, and the canonical loss
+record supplies one kill ID even when several pilots have copies in their personal logs. The resident economy indexes
+existing combat reports by corporation and side and restores the index from checkpoints. Structure reports are available
+through the War Report for attributed structure losses.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms the navigation in
+`corporationWindow.pyj` and the `corpRegistry.GetRecentKills` and `GetRecentLosses` calls in `base_corporation.pyj`.
+`corp_ui_killreports.pyj` sends a page size of 25 and a Python None or an exclusive kill ID. The same archive's
+`crowset.pyj` accepts the descriptor and rows in its `CRowset` constructor. Both replies use a corporation-scoped cached
+`CRowset` like the EVE.js **261108.1** reference and share Eden's combat report fields and killmail XML.
+EVE.js reference files are `corpRegistryRuntime.js` (SHA-256
+`41d691387ff45dce3cf4680da40291557b868f0b3f589234d0eb244b77c4e35c`) and `killmailState.js` (SHA-256
+`920fca640077c858230c273b7fdb52bd5869196fd1d5ffad316ad27e871451cd`).
+[UniWiki Killmail](https://wiki.eveuniversity.org/Killmail)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Alliances.CorporationCombatReportTests.NativeCorporationPagesUseCanonicalKillIdsAndSurviveCheckpoint`
+passed. It exercises a bound registry call, corporation isolation, native reply fields, exclusive paging, duplicate
+personal reports, NPC-inflicted loss and checkpoint reload.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Open **Corporation → General → Kill Reports**, switch between kills and losses, and open a saved report.
 
 ## Corporation and alliance wars
 

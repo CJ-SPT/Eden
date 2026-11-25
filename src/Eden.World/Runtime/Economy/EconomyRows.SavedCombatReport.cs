@@ -21,6 +21,13 @@ internal sealed partial class ResidentEconomy
     internal (IndexedCombatReport Report, string? Victim, string? Killer)[] Killboard(KillboardFilter filter, int count) =>
         Inspect(_ => _combatReports.Page(filter, count).Select(report => (report, Name(report.Victim), Name(report.Killer))).ToArray());
 
+    internal IReadOnlyList<ShipCombatReport> CorporationCombatReports(long pilotId, bool losses, int count, long? beforeId) =>
+        Inspect(world =>
+        {
+            var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+            return _combatReports.CorporationPage(pilot.CorporationId, losses, count, beforeId);
+        });
+
     private string? Name(IndexedCombatParty party) => party.CharacterId is long id ? KillboardPilot(id)?.Name : null;
 
     private void RegisterCombatReports()

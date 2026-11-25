@@ -14,38 +14,37 @@ internal sealed record ShipCombatHistoryReply(IReadOnlyList<ShipCombatReport> Re
 internal sealed record ShipCombatReportRow(ShipCombatReport Report, long? WarId = null, double? IskLost = null, double? IskDestroyed = null)
     : BlueModel
 {
-    public override object ToBlue() =>
-        new BlueInstance(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["killID"] = Report.Id,
-                ["killTime"] = Report.Time,
-                ["solarSystemID"] = Report.SystemId,
-                ["moonID"] = null,
-                ["victimCharacterID"] = Report.Victim.CharacterId,
-                ["victimCorporationID"] = Report.Victim.CorporationId,
-                ["victimAllianceID"] = Report.Victim.AllianceId,
-                ["victimFactionID"] = Report.Victim.FactionId,
-                ["victimShipTypeID"] = Report.Victim.ShipTypeId,
-                ["victimDamageTaken"] = Report.Victim.Damage,
-                ["finalCharacterID"] = Report.FinalBlow.CharacterId,
-                ["finalCorporationID"] = Report.FinalBlow.CorporationId,
-                ["finalAllianceID"] = Report.FinalBlow.AllianceId,
-                ["finalFactionID"] = Report.FinalBlow.FactionId,
-                ["finalShipTypeID"] = Report.FinalBlow.ShipTypeId,
-                ["finalWeaponTypeID"] = Report.FinalBlow.WeaponTypeId,
-                ["finalSecurityStatus"] = Report.FinalBlow.SecurityStatus ?? 0,
-                ["finalDamageDone"] = Report.FinalBlow.Damage,
-                ["killBlob"] = KillBlob(),
-                ["warID"] = WarId,
-                ["iskLost"] = IskLost,
-                ["iskDestroyed"] = IskDestroyed,
-                ["bountyClaimed"] = null,
-                ["loyaltyPoints"] = null,
-                ["killRightSupplied"] = Report.KillRightSupplierId,
-            }
-        );
+    public override object ToBlue() => new BlueInstance("utillib.KeyVal", Fields());
+
+    internal Dictionary<string, object?> Fields() =>
+        new()
+        {
+            ["killID"] = Report.Id,
+            ["killTime"] = Report.Time,
+            ["solarSystemID"] = Report.SystemId,
+            ["moonID"] = null,
+            ["victimCharacterID"] = Report.Victim.CharacterId,
+            ["victimCorporationID"] = Report.Victim.CorporationId,
+            ["victimAllianceID"] = Report.Victim.AllianceId,
+            ["victimFactionID"] = Report.Victim.FactionId,
+            ["victimShipTypeID"] = Report.Victim.ShipTypeId,
+            ["victimDamageTaken"] = Report.Victim.Damage,
+            ["finalCharacterID"] = Report.FinalBlow.CharacterId,
+            ["finalCorporationID"] = Report.FinalBlow.CorporationId,
+            ["finalAllianceID"] = Report.FinalBlow.AllianceId,
+            ["finalFactionID"] = Report.FinalBlow.FactionId,
+            ["finalShipTypeID"] = Report.FinalBlow.ShipTypeId,
+            ["finalWeaponTypeID"] = Report.FinalBlow.WeaponTypeId,
+            ["finalSecurityStatus"] = Report.FinalBlow.SecurityStatus ?? 0,
+            ["finalDamageDone"] = Report.FinalBlow.Damage,
+            ["killBlob"] = KillBlob(),
+            ["warID"] = WarId,
+            ["iskLost"] = IskLost,
+            ["iskDestroyed"] = IskDestroyed,
+            ["bountyClaimed"] = null,
+            ["loyaltyPoints"] = null,
+            ["killRightSupplied"] = Report.KillRightSupplierId,
+        };
 
     private string KillBlob()
     {

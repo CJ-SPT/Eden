@@ -34,6 +34,7 @@ public interface IUniversalSearch
 {
     IReadOnlyList<SearchGroup> Search(SearchRequest request);
     IReadOnlyList<SearchEntry> Owners(IReadOnlyList<long> ids);
+    IReadOnlyList<SearchEntry> PlayerOrganizations(CharacterSearchQuery query);
 }
 
 public static class UniversalSearchRules

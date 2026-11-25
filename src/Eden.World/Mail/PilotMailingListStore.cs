@@ -1,6 +1,8 @@
 using System.Globalization;
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Mail;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
@@ -30,11 +32,33 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
     {
         var list = Active(world, listId);
         MailingListRules.Manager(Role(world, pilot, listId));
+        if (!CanSubscribe(world, list, Pilot(world, pilot), MailingListAccess.Allowed, Access(world, listId)))
+        {
+            throw new InvalidDataException("You are blocked from this mailing list.");
+        }
         return list;
     }
 
     private static Dictionary<long, MailingListAccess> Access(WorldAction world, long list) =>
         world.Filter<SavedMailingListAccess>(a => a.ListId == list).ToDictionary(a => a.EntityId, a => a.Access);
+
+    private static long? Alliance(WorldAction world, int corporationId) =>
+        world is EconomyTransaction
+        && world.Set<SavedAllianceMember>().Find(corporationId) is { } member
+        && world.Set<SavedAlliance>().Find(member.AllianceId) is { ClosedAt: null }
+            ? member.AllianceId
+            : null;
+
+    private static bool CanSubscribe(
+        WorldAction world,
+        SavedMailingList list,
+        Pilot pilot,
+        MailingListAccess fallback,
+        IReadOnlyDictionary<long, MailingListAccess> rules
+    ) =>
+        pilot.Id == list.OwnerId
+        || MailingListRules.Access(pilot.Id, pilot.CorporationId, fallback, rules, Alliance(world, pilot.CorporationId))
+            == MailingListAccess.Allowed;
 
     private static void Feed(
         WorldAction world,
@@ -134,13 +158,14 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
             world.Set<SavedMailingList>().SingleOrDefault(l => l.Key == normalized.Key && !l.Deleted)
             ?? throw new InvalidDataException("That mailing list does not exist.");
         var existing = world.Set<SavedMailingListMember>().Find(list.Id, pilotId);
+        var fallback = existing is null ? list.DefaultAccess : MailingListAccess.Allowed;
+        if (!CanSubscribe(world, list, pilot, fallback, Access(world, list.Id)))
+        {
+            throw new InvalidDataException("You are blocked from joining this mailing list.");
+        }
         if (existing is not null)
         {
             return list.Info(existing.Role);
-        }
-        if (MailingListRules.Access(pilotId, pilot.CorporationId, list.DefaultAccess, Access(world, list.Id)) != MailingListAccess.Allowed)
-        {
-            throw new InvalidDataException("You are blocked from joining this mailing list.");
         }
         MailingListRules.Capacity(world.Set<SavedMailingListMember>().Count(m => m.ListId == list.Id));
         world.Add(
@@ -295,9 +320,16 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
             {
                 throw new InvalidDataException("The list owner cannot be blocked.");
             }
-            if (!world.Pilots.Any(p => p.Id == entity) && catalog.Read(CatalogData.Client.Npccorporations, (long)entity) is null)
+            bool organization =
+                world is EconomyTransaction
+                && entity <= int.MaxValue
+                && (
+                    world.Set<SavedCorporation>().Find((int)entity) is { ClosedAt: null }
+                    || world.Set<SavedAlliance>().Find((int)entity) is { ClosedAt: null }
+                );
+            if (!organization && world.Pilots.Find(entity) is null && catalog.Read(CatalogData.Client.Npccorporations, entity) is null)
             {
-                throw new InvalidDataException("Choose a local character or a catalog corporation.");
+                throw new InvalidDataException("Choose a local character, corporation or alliance.");
             }
         }
         foreach (var (entity, value) in access)
@@ -308,34 +340,36 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
             entry.Access = value;
         }
         world.SaveChanges();
-        var rules = Access(world, listId);
-        var members = world
-            .Filter<SavedMailingListMember>(m => m.ListId == listId && m.PilotId != list.OwnerId)
-            .AsEnumerable()
-            .Select(m => (Member: m, CorporationId: Pilot(world, m.PilotId).CorporationId))
-            .ToArray();
-        foreach (
-            var row in members.Where(m =>
-                MailingListRules.Access(m.Member.PilotId, m.CorporationId, MailingListAccess.Allowed, rules) == MailingListAccess.Blocked
-            )
-        )
-        {
-            world.Remove(row.Member);
-            Feed(world, row.Member.PilotId, listId, MailingListChangeKind.Left, Guid.Empty);
-        }
+        RemoveBlockedMembers(world, list);
         world.SaveChanges();
         transaction.Commit();
+    }
+
+    private static void RemoveBlockedMembers(WorldAction world, SavedMailingList list)
+    {
+        var rules = Access(world, list.Id);
+        var members = world.Filter<SavedMailingListMember>(m => m.ListId == list.Id).ToArray();
+        foreach (var member in members)
+        {
+            if (!CanSubscribe(world, list, Pilot(world, member.PilotId), MailingListAccess.Allowed, rules))
+            {
+                world.Remove(member);
+                Feed(world, member.PilotId, list.Id, MailingListChangeKind.Left, Guid.Empty);
+            }
+        }
     }
 
     public void ClearAccess(long pilotId, long listId, long entityId)
     {
         using var transaction = new WorldActionScope(database, TransactionParticipants.None);
         var world = transaction.World;
-        _ = Manage(world, pilotId, listId);
+        var list = Manage(world, pilotId, listId);
         var entry = world.Set<SavedMailingListAccess>().Find(listId, entityId);
         if (entry is not null)
         {
             world.Remove(entry);
+            world.SaveChanges();
+            RemoveBlockedMembers(world, list);
             world.SaveChanges();
         }
         transaction.Commit();
@@ -366,7 +400,7 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         list.WelcomeBody = welcome?.Body;
         if (send && welcome is not null)
         {
-            var audience = world.Filter<SavedMailingListMember>(m => m.ListId == listId).Select(m => m.PilotId).ToArray();
+            var audience = Subscribers(world, list, Access(world, listId)).ToArray();
             WelcomeDelivery(world, list, [], audience, origin);
         }
         world.SaveChanges();
@@ -402,28 +436,25 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         }
         var rules = Access(world, listId);
         var sender = Pilot(world, pilotId);
-        if (
-            pilotId != list.OwnerId
-            && MailingListRules.Access(pilotId, sender.CorporationId, MailingListAccess.Allowed, rules) == MailingListAccess.Blocked
-        )
+        if (!CanSubscribe(world, list, sender, MailingListAccess.Allowed, rules))
         {
             throw new InvalidDataException("You are blocked from this mailing list.");
         }
         var blocked = world.Filter<SavedBlockedContact>(b => b.ContactId == pilotId).Select(b => b.PilotId).ToHashSet();
-        return world
-            .Filter<SavedMailingListMember>(m => m.ListId == listId)
+        return Subscribers(world, list, rules).Where(id => !blocked.Contains(id)).ToArray();
+    }
+
+    private static IEnumerable<long> Subscribers(
+        WorldAction world,
+        SavedMailingList list,
+        IReadOnlyDictionary<long, MailingListAccess> rules
+    ) =>
+        world
+            .Filter<SavedMailingListMember>(m => m.ListId == list.Id)
             .AsEnumerable()
             .Select(m => Pilot(world, m.PilotId))
-            .Where(p =>
-                !blocked.Contains(p.Id)
-                && (
-                    p.Id == list.OwnerId
-                    || MailingListRules.Access(p.Id, p.CorporationId, MailingListAccess.Allowed, rules) == MailingListAccess.Allowed
-                )
-            )
-            .Select(p => p.Id)
-            .ToArray();
-    }
+            .Where(p => CanSubscribe(world, list, p, MailingListAccess.Allowed, rules))
+            .Select(p => p.Id);
 
     public long Observe(long pilotId)
     {

@@ -118,7 +118,11 @@ The **Notes** tab reads and saves private notes about local pilots and catalog N
 
 Native chat now supports multi-pilot Local, corporation and alliance chat, and private conversations over TLS. Local membership follows the selected pilot’s system and cleans up on disconnect/logoff; delayed Local hides silent peers. Chat completes the native availability handshake before joining channels. Initial joins include complete native rosters, and a bounded startup wait preserves the first message racing its system-channel join. The companion launcher provisions certificate trust only in prepared client copies. Server-side archives and persistent custom channel settings remain deferred. See the [chat notes](protocol/social.md#native-chat-and-multi-pilot-local-november-5-2026).
 
-Mailing lists now support native creation/joining, membership and role management, access rules, welcome messages and subscriber broadcasts. Delivery snapshots keep subscriber identities private, preserve each mailbox's state and retain list names in historical mail. Native presentation remains unverified. Corporation/alliance mail is implemented; mailing-list alliance access rules and paid CSPA remain pending. See the [mailing-list notes](protocol/social.md#persistent-mailing-lists).
+Mailing lists support native creation, joining, membership and role management, welcome messages and subscriber broadcasts.
+Managers can set access rules for characters, corporations and alliances. Delivery snapshots preserve each mailbox's state
+and keep subscriber identities private. Paid CSPA remains pending.
+[Mailing-list notes](protocol/social.md#persistent-mailing-lists) ·
+[Organization access](protocol/social.md#mailing-list-organization-access)
 
 Mail-arrival events now match the stock client's eight-argument callback. An extra label-mask argument previously caused the recipient callback to be rejected before its native unread/popup handling. See the [arrival-event correction](protocol/social.md#mail-arrival-notification-arity); live popup/blink confirmation remains pending.
 
@@ -137,13 +141,16 @@ Station Guests lists all connected pilots docked at that station, with live arri
 ## Cooperative fleets
 
 Pilots can create fleets, invite online pilots, manage command roles, broadcast, chat, and warp members to supported system
-objects, bookmarks and same-system pilots. Members can opt out of fleet warp. Fleets support eligible mission reward and bounty
-sharing, on-grid loot access, watchlist damage and Command Bursts.
+objects, bookmarks and same-system pilots. Commanders can regroup their eligible subordinates on grid. Members can opt out of
+fleet warp and regroup independently. Fleets support eligible mission reward and bounty sharing, on-grid loot access, watchlist
+damage and Command Bursts. [Fleet regroup](protocol/fleets.md#native-fleet-regroup) ·
 [Cooperative fleet records](protocol/fleets.md)
 
-Fleet Finder supports corporation and public adverts, with standings filters and open or approval-based applications.
-Alliance and militia adverts, reconnect grace, saved setups and geometric formations remain open. Fleets and their adverts
-last for the running server session. [Fleet Finder](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026)
+Fleet Finder supports corporation, alliance, militia and public adverts, with standings filters and open or approval-based
+applications. Fleets and their adverts last for the running server session. Reconnect grace, saved setups and geometric
+formations remain open. [Fleet Finder](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) ·
+[Alliance adverts](protocol/alliances.md#shared-tools-and-affiliation-consumers--november-16-2026) ·
+[Militia fleet adverts](protocol/faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026)
 
 ## Player corporations
 
@@ -159,6 +166,10 @@ Defenders can hire eligible allies, either principal can negotiate surrender, an
 killmails. [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars) ·
 [Allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports) ·
 [War report side filters](protocol/corporations.md#war-report-side-filters-and-former-ally-updates)
+
+The Corporation window's **Kill Reports** tab lists capsuleer kills credited to the corporation and losses suffered by
+its members at the time of combat. Reports retain their attribution and kill IDs across restarts.
+[Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
 
 ## Travel and navigation
 
@@ -347,7 +358,9 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
   together. [Subcapital Micro Jump Field Generator](protocol/navigation.md#subcapital-micro-jump-field-generator)
 - **Drones and information modules.** Supported hulls can control combat, mining and utility drones. Combat drones can
   assist and guard fleetmates. Scanners, probes, salvagers and tractors use their own eligibility and range rules.
-  [Drones](protocol/drones.md) · [Information modules](protocol/information.md)
+  Cargo scanners respect full cargo-scan immunity when they start and when the paid cycle finishes.
+  [Drones](protocol/drones.md) · [Information modules](protocol/information.md) ·
+  [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - **Capital and Upwell roles.** Supported capitals have ship-specific jump, fighter, fleet hangar, maintenance, refitting and clone
   services. Upwell gunners can lock targets and launch and recall Standup fighter squadrons.
   [Capital logistics](protocol/capital-logistics.md) · [Upwell structures](protocol/structures.md)

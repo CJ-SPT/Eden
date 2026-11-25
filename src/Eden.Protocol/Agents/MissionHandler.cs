@@ -304,7 +304,7 @@ internal sealed partial class MissionHandler(
                 {
                     return fleets.Warp(context, warp, formation);
                 }
-                fleets.CancelWarpOrders(pilotId);
+                fleets.CancelMovementOrders(pilotId);
                 return context.Flight.Execute(warp);
             }
             return new PilotCallResult.Failure("Invalid or unsupported agent mission request.");

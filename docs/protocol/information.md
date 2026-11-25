@@ -2,6 +2,29 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Cargo scan immunity
+
+Cargo scanners reject a fully resistant ship before spending capacitor, starting a cooldown or publishing a scan effect.
+The resident scan owner checks the target's current resistance again at the paid deadline before reading its cargo. If the
+target gains immunity during the cycle, the scanner finishes without a result and retains the paid capacitor and cooldown.
+Ship scanners can still read the target's fitting. The native scan notifications use the existing [scanner contract](#native-scans-and-targeting).
+
+Build 3662168 identifies this property as dogma attribute **188**, `cargoScanResistance`. The Crane, Prorator, Prowler,
+Viator, Deluge, Boobook, Cenotaph and Tholos all have value **1.0**. The Serpentis Battlecruiser catalog profile **38657**
+has **1.1**. Pilot targets use their effective fitted attributes and NPC targets use their catalog attributes. Eden uses
+the threshold **1.0** for full immunity. [EVE University cargo scanning](https://wiki.eveuniversity.org/Cargo_scanning) ·
+[CCP Retribution patch notes](https://www.eveonline.com/news/view/patch-notes-for-retribution-1.1)
+
+The EVE.js 261108.1 `server/src/space/modules/scannerModuleRuntime.js` reference uses the same attribute and rejects
+fully resistant targets before activation. Its source SHA-256 is
+`1F5DDD4448F6A0C94ACBB38E3A206ACFE08C9900208C3E7FEC39C56D2C3B85DC`.
+
+**Automated validation.** `CargoScanImmunityIsEnforcedBeforePaymentAndAtDisclosure` passed both resident protocol
+cases in 2.43 seconds of combined case time. The Crane fixture checks the failed activation, the still-functional ship
+scan and a paid scan whose target regains immunity before disclosure.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## DED complexes and Ghost Sites
 
 **DED complexes.** High- and low-security systems in the corresponding pirate regions can spawn Serpentis Drug Outlet

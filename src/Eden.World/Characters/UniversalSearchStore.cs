@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Alliances;
@@ -108,6 +109,27 @@ internal sealed class UniversalSearchStore(WorldDatabase database, IAlliances al
             )
             .OrderBy(entry => entry.Id)
             .ToArray();
+    }
+
+    public IReadOnlyList<SearchEntry> PlayerOrganizations(CharacterSearchQuery query)
+    {
+        if (LiveWorld.Find(database.Path) is not { } resident)
+        {
+            return [];
+        }
+        return resident.Economy.Inspect(world =>
+            (IReadOnlyList<SearchEntry>)
+                resident
+                    .OwnerDirectory.Snapshot.CorporationSearch.Value.Select(query)
+                    .Where(entry => world.Set<SavedCorporation>().Find((int)entry.Id) is { ClosedAt: null })
+                    .Concat(
+                        world
+                            .Filter<SavedAlliance>(row => row.ClosedAt == null)
+                            .Where(row => query.Matches(new(row.Name)))
+                            .Select(row => new SearchEntry(SearchCategory.Alliance, row.Id, row.Name))
+                    )
+                    .ToArray()
+        );
     }
 
     private static ImmutableDictionary<SearchCategory, SearchNameIndex> Load(CatalogDbContext catalog)

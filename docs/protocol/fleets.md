@@ -2,6 +2,45 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Native fleet regroup
+
+Fleet, wing and squad commanders can use **Regroup** to have eligible subordinates on grid approach their
+ship at full speed. The command follows the existing fleet hierarchy and observer grid. Recipients can use
+**Accept Fleet Regroups** independently of fleet warp and conduit jumps. The preference belongs to the active
+fleet membership and defaults to accepting regroups.
+
+The transient fleet owner queues movement for each eligible pilot and rechecks both memberships, ships,
+command scope, opt-out, range and transit state before delivery. Orders expire after the existing ten-second
+movement window. Newer personal flight commands invalidate pending orders. Delivery uses Eden's existing
+zero-range approach and normal flight restrictions, including whether the commander is a visible follow target.
+
+Inert disassembly of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms
+`fleetSvc.Regroup` sends `beyonce.CmdFleetRegroup()` and `SetAcceptRegroupValue` sends the bound
+`SetAcceptsRegroupValue(value)` call. `evefleet.members.GetNewMemberOptOutsKeyval` defaults
+`acceptsFleetRegroups` to True. EVE.js **261108.1** exposes the same preference in
+`server/src/services/fleets/fleetObjectHandlerService.js` (SHA-256
+`87115f9522803bd4d6803329a8e17b6f92fa5df9f5ea044a901bbdf92a13cbc1`).
+[Fleet interface](https://wiki.eveuniversity.org/Fleet_User_Interface#Fleet_Window) ·
+[CCP 22.02 fleet changes](https://www.eveonline.com/news/view/patch-notes-version-22-02)
+
+**Automated validation.** Both exact cases passed. `NativeFleetRegroupUsesFlightFollowAndHonorsMemberOptOut`
+verified native dispatch, the preference update, and the Destiny follow and full-speed commands in a resident world.
+`RegroupOrdersRespectSquadRangeAndCurrentMovementAuthority` verified squad scope, grid range, expiry,
+manual override and loss of command authority after the issuing pilot changes ships.
+
+The November 25, 2026 milestone also includes corporation kill reports, mailing-list organization access
+and cargo-scan immunity. All six exact cases passed in 11.43 seconds. The solution built with zero warnings
+and errors. All 196 focused tests passed in 87.10 seconds, and the catalog and formatting policy suites
+passed all 17 cases. CSharpier and the line-width check passed with the ignored `.artifacts` directory
+excluded from the formatter's scan.
+
+```text
+FullyQualifiedName~FleetRulesTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~InformationTests|FullyQualifiedName~MailingList|FullyQualifiedName~UniversalSearch|FullyQualifiedName~CharacterInteractionHistoryTests|FullyQualifiedName~CorporationCombatReportTests|FullyQualifiedName~CorporationWarReport|FullyQualifiedName~AllianceIntegrationTests|FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.KillboardFiltersCommittedKillsAndLossesAndPagesAcrossRestart
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Fleet finder advert creation, November 15, 2026
 
 The maintainer's Create Advert screenshot showed **Use a bound fleet reference.** after Submit.

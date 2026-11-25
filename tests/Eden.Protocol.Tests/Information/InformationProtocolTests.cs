@@ -1,4 +1,5 @@
 using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
 using Eden.Data.World.Information;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
@@ -14,6 +15,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,6 +83,78 @@ public sealed partial class InformationTests
         Assert.DoesNotContain(recipient.Notifications, n => n.Name == notification);
         using WorldDbContext world = new(f.Db.Path);
         Assert.Empty(world.Set<SavedInformationCycle>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CargoScanImmunityIsEnforcedBeforePaymentAndAtDisclosure(bool immuneAtActivation)
+    {
+        const int crane = 12729;
+        using Fixture f = Prepare();
+        PassiveCatalogFixture.LoadTechTwoHulls(f.CatalogPath, crane);
+        long cargoScanner = f.Fit(442);
+        long shipScanner = f.Fit(443);
+        long ship = f.ShipId;
+        long target = Target(f);
+        Space(f);
+        if (!immuneAtActivation)
+        {
+            SetResistance(0);
+        }
+        WorldDatabase database = new(f.Db.Path);
+        using LiveWorld live = new(database, f.Clock, _ => { });
+        using (WorldActionScope setup = new(database, new(ships: [target])))
+        {
+            setup.World.Ships.Find(target)!.TypeId = crane;
+            setup.Commit();
+        }
+        using var source = Client(f, 1000001);
+        using var recipient = Client(f, 1000002);
+        using var scope = f.Db.Services.CreateScope();
+        var targeting = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
+        var handler = scope.ServiceProvider.GetRequiredService<InformationHandler>();
+        Lock(f, source, targeting, target);
+
+        double? capacitorBefore = live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(ship)?.Charge);
+        var activation = handler.CallModule(source, "Activate", [cargoScanner, "cargoScan", target, 0L]);
+        if (immuneAtActivation)
+        {
+            Assert.Contains("immune to cargo scanning", Assert.IsType<PilotCallResult.Failure>(activation).Message);
+            Assert.Equal(capacitorBefore, live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(ship)?.Charge));
+            Assert.Null(live.Economy.Inspect(world => world.Set<ModuleCooldown>().Find(cargoScanner)));
+            Assert.IsType<PilotCallResult.Success>(handler.CallModule(source, "Activate", [shipScanner, "shipScan", target, 0L]));
+            f.Clock.Milliseconds += (long)handler.ActiveEffect(source.Pilot, shipScanner)!.DurationMilliseconds!.Value;
+            handler.Advance(source);
+            Assert.Single(source.Notifications, notification => notification.Name == "OnShipScanCompleted");
+        }
+        else
+        {
+            Assert.IsType<PilotCallResult.Success>(activation);
+            double paid = live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(ship)!.Charge);
+            long deadline = live.Economy.Inspect(world => world.Set<ModuleCooldown>().Find(cargoScanner)!.ReadyAt);
+            SetResistance(1);
+            f.Clock.Milliseconds += (long)handler.ActiveEffect(source.Pilot, cargoScanner)!.DurationMilliseconds!.Value;
+            handler.Advance(source);
+            Assert.Equal(paid, live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(ship)!.Charge));
+            Assert.Equal(deadline, live.Economy.Inspect(world => world.Set<ModuleCooldown>().Find(cargoScanner)!.ReadyAt));
+        }
+        Assert.Null(handler.ActiveEffect(source.Pilot, cargoScanner));
+        Assert.Null(live.Economy.Inspect(world => world.Set<SavedInformationCycle>().Find(cargoScanner)));
+        Assert.DoesNotContain(source.Notifications, notification => notification.Name == "OnCargoScanComplete");
+        Assert.DoesNotContain(recipient.Notifications, notification => notification.Name == "OnCargoScanComplete");
+
+        void SetResistance(double value)
+        {
+            using CatalogDbContext catalog = new(f.CatalogPath, writable: true);
+            int attributeId = (int)DogmaAttributeId.CargoScanResistance;
+            Assert.Equal(
+                1,
+                catalog.Database.ExecuteSql(
+                    $"UPDATE TypeAttribute SET Value={value} WHERE ItemTypeId={crane} AND AttributeId={attributeId}"
+                )
+            );
+        }
     }
 
     [Fact]

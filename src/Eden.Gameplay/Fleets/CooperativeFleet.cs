@@ -70,7 +70,8 @@ public sealed record FleetMember(
     FleetPlacement Placement,
     int Job,
     bool TakesFleetWarp = true,
-    bool AcceptsConduitJumps = true
+    bool AcceptsConduitJumps = true,
+    bool AcceptsFleetRegroups = true
 );
 
 public sealed record FleetSquad(long Id, string Name);
@@ -105,6 +106,15 @@ public sealed record FleetWarpOrder(
     long ExpiresAt
 );
 
+public sealed record FleetRegroupOrder(
+    long CommanderId,
+    long CommanderShipId,
+    FleetMembership Commander,
+    FleetMembership Recipient,
+    long ControlVersion,
+    long ExpiresAt
+);
+
 public abstract record FleetEvent
 {
     public sealed record Invitation(long FleetId, long InviterId) : FleetEvent;
@@ -128,6 +138,8 @@ public abstract record FleetEvent
     public sealed record Broadcast(FleetBroadcast Value) : FleetEvent;
 
     public sealed record Warp(FleetWarpOrder Order) : FleetEvent;
+
+    public sealed record Regroup(FleetRegroupOrder Order) : FleetEvent;
 
     public sealed record StandingChanged(long SourceId, double Value) : FleetEvent;
 
@@ -172,6 +184,7 @@ public interface ICooperativeFleets
     void SetMotd(long actor, long fleet, string text);
     void SetTakesWarp(long actor, long fleet, bool enabled);
     void SetAcceptsConduitJumps(long actor, long fleet, bool enabled);
+    void SetAcceptsRegroup(long actor, long fleet, bool enabled);
     void Broadcast(
         long actor,
         long fleet,
@@ -185,7 +198,9 @@ public interface ICooperativeFleets
     void TagTarget(long actor, long fleet, FleetTagTarget target, string? tag);
     void Warp(long actor, long fleet, long target, double range, SpacePosition? point);
     bool CanExecuteWarp(long actor, FleetWarpOrder order);
-    void CancelWarpOrders(long actor);
+    void Regroup(long actor, long fleet);
+    bool CanExecuteRegroup(long actor, FleetRegroupOrder order);
+    void CancelMovementOrders(long actor);
 }
 
 public static class FleetRules
@@ -208,7 +223,7 @@ public static class FleetRules
     public const double CommandRange = NavigationDefinitions.MaximumTargetDistance;
     public const double MaximumWarpRange = 100000;
     public static readonly TimeSpan InvitationLifetime = TimeSpan.FromMinutes(2);
-    public static readonly TimeSpan WarpOrderLifetime = TimeSpan.FromSeconds(10);
+    public static readonly TimeSpan MovementOrderLifetime = TimeSpan.FromSeconds(10);
     public static readonly TimeSpan BroadcastInterval = TimeSpan.FromSeconds(1);
 
     public static bool Subordinate(FleetMember commander, FleetMember member) =>

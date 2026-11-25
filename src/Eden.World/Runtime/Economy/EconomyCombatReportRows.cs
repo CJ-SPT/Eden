@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 
 namespace Eden.World.Runtime.Economy;
@@ -8,6 +9,7 @@ internal sealed class EconomyCombatReportRows(Func<long, KillboardPartyKind> pil
     private readonly Dictionary<EconomyKey, EconomySavedCombatReport> _rows = [];
     private readonly Dictionary<long, IndexedCombatReport> _reports = [];
     private readonly Dictionary<(KillboardPartyKind Killer, KillboardPartyKind Victim), SortedSet<(long Time, long Id)>> _byParties = [];
+    private readonly Dictionary<(int Corporation, bool Losses), SortedSet<long>> _byCorporation = [];
 
     public string LoadOrder => "Id";
     public IEnumerable<EconomyKey> Keys => _rows.Keys;
@@ -21,6 +23,7 @@ internal sealed class EconomyCombatReportRows(Func<long, KillboardPartyKind> pil
         if (_reports.Remove(key.Id, out var previous))
         {
             _byParties[(previous.Killer.Kind, previous.Victim.Kind)].Remove((previous.Cursor.Time, previous.Cursor.Id));
+            ChangeCorporationPages(previous, false);
         }
         if (row is null)
         {
@@ -49,7 +52,51 @@ internal sealed class EconomyCombatReportRows(Func<long, KillboardPartyKind> pil
             _byParties.Add(parties, order = []);
         }
         order.Add((row.Time, row.Id));
+        ChangeCorporationPages(entry, true);
     }
+
+    private void ChangeCorporationPages(IndexedCombatReport report, bool add)
+    {
+        if (report.Victim.CharacterId is null)
+        {
+            return;
+        }
+        Change(report.Victim.CorporationId, true);
+        if (report.Killer.CharacterId is not null)
+        {
+            Change(report.Killer.CorporationId, false);
+        }
+
+        void Change(int corporationId, bool losses)
+        {
+            var key = (corporationId, losses);
+            if (add)
+            {
+                if (!_byCorporation.TryGetValue(key, out var ids))
+                {
+                    _byCorporation.Add(key, ids = []);
+                }
+                ids.Add(report.Cursor.Id);
+            }
+            else if (_byCorporation.TryGetValue(key, out var ids))
+            {
+                ids.Remove(report.Cursor.Id);
+                if (ids.Count == 0)
+                {
+                    _byCorporation.Remove(key);
+                }
+            }
+        }
+    }
+
+    internal ShipCombatReport[] CorporationPage(int corporationId, bool losses, int count, long? beforeId) =>
+        _byCorporation.TryGetValue((corporationId, losses), out var ids)
+            ? (beforeId is long before ? ids.GetViewBetween(0, before - 1) : ids)
+                .Reverse()
+                .Take(count)
+                .Select(id => new SavedCombatReport { Id = id, Data = _rows[new EconomyKey(id)].Data }.Snapshot())
+                .ToArray()
+            : [];
 
     internal IEnumerable<IndexedCombatReport> Page(KillboardFilter filter, int count)
     {
@@ -65,7 +112,12 @@ internal sealed class EconomyCombatReportRows(Func<long, KillboardPartyKind> pil
     }
 
     private IndexedCombatParty Party(CombatParty party) =>
-        new(party.CharacterId is long pilot ? pilotKind(pilot) : KillboardPartyKind.Npc, party.CharacterId, party.ShipTypeId);
+        new(
+            party.CharacterId is long pilot ? pilotKind(pilot) : KillboardPartyKind.Npc,
+            party.CharacterId,
+            party.ShipTypeId,
+            party.CorporationId
+        );
 
     public void CompleteWrites() { }
 
@@ -74,11 +126,12 @@ internal sealed class EconomyCombatReportRows(Func<long, KillboardPartyKind> pil
         _rows.Clear();
         _reports.Clear();
         _byParties.Clear();
+        _byCorporation.Clear();
     }
 
     private sealed record ReportSummary(int SystemId, CombatParty? Victim, CombatParty? FinalBlow);
 }
 
-internal readonly record struct IndexedCombatParty(KillboardPartyKind Kind, long? CharacterId, int? ShipTypeId);
+internal readonly record struct IndexedCombatParty(KillboardPartyKind Kind, long? CharacterId, int? ShipTypeId, int CorporationId);
 
 internal sealed record IndexedCombatReport(KillboardCursor Cursor, int SystemId, IndexedCombatParty Victim, IndexedCombatParty Killer);

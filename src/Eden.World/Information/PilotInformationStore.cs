@@ -175,6 +175,8 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         int system = System(catalog, pilot);
         SpacePosition targetPosition;
         double radius;
+        Pilot? scannedPilot = null;
+        int? scannedNpcType = null;
         if (module.Effect is DogmaEffect.TractorBeam or DogmaEffect.Salvaging)
         {
             var wreck = world.Set<WorldWreck>().Find(targetId);
@@ -223,6 +225,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             }
             targetPosition = new(position.X, position.Y, position.Z);
             radius = catalog.FittingType(target.ActiveShip.TypeId)!.Radius ?? 0;
+            scannedPilot = target;
         }
         else if (
             module.Effect == DogmaEffect.CargoScan
@@ -242,6 +245,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         {
             targetPosition = NpcMotion.Position(npc);
             radius = catalog.FittingType(npc.TypeId)!.Radius ?? 0;
+            scannedNpcType = npc.TypeId;
         }
         else
         {
@@ -255,6 +259,17 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         if (distance > module.Range)
         {
             throw new InvalidDataException("The target is outside this module's verified range.");
+        }
+        if (module.Effect == DogmaEffect.CargoScan)
+        {
+            var attributes =
+                scannedPilot is not null ? PilotFittingStore.ShipAttributes(world, catalog, scannedPilot, includeIncursion: false)
+                : scannedNpcType is int type ? catalog.FittingAttributes(type)
+                : null;
+            if (InformationRules.CargoScanImmune(attributes))
+            {
+                throw new InvalidDataException("The target ship is immune to cargo scanning.");
+            }
         }
     }
 

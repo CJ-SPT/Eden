@@ -78,6 +78,7 @@ public enum DogmaAttributeId
     ShipScanRange = 125,
     CargoScanRange = 126,
     TargetHostileRange = 143,
+    CargoScanResistance = 188,
     ShipScanFalloff = 510,
     AccessDifficulty = 901,
     AccessDifficultyBonus = 902,

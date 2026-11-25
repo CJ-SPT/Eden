@@ -276,7 +276,7 @@ public sealed partial class FleetRulesTests
         var order = Assert.IsType<FleetEvent.Warp>(Assert.Single(world.Drain(2)).Event).Order;
         world.Update(Guid.NewGuid(), Pilot(1, FleetRules.CommandRange * 2));
         Assert.True(world.CanExecuteWarp(2, order, 0));
-        world.CancelWarpOrders(2);
+        world.CancelMovementOrders(2);
         Assert.False(world.CanExecuteWarp(2, order, 0));
         world.Update(Guid.NewGuid(), Pilot(1));
         world.Warp(1, fleet.Id, 42, 0, null, 0);

@@ -27,7 +27,7 @@ internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
             {
                 ["acceptsFleetWarp"] = member.TakesFleetWarp,
                 ["acceptsConduitJumps"] = member.AcceptsConduitJumps,
-                ["acceptsFleetRegroups"] = false,
+                ["acceptsFleetRegroups"] = member.AcceptsFleetRegroups,
             }
         );
 

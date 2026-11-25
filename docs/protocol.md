@@ -345,6 +345,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Chat, mail and contacts
 
+- [Mailing-list organization access](protocol/social.md#mailing-list-organization-access)
 - [Corporation calendar events](protocol/social.md#corporation-calendar-events)
 - [Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026)
 - [Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026)
@@ -444,6 +445,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Native fleet regroup](protocol/fleets.md#native-fleet-regroup)
 - [Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026)
 - [Fleet target tags](protocol/fleets.md#fleet-target-tags-november-14-2026)
 - [Shared fleet rewards and watchlist damage](protocol/fleets.md#shared-mission-rewards-bounties-loot-and-watchlist-damage)
@@ -454,6 +456,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
 - [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
 - [War report side filters and former ally updates](protocol/corporations.md#war-report-side-filters-and-former-ally-updates)
 - [Defender allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports)
@@ -617,6 +620,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Information modules and salvage
 
+- [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - [Automatic signature resolution](protocol/information.md#automatic-signature-resolution--november-15-2026)
 - [DED complexes and Ghost Sites](protocol/information.md#ded-complexes-and-ghost-sites)
 - [DED catalog expansion and escalations](protocol/information.md#ded-catalog-expansion-and-escalations)

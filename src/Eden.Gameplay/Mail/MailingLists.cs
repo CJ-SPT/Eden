@@ -156,6 +156,11 @@ public static class MailingListRules
         long pilot,
         long corporation,
         MailingListAccess fallback,
-        IReadOnlyDictionary<long, MailingListAccess> entries
-    ) => entries.TryGetValue(pilot, out var personal) ? personal : entries.GetValueOrDefault(corporation, fallback);
+        IReadOnlyDictionary<long, MailingListAccess> entries,
+        long? alliance = null
+    ) =>
+        entries.TryGetValue(pilot, out var personal) ? personal
+        : entries.TryGetValue(corporation, out var corporate) ? corporate
+        : alliance is long allianceId ? entries.GetValueOrDefault(allianceId, fallback)
+        : fallback;
 }

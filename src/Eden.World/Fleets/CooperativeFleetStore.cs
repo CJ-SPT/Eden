@@ -160,6 +160,8 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
     public void SetAcceptsConduitJumps(long actor, long fleet, bool enabled) =>
         Write(() => _world.SetAcceptsConduitJumps(actor, fleet, enabled));
 
+    public void SetAcceptsRegroup(long actor, long fleet, bool enabled) => Write(() => _world.SetAcceptsRegroup(actor, fleet, enabled));
+
     public void Broadcast(
         long actor,
         long fleet,
@@ -178,7 +180,11 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
     public void Warp(long actor, long fleet, long target, double range, SpacePosition? point) =>
         Write(() => _world.Warp(actor, fleet, target, range, point, Now));
 
-    public void CancelWarpOrders(long actor) => Write(() => _world.CancelWarpOrders(actor));
+    public void CancelMovementOrders(long actor) => Write(() => _world.CancelMovementOrders(actor));
 
     public bool CanExecuteWarp(long actor, FleetWarpOrder order) => Read(() => _world.CanExecuteWarp(actor, order, Now));
+
+    public void Regroup(long actor, long fleet) => Write(() => _world.Regroup(actor, fleet, Now));
+
+    public bool CanExecuteRegroup(long actor, FleetRegroupOrder order) => Read(() => _world.CanExecuteRegroup(actor, order, Now));
 }

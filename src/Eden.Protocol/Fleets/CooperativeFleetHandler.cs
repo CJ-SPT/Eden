@@ -136,6 +136,12 @@ internal sealed partial class CooperativeFleetHandler(
                         );
                     }
                     break;
+                case FleetEvent.Regroup regroup:
+                    if (context.Flight.CanTarget && fleets.CanExecuteRegroup(pilot.PilotId, regroup.Order))
+                    {
+                        context.Flight.Execute(new FlightCommand.Follow(regroup.Order.CommanderShipId, 0, false));
+                    }
+                    break;
                 case FleetEvent.StandingChanged standing:
                     context.Notifications.Add(new NpcStandingSet(standing.SourceId, pilot.PilotId, standing.Value));
                     break;
@@ -278,7 +284,7 @@ internal sealed partial class CooperativeFleetHandler(
         _tagFleet = null;
     }
 
-    public void CancelWarpOrders(long actor) => fleets.CancelWarpOrders(actor);
+    public void CancelMovementOrders(long actor) => fleets.CancelMovementOrders(actor);
 
     public FlightCommand MemberWarp(PilotCallContext context, FlightCommand.WarpToFleetMember request)
     {
@@ -309,6 +315,29 @@ internal sealed partial class CooperativeFleetHandler(
                     .Members.Where(m => m.Pilot.SystemId == context.Pilot.SystemId && m.Pilot.Position is not null)
                     .ToArray()
             );
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult Regroup(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (args.Length != 0 || keywords is { Count: > 0 } || !context.Flight.CanTarget)
+        {
+            return new PilotCallResult.Failure("Issue fleet regroup in space without arguments.");
+        }
+        Advance(context);
+        long actor = context.Pilot.PilotId;
+        if (fleets.Identity(actor) is not { } identity)
+        {
+            return new PilotCallResult.Failure("Join a fleet before commanding fleet regroup.");
+        }
+        try
+        {
+            fleets.Regroup(actor, identity.FleetId);
+            return PilotCallResult.None;
         }
         catch (InvalidDataException error)
         {
@@ -379,6 +408,10 @@ internal sealed partial class CooperativeFleetHandler(
         if (service == "beyonce" && method == "CmdFleetTagTarget")
         {
             return TagTarget(context, args, keywords);
+        }
+        if (service == "beyonce" && method == "CmdFleetRegroup")
+        {
+            return Regroup(context, args, keywords);
         }
         bool bound = service.StartsWith(Prefix, StringComparison.Ordinal);
         if (!bound && service is not ("fleetObjectHandler" or "fleetMgr" or "fleetProxy"))
@@ -588,6 +621,9 @@ internal sealed partial class CooperativeFleetHandler(
                     return PilotCallResult.None;
                 case ("SetAcceptsConduitJumpsValue", [bool acceptsConduit]):
                     fleets.SetAcceptsConduitJumps(actor, id, acceptsConduit);
+                    return PilotCallResult.None;
+                case ("SetAcceptsRegroupValue", [bool acceptsRegroup]):
+                    fleets.SetAcceptsRegroup(actor, id, acceptsRegroup);
                     return PilotCallResult.None;
                 case ("SendBroadcast", _):
                     SendBroadcast(actor, id, args, FleetBroadcastRange.Universe);

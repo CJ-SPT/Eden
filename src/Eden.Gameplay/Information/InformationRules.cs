@@ -42,6 +42,10 @@ public static class InformationRules
     public const double TractorStopDistance = 1500;
     public const double MiningScanRange = 250_000;
 
+    // Build 3662168 uses values of at least one for cargo-scan-immune ships.
+    public static bool CargoScanImmune(IReadOnlyDictionary<DogmaAttributeId, double>? attributes) =>
+        attributes?.GetValueOrDefault(DogmaAttributeId.CargoScanResistance) >= 1;
+
     public static void RequireMiningSurvey(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
         if (

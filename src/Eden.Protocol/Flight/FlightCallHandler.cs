@@ -303,7 +303,7 @@ internal sealed class FlightCallHandler(
         }
         if (command is not FlightCommand.RefreshState)
         {
-            fleets.CancelWarpOrders(context.Pilot.PilotId);
+            fleets.CancelMovementOrders(context.Pilot.PilotId);
         }
         var result = command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
         if (

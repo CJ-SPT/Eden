@@ -2,7 +2,11 @@ using Eden.Gameplay.Mail;
 using Eden.Protocol.Mail;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Alliances;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server;
+using Eden.World.Runtime;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
@@ -124,6 +128,82 @@ public sealed class MailingListServiceTests
         );
         Assert.Null(Reply(owner.Call("Delete", [id], "mailingListsMgr")));
         Assert.Equal("Access", Fields(Reply(owner.Call("GetInfo", [id], "mailingListsMgr")))["displayName"]);
+    }
+
+    [Fact]
+    public async Task NativeOrganizationAccessLookupPrecedenceAndEvictionSurviveCheckpoint()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var setup = AllianceSocialTests.Admit(db, clock);
+        long id;
+        const string name = "Organization Access";
+        using (CourierServiceTests.Client owner = new(db, clock, 1000001))
+        using (CourierServiceTests.Client member = new(db, clock, 1000002))
+        {
+            owner.Refresh();
+            member.Refresh();
+            CheckLookup("Applicant Corporation", setup.Member, 2, 2);
+            CheckLookup("Eden Alliance", setup.Alliance, 16159, 32);
+            id = Assert.IsType<long>(Reply(owner.Call("Create", [name, 0L, 1L, 0L], "mailingListsMgr")));
+            Assert.IsType<PilotCallResult.Failure>(member.Call("Join", [name], "mailingListsMgr"));
+            SetAccess(new() { [setup.Alliance] = 1L });
+            Assert.Equal(id, Fields(Reply(member.Call("Join", [name], "mailingListsMgr")))["id"]);
+
+            SetAccess(new() { [setup.Member] = 0L });
+            clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            member.Advance();
+            Assert.Equal(
+                new object?[] { id, AllianceCreationTests.Other },
+                Assert.Single(member.Context.Notifications.OfType<MailingListLeft>()).Arguments
+            );
+            Assert.IsType<PilotCallResult.Failure>(member.Call("Join", [name], "mailingListsMgr"));
+            SetAccess(new() { [AllianceCreationTests.Other] = 1L });
+            Assert.Equal(id, Fields(Reply(member.Call("Join", [name], "mailingListsMgr")))["id"]);
+
+            SetAccess(
+                new()
+                {
+                    [setup.Alliance] = 0L,
+                    [setup.Member] = 1L,
+                    [setup.Founder] = 0L,
+                }
+            );
+            Assert.Null(Reply(owner.Call("ClearEntityAccess", [id, AllianceCreationTests.Other], "mailingListsMgr")));
+            Assert.Equal(id, Fields(Reply(member.Call("Join", [name], "mailingListsMgr")))["id"]);
+            Assert.Null(Reply(owner.Call("ClearEntityAccess", [id, (long)setup.Member], "mailingListsMgr")));
+            Assert.Empty(
+                Assert.IsAssignableFrom<System.Collections.IDictionary>(Reply(member.Call("GetJoinedLists", [], "mailingListsMgr")))
+            );
+            Assert.IsType<PilotCallResult.Failure>(member.Call("Join", [name], "mailingListsMgr"));
+
+            Dictionary<long, object?> invalid = new() { [setup.Alliance] = 1L, [long.MaxValue] = 1L };
+            Assert.IsType<PilotCallResult.Failure>(owner.Call("SetEntitiesAccess", [id, invalid], "mailingListsMgr"));
+
+            void SetAccess(Dictionary<long, object?> rules) =>
+                Assert.Null(Reply(owner.Call("SetEntitiesAccess", [id, rules], "mailingListsMgr")));
+
+            void CheckLookup(string query, long ownerId, long typeId, long groupId)
+            {
+                var row = Fields(
+                    Assert.Single(Assert.IsType<List<object?>>(Reply(owner.Call("LookupPCOwners", [query, 3L], "lookupSvc"))))
+                );
+                Assert.Equal(ownerId, row["ownerID"]);
+                Assert.Equal(query, row["ownerName"]);
+                Assert.Equal(typeId, row["typeID"]);
+                Assert.Equal(groupId, row["groupID"]);
+            }
+        }
+        await db.Services.GetRequiredService<LiveWorld>().FlushAsync();
+        db.Services.Dispose();
+        using var reopened = ServerServices.Build(new(db.Path), clock, liveWorld: true);
+        var lists = reopened.GetRequiredService<IPilotMailingLists>();
+        var access = lists.Settings(AllianceCreationTests.Ceo, id).Access;
+        Assert.Equal(2, access.Count);
+        Assert.Equal(MailingListAccess.Blocked, access[setup.Alliance]);
+        Assert.Equal(MailingListAccess.Blocked, access[setup.Founder]);
+        Assert.Equal(MailingListRole.Owner, Assert.Single(lists.Members(AllianceCreationTests.Ceo, id)).Value);
+        Assert.Throws<InvalidDataException>(() => lists.Join(AllianceCreationTests.Other, name, Guid.NewGuid()));
     }
 
     [Theory]

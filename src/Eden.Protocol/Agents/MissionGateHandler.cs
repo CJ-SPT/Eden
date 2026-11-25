@@ -31,7 +31,7 @@ internal sealed class MissionGateHandler(CooperativeFleetHandler fleets) : ISele
         {
             return new PilotCallResult.Failure("Undock before activating an acceleration gate.");
         }
-        fleets.CancelWarpOrders(context.Pilot.PilotId);
+        fleets.CancelMovementOrders(context.Pilot.PilotId);
         var result = context.Flight.Execute(new FlightCommand.ActivateAccelerationGate(gateId));
         foreach (var item in context.Flight.TakeGateInventoryChanges())
         {

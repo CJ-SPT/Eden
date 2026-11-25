@@ -390,7 +390,7 @@ public sealed partial class FleetWorld(long seed)
     public void Leave(long actor, long fleetId)
     {
         var fleet = MemberFleet(actor, fleetId);
-        CancelWarpOrders(actor);
+        CancelMovementOrders(actor);
         Publish(fleet, new FleetEvent.Left(actor));
         bool boss = Boss(fleet, actor);
         fleet.Members.Remove(actor);
@@ -588,6 +588,12 @@ public sealed partial class FleetWorld(long seed)
         ChangeMember(fleet, fleet.Members[actor] with { AcceptsConduitJumps = enabled });
     }
 
+    public void SetAcceptsRegroup(long actor, long fleetId, bool enabled)
+    {
+        var fleet = MemberFleet(actor, fleetId);
+        ChangeMember(fleet, fleet.Members[actor] with { AcceptsFleetRegroups = enabled });
+    }
+
     public void Broadcast(
         long actor,
         long fleetId,
@@ -672,7 +678,7 @@ public sealed partial class FleetWorld(long seed)
                             point,
                             sender.Pilot.Position,
                             _controlVersions.GetValueOrDefault(member.Pilot.Id),
-                            checked(now + FleetRules.WarpOrderLifetime.Ticks)
+                            checked(now + FleetRules.MovementOrderLifetime.Ticks)
                         )
                     )
                 );
@@ -696,7 +702,56 @@ public sealed partial class FleetWorld(long seed)
         && member.Pilot.Position is { } position
         && position.DistanceTo(order.Origin) <= FleetRules.CommandRange;
 
-    public void CancelWarpOrders(long actor)
+    public void Regroup(long actor, long fleetId, long now)
+    {
+        var fleet = MemberFleet(actor, fleetId);
+        var commander = fleet.Members[actor];
+        if (commander.Placement.Role == FleetRole.Member || commander.Pilot is not { InTransit: false, Position: not null })
+        {
+            throw new InvalidDataException("A commander in space must issue fleet regroup.");
+        }
+        var membership = _memberships[actor];
+        long expiresAt = checked(now + FleetRules.MovementOrderLifetime.Ticks);
+        foreach (var member in fleet.Members.Values.Where(member => CanRegroup(commander, member)))
+        {
+            long recipient = member.Pilot.Id;
+            Queue(
+                recipient,
+                fleetId,
+                new FleetEvent.Regroup(
+                    new(
+                        actor,
+                        commander.Pilot.ShipId,
+                        membership,
+                        _memberships[recipient],
+                        _controlVersions.GetValueOrDefault(recipient),
+                        expiresAt
+                    )
+                )
+            );
+        }
+    }
+
+    public bool CanExecuteRegroup(long actor, FleetRegroupOrder order, long now) =>
+        order.ExpiresAt > now
+        && Membership(actor) == order.Recipient
+        && Membership(order.CommanderId) == order.Commander
+        && order.Recipient.FleetId == order.Commander.FleetId
+        && _controlVersions.GetValueOrDefault(actor) == order.ControlVersion
+        && _fleets.TryGetValue(order.Recipient.FleetId, out var fleet)
+        && fleet.Members[order.CommanderId] is { } commander
+        && commander.Pilot.ShipId == order.CommanderShipId
+        && CanRegroup(commander, fleet.Members[actor]);
+
+    private static bool CanRegroup(FleetMember commander, FleetMember member) =>
+        commander.Pilot.Id != member.Pilot.Id
+        && member.AcceptsFleetRegroups
+        && !commander.Pilot.InTransit
+        && !member.Pilot.InTransit
+        && FleetRules.Subordinate(commander, member)
+        && FleetRules.InCommandRange(commander.Pilot, member.Pilot);
+
+    public void CancelMovementOrders(long actor)
     {
         if (Identity(actor) is not null)
         {
