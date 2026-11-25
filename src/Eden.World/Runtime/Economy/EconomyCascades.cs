@@ -68,6 +68,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Filter<Eden.Data.World.Docking.SavedShipSkinLicense>(license => license.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Combat.SavedKillRight>(row => row.OwnerId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Combat.SavedKillRight>(row => row.TargetId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Exploration.SavedIncursionLoyaltyEntry>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpTimers>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedCynosuralField>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.PilotId == removed.Id));
@@ -123,6 +124,10 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarParticipant>(c => c.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarChange>(c => c.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Mail.SavedMailEntry>(c => c.PilotId == removed.Id));
+                if (Set<Eden.Data.World.Mail.SavedMailContactPolicy>().Find(removed.Id) is { } mailContactPolicy)
+                {
+                    Remove(mailContactPolicy);
+                }
                 RemoveRange(Filter<Eden.Data.World.Mail.SavedMailLabel>(c => c.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Mail.SavedMailChange>(c => c.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Mail.SavedMailingListMember>(c => c.PilotId == removed.Id));

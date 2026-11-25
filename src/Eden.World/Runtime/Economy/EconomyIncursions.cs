@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.World.Exploration;
+using Eden.Gameplay.Exploration;
 using Eden.World.Exploration;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -105,6 +106,97 @@ internal sealed partial class ResidentEconomy
                 primaryColumn: null
             )
         );
+        Register(
+            new EconomyTable<SavedIncursionLoyaltyEntry, EconomyIncursionLoyaltyEntry>(
+                IncursionSchema.LoyaltyJournalTable,
+                row => new(row.PilotId, row.SourceId),
+                row =>
+                    new(
+                        row.PilotId,
+                        row.SourceId,
+                        new(
+                            row.TaleId,
+                            row.SystemId,
+                            row.RewardId,
+                            row.RewardMessageId,
+                            row.DungeonName,
+                            row.Pilots,
+                            row.Time,
+                            row.Event,
+                            row.Points
+                        )
+                    ),
+                row => new SavedIncursionLoyaltyEntry
+                {
+                    PilotId = row.PilotId,
+                    SourceId = row.SourceId,
+                    TaleId = row.Entry.TaleId,
+                    SystemId = row.Entry.SystemId,
+                    RewardId = row.Entry.RewardId,
+                    RewardMessageId = row.Entry.RewardMessageId,
+                    DungeonName = row.Entry.DungeonName,
+                    Pilots = row.Entry.Pilots,
+                    Time = row.Entry.Time,
+                    Event = row.Entry.Event,
+                    Points = row.Entry.Points,
+                },
+                ProjectLoyaltyJournal,
+                "PilotId,SourceId,TaleId,SystemId,RewardId,RewardMessageId,DungeonName,Pilots,Time,Event,Points",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        new(
+                            reader.GetInt64(3),
+                            reader.GetInt32(4),
+                            reader.GetInt32(5),
+                            reader.GetInt32(6),
+                            reader.GetString(7),
+                            reader.GetInt32(8),
+                            reader.GetInt64(9),
+                            (IncursionLoyaltyEvent)reader.GetInt32(10),
+                            reader.GetInt64(11)
+                        )
+                    ),
+                row => new(row.PilotId, row.SourceId),
+                indexes: [new(nameof(SavedIncursionLoyaltyEntry.PilotId), row => row.PilotId)],
+                primaryColumn: null
+            )
+        );
+    }
+
+    private static void ProjectLoyaltyJournal(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyIncursionLoyaltyEntry>> changes)
+    {
+        foreach (var batch in changes.Chunk(ProjectionBatchSize))
+        {
+            var deleted = batch.Where(change => change.Value is null).Select(change => change.Key).ToArray();
+            if (deleted.Length > 0)
+            {
+                string keys = JsonSerializer.Serialize(deleted);
+                world.Database.ExecuteSql(
+                    $"""
+                    DELETE FROM WorldIncursionLoyaltyEntry
+                    WHERE (PilotId,SourceId) IN (SELECT value->>'$.Id',value->>'$.Part' FROM json_each({keys}))
+                    """
+                );
+            }
+            var entries = batch.Select(change => change.Value).OfType<EconomyIncursionLoyaltyEntry>().ToArray();
+            if (entries.Length > 0)
+            {
+                string rows = JsonSerializer.Serialize(entries);
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldIncursionLoyaltyEntry(
+                        PilotId,SourceId,TaleId,SystemId,RewardId,RewardMessageId,DungeonName,Pilots,Time,Event,Points)
+                    SELECT value->>'$.PilotId',value->>'$.SourceId',value->>'$.Entry.TaleId',value->>'$.Entry.SystemId',
+                        value->>'$.Entry.RewardId',value->>'$.Entry.RewardMessageId',value->>'$.Entry.DungeonName',
+                        value->>'$.Entry.Pilots',value->>'$.Entry.Time',value->>'$.Entry.Event',value->>'$.Entry.Points'
+                    FROM json_each({rows}) WHERE 1
+                    ON CONFLICT(PilotId,SourceId) DO NOTHING
+                    """
+                );
+            }
+        }
     }
 
     private static void ProjectCampaigns(WorldDbContext world, IReadOnlyList<EconomyChange<Campaign>> changes)
@@ -175,3 +267,5 @@ internal sealed partial class ResidentEconomy
         }
     }
 }
+
+internal sealed record EconomyIncursionLoyaltyEntry(long PilotId, long SourceId, IncursionLoyaltyEntry Entry);

@@ -4,8 +4,10 @@
 
 ## Gameplay overview
 
-- **Flight and combat.** Fit a ship, join a fleet, take agent missions, and fight NPCs or other pilots.
-  [Fitting and modules](#fitting-weapons-and-modules) · [Supported missions](missions.md) · [Sansha Incursions](protocol/incursions.md)
+- **Flight and combat.** Fit a ship, join a fleet, take agent missions, and fight NPCs or other pilots. The Incursion journal
+  shows stored, paid and forfeited loyalty points.
+  [Fitting and modules](#fitting-weapons-and-modules) · [Supported missions](missions.md) ·
+  [Sansha Incursion LP journal](protocol/incursions.md#incursion-loyalty-point-journal)
 - **Exploration.** Scan and hack data and relic sites, explore wormholes with mass and lifetime limits, and run Abyssal pockets.
   [Scanning and hacking](protocol/information.md) · [Wormholes](protocol/wormholes.md) · [Abyssal Deadspace](protocol/abyssal.md)
 - **Industry and trade.** Mine resources, operate planetary colonies and moon refineries, run blueprint and production jobs,
@@ -130,7 +132,10 @@ Mail-arrival events now match the stock client's eight-argument callback. An ext
 
 New personal mail now accepts the stock compose window's `False` defaults for unused reply/forward IDs. This fixes the reported **Expected a mail identifier or None** rejection when sending to another pilot. See the [compose-default correction](protocol/social.md#mail-compose-optional-source-defaults); live confirmation of the fix remains pending.
 
-Personal EVE Mail now supports local-pilot sending, inbox/sent state, replies/forwards, compressed bodies, read/unread actions, trash/restoration/deletion and private labels. Mail and change notifications persist across restarts, with recipient ownership, blocking and rate limits enforced atomically. Native presentation remains unverified. Corporation/alliance broadcasts now snapshot their member recipients; paid CSPA remains pending. Mailing lists are implemented above. See the [personal mail notes](protocol/social.md#persistent-personal-eve-mail).
+Personal EVE Mail supports direct messages, inbox and sent mail, replies and forwards, private labels, and trash recovery.
+Pilots can charge for direct mail from unknown senders or block it. Personal contacts and corporation members are exempt from
+the charge. The wallet debit and mail delivery commit together. Corporation and alliance broadcasts snapshot their recipients.
+[Personal mail](protocol/social.md#persistent-personal-eve-mail) · [Direct mail CSPA](protocol/social.md#personal-mail-cspa)
 
 Corporation directors can restrict corporation-wide mail to Communications Officers and directors.
 [Corporation mail restrictions](protocol/corporations.md#corporation-mail-restrictions)
@@ -305,6 +310,10 @@ Personal courier contracts now support public offers and private assignments bet
 Personal item-exchange contracts support public offers and assignments to local pilots, item/ISK escrow, requested packaged items, search, lists, acceptance, rejection, cancellation and expired-escrow collection. Settlement transfers assets and ISK together, retains fitted hulls and nested contents, and records wallet history. Native requests and notifications are covered by automated tests; client presentation remains unverified. Corporation/structure contracts and package subcontracting remain pending. See the [item-exchange notes](protocol/contracts.md#personal-item-exchange-contracts) and [asset preparation notes](protocol/contracts.md#personal-contract-asset-preparation).
 
 ## Mining, industry and economy
+
+Deep-core mining of Mercoxit can release a temporary pollution cloud. Nearby ships and deployed drones take periodic
+damage, and Deep Core Mining reduces the chance of a cloud forming.
+[Mercoxit mining pollution clouds](protocol/industry.md#mercoxit-mining-pollution-clouds)
 
 ISK and EverMarks redeem rewards now credit their wallets. ISK tokens previously fell through to inventory delivery. ISK gains have native journal entries and balance updates; personal LP reads return saved issuer balances, including Paragon EverMarks. Claims survive restarts, reject duplicates/overflow, and work before pilot selection or in space. Native wallet rendering remains unverified. Corporation donations are implemented; Paragon missions remain pending. See the [currency and loyalty-wallet notes](protocol/industry.md#currency-redemption-and-loyalty-wallets).
 

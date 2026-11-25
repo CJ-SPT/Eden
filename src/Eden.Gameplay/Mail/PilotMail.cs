@@ -28,6 +28,7 @@ public sealed record MailDraft(IReadOnlyList<long> Recipients, string Subject, s
 {
     public long? ListId { get; init; }
     public long? OrganizationId { get; init; }
+    public long ApprovedContactCostIsk { get; init; }
 }
 
 public sealed record MailHeader(long Id, long SenderId, long SentAt, IReadOnlyList<long> Recipients, string Subject)
@@ -116,6 +117,10 @@ public static partial class MailRules
 
     public static void Draft(MailDraft draft)
     {
+        if (draft.ApprovedContactCostIsk is < 0 or > MailContactRules.MaximumApprovalIsk)
+        {
+            throw new InvalidDataException("Invalid mail contact charge approval.");
+        }
         if (
             draft.Recipients.Count > MaximumRecipients
             || (draft.Recipients.Count == 0 && !draft.ListId.HasValue && !draft.OrganizationId.HasValue)

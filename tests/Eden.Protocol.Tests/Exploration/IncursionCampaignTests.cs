@@ -5,6 +5,7 @@ using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Exploration;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -36,8 +37,10 @@ public sealed class IncursionCampaignTests
         var sites = fixture.Db.Services.GetRequiredService<ICombatAnomalies>();
         var wallet = fixture.Db.Services.GetRequiredService<IPilotWalletReader>();
         var loyalty = fixture.Db.Services.GetRequiredService<IPilotLoyaltyWallet>();
+        var loyaltyJournal = fixture.Db.Services.GetRequiredService<IIncursionLoyaltyJournal>();
         long pilotId = fixture.PilotId;
         long shipId = fixture.ShipId;
+        long legacyPilotId = fixture.Db.Store.FindPilot(1000002)!.PilotId;
         long initialBalance;
         int systemId;
         int assaultSystem;
@@ -46,6 +49,7 @@ public sealed class IncursionCampaignTests
         long expectedVictoryLoyalty = 0;
         const long SoloIskCents = 314_344_800;
         const long SoloPoints = 423;
+        const long LegacyPoints = 75;
 
         database.Catalog.PrepareRuntime();
         using (CatalogDbContext catalog = new(fixture.CatalogPath))
@@ -63,6 +67,7 @@ public sealed class IncursionCampaignTests
             Assert.Equal(1, focus.Influence);
             Assert.Equal(opens + IncursionRules.ActiveTicks, focus.EndsAt);
             Assert.Empty(directory.PendingLoyalties(pilotId, clock.Now));
+            Assert.Empty(loyaltyJournal.History(pilotId));
             systemId = focus.Systems.First(system => system.SceneType == IncursionScene.Vanguard).SystemId;
             assaultSystem = Assert.Single(focus.Systems, system => system.SceneType == IncursionScene.Assault).SystemId;
             headquartersSystem = Assert.Single(focus.Systems, system => system.SceneType == IncursionScene.Headquarters).SystemId;
@@ -104,6 +109,43 @@ public sealed class IncursionCampaignTests
             Assert.Equal((long)LoyaltyStoreRules.ConcordCorporation, payout["ownerID1"]);
             Assert.Equal(pilotId, payout["ownerID2"]);
             Assert.Empty(loyalty.Read(pilotId));
+            var savedAward = Assert.Single(loyaltyJournal.History(pilotId));
+            Assert.Equal(IncursionLoyaltyEvent.Stored, savedAward.Event);
+            Assert.Equal(SoloPoints, savedAward.Points);
+            Assert.Equal(clock.Now, savedAward.Time);
+            Assert.Empty(loyaltyJournal.History(legacyPilotId));
+            var journal = scope.ServiceProvider.GetRequiredService<IncursionHandler>();
+            using (GameplaySqlGuard.Begin())
+            {
+                var logReply = Assert.IsType<PilotCallResult.Success>(journal.Call(context, "rewardMgr", "GetRewardLPLogs", []));
+                var row = Assert.Single(Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(logReply.Reply))));
+                var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(row).State);
+                Assert.Equal((long)IncursionLoyaltyEvent.Stored, fields["eventTypeID"]);
+                Assert.Equal(savedAward.TaleId, fields["taleID"]);
+                Assert.Equal((long)systemId, fields["solarSystemID"]);
+                Assert.Equal(545502L, fields["rewardMessageKey"]);
+                Assert.Equal(savedAward.DungeonName, BlueMarshal.Text(fields["dungeonName"]));
+                Assert.Equal(1L, fields["numberOfPlayers"]);
+                Assert.Equal(clock.Now, fields["date"]);
+                Assert.Equal(SoloPoints, fields["lpAmountAddedToPool"]);
+                Assert.Equal(0L, fields["lpAmountPayedOut"]);
+            }
+            Assert.IsType<PilotCallResult.Failure>(journal.Call(context, "rewardMgr", "GetRewardLPLogs", [pilotId]));
+            // A pre-upgrade held balance has an original contribution but no journal row.
+            using (var action = live.Economy.Begin(new(pilots: [legacyPilotId])))
+            {
+                var contribution = Assert.Single(action.Filter<SavedIncursionContribution>(row => row.PilotId == pilotId));
+                action.Add(
+                    new SavedIncursionContribution
+                    {
+                        PilotId = legacyPilotId,
+                        SiteId = contribution.SiteId,
+                        TaleId = contribution.TaleId,
+                        PendingLoyalty = LegacyPoints,
+                    }
+                );
+                action.Commit();
+            }
             await live.FlushAsync();
         }
 
@@ -112,6 +154,7 @@ public sealed class IncursionCampaignTests
             Assert.Equal(IncursionRules.Influence(1), Assert.Single(directory.Read(clock.Now)).Influence);
             Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
             Assert.Equal(SoloPoints, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
+            Assert.Equal(SoloPoints, Assert.Single(loyaltyJournal.History(pilotId)).Points);
             if (repel)
             {
                 Assert.DoesNotContain(
@@ -155,7 +198,7 @@ public sealed class IncursionCampaignTests
                 clock.AdvanceWallTime(TimeSpan.FromSeconds(CombatAnomalyRules.ReplacementSeconds));
                 Clear(live, systemId, IncursionSiteKind.Vanguard, onGrid: false);
                 Assert.Equal(SoloPoints, Assert.Single(directory.PendingLoyalties(pilotId, clock.Now)).Amount);
-                clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.ActiveTicks);
+                clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.ActiveTicks + TimeSpan.TicksPerMinute);
                 fixture.Db.Services.GetRequiredService<IIncursionMaintenance>().Advance(clock.Now);
                 Assert.Empty(loyalty.Read(pilotId));
                 Assert.Equal(initialBalance + SoloIskCents, wallet.Balance(pilotId));
@@ -189,9 +232,20 @@ public sealed class IncursionCampaignTests
                     .Where(balance => balance.IssuerCorporationId == LoyaltyStoreRules.ConcordCorporation)
                     .Sum(balance => balance.Points)
             );
+            var history = loyaltyJournal.History(pilotId);
+            var terminal = Assert.Single(history, entry => entry.Event != IncursionLoyaltyEvent.Stored);
+            Assert.Equal(repel ? IncursionLoyaltyEvent.Paid : IncursionLoyaltyEvent.Forfeited, terminal.Event);
+            Assert.Equal(repel ? clock.Now : opens + IncursionRules.ActiveTicks, terminal.Time);
+            Assert.Equal(repel ? expectedVictoryLoyalty : SoloPoints, terminal.Points);
+            Assert.Equal(terminal.Points, history.Where(entry => entry.Event == IncursionLoyaltyEvent.Stored).Sum(entry => entry.Points));
+            var legacyTerminal = Assert.Single(loyaltyJournal.History(legacyPilotId));
+            Assert.Equal(terminal.Event, legacyTerminal.Event);
+            Assert.Equal(LegacyPoints, legacyTerminal.Points);
+            Assert.Equal(repel ? LegacyPoints : 0, loyalty.Read(legacyPilotId).Sum(balance => balance.Points));
             clock.UtcNow = DateTimeOffset.FromFileTime(opens + IncursionRules.RotationTicks);
             var replacement = Assert.Single(directory.Read(clock.Now));
             Assert.DoesNotContain(replacement.Systems, system => system.SystemId == systemId);
+            Assert.Equal(history, loyaltyJournal.History(pilotId));
         }
 
         void Clear(LiveWorld live, int targetSystem, IncursionSiteKind kind, bool onGrid = true)

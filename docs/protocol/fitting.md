@@ -1360,7 +1360,9 @@ Automated acceptance: tool/solution restore and build passed with zero warnings/
 
 References: pinned build 3662168 type/effect/attribute records and inert dogma code-object inspection in code.ccp, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Existing consulted Carbon Blue af0d65b / Destiny 27ee40b formats and projectile FX are unchanged. The user-directed game-window hold remains in force: no client input, host/client restart, deployment or running-save change occurred. Tooltip/defense, advanced charge effects, actual resource expenditure and native HUD acceptance remain **pending**.
 
-Remaining unrestricted work includes deep-core hazards, new weapon/module families, outstanding mixed/drone effects, and per-item mutations before ship-restricted modules. Deep-core investigation confirmed the pinned Mining Pollution Cloud (11546): radius 5 km, 30-second effect delay, 300-second lifetime and 50 damage of each type, plus Deep Core Mining's current -10% per-level chance modifier. That data is not an implemented hazard lifecycle; both deep-core laser profiles remain unavailable until the shared cloud, damage, lifetime and native visibility behavior is implemented and verified.
+At this checkpoint deep-core hazards, new weapon/module families, outstanding mixed/drone effects and per-item mutations
+remained open. The later [Mercoxit mining pollution clouds](industry.md#mercoxit-mining-pollution-clouds) record covers
+the pinned hazard, paid-cycle trigger, damage, lifetime and native visibility.
 
 ## Fitting expansion milestone 15: projectile turrets and ammunition
 

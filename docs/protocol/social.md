@@ -29,6 +29,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mailing-list organization access](#mailing-list-organization-access)
 - [Mail arrival notification arity](#mail-arrival-notification-arity)
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
+- [Personal mail CSPA](#personal-mail-cspa)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
 
@@ -660,6 +661,40 @@ Reference: pinned archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF491741833
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Load the rebuilt server and retry a new message from pilot 1 to pilot 2; inspect delivery, then reply. The screenshot establishes the original live failure, not acceptance of the corrected build.
+
+## Personal mail CSPA
+
+The native **Mail & Communications Settings** panel can charge unknown senders up to **1,000,000 ISK** per message or
+accept mail only from known pilots. The default fee is zero. A recipient's own corporation and their personal
+contacts are exempt. An explicit block still rejects the message. The policy applies to explicitly addressed
+characters, including those listed alongside a group address. Mailing list and organization audiences, fleet
+invitations, conversations, calendar invitations and contact notifications use their existing rules.
+
+The first send that requires payment returns a native confirmation dialog. Eden recalculates the total and checks
+the sender's current wallet on the approved send. A changed fee requires a fresh approval. Delivery, sender wallet
+and the CSPA journal entries commit together. One journal entry per charged recipient records the debit to CONCORD.
+The policy is character-owned and persists through the resident checkpoint. World schema **231** adds its policy
+table, with zero cost for existing characters until they choose a setting.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, identifies `account.GetDefaultContactCost()`
+and `account.SetContactCost(cost)` in `accountsvc.pyj`. The client writes and reads Python None for its block-unknown
+setting. `mailSvc.SendMail` passes the request through `eveMisc.CSPAChargedAction`, which consumes the
+`ContactCostNotApproved` error values `totalCost` and `totalCostISK` and resends with `approvedCost` when confirmed.
+`appConst.refCSPA` identifies journal type **35**. Local EVE.js **261108.1** leaves the contact-cost RPCs as stubs
+in `accountService.js`, SHA-256 `f427b0968885c250a05b3c4b0aacf6025c6cf246cf474ce718cbfa13db9d464a`, and confirms
+the journal type in `accountingEntryTypes.json`.
+[EVE University EVE Mail](https://wiki.eveuniversity.org/EVE_Mail#CONCORD_Spam_Prevention_Act)
+
+**Automated validation.** `NativePaidMailRequotesAndCommitsDeliveryWithTheWalletCharge` and
+`BlockUnknownMailExemptsCorporationAndRecipientContactsWhileExplicitBlocksWin` passed in 5.19 seconds of combined
+case time. They cover live settings changes between sends, a changed balance between quote and approval, native
+mail and journal replies, recipient exemptions and explicit blocks, and checkpoint reopen.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Set a charge on one pilot and send from a pilot outside their corporation and
+contact list. Approve the native dialog and inspect the sender's journal and recipient's inbox.
 
 ## Persistent personal EVE Mail
 

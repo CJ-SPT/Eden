@@ -49,9 +49,16 @@ internal sealed partial class AsteroidFieldStore(WorldDatabase database, TimePro
     public IReadOnlyList<StaticSpaceObject> List(int systemId)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.asteroids");
-        return LiveReadModels.Find(database.Path) is { } resident
+        var asteroids = LiveReadModels.Find(database.Path) is { } resident
             ? resident.Asteroids(systemId, () => ListSql(systemId))
             : ListSql(systemId);
+        if (LiveWorld.Find(database.Path) is { } live && live.Economy.HasMiningPollution(systemId))
+        {
+            long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            var clouds = MiningPollutionStore.Contacts(live, database.CatalogPath, systemId, now);
+            return clouds.Count == 0 ? asteroids : [.. asteroids, .. clouds];
+        }
+        return asteroids;
     }
 
     private IReadOnlyList<StaticSpaceObject> ListSql(int systemId)

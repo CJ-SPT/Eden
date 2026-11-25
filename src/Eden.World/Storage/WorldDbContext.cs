@@ -320,6 +320,8 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<SavedMail>().ToTable("WorldMail").HasKey(mail => mail.Id);
         model.Entity<SavedMail>().HasIndex(mail => new { mail.SenderId, mail.SentAt });
         model.Entity<SavedMail>().HasIndex(mail => mail.ListId);
+        model.Entity<SavedMailContactPolicy>().ToTable(MailContactPolicySchema.Table).HasKey(policy => policy.PilotId);
+        model.Entity<SavedMailContactPolicy>().HasOne<Pilot>().WithMany().HasForeignKey(policy => policy.PilotId);
         model.Entity<SavedMailEntry>().ToTable("WorldMailEntry").HasOne<Pilot>().WithMany().HasForeignKey(entry => entry.PilotId);
         model.Entity<SavedMailEntry>().HasOne<SavedMail>().WithMany().HasForeignKey(entry => entry.MessageId);
         model.Entity<SavedMailLabel>().ToTable("WorldMailLabel").HasOne<Pilot>().WithMany().HasForeignKey(label => label.PilotId);
@@ -654,6 +656,9 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldAsteroid>().Property(a => a.Id).ValueGeneratedNever();
         model.Entity<WorldAsteroid>().HasIndex(a => a.SystemId);
         model.Entity<WorldAsteroid>().HasIndex(a => a.BeltId);
+        model.Entity<SavedMiningPollutionCloud>().Property(cloud => cloud.Id).ValueGeneratedNever();
+        model.Entity<SavedMiningPollutionCloud>().HasIndex(cloud => cloud.AsteroidId).IsUnique();
+        model.Entity<SavedMiningPollutionCloud>().HasIndex(cloud => cloud.SystemId);
         Eden.World.Mining.MiningSiteSchema.Configure(model);
         Eden.World.Mining.MiningLedgerSchema.Configure(model);
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));

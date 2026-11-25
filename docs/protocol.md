@@ -345,6 +345,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Chat, mail and contacts
 
+- [Personal mail CSPA](protocol/social.md#personal-mail-cspa)
 - [Mailing-list organization access](protocol/social.md#mailing-list-organization-access)
 - [Corporation calendar events](protocol/social.md#corporation-calendar-events)
 - [Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026)
@@ -622,6 +623,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sansha Incursions
 
+- [Incursion loyalty point journal](protocol/incursions.md#incursion-loyalty-point-journal)
 - [Roaming Sansha populations](protocol/incursions.md#roaming-sansha-populations)
 - [Security campaigns and system effects](protocol/incursions.md#security-campaigns-and-system-effects)
 - [High-security Incursion campaign](protocol/incursions.md#high-security-incursion-campaign)
@@ -681,6 +683,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Mercoxit mining pollution clouds](protocol/industry.md#mercoxit-mining-pollution-clouds)
 - [Procurement and Marketing at remote stations](protocol/industry.md#procurement-and-marketing-at-remote-stations)
 - [Remote personal order management](protocol/industry.md#remote-personal-order-management)
 - [Browsing industry facilities from any station](protocol/industry.md#browsing-industry-facilities-from-any-station)

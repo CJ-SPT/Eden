@@ -1002,6 +1002,7 @@ internal sealed partial class ResidentEconomy
         RegisterCommandBursts();
         RegisterInterdiction();
         RegisterAreaWeapons();
+        RegisterMiningPollutionClouds();
         RegisterLanceDisruptions();
         RegisterCloneTrainingTables();
         RegisterCharacterServices();

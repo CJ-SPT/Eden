@@ -8,6 +8,7 @@ using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Mining;
 using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
 using Eden.World.Thermal;
@@ -17,7 +18,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = CorporationMedalSchema.Version;
+    internal const int CurrentVersion = Eden.World.Exploration.IncursionSchema.LoyaltyJournalVersion;
 
     public static void Open(
         WorldDbContext world,
@@ -169,6 +170,8 @@ internal static class WorldMigration
         CorporationWarSchema.Upgrade(world);
         WarReportSchema.Upgrade(world);
         CorporationMedalSchema.Upgrade(world);
+        Eden.World.Mail.MailContactPolicySchema.Upgrade(world);
+        MiningPollutionSchema.Upgrade(world);
         Eden.World.Inventory.MutationSchema.Upgrade(world);
         Eden.World.Inventory.CargoContainerSchema.Upgrade(world);
         Eden.World.Exploration.AbyssalSchema.Upgrade(world);

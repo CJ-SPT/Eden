@@ -26,7 +26,7 @@ using Eden.World.Storage;
 namespace Eden.World.Exploration;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed partial class IncursionStore(WorldDatabase database) : IIncursionDirectory, IIncursionMaintenance
+internal sealed partial class IncursionStore(WorldDatabase database) : IIncursionDirectory, IIncursionMaintenance, IIncursionLoyaltyJournal
 {
     private enum RewardType
     {
@@ -66,6 +66,8 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
     private sealed record Breakpoint(long PilotCount, long Amount);
 
     private sealed record PayoutTable(
+        RewardGroup Group,
+        int LogNameId,
         long MinimumContribution,
         double DamageMultiplier,
         double RepairMultiplier,
@@ -341,7 +343,20 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
 
             CombatAnomalyStore.RetireIncursion(world, taleId, now);
             IncursionRoamingPopulation.Retire(world, ForTale(taleId).Systems, taleId, now);
-            world.RemoveRange(world.Filter<SavedIncursionContribution>(row => row.TaleId == taleId).ToArray());
+            var contributions = world.Filter<SavedIncursionContribution>(row => row.TaleId == taleId).ToArray();
+            foreach (var (pilotId, points) in HeldLoyalty(world, contributions))
+            {
+                RecordLoyaltyClose(
+                    world,
+                    pilotId,
+                    taleId,
+                    ForTale(taleId).Staging,
+                    IncursionLoyaltyEvent.Forfeited,
+                    points,
+                    IncursionRules.EndsAt(taleId)
+                );
+            }
+            world.RemoveRange(contributions);
             world.RemoveRange(world.Filter<SavedIncursionRepairDamage>(row => row.TaleId == taleId).ToArray());
             world.Remove(campaign);
             world.Commit();
@@ -433,6 +448,7 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
 
         long isk = checked(MarketDefinitions.CentsPerIsk * Amount(winners.Length, rewards.Isk));
         long loyalty = Amount(winners.Length, rewards.Loyalty);
+        string dungeonName = loyalty > 0 ? IncursionSiteCatalog.Read(catalog, site.DungeonId)?.Encounter.Name ?? "" : "";
         foreach (var winner in winners)
         {
             if (isk > 0)
@@ -440,6 +456,25 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
                 PayIsk(world, winner.Pilot!, site.SystemId, isk, now);
             }
             winner.Row.PendingLoyalty = loyalty;
+            if (loyalty > 0)
+            {
+                world.Add(
+                    new SavedIncursionLoyaltyEntry
+                    {
+                        PilotId = winner.Row.PilotId,
+                        SourceId = site.Id,
+                        TaleId = taleId,
+                        SystemId = site.SystemId,
+                        RewardId = (int)rewards.Group,
+                        RewardMessageId = rewards.LogNameId,
+                        DungeonName = dungeonName,
+                        Pilots = winners.Length,
+                        Event = IncursionLoyaltyEvent.Stored,
+                        Points = loyalty,
+                        Time = now,
+                    }
+                );
+            }
         }
 
         world.RemoveRange(contributions.Where(row => row.PendingLoyalty == 0).ToArray());
@@ -562,18 +597,14 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
     private static void Repel(WorldAction world, long taleId, long now)
     {
         var contributions = world.Filter<SavedIncursionContribution>(row => row.TaleId == taleId).ToArray();
-        foreach (var award in contributions.Where(row => row.PendingLoyalty > 0).GroupBy(row => row.PilotId))
+        foreach (var (pilotId, points) in HeldLoyalty(world, contributions))
         {
-            if (!world.PilotExists(award.Key) || world.Set<SavedCharacterDeletion>().Find(award.Key)?.DeletedAt is not null)
-            {
-                continue;
-            }
-
             int issuer = LoyaltyStoreRules.ConcordCorporation;
             var wallet =
-                world.Set<SavedLoyaltyBalance>().Find(award.Key, issuer)
-                ?? world.Add(new SavedLoyaltyBalance { PilotId = award.Key, IssuerCorporationId = issuer }).Entity;
-            wallet.Points = checked(wallet.Points + award.Sum(row => row.PendingLoyalty));
+                world.Set<SavedLoyaltyBalance>().Find(pilotId, issuer)
+                ?? world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = issuer }).Entity;
+            wallet.Points = checked(wallet.Points + points);
+            RecordLoyaltyClose(world, pilotId, taleId, ForTale(taleId).Headquarters, IncursionLoyaltyEvent.Paid, points, now);
         }
         world.RemoveRange(contributions);
         world.RemoveRange(world.Filter<SavedIncursionRepairDamage>(row => row.TaleId == taleId).ToArray());
@@ -606,7 +637,15 @@ internal sealed partial class IncursionStore(WorldDatabase database) : IIncursio
         var loyalty = Table(RewardType.Loyalty, true);
         return isk.IsEmpty || loyalty.IsEmpty
             ? null
-            : new(profile.MinimumContribution.Value, damageMultiplier, repairMultiplier, isk, loyalty);
+            : new(
+                rewardGroup,
+                checked((int)(profile.LpLogTypeNameID ?? RewardLogName(rewardGroup))),
+                profile.MinimumContribution.Value,
+                damageMultiplier,
+                repairMultiplier,
+                isk,
+                loyalty
+            );
 
         ImmutableArray<Breakpoint> Table(RewardType type, bool delayed)
         {

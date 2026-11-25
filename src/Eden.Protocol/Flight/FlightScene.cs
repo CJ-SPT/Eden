@@ -206,14 +206,15 @@ internal sealed class FlightScene(
             ? new(id, ship.Velocity)
             : null;
 
-    private static bool IsPublicAsteroid(StaticSpaceObject item) =>
-        MiningDefinitions.IsResource(item.CategoryId, item.GroupId) && !MissionMiningRules.IsDeposit(item.Id);
+    private static bool IsPublicFieldObject(StaticSpaceObject item) =>
+        item.TypeId == MiningPollutionRules.TypeId
+        || MiningDefinitions.IsResource(item.CategoryId, item.GroupId) && !MissionMiningRules.IsDeposit(item.Id);
 
     private StaticSpaceObject[] VisibleObjects(FlightSceneContext context) =>
         Objects
             .AsValueEnumerable()
             .Where(o =>
-                !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
+                !(MiningDefinitions.IsResource(o.CategoryId, o.GroupId) || o.TypeId == MiningPollutionRules.TypeId)
                 || (context.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)
             )
             .ToArray();
@@ -286,7 +287,7 @@ internal sealed class FlightScene(
             return null;
         }
         var target =
-            VisibleObjects(context).FirstOrDefault(o => o.Id == id)
+            VisibleObjects(context).FirstOrDefault(o => o.Id == id && o.TypeId != MiningPollutionRules.TypeId)
             ?? (
                 space
                     .Peers(context.Pilot)
@@ -433,7 +434,7 @@ internal sealed class FlightScene(
         // Resident fields publish immutable lists; scene replacement clears the cached source.
         if (!ReferenceEquals(_asteroidSource, asteroids))
         {
-            Objects = Objects.Where(o => !IsPublicAsteroid(o)).Concat(asteroids).ToArray();
+            Objects = Objects.Where(o => !IsPublicFieldObject(o)).Concat(asteroids).ToArray();
             _asteroidSource = asteroids;
         }
         // Movement can cross visibility boundaries even when the field is unchanged.
@@ -661,7 +662,7 @@ internal sealed class FlightScene(
         var current = Objects
             .AsValueEnumerable()
             .Where(o =>
-                IsPublicAsteroid(o)
+                IsPublicFieldObject(o)
                 && context.Position is { } position
                 && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange
             )
@@ -738,7 +739,7 @@ internal sealed class FlightScene(
         _wrecks = ReadWrecks(context);
         _missiles = ReadMissiles(context);
         Drones.Capture(context);
-        _visibleAsteroids = visible.Where(IsPublicAsteroid).ToArray();
+        _visibleAsteroids = visible.Where(IsPublicFieldObject).ToArray();
         var snapshot = own is null
             ? Ballpark.StructureSnapshot(
                 context.EntityId,

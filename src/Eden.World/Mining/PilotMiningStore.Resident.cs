@@ -293,6 +293,10 @@ internal sealed partial class PilotMiningStore
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId) ?? world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        if (laser.Family == MiningFamily.Ore)
+        {
+            MiningPollutionStore.Begin(world, catalog, pilot, asteroid, now);
+        }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.MiningLaserActivated);
         world.SaveChanges();
         return new(laser, charge);

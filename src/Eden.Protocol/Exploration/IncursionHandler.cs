@@ -6,8 +6,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Exploration;
 
 [Injectable]
-internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvider clock, IncursionAgencyMonitor? agency = null)
-    : ISelectedPilotCallHandler
+internal sealed class IncursionHandler(
+    IIncursionDirectory directory,
+    TimeProvider clock,
+    IncursionAgencyMonitor? agency = null,
+    IIncursionLoyaltyJournal? loyalty = null
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -17,6 +21,14 @@ internal sealed class IncursionHandler(IIncursionDirectory directory, TimeProvid
         Dictionary<string, object?>? keywords = null
     )
     {
+        if ((service, method) is ("rewardMgr", "GetRewardLPLogs") && loyalty is not null)
+        {
+            return args.Length == 0 && keywords is not { Count: > 0 }
+                ? new BlueList<IncursionLoyaltyLogRow>(
+                    loyalty.History(context.Pilot.PilotId).Select(entry => new IncursionLoyaltyLogRow(entry)).ToArray()
+                )
+                : new PilotCallResult.Failure("The Incursion loyalty log does not accept arguments.");
+        }
         if ((service, method) is ("rewardMgr", "GetDelayedRewardsByGroupIDs"))
         {
             if (keywords is { Count: > 0 } || args is not [object?[] groupIds] || groupIds.Any(id => id is not (long and > 0)))

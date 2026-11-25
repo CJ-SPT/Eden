@@ -88,7 +88,7 @@ def export(catalog_path, output, sites_output):
         pending = {type_id for type_id, group in catalog.execute('SELECT Id,GroupId FROM ItemType')
                    if group in GROUPS and record('client/types', type_id).get('published') == 1}
         pending.update({601, 1230, 1223, 17478, 17480, 17476, 32880, 32918, 3410, 90727, 90728, 25268, 91174, 33697, 28444})
-        pending.update(MERCOXIT)
+        pending.update(MERCOXIT | {11546})
         for ore in MERCOXIT:
             pending.update(material['materialTypeID'] for material in record('client/typematerials', ore)['materials'])
         regions = {name: region_id for region_id, name in catalog.execute('SELECT Id,Name FROM Region')}

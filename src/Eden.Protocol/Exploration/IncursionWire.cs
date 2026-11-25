@@ -78,3 +78,26 @@ internal sealed record IncursionLoyaltyAmount(long Amount) : BlueModel
     public override object ToBlue() =>
         new BlueInstance("util.KeyVal", new Dictionary<string, object?> { ["rewardTypeID"] = LoyaltyPoints, ["rewardQuantity"] = Amount });
 }
+
+internal sealed record IncursionLoyaltyLogRow(IncursionLoyaltyEntry Entry) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "util.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["taleID"] = Entry.TaleId,
+                ["solarSystemID"] = Entry.SystemId,
+                ["rewardID"] = Entry.RewardId,
+                ["rewardMessageKey"] = Entry.RewardMessageId,
+                ["dungeonName"] = new BlueUnicode(Entry.DungeonName),
+                ["numberOfPlayers"] = Entry.Pilots,
+                ["date"] = Entry.Time,
+                ["eventTypeID"] = (int)Entry.Event,
+                ["lpAmountAddedToPool"] = Entry.Event == IncursionLoyaltyEvent.Stored ? Entry.Points : 0,
+                ["lpAmountPayedOut"] = Entry.Event == IncursionLoyaltyEvent.Paid ? Entry.Points : 0,
+                ["disqualifierType"] = null,
+                ["disqualifierData"] = null,
+            }
+        );
+}

@@ -315,9 +315,9 @@ internal static class ShipContentAudit
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
-                    false,
+                    catalog.FittingType(MiningPollutionRules.TypeId)?.GroupId == MiningPollutionRules.GroupId,
                     ShipContentMilestone.Mining,
-                    "Mercoxit extraction and crystals work. Pollution cloud hazards remain unavailable.",
+                    "Paid Mercoxit cycles can create a resident pollution cloud using the pinned field profile.",
                     HullCapability.DeepCoreMining
                 )
             );

@@ -157,10 +157,9 @@ public sealed partial class MiningCrystalTests
         Assert.All(crystals, p => Assert.True(MiningCrystalCatalog.Supported(catalog, checked((int)p.Key), (int)p.Value.GroupID!.Value)));
         Assert.Null(FittingCatalog.Definition(catalog, 90474));
         var coverage = ShipContentAudit.Read(catalog);
-        Assert.Equal(ContentSupportState.Complete, coverage.Entries.Single(e => e.TypeId == 17912).State);
-        foreach (int type in new[] { 18068, 24305 })
+        foreach (int type in new[] { 17912, 18068, 24305 })
         {
-            Assert.Equal(ContentSupportState.Partial, coverage.Entries.Single(e => e.TypeId == type).State);
+            Assert.Equal(ContentSupportState.Complete, coverage.Entries.Single(e => e.TypeId == type).State);
         }
     }
 

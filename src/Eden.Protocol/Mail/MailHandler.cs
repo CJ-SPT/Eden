@@ -106,15 +106,7 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
         try
         {
             Enter(context);
-            if (
-                keywords is { Count: > 0 }
-                && (
-                    method != "SendMail"
-                    || keywords.Count != 1
-                    || !keywords.TryGetValue("approvedCost", out var cost)
-                    || cost is not (null or 0L or 0d)
-                )
-            )
+            if (keywords is { Count: > 0 } && (method != "SendMail" || keywords.Count != 1 || !keywords.ContainsKey("approvedCost")))
             {
                 throw new InvalidDataException("Unexpected mail arguments or stale CSPA approval.");
             }
@@ -134,6 +126,7 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
                         {
                             ListId = OptionalId(list),
                             OrganizationId = OptionalId(corporation),
+                            ApprovedContactCostIsk = ContactCost(keywords?.GetValueOrDefault("approvedCost")),
                         },
                         _origin
                     );
@@ -184,6 +177,10 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
                 return new MailSelection.Ids(Ids(ids));
             }
         }
+        catch (MailContactCostApprovalRequired quote)
+        {
+            return new PilotCallResult.NamedFailure("ContactCostNotApproved", new MailContactCostValues(quote.CostIsk));
+        }
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
@@ -203,6 +200,15 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
             null or false or 0L => null,
             long id when id > 0 => id,
             _ => throw new InvalidDataException("Expected a mail identifier or None."),
+        };
+
+    private static long ContactCost(object? value) =>
+        value switch
+        {
+            null => 0,
+            long cost when cost is >= 0 and <= MailContactRules.MaximumApprovalIsk => cost,
+            double cost when cost is >= 0 and <= MailContactRules.MaximumApprovalIsk && cost == Math.Truncate(cost) => (long)cost,
+            _ => throw new InvalidDataException("Invalid mail contact charge approval."),
         };
 
     private static int? Color(object? value) =>

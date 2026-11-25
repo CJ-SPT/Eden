@@ -1495,7 +1495,7 @@ The build 3662168 catalog has Mercoxit belts in 368 systems. Those systems have 
 founder Venture stages at a market station and takes reciprocal gates to and from a nullsec belt within eight jumps.
 The specialist uses a Deep Core Mining Laser I and the ordinary mining cycle, fittings, ore hold and defenses. Existing
 and new founder Ventures can receive a single starter laser while on their original hull. Subsequent trips use the owned
-fit. As with other mining in Eden, deep-core pollution clouds are outside the native simulation's current support.
+fit. Player-activated deep-core cycles can create [Mercoxit pollution clouds](industry.md#mercoxit-mining-pollution-clouds).
 
 Before departing, the specialist checks the destination's catalog belts against the resident asteroid index and its
 crew's belt memory. A previously populated belt must still contain Mercoxit, and a recently stripped or threatened

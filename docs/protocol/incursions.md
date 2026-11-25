@@ -2,6 +2,43 @@
 
 [Documentation index](../README.md) · [Protocol records](../protocol.md)
 
+## Incursion loyalty point journal
+
+Journal → Incursions → Loyalty Point Log shows the selected pilot's pooled CONCORD LP awards and campaign outcomes.
+Each eligible site completion records its LP, completion time, site, system and number of rewarded pilots. Defeating the
+mothership records one paid row per recipient alongside the wallet credit. If Sansha withdraw, the journal records the lost
+pool at the focus's expiry. The native loss row displays the loss label and zero paid LP. The save retains the forfeited
+amount. Rows survive checkpoints and campaign rotation.
+
+The pinned build **3662168** `journal.pyj` calls `rewardMgr.GetRewardLPLogs()` with zero arguments and reads a list of named
+rows. `appLogConst.pyj` defines stored **312**, paid **313** and lost **314**. The pinned `grouprewards` catalog supplies the
+site-class labels. EVE.js **261108.1** was checked against its reward manager and the stored, paid and forfeited journal rows.
+[CCP's Journal changes](https://www.eveonline.com/news/view/updates-to-the-agency-journal-and-agent-finder) ·
+[EVE University Incursions](https://wiki.eveuniversity.org/Incursion)
+
+| Local EVE.js reference | SHA-256 |
+| --- | --- |
+| server/src/services/rewards/rewardMgrService.js | f101a6575796818d2729c725c726b2c26641a35e848a72f98dea7877edcb4a42 |
+| server/src/services/incursion/incursionRewards.js | d421e68bb53ff327ca05d791508e7cbe5b8638362f76300f3ee95da4baa29e67 |
+
+World schema **233** adds private history keyed by pilot and source. Each site or terminal row commits with the existing
+resident reward change. Existing held LP retains its pending balance and generates a terminal row on settlement. Earlier
+site awards carry only the data retained by the existing live pool, so per-site journal entries begin after the upgrade.
+
+### Automated validation
+
+The exact `IncursionCampaignTests.SitePayoutAndDelayedLoyaltySurviveCheckpointAndSettleOnlyOnVictory` filter passed both
+cases. The victory case took 0.93 seconds and the forfeiture case took 0.58 seconds. They cover the native LP journal reply,
+history privacy, stored and terminal amounts, checkpoint reopen and rollover.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Open the Loyalty Point Log after clearing a site and again after the focus ends. Compare the history with the CONCORD LP wallet.
+
 ## Roaming Sansha populations
 
 While a focus is active, Sansha patrols take over ordinary asteroid belts and active ice fields in its systems

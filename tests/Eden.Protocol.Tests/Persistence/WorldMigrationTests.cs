@@ -1,21 +1,57 @@
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Exploration;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Mail;
+using Eden.Data.World.Mining;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Tests.Structures;
+using Eden.Server;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
+    [Fact]
+    public void Version230UpgradeLoadsAllThreeNewResidentTablesAndRetainsThePilot()
+    {
+        using TestWorld db = new(freshInitialization: true);
+        var pilot = db.Store.FindPilot(1000001)!;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                DROP TABLE WorldMailContactPolicy;
+                DROP TABLE SavedMiningPollutionCloud;
+                DROP TABLE WorldIncursionLoyaltyEntry;
+                PRAGMA user_version=230;
+                """
+            );
+        }
+        WorldDatabase database = new(db.Path);
+        WorldInitialization.Initialize(database);
+        WorldInitialization.Initialize(database);
+        using (WorldDbContext world = new(db.Path))
+        {
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        }
+        using var reopened = ServerServices.Build(database, liveWorld: true);
+        using var loaded = reopened.GetRequiredService<LiveWorld>().Economy.Begin();
+        Assert.Equal(pilot.ShipId, loaded.Pilots.Find(pilot.PilotId)!.ActiveShipId);
+        Assert.Empty(loaded.Set<SavedMailContactPolicy>());
+        Assert.Empty(loaded.Set<SavedMiningPollutionCloud>());
+        Assert.Empty(loaded.Set<SavedIncursionLoyaltyEntry>());
+    }
+
     [Theory]
     [InlineData(189)]
     [InlineData(213)]

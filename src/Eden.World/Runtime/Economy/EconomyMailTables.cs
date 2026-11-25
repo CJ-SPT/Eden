@@ -135,6 +135,7 @@ internal sealed partial class ResidentEconomy
 
     private void RegisterMailTables()
     {
+        RegisterMailContactPolicy();
         Register(
             new EconomyTable<SavedInboxNotification, EconomySavedInboxNotification>(
                 "WorldInboxNotification",
