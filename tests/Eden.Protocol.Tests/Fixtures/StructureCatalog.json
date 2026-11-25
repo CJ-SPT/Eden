@@ -103637,6 +103637,25 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 2114,
+      "data": {
+        "stackable": 1,
+        "iconID": 1390,
+        "displayNameID": 311129,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "unitID": 108,
+        "name": "targetPainterResistance",
+        "attributeID": 2114,
+        "published": 1,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 36,
+        "description": "Resistance against Target Painters"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 2115,
       "data": {
         "stackable": 1,

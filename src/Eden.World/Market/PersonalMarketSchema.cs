@@ -10,6 +10,7 @@ namespace Eden.World.Market;
 internal static class PersonalMarketSchema
 {
     internal const int MinimumVolumeVersion = 229;
+    internal const int BuyRangeVersion = 234;
 
     internal static void Configure(ModelBuilder model)
     {
@@ -31,6 +32,7 @@ internal static class PersonalMarketSchema
                 }
             );
         model.Entity<SavedPersonalOrder>().Property(o => o.MinimumVolume).HasDefaultValue(1);
+        model.Entity<SavedPersonalOrder>().Property(o => o.Range).HasDefaultValue(MarketDefinitions.StationRange);
         model.Entity<SavedPersonalOrder>().HasIndex(o => new { o.PilotId, o.Status });
         model.Entity<SavedPersonalOrder>().HasIndex(o => new { o.Status, o.Expires });
         model
@@ -135,6 +137,14 @@ internal static class PersonalMarketSchema
                     CONSTRAINT CK_PersonalOrder_MinimumVolume CHECK (MinimumVolume BETWEEN 1 AND Entered)
                 """
             );
+        }
+    }
+
+    internal static void UpgradeBuyRange(WorldDbContext world)
+    {
+        if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPersonalOrder')").Contains("Range"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPersonalOrder ADD COLUMN Range INTEGER NOT NULL DEFAULT -1");
         }
     }
 }

@@ -44,14 +44,14 @@ public sealed class StructureEcmTests
         var weapons = f.Db.Services.GetRequiredService<IPilotStructureWeapons>();
         double capacity = structure.Fitting!.Attributes[DogmaAttributeId.CapacitorCapacity];
         var first = weapons.Activate(lease.Token, module, Npc, 1, 1, Effect);
-        var ecm = Assert.IsType<ElectronicWarfareActivation>(first.Ecm);
+        var ecm = Assert.IsType<ElectronicWarfareActivation>(first.ElectronicWarfare);
         Assert.Equal(range, ecm.Module.Optimal);
         Assert.Equal(range, ecm.Module.Falloff);
         Assert.Equal(strength * 2, ecm.Module.Power.Jamming!.Gravimetric);
         Assert.Equal(strength / 2, ecm.Module.Power.Jamming.Radar);
         Assert.Equal(capacity - cost, ecm.Capacitor);
         Assert.Equal(TimeSpan.FromSeconds(20).Ticks, first.Cycle.ReadyAt - first.Cycle.StartedAt);
-        Assert.Null(weapons.Activate(lease.Token, module, Npc, 1, 1, Effect).Ecm);
+        Assert.Null(weapons.Activate(lease.Token, module, Npc, 1, 1, Effect).ElectronicWarfare);
         var live = LiveWorld.Find(f.Db.Path)!;
         var timedModules = new LiveTimedModules(live, Fixture.SystemId);
         var effects = f.Db.Services.GetRequiredService<IPilotElectronicWarfare>();
@@ -69,7 +69,7 @@ public sealed class StructureEcmTests
         Assert.Empty(effects.Incoming(Npc));
         using var action = StructureAttackTests.Scope(f);
         Assert.Equal(repeat.Cycle.ReadyAt, action.World.Set<ModuleCooldown>().Find(module)!.ReadyAt);
-        Assert.Equal(repeat.Ecm!.Capacitor, action.World.Set<SavedStructureEnergy>().Find(structure.Id)!.Charge);
+        Assert.Equal(repeat.ElectronicWarfare!.Capacitor, action.World.Set<SavedStructureEnergy>().Find(structure.Id)!.Charge);
     }
 
     [Fact]

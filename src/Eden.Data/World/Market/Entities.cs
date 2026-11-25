@@ -106,6 +106,7 @@ public sealed class SavedPersonalOrder
     public int Remaining { get; set; }
     public int Entered { get; set; }
     public int MinimumVolume { get; set; } = 1;
+    public int Range { get; set; } = MarketDefinitions.StationRange;
     public long Issued { get; set; }
     public long Expires { get; set; }
     public long Modified { get; set; }
@@ -128,6 +129,7 @@ public sealed class SavedPersonalOrder
             Issued,
             DurationDays,
             EscrowCents,
+            Range,
             MinimumVolume: MinimumVolume,
             IsCorporation: CorporationId.HasValue
         );

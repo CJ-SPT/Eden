@@ -32,13 +32,14 @@ internal sealed partial class PilotMarketStore
         int stationId,
         IReadOnlyList<MarketPurchase> items,
         int days,
-        int minimumVolume
+        int minimumVolume,
+        int range
     )
     {
         Expire();
         using var world = live.Economy.Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = ExecuteBuy(world, catalog, pilotId, stationId, items, days, minimumVolume: minimumVolume);
+        var result = ExecuteBuy(world, catalog, pilotId, stationId, items, days, minimumVolume: minimumVolume, range: range);
         world.Commit();
         signal.Changed();
         return result;
@@ -68,6 +69,7 @@ internal sealed partial class PilotMarketStore
             || order.StationId != request.StationId
             || order.SystemId != request.SystemId
             || order.Bid != request.Bid
+            || order.Range != request.Range
         )
         {
             throw new InvalidDataException("The market order changed. Refresh before modifying it.");

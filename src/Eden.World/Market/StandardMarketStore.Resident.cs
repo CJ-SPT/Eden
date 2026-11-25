@@ -78,15 +78,21 @@ internal sealed partial class PilotMarketStore
 
     private static bool StandardBidReaches(CatalogDbContext catalog, NpcMarketOrder order, SavedPersonalOrder incoming)
     {
-        if (!order.Bid || order.StationId == incoming.StationId || order.Range == StandardMarketRules.RegionRange)
+        return !order.Bid || BuyReaches(catalog, order.Range, order.StationId, order.SystemId, incoming.StationId, incoming.SystemId);
+    }
+
+    private static bool BuyReaches(CatalogDbContext catalog, int range, int buyStation, int buySystem, int sellStation, int sellSystem)
+    {
+        if (buyStation == sellStation || range == StandardMarketRules.RegionRange)
         {
             return true;
         }
-        if (order.Range == MarketDefinitions.StationRange)
+        if (range == MarketDefinitions.StationRange)
         {
             return false;
         }
-        return StandardMarketRules.Reaches(order.Range, false, MarketJumpDistance(catalog, incoming.SystemId, order.SystemId));
+        return buySystem == sellSystem
+            || range > 0 && StandardMarketRules.Reaches(range, false, MarketJumpDistance(catalog, sellSystem, buySystem));
     }
 
     private static int? MarketJumpDistance(CatalogDbContext catalog, int source, int target)

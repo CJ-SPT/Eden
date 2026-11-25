@@ -345,6 +345,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Chat, mail and contacts
 
+- [Personal calendar invitation CSPA](protocol/social.md#personal-calendar-invitation-cspa)
 - [Personal mail CSPA](protocol/social.md#personal-mail-cspa)
 - [Mailing-list organization access](protocol/social.md#mailing-list-organization-access)
 - [Corporation calendar events](protocol/social.md#corporation-calendar-events)
@@ -683,6 +684,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Ranged personal buy orders](protocol/industry.md#ranged-personal-buy-orders)
+- [Ship SKIN licenses from NPC loyalty stores](protocol/industry.md#ship-skin-licenses-from-npc-loyalty-stores)
 - [Mercoxit mining pollution clouds](protocol/industry.md#mercoxit-mining-pollution-clouds)
 - [Procurement and Marketing at remote stations](protocol/industry.md#procurement-and-marketing-at-remote-stations)
 - [Remote personal order management](protocol/industry.md#remote-personal-order-management)
@@ -854,6 +857,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Standup target painters and sensor dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners)
 - [Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm)
 - [Warp disruption and Upwell docking](protocol/structures.md#warp-disruption-and-upwell-docking)
 - [Structures gap audit](protocol/structures.md#structures-gap-audit)

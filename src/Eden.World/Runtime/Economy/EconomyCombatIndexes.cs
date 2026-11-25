@@ -407,7 +407,7 @@ internal sealed partial class ResidentEconomy
             var contact = System.Text.Json.JsonSerializer.Deserialize<Eden.Gameplay.Combat.ElectronicWarfareContact>(row.ContactJson)!;
             if (
                 Eden.Gameplay.Combat.AreaWeaponRules.IsProjector(contact.Module.Effect)
-                || contact.Module.Effect == Eden.Gameplay.Inventory.DogmaEffect.StructureEcm
+                || Eden.Gameplay.Structures.StructureWeaponRules.IsElectronicWarfare(contact.Module.Effect)
             )
             {
                 var key = (contact.ExpiresAt, row.ModuleId, row.TargetId, row.SystemId);

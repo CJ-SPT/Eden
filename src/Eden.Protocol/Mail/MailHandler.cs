@@ -126,7 +126,7 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
                         {
                             ListId = OptionalId(list),
                             OrganizationId = OptionalId(corporation),
-                            ApprovedContactCostIsk = ContactCost(keywords?.GetValueOrDefault("approvedCost")),
+                            ApprovedContactCostIsk = ContactCostWire.Approval(keywords?.GetValueOrDefault("approvedCost")),
                         },
                         _origin
                     );
@@ -179,7 +179,7 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
         }
         catch (MailContactCostApprovalRequired quote)
         {
-            return new PilotCallResult.NamedFailure("ContactCostNotApproved", new MailContactCostValues(quote.CostIsk));
+            return ContactCostWire.Requote(quote.CostIsk);
         }
         catch (InvalidDataException error)
         {
@@ -200,15 +200,6 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
             null or false or 0L => null,
             long id when id > 0 => id,
             _ => throw new InvalidDataException("Expected a mail identifier or None."),
-        };
-
-    private static long ContactCost(object? value) =>
-        value switch
-        {
-            null => 0,
-            long cost when cost is >= 0 and <= MailContactRules.MaximumApprovalIsk => cost,
-            double cost when cost is >= 0 and <= MailContactRules.MaximumApprovalIsk && cost == Math.Truncate(cost) => (long)cost,
-            _ => throw new InvalidDataException("Invalid mail contact charge approval."),
         };
 
     private static int? Color(object? value) =>

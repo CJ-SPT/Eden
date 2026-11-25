@@ -23,6 +23,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Chat certificate manifest correction (November 5, 2026)](#chat-certificate-manifest-correction-november-5-2026)
 - [Native chat and multi-pilot Local (November 5, 2026)](#native-chat-and-multi-pilot-local-november-5-2026)
 - [Personal contacts and online status](#personal-contacts-and-online-status)
+- [Personal calendar invitation CSPA](#personal-calendar-invitation-cspa)
 - [Persistent personal calendar](#persistent-personal-calendar)
 - [Persistent notification inbox and contact messages](#persistent-notification-inbox-and-contact-messages)
 - [Persistent mailing lists](#persistent-mailing-lists)
@@ -547,6 +548,36 @@ References: unchanged pinned `code.ccp` hash and Carbon Blue revision **fcbf0c2e
 
 **Optional maintainer checks.** Add another local pilot with Send Notification cleared, assign a label and reconnect; verify the contact and label remain. With both pilots connected, check watchlist indicators through logoff/reconnect. Native rendering and interaction remain unverified.
 
+## Personal calendar invitation CSPA
+
+Personal event invitations follow the recipient's **Mail & Communications Settings**. The owner sees a charge
+confirmation when creating an event with paid invitees or adding paid invitees to an existing event. Same-corporation
+members and the recipient's contacts are exempt. An explicit block still rejects the invitation. The amount is
+recomputed from the actual additions on approval. Existing invitees, removals, event edits and organization events
+have no fee. An unchanged retry of an already applied participant update has no fee.
+
+The event, participant changes and notification feed commit with the wallet debit and CSPA journal. A rejected
+or outdated approval leaves the current roster and event details intact. The existing contact-policy table and
+wallet ledger carry the durable state.
+
+Pinned build **3662168**, archive SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`,
+calls `CSPAChargedAction('CSPACalendarCheck', ...)` around `CreatePersonalEvent` with invitees and
+`UpdateEventParticipants` with additions in `eveCalendarsvc.pyj`. Removal-only requests call the manager directly.
+The approval uses the same `ContactCostNotApproved` and `approvedCost` contract as personal mail. EVE.js
+**261108.1**'s `calendarMgrService.js`, SHA-256 `8a1f814f2efd9cbda7a259056bc78162bd3c1e92a5bab1a2c58b491fff01c807`,
+confirms the creation and participant update shapes and the audience notifications.
+[EVE University Calendar](https://wiki.eveuniversity.org/Neocom#Calendar) · [EVE University CSPA](https://wiki.eveuniversity.org/EVE_Mail#CONCORD_Spam_Prevention_Act)
+
+**Automated validation.** `NativeCalendarInvitationChargesCommitWithTheEventAndSurviveReopen` and
+`NativeParticipantUpdatesChargeOnlyNewInviteesAndKeepRejectedRemovals` passed in 1.07 seconds of combined
+case time. They exercise the native quote and approval, insufficient funds, stale fees, an intervening edit,
+an idempotent participant retry, removal without charge and checkpoint reopen.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Create an event for a pilot who has set a CSPA fee, approve the dialog and
+check the resulting invitation and journal. Add or remove invitees on the saved event.
+
 ## Persistent personal calendar
 
 Replaced the always-empty `calendarProxy.GetEventList(month, year)` with saved personal events visible only to their creator and invited local pilots. The native result is a **list of result groups**, each containing native `blue.DBRow` records; a flat event list is incorrect. Event rows preserve `eventID`, `ownerID`, `eventDateTime`, nullable `eventDuration`, Unicode `eventTitle`, `importance`, `isDeleted` and `dateModified`. `GetEventDetails(eventID, ownerID)` returns `creatorID` and Unicode `eventText`. The owner argument is checked against saved ownership and never grants access. Cancelled events remain marked as cancelled in history; they do not become upcoming live events.
@@ -555,7 +586,7 @@ Pinned build **3662168** inert inspection covered `eve/client/script/ui/services
 
 `GetResponsesForCharacter()` returns `eventID`/`status` rows, including the creator's implicit accepted status. `GetResponsesToEvent(eventID, ownerID)` returns invitee `characterID`/`status` rows after the same visibility check. Pinned statuses are **Uninvited 0**, **Deleted 1**, **Declined 2**, **Undecided 3**, **Accepted 4**, **Maybe 5**. New invitees start undecided. Only invitees can submit accepted, declined or tentative replies. Moving an event resets accepted and tentative replies to undecided while preserving declined replies, matching the native `OnEditCalendarEvent` branch; changing text alone preserves replies. Removing a guest revokes event, details, attendee and reply access; re-invitation starts with a new undecided reply. Replies are saved immediately. Native response calls update their own cache; reopening the uncached attendee query reads current replies rather than forcibly closing other event windows.
 
-The server enforces the pinned **40-character title**, **500-character description**, **50 other invitees**, and **12 calendar months ahead** limits. Duration is None or the native selector's **1–24 whole hours**, stored as minutes. Month queries use UTC month boundaries and preserve history from the client's calendar start year **2003**. New/edited events cannot be moved into the past; the current minute is allowed because the native editor uses minute precision. Unknown, duplicate, self and blocked invitations, unauthorized changes, malformed fields, stale dates and invalid response statuses fail without partial writes. Personal invitations currently have **no configured CSPA charge**. The native CSPA wrapper first tries the ordinary create/update call; it does not require a separate fee query. Only an optional zero `approvedCost` is accepted. Paid communication settings, corporation/alliance event permissions, official CCP events and automated structure events are separate future work.
+The server enforces the pinned **40-character title**, **500-character description**, **50 other invitees**, and **12 calendar months ahead** limits. Duration is None or the native selector's **1–24 whole hours**, stored as minutes. Month queries use UTC month boundaries and preserve history from the client's calendar start year **2003**. New/edited events cannot be moved into the past; the current minute is allowed because the native editor uses minute precision. Unknown, duplicate, self and blocked invitations, unauthorized changes, malformed fields, stale dates and invalid response statuses fail without partial writes. This milestone accepted zero `approvedCost` for personal invitations. Paid approvals are covered by [personal calendar invitation CSPA](#personal-calendar-invitation-cspa). Corporation/alliance event permissions, official CCP events and automated structure events were outside this milestone.
 
 Create, edit, cancellation and invitation membership changes commit together with a private, ordered change feed. Connected recipients receive native `OnNewCalendarEvent`, `OnEditCalendarEvent` and `OnRemoveCalendarEvent` argument shapes, including the prior date for a move and the cancelled-versus-uninvited removal flag. A connection starts at its current feed cursor; reconnects fetch saved event state without replaying old notifications. Tick delivery drains at most **256 changes** at a time and continues when a batch remains even if no new write occurs. A process-local revision signal avoids SQLite polling on unchanged idle ticks, and publishes only after commit. Pilot logoff resets the observer. No email, chat message or external calendar is sent.
 
@@ -667,8 +698,8 @@ Reference: pinned archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF491741833
 The native **Mail & Communications Settings** panel can charge unknown senders up to **1,000,000 ISK** per message or
 accept mail only from known pilots. The default fee is zero. A recipient's own corporation and their personal
 contacts are exempt. An explicit block still rejects the message. The policy applies to explicitly addressed
-characters, including those listed alongside a group address. Mailing list and organization audiences, fleet
-invitations, conversations, calendar invitations and contact notifications use their existing rules.
+characters, including those listed alongside a group address. Personal calendar invitations use the same policy.
+Mailing list and organization audiences, fleet invitations, conversations and contact notifications use their existing rules.
 
 The first send that requires payment returns a native confirmation dialog. Eden recalculates the total and checks
 the sender's current wallet on the approved send. A changed fee requires a fresh approval. Delivery, sender wallet

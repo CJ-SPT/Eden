@@ -99,10 +99,10 @@ public static class PlayerEwarRules
         effect switch
         {
             DogmaEffect.PlayerEcm or DogmaEffect.StructureEcm => NpcEwarKind.Jamming,
-            DogmaEffect.SensorDampener => NpcEwarKind.SensorDampening,
+            DogmaEffect.SensorDampener or DogmaEffect.StructureSensorDampener => NpcEwarKind.SensorDampening,
             DogmaEffect.TrackingDisruptor => NpcEwarKind.TrackingDisruption,
             DogmaEffect.GuidanceDisruptor => NpcEwarKind.GuidanceDisruption,
-            DogmaEffect.TargetPainter => NpcEwarKind.TargetPainting,
+            DogmaEffect.TargetPainter or DogmaEffect.StructureTargetPainter => NpcEwarKind.TargetPainting,
             _ => null,
         };
 

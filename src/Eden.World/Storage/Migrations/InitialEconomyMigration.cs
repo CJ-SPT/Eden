@@ -26,6 +26,10 @@ internal static class InitialEconomyMigration
         {
             PersonalMarketSchema.UpgradeMinimumVolume(world);
         }
+        if (version < PersonalMarketSchema.BuyRangeVersion)
+        {
+            PersonalMarketSchema.UpgradeBuyRange(world);
+        }
         if (!world.Set<SavedWorldEconomy>().Any())
         {
             world.Add(

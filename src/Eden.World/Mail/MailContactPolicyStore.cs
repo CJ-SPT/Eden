@@ -50,10 +50,19 @@ internal sealed class MailContactPolicyStore(WorldDatabase database) : IMailCont
     private static long? Cost(WorldAction world, long pilotId) =>
         world.Set<SavedMailContactPolicy>().Find(pilotId) is { } policy ? policy.CostIsk : 0;
 
-    internal static void Charge(EconomyTransaction world, Pilot sender, MailDraft draft, long now)
+    internal static void Charge(WorldAction world, long senderId, IReadOnlyList<long> recipients, long approvedContactCostIsk, long now)
     {
+        if (world is not EconomyTransaction)
+        {
+            if (approvedContactCostIsk != 0)
+            {
+                throw new InvalidDataException("Paid communications require the resident world.");
+            }
+            return;
+        }
+        var sender = world.Pilots.Find(senderId)!;
         List<(long Recipient, long Isk)> charges = [];
-        foreach (long recipientId in draft.Recipients)
+        foreach (long recipientId in recipients)
         {
             long? fee = Cost(world, recipientId);
             if (fee == 0)
@@ -65,15 +74,15 @@ internal sealed class MailContactPolicyStore(WorldDatabase database) : IMailCont
             {
                 continue;
             }
-            long required = fee ?? throw new InvalidDataException("A recipient only accepts mail from known pilots.");
+            long required = fee ?? throw new InvalidDataException("A recipient only accepts requests from known pilots.");
             charges.Add((recipientId, required));
         }
         long total = charges.Sum(charge => charge.Isk);
-        if (total != draft.ApprovedContactCostIsk)
+        if (total != approvedContactCostIsk)
         {
             if (total == 0)
             {
-                throw new InvalidDataException("The mail contact charge changed. Send the message without an approved charge.");
+                throw new InvalidDataException("The contact charge changed. Retry without an approved charge.");
             }
             throw new MailContactCostApprovalRequired(total);
         }
@@ -84,7 +93,7 @@ internal sealed class MailContactPolicyStore(WorldDatabase database) : IMailCont
         var wallet = world.Set<PilotWallet>().Find(sender.Id);
         if (wallet is null || wallet.Cents < total * MarketDefinitions.CentsPerIsk)
         {
-            throw new InvalidDataException("Your wallet cannot cover the mail contact charge.");
+            throw new InvalidDataException("Your wallet cannot cover the contact charge.");
         }
         foreach (var (recipient, isk) in charges)
         {

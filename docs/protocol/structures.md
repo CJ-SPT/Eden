@@ -167,20 +167,20 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress. Resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, targeted ECM, stasis webifiers and focused warp tackle are implemented. Other EWAR and area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress. Resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, ECM, target painters, sensor dampeners, stasis webifiers and focused warp tackle are implemented. Weapon disruption and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
 ### Structures gap audit
 
 The defense branch covers resident gunner leases, fitting, target locks, ammunition, defensive missiles against ships and
-drones, capacitor warfare, targeted ECM and targeted webs. The integration uses that lease for Standup fighter assignment and automatic
+drones, capacitor warfare, targeted ECM, painters, dampeners and webs. The integration uses that lease for Standup fighter assignment and automatic
 recall. Ship locks on the structure survive a change of gunner. Controlled flight snapshots use the structure as the
 ballpark ego while the pilot's personal ship stays docked. Schema 214 adds structure tackle source support to main's
 schema 213 and also accepts the earlier structure-branch format.
 
 | Area | Existing coverage and remaining gaps |
 | --- | --- |
-| Defense | Launch and recall of Standup fighters, guided missiles, ECM, webs, neutralizers and scripted warp tackle work. Other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Defense | Launch and recall of Standup fighters, guided missiles, ECM, painters, dampeners, webs, neutralizers and scripted warp tackle work. Weapon disruption, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
 | Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
 | Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
 | Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
@@ -213,6 +213,51 @@ Not performed; agent client testing is disabled.
 
 Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
 the other ship retains its lock on the Astrahus.
+
+### Standup Target Painters and Sensor Dampeners
+
+A gunner can use Standup Target Painters and Standup Remote Sensor Dampeners on locked ships and NPCs. Painters
+increase signature radius. Dampeners reduce maximum targeting range and scan resolution together. Both use
+structure green safety, pay capacitor at activation and apply a new paid cycle on repeat. Target resistance and
+stacking penalties use the existing electronic warfare calculation. Falloff scales strength continuously to half
+at one falloff, the inclusive activation limit. Releasing the gunner lease or losing the target ends the effect.
+Checkpointed capacitor and cooldowns survive restart.
+
+| Module | Type | Cost | Cycle | Optimal | Falloff | Base effect |
+| --- | --- | --- | --- | --- | --- | --- |
+| Standup Target Painter I | 35947 | 1,000 GJ | 10 s | 75 km | 150 km | +65% signature |
+| Standup Target Painter II | 47366 | 1,200 GJ | 10 s | 90 km | 180 km | +72% signature |
+| Standup Remote Sensor Dampener I | 35941 | 400 GJ | 5 s | 75 km | 150 km | −55% range and resolution |
+| Standup Remote Sensor Dampener II | 47368 | 480 GJ | 5 s | 90 km | 180 km | −61% range and resolution |
+
+Build 3662168 gives these modules group 1719 and the default effects 6683
+(`structureModuleEffectTargetPainter`) and 6684 (`structureModuleEffectRemoteSensorDampener`). Both use
+`effects.Laser`. Painter resistance is attribute 2114 and dampener resistance is 2112. Structure Electronic
+Systems effect 6400 targets groups 1332, 1441 and 1442. These two module families use their listed base capacitor
+costs. Their build-specific profiles have no script slots. EVE.js 261108.1 maps both effects into its hostile
+module runtime and applies the same falloff and resistance paths. Its local `space/modules/hostileModuleRuntime.js`
+SHA-256 is `DB747AA99975012526F576E6042BA2C1C6D7D664C58CC50E0DC31FC5E550D93F`.
+The regenerated structure catalog fixture includes the target's default resistance metadata.
+Its LF SHA-256 is `E9AC3C34B8372D24E8FA500711193AB8A0DC628F48C5D645C9B9EE73AE50DF39`.
+[EVE University Upwell fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures)
+
+**Automated validation**
+
+The shared exact selection passed 13 cases in 16.09 seconds, including all six `StructureTargetEffectsTests` cases.
+The exact filters were
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureTargetEffectsTests.StandupPainterAndDampenerUsePinnedRangeCostAndFalloff`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureTargetEffectsTests.StandupPainterAndDampenerPublishNativeVictimEffectsAndClearOnRelease`.
+The tests cover all four catalog profiles, range rejection, falloff and resistance, capacitor and cycle deadlines,
+green safety, native victim notifications and effect removal on expiry or on release of the gunner lease.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Apply each effect from a gunner seat and check the victim's icon and affected ship attributes through release.
 
 ### Standup Variable Spectrum ECM
 

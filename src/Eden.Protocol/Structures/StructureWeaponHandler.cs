@@ -36,6 +36,8 @@ internal sealed class StructureWeaponHandler(
             "structureWarpScrambleBlockMWDWithNPCEffect" => DogmaEffect.StructureWarpDisruptor,
             "structureEnergyNeutralizerFalloff" => DogmaEffect.StructureEnergyNeutralizer,
             "structureModuleEffectECM" => DogmaEffect.StructureEcm,
+            "structureModuleEffectTargetPainter" => DogmaEffect.StructureTargetPainter,
+            "structureModuleEffectRemoteSensorDampener" => DogmaEffect.StructureSensorDampener,
             _ => null,
         };
 
@@ -148,7 +150,7 @@ internal sealed class StructureWeaponHandler(
 
     private void Started(PilotCallContext context, StructureControlToken token, StructureWeaponActivation result)
     {
-        if (result.Launch is null && result.Neutralization is null && result.Tackle is null && result.Ecm is null)
+        if (result.Launch is null && result.Neutralization is null && result.Tackle is null && result.ElectronicWarfare is null)
         {
             return;
         }
@@ -178,7 +180,7 @@ internal sealed class StructureWeaponHandler(
             _neutralizers[result.Cycle.ModuleId] = drain.Cycle;
             capacitor.Set(drain.Cycle, true);
         }
-        if ((result.Tackle?.Capacitor ?? result.Neutralization?.Capacitor ?? result.Ecm?.Capacitor) is double charge)
+        if ((result.Tackle?.Capacitor ?? result.Neutralization?.Capacitor ?? result.ElectronicWarfare?.Capacitor) is double charge)
         {
             _sourceSystem = context.Pilot.SystemId;
             var beam = new StructureBeam(token.StructureId, result.Cycle);

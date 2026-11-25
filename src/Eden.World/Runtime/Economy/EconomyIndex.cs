@@ -14,7 +14,8 @@ internal class EconomyIndex<T>(
     string name,
     Func<T, object?> value,
     IEqualityComparer<object>? comparer = null,
-    EconomyIndexMember member = EconomyIndexMember.FullKey
+    EconomyIndexMember member = EconomyIndexMember.FullKey,
+    bool indexNull = true
 )
     where T : class
 {
@@ -30,6 +31,10 @@ internal class EconomyIndex<T>(
 
     private void Add(EconomyKey id, object key)
     {
+        if (!indexNull && ReferenceEquals(key, NullKey))
+        {
+            return;
+        }
         if (!_keys.TryGetValue(key, out var keys))
         {
             _keys.Add(

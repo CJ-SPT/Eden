@@ -114,9 +114,9 @@ internal sealed partial class PilotStructureWeaponStore(
                     {
                         EndTackle(cycle);
                     }
-                    if (cycle.Effect == DogmaEffect.StructureEcm)
+                    if (StructureWeaponRules.IsElectronicWarfare(cycle.Effect))
                     {
-                        EndEcm(cycle);
+                        EndElectronicWarfare(cycle);
                     }
                     if (!targetLost && !cycle.Stopping && cycle.Repeats > 0)
                     {
@@ -187,7 +187,7 @@ internal sealed partial class PilotStructureWeaponStore(
             || module.OwnerId != source.CorporationId
             || !module.Online
             || !(
-                TackleDefinitions.StructureTackle(effect) || effect == DogmaEffect.StructureEcm
+                TackleDefinitions.StructureTackle(effect) || StructureWeaponRules.IsElectronicWarfare(effect)
                     ? InventoryDefinitions.IsMediumSlot(module.FlagId)
                     : InventoryDefinitions.IsHighSlot(module.FlagId)
             )
@@ -219,9 +219,9 @@ internal sealed partial class PilotStructureWeaponStore(
         {
             result = ApplyTackle(world, catalog, token, source, module, target, victim, fit, effect, now);
         }
-        else if (effect == DogmaEffect.StructureEcm && profile.GroupId == StructureWeaponRules.EcmGroup)
+        else if (StructureWeaponRules.MatchesElectronicWarfare(profile.GroupId, effect))
         {
-            result = Jam(world, catalog, token, source, module, target, victim, fit, repeats, now);
+            result = ApplyElectronicWarfare(world, catalog, token, source, module, target, victim, fit, effect, repeats, now);
         }
         else if (effect == DogmaEffect.UseMissiles && StructureWeaponRules.MissileLauncher(profile.GroupId))
         {

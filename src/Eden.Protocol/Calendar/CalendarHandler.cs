@@ -1,5 +1,6 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Calendar;
+using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -98,14 +99,14 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
                 && (
                     method is not ("CreatePersonalEvent" or "UpdateEventParticipants")
                     || keywords.Count != 1
-                    || !keywords.TryGetValue("approvedCost", out var approved)
-                    || approved is not (0L or 0d)
+                    || keywords.GetValueOrDefault("approvedCost") is null
                 )
             )
             {
-                throw new InvalidDataException("Unexpected calendar arguments. Personal invitations have no configured CSPA fee.");
+                throw new InvalidDataException("Unexpected calendar arguments.");
             }
             long pilot = context.Pilot.PilotId;
+            long approved = ContactCostWire.Approval(keywords?.GetValueOrDefault("approvedCost"));
             switch (method, args)
             {
                 case ("GetEventList", [long month, long year])
@@ -135,7 +136,7 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
                         Events(owner).Attendance(pilot, id, owner).Select(r => new CalendarAttendanceRow(r)).ToArray()
                     );
                 case ("CreatePersonalEvent", [long time, var duration, var title, var description, var important, var invitees]):
-                    return calendar.Create(pilot, Draft(time, duration, title, description, important), Pilots(invitees));
+                    return calendar.Create(pilot, Draft(time, duration, title, description, important), Pilots(invitees), approved);
                 case (
                     "CreateCorporationEvent"
                         or "CreateAllianceEvent",
@@ -153,7 +154,7 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
                     Organization(method).Edit(pilot, id, old, Draft(time, duration, title, description, important));
                     return PilotCallResult.None;
                 case ("UpdateEventParticipants", [long id, var add, var remove]):
-                    calendar.UpdateParticipants(pilot, id, Pilots(add), Pilots(remove));
+                    calendar.UpdateParticipants(pilot, id, Pilots(add), Pilots(remove), approved);
                     return PilotCallResult.None;
                 case ("SendEventResponse", [long id, long owner, long response]) when response is >= 0 and <= (long)CalendarResponse.Maybe:
                     Events(owner).Respond(pilot, id, owner, (CalendarResponse)response);
@@ -164,6 +165,10 @@ internal sealed class CalendarHandler(IPilotCalendar calendar, IAllianceCalendar
                 default:
                     throw new InvalidDataException("Invalid calendar request.");
             }
+        }
+        catch (MailContactCostApprovalRequired quote)
+        {
+            return ContactCostWire.Requote(quote.CostIsk);
         }
         catch (InvalidDataException error)
         {

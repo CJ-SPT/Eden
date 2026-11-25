@@ -272,6 +272,7 @@ internal sealed partial class PilotMarketStore
 
     private sealed record Candidate(SavedPersonalOrder? Personal, NpcMarketOrder? Npc)
     {
+        public int StationId => Personal?.StationId ?? Npc!.StationId;
         internal long Id => Personal?.Id ?? Npc!.Id;
         internal long Owner => Personal?.CorporationId ?? Personal?.PilotId ?? Npc!.OwnerId;
         internal long Price => Personal?.PriceCents ?? Npc!.PriceCents;
@@ -474,6 +475,13 @@ internal sealed partial class PilotMarketStore
 
     public void PlaceBuy(long pilotId, PersonalMarketBuy request)
     {
+        if (
+            !PersonalMarketRules.ValidBuyRange(request.Range)
+            || request.DurationDays == 0 && request.Range != MarketDefinitions.StationRange
+        )
+        {
+            throw new InvalidDataException("Choose a valid fulfillment range for this buy order.");
+        }
         if (request.MinimumVolume < 1 || request.MinimumVolume > request.Quantity)
         {
             throw new InvalidDataException("Choose a minimum volume between one and the buy order quantity.");
@@ -487,18 +495,30 @@ internal sealed partial class PilotMarketStore
             request.StationId,
             [new(request.TypeId, request.PriceCents, request.Quantity)],
             request.DurationDays,
-            request.MinimumVolume
+            request.MinimumVolume,
+            request.Range
         );
     }
 
     public void PlaceSell(long pilotId, IReadOnlyList<MarketSale> items, int durationDays) => ExecuteSell(pilotId, items, durationDays);
 
-    private MarketResult ExecuteBuy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items, int days, int minimumVolume = 1)
+    private MarketResult ExecuteBuy(
+        long pilotId,
+        int stationId,
+        IReadOnlyList<MarketPurchase> items,
+        int days,
+        int minimumVolume = 1,
+        int range = MarketDefinitions.StationRange
+    )
     {
         RequireResidentStandardMarket();
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
-            return ResidentBuy(live, pilotId, stationId, items, days, minimumVolume);
+            return ResidentBuy(live, pilotId, stationId, items, days, minimumVolume, range);
+        }
+        if (range != MarketDefinitions.StationRange)
+        {
+            throw new InvalidDataException("Ranged buy orders require the resident world.");
         }
         if (minimumVolume > 1)
         {
@@ -665,6 +685,10 @@ internal sealed partial class PilotMarketStore
             ResidentModify(live, pilotId, request);
             return;
         }
+        if (request.Range != MarketDefinitions.StationRange)
+        {
+            throw new InvalidDataException("Ranged buy orders require the resident world.");
+        }
         Expire();
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -677,6 +701,7 @@ internal sealed partial class PilotMarketStore
             || order.StationId != request.StationId
             || order.SystemId != request.SystemId
             || order.Bid != request.Bid
+            || order.Range != request.Range
         )
         {
             throw new InvalidDataException("The market order changed. Refresh before modifying it.");

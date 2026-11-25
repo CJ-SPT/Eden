@@ -26,7 +26,7 @@ public sealed record StructureWeaponActivation(
     MissileLaunch? Launch,
     CapacitorActivation? Neutralization = null,
     TackleActivation? Tackle = null,
-    ElectronicWarfareActivation? Ecm = null
+    ElectronicWarfareActivation? ElectronicWarfare = null
 );
 
 public sealed record StructureWeaponFrame(IReadOnlyList<StructureWeaponActivation> Started, IReadOnlyList<StructureWeaponCycle> Stopped);
@@ -52,6 +52,7 @@ public static class StructureWeaponRules
     public const int AnticapitalLauncherGroup = 1327;
     public const int MultiroleLauncherGroup = 1562;
     public const int EcmGroup = 1332;
+    public const int ElectronicDefenseGroup = 1719;
     public const int WebifierGroup = 1441;
     public const int WarpDisruptorGroup = 1442;
     public const int ElectronicSystemsSkill = 37798;
@@ -62,6 +63,25 @@ public static class StructureWeaponRules
 
     public static bool UsesElectronicSystems(int group) => group is EcmGroup or WebifierGroup or WarpDisruptorGroup;
 
+    public static bool IsElectronicWarfare(DogmaEffect effect) =>
+        effect is DogmaEffect.StructureEcm or DogmaEffect.StructureTargetPainter or DogmaEffect.StructureSensorDampener;
+
+    public static bool MatchesElectronicWarfare(int group, DogmaEffect effect) =>
+        group switch
+        {
+            EcmGroup => effect == DogmaEffect.StructureEcm,
+            ElectronicDefenseGroup => effect is DogmaEffect.StructureTargetPainter or DogmaEffect.StructureSensorDampener,
+            _ => false,
+        };
+
+    public static void CheckElectronicRange(ElectronicWarfareModule module, double distance)
+    {
+        if (!double.IsFinite(distance) || distance < 0 || distance > module.Optimal + module.Falloff)
+        {
+            throw new InvalidDataException("The target is outside the structure module's electronic warfare range.");
+        }
+    }
+
     public static NpcEwarPower? Jam(
         ElectronicWarfareModule module,
         IReadOnlyDictionary<DogmaAttributeId, double> target,
@@ -69,10 +89,7 @@ public static class StructureWeaponRules
         double roll
     )
     {
-        if (!double.IsFinite(distance) || distance < 0 || distance > module.Optimal + module.Falloff)
-        {
-            throw new InvalidDataException("The target is outside the structure ECM's range.");
-        }
+        CheckElectronicRange(module, distance);
         if (!double.IsFinite(roll) || roll is < 0 or >= 1 || module.Power.Jamming is not { } jam)
         {
             throw new InvalidDataException("Invalid structure ECM attempt.");

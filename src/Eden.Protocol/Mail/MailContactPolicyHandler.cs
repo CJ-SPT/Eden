@@ -1,8 +1,6 @@
-using System.Globalization;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Mail;
 
@@ -47,14 +45,4 @@ internal sealed class MailContactPolicyHandler(IMailContactPolicy policy) : ISel
             return new PilotCallResult.Failure(error.Message);
         }
     }
-}
-
-internal sealed record MailContactCostValues(long CostIsk) : BlueModel
-{
-    public override object ToBlue() =>
-        new Dictionary<string, object?>
-        {
-            ["totalCost"] = CostIsk,
-            ["totalCostISK"] = $"{CostIsk.ToString("N2", CultureInfo.InvariantCulture)} ISK",
-        };
 }

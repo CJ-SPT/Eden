@@ -65,9 +65,15 @@ public interface IPilotCalendar : ICalendarEvents
     long Revision { get; }
     long Observe(long pilotId);
     CalendarChanges Changes(long pilotId, long after);
-    long Create(long pilotId, CalendarEventDraft draft, IReadOnlyList<long> invitees);
+    long Create(long pilotId, CalendarEventDraft draft, IReadOnlyList<long> invitees, long approvedContactCostIsk = 0);
     void Edit(long pilotId, long eventId, long oldTime, CalendarEventDraft draft);
-    void UpdateParticipants(long pilotId, long eventId, IReadOnlyList<long> add, IReadOnlyList<long> remove);
+    void UpdateParticipants(
+        long pilotId,
+        long eventId,
+        IReadOnlyList<long> add,
+        IReadOnlyList<long> remove,
+        long approvedContactCostIsk = 0
+    );
 }
 
 public static class CalendarRules

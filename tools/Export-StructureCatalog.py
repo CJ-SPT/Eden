@@ -51,6 +51,9 @@ def export(path, output):
                               for a, v in db.execute('SELECT AttributeId,Value FROM TypeAttribute '
                                                     'WHERE ItemTypeId=? ORDER BY AttributeId', (i,))]))
             attribute_ids.update(a['id'] for a in types[-1]['attributes'])
+            # Standup EWAR modules declare the target's resistance attribute through resistanceAttributeID (2138).
+            attribute_ids.update(int(a['value']) for a in types[-1]['attributes']
+                                 if a['id'] == 2138 and a['value'] > 0)
             for dataset in ('client/types', 'client/typedogma'):
                 raw = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(i))).fetchone()
                 if raw:

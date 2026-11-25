@@ -268,14 +268,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
             var source = Entry(world, pilotId, sourceId.Value);
             source.Status |= draft.ReplyTo.HasValue ? MailStatus.Replied : MailStatus.Forwarded;
         }
-        if (world is EconomyTransaction resident)
-        {
-            MailContactPolicyStore.Charge(resident, world.Pilots.Find(pilotId)!, draft, now);
-        }
-        else if (draft.ApprovedContactCostIsk != 0)
-        {
-            throw new InvalidDataException("Paid mail requires the resident world.");
-        }
+        MailContactPolicyStore.Charge(world, pilotId, draft.Recipients, draft.ApprovedContactCostIsk, now);
         long id = Deliver(
             world,
             new(

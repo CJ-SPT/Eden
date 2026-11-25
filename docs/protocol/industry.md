@@ -7,16 +7,45 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Ranged personal buy orders
+
+Personal buy listings at NPC stations support station, solar-system, 1–5, 10, 20, 30 and 40 jumps, and region fulfillment
+ranges. A pilot docked at the order's station can select any range. Procurement governs remote placement, and Visibility
+limits the fulfillment range of an order placed remotely. Matching stays within the origin region and uses the pinned
+stargate graph for finite distances. Immediate purchases use the selected selling station.
+
+An incoming ranged bid can fill from existing asks within reach. A later sale can fill a bid from another station within
+its range. Both paths deliver goods to the seller's station and record that location in the wallet history. Buy orders
+retain their origin, range, residual volume, escrow and expiration. Repricing preserves the selected range and checks it
+with the other quoted order fields. Schema 234 brings forward existing orders with station fulfillment range.
+
+Build **3662168** `buyThisTypeWindow.pyj` lists the range values and `marketutil/skilllimits.pyj` maps Visibility to `vis`.
+The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+EVE.js **261108.1** `marketRules.js` supplies the same choices and `marketProxyService.js` matches in-range asks and
+delivers purchases at the source station. [EVE University Visibility](https://wiki.eveuniversity.org/Skills:Trade#Visibility) ·
+[CCP brokerage rules](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+**Automated validation.** The three exact `RangedMarketTests` cases passed in a 13-case run that took 16.09 seconds.
+They cover filling from the seller's station, checkpoint round-trip and repricing, Visibility on a remote order, and
+upgrading version 233 orders to the station range. The affected market, calendar, mail, structure, electronic warfare,
+and persistence selection passed 275 cases in 121.84 seconds. `PersonalMarketRulesTests` passed five in 2.38 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Place a one-jump buy order and sell to it from a neighboring system. Confirm delivery
+at the seller's station and check the order's remaining escrow.
+
 ## Procurement and Marketing at remote stations
 
-Procurement lets pilots place a personal station-range buy order at another NPC market station in the current region.
+Procurement lets pilots place a personal buy order at another NPC market station in the current region.
 Marketing lets pilots list or immediately sell their own Item Hangar stacks at another NPC market station. Orders, escrow,
 deliveries and returned items use the station where the order was placed or the item was sold. Each sell request uses one
 station. Ship cargo remains eligible when the ship is docked at the selling station.
 
 From the authoritative ship location the two skills allow the current station, the current system, 5 jumps, 10 jumps,
 20 jumps and the current region at levels 0 to V. The four pinned Alpha grade records cap Marketing at II and omit
-Procurement. Immediate purchases still use the regional purchase flow. Personal buy orders use station fulfillment range.
+Procurement. Immediate purchases still use the regional purchase flow. See [ranged personal buy orders](#ranged-personal-buy-orders)
+for the Visibility follow-up.
 
 In build **3662168**, `marketutil/skilllimits.pyj` uses **16598** (Marketing) and **16594** (Procurement) for `ask` and `bid`
 with `JUMPS_PER_SKILL_LEVEL`. `marketsvc.pyj` forwards the selected station and range from `BuyStuff` to `PlaceBuyOrder`,
@@ -1721,6 +1750,39 @@ formatting verification passed. The full validation sequence took 87 seconds.
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Open the Caldari Navy LP store and check the Quantum Physics bundle.
+
+## Ship SKIN licenses from NPC loyalty stores
+
+The embedded November 8, 2026 CCP ESI offer snapshot and pinned build **3662168** catalog supply **112** physical
+ship SKIN license offers across **10** NPC issuers. A listing needs a published category-91 item, a matching
+`client/skinlicenses` record, and a ship skin in `client/skins` with supported hulls and a valid license duration.
+The CONCORD Police Comet license costs 37,500 LP and 25 million ISK per item. DED's Algos Triglavian Twilight license
+costs 10,000 LP, 25 million ISK, and 100 Triglavian Survey Databases per item.
+
+The existing `LPStoreMgr` browse and purchase calls deliver the physical license to the selected pilot's station Item
+Hangar. The docked ship must be at the issuer's NPC station with an LP store. The resident purchase settles any required
+items, the LP and wallet debits, the resulting license stack, and the wallet receipt together. Pilots can then use the
+existing `shipCosmeticsMgr.ActivateSkinLicense` and `ApplySkinToShip` calls. Activation consumes one physical license and
+grants the entitlement used to apply the skin. The inventory, wallet, entitlement, and application persist through the
+existing checkpoint records. [Pinned ship cosmetics calls](inventory.md#first-party-ship-skin-licenses) ·
+[EVE University Loyalty Points](https://wiki.eveuniversity.org/Loyalty_Points) ·
+[CCP Ship SKINs](https://support.eveonline.com/hc/en-us/articles/203280701-Ship-SKINs)
+
+EVE.js **261108.1** uses the ordinary LP store purchase and item delivery path for static inventory offers. Its
+`lpStoreMgrService.js` hashes to `c92159a9f99f847a8fb9378c668b13dbb5bb7d2beef8cc71625ead15fd742d` and
+`lpStoreItemCustody.js` hashes to `3e44e0e333671ec0ce48951366904acec81d2fa805e1034c76c3829211df28ad`.
+Paragon heraldry purchases use the emblem feature.
+[CCP Heraldry and Emblems](https://support.eveonline.com/hc/en-us/articles/6807979979036-Heraldry-and-Emblems)
+
+**Automated validation.** Both `NativeLoyaltyStoreLicensesCanBePurchasedActivatedAndAppliedAcrossCheckpoint`
+cases passed in 1.27 seconds of combined case time. They cover CONCORD and DED offer and issuer eligibility, required
+item rejection and consumption, two-license delivery, native activation and application, and wallet, inventory, and
+entitlement state after checkpoint reopen. Results are in
+`artifacts/feature-tests/results/9c823db5346a4959999788173cea5450/tests.trx`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Buy a funded physical license, activate it from the Item Hangar, and apply it to the matching hull.
 
 ## Currency redemption and loyalty wallets
 

@@ -488,7 +488,8 @@ internal sealed record EconomySavedPersonalOrder(
     long EscrowCents,
     PersonalOrderStatus Status,
     int? CorporationId,
-    int MinimumVolume
+    int MinimumVolume,
+    int Range
 );
 
 internal sealed partial class ResidentEconomy
@@ -515,21 +516,21 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldPersonalOrder(Id,PilotId,StationId,SystemId,RegionId,TypeId,Bid,PriceCents,Remaining,
-                        Entered,Issued,Expires,Modified,DurationDays,EscrowCents,Status,CorporationId,MinimumVolume)
+                        Entered,Issued,Expires,Modified,DurationDays,EscrowCents,Status,CorporationId,MinimumVolume,Range)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.PilotId'),json_extract(value,'$.StationId'),
                         json_extract(value,'$.SystemId'),json_extract(value,'$.RegionId'),json_extract(value,'$.TypeId'),
                         json_extract(value,'$.Bid'),json_extract(value,'$.PriceCents'),json_extract(value,'$.Remaining'),
                         json_extract(value,'$.Entered'),json_extract(value,'$.Issued'),json_extract(value,'$.Expires'),
                         json_extract(value,'$.Modified'),json_extract(value,'$.DurationDays'),json_extract(value,
                         '$.EscrowCents'),json_extract(value,'$.Status'),json_extract(value,'$.CorporationId'),
-                        json_extract(value,'$.MinimumVolume')
+                        json_extract(value,'$.MinimumVolume'),json_extract(value,'$.Range')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET PilotId=excluded.PilotId,StationId=excluded.StationId,
                         SystemId=excluded.SystemId,RegionId=excluded.RegionId,TypeId=excluded.TypeId,Bid=excluded.Bid,
                         PriceCents=excluded.PriceCents,Remaining=excluded.Remaining,Entered=excluded.Entered,
                         Issued=excluded.Issued,Expires=excluded.Expires,Modified=excluded.Modified,
                         DurationDays=excluded.DurationDays,EscrowCents=excluded.EscrowCents,Status=excluded.Status,
-                        CorporationId=excluded.CorporationId,MinimumVolume=excluded.MinimumVolume
+                        CorporationId=excluded.CorporationId,MinimumVolume=excluded.MinimumVolume,Range=excluded.Range
                     """
                 );
             }
@@ -1411,7 +1412,8 @@ internal sealed partial class ResidentEconomy
                         row.EscrowCents,
                         row.Status,
                         row.CorporationId,
-                        row.MinimumVolume
+                        row.MinimumVolume,
+                        row.Range
                     ),
                 state => new SavedPersonalOrder
                 {
@@ -1433,10 +1435,11 @@ internal sealed partial class ResidentEconomy
                     Status = state.Status,
                     CorporationId = state.CorporationId,
                     MinimumVolume = state.MinimumVolume,
+                    Range = state.Range,
                 },
                 ProjectSavedPersonalOrder,
                 "Id,PilotId,StationId,SystemId,RegionId,TypeId,Bid,PriceCents,Remaining,Entered,Issued,Expires,Modified,DurationDays,"
-                    + "EscrowCents,Status,CorporationId,MinimumVolume",
+                    + "EscrowCents,Status,CorporationId,MinimumVolume,Range",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -1456,7 +1459,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(15),
                         (PersonalOrderStatus)reader.GetInt32(16),
                         reader.IsDBNull(17) ? null : reader.GetInt32(17),
-                        reader.GetInt32(18)
+                        reader.GetInt32(18),
+                        reader.GetInt32(19)
                     ),
                 state => new(state.Id),
                 readOnly: false,
@@ -1468,6 +1472,15 @@ internal sealed partial class ResidentEconomy
                     new("RegionId", row => row.RegionId),
                     new("TypeId", row => row.TypeId),
                     new("Status", row => row.Status),
+                    new(
+                        nameof(EconomyTransaction.RangedRegionalBids),
+                        row =>
+                            row.Bid && row.Status == PersonalOrderStatus.Open && row.Range != MarketDefinitions.StationRange
+                                ? (row.RegionId, row.TypeId)
+                                : null,
+                        member: EconomyIndexMember.RowId,
+                        indexNull: false
+                    ),
                 ],
                 changed: OrderChanged,
                 primaryColumn: "Id"

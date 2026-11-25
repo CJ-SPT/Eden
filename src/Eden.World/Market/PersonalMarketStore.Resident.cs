@@ -5,6 +5,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
@@ -112,7 +113,8 @@ internal sealed partial class PilotMarketStore
         int quantity,
         int days,
         int? corporationId = null,
-        int minimumVolume = 1
+        int minimumVolume = 1,
+        int range = MarketDefinitions.StationRange
     )
     {
         PersonalMarketRules.Validate(quantity, price, days);
@@ -134,6 +136,7 @@ internal sealed partial class PilotMarketStore
             Remaining = quantity,
             Entered = quantity,
             MinimumVolume = minimumVolume,
+            Range = range,
             Issued = Now,
             Modified = Now,
             Expires = checked(Now + TimeSpan.FromDays(days).Ticks),
@@ -179,7 +182,7 @@ internal sealed partial class PilotMarketStore
         var resident = world as EconomyTransaction;
         var personal =
             npcDemandOnly ? []
-            : resident is not null ? ResidentPersonalMatches(resident, incoming, specificOrder, now)
+            : resident is not null ? ResidentPersonalMatches(resident, catalog, incoming, specificOrder, now)
             : world
                 .Set<SavedPersonalOrder>()
                 .Where(o =>
@@ -198,7 +201,7 @@ internal sealed partial class PilotMarketStore
         bool progressive = RegionalMarketStore.Enabled(world);
         var npcs =
             specificOrder is not null ? []
-            : resident is not null ? ResidentNpcMatches(resident, incoming, kind, progressive, npcDemandOnly, cutoff, now)
+            : resident is not null ? ResidentNpcMatches(resident, catalog, incoming, kind, progressive, npcDemandOnly, cutoff, now)
             : world
                 .Set<NpcMarketOrder>()
                 .Where(o =>
@@ -255,6 +258,7 @@ internal sealed partial class PilotMarketStore
             long gross = fill.GrossCents;
             long buyerId = incoming.Bid ? incoming.PilotId : candidate.Personal?.PilotId ?? candidate.Owner;
             long sellerId = incoming.Bid ? candidate.Personal?.PilotId ?? candidate.Owner : incoming.PilotId;
+            int tradeStation = incoming.Bid ? candidate.StationId : incoming.StationId;
             var buyerOrder = incoming.Bid ? incoming : candidate.Personal;
             var sellerOrder = incoming.Bid ? candidate.Personal : incoming;
             var buyerWallet = incoming.Bid || candidate.Personal is not null ? Wallet(world, buyerId) : null;
@@ -304,7 +308,7 @@ internal sealed partial class PilotMarketStore
                     world,
                     catalog,
                     buyerId,
-                    incoming.StationId,
+                    tradeStation,
                     (int)InventoryFlag.Hangar,
                     incoming.TypeId,
                     quantity
@@ -322,7 +326,7 @@ internal sealed partial class PilotMarketStore
                             PilotId = pilotId,
                             CounterpartyId = buy ? sellerOrder?.CorporationId ?? sellerId : buyerOrder?.CorporationId ?? buyerId,
                             OrderId = orderId,
-                            StationId = incoming.StationId,
+                            StationId = tradeStation,
                             TypeId = incoming.TypeId,
                             IsBuy = buy,
                             Quantity = quantity,
@@ -394,13 +398,23 @@ internal sealed partial class PilotMarketStore
 
     private static SavedPersonalOrder[] ResidentPersonalMatches(
         EconomyTransaction world,
+        CatalogDbContext catalog,
         SavedPersonalOrder incoming,
         long? specificOrder,
         long now
     )
     {
-        var matches = world
-            .StationPersonalOrders(incoming.StationId, incoming.TypeId)
+        var available =
+            incoming.Bid && incoming.Range != MarketDefinitions.StationRange
+                ? world.RegionalPersonalOrders(incoming.RegionId, incoming.TypeId)
+                : world.StationPersonalOrders(incoming.StationId, incoming.TypeId);
+        if (!incoming.Bid)
+        {
+            available = available.Concat(
+                world.RangedRegionalBids(incoming.RegionId, incoming.TypeId).Where(order => order.StationId != incoming.StationId)
+            );
+        }
+        var matches = available
             .Where(order =>
                 order.Bid != incoming.Bid
                 && order.Status == PersonalOrderStatus.Open
@@ -410,6 +424,11 @@ internal sealed partial class PilotMarketStore
                 && (specificOrder == null || order.Id == specificOrder)
                 && order.Remaining > 0
                 && PersonalMarketRules.Crosses(incoming.Bid, incoming.PriceCents, order.PriceCents)
+                && (
+                    incoming.Bid
+                        ? BuyReaches(catalog, incoming.Range, incoming.StationId, incoming.SystemId, order.StationId, order.SystemId)
+                        : BuyReaches(catalog, order.Range, order.StationId, order.SystemId, incoming.StationId, incoming.SystemId)
+                )
             )
             .Select(order => order.Id)
             .ToArray();
@@ -419,6 +438,7 @@ internal sealed partial class PilotMarketStore
 
     private static NpcMarketOrder[] ResidentNpcMatches(
         EconomyTransaction world,
+        CatalogDbContext catalog,
         SavedPersonalOrder incoming,
         NpcMarketKind kind,
         bool progressive,
@@ -427,7 +447,10 @@ internal sealed partial class PilotMarketStore
         long now
     )
     {
-        var available = world.StationMarketOrders(incoming.StationId, incoming.TypeId);
+        var available =
+            incoming.Bid && incoming.Range != MarketDefinitions.StationRange
+                ? world.RegionalOrders(incoming.RegionId, incoming.TypeId)
+                : world.StationMarketOrders(incoming.StationId, incoming.TypeId);
         if (!progressive && kind == NpcMarketKind.Standard && !incoming.Bid && !npcDemandOnly)
         {
             available = available.Concat(
@@ -449,6 +472,10 @@ internal sealed partial class PilotMarketStore
                 )
                 && (!npcDemandOnly || order.Kind == NpcMarketKind.Regional && order.Bid)
                 && PersonalMarketRules.Crosses(incoming.Bid, incoming.PriceCents, order.PriceCents)
+                && (
+                    !incoming.Bid
+                    || BuyReaches(catalog, incoming.Range, incoming.StationId, incoming.SystemId, order.StationId, order.SystemId)
+                )
             )
             .Select(order => order.Id)
             .ToArray();
@@ -473,8 +500,9 @@ internal sealed partial class PilotMarketStore
         int days,
         int? corporationId = null,
         List<long>? placedOrders = null,
-        int minimumVolume = 1
-    ) => ExecuteBuyCore(world, catalog, pilotId, stationId, items, days, corporationId, placedOrders, false, minimumVolume);
+        int minimumVolume = 1,
+        int range = MarketDefinitions.StationRange
+    ) => ExecuteBuyCore(world, catalog, pilotId, stationId, items, days, corporationId, placedOrders, false, minimumVolume, range);
 
     private MarketResult ExecuteBuyCore(
         WorldAction world,
@@ -486,7 +514,8 @@ internal sealed partial class PilotMarketStore
         int? corporationId,
         List<long>? placedOrders,
         bool fundedRefit,
-        int minimumVolume = 1
+        int minimumVolume = 1,
+        int range = MarketDefinitions.StationRange
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -497,6 +526,19 @@ internal sealed partial class PilotMarketStore
             if (world is EconomyTransaction && corporationId is null)
             {
                 RequireRemoteTradeRange(world, catalog, pilot, station, MarketSkill.Procurement);
+                if (range != MarketDefinitions.StationRange && !DockedAt(pilot, station.Id))
+                {
+                    int level =
+                        world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega
+                            ? PilotSkillReader.Level(world, catalog, pilotId, (int)MarketSkill.Visibility)
+                            : 0;
+                    if (range > PersonalMarketRules.RemoteTradeRange(level))
+                    {
+                        throw new InvalidDataException(
+                            "Your Visibility skill does not let you place a buy order with that range from here."
+                        );
+                    }
+                }
             }
             else
             {
@@ -532,7 +574,8 @@ internal sealed partial class PilotMarketStore
                 request.Quantity,
                 days,
                 corporationId,
-                minimumVolume
+                minimumVolume,
+                range
             );
             int start = changes.Count;
             var fills = MatchOrders(world, catalog, order, changes, fundedRefit: fundedRefit);

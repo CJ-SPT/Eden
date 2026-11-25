@@ -85,6 +85,16 @@ internal sealed partial class EconomyTransaction(
             )
             .Where(order => order.StationId == station && (typeId is null || order.TypeId == typeId));
 
+    internal IEnumerable<EconomySavedPersonalOrder> RegionalPersonalOrders(int region, int type) =>
+        ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>())
+            .IndexedSnapshots(nameof(SavedPersonalOrder.RegionId), region, (nameof(SavedPersonalOrder.TypeId), type))
+            .Where(order => order.RegionId == region && order.TypeId == type);
+
+    internal IEnumerable<EconomySavedPersonalOrder> RangedRegionalBids(int region, int type) =>
+        ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>())
+            .IndexedSnapshots(nameof(RangedRegionalBids), (region, type))
+            .Where(order => order.RegionId == region && order.TypeId == type && order.Bid && order.Range != MarketDefinitions.StationRange);
+
     internal EconomySavedRegionalMarketStock? RegionalStockState(long orderId) =>
         ((EconomySet<SavedRegionalMarketStock, EconomySavedRegionalMarketStock>)Set<SavedRegionalMarketStock>()).ReadSnapshot(new(orderId));
 
@@ -512,6 +522,8 @@ internal sealed partial class EconomyTransaction(
                 || order.Remaining > order.Entered
                 || order.PriceCents <= 0
                 || order.EscrowCents < 0
+                || !PersonalMarketRules.ValidBuyRange(order.Range)
+                || !order.Bid && order.Range != MarketDefinitions.StationRange
                 || Pilots.Find(order.PilotId) is null
             )
             {

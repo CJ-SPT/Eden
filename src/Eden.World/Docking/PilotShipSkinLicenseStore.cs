@@ -17,6 +17,8 @@ namespace Eden.World.Docking;
 [Injectable]
 internal sealed class PilotShipSkinLicenseStore(WorldDatabase database, TimeProvider clock) : IPilotShipSkinLicenses
 {
+    private sealed record CatalogLicense(int SkinId, long Days, bool IsSingleUse, ClientSkins Skin);
+
     private static readonly CatalogDefinition<ClientSkins?> s_skin = new(
         "ship-skin-license",
         (catalog, id) =>
@@ -88,23 +90,17 @@ internal sealed class PilotShipSkinLicenseStore(WorldDatabase database, TimeProv
             {
                 throw new InvalidDataException("That SKIN license is not in your accessible personal inventory.");
             }
-            var definition = catalog.Read(CatalogData.Client.Skinlicenses, CatalogKeyFor(item.TypeId));
-            if (
-                definition is not { SkinID: long skinId64, Duration: long days }
-                || definition.LicenseTypeID != item.TypeId
-                || skinId64 is <= 0 or > int.MaxValue
-                || catalog.Definition(s_skin, (int)skinId64) is null
-            )
+            if (LicenseForItem(catalog, item.TypeId) is not { } definition)
             {
                 throw new InvalidDataException("That item is not a ship SKIN license.");
             }
-            int skinId = (int)skinId64;
+            int skinId = definition.SkinId;
             var saved = savedLicenses.Find(pilotId, skinId);
             if (!plannedSkins.Add(skinId) || saved is not null && ShipSkinLicenseRules.IsActive(saved.Expires, now))
             {
                 throw new InvalidDataException("That SKIN license is already active on this character.");
             }
-            ShipSkinLicense license = new(skinId, ShipSkinLicenseRules.Expiration(days, now), definition.IsSingleUse == true);
+            ShipSkinLicense license = new(skinId, ShipSkinLicenseRules.Expiration(definition.Days, now), definition.IsSingleUse);
             plan.Add((item, PilotInventoryStore.Read(catalog, item), saved, license));
         }
 
@@ -130,6 +126,20 @@ internal sealed class PilotShipSkinLicenseStore(WorldDatabase database, TimeProv
 
     internal static bool SupportsHull(CatalogDbContext catalog, int skinId, int hullTypeId) =>
         catalog.Definition(s_skin, skinId)?.Types?.Contains(hullTypeId) == true;
+
+    internal static bool IsPublishedShipLicense(CatalogDbContext catalog, int typeId) =>
+        catalog.Read(CatalogData.Client.Types, (long)typeId) is { Published: 1, Volume: double volume }
+        && double.IsFinite(volume)
+        && volume >= 0
+        && LicenseForItem(catalog, typeId) is { Days: ShipSkinLicenseRules.Permanent or > 0, Skin.Types: { IsEmpty: false } };
+
+    private static CatalogLicense? LicenseForItem(CatalogDbContext catalog, int typeId) =>
+        catalog.Read(CatalogData.Client.Skinlicenses, CatalogKeyFor(typeId))
+            is { SkinID: > 0 and <= int.MaxValue and long id, Duration: long days } definition
+        && definition.LicenseTypeID == typeId
+        && catalog.Definition(s_skin, (int)id) is { } skin
+            ? new((int)id, days, definition.IsSingleUse == true, skin)
+            : null;
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

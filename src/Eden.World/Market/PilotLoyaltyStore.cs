@@ -48,7 +48,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown loyalty store customer.");
         var station = catalog.Definitions.FindStation(pilot.ActiveShip.StationId);
         if (
-            pilot.ActiveShip.Position is not null
+            pilot.ActiveShip is not { Position: null, StructureId: null }
             || station is null
             || !StationCapabilities.Has(catalog, station.OperationId, StationService.LoyaltyStore)
         )
@@ -132,16 +132,17 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
     private static bool Supported(CatalogDbContext catalog, LoyaltyOfferDefinition offer)
     {
         // The snapshot's blueprint quantity is the run count of one licensed copy.
-        // Analysis Kredits and cosmetic licenses require their own authoritative ledgers.
+        // Physical SKIN licenses use the same catalog identity as native activation.
         return offer.AnalysisKredits == 0
             && catalog.Definitions.Items.GetValueOrDefault(offer.TypeId) is { } type
             && (
-                type.CategoryId == (int)InventoryCategory.Blueprint
-                    ? offer.Quantity > 0 && ManufacturingCatalog.Recipes(catalog).ContainsKey(offer.TypeId)
-                    : (
-                        RedemptionRules.Deliverable((InventoryCategory)type.CategoryId)
-                        || Eden.Gameplay.FactionWarfare.MilitiaObjectiveRules.IsDeployable(type.Id)
-                    )
+                (InventoryCategory)type.CategoryId switch
+                {
+                    InventoryCategory.Blueprint => offer.Quantity > 0 && ManufacturingCatalog.Recipes(catalog).ContainsKey(offer.TypeId),
+                    InventoryCategory.ShipSkin => PilotShipSkinLicenseStore.IsPublishedShipLicense(catalog, type.Id),
+                    var category => RedemptionRules.Deliverable(category)
+                        || Eden.Gameplay.FactionWarfare.MilitiaObjectiveRules.IsDeployable(type.Id),
+                }
             )
             && offer.RequiredItems.All(item => catalog.Definitions.Items.ContainsKey(item.TypeId));
     }
@@ -169,6 +170,11 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         var offer =
             Offers(catalog, corporationId).SingleOrDefault(offer => offer.Id == offerId)
             ?? throw new InvalidDataException("This offer is not available from this loyalty store.");
+        var rewardCategory = (InventoryCategory)catalog.RequireItem(offer.TypeId).CategoryId;
+        if (rewardCategory == InventoryCategory.ShipSkin && world is not EconomyTransaction)
+        {
+            throw new InvalidDataException("Loyalty-store SKIN purchases require the resident world.");
+        }
         var cost = LoyaltyStoreRules.Cost(offer, count);
         var owner = corporate ? CorporationRoleStore.Current(world, pilotId) : null;
         if (owner is not null && !CorporationRoleStore.Has(world, pilotId, owner, CorporationRole.Director))
@@ -220,7 +226,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
                 }
             }
         }
-        if (catalog.RequireItem(offer.TypeId).CategoryId == (int)InventoryCategory.Blueprint)
+        if (rewardCategory == InventoryCategory.Blueprint)
         {
             long first = InventoryPersistence.NextId(world);
             for (int index = 0; index < count; index++)

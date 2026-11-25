@@ -10,7 +10,15 @@ public enum PersonalOrderStatus
     Expired,
 }
 
-public sealed record PersonalMarketBuy(int StationId, int TypeId, long PriceCents, int Quantity, int DurationDays, int MinimumVolume = 1);
+public sealed record PersonalMarketBuy(
+    int StationId,
+    int TypeId,
+    long PriceCents,
+    int Quantity,
+    int DurationDays,
+    int MinimumVolume = 1,
+    int Range = MarketDefinitions.StationRange
+);
 
 public sealed record PersonalMarketModification(
     long OrderId,
@@ -20,7 +28,8 @@ public sealed record PersonalMarketModification(
     int SystemId,
     long PreviousPriceCents,
     int Remaining,
-    long Issued
+    long Issued,
+    int Range = MarketDefinitions.StationRange
 );
 
 public sealed record MarketEscrow(long IskCents, long ItemsValueCents);
@@ -114,6 +123,9 @@ public static class PersonalMarketRules
             5 => StandardMarketRules.RegionRange,
             _ => MarketDefinitions.StationRange,
         };
+
+    public static bool ValidBuyRange(int range) =>
+        range is MarketDefinitions.StationRange or 0 or 1 or 2 or 3 or 4 or 5 or 10 or 20 or 30 or 40 or StandardMarketRules.RegionRange;
 
     // CCP NPC-station broker formula and relist discount; server-side values
     // unavailable from catalog are pinned here rather than trusted client quotes.

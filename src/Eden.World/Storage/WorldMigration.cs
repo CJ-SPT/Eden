@@ -18,7 +18,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = Eden.World.Exploration.IncursionSchema.LoyaltyJournalVersion;
+    internal const int CurrentVersion = Eden.World.Market.PersonalMarketSchema.BuyRangeVersion;
 
     public static void Open(
         WorldDbContext world,

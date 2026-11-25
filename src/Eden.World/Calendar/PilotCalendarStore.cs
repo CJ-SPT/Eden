@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Gameplay.Calendar;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
+using Eden.World.Mail;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -214,14 +215,15 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         transaction.Commit();
     }
 
-    public long Create(long pilotId, CalendarEventDraft draft, IReadOnlyList<long> invitees)
+    public long Create(long pilotId, CalendarEventDraft draft, IReadOnlyList<long> invitees, long approvedContactCostIsk = 0)
     {
-        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        using var transaction = new WorldActionScope(database, invitees.Count == 0 ? TransactionParticipants.None : new(pilots: [pilotId]));
         var world = transaction.World;
         long now = Now;
         var value = CalendarRules.Check(draft, now);
         CheckPilot(world, pilotId);
         CheckKnown(world, pilotId, invitees, checkBlocks: true);
+        MailContactPolicyStore.Charge(world, pilotId, invitees, approvedContactCostIsk, now);
         var entry = world
             .Add(
                 new SavedCalendarEvent
@@ -297,9 +299,15 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         Commit(transaction);
     }
 
-    public void UpdateParticipants(long pilotId, long eventId, IReadOnlyList<long> add, IReadOnlyList<long> remove)
+    public void UpdateParticipants(
+        long pilotId,
+        long eventId,
+        IReadOnlyList<long> add,
+        IReadOnlyList<long> remove,
+        long approvedContactCostIsk = 0
+    )
     {
-        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        using var transaction = new WorldActionScope(database, add.Count == 0 ? TransactionParticipants.None : new(pilots: [pilotId]));
         var world = transaction.World;
         var entry = Owned(world, pilotId, eventId);
         CheckMutable(entry);
@@ -320,7 +328,9 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         {
             return;
         }
-        entry.Modified = Now;
+        long now = Now;
+        MailContactPolicyStore.Charge(world, pilotId, added, approvedContactCostIsk, now);
+        entry.Modified = now;
         foreach (long pilot in removed)
         {
             world.Remove(existing[pilot]);

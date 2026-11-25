@@ -142,7 +142,12 @@ Corporation directors can restrict corporation-wide mail to Communications Offic
 
 The notification inbox now saves contact-add and contact-edit notifications, including the contact form's **Send Notification** message. Recipients can fetch history/unread groups, mark items read and delete selected items, groups or all history. Connected pilots receive native notifications; offline recipients retain them across restarts. Blocked messages fail together with the contact edit. Other gameplay notification families and paid CSPA communication remain pending; native inbox presentation is unverified. See the [notification inbox notes](protocol/social.md#persistent-notification-inbox-and-contact-messages).
 
-Personal calendar events now support saved invitations, details, replies, edits, rescheduling and cancellation. Creators can invite up to **50 local Eden pilots**; connected invitees receive ordered calendar updates, and offline invitees see their events after reconnecting. Removing an invitee revokes access. Alliance calendars are implemented with current-member access and executor administration. Corporation members can see and respond to corporation events. Communications Officers, directors and CEOs can schedule, reschedule and cancel them. See [corporation calendar events](protocol/social.md#corporation-calendar-events). Official events and paid CSPA invitations remain pending. Native calendar presentation is unverified; see the [calendar notes](protocol/social.md#persistent-personal-calendar).
+Personal calendar events support up to **50 local invitees**, saved replies, editing, rescheduling and cancellation.
+The creator confirms any CSPA fees when adding new invitees. Alliance calendars use current membership and executor
+administration. Corporation Communications Officers, directors and CEOs can manage corporation events.
+[Personal calendar](protocol/social.md#persistent-personal-calendar) ·
+[Calendar invitation CSPA](protocol/social.md#personal-calendar-invitation-cspa) ·
+[Corporation events](protocol/social.md#corporation-calendar-events)
 
 Personal contacts support add/edit/delete, standings, blocking and labels for local Eden pilots, including offline pilots. Values survive restarts. Watchlists show online state and receive login/logoff updates without docking flicker. NPC agents can be saved through their native address-book action. Optional add/edit messages reach the recipient's saved notification inbox. Corporation and alliance shared contact books are implemented. Personal standings and labels also accept local player corporation and alliance owners; watchlists, blocking and notification messages remain character-only. Native contact-window presentation is unverified; see the [personal contact implementation notes](protocol/social.md#personal-contacts-and-online-status).
 
@@ -249,11 +254,14 @@ hangar. The recipient's items and inbox notification persist across restarts.
 [Personal Deliveries at Upwell structures](protocol/structures.md#personal-deliveries-at-upwell-structures)
 
 Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
-missiles, neutralize capacitor, slow ships, jam sensors and disrupt warp. Loading the Standup scrambling script also blocks
+missiles, neutralize capacitor, slow ships, jam sensors and disrupt warp. Target painters increase the target's signature
+radius, and remote sensor dampeners reduce its lock range and scan resolution. Loading the Standup scrambling script also blocks
 microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner
 releases control. The structure audit tracks the remaining defensive effects, service-specific access and fees,
 player markets, clone bays, corporation offices, and specialized hull behavior.
-[Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm) · [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
+[Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm) ·
+[Painters and dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners) ·
+[Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
 
 High GMs can force all native Upwell operating states, set operating and deployment timers, start or cancel unanchoring,
 and change an eligible structure's abandonment deadline. [Structure GM commands](protocol/structures.md#structure-gm-commands)
@@ -317,7 +325,11 @@ damage, and Deep Core Mining reduces the chance of a cloud forming.
 
 ISK and EverMarks redeem rewards now credit their wallets. ISK tokens previously fell through to inventory delivery. ISK gains have native journal entries and balance updates; personal LP reads return saved issuer balances, including Paragon EverMarks. Claims survive restarts, reject duplicates/overflow, and work before pilot selection or in space. Native wallet rendering remains unverified. Corporation donations are implemented; Paragon missions remain pending. See the [currency and loyalty-wallet notes](protocol/industry.md#currency-redemption-and-loyalty-wallets).
 
-NPC loyalty point stores support native station access, offer browsing, personal purchases, CEO/Director corporate purchases from the selected ISK division, and personal CONCORD LP conversion at pinned catalog rates. Required items come from the purchasing pilot's station Item Hangar; LP/ISK, item consumption, delivery and purchase receipts commit together. A dated offline CCP offer snapshot is checked against the pinned catalog, exposing supported physical rewards. Cosmetic licenses, Analysis Kredit offers and event-specific access remain open. Supported missions award LP. Eligible NPC loyalty stores also offer [earned blueprint copies](protocol/industry.md#earned-lp-blueprint-copies). See [LP-store scope and validation](protocol/industry.md#loyalty-point-stores-november-8-2026).
+NPC loyalty point stores support personal and eligible corporate purchases and personal CONCORD LP conversion. LP, ISK,
+required items and the reward settle together. Offers include earned blueprint copies and published physical ship SKIN licenses.
+Analysis Kredit offers and event-specific access remain open. [LP stores](protocol/industry.md#loyalty-point-stores-november-8-2026) ·
+[Earned blueprint copies](protocol/industry.md#earned-lp-blueprint-copies) ·
+[Ship SKIN licenses](protocol/industry.md#ship-skin-licenses-from-npc-loyalty-stores)
 
 Mine ordinary ore, ice, gas or Mercoxit with equipment admitted for the resource and hull. Modulated ore lasers use compatible
 crystals with saved wear. At stations with reprocessing, preview and refine eligible materials using the station, recipe, and
@@ -337,8 +349,10 @@ Eden's default testing market sells all **19,727 published market types** in the
 Daytrading extends the range for repricing personal orders within your current region. You can cancel your own order
 from another region. Remaining sell inventory returns to the original station, and buy escrow returns to your wallet.
 Procurement enables remote station buy orders, and Marketing enables sales from remote station hangars.
+Buy orders can accept fulfillment within a selected range. Visibility governs the available range when placing them remotely.
 [Remote personal order management](protocol/industry.md#remote-personal-order-management) ·
-[Procurement and Marketing](protocol/industry.md#procurement-and-marketing-at-remote-stations)
+[Procurement and Marketing](protocol/industry.md#procurement-and-marketing-at-remote-stations) ·
+[Ranged buy orders](protocol/industry.md#ranged-personal-buy-orders)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 

@@ -278,7 +278,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
                 }
                 continue;
             }
-            if (contact.Module.Effect == DogmaEffect.StructureEcm)
+            if (Eden.Gameplay.Structures.StructureWeaponRules.IsElectronicWarfare(contact.Module.Effect))
             {
                 if (
                     contact.ExpiresAt <= now

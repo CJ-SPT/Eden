@@ -152,7 +152,7 @@ internal sealed class MarketHandler(
                             long modifyStation,
                             long modifySystem,
                             var oldPrice,
-                            (long)MarketDefinitions.StationRange,
+                            long modifyRange,
                             long remaining,
                             long issued,
                         ]:
@@ -166,7 +166,8 @@ internal sealed class MarketHandler(
                             checked((int)modifySystem),
                             MarketRequestWire.Price(oldPrice),
                             checked((int)remaining),
-                            issued
+                            issued,
+                            checked((int)modifyRange)
                         )
                     );
                     monitor.Advance(context);
@@ -205,7 +206,7 @@ internal sealed class MarketHandler(
                             long listedType,
                             var listedPrice,
                             long listedQuantity,
-                            (long)MarketDefinitions.StationRange,
+                            long buyRange,
                             long minimumVolume,
                             long buyDays,
                             false
@@ -221,7 +222,8 @@ internal sealed class MarketHandler(
                             MarketRequestWire.Price(listedPrice),
                             checked((int)listedQuantity),
                             checked((int)buyDays),
-                            checked((int)minimumVolume)
+                            checked((int)minimumVolume),
+                            checked((int)buyRange)
                         )
                     );
                     monitor.Advance(context);
@@ -283,10 +285,7 @@ internal sealed class MarketHandler(
                 case "BuyMultipleItems":
                 case "ModifyCharOrder":
                 case "CancelCharOrder":
-                    return new PilotCallResult.Failure(
-                        "Choose a supported personal station order with station range.",
-                        ShowInformationDialog: true
-                    );
+                    return new PilotCallResult.Failure("Choose a supported personal market order.", ShowInformationDialog: true);
                 case "GetPlexOldPriceHistory" or "GetPlexNewPriceHistory":
                     return new PilotCallResult.Failure("PLEX price history does not accept arguments.");
                 default:

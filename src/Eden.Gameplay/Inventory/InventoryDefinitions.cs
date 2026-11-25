@@ -204,6 +204,8 @@ public enum DogmaEffect
     StructureEnergyNeutralizer = 6216,
     StructureWarpDisruptor = 6222,
     StructureStasisWebifier = 6682,
+    StructureTargetPainter = 6683,
+    StructureSensorDampener = 6684,
     StructureEcm = 6685,
     EnergyNosferatu = 6197,
     ShieldBoosting = 4,
