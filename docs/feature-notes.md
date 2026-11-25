@@ -327,7 +327,9 @@ Eden's default testing market sells all **19,727 published market types** in the
 
 Daytrading extends the range for repricing personal orders within your current region. You can cancel your own order
 from another region. Remaining sell inventory returns to the original station, and buy escrow returns to your wallet.
-[Remote personal order management](protocol/industry.md#remote-personal-order-management)
+Procurement enables remote station buy orders, and Marketing enables sales from remote station hangars.
+[Remote personal order management](protocol/industry.md#remote-personal-order-management) ·
+[Procurement and Marketing](protocol/industry.md#procurement-and-marketing-at-remote-stations)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 

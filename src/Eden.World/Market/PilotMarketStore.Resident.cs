@@ -28,27 +28,38 @@ internal sealed partial class PilotMarketStore
         ship.Position?.SystemId
         ?? (ship.StructureId is long structure ? world.StructureSystemId(structure) : Station(catalog, ship.StationId).SolarSystemId);
 
-    private static void RequireModificationRange(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogStationDefinition station)
+    private static bool DockedAt(Pilot pilot, int stationId) =>
+        pilot.ActiveShip.Position is null && pilot.ActiveShip.DockedLocationId == stationId;
+
+    private static void RequireRemoteTradeRange(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        CatalogStationDefinition station,
+        MarketSkill skill
+    )
     {
         if (!HasMarket(catalog, station))
         {
             throw new InvalidDataException("This station does not provide a market.");
         }
-        var ship = pilot.ActiveShip;
-        if (ship.Position is null && ship.DockedLocationId == station.Id)
+        if (DockedAt(pilot, station.Id))
         {
             return;
         }
-        int system = MarketSystem(world, catalog, ship);
+        int system = MarketSystem(world, catalog, pilot.ActiveShip);
         if (catalog.RequireSystem(system).RegionId != station.RegionId)
         {
-            throw new InvalidDataException("Modify orders from their current market region.");
+            throw new InvalidDataException("Trade from the station's current market region.");
         }
-        int level =
-            world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega
-                ? PilotSkillReader.Level(world, catalog, pilot.Id, (int)MarketSkill.Daytrading)
-                : 0;
-        int range = PersonalMarketRules.ModificationRange(level);
+        // All four build 3662168 clone-grade profiles cap Marketing at II and omit Procurement and Daytrading.
+        const int alphaMarketingLevel = 2;
+        int level = PilotSkillReader.Level(world, catalog, pilot.Id, (int)skill);
+        if (world.Set<Account>().Find(pilot.AccountId)?.CloneGrade != AccountCloneGrade.Omega)
+        {
+            level = skill == MarketSkill.Marketing ? Math.Min(level, alphaMarketingLevel) : 0;
+        }
+        int range = PersonalMarketRules.RemoteTradeRange(level);
         int? jumps = range switch
         {
             0 when system == station.SolarSystemId => 0,
@@ -57,7 +68,7 @@ internal sealed partial class PilotMarketStore
         };
         if (!StandardMarketRules.Reaches(range, false, jumps))
         {
-            throw new InvalidDataException("Your Daytrading skill does not let you modify that order from here.");
+            throw new InvalidDataException($"Your {skill} skill does not reach that market station.");
         }
     }
 

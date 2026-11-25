@@ -681,6 +681,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Procurement and Marketing at remote stations](protocol/industry.md#procurement-and-marketing-at-remote-stations)
 - [Remote personal order management](protocol/industry.md#remote-personal-order-management)
 - [Browsing industry facilities from any station](protocol/industry.md#browsing-industry-facilities-from-any-station)
 - [Regional market location while docked at Upwell structures](protocol/industry.md#regional-market-location-while-docked-at-upwell-structures)

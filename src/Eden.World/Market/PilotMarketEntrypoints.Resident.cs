@@ -78,7 +78,7 @@ internal sealed partial class PilotMarketStore
             throw new InvalidDataException("Wait five minutes before modifying this order.");
         }
         var station = Station(catalog, order.StationId);
-        RequireModificationRange(world, catalog, Pilot(world, pilotId), station);
+        RequireRemoteTradeRange(world, catalog, Pilot(world, pilotId), station, MarketSkill.Daytrading);
         Seed(world, catalog, station, order.TypeId);
         Payment(
             world,

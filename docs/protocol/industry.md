@@ -7,6 +7,35 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Procurement and Marketing at remote stations
+
+Procurement lets pilots place a personal station-range buy order at another NPC market station in the current region.
+Marketing lets pilots list or immediately sell their own Item Hangar stacks at another NPC market station. Orders, escrow,
+deliveries and returned items use the station where the order was placed or the item was sold. Each sell request uses one
+station. Ship cargo remains eligible when the ship is docked at the selling station.
+
+From the authoritative ship location the two skills allow the current station, the current system, 5 jumps, 10 jumps,
+20 jumps and the current region at levels 0 to V. The four pinned Alpha grade records cap Marketing at II and omit
+Procurement. Immediate purchases still use the regional purchase flow. Personal buy orders use station fulfillment range.
+
+In build **3662168**, `marketutil/skilllimits.pyj` uses **16598** (Marketing) and **16594** (Procurement) for `ask` and `bid`
+with `JUMPS_PER_SKILL_LEVEL`. `marketsvc.pyj` forwards the selected station and range from `BuyStuff` to `PlaceBuyOrder`,
+and item station IDs from `SellMulti` to `PlaceMultiSellOrder`. The stock `code.ccp` SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. EVE.js **261108.1** `marketProxyService.js`
+(SHA-256 `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`) also validates Procurement for
+resting buy orders and Marketing for sell requests. [EVE University trade skills](https://wiki.eveuniversity.org/Skills:Trade#Procurement) ·
+[CCP brokerage rules](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+**Automated validation.** `ProcurementPlacesNativeBuyOrderAndDeliversAtTheOriginStation` and
+`MarketingSellsOnlyOwnedHangarStockAtTheRemoteStation` passed three cases in 8.50 seconds. The affected selection passed
+85 tests in 34 seconds across `RemoteOrderManagementTests`, `RemoteMarketTests`, `PersonalMarketRulesTests`,
+`PersonalMarketTests`, `StandardMarketTests` and `NpcRestingOrderTests`. Cases exercise exact origin delivery, clone-grade
+limits, range and region checks, rejection of cargo from an undocked ship, and both immediate sales and listings.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Use a nearby station's remote buy and sell controls, then confirm delivery at the order station.
+
 ## Remote personal order management
 
 Pilots can reprice their own NPC-station buy and sell orders across the current region. Without effective Daytrading,

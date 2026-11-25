@@ -104,8 +104,8 @@ public static class PersonalMarketRules
         5 + 4 * trade + 8 * retail + 16 * wholesale + 32 * tycoon;
 
     // Build 3662168 marketutil.skilllimits.JUMPS_PER_SKILL_LEVEL.
-    public static int ModificationRange(int daytrading) =>
-        daytrading switch
+    public static int RemoteTradeRange(int level) =>
+        level switch
         {
             1 => 0,
             2 => 5,

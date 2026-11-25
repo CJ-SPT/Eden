@@ -491,7 +491,18 @@ internal sealed partial class PilotMarketStore
     {
         var pilot = Pilot(world, pilotId);
         // Immediate purchases need no remote-order skill; goods stay at the selling station.
-        var station = days == 0 ? PurchaseStation(world, catalog, pilot, stationId) : TradeStation(catalog, pilot, stationId);
+        var station = days == 0 ? PurchaseStation(world, catalog, pilot, stationId) : Station(catalog, stationId);
+        if (days > 0)
+        {
+            if (world is EconomyTransaction && corporationId is null)
+            {
+                RequireRemoteTradeRange(world, catalog, pilot, station, MarketSkill.Procurement);
+            }
+            else
+            {
+                _ = TradeStation(catalog, pilot, stationId);
+            }
+        }
         if (items.Count == 0 || items.Select(i => i.TypeId).Distinct().Count() != items.Count)
         {
             throw new InvalidDataException("Select distinct market types.");
@@ -551,11 +562,24 @@ internal sealed partial class PilotMarketStore
     )
     {
         var pilot = Pilot(world, pilotId);
-        var station = TradeStation(catalog, pilot, pilot.ActiveShip.StationId);
         if (items.Count == 0 || items.Select(i => i.ItemId).Distinct().Count() != items.Count)
         {
             throw new InvalidDataException("Select distinct owned stacks.");
         }
+        var station = Station(catalog, items[0].StationId);
+        if (items.Any(item => item.StationId != station.Id))
+        {
+            throw new InvalidDataException("Select stacks at the same market station.");
+        }
+        if (world is EconomyTransaction)
+        {
+            RequireRemoteTradeRange(world, catalog, pilot, station, MarketSkill.Marketing);
+        }
+        else
+        {
+            _ = TradeStation(catalog, pilot, station.Id);
+        }
+        bool docked = DockedAt(pilot, station.Id);
         foreach (int type in items.Select(i => i.TypeId).Distinct())
         {
             Seed(world, catalog, station, type);
@@ -579,12 +603,12 @@ internal sealed partial class PilotMarketStore
                 || item.TypeId != request.TypeId
                 || item.Singleton
                 || item.CrystalDamage != 0
-                || request.StationId != station.Id
                 || request.Quantity > item.Quantity
                 || PilotIndustryStore.IsInstalled(world, item.Id)
                 || !(
                     item.LocationId == station.Id && item.FlagId == (int)InventoryFlag.Hangar
-                    || item.LocationId == pilot.ActiveShipId
+                    || docked
+                        && item.LocationId == pilot.ActiveShipId
                         && item.FlagId is (int)InventoryFlag.Cargo or (int)InventoryFlag.GeneralMiningHold
                 )
             )
