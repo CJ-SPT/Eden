@@ -27,13 +27,15 @@ public sealed partial class CooperativeFleetTests
         member.Context.Flight.Snapshot();
         leader.Context.Flight.Snapshot();
         long fleet = leader.Create();
+        var fleets = world.Services.GetRequiredService<ICooperativeFleets>();
+        var placement = new FleetPlacement(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member);
         leader.Context.Notifications.Clear();
         member.Context.Notifications.Clear();
         Assert.Null(leader.ServiceReply("beyonce", "CmdFleetTagTarget", [target.ShipId, "A"]));
         Assert.Equal("A", Tags(leader)[target.ShipId]);
         member.Advance();
         Assert.Empty(member.Context.Notifications.OfType<FleetStateNotification>());
-        leader.Reply("Invite", [member.PilotId, null, null, (long)FleetRole.Member]);
+        fleets.Invite(leader.PilotId, fleet, member.PilotId, placement);
         member.Advance();
         member.Bind(fleet);
         member.Reply("AcceptInvite", [(long)member.Context.Pilot.ShipTypeId]);
@@ -52,7 +54,7 @@ public sealed partial class CooperativeFleetTests
         {
             Assert.IsType<PilotCallResult.Failure>(leader.CallService("beyonce", "CmdFleetTagTarget", args));
         }
-        Assert.Equal("A", Assert.Single(world.Services.GetRequiredService<ICooperativeFleets>().TargetTags(leader.PilotId)).Tag);
+        Assert.Equal("A", Assert.Single(fleets.TargetTags(leader.PilotId)).Tag);
         leader.Context.Notifications.Clear();
         member.Context.Notifications.Clear();
         Assert.Null(leader.ServiceReply("beyonce", "CmdFleetTagTarget", [target.ShipId, "A"]));
@@ -80,7 +82,7 @@ public sealed partial class CooperativeFleetTests
         Assert.Equal("2", Tags(member)[target.ShipId]);
         member.Reply("LeaveFleet", []);
         Assert.Empty(Tags(member));
-        leader.Reply("Invite", [member.PilotId, null, null, (long)FleetRole.Member]);
+        fleets.Invite(leader.PilotId, fleet, member.PilotId, placement);
         member.Advance();
         member.Bind(fleet);
         member.Reply("AcceptInvite", [(long)member.Context.Pilot.ShipTypeId]);

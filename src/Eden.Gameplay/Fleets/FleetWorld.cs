@@ -344,7 +344,7 @@ public sealed partial class FleetWorld(long seed)
         }
     }
 
-    public void Invite(long actor, long fleetId, long target, FleetPlacement requested, long now)
+    public void Invite(long actor, long fleetId, long target, FleetPlacement requested, long now, Action? commitCommunication = null)
     {
         var fleet = MemberFleet(actor, fleetId);
         var placement = Placement(fleet, requested);
@@ -354,7 +354,13 @@ public sealed partial class FleetWorld(long seed)
         {
             throw new InvalidDataException("Invite an online pilot outside a fleet with an available position.");
         }
-        PublishInvitation(fleet, actor, target, placement, checked(now + FleetRules.InvitationLifetime.Ticks));
+        if (commitCommunication is not null && IsPendingInvitation(fleetId, actor, target, placement, now))
+        {
+            return;
+        }
+        long expires = checked(now + FleetRules.InvitationLifetime.Ticks);
+        commitCommunication?.Invoke();
+        PublishInvitation(fleet, actor, target, placement, expires);
     }
 
     public FleetInviteBatchResult InviteMany(
@@ -391,13 +397,7 @@ public sealed partial class FleetWorld(long seed)
             {
                 rejected.Add(target, rejection);
             }
-            else if (
-                _invitations.GetValueOrDefault(target) is not { } pending
-                || pending.FleetId != fleetId
-                || pending.Inviter != actor
-                || pending.Placement != placement
-                || pending.Expires <= now
-            )
+            else if (!IsPendingInvitation(fleetId, actor, target, placement, now))
             {
                 invited.Add(target);
             }
@@ -412,6 +412,13 @@ public sealed partial class FleetWorld(long seed)
         }
         return new(invited, rejected);
     }
+
+    private bool IsPendingInvitation(long fleetId, long actor, long target, FleetPlacement placement, long now) =>
+        _invitations.GetValueOrDefault(target) is { } pending
+        && pending.FleetId == fleetId
+        && pending.Inviter == actor
+        && pending.Placement == placement
+        && pending.Expires > now;
 
     private FleetInviteRejection? BatchInviteRejection(Fleet fleet, long actor, long target, FleetPlacement placement)
     {

@@ -119,7 +119,34 @@ public sealed partial class PlexVaultTests
         Assert.Empty(vault.History(AccountId));
         vault.Withdraw(pilot.PilotId, pilot.StationId, (int)InventoryFlag.Hangar, 3, forMarket: false);
         var entry = Assert.Single(vault.History(AccountId));
-        Assert.Equal((-3, 6L), (entry.Amount, entry.Balance));
+        Assert.Equal((-3L, 6L), (entry.Amount, entry.Balance));
+    }
+
+    [Fact]
+    public async Task Version237VaultHistoryReopensWithItsExistingEntriesAndBalance()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(emptyWallets: false, clock: clock, liveWorld: true);
+        AddPlex(db);
+        var pilot = db.Store.FindPilot(AccountId)!;
+        var stack = Assert
+            .Single(db.Services.GetRequiredService<IPilotMarket>().Buy(pilot.PilotId, pilot.StationId, [new(Plex, 100, 7)]).Changes)
+            .Item;
+        var vault = db.Services.GetRequiredService<IPlexVault>();
+        vault.Deposit(pilot.PilotId, pilot.StationId, stack.Id, 7);
+        var entry = Assert.Single(vault.History(AccountId));
+        await db.Services.GetRequiredService<LiveWorld>().FlushAsync();
+        db.Services.Dispose();
+        using (WorldDbContext old = new(db.Path))
+        {
+            old.Database.ExecuteSqlRaw("ALTER TABLE WorldPlexVaultHistory DROP COLUMN CounterpartyPilotId; PRAGMA user_version=237;");
+        }
+        WorldDatabase database = new(db.Path);
+        WorldInitialization.Initialize(database, clock);
+        using var reopened = ServerServices.Build(database, clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<IPlexVault>();
+        Assert.Equal(7, restored.Balance(AccountId));
+        Assert.Equal(entry, Assert.Single(restored.History(AccountId)));
     }
 
     private static T VaultLog<T>(GatewayRequests gateway, IMessage request, long account, long activePilot)

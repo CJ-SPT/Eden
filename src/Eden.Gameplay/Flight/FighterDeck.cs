@@ -2,6 +2,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Structures;
 
 namespace Eden.Gameplay.Flight;
 
@@ -65,6 +66,13 @@ public interface IStandupFighterFlight
     void Assign(long pilotId, long structureId);
     void Release(long pilotId, long structureId, long now);
     void Recall(long pilotId, long structureId, IReadOnlyList<long> squadrons, long now);
+    void SetMobility(
+        StructureControlToken token,
+        IReadOnlyList<long> squadrons,
+        bool activate,
+        long now,
+        SpacePosition? destination = null
+    );
     void AdvanceReturns(long now);
 }
 

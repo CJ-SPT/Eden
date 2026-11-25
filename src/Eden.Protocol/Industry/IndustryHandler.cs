@@ -42,11 +42,6 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
         {
             return;
         }
-        if (context.Pilot.Position is not null || context.Pilot.DockedLocationId != station)
-        {
-            _station = null;
-            return;
-        }
         IReadOnlyDictionary<int, long> current;
         try
         {
@@ -322,7 +317,6 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
                             .ToArray()
                     );
                 case ("facilityManager", "GetFacilityLocations") when args is [long station, long owner] && owner == pilotId:
-                    industry.CheckStation(pilotId, station);
                     return new BlueList<IndustryInventoryLocationReply>(
                         industry.Locations(pilotId, station).Select(location => new IndustryInventoryLocationReply(location)).ToArray()
                     );

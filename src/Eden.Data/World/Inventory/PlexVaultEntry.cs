@@ -8,7 +8,8 @@ public sealed class SavedPlexVaultEntry
     public long AccountId { get; set; }
     public long PilotId { get; set; }
     public PlexVaultTransferKind Kind { get; set; }
-    public int Amount { get; set; }
+    public long Amount { get; set; }
     public long Balance { get; set; }
     public long Time { get; set; }
+    public long? CounterpartyPilotId { get; set; }
 }

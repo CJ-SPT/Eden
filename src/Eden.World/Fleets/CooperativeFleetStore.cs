@@ -160,6 +160,30 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
     public void Invite(long actor, long fleet, long target, FleetPlacement placement) =>
         Write(() => _world.Invite(actor, fleet, target, placement, Now));
 
+    public void InviteWithContactPolicy(long actor, long fleet, long target, FleetPlacement placement, long approvedCostIsk)
+    {
+        using var transaction = BeginInviteContactPolicy(actor);
+        Write(() =>
+        {
+            long now = Now;
+            _world.Invite(
+                actor,
+                fleet,
+                target,
+                placement,
+                now,
+                () =>
+                {
+                    if (!PermitsContact(transaction, actor, target))
+                    {
+                        throw new InvalidDataException("This pilot cannot receive a fleet invitation.");
+                    }
+                    CommitContactCost(transaction, actor, [target], approvedCostIsk, now);
+                }
+            );
+        });
+    }
+
     public FleetInviteBatchResult InviteMany(
         long actor,
         long fleet,
@@ -168,31 +192,45 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
         long approvedCostIsk
     )
     {
-        var live = database is null ? null : LiveWorld.Find(database.Path);
-        if (live is null)
-        {
-            throw new InvalidDataException("Fleet group invitations require the resident world.");
-        }
-        // The resident owner precedes the fleet lock, which stays held from validation through publication.
-        using var transaction = live.Economy.Begin(new(pilots: [actor]));
+        using var transaction = BeginInviteContactPolicy(actor);
         return Read(() =>
         {
             long now = Now;
-            var blocks = transaction.Set<SavedBlockedContact>();
             return _world.InviteMany(
                 actor,
                 fleet,
                 targets,
                 placement,
                 now,
-                recipient => blocks.Find(recipient, actor) is null && blocks.Find(actor, recipient) is null,
-                recipients =>
-                {
-                    MailContactPolicyStore.Charge(transaction, actor, recipients, approvedCostIsk, now);
-                    transaction.Commit();
-                }
+                recipient => PermitsContact(transaction, actor, recipient),
+                recipients => CommitContactCost(transaction, actor, recipients, approvedCostIsk, now)
             );
         });
+    }
+
+    private EconomyTransaction BeginInviteContactPolicy(long actor)
+    {
+        var live = database is null ? null : LiveWorld.Find(database.Path);
+        // The resident owner precedes the fleet lock, which stays held from validation through publication.
+        return live?.Economy.Begin(new(pilots: [actor])) ?? throw new InvalidDataException("Fleet invitations require the resident world.");
+    }
+
+    private static bool PermitsContact(EconomyTransaction transaction, long actor, long recipient)
+    {
+        var blocks = transaction.Set<SavedBlockedContact>();
+        return blocks.Find(recipient, actor) is null && blocks.Find(actor, recipient) is null;
+    }
+
+    private static void CommitContactCost(
+        EconomyTransaction transaction,
+        long actor,
+        IReadOnlyList<long> recipients,
+        long approvedCostIsk,
+        long now
+    )
+    {
+        MailContactPolicyStore.Charge(transaction, actor, recipients, approvedCostIsk, now);
+        transaction.Commit();
     }
 
     public void Accept(long actor, long fleet)

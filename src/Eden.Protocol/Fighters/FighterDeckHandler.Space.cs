@@ -21,7 +21,15 @@ internal sealed partial class FighterDeckHandler
     {
         var flight = context.Flight;
         long? structure = context.ControlledStructureId;
-        if (structure is not null && method is not ("LaunchFightersFromTubes" or "RecallFightersToTubes"))
+        if (
+            structure is not null
+            && method is not ("LaunchFightersFromTubes" or "RecallFightersToTubes")
+            && !(
+                method is "CmdActivateAbilitySlots" or "CmdDeactivateAbilitySlots"
+                && args.Length >= 2
+                && Equals(args[1], (long)FighterMobilityRules.Slot)
+            )
+        )
         {
             return PilotCallResult.Unsupported;
         }
@@ -74,13 +82,13 @@ internal sealed partial class FighterDeckHandler
                 return new BlueMap<long, object?>(stopping.ToDictionary(id => id, _ => (object?)null));
             case ("CmdActivateAbilitySlots" or "CmdDeactivateAbilitySlots", [var fighters, (long)FighterMobilityRules.Slot]):
                 var squads = ReadSelection(fighters);
-                deck.SetMobility(pilot.PilotId, pilot.ShipId, squads, method == "CmdActivateAbilitySlots", Now);
+                SetMobility(context, squads, method == "CmdActivateAbilitySlots");
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(squads.ToDictionary(id => id, _ => (object?)null));
             case ("CmdActivateAbilitySlots", [var fighters, (long)FighterMobilityRules.Slot, var point]):
                 var jumping = ReadSelection(fighters);
-                deck.SetMobility(pilot.PilotId, pilot.ShipId, jumping, true, Now, ReadPoint(point));
+                SetMobility(context, jumping, true, ReadPoint(point));
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(jumping.ToDictionary(id => id, _ => (object?)null));
@@ -114,6 +122,24 @@ internal sealed partial class FighterDeckHandler
         Advance(context);
         flight.RefreshDrones();
         return BlueEmpty.Dictionary;
+    }
+
+    private void SetMobility(PilotCallContext context, IReadOnlyList<long> squadrons, bool activate, SpacePosition? destination = null)
+    {
+        if (context.StructureControl?.Token is { } token)
+        {
+            (standup ?? throw new InvalidDataException("Structure fighter commands are unavailable.")).SetMobility(
+                token,
+                squadrons,
+                activate,
+                Now,
+                destination
+            );
+        }
+        else
+        {
+            deck.SetMobility(context.Pilot.PilotId, context.Pilot.ShipId, squadrons, activate, Now, destination);
+        }
     }
 
     internal void Advance(PilotCallContext context)

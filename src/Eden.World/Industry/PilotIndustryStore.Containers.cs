@@ -18,7 +18,7 @@ internal sealed partial class PilotIndustryStore
             database,
             world =>
             {
-                var station = CurrentStation(world, catalog, pilotId, stationId, null);
+                var station = ManufacturingStation(world, catalog, pilotId, stationId, null);
                 List<IndustryInventoryLocation> locations =
                 [
                     new(stationId, station.TypeId, pilotId, (int)InventoryFlag.Hangar, station.SolarSystemId),

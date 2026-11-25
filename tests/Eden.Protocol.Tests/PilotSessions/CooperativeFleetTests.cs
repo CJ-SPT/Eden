@@ -30,7 +30,7 @@ public sealed partial class CooperativeFleetTests
     [Fact]
     public void NativeCreateInviteAcceptAndLeaveKeepReferencesRosterAndSessionFieldsConsistent()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         long id = leader.Create();
@@ -79,7 +79,7 @@ public sealed partial class CooperativeFleetTests
     public void NativeHierarchyRolesOptionsAndBroadcastsReachOnlyAuthorizedMembers()
     {
         TestClock clock = new();
-        using TestWorld world = new(clock: clock);
+        using TestWorld world = new(clock: clock, liveWorld: true);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         long id = Join(leader, member);
@@ -227,7 +227,7 @@ public sealed partial class CooperativeFleetTests
     [Fact]
     public void FleetChatRevokesSendingAndReceivingImmediatelyAfterKickBeforeTheOtherSessionPolls()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         long id = Join(leader, member);
@@ -281,7 +281,7 @@ public sealed partial class CooperativeFleetTests
     [Fact]
     public void OldFleetEventsCannotPopulateANewFleetAndDisconnectPromotesTheRemainingBoss()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         long old = Join(leader, member);
@@ -380,7 +380,10 @@ public sealed partial class CooperativeFleetTests
         long module = fixture.Fit(447);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
-        long fleet = Join(leader, member);
+        long fleet = leader.Create();
+        var fleets = world.Services.GetRequiredService<ICooperativeFleets>();
+        fleets.Invite(leader.PilotId, fleet, member.PilotId, new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member));
+        AcceptInvitation(leader, member, fleet);
         foreach (var pilot in new[] { leader, member })
         {
             pilot.CallService("ship", "Undock", [pilot.Context.Pilot.ShipId]);
@@ -398,7 +401,7 @@ public sealed partial class CooperativeFleetTests
         );
         Assert.True(activation.Module.Strength > 0);
         var target = world.Objects.First(o => o.Position.DistanceTo(leader.Context.Pilot.Position!) > 1000000);
-        world.Services.GetRequiredService<ICooperativeFleets>().Warp(leader.PilotId, fleet, target.Id, 0, null);
+        fleets.Warp(leader.PilotId, fleet, target.Id, 0, null);
         member.Advance();
         var space = world.Services.GetRequiredService<SharedSpace>();
         Assert.Null(space.Peers(leader.Context.Pilot).Single(p => p.Pilot.PilotId == member.PilotId).AlignTo);
@@ -407,7 +410,7 @@ public sealed partial class CooperativeFleetTests
     [Fact]
     public void ImmediateRejoinCannotDeliverAnOldSelfLeaveAfterTheSuccessfulAcceptReply()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         long id = Join(leader, member);
@@ -561,11 +564,16 @@ public sealed partial class CooperativeFleetTests
     {
         long fleet = leader.Create();
         leader.Reply("Invite", [member.PilotId, null, null, (long)FleetRole.Member]);
+        AcceptInvitation(leader, member, fleet);
+        return fleet;
+    }
+
+    private static void AcceptInvitation(FleetClient leader, FleetClient member, long fleet)
+    {
         member.Advance();
         member.Bind(fleet);
         member.Reply("AcceptInvite", [(long)member.Context.Pilot.ShipTypeId]);
         leader.Advance();
-        return fleet;
     }
 
     private sealed class FleetClient : IDisposable

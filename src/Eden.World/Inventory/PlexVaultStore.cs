@@ -64,7 +64,7 @@ internal sealed class PlexVaultStore(WorldDatabase database, TimeProvider clock)
         {
             world.Remove(item);
         }
-        Record(world, pilot, account.PlexBalance, PlexVaultTransferKind.Deposit, quantity);
+        Record(world, pilot, account.PlexBalance, PlexVaultTransferKind.Deposit, quantity, Now);
         world.Commit();
         return new(before with { Quantity = before.Quantity - quantity }, before);
     }
@@ -107,13 +107,24 @@ internal sealed class PlexVaultStore(WorldDatabase database, TimeProvider clock)
             pilot,
             account.PlexBalance,
             forMarket ? PlexVaultTransferKind.MarketWithdrawal : PlexVaultTransferKind.InventoryWithdrawal,
-            -quantity
+            -quantity,
+            Now
         );
         world.Commit();
         return change;
     }
 
-    private void Record(EconomyTransaction world, Pilot pilot, long balance, PlexVaultTransferKind kind, int amount) =>
+    private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
+    internal static void Record(
+        EconomyTransaction world,
+        Pilot pilot,
+        long balance,
+        PlexVaultTransferKind kind,
+        long amount,
+        long now,
+        long? otherPilotId = null
+    ) =>
         world.Add(
             new SavedPlexVaultEntry
             {
@@ -123,7 +134,8 @@ internal sealed class PlexVaultStore(WorldDatabase database, TimeProvider clock)
                 Kind = kind,
                 Amount = amount,
                 Balance = balance,
-                Time = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                Time = now,
+                CounterpartyPilotId = otherPilotId,
             }
         );
 

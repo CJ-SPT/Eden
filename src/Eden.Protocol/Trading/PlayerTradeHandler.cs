@@ -17,6 +17,12 @@ internal sealed class PlayerTradeHandler(SharedPlayerTrades trades, IPlayerTrade
 
     public void Advance(PilotCallContext context) => trades.Advance(this, context);
 
+    internal long AddVaultPlex(PilotCallContext context, long id, long partner, int quantity)
+    {
+        Advance(context);
+        return trades.AddVaultPlex(this, id, partner, quantity, store);
+    }
+
     public void Dispose()
     {
         trades.Remove(this);

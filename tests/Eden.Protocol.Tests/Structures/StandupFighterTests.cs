@@ -17,7 +17,7 @@ using Fixture = Eden.Protocol.Tests.Structures.StructureTests.Fixture;
 
 namespace Eden.Protocol.Tests.Structures;
 
-public sealed class StandupFighterTests
+public sealed partial class StandupFighterTests
 {
     [Theory]
     [InlineData(false)]

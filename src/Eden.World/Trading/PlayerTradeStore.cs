@@ -60,6 +60,44 @@ internal sealed class PlayerTradeStore(WorldDatabase database, TimeProvider cloc
         );
     }
 
+    public InventoryItem QuoteVaultPlex(long pilotId, long partnerId, long stationId, int quantity, long alreadyOffered)
+    {
+        if (quantity <= 0 || alreadyOffered < 0 || alreadyOffered > PlayerTradeRules.MaximumVaultPlex - quantity)
+        {
+            throw new PlexVaultRejected(PlexVaultFailure.Amount);
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return Resident.Economy.Inspect(
+            world =>
+            {
+                RequireDocked(world, pilotId, stationId);
+                RequireDocked(world, partnerId, stationId);
+                var pilot = world.Pilots.Find(pilotId)!;
+                var partner = world.Pilots.Find(partnerId)!;
+                if (pilot.AccountId == partner.AccountId)
+                {
+                    throw new PlexVaultRejected(PlexVaultFailure.Location);
+                }
+                if (world.Set<Account>().Find(pilot.AccountId)!.PlexBalance < alreadyOffered + quantity)
+                {
+                    throw new PlexVaultRejected(PlexVaultFailure.Funds);
+                }
+                return PilotInventoryStore.Read(
+                    catalog,
+                    new OwnedItem
+                    {
+                        OwnerId = pilotId,
+                        TypeId = MarketDefinitions.PlexTypeId,
+                        LocationId = stationId,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = quantity,
+                    }
+                );
+            },
+            new(pilots: [pilotId, partnerId])
+        );
+    }
+
     public TradeSettlement Settle(long stationId, TradeSide initiator, TradeSide partner)
     {
         if (initiator.PilotId == partner.PilotId)
@@ -75,16 +113,57 @@ internal sealed class PlayerTradeStore(WorldDatabase database, TimeProvider cloc
         var secondWallet = world.Set<PilotWallet>().Find(partner.PilotId);
         long firstBalance = PlayerTradeRules.BalanceAfterTrade(firstWallet?.Cents ?? 0, initiator.MoneyCents, partner.MoneyCents);
         long secondBalance = PlayerTradeRules.BalanceAfterTrade(secondWallet?.Cents ?? 0, partner.MoneyCents, initiator.MoneyCents);
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        SettleVaultPlex(world, initiator, partner, now);
 
         List<InventoryChange> firstChanges = [];
         List<InventoryChange> secondChanges = [];
         Transfer(world, catalog, initiator.Items, partner.PilotId, stationId, firstChanges, secondChanges);
         Transfer(world, catalog, partner.Items, initiator.PilotId, stationId, secondChanges, firstChanges);
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         Pay(world, stationId, initiator, partner, firstWallet, firstBalance, now);
         Pay(world, stationId, partner, initiator, secondWallet, secondBalance, now);
         world.Commit();
         return new(firstChanges, secondChanges);
+    }
+
+    private static void SettleVaultPlex(EconomyTransaction world, TradeSide first, TradeSide second, long now)
+    {
+        if (first.VaultPlex == 0 && second.VaultPlex == 0)
+        {
+            return;
+        }
+        var firstPilot = world.Pilots.Find(first.PilotId)!;
+        var secondPilot = world.Pilots.Find(second.PilotId)!;
+        var firstAccount = world.Set<Account>().Find(firstPilot.AccountId)!;
+        var secondAccount = world.Set<Account>().Find(secondPilot.AccountId)!;
+        if (
+            firstAccount.Id == secondAccount.Id
+            || first.VaultPlex is < 0 or > PlayerTradeRules.MaximumVaultPlex
+            || second.VaultPlex is < 0 or > PlayerTradeRules.MaximumVaultPlex
+            || first.VaultPlex > firstAccount.PlexBalance
+            || second.VaultPlex > secondAccount.PlexBalance
+            || firstAccount.PlexBalance - first.VaultPlex > PlexVaultRules.MaximumBalance - second.VaultPlex
+            || secondAccount.PlexBalance - second.VaultPlex > PlexVaultRules.MaximumBalance - first.VaultPlex
+        )
+        {
+            throw new InvalidDataException("The PLEX vault balances cannot complete this trade.");
+        }
+        SettleSide(firstPilot, firstAccount, first.VaultPlex, secondPilot.Id, second.VaultPlex);
+        SettleSide(secondPilot, secondAccount, second.VaultPlex, firstPilot.Id, first.VaultPlex);
+
+        void SettleSide(Pilot pilot, Account account, long sent, long other, long received)
+        {
+            if (sent > 0)
+            {
+                account.PlexBalance -= sent;
+                PlexVaultStore.Record(world, pilot, account.PlexBalance, PlexVaultTransferKind.TradeSent, -sent, now, other);
+            }
+            if (received > 0)
+            {
+                account.PlexBalance += received;
+                PlexVaultStore.Record(world, pilot, account.PlexBalance, PlexVaultTransferKind.TradeReceived, received, now, other);
+            }
+        }
     }
 
     private static long RequireDocked(WorldAction world, long pilotId, long stationId)

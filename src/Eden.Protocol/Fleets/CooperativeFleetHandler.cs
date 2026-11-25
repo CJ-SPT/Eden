@@ -537,6 +537,10 @@ internal sealed partial class CooperativeFleetHandler(
             {
                 return PilotCallResult.None;
             }
+            if (bound && method == "Invite")
+            {
+                return Invite(actor, id, args, keywords);
+            }
             if (bound && method == "MassInvite")
             {
                 return MassInvite(actor, id, args, keywords);
@@ -607,10 +611,6 @@ internal sealed partial class CooperativeFleetHandler(
                     return PilotCallResult.None;
                 case ("Reconnect" or "FinishMove", []):
                     return PilotCallResult.None;
-                // The default invite menu and dropping a pilot into My Fleet send None for the member role.
-                case ("Invite", [long target, var wing, var squad, var role]) when role is null or long:
-                    fleets.Invite(actor, id, target, Placement(wing, squad, role as long? ?? (long)FleetRole.Member));
-                    return PilotCallResult.None;
                 case ("MoveMember", [long target, var wing, var squad, long role]):
                     fleets.Move(actor, id, target, Placement(wing, squad, role));
                     return false;
@@ -674,6 +674,30 @@ internal sealed partial class CooperativeFleetHandler(
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult Invite(long actor, long fleet, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (
+            args is not [long and > 0 and var target, var wing, var squad, var role]
+            || role is not (null or long)
+            || keywords?.Keys.Any(key => key != "approvedCost") == true
+        )
+        {
+            throw new InvalidDataException("Invalid fleet invitation.");
+        }
+        long approval = ContactCostWire.Approval(keywords?.GetValueOrDefault("approvedCost"), MailContactRules.MaximumCostIsk);
+        // The default invite menu and dropping a pilot into My Fleet send None for the member role.
+        var placement = Placement(wing, squad, role as long? ?? (long)FleetRole.Member);
+        try
+        {
+            fleets.InviteWithContactPolicy(actor, fleet, target, placement, approval);
+            return PilotCallResult.None;
+        }
+        catch (MailContactCostApprovalRequired quote)
+        {
+            return ContactCostWire.Requote(quote.CostIsk);
         }
     }
 

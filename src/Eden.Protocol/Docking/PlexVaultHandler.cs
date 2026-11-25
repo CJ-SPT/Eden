@@ -2,11 +2,12 @@ using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Trading;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class PlexVaultHandler(IPlexVault vault, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class PlexVaultHandler(IPlexVault vault, TimeProvider clock, PlayerTradeHandler trade) : ISelectedPilotCallHandler
 {
     // Build 3662168 vgs.common.listeners registers the listener after the RPC returns.
     private static readonly TimeSpan s_listenerDelay = TimeSpan.FromMilliseconds(150);
@@ -33,18 +34,34 @@ internal sealed class PlexVaultHandler(IPlexVault vault, TimeProvider clock) : I
         long pilot = context.Pilot.PilotId;
         try
         {
-            var change = (deposit, args) switch
+            long itemId = (deposit, args) switch
             {
                 (true, [null or long, long item, long amount, var invoice]) when BlueRead.Text(invoice) == "InventoryToVault" =>
-                    vault.Deposit(pilot, args[0] as long?, item, Quantity(amount)),
+                    NotifyInventory(vault.Deposit(pilot, args[0] as long?, item, Quantity(amount))),
                 (false, [long amount, long destination, var invoice, long flag, null]) when BlueRead.Text(invoice) == "VaultToInventory" =>
-                    vault.Withdraw(pilot, destination, checked((int)flag), Quantity(amount), forMarket: false),
+                    NotifyInventory(vault.Withdraw(pilot, destination, checked((int)flag), Quantity(amount), forMarket: false)),
                 (false, [long amount, long destination, var invoice, long flag]) when BlueRead.Text(invoice) == "VaultToMarket" =>
-                    vault.Withdraw(pilot, destination, checked((int)flag), Quantity(amount), forMarket: true),
+                    NotifyInventory(vault.Withdraw(pilot, destination, checked((int)flag), Quantity(amount), forMarket: true)),
+                (
+                    false,
+                    [
+                        long amount,
+                        long destination,
+                        var invoice,
+                        null
+                        or (long)InventoryFlag.None
+                        or (long)InventoryFlag.Hangar,
+                        long partner,
+                    ]
+                ) when BlueRead.Text(invoice) == "VaultToDirectTrade" => trade.AddVaultPlex(
+                    context,
+                    destination,
+                    partner,
+                    Quantity(amount)
+                ),
                 _ => throw new PlexVaultRejected(PlexVaultFailure.Location),
             };
-            InventoryChangesWire.NotifyItemChange(context, change);
-            Schedule(new PlexVaultTransferCompleted(pilot, deposit, change.Item.Id, reference));
+            Schedule(new PlexVaultTransferCompleted(pilot, deposit, itemId, reference));
         }
         catch (PlexVaultRejected rejection)
         {
@@ -55,6 +72,12 @@ internal sealed class PlexVaultHandler(IPlexVault vault, TimeProvider clock) : I
             Schedule(new PlexVaultTransferFailed(pilot, deposit, Error(deposit, PlexVaultFailure.Location), reference));
         }
         return reference;
+
+        long NotifyInventory(InventoryChange change)
+        {
+            InventoryChangesWire.NotifyItemChange(context, change);
+            return change.Item.Id;
+        }
 
         void Schedule(PilotNotification notice) => context.ScheduleNotification(clock.GetUtcNow() + s_listenerDelay, notice);
     }

@@ -34,6 +34,7 @@ public enum IndustrySkill
     AdvancedLaboratoryOperation = 24624,
     MassProduction = 3387,
     AdvancedIndustry = 3388,
+    SupplyChainManagement = 24268,
     AdvancedMassProduction = 24625,
     Reactions = 45746,
     MassReactions = 45748,

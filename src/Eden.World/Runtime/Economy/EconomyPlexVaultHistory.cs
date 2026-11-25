@@ -32,7 +32,7 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedPlexVaultEntry, VaultHistoryRow>(
                 PlexVaultSchema.HistoryTable,
                 row => new(row.Id),
-                row => new(row.AccountId, new(row.Id, row.PilotId, row.Kind, row.Amount, row.Balance, row.Time)),
+                row => new(row.AccountId, new(row.Id, row.PilotId, row.Kind, row.Amount, row.Balance, row.Time, row.CounterpartyPilotId)),
                 row => new SavedPlexVaultEntry
                 {
                     Id = row.Entry.Id,
@@ -42,9 +42,10 @@ internal sealed partial class ResidentEconomy
                     Amount = row.Entry.Amount,
                     Balance = row.Entry.Balance,
                     Time = row.Entry.Time,
+                    CounterpartyPilotId = row.Entry.CounterpartyPilotId,
                 },
                 ProjectPlexVaultEntries,
-                "AccountId,Id,PilotId,Kind,Amount,Balance,Time",
+                "AccountId,Id,PilotId,Kind,Amount,Balance,Time,CounterpartyPilotId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -52,9 +53,10 @@ internal sealed partial class ResidentEconomy
                             reader.GetInt64(2),
                             reader.GetInt64(3),
                             (PlexVaultTransferKind)reader.GetInt32(4),
-                            reader.GetInt32(5),
+                            reader.GetInt64(5),
                             reader.GetInt64(6),
-                            reader.GetInt64(7)
+                            reader.GetInt64(7),
+                            reader.IsDBNull(8) ? null : reader.GetInt64(8)
                         )
                     ),
                 row => new(row.Entry.Id),
@@ -80,11 +82,13 @@ internal sealed partial class ResidentEconomy
                 string values = JsonSerializer.Serialize(rows);
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldPlexVaultHistory(Id,AccountId,PilotId,Kind,Amount,Balance,Time)
+                    INSERT INTO WorldPlexVaultHistory(Id,AccountId,PilotId,Kind,Amount,Balance,Time,CounterpartyPilotId)
                     SELECT value->>'$.Entry.Id',value->>'$.AccountId',value->>'$.Entry.PilotId',value->>'$.Entry.Kind',
-                        value->>'$.Entry.Amount',value->>'$.Entry.Balance',value->>'$.Entry.Time' FROM json_each({values}) WHERE 1
+                        value->>'$.Entry.Amount',value->>'$.Entry.Balance',value->>'$.Entry.Time',
+                        value->>'$.Entry.CounterpartyPilotId' FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET AccountId=excluded.AccountId,PilotId=excluded.PilotId,Kind=excluded.Kind,
-                        Amount=excluded.Amount,Balance=excluded.Balance,Time=excluded.Time
+                        Amount=excluded.Amount,Balance=excluded.Balance,Time=excluded.Time,
+                        CounterpartyPilotId=excluded.CounterpartyPilotId
                     """
                 );
             }

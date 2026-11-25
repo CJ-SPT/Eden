@@ -2,6 +2,36 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Individual fleet invitation CSPA
+
+An individual fleet invitation respects the recipient's Mail & Communications settings. A charge prompts the
+sender to approve the current ISK amount. Existing contacts of the recipient and pilots in their corporation
+qualify for the usual exceptions. A communications block prevents delivery. Changed fees or insufficient funds
+leave the sender's wallet and the invitation unchanged. A retry for the same pending invitation does not send
+another prompt or charge again. Each approved debit is recorded in the sender's wallet journal and checkpointed.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms that
+`fleetSvc.Invite` calls `CSPAChargedAction('CSPAFleetCheck', fleet, 'Invite', charID, wingID, squadID, role)`.
+The helper reads `totalCost` and `totalCostISK` from `ContactCostNotApproved` and retries with `approvedCost`.
+EVE.js **261108.1** confirms the bound invitation arguments in
+`server/src/services/fleets/fleetObjectHandlerService.js` (SHA-256
+`87115f9522803bd4d6803329a8e17b6f92fa5df9f5ea044a901bbdf92a13cbc1`). Eden follows the pinned client
+for the approval exchange. [EVE University incursion checklist](https://wiki.eveuniversity.org/Incursions_checklist)
+
+**Automated validation.** On `622fbe7f` plus the invitation change, the exact
+`CooperativeFleetTests.NativeSingleInviteRequotesAndChargesOnceAcrossCheckpoint` and
+`CooperativeFleetTests.NativeSingleInviteHonorsKnownSenderPolicyAndBlocksWithoutDebiting` cases passed
+in 5.20 seconds of combined case time (7.96 seconds for the runner). They cover price changes, insufficient
+funds, known-sender exceptions, blocks, duplicate approval, invitation acceptance and a checkpointed debit.
+The affected selection for `CooperativeFleetTests`, `FleetRulesTests`, `ContactNotificationCostTests`,
+`CalendarContactPolicyTests` and `MailContactPolicyTests` passed all 64 cases in 22.01 seconds of runner time.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Invite a pilot with a configured communications fee, approve the prompt,
+and confirm delivery and one CSPA wallet entry.
+
 ## Fleet group invitations
 
 The fleet boss and eligible command roles can invite a selection of pilots from the fleet menu. Group invitations

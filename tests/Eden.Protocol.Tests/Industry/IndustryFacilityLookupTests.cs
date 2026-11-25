@@ -52,9 +52,12 @@ public sealed class IndustryFacilityLookupTests
         Assert.IsType<PilotCallResult.Failure>(
             handler.Call(context, "facilityManager", "GetFacilityLocations", [pilot.DockedLocationId, pilot.PilotId])
         );
-        Assert.IsType<PilotCallResult.Failure>(
-            handler.Call(context, "facilityManager", "GetFacilityLocations", [(long)ContractAssetTestData.RemoteStation, pilot.PilotId])
+        var locations = Assert.IsType<BlueList<IndustryInventoryLocationReply>>(
+            Success(
+                handler.Call(context, "facilityManager", "GetFacilityLocations", [(long)ContractAssetTestData.RemoteStation, pilot.PilotId])
+            )
         );
+        Assert.Equal(ContractAssetTestData.RemoteStation, Assert.Single(locations.Items).Location.Id);
         Assert.Empty(context.Notifications);
     }
 

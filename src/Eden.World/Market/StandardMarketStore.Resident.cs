@@ -1,4 +1,3 @@
-using System.Buffers;
 using Eden.Data.Catalog.Market;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Market;
@@ -20,62 +19,6 @@ internal sealed partial class PilotMarketStore
         }
     }
 
-    private sealed record StandardGateGraph(IReadOnlyDictionary<int, int> Systems, int[][] Edges);
-
-    private static readonly CatalogDefinition<StandardGateGraph> StandardMarketGraph = new(
-        "standard-market.gate-graph",
-        (catalog, _) =>
-        {
-            var definitions = catalog.Definitions;
-            int[] systems = definitions
-                .Gates.Values.SelectMany(gate => new[] { gate.SolarSystemId, gate.DestinationSystemId })
-                .Distinct()
-                .ToArray();
-            var index = systems.Select((system, position) => (system, position)).ToDictionary(pair => pair.system, pair => pair.position);
-            int[][] edges = systems
-                .Select(system => definitions.GatesInSystem(system).Select(gate => index[gate.DestinationSystemId]).ToArray())
-                .ToArray();
-            return new(index, edges);
-        },
-        Estimate: graph => graph.Systems.Count * 64L + graph.Edges.Sum(edges => edges.Length * sizeof(int))
-    );
-
-    private static readonly CatalogDefinition<int[]> StandardMarketDistances = new(
-        "standard-market.distances",
-        (catalog, source) =>
-        {
-            var graph = catalog.Definitions.GlobalDefinition(StandardMarketGraph);
-            int[] distances = new int[graph.Edges.Length];
-            Array.Fill(distances, -1);
-            int[] pending = ArrayPool<int>.Shared.Rent(graph.Edges.Length);
-            try
-            {
-                int origin = graph.Systems[source];
-                distances[origin] = 0;
-                pending[0] = origin;
-                int tail = 1;
-                for (int head = 0; head < tail; head++)
-                {
-                    int system = pending[head];
-                    foreach (int destination in graph.Edges[system])
-                    {
-                        if (distances[destination] == -1)
-                        {
-                            distances[destination] = distances[system] + 1;
-                            pending[tail++] = destination;
-                        }
-                    }
-                }
-                return distances;
-            }
-            finally
-            {
-                ArrayPool<int>.Shared.Return(pending);
-            }
-        },
-        Estimate: distances => distances.Length * sizeof(int)
-    );
-
     private static bool StandardBidReaches(CatalogDbContext catalog, NpcMarketOrder order, SavedPersonalOrder incoming)
     {
         return !order.Bid || BuyReaches(catalog, order.Range, order.StationId, order.SystemId, incoming.StationId, incoming.SystemId);
@@ -92,23 +35,7 @@ internal sealed partial class PilotMarketStore
             return false;
         }
         return buySystem == sellSystem
-            || range > 0 && StandardMarketRules.Reaches(range, false, MarketJumpDistance(catalog, sellSystem, buySystem));
-    }
-
-    private static int? MarketJumpDistance(CatalogDbContext catalog, int source, int target)
-    {
-        if (source == target)
-        {
-            return 0;
-        }
-        var definitions = catalog.Definitions;
-        var graph = definitions.GlobalDefinition(StandardMarketGraph);
-        if (!graph.Systems.ContainsKey(source) || !graph.Systems.TryGetValue(target, out int destination))
-        {
-            return null;
-        }
-        int distance = definitions.Definition(StandardMarketDistances, source)[destination];
-        return distance >= 0 ? distance : null;
+            || range > 0 && StandardMarketRules.Reaches(range, false, catalog.Definitions.StargateDistance(sellSystem, buySystem));
     }
 
     private static EconomyTransaction ResidentStandardMarket(WorldAction world) =>

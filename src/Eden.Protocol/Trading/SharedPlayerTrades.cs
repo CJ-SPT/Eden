@@ -28,10 +28,13 @@ internal sealed class SharedPlayerTrades
         internal Presence Presence { get; } = presence;
         internal long PilotId { get; } = presence.Pilot.PilotId;
         internal List<OfferedItem> Items { get; } = [];
+        internal List<InventoryRow> VaultPlex { get; } = [];
+        internal int OfferCount => Items.Count + VaultPlex.Count;
+        internal long PlexQuantity => VaultPlex.Sum(row => (long)row.Quantity);
         internal long Money { get; set; }
         internal TradeManifest? Acceptance { get; set; }
 
-        internal TradeSide Side() => new(PilotId, Money, Items.Select(item => item.Offer).ToArray());
+        internal TradeSide Side() => new(PilotId, Money, Items.Select(item => item.Offer).ToArray(), PlexQuantity);
     }
 
     private sealed class Trade(long id, Presence initiator, Presence partner)
@@ -43,7 +46,7 @@ internal sealed class SharedPlayerTrades
         internal TradeAmounts Amounts => new(Initiator.Money, Partner.Money);
         internal TradeAcceptances State => new(Initiator.Acceptance, Partner.Acceptance);
         internal IEnumerable<OfferedItem> Offers => Initiator.Items.Concat(Partner.Items);
-        internal TradeItems Items => new(Offers.Select(item => item.Row).ToArray());
+        internal TradeItems Items => new(Offers.Select(item => item.Row).Concat(Initiator.VaultPlex).Concat(Partner.VaultPlex).ToArray());
 
         internal TradeList List() => new(Id, Initiator.PilotId, Partner.PilotId, State, Amounts, Items);
 
@@ -189,7 +192,7 @@ internal sealed class SharedPlayerTrades
         {
             var trade = Find(connection, id);
             var trader = trade.For(_pilots[connection]);
-            if (trader.Items.Count + request.ItemIds.Count > PlayerTradeRules.MaximumItemsPerPilot)
+            if (trader.OfferCount + request.ItemIds.Count > PlayerTradeRules.MaximumItemsPerPilot)
             {
                 throw new InvalidDataException("The trade window has reached its item limit.");
             }
@@ -203,7 +206,7 @@ internal sealed class SharedPlayerTrades
                 throw new InvalidDataException("A selected item is already included in the trade.");
             }
 
-            var staged = quotes.Select(offer => new OfferedItem(offer, DisplayRow(trade, offer))).ToArray();
+            var staged = quotes.Select(offer => new OfferedItem(offer, DisplayRow(trade, offer.Asset.Root, offer.Quantity))).ToArray();
             trader.Items.AddRange(staged);
             long[] named = staged.Where(item => item.Offer.Asset.ShipName is not null).Select(item => item.Row.Id).ToArray();
             if (named.Length > 0)
@@ -220,16 +223,28 @@ internal sealed class SharedPlayerTrades
         }
     }
 
-    private InventoryRow DisplayRow(Trade trade, TradeItemOffer offer) =>
-        InventoryRow.From(
-            offer.Asset.Root with
+    internal long AddVaultPlex(PlayerTradeHandler connection, long id, long partnerId, int quantity, IPlayerTradeStore store)
+    {
+        lock (_gate)
+        {
+            var trade = Find(connection, id);
+            var trader = trade.For(_pilots[connection]);
+            long partner = ReferenceEquals(trader, trade.Initiator) ? trade.Partner.PilotId : trade.Initiator.PilotId;
+            if (partnerId != partner || trader.OfferCount >= PlayerTradeRules.MaximumItemsPerPilot)
             {
-                Id = ++_nextId,
-                LocationId = trade.Id,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = offer.Quantity,
+                throw new PlexVaultRejected(PlexVaultFailure.Location);
             }
-        );
+            var quote = store.QuoteVaultPlex(trader.PilotId, partner, trade.StationId, quantity, trader.PlexQuantity);
+            var row = DisplayRow(trade, quote, quantity);
+            trader.VaultPlex.Add(row);
+            trade.Notify(new ItemChanged(row, new Dictionary<InventoryColumn, long> { [InventoryColumn.Location] = 0 }));
+            trade.Reset();
+            return row.Id;
+        }
+    }
+
+    private InventoryRow DisplayRow(Trade trade, InventoryItem item, int quantity) =>
+        InventoryRow.From(item with { Id = ++_nextId, LocationId = trade.Id, FlagId = (int)InventoryFlag.Hangar, Quantity = quantity });
 
     internal bool OfferMoney(PlayerTradeHandler connection, long id, long amount, IPlayerTradeStore store)
     {

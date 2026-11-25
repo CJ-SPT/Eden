@@ -172,6 +172,8 @@ damage and Command Bursts. [Fleet regroup](protocol/fleets.md#native-fleet-regro
 
 Fleet commanders can invite multiple pilots to a selected wing or squad in one action. The client reports recipients who
 couldn’t be invited and prompts for applicable contact charges. [Fleet group invitations](protocol/fleets.md#fleet-group-invitations)
+Individual invitations also honor contact fees and communications blocks.
+[Individual fleet invitation CSPA](protocol/fleets.md#individual-fleet-invitation-cspa)
 
 Fleet Composition shows hulls, docking status and leadership skills for pilots in the viewer's command scope.
 Fleet members can see the fleet's system locations through the map's **My Fleet** filter.
@@ -276,10 +278,12 @@ player markets, clone bays, corporation offices, and specialized hull behavior.
 [Painters and dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners) ·
 [Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors) ·
 [Standup Point Defense Batteries](protocol/structures.md#standup-point-defense-batteries) ·
+[Standup fighter mobility](protocol/structures.md#standup-fighter-mobility) ·
 [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
 
 Standup Point Defense Batteries fire an untargeted flak pulse around eligible large or extra-large Upwell structures.
 Each cycle consumes capacitor and 200 rounds and applies local safety and range checks.
+Standup fighter gunners can activate the squadron's microwarpdrive, afterburner, evasive maneuver, or micro jump ability.
 
 High GMs can force all native Upwell operating states, set operating and deployment timers, start or cancel unanchoring,
 and change an eligible structure's abandonment deadline. [Structure GM commands](protocol/structures.md#structure-gm-commands)
@@ -376,10 +380,14 @@ The account PLEX Vault supports transfers between owned physical stacks and the 
 repricing through the regional market at NPC stations. The Wallet shows transaction history and categorized totals for the
 account's pilots. [PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale) ·
 [PLEX Vault transaction history](protocol/industry.md#plex-vault-transaction-history)
+Pilots can include vault PLEX with items and ISK in a direct trade. Both vault journals record the trade when it settles.
+[PLEX Vault offers in direct trades](protocol/inventory.md#plex-vault-offers-in-direct-trades)
 
 Personal NPC-station industry jobs can be delivered or cancelled while the pilot is docked elsewhere or in space.
 Results and released assets stay at the job's saved location.
 [Remote industry settlement](protocol/industry.md#remote-settlement-of-personal-npc-station-industry-jobs)
+Pilots can also install personal NPC-station manufacturing jobs from space or another station within their Supply Chain
+Management range. [Remote manufacturing installation](protocol/industry.md#remote-manufacturing-installation-at-npc-stations)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 

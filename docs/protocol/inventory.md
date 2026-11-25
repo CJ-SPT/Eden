@@ -930,3 +930,34 @@ After rebasing onto `78a2a69a`, restore, build and the `FullyQualifiedName~Playe
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** From Guests, start a trade between two docked clients, exchange a partial stack for ISK, and verify both hangars and wallets. Repeat with a changed offer, then close one window and verify cancellation on the other client.
+
+### PLEX Vault offers in direct trades
+
+A pilot can drag PLEX from the vault into a direct trade with a pilot on another account. The trade displays the PLEX
+alongside item and ISK offers and clears both acceptances when the offer changes. Eden holds the PLEX in the sender's
+vault until both pilots accept the same manifest, as it does for the other quoted assets. The resident settlement rechecks
+both locations, the source funds, and the destination balance limit before debiting and crediting the account vaults.
+PLEX, items, ISK, and the signed vault journal entries commit together. Closing, cancelling, or losing the session before
+settlement discards the offer. Schema 238 adds a nullable counterparty pilot ID to the vault history.
+
+Build **3662168** `inventory/plexVault.pyj` sends
+`invbroker.WithdrawPlexFromVault(quantity, tradeContainerID, "VaultToDirectTrade", locationFlag, otherPartyID)`.
+`invControllers.PlayerTrade` reads the offer rows by trade container and owner. The broker verifies the claimed partner and
+responds with a reference, then `vgs/common/listeners.pyj` matches `OnPlexItemAddedToInventory` to the displayed offer row.
+Pinned localization uses **1021857** and **1021771** for the sent and received summaries, with `characterID` and
+`otherCharacterID`. The stock archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+EVE.js **261108.1** `tradeMgrService.js` (SHA-256 `37f12aea4369ce56ebe705c0df2df394a4ea50c2fe777e2db826f1887e16fd56`)
+provides the reference trade settlement. Its `invBroker/plexVault.js`
+(SHA-256 `10a36dd41c2645b56e3ee017f4baec29f75e4642f87750ddbb81a95ee8b21c46`) provides the reference acknowledgement shape.
+[CCP PLEX Vault](https://support.eveonline.com/hc/en-us/articles/115003168285-PLEX-Vault) ·
+[EVE University direct trade](https://wiki.eveuniversity.org/Alternate_characters#Transferring_goods_between_characters)
+
+**Automated validation.** The integrated exact selection passed 15 cases in 17.18 seconds. The direct-trade cases cover
+two-sided vault offers with physical goods and ISK, acceptance reset, acknowledgements, a forged partner, stale funds,
+cancellation, and checkpointed counterparty invoices. The schema-237 case preserves the existing vault balance and history.
+The affected trade, vault, fleet, industry, market, fighter, and persistence selection passed 391 cases in 161.42 seconds.
+The optional installed-catalog Rhea acquisition case skipped because its captured market fixture was unconfigured.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Drag vault PLEX into a station trade, accept on both clients, and inspect both vault journals.

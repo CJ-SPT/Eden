@@ -180,7 +180,7 @@ schema 213 and also accepts the earlier structure-branch format.
 
 | Area | Existing coverage and remaining gaps |
 | --- | --- |
-| Defense | Launch and recall of Standup fighters, guided missiles, point defense batteries, ECM, painters, dampeners, weapon disruptors, webs, neutralizers and scripted warp tackle work. Other area and superweapon modules and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Defense | Launch, recall and mobility abilities for Standup fighters work alongside guided missiles, point defense, ECM, painters, dampeners, weapon disruptors, webs, neutralizers and scripted warp tackle. Other area and superweapon modules and fighter attack commands need dedicated gameplay and protocol coverage. |
 | Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
 | Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
 | Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
@@ -213,6 +213,57 @@ Not performed; agent client testing is disabled.
 
 Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
 the other ship retains its lock on the Astrahus.
+
+### Standup Fighter Mobility
+
+An Upwell gunner can activate and deactivate slot **1** on controlled Standup fighter squadrons through
+`fighterMgr.CmdActivateAbilitySlots(ids, 1)` and `CmdDeactivateAbilitySlots(ids, 1)`. Micro jumps take a third
+argument with the destination coordinates. Selection and the live gunner lease are validated together before
+any squadron starts a cycle. The ability reply and fighter start/end notifications use the existing carrier
+wire shapes. The structure pilot's own ship and skills do not supply fighter attributes.
+
+Build **3662168** lists 41 Standup slot-1 profiles in `client/fighterabilitiesbytype`. Each uses the same
+effect attributes and cooldown rules as the corresponding carrier ability. Representative profiles are below.
+
+| Standup squadron | Ability | Cycle | Cooldown after cycle | Effect |
+| --- | --- | --- | --- | --- |
+| Templar I (47035) | Microwarpdrive (4) | 20 seconds | 60 seconds | 6× speed and signature |
+| Gram I (47036) | Evasive Maneuvers (13) | 10 seconds | 60 seconds | 3× speed, 0.2× signature, 0.5× shield resonance |
+| Siren I (47037) | Afterburner (9) | 20 seconds | 60 seconds | 3× speed |
+| Gungnir I (47039) | Micro Jump Drive (5) | 10 seconds | 90 seconds | Up to 100 km directed displacement, 2.5× signature during spool |
+
+Mobility bonuses are resolved from the resident fighter contact at the current timestamp. The Standup maintenance
+pass completes due jumps once, checks tackle again at the deadline and keeps the original cooldown after cancellation.
+Recall or loss of the gunner lease cancels a spooling jump. Assignment under a new lease also clears a pending jump
+left by a previous host. Movement, cycle deadlines and cooldown reuse the fighter's existing checkpoint work fields.
+
+Catalog evidence comes from read-only `sde/_sde`, `client/fighterabilitiesbytype` and the fighter type attributes
+exported in [CapitalTravelCatalog.json](../../tests/Eden.Protocol.Tests/Fixtures/CapitalTravelCatalog.json).
+The fixture's SHA-256 is `4510DBC6D42C4F2C87007109DE3D41C053D3E73D729AD3731266FCDA58B2D9D7`.
+[EVE University fighter abilities](https://wiki.eveuniversity.org/Fighters)
+
+Local EVE.js 261108.1 has the same fighter ability RPCs and the four mobility modes in
+`services/fighter/fighterMgrService.js` `EA4D094490B32117BB8A353BFCDD2958D63513B3305A8D013991E97CE75490D5`
+and `services/fighter/fighterRuntime.js` `7E3048354260F2EFCA1DD998AA529954581EBA3B00A394DE31247B7FB4692644`.
+
+**Automated validation**
+
+The integrated build passed with zero warnings or errors in 12.39 seconds. The exact filters
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StandupFighterTests.GunnerActivatesNativeStandupFighterMobilityUntilExpiryOrStop`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StandupFighterTests.StandupFighterMicroJumpCompletesOnceAndReleaseCancelsPendingJump`
+passed all four Standup cases in the 15.74-second combined test run. They cover physical modifiers, exact expiry
+and cooldown boundaries, manual stop, jump distance and completion, the Destiny position update and stale lease
+rejection. The pinned fixture reproduced byte-for-byte.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Activate a Standup fighter's microwarpdrive and check the display. Jump a heavy squadron from a Keepstar and verify
+its on-grid destination and cooldown.
 
 ### Standup Point Defense Batteries
 

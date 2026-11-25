@@ -7,7 +7,7 @@ public sealed record TradeAsset(InventoryItem Root, IReadOnlyList<InventoryItem>
 
 public sealed record TradeItemOffer(TradeAsset Asset, int Quantity);
 
-public sealed record TradeSide(long PilotId, long MoneyCents, IReadOnlyList<TradeItemOffer> Items);
+public sealed record TradeSide(long PilotId, long MoneyCents, IReadOnlyList<TradeItemOffer> Items, long VaultPlex = 0);
 
 public sealed record TradeSettlement(IReadOnlyList<InventoryChange> InitiatorChanges, IReadOnlyList<InventoryChange> PartnerChanges);
 
@@ -15,12 +15,14 @@ public interface IPlayerTradeStore
 {
     long Balance(long pilotId);
     IReadOnlyList<TradeItemOffer> Quote(long pilotId, long stationId, InventoryMoveRequest request);
+    InventoryItem QuoteVaultPlex(long pilotId, long partnerId, long stationId, int quantity, long alreadyOffered);
     TradeSettlement Settle(long stationId, TradeSide initiator, TradeSide partner);
 }
 
 public static class PlayerTradeRules
 {
     public const int MaximumItemsPerPilot = 250;
+    public const long MaximumVaultPlex = (long)MaximumItemsPerPilot * int.MaxValue;
 
     public static long MoneyCents(double isk)
     {

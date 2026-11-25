@@ -14,9 +14,19 @@ public enum PlexVaultTransferKind
     Deposit = 1,
     InventoryWithdrawal = 2,
     MarketWithdrawal = 3,
+    TradeSent = 4,
+    TradeReceived = 5,
 }
 
-public sealed record PlexVaultEntry(long Id, long PilotId, PlexVaultTransferKind Kind, int Amount, long Balance, long Time);
+public sealed record PlexVaultEntry(
+    long Id,
+    long PilotId,
+    PlexVaultTransferKind Kind,
+    long Amount,
+    long Balance,
+    long Time,
+    long? CounterpartyPilotId
+);
 
 public enum PlexVaultFailure
 {

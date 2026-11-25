@@ -18,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class PlayerTradeTests
+public sealed partial class PlayerTradeTests
 {
     private const long Pilot = ContractAssetTestData.Pilot;
     private const long Partner = ContractAssetTestData.Other;

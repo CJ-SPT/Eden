@@ -19,6 +19,8 @@ internal static class PlexVaultLogRequests
     private const uint Trading = 1021780;
     private const uint Deposited = 1021300;
     private const uint Withdrawn = 1021301;
+    private const uint SentInTrade = 1021857;
+    private const uint ReceivedInTrade = 1021771;
 
     internal static GatewayReply? Read(string type, ByteString payload, long? authenticatedAccount, IPlexVault vault)
     {
@@ -62,20 +64,39 @@ internal static class PlexVaultLogRequests
             return new() { Unavailable = true };
         }
 
-        bool deposit = row.Kind == PlexVaultTransferKind.Deposit;
         var actor = new PublicCharacter.Identifier { Sequential = checked((ulong)row.PilotId) };
-        var summary = Label(deposit ? Deposited : Withdrawn);
+        var summary = Label(
+            row.Kind switch
+            {
+                PlexVaultTransferKind.Deposit => Deposited,
+                PlexVaultTransferKind.TradeSent => SentInTrade,
+                PlexVaultTransferKind.TradeReceived => ReceivedInTrade,
+                _ => Withdrawn,
+            }
+        );
         summary.Parameters.Add(new Parameter { Key = "characterID", Integer = actor.Sequential });
-        InvoiceAttributes invoice = new() { Category = Label(Category(row)), SummaryMessage = summary };
-        if (deposit)
+        PublicCharacter.Identifier? other = row.CounterpartyPilotId is long id ? new() { Sequential = checked((ulong)id) } : null;
+        if (other is not null)
         {
-            invoice.SourceCharacter = actor;
-            invoice.NoDestination = true;
+            summary.Parameters.Add(new Parameter { Key = "otherCharacterID", Integer = other.Sequential });
+        }
+        InvoiceAttributes invoice = new() { Category = Label(Category(row)), SummaryMessage = summary };
+        bool fromActor = row.Kind is PlexVaultTransferKind.Deposit or PlexVaultTransferKind.TradeSent;
+        if ((fromActor ? actor : other) is { } source)
+        {
+            invoice.SourceCharacter = source;
         }
         else
         {
             invoice.NoSource = true;
-            invoice.DestinationCharacter = actor;
+        }
+        if ((fromActor ? other : actor) is { } destination)
+        {
+            invoice.DestinationCharacter = destination;
+        }
+        else
+        {
+            invoice.NoDestination = true;
         }
         Span<byte> entryId = stackalloc byte[sizeof(long)];
         BinaryPrimitives.WriteInt64BigEndian(entryId, row.Id);
@@ -107,15 +128,18 @@ internal static class PlexVaultLogRequests
                 .Select(group => new GetStatisticsResponse.Types.Entry
                 {
                     Category = Label(group.Key),
-                    Incomes = Currency(group.Sum(row => (long)Math.Max(0, row.Amount))),
-                    Expenses = Currency(group.Sum(row => -(long)Math.Min(0, row.Amount))),
+                    Incomes = Currency(group.Sum(row => Math.Max(0L, row.Amount))),
+                    Expenses = Currency(group.Sum(row => -Math.Min(0L, row.Amount))),
                     TransactionsCount = (uint)group.Count(),
                 })
         );
         return response;
     }
 
-    private static uint Category(PlexVaultEntry row) => row.Kind == PlexVaultTransferKind.MarketWithdrawal ? Trading : Inventory;
+    private static uint Category(PlexVaultEntry row) =>
+        row.Kind is PlexVaultTransferKind.MarketWithdrawal or PlexVaultTransferKind.TradeSent or PlexVaultTransferKind.TradeReceived
+            ? Trading
+            : Inventory;
 
     private static FormattedMessage Label(uint id) => new() { Identifier = new() { Sequential = id } };
 

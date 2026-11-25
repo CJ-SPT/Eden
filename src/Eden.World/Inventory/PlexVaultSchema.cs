@@ -9,6 +9,7 @@ internal static class PlexVaultSchema
 {
     internal const int BalanceVersion = 236;
     internal const int HistoryVersion = 237;
+    internal const int DirectTradeVersion = 238;
     internal const string HistoryTable = "WorldPlexVaultHistory";
 
     internal static void Configure(ModelBuilder model)
@@ -36,4 +37,16 @@ internal static class PlexVaultSchema
             CREATE INDEX IF NOT EXISTS IX_WorldPlexVaultHistory_AccountId_Id ON WorldPlexVaultHistory(AccountId,Id);
             """
         );
+
+    internal static void UpgradeDirectTrade(WorldDbContext world)
+    {
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPlexVaultHistory')")
+                .Contains("CounterpartyPilotId")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPlexVaultHistory ADD COLUMN CounterpartyPilotId INTEGER");
+        }
+    }
 }

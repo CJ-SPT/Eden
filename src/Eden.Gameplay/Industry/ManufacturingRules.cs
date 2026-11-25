@@ -22,6 +22,9 @@ public sealed record ManufacturingPlan(long DurationSeconds, IReadOnlyDictionary
 
 public static class ManufacturingRules
 {
+    // Build 3662168 industry.const DISTANCE_PER_LEVEL, applied to Supply Chain Management.
+    public static int FacilityJumpRange(int skillLevel) => 5 * Math.Clamp(skillLevel, 0, 5);
+
     public static ManufacturingPlan Plan(IndustryRequest request, ManufacturingInputs inputs)
     {
         var plan = Plan(request.Runs, inputs);

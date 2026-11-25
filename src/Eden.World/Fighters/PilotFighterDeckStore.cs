@@ -181,16 +181,40 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
         SpacePosition? destination = null
     )
     {
-        if (squadrons.Count is < 1 or > FighterDeckRules.MaximumTubes || squadrons.Distinct().Count() != squadrons.Count)
-        {
-            throw new InvalidDataException("Choose distinct fighter squadrons.");
-        }
         using var action = Live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = RequireDeck(action, catalog, pilotId, shipId, FighterDeckRules.FirstTube);
         var origin = pilot.ActiveShip.Position ?? throw new InvalidDataException("Use your active ship in space to command fighters.");
         int system = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
         action.RequireUncloaked(shipId);
+        SetMobility(
+            action,
+            catalog,
+            new(pilotId, shipId, pilotId, system, new(origin.X, origin.Y, origin.Z)),
+            squadrons,
+            activate,
+            now,
+            destination
+        );
+        action.Commit();
+    }
+
+    private sealed record MobilityHost(long PilotId, long Id, long Owner, int SystemId, SpacePosition Position);
+
+    private static void SetMobility(
+        WorldAction action,
+        CatalogDbContext catalog,
+        MobilityHost host,
+        IReadOnlyList<long> squadrons,
+        bool activate,
+        long now,
+        SpacePosition? destination
+    )
+    {
+        if (squadrons.Count is < 1 or > FighterDeckRules.MaximumTubes || squadrons.Distinct().Count() != squadrons.Count)
+        {
+            throw new InvalidDataException("Choose distinct fighter squadrons.");
+        }
         foreach (long id in squadrons)
         {
             var drone = action.Set<WorldDrone>().Find(id);
@@ -198,18 +222,18 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
             if (
                 drone is null
                 || item is null
-                || drone.PilotId != pilotId
-                || item.OwnerId != pilotId
-                || drone.ControllerShipId != shipId
-                || drone.SystemId != system
-                || item.LocationId != system
+                || drone.PilotId != host.PilotId
+                || item.OwnerId != host.Owner
+                || drone.ControllerShipId != host.Id
+                || drone.SystemId != host.SystemId
+                || item.LocationId != host.SystemId
                 || !FighterDeckRules.IsTube(item.FlagId)
-                || new SpacePosition(origin.X, origin.Y, origin.Z).DistanceTo(new(drone.X, drone.Y, drone.Z)) > DroneRules.ShutdownDistance
+                || host.Position.DistanceTo(new(drone.X, drone.Y, drone.Z)) > DroneRules.ShutdownDistance
             )
             {
-                throw new InvalidDataException("Choose deployed squadrons controlled by this ship.");
+                throw new InvalidDataException("Choose deployed squadrons controlled by this fighter deck.");
             }
-            var profile = DroneCatalog.Skilled(action, catalog, pilotId, item.TypeId, shipId);
+            var profile = DroneCatalog.Skilled(action, catalog, host.PilotId, item.TypeId, host.Id);
             var mobility = profile.Mobility ?? throw new InvalidDataException("That squadron has no supported mobility ability.");
             var work = PilotDroneStore.ReadWork(drone);
             FighterMobilityCycle cycle;
@@ -253,7 +277,6 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
             }
             PilotDroneStore.WriteWork(drone, work with { FighterMobility = cycle });
         }
-        action.Commit();
     }
 
     public FighterTubeChange Load(long pilotId, long shipId, long stackId, int flag)

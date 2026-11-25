@@ -63,7 +63,7 @@ internal sealed partial class PilotMarketStore
         int? jumps = range switch
         {
             0 when system == station.SolarSystemId => 0,
-            > 0 and < StandardMarketRules.RegionRange => MarketJumpDistance(catalog, system, station.SolarSystemId),
+            > 0 and < StandardMarketRules.RegionRange => catalog.Definitions.StargateDistance(system, station.SolarSystemId),
             _ => null,
         };
         if (!StandardMarketRules.Reaches(range, false, jumps))

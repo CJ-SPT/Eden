@@ -19,7 +19,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = PlexVaultSchema.HistoryVersion;
+    internal const int CurrentVersion = PlexVaultSchema.DirectTradeVersion;
 
     public static void Open(
         WorldDbContext world,
@@ -79,6 +79,10 @@ internal static class WorldMigration
         if (version < PlexVaultSchema.HistoryVersion)
         {
             PlexVaultSchema.UpgradeHistory(world);
+        }
+        if (version < PlexVaultSchema.DirectTradeVersion)
+        {
+            PlexVaultSchema.UpgradeDirectTrade(world);
         }
         Eden.World.Characters.ShipCloneSchema.Upgrade(world);
         if (version is >= 6 and < ScienceSchema.Version)

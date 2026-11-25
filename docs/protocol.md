@@ -451,6 +451,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Individual fleet invitation CSPA](protocol/fleets.md#individual-fleet-invitation-cspa)
 - [Fleet group invitations](protocol/fleets.md#fleet-group-invitations)
 - [Fleet group moves](protocol/fleets.md#fleet-group-moves)
 - [Fleet composition and map locations](protocol/fleets.md#fleet-composition-and-map-locations)
@@ -666,6 +667,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [NPC wreck ownership from damage](protocol/inventory.md#npc-wreck-ownership-from-damage)
 - [Loot abandonment and theft](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026)
 - [Direct player trading](protocol/inventory.md#direct-player-trading)
+- [PLEX Vault offers in direct trades](protocol/inventory.md#plex-vault-offers-in-direct-trades)
 - [Targeted stack merging, November 9, 2026](protocol/inventory.md#targeted-stack-merging-november-9-2026)
 - [Trashing personal items and ships, November 8, 2026](protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026)
 - [Cargo jettison, November 13, 2026](protocol/inventory.md#cargo-jettison-november-13-2026)
@@ -689,6 +691,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 - [PLEX Vault transaction history](protocol/industry.md#plex-vault-transaction-history)
 - [Account PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale)
+- [Remote manufacturing installation at NPC stations](protocol/industry.md#remote-manufacturing-installation-at-npc-stations)
 - [Remote settlement of personal NPC-station industry jobs](protocol/industry.md#remote-settlement-of-personal-npc-station-industry-jobs)
 - [Ranged personal buy orders](protocol/industry.md#ranged-personal-buy-orders)
 - [Ship SKIN licenses from NPC loyalty stores](protocol/industry.md#ship-skin-licenses-from-npc-loyalty-stores)
@@ -863,6 +866,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Standup fighter mobility](protocol/structures.md#standup-fighter-mobility)
 - [Standup Point Defense Batteries](protocol/structures.md#standup-point-defense-batteries)
 - [Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors)
 - [Standup target painters and sensor dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners)

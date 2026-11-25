@@ -211,6 +211,7 @@ public interface ICooperativeFleets
     CooperativeFleet Read(long actor, long fleet);
     IReadOnlyList<FleetCompositionMember> Composition(long actor, long fleet);
     void Invite(long actor, long fleet, long target, FleetPlacement placement);
+    void InviteWithContactPolicy(long actor, long fleet, long target, FleetPlacement placement, long approvedCostIsk);
     FleetInviteBatchResult InviteMany(long actor, long fleet, IReadOnlyList<long> targets, FleetPlacement placement, long approvedCostIsk);
     void Accept(long actor, long fleet);
     void Reject(long actor, long fleet);

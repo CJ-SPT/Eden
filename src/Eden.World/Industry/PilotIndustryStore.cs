@@ -8,6 +8,7 @@ using Eden.Data.World.Structures;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -163,6 +164,46 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         return Station(world, catalog, stationId, service);
     }
 
+    private static int ShipSystem(WorldAction world, CatalogDbContext catalog, Ship ship) =>
+        ship.Position?.SystemId
+        ?? (ship.StructureId is long structure ? world.StructureSystemId(structure) : catalog.RequireStation(ship.StationId).SolarSystemId);
+
+    private static IndustryStation ManufacturingStation(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long stationId,
+        StationService? localService = StationService.Manufacturing
+    )
+    {
+        if (world is not EconomyTransaction || stationId >= StructureRules.FirstStructureId)
+        {
+            return CurrentStation(world, catalog, pilotId, stationId, localService);
+        }
+        var pilot = Pilot(world, pilotId);
+        var ship = pilot.ActiveShip;
+        if (ship.Position is null && ship.DockedLocationId == stationId)
+        {
+            return NpcStation(catalog, stationId, localService);
+        }
+        var station = NpcStation(catalog, stationId, StationService.Manufacturing);
+        int system = ShipSystem(world, catalog, ship);
+        if (system != station.SolarSystemId)
+        {
+            // Supply Chain Management is absent from all four pinned Alpha skill lists.
+            int level =
+                world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega
+                    ? Level(world, catalog, pilotId, (int)IndustrySkill.SupplyChainManagement)
+                    : 0;
+            int range = ManufacturingRules.FacilityJumpRange(level);
+            if (range == 0 || catalog.Definitions.StargateDistance(system, station.SolarSystemId) is not int jumps || jumps > range)
+            {
+                throw new InvalidDataException("Your Supply Chain Management skill does not reach this manufacturing facility.");
+            }
+        }
+        return station;
+    }
+
     public void CheckStation(long pilotId, long stationId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -199,13 +240,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             {
                 var ship = Pilot(world, pilotId).ActiveShip;
                 // Browsing depends on the pilot's location, even at a station without industry services.
-                int systemId =
-                    ship.Position?.SystemId
-                    ?? (
-                        ship.StructureId is long structure
-                            ? world.StructureSystemId(structure)
-                            : catalog.RequireStation(ship.StationId).SolarSystemId
-                    );
+                int systemId = ShipSystem(world, catalog, ship);
                 int regionId = catalog.RequireSystem(systemId).RegionId;
                 return catalog
                     .Definitions.Stations.Values.Where(s => catalog.Definitions.Systems[s.SolarSystemId].RegionId == regionId)
@@ -431,7 +466,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             database,
             world =>
             {
-                _ = CurrentStation(world, catalog, pilotId, stationId, null);
+                _ = ManufacturingStation(world, catalog, pilotId, stationId, null);
                 var storage = Storage(world, catalog, pilotId, stationId, input);
                 return world
                     .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == storage.Id && !i.Singleton)
@@ -649,7 +684,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     )
     {
         AdvanceFacility(world, catalog, request.FacilityId, Now);
-        var station = CurrentStation(world, catalog, pilotId, request.FacilityId);
+        var station = supplyCorporation.HasValue
+            ? CurrentStation(world, catalog, pilotId, request.FacilityId)
+            : ManufacturingStation(world, catalog, pilotId, request.FacilityId);
         var item =
             world.Filter<OwnedItem>(i => i.Id == request.BlueprintId && i.OwnerId == pilotId).SingleOrDefault()
             ?? throw new InvalidDataException("The blueprint is unavailable or belongs to another pilot.");

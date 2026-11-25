@@ -10,7 +10,7 @@ internal sealed partial class PilotDroneStore
     internal static bool FighterJumpDisrupted(WorldAction world, long fighter, long now) =>
         PlayerEwarStore.Active(world, fighter).Any(effect => effect.ExpiresAt > now && effect.Applied?.WarpStrength > 0);
 
-    private static void CancelFighterMicroJump(WorldDrone drone)
+    internal static void CancelFighterMicroJump(WorldDrone drone)
     {
         var work = ReadWork(drone);
         if (work.FighterMobility is { Destination: not null } cycle)
@@ -19,7 +19,7 @@ internal sealed partial class PilotDroneStore
         }
     }
 
-    private static void CompleteFighterMicroJump(WorldAction world, WorldDrone drone, long now)
+    internal static void CompleteFighterMicroJump(WorldAction world, WorldDrone drone, long now)
     {
         var work = ReadWork(drone);
         if (work.FighterMobility is not { Destination: { } point } cycle || cycle.EndsAt > now)

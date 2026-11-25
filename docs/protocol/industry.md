@@ -15,6 +15,7 @@ Details include the recorded pilot, the signed transfer, timestamp, and resultin
 window for its categorized income, expenses, counts, and earliest transaction date. A market withdrawal records the move
 out of the vault, with order settlement recorded by the existing market service. Schema 237 preserves older balances and
 starts the ledger with the next transfer. The checkpoint retains the complete ledger.
+[Vault-to-vault direct trades](inventory.md#plex-vault-offers-in-direct-trades) record both sides and their counterparties.
 
 Build **3662168** `plex/client/message_bus/request_messenger.pyj` calls `GetAllLoggedForUser`, `GetLog`, and `GetStatistics`
 on `eve_public.plex.vault.transaction.api`. The pinned `requests_pb2.pyj`, `invoice_pb2.pyj`, and localization descriptors
@@ -58,7 +59,7 @@ changes to that account's notice stream. Build **3662168** `invControllers.pyj`,
 
 **Sell PLEX** withdraws to the current NPC station and submits to Eden's existing regional market, including normal
 settlement, taxes and sell order expiry. Global order pooling, purchases delivered straight into the vault,
-vault-to-direct-trade and New Eden Store spending remain pending. See [PLEX Vault transaction history](#plex-vault-transaction-history).
+and New Eden Store spending remain pending. See [PLEX Vault transaction history](#plex-vault-transaction-history).
 
 The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
 EVE.js **261108.1** `invBroker/plexVault.js` (SHA-256 `10a36dd41c2645b56e3ee017f4baec29f75e4642f87750ddbb81a95ee8b21c46`)
@@ -1144,6 +1145,44 @@ no capacity benchmark or full .NET suite was requested or run.
 
 **Optional maintainer checks:** Mine a small amount, open/refresh the personal ledger and compare the day's quantity,
 waste, system and graph. Native rendering and memoized refresh timing remain unverified.
+
+## Remote manufacturing installation at NPC stations
+
+Pilots can start a personal manufacturing job from space or another station. Their hangar at the facility supplies the
+blueprint and materials and receives the output. A pilot can reach factories in the current solar system at level zero.
+Supply Chain Management adds five stargate jumps per level, up to 25 at level V. Routes can cross region boundaries.
+The resident world uses the active ship's current system, validates the trained skill against the account's clone grade,
+and uses the shortest path on the pinned stargate graph. [EVE University Manufacturing](https://wiki.eveuniversity.org/Manufacturing) ·
+[CCP Manufacturing](https://support.eveonline.com/hc/en-us/articles/203210292-Manufacturing)
+
+The native `GetFacilityLocations`, `ConnectJob`, and `InstallJob` calls use the same range rule for remote factories.
+A connected material monitor reads committed changes at that factory. The install transaction checks ownership, prices,
+job slots, the chosen blueprint, and input and output locations. It consumes materials and reserves the blueprint at the
+facility. Checkpoints use the existing job, inventory, and wallet records.
+
+Build **3662168** `industry/const.pyj` maps manufacturing to Supply Chain Management **24268** and defines
+`DISTANCE_PER_LEVEL` as 0, 5, 10, 15, 20, and 25. `industry/job.pyj` compares `distance` with `max_distance` using
+`FACILITY_DISTANCE` error **32**. The pinned catalog lists 24268 as Supply Chain Management and omits it from all four
+Alpha skill lists. The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+
+EVE.js **261108.1** `industryRestrictions.js` also uses the current system, shortest stargate distance, and the same
+skill table in `industryConstants.js`. Their SHA-256 hashes are
+`35ce309015a6cc17368cc636ad151be774bc5f8aafe560ae75f910aabc0375ec` and
+`ca3217d4f71251159ffe825f051af4fe68ce97d65be857739f46784c1b43df67` respectively. Eden shares the catalog distance cache
+with existing market range checks.
+
+**Automated validation.** `NativeRemoteManufacturingUsesEffectiveStargateRangeAndPersistsAtTheFacility` passed all six
+cases in 9.19 seconds after a zero-warning feature build in 7.57 seconds. The exact cases cover untrained same-system
+installation, an Alpha pilot with saved skill points, the five-jump boundary, a disconnected system, the native material
+monitor, checkpoint reopen, and delivery to the original facility. The isolated results are in
+`artifacts/remote-manufacturing-622fbe7f/source/artifacts/feature-tests/results/03df84b458b4434fb7c56853f84b5cae/tests.trx`.
+The 56-case affected industry and market selection passed in 24.37 seconds, including the warm material monitor's zero
+SQL checks and the personal and ranged market order tests that use the shared route graph.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Leave a manufacturing blueprint and materials at an NPC factory, travel to another
+system within your skill range, and install the job from Industry. Check the product at the original factory after delivery.
 
 ## Remote settlement of personal NPC station industry jobs
 
