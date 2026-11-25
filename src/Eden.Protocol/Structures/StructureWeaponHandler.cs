@@ -32,6 +32,7 @@ internal sealed class StructureWeaponHandler(
         name switch
         {
             MissileHandler.EffectName => DogmaEffect.UseMissiles,
+            "pointDefense" => DogmaEffect.StructurePointDefense,
             "structureModuleEffectStasisWebifier" => DogmaEffect.StructureStasisWebifier,
             "structureWarpScrambleBlockMWDWithNPCEffect" => DogmaEffect.StructureWarpDisruptor,
             "structureEnergyNeutralizerFalloff" => DogmaEffect.StructureEnergyNeutralizer,
@@ -47,7 +48,7 @@ internal sealed class StructureWeaponHandler(
             cycle.ModuleId,
             token.PilotId,
             token.StructureId,
-            cycle.TargetId,
+            cycle.Effect == DogmaEffect.StructurePointDefense ? null : cycle.TargetId,
             cycle.Effect,
             cycle.StartedAt,
             cycle.DurationMilliseconds,
@@ -126,7 +127,7 @@ internal sealed class StructureWeaponHandler(
             if (
                 beam.Cycle.ReadyAt > now
                 && beam.SourceId != context.ControlledStructureId
-                && context.Flight.SeesStructureEffect(beam.SourceId, beam.Cycle.TargetId)
+                && context.Flight.SeesStructureEffect(beam.SourceId, beam.Pulse is null ? beam.Cycle.TargetId : null)
             )
             {
                 _nextVisible.Add(beam.Cycle.ModuleId, beam);
@@ -151,7 +152,13 @@ internal sealed class StructureWeaponHandler(
 
     private void Started(PilotCallContext context, StructureControlToken token, StructureWeaponActivation result)
     {
-        if (result.Launch is null && result.Neutralization is null && result.Tackle is null && result.ElectronicWarfare is null)
+        if (
+            result.Launch is null
+            && result.Neutralization is null
+            && result.Tackle is null
+            && result.ElectronicWarfare is null
+            && result.PointDefense is null
+        )
         {
             return;
         }
@@ -161,6 +168,10 @@ internal sealed class StructureWeaponHandler(
         {
             MagazineWire.NotifyState(context, launch.Magazine, result.Cycle.StartedAt);
             context.Flight.RefreshMissiles();
+        }
+        if (result.PointDefense is { } pulse)
+        {
+            MagazineWire.NotifyState(context, pulse.Magazine, result.Cycle.StartedAt);
         }
         if (result.Cycle.ReactivationAt > 0)
         {
@@ -181,10 +192,18 @@ internal sealed class StructureWeaponHandler(
             _neutralizers[result.Cycle.ModuleId] = drain.Cycle;
             capacitor.Set(drain.Cycle, true);
         }
-        if ((result.Tackle?.Capacitor ?? result.Neutralization?.Capacitor ?? result.ElectronicWarfare?.Capacitor) is double charge)
+        if (
+            (
+                result.Tackle?.Capacitor
+                ?? result.Neutralization?.Capacitor
+                ?? result.ElectronicWarfare?.Capacitor
+                ?? result.PointDefense?.Capacitor
+            )
+            is double charge
+        )
         {
             _sourceSystem = context.Pilot.SystemId;
-            var beam = new StructureBeam(token.StructureId, result.Cycle);
+            var beam = new StructureBeam(token.StructureId, result.Cycle, result.PointDefense);
             _beams[result.Cycle.ModuleId] = beam;
             beams.Set(_sourceSystem, beam, true);
             context.Flight.StructureBeamEffect(beam, true);
@@ -221,6 +240,20 @@ internal sealed class StructureWeaponHandler(
         }
         try
         {
+            if (method == "Activate" && effect == DogmaEffect.StructurePointDefense)
+            {
+                if (
+                    args is not [long battery, _, var requested, long cycles]
+                    || cycles is < 0 or > int.MaxValue
+                    || requested is not null && !Equals(requested, token.StructureId)
+                )
+                {
+                    return new PilotCallResult.Failure("Activate point defense without a locked target and with a valid repeat count.");
+                }
+                var pulse = weapons.Activate(token, battery, 0, (int)cycles, context.Flight.CurrentStamp, effect);
+                Started(context, token, pulse);
+                return PilotCallResult.None;
+            }
             if (method == "Activate" && args is [long module, _, long target, long repeats] && repeats is >= 0 and <= int.MaxValue)
             {
                 var result = weapons.Activate(token, module, target, (int)repeats, context.Flight.CurrentStamp, effect);

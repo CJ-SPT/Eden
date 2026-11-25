@@ -61,7 +61,7 @@ internal sealed class MailContactPolicyStore(WorldDatabase database) : IMailCont
             return;
         }
         var sender = world.Pilots.Find(senderId)!;
-        List<(long Recipient, long Isk)> charges = [];
+        List<MailContactCharge> charges = [];
         foreach (long recipientId in recipients)
         {
             long? fee = Cost(world, recipientId);
@@ -75,16 +75,16 @@ internal sealed class MailContactPolicyStore(WorldDatabase database) : IMailCont
                 continue;
             }
             long required = fee ?? throw new InvalidDataException("A recipient only accepts requests from known pilots.");
-            charges.Add((recipientId, required));
+            charges.Add(new(recipientId, required));
         }
-        long total = charges.Sum(charge => charge.Isk);
+        long total = charges.Sum(charge => charge.CostIsk);
         if (total != approvedContactCostIsk)
         {
             if (total == 0)
             {
                 throw new InvalidDataException("The contact charge changed. Retry without an approved charge.");
             }
-            throw new MailContactCostApprovalRequired(total);
+            throw new MailContactCostApprovalRequired(total, charges);
         }
         if (total == 0)
         {

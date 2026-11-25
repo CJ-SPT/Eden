@@ -178,6 +178,16 @@ public abstract record FleetEvent
 
 public sealed record FleetDelivery(long FleetId, FleetEvent Event);
 
+public enum FleetInviteRejection
+{
+    AlreadyInFleet,
+    NotAllowed,
+    NoPosition,
+    FleetFull,
+}
+
+public sealed record FleetInviteBatchResult(IReadOnlyList<long> Invited, IReadOnlyDictionary<long, FleetInviteRejection> Rejected);
+
 public interface ICooperativeFleets
 {
     FleetAdvert? MyAdvert(long actor);
@@ -201,6 +211,7 @@ public interface ICooperativeFleets
     CooperativeFleet Read(long actor, long fleet);
     IReadOnlyList<FleetCompositionMember> Composition(long actor, long fleet);
     void Invite(long actor, long fleet, long target, FleetPlacement placement);
+    FleetInviteBatchResult InviteMany(long actor, long fleet, IReadOnlyList<long> targets, FleetPlacement placement, long approvedCostIsk);
     void Accept(long actor, long fleet);
     void Reject(long actor, long fleet);
     void Leave(long actor, long fleet);

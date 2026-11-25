@@ -5,14 +5,18 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Industry.IndustryTests.Fixture;
 
 namespace Eden.Protocol.Tests.Industry;
@@ -114,6 +118,87 @@ public sealed class BulkIndustryDeliveryTests
             delivery => Assert.Empty(delivery.Changes)
         );
         Assert.Equal(300, f.Quantity(215));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativePersonalNpcJobsSettleAtTheirFacilityFromAnotherRegion(bool inSpace)
+    {
+        const int remoteSystem = 30000001;
+        const int ammunition = 215;
+        const int tritanium = 34;
+        const int pyerite = 35;
+        using var f = Create();
+        ContractAssetTestData.AddRemoteStation(f.Db);
+        WorldDatabase database = new(f.Db.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO Region(Id,Name) VALUES(10000043,'Remote region');
+                INSERT INTO Constellation(Id,RegionId,Name) VALUES(20000021,10000043,'Remote constellation');
+                INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES(30000001,20000021,'Remote system');
+                UPDATE Station SET SolarSystemId=30000001,X=10,Y=20,Z=30 WHERE Id=60003761;
+                """
+            );
+        }
+        long pilot = f.Pilot.PilotId;
+        long ship = f.Pilot.ShipId;
+        long station = f.Pilot.StationId;
+        IndustryJobDetails delivered;
+        IndustryJobDetails cancelled;
+        using (var host = ServerServices.Build(database, f.Clock, liveWorld: true))
+        {
+            (delivered, cancelled) = Install(f);
+            f.Db.Store.SetPosition(ship, new(10, 20, 30), remoteSystem);
+            if (!inSpace)
+            {
+                f.Db.Store.Dock(pilot, ship, ContractAssetTestData.RemoteStation);
+            }
+            using var context = Context(f);
+            Assert.Equal(remoteSystem, context.Pilot.SystemId);
+            Assert.Equal(inSpace, context.Pilot.Position is not null);
+            using var session = host.CreateScope();
+            var router = session.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            PilotCallResult CallService(string method, params object?[] args) =>
+                router.Call(context, "industryManager", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { });
+            PilotCallResult CallJob(string method, long job, int system) => CallService(method, job, (long)system);
+
+            Assert.IsType<PilotCallResult.Failure>(CallJob("CancelJob", cancelled.Id, remoteSystem));
+            Assert.IsType<PilotCallResult.Failure>(CallJob("CompleteJob", delivered.Id, delivered.Facility.SystemId));
+            Assert.Empty(context.Notifications);
+            Assert.Same(PilotCallResult.None, CallJob("CancelJob", cancelled.Id, cancelled.Facility.SystemId));
+            Assert.Equal(IndustryJobStatus.Cancelled, Assert.Single(context.Notifications.OfType<IndustryJobChanged>()).Job.Status);
+            Assert.Empty(context.Notifications.OfType<ItemChanged>());
+            context.Notifications.Clear();
+
+            f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(delivered.DurationSeconds));
+            Assert.IsType<PilotCallResult.Failure>(CallJob("CompleteJob", delivered.Id, remoteSystem));
+            Assert.Empty(context.Notifications);
+            PilotCallResult result = inSpace
+                ? CallService("CompleteManyJobs", new List<object?> { new object?[] { delivered.Id, (long)delivered.Facility.SystemId } })
+                : CallJob("CompleteJob", delivered.Id, delivered.Facility.SystemId);
+            Assert.Same(PilotCallResult.None, result);
+            Assert.Equal(IndustryJobStatus.Delivered, Assert.Single(context.Notifications.OfType<IndustryJobChanged>()).Job.Status);
+            var changed = Assert.Single(context.Notifications.OfType<ItemChanged>()).Item;
+            Assert.Equal((ammunition, station, 100), (changed.TypeId, changed.LocationId, changed.Quantity));
+            Assert.Same(PilotCallResult.None, CallJob("CompleteJob", delivered.Id, delivered.Facility.SystemId));
+            Assert.Single(context.Notifications.OfType<ItemChanged>());
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(database, f.Clock, liveWorld: true);
+        var inventory = reopened.GetRequiredService<IPilotInventory>();
+        var originalHangar = inventory.List(pilot, station);
+        Assert.Equal(100, Assert.Single(originalHangar, item => item.TypeId == ammunition).Quantity);
+        Assert.Contains(originalHangar, item => item.Id == SecondBlueprint);
+        Assert.Null(f.Store.Blueprint(pilot, SecondBlueprint).JobId);
+        Assert.DoesNotContain(originalHangar, item => item.TypeId is tritanium or pyerite);
+        Assert.DoesNotContain(inventory.List(pilot, ContractAssetTestData.RemoteStation), item => item.TypeId == ammunition);
+        Assert.Equal(IndustryJobStatus.Delivered, f.Store.Job(pilot, delivered.Id).Status);
+        Assert.Equal(IndustryJobStatus.Cancelled, f.Store.Job(pilot, cancelled.Id).Status);
+        Assert.Empty(f.Store.Deliver(pilot, delivered.Id, delivered.Facility.SystemId).Changes);
     }
 
     [Theory]

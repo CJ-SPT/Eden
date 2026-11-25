@@ -1,0 +1,17 @@
+syntax = "proto3";
+package eve_public.localization.cerberus;
+option csharp_namespace = "Eden.Protocol.Gateway.PlexVault.Localization";
+
+import "plex_vault_localization_message.proto";
+
+message FormattedMessage {
+  eve_public.localization.message.Identifier identifier = 1;
+  repeated Parameter parameters = 2;
+}
+
+message Parameter {
+  string key = 1;
+  oneof value {
+    uint64 integer = 3;
+  }
+}

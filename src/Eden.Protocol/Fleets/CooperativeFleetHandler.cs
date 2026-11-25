@@ -3,6 +3,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;
@@ -536,6 +537,10 @@ internal sealed partial class CooperativeFleetHandler(
             {
                 return PilotCallResult.None;
             }
+            if (bound && method == "MassInvite")
+            {
+                return MassInvite(actor, id, args, keywords);
+            }
             if (keywords is { Count: > 0 })
             {
                 throw new InvalidDataException("Unexpected fleet arguments.");
@@ -669,6 +674,45 @@ internal sealed partial class CooperativeFleetHandler(
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult MassInvite(long actor, long fleet, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (
+            args is not [List<object?> targets, var wing, var squad, var role]
+            || targets.Count is < 1 or > FleetRules.MaximumMembers
+            || role is not (null or long)
+            || keywords?.Keys.Any(key => key != "approvedCost") == true
+        )
+        {
+            throw new InvalidDataException("Invalid fleet group invitation.");
+        }
+        long approval = ContactCostWire.Approval(
+            keywords?.GetValueOrDefault("approvedCost"),
+            MailContactRules.MaximumCostIsk * FleetRules.MaximumMembers
+        );
+        var placement = Placement(wing, squad, role as long? ?? (long)FleetRole.Member);
+        try
+        {
+            var result = fleets.InviteMany(actor, fleet, BlueRead.PositiveIds(targets), placement, approval);
+            if (result.Rejected.Count == 0)
+            {
+                return new BlueList<long>(result.Invited);
+            }
+            string error = result.Rejected.Values.Distinct().Take(2).ToArray() switch
+            {
+                [FleetInviteRejection.AlreadyInFleet] => "FleetErrorMany",
+                [FleetInviteRejection.NotAllowed] => "FleetNotAllowedMany",
+                [FleetInviteRejection.NoPosition] => "FleetNoPositionFoundMany",
+                [FleetInviteRejection.FleetFull] => "FleetTooManyMembersMany",
+                _ => "FleetInviteMultipleErrors",
+            };
+            return new PilotCallResult.NamedFailure(error, new FleetInviteFailureValues(result.Rejected.Keys.ToArray()));
+        }
+        catch (MailContactCostApprovalRequired quote)
+        {
+            return ContactCostWire.RequoteMany(quote.Charges);
         }
     }
 

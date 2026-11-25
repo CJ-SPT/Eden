@@ -308,11 +308,14 @@ public sealed partial class FleetWorld(long seed)
 
     private static void CheckSlot(Fleet fleet, long target, FleetPlacement placement)
     {
-        if (placement.Role != FleetRole.Member && fleet.Members.Values.Any(m => m.Pilot.Id != target && m.Placement == placement))
+        if (SlotOccupied(fleet, target, placement))
         {
             throw new InvalidDataException("This command position is occupied.");
         }
     }
+
+    private static bool SlotOccupied(Fleet fleet, long target, FleetPlacement placement) =>
+        placement.Role != FleetRole.Member && fleet.Members.Values.Any(m => m.Pilot.Id != target && m.Placement == placement);
 
     private static void AuthorizePlacement(Fleet fleet, long actor, long target, FleetPlacement placement)
     {
@@ -351,9 +354,91 @@ public sealed partial class FleetWorld(long seed)
         {
             throw new InvalidDataException("Invite an online pilot outside a fleet with an available position.");
         }
+        PublishInvitation(fleet, actor, target, placement, checked(now + FleetRules.InvitationLifetime.Ticks));
+    }
+
+    public FleetInviteBatchResult InviteMany(
+        long actor,
+        long fleetId,
+        IReadOnlyList<long> targets,
+        FleetPlacement requested,
+        long now,
+        Func<long, bool> permitsContact,
+        Action<IReadOnlyList<long>> commitCharges
+    )
+    {
+        if (targets.Count is < 1 or > FleetRules.MaximumMembers || targets.Any(id => id <= 0))
+        {
+            throw new InvalidDataException("Choose a valid group of pilots to invite.");
+        }
+        var fleet = MemberFleet(actor, fleetId);
+        long[] candidates = targets.Distinct().Where(id => id != actor && _online.ContainsKey(id) && permitsContact(id)).ToArray();
+        FleetPlacement placement;
+        try
+        {
+            placement = Placement(fleet, requested);
+        }
+        catch (InvalidDataException)
+        {
+            return new([], candidates.ToDictionary(id => id, _ => FleetInviteRejection.NoPosition));
+        }
+        long expires = checked(now + FleetRules.InvitationLifetime.Ticks);
+        List<long> invited = [];
+        Dictionary<long, FleetInviteRejection> rejected = [];
+        foreach (long target in candidates)
+        {
+            if (BatchInviteRejection(fleet, actor, target, placement) is { } rejection)
+            {
+                rejected.Add(target, rejection);
+            }
+            else if (
+                _invitations.GetValueOrDefault(target) is not { } pending
+                || pending.FleetId != fleetId
+                || pending.Inviter != actor
+                || pending.Placement != placement
+                || pending.Expires <= now
+            )
+            {
+                invited.Add(target);
+            }
+        }
+        if (invited.Count > 0)
+        {
+            commitCharges(invited);
+            foreach (long target in invited)
+            {
+                PublishInvitation(fleet, actor, target, placement, expires);
+            }
+        }
+        return new(invited, rejected);
+    }
+
+    private FleetInviteRejection? BatchInviteRejection(Fleet fleet, long actor, long target, FleetPlacement placement)
+    {
+        try
+        {
+            AuthorizePlacement(fleet, actor, target, placement);
+        }
+        catch (InvalidDataException)
+        {
+            return FleetInviteRejection.NotAllowed;
+        }
+        if (Identity(target) is not null)
+        {
+            return FleetInviteRejection.AlreadyInFleet;
+        }
+        if (fleet.Members.Count >= fleet.MaximumSize)
+        {
+            return FleetInviteRejection.FleetFull;
+        }
+        return SlotOccupied(fleet, target, placement) ? FleetInviteRejection.NoPosition : null;
+    }
+
+    private void PublishInvitation(Fleet fleet, long actor, long target, FleetPlacement placement, long expires)
+    {
         bool militiaApplication = fleet.JoinRequests.Remove(target) && fleet.Advert?.Scope.HasFlag(FleetInviteScope.Militia) == true;
-        _invitations[target] = new(fleetId, actor, placement, checked(now + FleetRules.InvitationLifetime.Ticks), militiaApplication);
-        Queue(target, fleetId, new FleetEvent.Invitation(fleetId, actor));
+        _invitations[target] = new(fleet.Id, actor, placement, expires, militiaApplication);
+        Queue(target, fleet.Id, new FleetEvent.Invitation(fleet.Id, actor));
     }
 
     public void Accept(long actor, long fleetId, long now, double security = 0)

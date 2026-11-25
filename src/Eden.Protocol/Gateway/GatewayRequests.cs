@@ -68,6 +68,7 @@ public sealed class GatewayRequests(
                     : PersonalSkillPlanRequests.Read(type, payload, request.AuthoritativeContext, authenticatedAccount, personalSkillPlans)
             )
             ?? shipSkins?.Read(type, payload, request.AuthoritativeContext, authenticatedAccount)
+            ?? (plexVault is null ? null : PlexVaultLogRequests.Read(type, payload, authenticatedAccount, plexVault))
             ?? CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
             ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =

@@ -19,7 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Market;
 
-public sealed class PlexVaultTests
+public sealed partial class PlexVaultTests
 {
     private const long AccountId = 1000001;
     private const long OtherAccount = 1000002;

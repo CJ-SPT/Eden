@@ -821,7 +821,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     {
         var job = OwnedJob(world, pilotId, jobId);
         AdvanceFacility(world, catalog, job.StationId, Now);
-        var station = CurrentStation(world, catalog, pilotId, job.StationId, null);
+        // The job's saved NPC facility determines where a resident settlement takes place.
+        // Upwell settlement requires docking and facility access.
+        var station =
+            world is EconomyTransaction && job.StationId < StructureRules.FirstStructureId
+                ? NpcStation(catalog, job.StationId, null)
+                : CurrentStation(world, catalog, pilotId, job.StationId, null);
         if (station.SolarSystemId != systemId)
         {
             throw new InvalidDataException("The job belongs to a different solar system.");

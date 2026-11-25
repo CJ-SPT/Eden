@@ -788,11 +788,16 @@ internal sealed partial class FlightSession(
         PublishContact();
     }
 
-    internal bool SeesStructureEffect(long sourceId, long targetId) =>
+    internal bool SeesStructureEffect(long sourceId, long? targetId) =>
         SceneContext.Position is { } observer
         && LocalObject(sourceId) is { } source
         && observer.DistanceTo(source.Position) <= NpcEncounterDefinitions.VisibilityRange
-        && (targetId == Pilot.ShipId || VisiblePeers.Any(p => p.Pilot.ShipId == targetId) || VisibleNpcs.Any(n => n.Id == targetId));
+        && (
+            targetId is null
+            || targetId == Pilot.ShipId
+            || VisiblePeers.Any(p => p.Pilot.ShipId == targetId)
+            || VisibleNpcs.Any(n => n.Id == targetId)
+        );
 
     internal void StructureBeamEffect(Eden.Protocol.Structures.StructureBeam beam, bool active) => Effects.StructureBeam(beam, active);
 

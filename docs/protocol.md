@@ -451,6 +451,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Fleet group invitations](protocol/fleets.md#fleet-group-invitations)
 - [Fleet group moves](protocol/fleets.md#fleet-group-moves)
 - [Fleet composition and map locations](protocol/fleets.md#fleet-composition-and-map-locations)
 - [Fleet recruitment limits and default squads](protocol/fleets.md#fleet-recruitment-limits-and-default-squads)
@@ -686,7 +687,9 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [PLEX Vault transaction history](protocol/industry.md#plex-vault-transaction-history)
 - [Account PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale)
+- [Remote settlement of personal NPC-station industry jobs](protocol/industry.md#remote-settlement-of-personal-npc-station-industry-jobs)
 - [Ranged personal buy orders](protocol/industry.md#ranged-personal-buy-orders)
 - [Ship SKIN licenses from NPC loyalty stores](protocol/industry.md#ship-skin-licenses-from-npc-loyalty-stores)
 - [Mercoxit mining pollution clouds](protocol/industry.md#mercoxit-mining-pollution-clouds)
@@ -860,6 +863,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Standup Point Defense Batteries](protocol/structures.md#standup-point-defense-batteries)
 - [Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors)
 - [Standup target painters and sensor dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners)
 - [Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm)

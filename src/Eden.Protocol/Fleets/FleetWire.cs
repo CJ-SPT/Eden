@@ -4,6 +4,11 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Fleets;
 
+internal sealed record FleetInviteFailureValues(IReadOnlyList<long> Rejected) : BlueModel
+{
+    public override object ToBlue() => new Dictionary<string, object?> { ["notInvited"] = new BlueList<long>(Rejected).ToBlue() };
+}
+
 internal sealed record FleetOptionsReply(FleetOptions Options) : BlueModel
 {
     public override object ToBlue() =>

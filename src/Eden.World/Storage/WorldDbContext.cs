@@ -674,6 +674,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<Account>().ToTable("WorldAccount");
         model.Entity<Account>().Property(a => a.CloneGrade).HasDefaultValue(AccountCloneGrade.Alpha);
         model.Entity<Account>().Property(a => a.PlexBalance).HasDefaultValue(0L);
+        PlexVaultSchema.Configure(model);
         model.Entity<Pilot>().ToTable("WorldPilot");
         model.Entity<Pilot>().Property(p => p.SafetyLevel).HasDefaultValue(ShipSafetyLevel.Full);
         // Defaults preserve the identities previously returned by character selection.

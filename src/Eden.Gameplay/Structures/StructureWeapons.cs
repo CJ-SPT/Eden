@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -26,8 +27,11 @@ public sealed record StructureWeaponActivation(
     MissileLaunch? Launch,
     CapacitorActivation? Neutralization = null,
     TackleActivation? Tackle = null,
-    ElectronicWarfareActivation? ElectronicWarfare = null
+    ElectronicWarfareActivation? ElectronicWarfare = null,
+    StructurePointDefensePulse? PointDefense = null
 );
+
+public sealed record StructurePointDefensePulse(Magazine Magazine, double Capacitor, double Range);
 
 public sealed record StructureWeaponFrame(IReadOnlyList<StructureWeaponActivation> Started, IReadOnlyList<StructureWeaponCycle> Stopped);
 
@@ -51,6 +55,7 @@ public static class StructureWeaponRules
     // Build 3662168: Standup anticapital and multirole launchers use the standard useMissiles effect.
     public const int AnticapitalLauncherGroup = 1327;
     public const int MultiroleLauncherGroup = 1562;
+    public const int PointDefenseGroup = 1330;
     public const int EcmGroup = 1332;
     public const int ElectronicDefenseGroup = 1719;
     public const int WebifierGroup = 1441;

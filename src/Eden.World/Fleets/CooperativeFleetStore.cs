@@ -1,10 +1,13 @@
 using System.Security.Cryptography;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Mail;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 
@@ -156,6 +159,41 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
 
     public void Invite(long actor, long fleet, long target, FleetPlacement placement) =>
         Write(() => _world.Invite(actor, fleet, target, placement, Now));
+
+    public FleetInviteBatchResult InviteMany(
+        long actor,
+        long fleet,
+        IReadOnlyList<long> targets,
+        FleetPlacement placement,
+        long approvedCostIsk
+    )
+    {
+        var live = database is null ? null : LiveWorld.Find(database.Path);
+        if (live is null)
+        {
+            throw new InvalidDataException("Fleet group invitations require the resident world.");
+        }
+        // The resident owner precedes the fleet lock, which stays held from validation through publication.
+        using var transaction = live.Economy.Begin(new(pilots: [actor]));
+        return Read(() =>
+        {
+            long now = Now;
+            var blocks = transaction.Set<SavedBlockedContact>();
+            return _world.InviteMany(
+                actor,
+                fleet,
+                targets,
+                placement,
+                now,
+                recipient => blocks.Find(recipient, actor) is null && blocks.Find(actor, recipient) is null,
+                recipients =>
+                {
+                    MailContactPolicyStore.Charge(transaction, actor, recipients, approvedCostIsk, now);
+                    transaction.Commit();
+                }
+            );
+        });
+    }
 
     public void Accept(long actor, long fleet)
     {

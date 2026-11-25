@@ -7,6 +7,40 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## PLEX Vault transaction history
+
+Each successful physical PLEX deposit, inventory withdrawal, or market withdrawal adds one account history row alongside
+the inventory and vault balance changes. Wallet Transactions shows the latest 2,000 entries across all pilots on the account.
+Details include the recorded pilot, the signed transfer, timestamp, and resulting balance. Wallet Overview uses the same
+window for its categorized income, expenses, counts, and earliest transaction date. A market withdrawal records the move
+out of the vault, with order settlement recorded by the existing market service. Schema 237 preserves older balances and
+starts the ledger with the next transfer. The checkpoint retains the complete ledger.
+
+Build **3662168** `plex/client/message_bus/request_messenger.pyj` calls `GetAllLoggedForUser`, `GetLog`, and `GetStatistics`
+on `eve_public.plex.vault.transaction.api`. The pinned `requests_pb2.pyj`, `invoice_pb2.pyj`, and localization descriptors
+define the identifier, invoice oneof, and formatted message parameters. Pinned English localization identifies Inventory
+**1021278**, Trading **1021780**, and the movement summaries **1021300** and **1021301**. Their `characterID` parameter
+resolves the acting pilot through the client, including in exported rows. The authenticated account owns every read.
+Unknown and foreign entry IDs both return the native unavailable response.
+
+The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. EVE.js **261108.1**
+`plexVaultLogState.js` (SHA-256 `bf0c8b1770a374f260c7668ba4df26a30ab58cb31a89f3a980e987a4c4676cc5`) and
+`plexVaultGatewayService.js` (SHA-256 `344df02d6756b1771fa62af7976cadcc71a7af1533266bd6fb48a2c80d05cb0d`) provide the
+reference response shapes and 2,000-entry window.
+[CCP PLEX Vault Logs](https://support.eveonline.com/hc/en-us/articles/115003168285-PLEX-Vault) ·
+[CCP Catalyst notes](https://www.eveonline.com/news/view/catalyst-expansion-notes) ·
+[EVE University PLEX Vault](https://wiki.eveuniversity.org/PLEX_Vault)
+
+**Automated validation.** The integrated exact selection passed nine cases in 13.33 seconds. The two PLEX history cases
+exercise the gateway list, details, and statistics calls across two pilots on one account, foreign and unauthenticated
+requests, rejected movements, checkpoint reopen, and migration from schema 236.
+The affected market, gateway, fleet, industry, combat, and persistence selection passed 292 cases in 122.42 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Deposit PLEX on one pilot and withdraw it on another pilot on the same account. Check both
+rows and the income and expense totals in Wallet → PLEX.
+
 ## Account PLEX Vault and market sale
 
 The vault is shared by pilots on an account. `invbroker.DepositPlexToVault` moves whole units of physical PLEX **44992**
@@ -23,8 +57,8 @@ changes to that account's notice stream. Build **3662168** `invControllers.pyj`,
 `marketsvc.pyj` sends `PlacePlexSellOrder` with one sell entry and uses the ordinary quote fields for `ModifyPlexCharOrder`.
 
 **Sell PLEX** withdraws to the current NPC station and submits to Eden's existing regional market, including normal
-settlement, taxes and sell order expiry. Global order pooling, purchases delivered straight into the vault, vault transaction
-history, vault-to-direct-trade and New Eden Store spending remain pending.
+settlement, taxes and sell order expiry. Global order pooling, purchases delivered straight into the vault,
+vault-to-direct-trade and New Eden Store spending remain pending. See [PLEX Vault transaction history](#plex-vault-transaction-history).
 
 The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
 EVE.js **261108.1** `invBroker/plexVault.js` (SHA-256 `10a36dd41c2645b56e3ee017f4baec29f75e4642f87750ddbb81a95ee8b21c46`)
@@ -1111,6 +1145,38 @@ no capacity benchmark or full .NET suite was requested or run.
 **Optional maintainer checks:** Mine a small amount, open/refresh the personal ledger and compare the day's quantity,
 waste, system and graph. Native rendering and memoized refresh timing remain unverified.
 
+## Remote settlement of personal NPC station industry jobs
+
+Pilots can deliver or cancel their own NPC-station jobs from another station or from space, including another region.
+`CompleteJob`, `CompleteManyJobs`, and `CancelJob` use the saved facility's solar system to validate the request. Delivery
+places production output at the job's saved destination. Cancellation releases the blueprint and job slot at the facility.
+Materials used at installation are forfeited. Ownership, ready time, status, and output capacity are checked at settlement.
+The resident transaction commits the inventory and job together and checkpoints them with the existing records.
+
+In build **3662168**, `industrySvc.pyj` sends the saved job and solar-system IDs. `jobEntry.pyj` and `submitButton.pyj`
+pass them directly from the selected job for delivery or cancellation, and `browserJobs.pyj` passes these pairs for a
+batch. The stock archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The pinned NPC station catalog provides the facility's system and operation services. [EVE University Industry](https://wiki.eveuniversity.org/Industry_Overview) ·
+[CCP Industry UI](https://www.eveonline.com/news/view/industry-ui)
+
+EVE.js **261108.1** settles jobs against their saved output locations. Its `industryManagerService.js` SHA-256 is
+`07f55314ec86f3005b9ac2cbffd76ddb65f416ddf69f36e558ce0e9c3f135fe5`, and `industryRuntimeState.js` SHA-256 is
+`bf6ab290bd622ed029fd8ed6e2214b4604ff874f6becd585842ffe4eac01d63c`. Eden reuses the native job, inventory, and blueprint
+notifications.
+
+**Automated validation.** `NativePersonalNpcJobsSettleAtTheirFacilityFromAnotherRegion` passed both docked and in-space
+cases in 8.19 seconds, after a zero-warning feature build in 13.78 seconds. The cases verify native single and bulk
+delivery, cancellation, facility-system and ready-time rejection, saved output location, blueprint release, notifications,
+and repeat requests after a checkpoint reopen. The isolated results are in
+`artifacts/industry-remote-b47b1de6/source/artifacts/feature-tests/results/df01f65a3b5c4d0a874508dce975c18d/tests.trx`.
+The affected selection passed 54 cases in 24.27 seconds across `BulkIndustryDeliveryTests`, `ScienceJobTests`,
+`IndustryContainerTests`, `IndustryFacilityLookupTests`, and `ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Start two jobs at an NPC station, travel to another region, cancel one, and deliver the
+ready job. Check the original facility's Item Hangar for the product and released blueprints.
+
 ## Bulk industry-job delivery — November 11, 2026
 
 The native Industry window can now deliver multiple selected personal jobs through
@@ -1125,6 +1191,8 @@ Every job retains the individual call's owner, docked-facility, solar-system, re
 If a later entry fails, earlier outputs, blueprint releases, progression claims and statuses roll back together;
 Protocol queues notifications only after the batch commits. Retrying already delivered jobs cannot duplicate output,
 blueprint copies or progression. This does not add remote or corporation job access, and needs no schema migration.
+The [remote settlement update](#remote-settlement-of-personal-npc-station-industry-jobs) extends these calls to personal
+NPC jobs when the pilot is elsewhere.
 
 Reference: installed EveJs **261108.1**, `industry/industryManagerService.js` SHA-256
 `07f55314ec86f3005b9ac2cbffd76ddb65f416ddf69f36e558ce0e9c3f135fe5` (the installation has no Git metadata).

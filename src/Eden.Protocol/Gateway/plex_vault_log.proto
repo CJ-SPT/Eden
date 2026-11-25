@@ -1,0 +1,49 @@
+syntax = "proto3";
+package eve_public.plex.vault.transaction.api;
+option csharp_namespace = "Eden.Protocol.Gateway.PlexVault.Log";
+
+import "google/protobuf/timestamp.proto";
+import "plex.proto";
+import "plex_vault_cerberus.proto";
+import "plex_vault_invoice.proto";
+import "plex_vault_transaction.proto";
+
+message GetAllLoggedForUserRequest {}
+
+message GetAllLoggedForUserResponse {
+  repeated eve_public.plex.vault.transaction.Identifier transactions = 1;
+}
+
+message GetLogRequest {
+  eve_public.plex.vault.transaction.Identifier identifier = 1;
+}
+
+message GetLogResponse {
+  eve_public.plex.vault.transaction.Attributes transaction = 1;
+  oneof invoice {
+    bool unavailable = 2;
+    Invoice invoice_entry = 3;
+  }
+
+  message Invoice {
+    eve_public.plex.vault.transaction.invoice.Identifier id = 1;
+    eve_public.plex.vault.transaction.invoice.Attributes attributes = 2;
+  }
+}
+
+message GetStatisticsRequest {}
+
+message GetStatisticsResponse {
+  repeated Entry entries = 1;
+  google.protobuf.Timestamp earliest_transaction = 2;
+
+  message Entry {
+    oneof classification {
+      eve_public.localization.cerberus.FormattedMessage category = 1;
+      bool no_classification = 2;
+    }
+    eve_public.plex.Currency incomes = 3;
+    eve_public.plex.Currency expenses = 4;
+    uint32 transactions_count = 5;
+  }
+}

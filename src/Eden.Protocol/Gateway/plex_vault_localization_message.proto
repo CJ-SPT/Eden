@@ -1,0 +1,7 @@
+syntax = "proto3";
+package eve_public.localization.message;
+option csharp_namespace = "Eden.Protocol.Gateway.PlexVault.Localization.Messages";
+
+message Identifier {
+  uint32 sequential = 1;
+}

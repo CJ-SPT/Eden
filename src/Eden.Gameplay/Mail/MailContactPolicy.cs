@@ -6,9 +6,12 @@ public interface IMailContactPolicy
     void SetContactCost(long pilotId, long? costIsk);
 }
 
-public sealed class MailContactCostApprovalRequired(long costIsk) : Exception
+public sealed record MailContactCharge(long RecipientId, long CostIsk);
+
+public sealed class MailContactCostApprovalRequired(long costIsk, IReadOnlyList<MailContactCharge> charges) : Exception
 {
     public long CostIsk { get; } = costIsk;
+    public IReadOnlyList<MailContactCharge> Charges { get; } = charges;
 }
 
 public static class MailContactRules

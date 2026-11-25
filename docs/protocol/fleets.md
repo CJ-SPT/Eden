@@ -2,6 +2,39 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet group invitations
+
+The fleet boss and eligible command roles can invite a selection of pilots from the fleet menu. Group invitations
+use the same hierarchy, placement, two-minute expiry and recipient prompt as individual invitations. Duplicate
+selections and invitations already pending for the same placement do not send a second prompt. An unavailable or
+blocked recipient produces no prompt. A partial rejection reports the affected pilot IDs to the client, while
+eligible recipients can accept their invitations in the chosen squad.
+
+The group route uses the resident communications fee settings and sender wallet. It quotes the current fee per
+eligible recipient and commits the approved wallet entries before sending invitations. A changed price requires
+approval again. The CSPA journal persists through standard checkpoints. Fleet invitations remain session state.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms that
+`fleetSvc.MassInvite` calls the bound object with `MassInvite(characterIDs, wingID, squadID, role)`.
+The client reads `notInvited` from the native fleet batch errors. `eveMisc.CSPAChargedActionForMany` reads
+`costNotApprovedFor` from `ContactCostNotApprovedForMany` and retries with the sum in `approvedCost`.
+EVE.js **261108.1** exposes the same call and returns the invited IDs from
+`server/src/services/fleets/fleetRuntime.js` (SHA-256
+`494727d0f0793202bd9195c417fffc63cce499ea157890fc12981919be521b8f`).
+[CCP 23.02 fleet menu changes](https://www.eveonline.com/news/view/patch-notes-version-23-02) ·
+[EVE University fleet formation](https://wiki.eveuniversity.org/How_to_Properly_Form_a_Fleet)
+
+**Automated validation.** The exact `CooperativeFleetTests.NativeMassInviteDeliversEligiblePilotsAndReportsPartialFailure`
+and `CooperativeFleetTests.NativeMassInviteRequotesAndCommitsTheWalletOnceAcrossReopen` methods passed in 0.94 seconds
+of combined case time. They cover command authority, duplicate selection, partial rejection, invitation delivery and
+squad placement, updated fee quotes, repeat approval, and the checkpointed CSPA debit.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Select multiple pilots from chat, invite them to a fleet and confirm that
+recipients can accept into the requested squad. Repeat with paid contact settings and confirm the grouped fee dialog.
+
 ## Fleet group moves
 
 Fleet bosses and commanders can drag a selection of fleet members into a squad. Eden checks each pilot
@@ -477,7 +510,7 @@ Eden now supports invitation-based cooperative fleets through the pinned client'
 
 - `fleetObjectHandler.CreateFleet()` returns a pilot-scoped fleet object reference. The creator becomes fleet commander and boss, with one initial wing and squad.
 - Native `fleetObjectHandler` resolve/bind requests name the fleet ID. Only a current member or the recipient of a live invitation may bind. An invited nonmember may accept/reject, but cannot read the roster, issue commands or inspect private MOTD data before accepting. Embedded first calls preserve success/None/failure and reference semantics.
-- The bound object supports `Init(shipTypeID,setupName,adInfoData=None)`, `GetFleetID`, `GetInitState`, `GetWings`, `GetMembers`, `GetOptions`, `GetJoinRequests`, `GetMotd`, `UpdateMemberInfo`, `Invite`, `AcceptInvite`, `RejectInvite`, `LeaveFleet`, `KickMember`, `DisbandFleet`, `MoveMember`, `MakeLeader`, wing/squad creation/deletion/naming, `SetOptions`, `SetMotdEx`, `SetTakesFleetWarp` and `SendBroadcast`. `FinishMove` acknowledges already committed movement. `Reconnect` only acknowledges an existing current membership; it cannot restore a disconnected fleet slot.
+- The bound object supports `Init(shipTypeID,setupName,adInfoData=None)`, `GetFleetID`, `GetInitState`, `GetWings`, `GetMembers`, `GetOptions`, `GetJoinRequests`, `GetMotd`, `UpdateMemberInfo`, `Invite`, `MassInvite`, `AcceptInvite`, `RejectInvite`, `LeaveFleet`, `KickMember`, `DisbandFleet`, `MoveMember`, `MakeLeader`, wing/squad creation/deletion/naming, `SetOptions`, `SetMotdEx`, `SetTakesFleetWarp` and `SendBroadcast`. `FinishMove` acknowledges already committed movement. `Reconnect` only acknowledges an existing current membership; it cannot restore a disconnected fleet slot.
 - Fleet IDs and subgroup IDs share a fresh random namespace for each host instance. Guessing an ID or retaining a former reference grants no authority. Invitation acceptance rechecks the issuer's current authority, slot availability, target membership and the two-minute deadline. Concurrent accepts create one membership and one join event. Ship type metadata is checked against the selected ship, while native None is accepted when the client has not loaded its active hull yet.
 - Fleet commander/wing commander/squad commander/member roles use the pinned values **1/2/3/4**. Boss is the independent job bit **2**. Boss transfer does not silently promote command rank. Commanders may manage only subordinate positions inside their scope; members cannot promote themselves or others. Free movement permits self-assignment as a member or into an empty squad-command position, without granting wing or fleet command. Only the boss may disband, transfer boss authority, change fleet options/MOTD, create wings or remove/rename hierarchy groups. A wing commander may create squads in their own wing. Nonempty groups cannot be deleted; their members must be moved first.
 - The limits are **256 members**, **25 wings**, **25 squads per wing**, ten-character subgroup names and a 4,000-character MOTD. The roster and wing/squad replies use named immutable snapshots and native KeyVal/dictionary forms. Mutation rejection leaves prior snapshots unchanged.

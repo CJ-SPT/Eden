@@ -1,4 +1,5 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
@@ -10,12 +11,18 @@ using Eden.World.Storage;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PlexVaultStore(WorldDatabase database) : IPlexVault
+internal sealed class PlexVaultStore(WorldDatabase database, TimeProvider clock) : IPlexVault
 {
     public long Balance(long accountId) =>
         accountId > 0 && LiveWorld.Find(database.Path) is { } live
             ? live.Economy.Inspect(world => world.Set<Account>().Find(accountId)?.PlexBalance ?? 0)
             : 0;
+
+    public IReadOnlyList<PlexVaultEntry> History(long accountId) =>
+        accountId > 0 && LiveWorld.Find(database.Path) is { } live ? live.Economy.VaultHistory(accountId) : [];
+
+    public PlexVaultEntry? HistoryEntry(long accountId, long id) =>
+        accountId > 0 && id > 0 && LiveWorld.Find(database.Path) is { } live ? live.Economy.VaultHistoryEntry(accountId, id) : null;
 
     public InventoryChange Deposit(long pilotId, long? locationId, long itemId, int quantity)
     {
@@ -57,6 +64,7 @@ internal sealed class PlexVaultStore(WorldDatabase database) : IPlexVault
         {
             world.Remove(item);
         }
+        Record(world, pilot, account.PlexBalance, PlexVaultTransferKind.Deposit, quantity);
         world.Commit();
         return new(before with { Quantity = before.Quantity - quantity }, before);
     }
@@ -94,9 +102,30 @@ internal sealed class PlexVaultStore(WorldDatabase database) : IPlexVault
         }
         account.PlexBalance -= quantity;
         var change = InventoryPersistence.MergeOutput(world, catalog, pilotId, locationId, flagId, MarketDefinitions.PlexTypeId, quantity);
+        Record(
+            world,
+            pilot,
+            account.PlexBalance,
+            forMarket ? PlexVaultTransferKind.MarketWithdrawal : PlexVaultTransferKind.InventoryWithdrawal,
+            -quantity
+        );
         world.Commit();
         return change;
     }
+
+    private void Record(EconomyTransaction world, Pilot pilot, long balance, PlexVaultTransferKind kind, int amount) =>
+        world.Add(
+            new SavedPlexVaultEntry
+            {
+                Id = world.Next(PlexVaultSchema.HistoryTable),
+                AccountId = pilot.AccountId,
+                PilotId = pilot.Id,
+                Kind = kind,
+                Amount = amount,
+                Balance = balance,
+                Time = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            }
+        );
 
     private LiveWorld Resident() => LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("A resident world is required.");
 }

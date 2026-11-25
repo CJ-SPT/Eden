@@ -19,6 +19,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Corporations;
+using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -35,7 +36,12 @@ internal sealed partial class PilotStructureWeaponStore(
     PilotStructureTargetStore targeting,
     NpcProfileCatalog npcProfiles,
     ICapacitorEvents capacitorEvents,
-    INpcEwarRoll ewarRolls
+    INpcEwarRoll ewarRolls,
+    IPilotCombatPresence presence,
+    IPilotDamageEvents damageEvents,
+    PilotLossSettlement losses,
+    SqliteWorld lookup,
+    SecurityStatusSignal securityStatus
 ) : IPilotStructureWeapons
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -105,7 +111,7 @@ internal sealed partial class PilotStructureWeaponStore(
                 long now = Now;
                 foreach (var cycle in lease.Weapons.Values.OrderBy(cycle => cycle.ModuleId).ToArray())
                 {
-                    bool targetLost = !locked.Contains(cycle.TargetId);
+                    bool targetLost = cycle.Effect != DogmaEffect.StructurePointDefense && !locked.Contains(cycle.TargetId);
                     if (!targetLost && now < cycle.ReadyAt)
                     {
                         continue;
@@ -158,23 +164,42 @@ internal sealed partial class PilotStructureWeaponStore(
         DogmaEffect effect
     )
     {
-        // Acquisition revalidates motion and shared lock breaks before opening the paid transaction.
-        targeting.RequireLocked(token, targetId);
+        bool area = effect == DogmaEffect.StructurePointDefense;
+        if (area)
+        {
+            if (targetId != 0)
+            {
+                throw new InvalidDataException("Activate point defense without a target.");
+            }
+        }
+        else
+        {
+            // Acquisition revalidates motion and shared lock breaks before opening the paid transaction.
+            targeting.RequireLocked(token, targetId);
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        long now = Now;
+        PointDefenseCandidates? candidates = null;
         using WorldActionScope transaction = new(
             database,
             select: world =>
-                new(
+            {
+                if (area)
+                {
+                    candidates = FindPointDefenseCandidates(world, catalog, token.StructureId, moduleId, now);
+                    return PointDefenseParticipants(world, token, candidates);
+                }
+                return new(
                     systems: [world.Structure(token.StructureId)!.SystemId],
                     pilots: [token.PilotId],
                     ships: [targetId],
                     resources: NpcHostility
                         .Participants(world, targetId)
                         .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
-                )
+                );
+            }
         );
         var world = transaction.World;
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        long now = Now;
         var source = world.Set<SavedStructure>().Find(token.StructureId)!;
         if (!StructureTargetingRules.Active(source.HasCore, source.State))
         {
@@ -206,6 +231,22 @@ internal sealed partial class PilotStructureWeaponStore(
             throw new InvalidDataException("The structure module is still cycling or reloading.");
         }
         var fit = StructureEquipmentPersistence.Read(world, catalog, source);
+        if (candidates is not null && profile.GroupId == StructureWeaponRules.PointDefenseGroup)
+        {
+            var pulse = FirePointDefense(world, catalog, token, source, module, profile, fit, candidates, repeats, now);
+            SetCooldown(world, moduleId, cooldown, pulse.Activation.Cycle.ReadyAt);
+            transaction.Commit();
+            transaction.Dispose();
+            if (pulse.DestroyedNpc)
+            {
+                securityStatus.Publish();
+            }
+            foreach (var notification in pulse.Notifications)
+            {
+                damageEvents.Publish(notification);
+            }
+            return pulse.Activation;
+        }
         var target =
             targeting.Find(world, catalog, source.SystemId, targetId, now)
             ?? throw new InvalidDataException("The defensive weapon target is unavailable.");
@@ -232,9 +273,7 @@ internal sealed partial class PilotStructureWeaponStore(
             throw new InvalidDataException("This defensive module effect is unsupported.");
         }
         long ready = result.Cycle.ReadyAt;
-        cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
-        cooldown.Kind = ModuleCooldownKind.Cycle;
-        cooldown.ReadyAt = Math.Max(ready, result.Cycle.ReactivationAt);
+        SetCooldown(world, moduleId, cooldown, Math.Max(ready, result.Cycle.ReactivationAt));
         StructureCombatTargets.Record(world, source.Id, targetId, now, ready);
         if (target.Kind == StructureTargetKind.Npc)
         {
@@ -262,6 +301,13 @@ internal sealed partial class PilotStructureWeaponStore(
             capacitorEvents.Publish(new(victim.Id, targetId));
         }
         return result;
+    }
+
+    private static void SetCooldown(WorldAction world, long moduleId, ModuleCooldown? cooldown, long ready)
+    {
+        cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
+        cooldown.ReadyAt = ready;
     }
 
     private IReadOnlyDictionary<DogmaAttributeId, double> TargetAttributes(

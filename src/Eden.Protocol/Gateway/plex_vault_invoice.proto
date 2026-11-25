@@ -1,0 +1,26 @@
+syntax = "proto3";
+package eve_public.plex.vault.transaction.invoice;
+option csharp_namespace = "Eden.Protocol.Gateway.PlexVault.Invoices";
+
+import "plex_vault_cerberus.proto";
+import "public_character.proto";
+
+message Identifier {
+  bytes uuid = 1;
+}
+
+message Attributes {
+  eve_public.localization.cerberus.FormattedMessage category = 1;
+  oneof summary {
+    eve_public.localization.cerberus.FormattedMessage summary_message = 2;
+    bool no_summary = 3;
+  }
+  oneof source {
+    eve_public.character.Identifier source_character = 4;
+    bool no_source = 6;
+  }
+  oneof destination {
+    eve_public.character.Identifier destination_character = 7;
+    bool no_destination = 9;
+  }
+}

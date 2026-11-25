@@ -1,10 +1,12 @@
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Structures;
 
-internal sealed record StructureBeam(long SourceId, StructureWeaponCycle Cycle)
+internal sealed record StructureBeam(long SourceId, StructureWeaponCycle Cycle, StructurePointDefensePulse? Pulse = null)
 {
     // Targeted Standup capacitor and tackle effects use the Laser GUID in build 3662168.
     internal DestinyCommand Command(bool active) =>
@@ -12,14 +14,25 @@ internal sealed record StructureBeam(long SourceId, StructureWeaponCycle Cycle)
             SourceId,
             Cycle.ModuleId,
             Cycle.TypeId,
-            Cycle.TargetId,
-            null,
-            "effects.Laser",
+            Pulse is null ? Cycle.TargetId : null,
+            Pulse?.Magazine.TypeId,
+            Cycle.Effect == DogmaEffect.StructurePointDefense ? "effects.PointDefense" : "effects.Laser",
             true,
             active,
             active,
             Cycle.DurationMilliseconds,
-            Cycle.StartedAt
+            Cycle.StartedAt,
+            Pulse is null
+                ? null
+                : new BlueInstance(
+                    "utillib.KeyVal",
+                    new Dictionary<string, object?>
+                    {
+                        ["candidateTypeListId"] = -1,
+                        ["hitRange"] = Pulse.Range,
+                        ["trackTargets"] = false,
+                    }
+                )
         );
 }
 

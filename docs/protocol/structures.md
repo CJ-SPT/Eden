@@ -180,7 +180,7 @@ schema 213 and also accepts the earlier structure-branch format.
 
 | Area | Existing coverage and remaining gaps |
 | --- | --- |
-| Defense | Launch and recall of Standup fighters, guided missiles, ECM, painters, dampeners, weapon disruptors, webs, neutralizers and scripted warp tackle work. Point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Defense | Launch and recall of Standup fighters, guided missiles, point defense batteries, ECM, painters, dampeners, weapon disruptors, webs, neutralizers and scripted warp tackle work. Other area and superweapon modules and fighter attack commands need dedicated gameplay and protocol coverage. |
 | Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
 | Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
 | Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
@@ -213,6 +213,60 @@ Not performed; agent client testing is disabled.
 
 Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
 the other ship retains its lock on the Astrahus.
+
+### Standup Point Defense Batteries
+
+A gunner can pulse Standup Point Defense Battery I or II on an eligible large or extra-large Upwell hull through
+`dogmaIM.Activate(moduleID, "pointDefense", None, repeat)`. Build 3662168 assigns both batteries to group 1330 and
+uses effect **6443**, `effects.PointDefense`. The existing fitting graph applies the one-per-group restriction,
+eligible hull list, point-defense rig bonuses and Structure Engineering Systems capacitor discount.
+
+| Module | Type | Base radius | Base capacitor | Damage per channel | Magazine capacity |
+| --- | --- | --- | --- | --- | --- |
+| Standup Point Defense Battery I | 35926 | 2,500 m | 1,500 GJ | 250 HP | 600 |
+| Standup Point Defense Battery II | 47327 | 3,000 m | 1,800 GJ | 312.5 HP | 1,000 |
+
+A paid cycle spends 200 Standup Flak Round I charges (type 63195) and fires one pulse. Cycles last 12 seconds and
+the magazine takes 180 seconds to reload. Targets use the nearest surfaces of the structure and contact in the
+local system. The pulse can damage pilot ships, NPCs, drones, vulnerable structures, bombs and interdiction probes.
+The pilot target selection uses nearby spatial candidates and unexpired same-system logoff contacts. Structure
+green safety omits illegal targets. Tethered, gate-cloaked and warping ships keep their existing protection.
+
+Damage, ammunition, capacitor and cycle deadline commit together in the resident world. A paid pulse can hit no
+targets. Duplicate activation during a paid cycle does not consume more charges. Repeats attempt one payment per
+observed boundary and stop if payment fails or control ends. A missed boundary never replays multiple pulses.
+Observers receive a source-only point-defense graphic with `candidateTypeListId`, `hitRange` and `trackTargets`.
+
+The pinned [StructureCatalog.json](../../tests/Eden.Protocol.Tests/Fixtures/StructureCatalog.json) contains the
+complete module, charge and fit attributes. CCP identifies 200 charges as the firing cost and 250 HP per damage
+channel as the base damage per cycle. [CCP balance announcement](https://forums.eveonline.com/t/road-to-fanfest-structure-updates/354743)
+· [CCP patch notes](https://www.eveonline.com/news/view/patch-notes-version-20-04)
+· [EVE University Upwell fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures#Structure_equipment)
+
+Local EVE.js 261108.1 was consulted for no-target cycles, green safety and graphic shape. Source fingerprints are
+`space/modules/pointDefenseRuntime.js` `633FA344A4B020941C346593C8E2251C6814836A396D8832208663FB8808B2AF`,
+`space/runtime/moduleRuntimeCallbacks.js` `60ED639A267DFCF617535A69F464CB03E324C7331250EB17C4394EC24D300C2E` and
+`space/runtime/moduleSpecialFx.js` `C122251CBDAA8A11C9F5F5DE26B273156DC288BFD5962B3AD16509A056B68FB9`.
+Eden uses its structure surface distance and CCP's published per-cycle damage.
+
+**Automated validation**
+
+An isolated build of `b47b1de6` plus this change passed with zero warnings or errors in 12.99 seconds. Exact filters
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructurePointDefenseTests.NativePointDefensePaysFlakAndCapacitorAndHitsOnlyLegalNearbyContacts`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructurePointDefenseTests.PointDefenseProfilesMatchPinnedCyclesAndFitting`
+passed all three cases in 16.27 seconds. Coverage includes both pinned profiles, native untargeted activation,
+reload rejection, idempotent activation, exact pulse and spatial boundaries, low-sec legal filtering, clip
+exhaustion and the targetless active-effect notification. The first integrated test caught an invalid optional
+catalog fixture insertion. The corrected fixture follows existing large-hull deployment setup.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Fire a loaded battery from a low-security Fortizar to check the area graphic, magazine decrement and ship damage.
 
 ### Standup Weapon Disruptors
 
@@ -591,7 +645,7 @@ triples are present on structure slim items for native hardpoint/missile present
 invalidates only contact views containing the changed structure; ordinary cargo quantity changes do not invalidate them.
 The structure safety view does not overwrite the operator's saved ship safety preference.
 
-Remaining defense work includes capacitor-backed EWAR/tackle, guided bombs, point defenses, doomsdays, drone targets,
+Remaining defense work includes capacitor-backed EWAR/tackle, guided bombs, doomsdays, drone targets,
 and NPC retaliation against structures. Ordinary NPC aggression currently requires a real ship target; defensive launches
 and impacts intentionally do not create an invalid ship reference or a fake ship. Structure-targeting NPC AI needs its own
 authority. Fighter/capital systems and war declarations remain separate dependencies. This missile milestone does not

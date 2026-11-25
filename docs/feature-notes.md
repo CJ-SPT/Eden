@@ -170,6 +170,9 @@ fleet warp and regroup independently. Fleets support eligible mission reward and
 damage and Command Bursts. [Fleet regroup](protocol/fleets.md#native-fleet-regroup) ·
 [Cooperative fleet records](protocol/fleets.md)
 
+Fleet commanders can invite multiple pilots to a selected wing or squad in one action. The client reports recipients who
+couldn’t be invited and prompts for applicable contact charges. [Fleet group invitations](protocol/fleets.md#fleet-group-invitations)
+
 Fleet Composition shows hulls, docking status and leadership skills for pilots in the viewer's command scope.
 Fleet members can see the fleet's system locations through the map's **My Fleet** filter.
 [Fleet composition](protocol/fleets.md#fleet-composition-and-map-locations)
@@ -272,7 +275,11 @@ player markets, clone bays, corporation offices, and specialized hull behavior.
 [Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm) ·
 [Painters and dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners) ·
 [Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors) ·
+[Standup Point Defense Batteries](protocol/structures.md#standup-point-defense-batteries) ·
 [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
+
+Standup Point Defense Batteries fire an untargeted flak pulse around eligible large or extra-large Upwell structures.
+Each cycle consumes capacitor and 200 rounds and applies local safety and range checks.
 
 High GMs can force all native Upwell operating states, set operating and deployment timers, start or cancel unanchoring,
 and change an eligible structure's abandonment deadline. [Structure GM commands](protocol/structures.md#structure-gm-commands)
@@ -366,7 +373,13 @@ Buy orders can accept fulfillment within a selected range. Visibility governs th
 [Ranged buy orders](protocol/industry.md#ranged-personal-buy-orders)
 
 The account PLEX Vault supports transfers between owned physical stacks and the shared vault balance, plus PLEX listings and
-repricing through the regional market at NPC stations. [PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale)
+repricing through the regional market at NPC stations. The Wallet shows transaction history and categorized totals for the
+account's pilots. [PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale) ·
+[PLEX Vault transaction history](protocol/industry.md#plex-vault-transaction-history)
+
+Personal NPC-station industry jobs can be delivered or cancelled while the pilot is docked elsewhere or in space.
+Results and released assets stay at the job's saved location.
+[Remote industry settlement](protocol/industry.md#remote-settlement-of-personal-npc-station-industry-jobs)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 
