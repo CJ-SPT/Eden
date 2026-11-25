@@ -131,6 +131,11 @@ internal sealed record FleetLeaveNotification(long PilotId) : FleetNotification(
     public override object?[] Arguments => [PilotId];
 }
 
+internal sealed record FleetMoveFailedNotification(long PilotId) : FleetNotification("OnFleetMoveFailed")
+{
+    public override object?[] Arguments => [PilotId, false];
+}
+
 internal sealed record FleetMemberNotification(long FleetId, FleetMember Before, FleetMember After, bool OnlyMember)
     : FleetNotification("OnFleetMemberChanged")
 {

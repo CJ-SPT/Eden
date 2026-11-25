@@ -151,6 +151,10 @@ public abstract record FleetEvent
 
     public sealed record Changed(FleetMember Before, FleetMember After, bool OnlyMember) : FleetEvent;
 
+    public sealed record MembersMoved(IReadOnlyList<Changed> Changes) : FleetEvent;
+
+    public sealed record MoveFailed(long PilotId) : FleetEvent;
+
     public sealed record Hierarchy(long WingId, long? SquadId, bool Deleted, string? Name = null) : FleetEvent;
 
     public sealed record Options(FleetOptions Before, FleetOptions After) : FleetEvent;
@@ -203,6 +207,7 @@ public interface ICooperativeFleets
     void Kick(long actor, long fleet, long target);
     void Disband(long actor, long fleet);
     void Move(long actor, long fleet, long target, FleetPlacement placement);
+    IReadOnlyList<long> MoveMany(long actor, long fleet, IReadOnlyList<long> targets, FleetPlacement placement);
     void MakeBoss(long actor, long fleet, long target);
     long CreateWing(long actor, long fleet);
     long CreateSquad(long actor, long fleet, long wing);

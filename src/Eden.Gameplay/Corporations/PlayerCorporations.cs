@@ -19,7 +19,8 @@ public sealed record CorporationDetails(
     CorporationCommunications? Communications = null,
     long RecruitmentRevision = 0,
     long GovernanceRevision = 0,
-    IReadOnlyList<MilitiaFaction>? AllowedMilitiaFactions = null
+    IReadOnlyList<MilitiaFaction>? AllowedMilitiaFactions = null,
+    bool RestrictCorpMails = false
 );
 
 public sealed record PlayerCorporation(

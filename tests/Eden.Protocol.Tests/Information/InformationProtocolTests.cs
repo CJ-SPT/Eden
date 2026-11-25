@@ -284,6 +284,78 @@ public sealed partial class InformationTests
     }
 
     [Fact]
+    public void NativeCargoScannerRevealsOneContainerLayerWithoutChangingContents()
+    {
+        const int auditContainer = 17363;
+        const int standardContainer = 3297;
+        const int tritanium = 34;
+        const int veldspar = 1230;
+        const long outer = 7000000000001;
+        const long recovered = 7000000000002;
+        const long inner = 7000000000003;
+        const long hidden = 7000000000004;
+        using Fixture f = Prepare();
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (448,'Audit Log Secure Container',2);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Capacity) VALUES
+                    ({auditContainer},'Small Audit Log Secure Container',448,120),({standardContainer},'Small Standard Container',12,120);
+                """
+            );
+        }
+        long scanner = f.Fit(442);
+        Space(f);
+        var target = f.Db.Store.FindPilot(1000002)!;
+        WorldDatabase database = new(f.Db.Path);
+        using LiveWorld live = new(database, f.Clock, _ => { });
+        using (WorldActionScope setup = new(database, new(ships: [target.ShipId])))
+        {
+            Add(outer, auditContainer, target.ShipId, InventoryFlag.Cargo, 1, singleton: true);
+            Add(recovered, tritanium, outer, InventoryFlag.Locked, 25);
+            Add(inner, standardContainer, outer, InventoryFlag.Unlocked, 1, singleton: true);
+            Add(hidden, veldspar, inner, InventoryFlag.None, 71);
+            setup.World.Add(new SavedCargoContainer { ItemId = outer, GeneralPassword = "fixture" });
+            setup.Commit();
+
+            void Add(long id, int type, long location, InventoryFlag flag, int quantity, bool singleton = false) =>
+                setup.World.Add(
+                    new OwnedItem
+                    {
+                        Id = id,
+                        TypeId = type,
+                        OwnerId = target.PilotId,
+                        LocationId = location,
+                        FlagId = (int)flag,
+                        Quantity = quantity,
+                        Singleton = singleton,
+                    }
+                );
+        }
+        using var source = Client(f, 1000001);
+        using var recipient = Client(f, 1000002);
+        using var services = f.Db.Services.CreateScope();
+        var targeting = services.ServiceProvider.GetRequiredService<TargetingHandler>();
+        var handler = services.ServiceProvider.GetRequiredService<InformationHandler>();
+        Lock(f, source, targeting, target.ShipId);
+        Assert.IsType<PilotCallResult.Success>(handler.CallModule(source, "Activate", [scanner, "cargoScan", target.ShipId, 0L]));
+        Assert.DoesNotContain(source.Notifications, item => item.Name == "OnCargoScanComplete");
+        f.Clock.Milliseconds += (long)Math.Ceiling(handler.ActiveEffect(source.Pilot, scanner)!.DurationMilliseconds!.Value);
+        handler.Advance(source);
+        handler.Advance(source);
+
+        var cargo = Assert.Single(source.Notifications.OfType<CargoScanCompleted>()).Scan.Cargo;
+        Assert.Contains(new ScanItem(tritanium, 25), cargo);
+        Assert.Contains(new ScanItem(standardContainer, 1), cargo);
+        Assert.DoesNotContain(cargo, item => item.TypeId == auditContainer || item == new ScanItem(veldspar, 71));
+        Assert.DoesNotContain(recipient.Notifications, item => item.Name == "OnCargoScanComplete");
+        Assert.Equal((int)InventoryFlag.Locked, live.Economy.Inspect(world => world.Set<OwnedItem>().Find(recovered)!.FlagId));
+        Assert.Equal(inner, live.Economy.Inspect(world => world.Set<OwnedItem>().Find(hidden)!.LocationId));
+        Assert.Equal("fixture", live.Economy.Inspect(world => world.Set<SavedCargoContainer>().Find(outer)!.GeneralPassword));
+    }
+
+    [Fact]
     public void LockLossCancelsAPaidScanWithoutResultsOrRefund()
     {
         using Fixture f = Prepare();

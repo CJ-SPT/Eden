@@ -1,15 +1,20 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Thermal;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.PilotSessions;
+using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -100,6 +105,106 @@ public sealed class ProductionInventoryTests
         f.Personal.PlaceSell(Owner, [new(ship, Station, 603, 100_000_000, 1)], 1);
         f.Market.Buy(Other, Station, [new(603, 100_000_000, 1)]);
         Assert.Equal(1, f.Stack(Other, 603).Quantity);
+    }
+
+    [Fact]
+    public async Task NativeRepackagingReturnsFittedModulesAndChargesAcrossCheckpoint()
+    {
+        const int merlin = 603;
+        const int ancillaryRepairer = 33076;
+        const int rig = 30987;
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        string catalog = new WorldDatabase(db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadStarterProduction(catalog);
+        PassiveCatalogFixture.LoadAncillaryRepairs(catalog);
+        PassiveCatalogFixture.LoadRigs(catalog);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        long ship;
+        long module;
+        long paste;
+        long rigged;
+        using (var world = live.Economy.Begin(TransactionParticipants.None))
+        {
+            ship = AddHull();
+            rigged = AddHull();
+            module = AddItem(ancillaryRepairer, ship, InventoryFlag.LowSlot0, quantity: 1, singleton: true, online: true);
+            paste = AddItem(NaniteRepairRules.PasteType, module, InventoryFlag.Cargo, quantity: 6);
+            AddItem(rig, rigged, InventoryFlag.RigSlot0, quantity: 1, singleton: true);
+            world.Commit();
+
+            long AddHull()
+            {
+                long id = InventoryPersistence.NextId(world);
+                world.Add(
+                    new Ship
+                    {
+                        Id = id,
+                        OwnerId = Owner,
+                        TypeId = merlin,
+                        StationId = Station,
+                        Name = "Merlin",
+                    }
+                );
+                return id;
+            }
+
+            long AddItem(int type, long location, InventoryFlag flag, int quantity, bool singleton = false, bool online = false)
+            {
+                long id = InventoryPersistence.NextId(world);
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = id,
+                        OwnerId = Owner,
+                        TypeId = type,
+                        LocationId = location,
+                        FlagId = (int)flag,
+                        Quantity = quantity,
+                        Singleton = singleton,
+                        Online = online,
+                    }
+                );
+                return id;
+            }
+        }
+
+        using (CourierServiceTests.Client client = new(db, clock, 1000001))
+        {
+            client.Refresh();
+            var fleet = db.Services.GetRequiredService<IPilotFleet>();
+            var inventory = db.Services.GetRequiredService<IPilotInventory>();
+            Assert.IsType<PilotCallResult.Failure>(Repackage(ship, rigged));
+            Assert.NotNull(fleet.Find(Owner, ship));
+            Assert.Single(inventory.List(Owner, ship), row => row.Id == module && row.Online);
+            Assert.Empty(client.Context.Notifications.OfType<ItemChanged>());
+
+            Assert.Same(PilotCallResult.None, Repackage(ship));
+            var updates = client.Context.Notifications.OfType<ItemChanged>().ToArray();
+            Assert.Equal(new[] { paste, module, ship }, updates.Select(update => update.Item.Id));
+            Assert.All(updates, update => Assert.Equal((long)Station, update.Item.LocationId));
+            Assert.Null(fleet.Find(Owner, ship));
+
+            PilotCallResult Repackage(params long[] ids) =>
+                client.Call(
+                    "RepackageItems",
+                    [new Dictionary<long, object?> { [Station] = ids.Select(id => (object?)new object?[] { id, (long)Station }).ToList() }],
+                    "repackagingSvc"
+                );
+        }
+
+        await live.FlushAsync();
+        db.Services.Dispose();
+        using var reopened = ServerServices.Build(new(db.Path), clock, liveWorld: true);
+        var saved = reopened.GetRequiredService<IPilotInventory>().List(Owner, Station);
+        Assert.False(Assert.Single(saved, row => row.Id == ship).Singleton);
+        var returnedModule = Assert.Single(saved, row => row.Id == module);
+        Assert.True(returnedModule.Singleton);
+        Assert.False(returnedModule.Online);
+        Assert.Equal(6, Assert.Single(saved, row => row.Id == paste).Quantity);
+        var repackaging = reopened.GetRequiredService<IPilotRepackaging>();
+        Assert.Empty(repackaging.Repackage(Owner, Station, [new(ship, Station)]));
+        Assert.NotNull(reopened.GetRequiredService<IPilotFleet>().Find(Owner, rigged));
     }
 
     [Theory]

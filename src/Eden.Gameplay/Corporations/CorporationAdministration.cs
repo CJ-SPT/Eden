@@ -71,4 +71,6 @@ public interface ICorporationAdministration
     void Update(long actorId, CorporationProperties properties);
     void UpdateLogo(long actorId, CorporationLogo logo);
     void UpdateDivisions(long actorId, CorporationDivisions divisions);
+    bool RestrictsCorpMails(long actorId);
+    void SetCorpMailRestriction(long actorId, bool restricted);
 }

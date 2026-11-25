@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Crystal damage in inventory](#crystal-damage-in-inventory)
+- [Fitted ship repackaging](#fitted-ship-repackaging)
 - [Inactive ship transfers and move-rule audit, November 15, 2026](#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
 
 - [Container stacking and fitting, November 15, 2026](#container-stacking-and-fitting-november-15-2026)
@@ -821,6 +822,18 @@ Inert build **3662168** `code.ccp` inspection (SHA-256 **37FB2AF4FA0EC5C8FA320F3
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect Stack All quantity/capacity refresh and repackaging's packaged tile/insurance display on a copied world. Native rendering and input remain unverified.
+
+### Fitted ship repackaging
+
+Repackaging an inactive, undamaged ship in the current personal hangar now returns its high, medium, and low slot modules and their loaded charges to that same hangar. Returned modules retain their identity, condition, and assembled form and go offline. The hull keeps its item ID in packaged form and loses its insurance without refund. The resident world commits these changes with the ordinary item notifications after the whole selection passes validation. The fitted hull must have an empty cargo hold, empty bays and no rigs or subsystems. [EVE University assembling and repackaging](https://wiki.eveuniversity.org/Assembling_and_Repackaging)
+
+In build **3662168**, `invItemFunctions.RepackageItems` confirms the ordinary request on the client and sends one station-keyed dictionary of item/location tuples. The client only sends `destroyable=True` on the separate upgrade-destruction retry. The local EVE.js **261108.1** `repackagingSupport.js` moves recoverable ship contents to Hangar during the packaging transaction. Eden uses its existing fitted-module inventory move, which also unloads saved charge stacks, and the existing resident hull-removal cleanup. The ordinary wire reply remains Python None.
+
+**Automated validation.** The exact test `FullyQualifiedName=Eden.Protocol.Tests.Industry.ProductionInventoryTests.NativeRepackagingReturnsFittedModulesAndChargesAcrossCheckpoint` passed in **1.14 seconds**. It checks native item notifications, module and charge recovery, the packaged hull, rollback when a later rigged hull fails, checkpoint reopening, and retry.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Repackage a spare hull carrying a fitted and loaded module, then inspect the packaged hull, offline module and restored charges in Item Hangar.
 
 ## Personal Assets window (November 8, 2026)
 

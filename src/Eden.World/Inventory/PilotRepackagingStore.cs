@@ -18,7 +18,7 @@ using Eden.World.Storage;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepackaging
+internal sealed class PilotRepackagingStore(WorldDatabase database, TimeProvider clock) : IPilotRepackaging
 {
     public IReadOnlyList<InventoryChange> Repackage(long pilotId, long stationId, IReadOnlyList<RepackageItem> items)
     {
@@ -26,11 +26,12 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
+        var selected = items.Select(i => i.ItemId).ToHashSet();
         if (
             pilot.ActiveShip.Position is not null
             || pilot.ActiveShip.DockedLocationId != stationId
             || items.Count == 0
-            || items.Select(i => i.ItemId).Distinct().Count() != items.Count
+            || selected.Count != items.Count
             || items.Any(i => i.LocationId != stationId)
         )
         {
@@ -54,18 +55,44 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                 var type = catalog.FittingType(ship.TypeId) ?? throw new InvalidDataException("Unknown ship type.");
                 var before = PilotFleetStore.Read(catalog, ship);
                 var health = world.Set<ShipHealthState>().Find(ship.Id);
+                long shipId = ship.Id;
+                var contents = world.Filter<OwnedItem>(i => i.LocationId == shipId).ToArray();
                 RepackagingRules.Check(
                     new(
                         before,
                         ship.TypeId != FleetDefinitions.CapsuleType && HullCatalog.CanAssemble(catalog, type, type.CategoryId),
                         world.Filter<Pilot>(p => p.ActiveShipId == ship.Id).Any(),
-                        world.Filter<OwnedItem>(i => i.LocationId == ship.Id).Any()
-                            || world.Filter<Ship>(s => s.StoredInId == ship.Id).Any(),
+                        contents.Any(i =>
+                            world is not EconomyTransaction
+                            || i.OwnerId != pilotId
+                            || !InventoryDefinitions.IsFittedSlot(i.FlagId)
+                            || InventoryDefinitions.IsRigSlot(i.FlagId)
+                            || selected.Contains(i.Id)
+                        ) || world.Filter<Ship>(s => s.StoredInId == shipId).Any(),
                         false,
                         health?.ArmorDamage ?? 0,
                         health?.StructureDamage ?? 0
                     )
                 );
+                if (contents.Length > 0)
+                {
+                    long[] modules = contents.Select(i => i.Id).ToArray();
+                    if (world.Filter<OwnedItem>(i => Enumerable.Contains(modules, i.LocationId) && i.OwnerId != pilotId).Any())
+                    {
+                        throw new InvalidDataException("This fitting contains items that do not belong to you.");
+                    }
+                    changes.AddRange(
+                        PilotInventoryStore.Move(
+                            world,
+                            catalog,
+                            pilotId,
+                            stationId,
+                            new(modules, shipId, (int)InventoryFlag.Hangar, null),
+                            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                            deferFittingChanges: true
+                        )
+                    );
+                }
                 PilotInsuranceStore.VoidRemovedHull(world, ship.Id);
                 world.Remove(ship);
                 var packaged = world

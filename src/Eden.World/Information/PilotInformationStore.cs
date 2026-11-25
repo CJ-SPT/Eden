@@ -372,7 +372,6 @@ internal sealed partial class PilotInformationStore(
                     .AsEnumerable()
                     .Where(i => ShipHoldRules.Definition(i.FlagId) is not null)
                     .OrderBy(i => i.Id)
-                    .Select(i => new ScanItem(i.TypeId, i.Quantity))
                     .ToArray();
                 var npcCargo = world
                     .Filter<WorldNpcMiningCargo>(c => c.NpcId == saved.TargetId && c.Quantity > 0)
@@ -384,7 +383,8 @@ internal sealed partial class PilotInformationStore(
                     .OrderBy(s => s.Id)
                     .Select(s => new ScanItem(s.TypeId, 1))
                     .ToArray();
-                result = new(Cargo: new(saved.TargetId, cargo.Concat(npcCargo).Concat(storedShips).ToArray()));
+                var rows = cargo.SelectMany(item => CargoScanRows(world, catalog, item));
+                result = new(Cargo: new(saved.TargetId, rows.Concat(npcCargo).Concat(storedShips).ToArray()));
             }
             else if (structure is not null)
             {
@@ -432,6 +432,20 @@ internal sealed partial class PilotInformationStore(
         world.Remove(saved);
         RemoveMarker(world, moduleId, saved.ShipId);
         return result;
+    }
+
+    private static IEnumerable<ScanItem> CargoScanRows(WorldAction world, CatalogDbContext catalog, OwnedItem item)
+    {
+        if (!CargoContainerAssemblyRules.IsContainer(item.TypeId, catalog.FittingType(item.TypeId)?.GroupId ?? 0))
+        {
+            return [new(item.TypeId, item.Quantity)];
+        }
+        return world
+            .Filter<OwnedItem>(child => child.LocationId == item.Id && child.OwnerId == item.OwnerId)
+            .AsEnumerable()
+            .Where(child => child.FlagId is (int)InventoryFlag.None or (int)InventoryFlag.Locked or (int)InventoryFlag.Unlocked)
+            .OrderBy(child => child.Id)
+            .Select(child => new ScanItem(child.TypeId, child.Quantity));
     }
 
     private static ShipScan ReadStructureScan(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now)

@@ -4,9 +4,11 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Mail;
 using Eden.Gameplay.Alliances;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
+using Eden.World.Corporations;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -215,8 +217,18 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         if (draft.OrganizationId is long organization)
         {
             var sender = world.Pilots.Find(pilotId)!;
-            if (organization == sender.CorporationId && world.Set<SavedCorporation>().Find(sender.CorporationId) is { ClosedAt: null })
+            if (
+                organization == sender.CorporationId
+                && world.Set<SavedCorporation>().Find(sender.CorporationId) is { ClosedAt: null } senderCorporation
+            )
             {
+                if (
+                    senderCorporation.Snapshot(0).Details.RestrictCorpMails
+                    && !CorporationRoleStore.Has(world, pilotId, senderCorporation, CorporationRole.ChatManager)
+                )
+                {
+                    throw new InvalidDataException("Only Communications Officers and Directors can mail the corporation.");
+                }
                 organizationAudience.UnionWith(world.Pilots.Where(p => p.CorporationId == sender.CorporationId).Select(p => p.Id));
                 organizationLabel = SystemMailLabel.Corporation;
             }

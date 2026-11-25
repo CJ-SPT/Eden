@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -28,6 +29,36 @@ internal sealed class CorporationAdministrationStore(WorldDatabase database) : I
 
     public void UpdateDivisions(long actorId, CorporationDivisions divisions) =>
         Change(actorId, details => details with { Divisions = divisions });
+
+    public bool RestrictsCorpMails(long actorId) =>
+        LiveWorld
+            .Find(database.Path)
+            ?.Economy.Inspect(world =>
+            {
+                var actor = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
+                return world.Set<SavedCorporation>().Find(actor.CorporationId) is { ClosedAt: null } corporation
+                    && corporation.Snapshot(0).Details.RestrictCorpMails;
+            })
+        ?? false;
+
+    public void SetCorpMailRestriction(long actorId, bool restricted)
+    {
+        var world =
+            LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Corporation mail settings require the resident world.");
+        using var action = world.Economy.Begin(TransactionParticipants.None);
+        var corporation = CorporationRoleStore.Current(action, actorId);
+        CorporationRoleStore.RequireDirector(action, actorId, corporation);
+        var details = corporation.Snapshot(0).Details;
+        if (corporation.ClosedAt.HasValue)
+        {
+            throw new InvalidDataException("This corporation is closed.");
+        }
+        if (details.RestrictCorpMails != restricted)
+        {
+            corporation.DetailsJson = JsonSerializer.Serialize(details with { RestrictCorpMails = restricted });
+        }
+        action.Commit();
+    }
 
     private void Change(long actorId, Func<CorporationDetails, CorporationDetails> update)
     {

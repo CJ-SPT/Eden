@@ -109,6 +109,17 @@ internal sealed partial class CooperativeFleetHandler(
                         new FleetMemberNotification(identity.FleetId, changed.Before, changed.After, changed.OnlyMember)
                     );
                     break;
+                case FleetEvent.MembersMoved moved:
+                    foreach (var change in moved.Changes)
+                    {
+                        context.Notifications.Add(
+                            new FleetMemberNotification(delivery.FleetId, change.Before, change.After, change.OnlyMember)
+                        );
+                    }
+                    break;
+                case FleetEvent.MoveFailed failed:
+                    context.Notifications.Add(new FleetMoveFailedNotification(failed.PilotId));
+                    break;
                 case FleetEvent.Hierarchy hierarchy when identity is not null:
                     context.Notifications.Add(new FleetHierarchyNotification(hierarchy));
                     break;
@@ -598,6 +609,9 @@ internal sealed partial class CooperativeFleetHandler(
                 case ("MoveMember", [long target, var wing, var squad, long role]):
                     fleets.Move(actor, id, target, Placement(wing, squad, role));
                     return false;
+                case ("MassMoveMembers", [List<object?> targets, var wing, var squad, long role])
+                    when targets.Count <= FleetRules.MaximumMembers:
+                    return new BlueList<long>(fleets.MoveMany(actor, id, BlueRead.PositiveIds(targets), Placement(wing, squad, role)));
                 case ("MakeLeader", [long target]):
                     fleets.MakeBoss(actor, id, target);
                     return PilotCallResult.None;

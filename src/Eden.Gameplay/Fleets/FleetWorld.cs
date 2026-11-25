@@ -449,12 +449,56 @@ public sealed partial class FleetWorld(long seed)
         ChangeMember(fleet, member with { Placement = placement });
     }
 
-    private void ChangeMember(Fleet fleet, FleetMember after)
+    public IReadOnlyList<long> MoveMany(long actor, long fleetId, IReadOnlyList<long> targets, FleetPlacement requested)
+    {
+        var fleet = MemberFleet(actor, fleetId);
+        if (!Boss(fleet, actor) && fleet.Members[actor].Placement.Role == FleetRole.Member)
+        {
+            throw new InvalidDataException("Only a commander or the fleet boss may move a group.");
+        }
+        if (
+            requested.Role != FleetRole.Member
+            || targets.Count is < 1 or > FleetRules.MaximumMembers
+            || targets.Any(id => id <= 0)
+            || targets.Distinct().Count() != targets.Count
+        )
+        {
+            throw new InvalidDataException("Choose distinct fleet members and a squad.");
+        }
+        var placement = Placement(fleet, requested);
+        List<FleetMember> moves = [];
+        // Authorize the entire selection against the original hierarchy, including a commander moving themselves.
+        foreach (long target in targets)
+        {
+            if (!fleet.Members.TryGetValue(target, out var member) || member.Placement == placement)
+            {
+                continue;
+            }
+            try
+            {
+                AuthorizePlacement(fleet, actor, target, placement);
+                moves.Add(member with { Placement = placement });
+            }
+            catch (InvalidDataException)
+            {
+                Queue(actor, fleetId, new FleetEvent.MoveFailed(target));
+            }
+        }
+        if (moves.Count > 0)
+        {
+            Publish(fleet, new FleetEvent.MembersMoved(moves.Select(member => UpdateMember(fleet, member)).ToArray()));
+        }
+        return moves.Select(member => member.Pilot.Id).ToArray();
+    }
+
+    private void ChangeMember(Fleet fleet, FleetMember after) => Publish(fleet, UpdateMember(fleet, after));
+
+    private FleetEvent.Changed UpdateMember(Fleet fleet, FleetMember after)
     {
         var before = fleet.Members[after.Pilot.Id];
         fleet.Members[after.Pilot.Id] = after;
         SaveIdentity(fleet, after);
-        Publish(fleet, new FleetEvent.Changed(before, after, fleet.Members.Count == 1));
+        return new(before, after, fleet.Members.Count == 1);
     }
 
     public void MakeBoss(long actor, long fleetId, long target)

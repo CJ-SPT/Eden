@@ -100,14 +100,7 @@ internal sealed partial class CorporationHandler(
         if (
             service != "corpRegistry"
             || method
-                is not (
-                    "AddCorporation"
-                    or "GetSuggestedTickerNames"
-                    or "GetEveOwners"
-                    or "GetMember"
-                    or "DoesMyCorpAcceptStructures"
-                    or "DoesCorpRestrictCorpMails"
-                )
+                is not ("AddCorporation" or "GetSuggestedTickerNames" or "GetEveOwners" or "GetMember" or "DoesMyCorpAcceptStructures")
         )
         {
             return PilotCallResult.Unsupported;
@@ -161,7 +154,7 @@ internal sealed partial class CorporationHandler(
                         corporations.Members(context.Pilot.PilotId).SingleOrDefault(m => m.PilotId == pilot)
                         ?? throw new InvalidDataException("That pilot is not a member of your corporation.");
                     return new PlayerCorporationMemberReply(member);
-                case ("DoesMyCorpAcceptStructures" or "DoesCorpRestrictCorpMails", []):
+                case ("DoesMyCorpAcceptStructures", []):
                     return false;
                 default:
                     throw new InvalidDataException("Invalid corporation request.");

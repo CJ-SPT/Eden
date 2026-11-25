@@ -11,6 +11,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation Kill Reports](#corporation-kill-reports)
 - [Corporation medals](#corporation-medals)
 - [Medal award notifications](#medal-award-notifications)
+- [Corporation mail restrictions](#corporation-mail-restrictions)
 - [Corporation and alliance wars](#corporation-and-alliance-wars)
 - [Defender allies, surrender and War Reports](#defender-allies-surrender-and-war-reports)
 - [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
@@ -155,6 +156,41 @@ Not performed; agent client testing is disabled.
 
 1. Award a medal while its recipient has Decorations open and confirm the view refreshes and the unread notice appears.
 2. Award another medal while the recipient is signed out, then verify the notification after sign-in.
+
+## Corporation mail restrictions
+
+CEOs and directors can set **Corp Mail** to **Communications Officers only** on the Corporation home panel.
+When enabled, Communications Officers and directors can address a mail to their corporation. The resident send
+checks the pilot's current corporation roles before creating the message, recipient copies or delivery events.
+If the draft also addresses individuals, a rejected corporation address prevents the entire send. Removing the
+restriction restores corporation-addressed sending for all current members. Existing saves default to unrestricted
+and the setting persists in the standard corporation details checkpoint.
+
+The pinned build **3662168** `corp_ui_home.pyj` checks `SessionChecker.IsCorpDirector` before showing its toggle.
+The read uses `corpRegistry.DoesCorpRestrictCorpMails()` and the toggle sends one Boolean to
+`RegisterNewCorpMailRestrictionSettings`. The restricted label identifies Communications Officers, who use the
+pinned `corpRoleChatManager` bit. The archive SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The EVE.js **261108.1** reference `corpRegistryRuntime.js` (SHA-256
+`41d691387ff45dce3cf4680da40291557b868f0b3f589234d0eb244b77c4e35c`) implements the settings calls.
+Eden keeps its existing Boolean read and checks the effective role in the mail transaction.
+[UniWiki corporation mail](https://wiki.eveuniversity.org/EVE_Mail#Corp_Mails) ·
+[CCP corporation roles](https://support.eveonline.com/hc/en-us/articles/203217712-Roles-Listing)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Alliances.CorporationMailRestrictionTests.NativeCorporationMailRestrictionChecksCurrentRoleAndSurvivesCheckpoint`
+passed in 0.42 seconds. It checks native reads and edits, authorization, atomic rejection of mixed recipients, personal
+mail, immediate role changes, and restriction persistence after reopening a checkpoint.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Enable **Communications Officers only** on Corporation Home and try sending to the corporation as an ordinary member.
+2. Assign the member the Communications Officer role, send again, and confirm the message appears in the Corp mailbox.
 
 ## Corporation and alliance wars
 

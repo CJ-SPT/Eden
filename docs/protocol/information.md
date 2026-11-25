@@ -2,6 +2,25 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Cargo scans through containers
+
+A paid cargo scan shows the immediate contents of ordinary, secure, audit-log and freight containers found in
+scannable holds. It omits the outer container and reports any container found inside it as an item. Deeper contents stay
+hidden. The scan reads the container owner's ordinary, locked and unlocked rows at the cycle deadline. It does not unlock
+items or grant inventory access. Courier package escrow remains outside this container read.
+
+CCP's Revelations II patch notes document scanning cargo containers. EVE University and the EVE.js 261108.1 scanner
+reference describe the one-layer limit. The pinned 3662168 catalog uses container groups **12**, **340**, **448** and
+**649**. Eden uses the existing `OnCargoScanComplete` item-type and quantity pairs for inner rows.
+[CCP Revelations II patch notes](https://www.eveonline.com/news/view/revelations-ii-patch-notes-features-fixes-and-improvements-1) ·
+[EVE University cargo scanning](https://wiki.eveuniversity.org/Cargo_scanning)
+
+**Automated validation.** `NativeCargoScannerRevealsOneContainerLayerWithoutChangingContents` passed in 1.17 seconds
+of test execution. The resident protocol case checks the paid deadline, one-layer disclosure from a password-protected
+container, privacy of the result and preservation of item locations and access settings.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Ship scanning Upwell structures
 
 A locked, targetable Upwell structure within ship-scan range now returns its complete fitted hardware and current

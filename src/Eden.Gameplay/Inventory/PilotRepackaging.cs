@@ -6,7 +6,7 @@ public sealed record RepackagingState(
     InventoryItem Item,
     bool Supported,
     bool ActiveShip,
-    bool HasContents,
+    bool HasUnsupportedContents,
     bool InstalledBlueprint,
     double ArmorDamage,
     double StructureDamage
@@ -25,7 +25,7 @@ public static class RepackagingRules
             !state.Supported
             || state.Item.CategoryId is not ((int)InventoryCategory.Ship or (int)InventoryCategory.Module)
             || state.ActiveShip
-            || state.HasContents
+            || state.HasUnsupportedContents
             || state.InstalledBlueprint
             || state.Item.Online
             || state.ArmorDamage > 0
@@ -33,7 +33,9 @@ public static class RepackagingRules
             || state.Item.CrystalDamage > 0
         )
         {
-            throw new InvalidDataException("Repackage an inactive, empty, unfitted and undamaged supported ship or module in Item Hangar.");
+            throw new InvalidDataException(
+                "Repackage an inactive, undamaged ship with recoverable fittings or an empty, offline, undamaged module in Item Hangar."
+            );
         }
     }
 }

@@ -2,6 +2,44 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet group moves
+
+Fleet bosses and commanders can drag a selection of fleet members into a squad. Eden checks each pilot
+against the original command hierarchy before applying the permitted moves together. Moving the issuing
+commander as part of the selection does not affect the other checks. Pilots outside the command scope
+stay in their current positions, and the requester receives the native move failure for those pilots.
+The client receives the pilots who actually changed position. A group move assigns ordinary member
+positions. Use the existing single-member move for command appointments.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms that
+`fleetSvc.MassMove` sends `MassMoveMembers(characterIDs, wingID, squadID, role)` on the bound fleet.
+It passes the returned list of changed IDs to `OnManyFleetMembersChanging`, while the native roster
+still consumes the individual `OnFleetMemberChanged` events. Eden queues one roster batch per observer
+and emits the existing per-member wire events. The EVE.js **261108.1** comparison in
+`server/src/services/fleets/fleetRuntime.js` (SHA-256
+`494727d0f0793202bd9195c417fffc63cce499ea157890fc12981919be521b8f`) returns the same list
+and applies per-pilot command checks.
+[CCP Rubicon fleet changes](https://www.eveonline.com/news/view/fleetchanges_ui) ·
+[EVE University fleet roles](https://wiki.eveuniversity.org/Roles_in_Incursions)
+
+**Automated validation.** `MassMoveUsesOriginalCommandAuthorityAndPublishesOneBatch` and
+`NativeMassMoveReturnsChangedMembersAndUpdatesTheirRoster` passed in 4.78 seconds of combined case time.
+They cover scoped partial success, a commander's own move, native roster updates and no-op retries.
+
+The November 25, 2026 milestone also covers corporation mail restrictions, cargo scans through containers
+and fitted ship repackaging. All five exact cases passed in 10.31 seconds. The solution built with zero
+warnings and errors. The broader filter passed all 234 cases in 94.49 seconds. Container and insurance
+checks passed another 48 cases in 17.71 seconds. Catalog and formatting policy suites passed all 17 cases.
+Style, CSharpier and line-width checks passed with the local `.artifacts` archive excluded from the formatter.
+
+```text
+FullyQualifiedName~FleetRulesTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~InformationTests|FullyQualifiedName~ProductionInventoryTests|FullyQualifiedName~InactiveShipInventoryTests|FullyQualifiedName~ShipRigTests|FullyQualifiedName~CorporationMailRestrictionTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationCommunicationTests|FullyQualifiedName~MailServiceTests|FullyQualifiedName~MailComposerDefaultsTests|FullyQualifiedName~Persistence.MailTests|FullyQualifiedName~InsuranceTests|FullyQualifiedName~CargoContainerTests|FullyQualifiedName~DetachedCheckpointTests
+FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~InsuranceServiceTests|FullyQualifiedName~InsuranceLossTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Fleet composition and map locations
 
 The fleet boss and commanders can inspect current hulls, docked locations and trained leadership skills for

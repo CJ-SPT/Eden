@@ -174,6 +174,9 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
     public void Move(long actor, long fleet, long target, FleetPlacement placement) =>
         Write(() => _world.Move(actor, fleet, target, placement));
 
+    public IReadOnlyList<long> MoveMany(long actor, long fleet, IReadOnlyList<long> targets, FleetPlacement placement) =>
+        Read(() => _world.MoveMany(actor, fleet, targets, placement));
+
     public void MakeBoss(long actor, long fleet, long target) => Write(() => _world.MakeBoss(actor, fleet, target));
 
     public long CreateWing(long actor, long fleet) => Read(() => _world.CreateWing(actor, fleet));

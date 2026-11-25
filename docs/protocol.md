@@ -445,6 +445,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Fleet group moves](protocol/fleets.md#fleet-group-moves)
 - [Fleet composition and map locations](protocol/fleets.md#fleet-composition-and-map-locations)
 - [Fleet recruitment limits and default squads](protocol/fleets.md#fleet-recruitment-limits-and-default-squads)
 - [Native fleet regroup](protocol/fleets.md#native-fleet-regroup)
@@ -458,6 +459,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Corporation mail restrictions](protocol/corporations.md#corporation-mail-restrictions)
 - [Medal award notifications](protocol/corporations.md#medal-award-notifications)
 - [Corporation medals](protocol/corporations.md#corporation-medals)
 - [Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
@@ -624,6 +626,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Information modules and salvage
 
+- [Cargo scans through containers](protocol/information.md#cargo-scans-through-containers)
 - [Ship scanning Upwell structures](protocol/information.md#ship-scanning-upwell-structures)
 - [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff)
 - [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
@@ -644,6 +647,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Inventory and ship ownership
 
+- [Fitted ship repackaging](protocol/inventory.md#fitted-ship-repackaging)
 - [Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
 - [Crystal damage in inventory](protocol/inventory.md#crystal-damage-in-inventory)
 - [Container stacking and fitting](protocol/inventory.md#container-stacking-and-fitting-november-15-2026)

@@ -130,6 +130,9 @@ New personal mail now accepts the stock compose window's `False` defaults for un
 
 Personal EVE Mail now supports local-pilot sending, inbox/sent state, replies/forwards, compressed bodies, read/unread actions, trash/restoration/deletion and private labels. Mail and change notifications persist across restarts, with recipient ownership, blocking and rate limits enforced atomically. Native presentation remains unverified. Corporation/alliance broadcasts now snapshot their member recipients; paid CSPA remains pending. Mailing lists are implemented above. See the [personal mail notes](protocol/social.md#persistent-personal-eve-mail).
 
+Corporation directors can restrict corporation-wide mail to Communications Officers and directors.
+[Corporation mail restrictions](protocol/corporations.md#corporation-mail-restrictions)
+
 The notification inbox now saves contact-add and contact-edit notifications, including the contact form's **Send Notification** message. Recipients can fetch history/unread groups, mark items read and delete selected items, groups or all history. Connected pilots receive native notifications; offline recipients retain them across restarts. Blocked messages fail together with the contact edit. Other gameplay notification families and paid CSPA communication remain pending; native inbox presentation is unverified. See the [notification inbox notes](protocol/social.md#persistent-notification-inbox-and-contact-messages).
 
 Personal calendar events now support saved invitations, details, replies, edits, rescheduling and cancellation. Creators can invite up to **50 local Eden pilots**; connected invitees receive ordered calendar updates, and offline invitees see their events after reconnecting. Removing an invitee revokes access. Alliance calendars are implemented with current-member access and executor administration. Corporation members can see and respond to corporation events. Communications Officers, directors and CEOs can schedule, reschedule and cancel them. See [corporation calendar events](protocol/social.md#corporation-calendar-events). Official events and paid CSPA invitations remain pending. Native calendar presentation is unverified; see the [calendar notes](protocol/social.md#persistent-personal-calendar).
@@ -149,6 +152,9 @@ damage and Command Bursts. [Fleet regroup](protocol/fleets.md#native-fleet-regro
 Fleet Composition shows hulls, docking status and leadership skills for pilots in the viewer's command scope.
 Fleet members can see the fleet's system locations through the map's **My Fleet** filter.
 [Fleet composition](protocol/fleets.md#fleet-composition-and-map-locations)
+
+Commanders can move a selection of permitted fleet members into a squad with one drag-and-drop action.
+[Fleet group moves](protocol/fleets.md#fleet-group-moves)
 
 Fleet Finder supports corporation, alliance, militia and public adverts, with standings filters and open or approval-based
 applications. Fleet bosses can cap the roster and choose a default squad for open applications. Fleets and their adverts
@@ -316,7 +322,11 @@ Economy worlds supply catalog-offered original blueprints and skillbooks at thei
 
 Catalog-backed belts now renew at a saved daily UTC boundary (11:00 by default), including when no pilot visits the system. Startup catches up overdue belts once; reconnecting does not reset depletion. New economy worlds save configurable material price inputs and industry indices, charge atomic industry/reprocessing fees, and value the manufactured starter hulls for insurance from their material recipes. See [resource renewal and economic charges](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026).
 
-Native **Stack All** now consolidates compatible personal stacks in Item Hangar or an active ship hold without changing total volume or ownership. Repackaging supports inactive, empty, unfitted, undamaged supported ships and offline modules in the current station hangar. Repackaged ships lose their insurance without a refund. Damaged ships, fitted ships, loaded modules, active ships, corporate assets and destructive confirmation forms remain unsupported. See [stacking and repackaging](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026).
+Native **Stack All** consolidates compatible personal stacks in Item Hangar or an active ship hold. Repackaging an
+eligible inactive ship with ordinary fittings returns its modules and charges to Item Hangar and voids the hull's
+insurance. The hull must be undamaged and free of cargo and rigs.
+[Fitted ship repackaging](protocol/inventory.md#fitted-ship-repackaging) ·
+[Stacking and repackaging](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026)
 
 ## Combat and NPC populations
 
@@ -376,9 +386,11 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
   assist and guard fleetmates. Scanners, probes, salvagers and tractors use their own eligibility and range rules.
   Ship scanners can reveal partial ship fittings in falloff and complete fittings on targetable Upwell structures.
   Cargo scanners respect full cargo-scan immunity when they start and when the paid cycle finishes.
+  A successful cargo scan can inspect the first layer of a container.
   [Drones](protocol/drones.md) · [Information modules](protocol/information.md) ·
   [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff) ·
   [Upwell ship scans](protocol/information.md#ship-scanning-upwell-structures) ·
+  [Cargo scans through containers](protocol/information.md#cargo-scans-through-containers) ·
   [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - **Capital and Upwell roles.** Supported capitals have ship-specific jump, fighter, fleet hangar, maintenance, refitting and clone
   services. Upwell gunners can lock targets and launch and recall Standup fighter squadrons.

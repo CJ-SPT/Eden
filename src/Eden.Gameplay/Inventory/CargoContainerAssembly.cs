@@ -9,8 +9,10 @@ public interface ICargoContainerAssembly
 
 public static class CargoContainerAssemblyRules
 {
-    public static bool IsContainer(InventoryItem item) =>
-        item.TypeId != CourierRules.PackageType && Enum.IsDefined((PersonalAssetContainerGroup)item.GroupId);
+    public static bool IsContainer(InventoryItem item) => IsContainer(item.TypeId, item.GroupId);
+
+    public static bool IsContainer(int typeId, int groupId) =>
+        typeId != CourierRules.PackageType && Enum.IsDefined((PersonalAssetContainerGroup)groupId);
 
     // Build 3662168 inventorycommon.const.packagedVolumeOverridesPerType for cargo containers.
     public static double PackagedVolume(int typeId, double volume) =>

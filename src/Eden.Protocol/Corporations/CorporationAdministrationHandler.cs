@@ -14,7 +14,17 @@ internal sealed partial class CorporationHandler
         Dictionary<string, object?>? keywords
     )
     {
-        if (service != "corpRegistry" || method is not ("UpdateCorporation" or "UpdateLogo" or "UpdateDivisionNames"))
+        if (
+            service != "corpRegistry"
+            || method
+                is not (
+                    "UpdateCorporation"
+                    or "UpdateLogo"
+                    or "UpdateDivisionNames"
+                    or "DoesCorpRestrictCorpMails"
+                    or "RegisterNewCorpMailRestrictionSettings"
+                )
+        )
         {
             return PilotCallResult.Unsupported;
         }
@@ -27,6 +37,11 @@ internal sealed partial class CorporationHandler
             long actor = context.Pilot.PilotId;
             switch (method, args)
             {
+                case ("DoesCorpRestrictCorpMails", []):
+                    return administration.RestrictsCorpMails(actor);
+                case ("RegisterNewCorpMailRestrictionSettings", [var restricted]):
+                    administration.SetCorpMailRestriction(actor, Flag(restricted));
+                    return PilotCallResult.None;
                 case ("UpdateCorporation", [var description, var url, var tax, var recruiting, var lpTax]):
                     administration.Update(actor, new(Text(description), Text(url), Rate(tax), Flag(recruiting), Rate(lpTax)));
                     break;
