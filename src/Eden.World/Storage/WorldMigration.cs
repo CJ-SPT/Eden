@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = WarReportSchema.Version;
+    internal const int CurrentVersion = CorporationMedalSchema.Version;
 
     public static void Open(
         WorldDbContext world,
@@ -168,6 +168,7 @@ internal static class WorldMigration
         Eden.World.Exploration.IncursionSchema.Upgrade(world, version);
         CorporationWarSchema.Upgrade(world);
         WarReportSchema.Upgrade(world);
+        CorporationMedalSchema.Upgrade(world);
         Eden.World.Inventory.MutationSchema.Upgrade(world);
         Eden.World.Inventory.CargoContainerSchema.Upgrade(world);
         Eden.World.Exploration.AbyssalSchema.Upgrade(world);

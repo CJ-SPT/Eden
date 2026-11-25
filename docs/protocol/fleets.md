@@ -2,6 +2,42 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet recruitment limits and default squads
+
+The fleet boss can set a maximum size from **1 to 256** and select or clear an existing default squad.
+The size limit applies to new direct invitations, Fleet Finder applications and acceptance of pending
+invitations. Lowering it keeps the current roster. A Fleet Finder advert can set a tighter join limit.
+
+Open Fleet Finder invitations use the configured squad and its wing. Explicit invitations retain their chosen
+placement. Deleting the empty default squad clears the choice and publishes the updated options. Fleet init,
+option reads and option-change notifications carry the current default squad, including during free-move and
+advert changes. Both settings belong to the running fleet.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms
+`fleetSvc.SetFleetMaxSize` reads `GetFleetMaxSize()` before sending `SetFleetMaxSize(qty)`. The native
+squad menu passes the squad ID or None to `SetAutoJoinSquadID` and consumes `autoJoinSquadID` from both
+options values in `OnFleetOptionsChanged`. EVE.js **261108.1** uses the fleet cap at invitation acceptance
+and the default squad for open applications in `server/src/services/fleets/fleetRuntime.js` (SHA-256
+`494727d0f0793202bd9195c417fffc63cce499ea157890fc12981919be521b8f`).
+[Fleet window controls](https://wiki.eveuniversity.org/Fleet_User_Interface#Fleet_Window) ·
+[CCP 22.02 fleet changes](https://www.eveonline.com/news/view/patch-notes-version-22-02)
+
+**Automated validation.** `NativeFleetSizeLimitsNewApplicationsAndRechecksPendingInvitations` and
+`NativeDefaultSquadFollowsOpenFinderApplicationsAndClearsWhenDeleted` passed in 1.04 seconds of combined
+case time. They exercise the native size controls, pending invitations, option notifications and squad placement.
+
+The November 25, 2026 milestone also covers personal buy order minimum volume, corporation medals and ship-scanner
+falloff. All 10 exact cases passed in 9.74 seconds. The solution built with zero warnings and errors. All 282
+focused cases passed in 85.43 seconds, and the catalog and formatting policy suites passed all 17 cases.
+Style, CSharpier and line-width checks passed. The formatter excluded the local `.artifacts` archive.
+
+```text
+FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~FleetRulesTests|FullyQualifiedName~InformationRuleTests|FullyQualifiedName~InformationTests|FullyQualifiedName~PersonalMarketTests|FullyQualifiedName~PersonalMarketRulesTests|FullyQualifiedName~StandardMarketTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~CorporationMedalTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~DetachedCheckpointTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Native fleet regroup
 
 Fleet, wing and squad commanders can use **Regroup** to have eligible subordinates on grid approach their

@@ -11,12 +11,14 @@ using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Maintenance;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,7 +42,7 @@ public sealed class PersonalMarketTests
 
         internal Fixture(bool live = false)
         {
-            Db = new(clock: Clock, liveWorld: live);
+            Db = new(clock: Clock, liveWorld: live, economy: new(TestingMarket: false, TestingGrants: false));
             Market = new(new(Db.Path), Clock, Db.Services.GetRequiredService<MarketChangeSignal>());
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
@@ -54,26 +56,26 @@ public sealed class PersonalMarketTests
                     """
                 );
             }
-            using WorldDbContext world = new(Db.Path);
-            world.Set<SavedWorldEconomy>().Single().TestingMarket = false;
-            world.Set<SavedWorldEconomy>().Single().TestingGrants = false;
+            int station = Pilot.StationId;
+            using var setup = new WorldActionScope(new(Db.Path), TransactionParticipants.None);
+            var world = setup.World;
             foreach (var id in new[] { Seller, Buyer })
             {
                 world.Add(new PilotWallet { PilotId = id, Cents = Budget });
             }
-            world.Ships.Single(s => s.OwnerId == Buyer).StationId = Pilot.StationId;
+            world.Set<Ship>().Single(s => s.OwnerId == Buyer).StationId = station;
             world.Add(
                 new OwnedItem
                 {
                     Id = Stack,
                     OwnerId = Seller,
                     TypeId = Ammo,
-                    LocationId = Pilot.StationId,
+                    LocationId = station,
                     FlagId = (int)InventoryFlag.Hangar,
                     Quantity = 100,
                 }
             );
-            world.SaveChanges();
+            setup.Commit();
         }
 
         internal void List(int quantity = 100, long price = 1000, int days = 1) =>
@@ -83,11 +85,11 @@ public sealed class PersonalMarketTests
 
         internal MarketResult Buy(int quantity, long price = 1000) => Market.Buy(Buyer, Pilot.StationId, [new(Ammo, price, quantity)]);
 
-        internal int Quantity(long pilot)
-        {
-            using WorldDbContext world = new(Db.Path);
-            return world.Set<OwnedItem>().Where(i => i.OwnerId == pilot && i.TypeId == Ammo).Sum(i => i.Quantity);
-        }
+        internal int Quantity(long pilot) =>
+            WorldActionScope.Inspect(
+                new(Db.Path),
+                world => world.Filter<OwnedItem>(i => i.OwnerId == pilot && i.TypeId == Ammo).Sum(i => i.Quantity)
+            );
 
         internal PersonalMarketModification Modification(MarketOrder order, long price) =>
             new(order.Id, price, order.Bid, order.StationId, order.SystemId, order.PriceCents, order.Remaining, order.Issued);
@@ -203,6 +205,72 @@ public sealed class PersonalMarketTests
         Assert.Equal(-70_000, journal.MarketPayments!.Sum(p => p.AmountCents));
         long sellerDay = DateTime.FromFileTimeUtc(f.Market.Transactions(Seller).Last().Time).Date.ToFileTimeUtc();
         Assert.Equal(40, Assert.Single(f.Market.History(Seller, [Ammo]), day => day.Date == sellerDay).Volume);
+    }
+
+    [Fact]
+    public async Task NativeBuyMinimumVolumeSurvivesCheckpointAndAllowsOnlyTheFullFinalRemainder()
+    {
+        using Fixture f = new(live: true);
+        int station = f.Pilot.StationId;
+        f.List(quantity: 2);
+        long after = f.Market.Observe(Buyer);
+        long buyerBefore = f.Market.Balance(Buyer);
+        using (CourierServiceTests.Client client = new(f.Db, f.Clock, 1000002))
+        {
+            client.Refresh();
+            PilotCallResult List(long minimum) =>
+                client.Call("PlaceBuyOrder", [(long)station, (long)Ammo, 10d, 9L, -1L, minimum, 1L, false, 0d], "marketProxy");
+
+            Assert.IsType<PilotCallResult.Failure>(List(0));
+            Assert.IsType<PilotCallResult.Failure>(List(10));
+            Assert.Equal(buyerBefore, f.Market.Balance(Buyer));
+            Assert.Empty(f.Market.PersonalOrders(Buyer));
+            Assert.Empty(f.Market.Changes(Buyer, after));
+            Assert.Same(PilotCallResult.None, List(5));
+        }
+        var order = f.Order(Buyer);
+        Assert.Equal((9, 7, 5, 7_000L), (order.Entered, order.Remaining, order.MinimumVolume, order.EscrowCents));
+        Assert.Equal(2, Assert.Single(f.Market.Transactions(Buyer)).Quantity);
+        Assert.Equal(5, Assert.Single(f.Market.Changes(Buyer, after)).Order.MinimumVolume);
+        var row = MarketWire.Row(Assert.Single(f.Market.Orders(Seller, Ammo), quote => quote.Id == order.Id));
+        Assert.Equal(5, Assert.IsType<object?[]>(row.Arguments[1])[11]);
+        await f.Db.Services.GetRequiredService<LiveWorld>().FlushAsync();
+        f.Db.Services.Dispose();
+
+        using var reopened = ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true);
+        var market = reopened.GetRequiredService<IPilotMarket>();
+        var orders = reopened.GetRequiredService<IPersonalMarket>();
+        var restored = Assert.Single(orders.PersonalOrders(Buyer));
+        Assert.Equal(order, restored);
+        long sellerBalance = market.Balance(Seller);
+        long buyerBalance = market.Balance(Buyer);
+        long changeHead = orders.Observe(Buyer);
+        Assert.Throws<InvalidDataException>(() => Sell(4));
+        Assert.Equal(7_000L, orders.Escrow(Buyer).IskCents);
+        Assert.Equal(sellerBalance, market.Balance(Seller));
+        Assert.Equal(buyerBalance, market.Balance(Buyer));
+        Assert.Empty(orders.Changes(Buyer, changeHead));
+        Assert.Equal((98, 2), (Quantity(Seller), Quantity(Buyer)));
+
+        Assert.Equal(5, Assert.Single(Sell(5).Trades).Quantity);
+        Assert.Equal(2_000L, orders.Escrow(Buyer).IskCents);
+        Assert.Equal(2, Assert.Single(orders.PersonalOrders(Buyer)).Remaining);
+        Assert.Throws<InvalidDataException>(() => Sell(1));
+        Assert.Equal(2, Assert.Single(Sell(2).Trades).Quantity);
+        Assert.Equal(0, orders.Escrow(Buyer).IskCents);
+        Assert.Empty(orders.PersonalOrders(Buyer));
+        Assert.Equal(5, Assert.Single(orders.PersonalOrders(Buyer, history: true)).MinimumVolume);
+        Assert.Equal(buyerBalance, market.Balance(Buyer));
+        Assert.Equal((91, 9), (Quantity(Seller), Quantity(Buyer)));
+
+        MarketResult Sell(int quantity) => market.Sell(Seller, [new(Stack, station, Ammo, 1_000, quantity)]);
+
+        int Quantity(long owner) =>
+            reopened
+                .GetRequiredService<LiveWorld>()
+                .Economy.Inspect(world =>
+                    world.Filter<OwnedItem>(item => item.OwnerId == owner && item.TypeId == Ammo).Sum(item => item.Quantity)
+                );
     }
 
     [Theory]

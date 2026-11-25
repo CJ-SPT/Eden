@@ -78,14 +78,21 @@ public sealed record FleetSquad(long Id, string Name);
 
 public sealed record FleetWing(long Id, string Name, IReadOnlyList<FleetSquad> Squads);
 
+public sealed record FleetOptions(bool FreeMove, bool Registered, long? AutoJoinSquadId);
+
 public sealed record CooperativeFleet(
     long Id,
     IReadOnlyList<FleetMember> Members,
     IReadOnlyList<FleetWing> Wings,
     bool FreeMove,
     string Motd,
-    bool Registered = false
-);
+    bool Registered = false,
+    int MaximumSize = FleetRules.MaximumMembers,
+    long? AutoJoinSquadId = null
+)
+{
+    public FleetOptions Options => new(FreeMove, Registered, AutoJoinSquadId);
+}
 
 public sealed record FleetTargetTag(long ItemId, int SystemId, string Tag);
 
@@ -127,9 +134,9 @@ public abstract record FleetEvent
 
     public sealed record Hierarchy(long WingId, long? SquadId, bool Deleted, string? Name = null) : FleetEvent;
 
-    public sealed record Options(bool Before, bool After, bool Registered = false) : FleetEvent;
+    public sealed record Options(FleetOptions Before, FleetOptions After) : FleetEvent;
 
-    public sealed record Registration(bool Before, bool After, bool FreeMove) : FleetEvent;
+    public sealed record Registration(bool Before, bool After, bool FreeMove, long? AutoJoinSquadId) : FleetEvent;
 
     public sealed record JoinRequest(FleetPilot Pilot) : FleetEvent;
 
@@ -181,6 +188,8 @@ public interface ICooperativeFleets
     long CreateSquad(long actor, long fleet, long wing);
     void ChangeGroup(long actor, long fleet, long group, bool squad, string? name);
     void SetFreeMove(long actor, long fleet, bool enabled);
+    int SetMaximumSize(long actor, long fleet, int size);
+    void SetAutoJoinSquad(long actor, long fleet, long? squad);
     void SetMotd(long actor, long fleet, string text);
     void SetTakesWarp(long actor, long fleet, bool enabled);
     void SetAcceptsConduitJumps(long actor, long fleet, bool enabled);

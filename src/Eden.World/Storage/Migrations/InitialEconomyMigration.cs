@@ -22,6 +22,10 @@ internal static class InitialEconomyMigration
         }
         // Create before old funding migrations; existing worlds keep development defaults.
         PersonalMarketSchema.Upgrade(world);
+        if (version < PersonalMarketSchema.MinimumVolumeVersion)
+        {
+            PersonalMarketSchema.UpgradeMinimumVolume(world);
+        }
         if (!world.Set<SavedWorldEconomy>().Any())
         {
             world.Add(

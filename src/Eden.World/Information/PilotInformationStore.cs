@@ -34,7 +34,11 @@ using Eden.World.Thermal;
 namespace Eden.World.Information;
 
 [Injectable]
-internal sealed partial class PilotInformationStore(WorldDatabase database, ICooperativeFleets? fleets = null) : IPilotInformation
+internal sealed partial class PilotInformationStore(
+    WorldDatabase database,
+    ICooperativeFleets? fleets = null,
+    Random? shipScanRandom = null
+) : IPilotInformation
 {
     private readonly NpcProfileCatalog _npcs = new();
 
@@ -170,7 +174,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
     private bool CanTractor(WorldAction world, Pilot pilot, WorldWreck wreck, long now) =>
         SpaceLootRights.CanTake(world, pilot, wreck.SystemId, new(wreck.OwnerId, wreck.CorporationId, wreck.Abandoned), now, fleets);
 
-    private void CheckTarget(WorldAction world, CatalogDbContext catalog, Pilot pilot, long targetId, InformationModule module, long now)
+    private double CheckTarget(WorldAction world, CatalogDbContext catalog, Pilot pilot, long targetId, InformationModule module, long now)
     {
         int system = System(catalog, pilot);
         SpacePosition targetPosition;
@@ -255,8 +259,11 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             0,
             Position(pilot).DistanceTo(targetPosition) - (catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0) - radius
         );
-        // No undocumented falloff sampling is substituted for the ship scanner.
-        if (distance > module.Range)
+        double accuracy =
+            module.Effect == DogmaEffect.ShipScan ? InformationRules.ShipScanAccuracy(distance, module.Range, module.Falloff)
+            : distance <= module.Range ? 1
+            : 0;
+        if (accuracy <= 0)
         {
             throw new InvalidDataException("The target is outside this module's verified range.");
         }
@@ -271,6 +278,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 throw new InvalidDataException("The target ship is immune to cargo scanning.");
             }
         }
+        return accuracy;
     }
 
     public InformationCompletion Complete(long pilotId, long moduleId, long expectedReadyAt, long now)
@@ -322,7 +330,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         InformationCompletion result = new();
         if (saved.Effect is DogmaEffect.CargoScan or DogmaEffect.ShipScan)
         {
-            CheckTarget(world, catalog, pilot, saved.TargetId, module, now);
+            double accuracy = CheckTarget(world, catalog, pilot, saved.TargetId, module, now);
             if (saved.Effect == DogmaEffect.CargoScan)
             {
                 var cargo = world
@@ -350,11 +358,11 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 {
                     var values = PilotFittingStore.ShipAttributes(world, catalog, target);
                     var hardware = world
-                        .Filter<OwnedItem>(i => i.LocationId == saved.TargetId)
-                        .AsEnumerable()
-                        .Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId))
+                        .FittedItems(target.Id, saved.TargetId)
                         .OrderBy(i => i.FlagId)
-                        .Select(i => new ScanItem(i.TypeId, i.Quantity))
+                        .Where(i => accuracy >= 1 || (shipScanRandom ?? Random.Shared).NextDouble() < accuracy)
+                        .GroupBy(i => i.TypeId)
+                        .Select(group => new ScanItem(group.Key, group.Sum(item => item.Quantity)))
                         .ToArray();
                     result = new(
                         new(

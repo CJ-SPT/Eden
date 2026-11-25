@@ -430,7 +430,7 @@ internal static class ShipContentAudit
                     ContentOperation.ConsumerCoverage,
                     false,
                     ShipContentMilestone.InformationAndSalvage,
-                    "Paid optimal-range ship scans work; exact server falloff and hardware sampling remain evidence-blocked."
+                    "Paid ship scans sample pilot fittings through falloff. Upwell structure targets remain unavailable."
                 )
             );
         }

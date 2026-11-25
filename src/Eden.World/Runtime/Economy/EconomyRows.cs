@@ -487,7 +487,8 @@ internal sealed record EconomySavedPersonalOrder(
     int DurationDays,
     long EscrowCents,
     PersonalOrderStatus Status,
-    int? CorporationId
+    int? CorporationId,
+    int MinimumVolume
 );
 
 internal sealed partial class ResidentEconomy
@@ -514,20 +515,21 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldPersonalOrder(Id,PilotId,StationId,SystemId,RegionId,TypeId,Bid,PriceCents,Remaining,
-                        Entered,Issued,Expires,Modified,DurationDays,EscrowCents,Status,CorporationId)
+                        Entered,Issued,Expires,Modified,DurationDays,EscrowCents,Status,CorporationId,MinimumVolume)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.PilotId'),json_extract(value,'$.StationId'),
                         json_extract(value,'$.SystemId'),json_extract(value,'$.RegionId'),json_extract(value,'$.TypeId'),
                         json_extract(value,'$.Bid'),json_extract(value,'$.PriceCents'),json_extract(value,'$.Remaining'),
                         json_extract(value,'$.Entered'),json_extract(value,'$.Issued'),json_extract(value,'$.Expires'),
                         json_extract(value,'$.Modified'),json_extract(value,'$.DurationDays'),json_extract(value,
-                        '$.EscrowCents'),json_extract(value,'$.Status'),json_extract(value,'$.CorporationId')
+                        '$.EscrowCents'),json_extract(value,'$.Status'),json_extract(value,'$.CorporationId'),
+                        json_extract(value,'$.MinimumVolume')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET PilotId=excluded.PilotId,StationId=excluded.StationId,
                         SystemId=excluded.SystemId,RegionId=excluded.RegionId,TypeId=excluded.TypeId,Bid=excluded.Bid,
                         PriceCents=excluded.PriceCents,Remaining=excluded.Remaining,Entered=excluded.Entered,
                         Issued=excluded.Issued,Expires=excluded.Expires,Modified=excluded.Modified,
                         DurationDays=excluded.DurationDays,EscrowCents=excluded.EscrowCents,Status=excluded.Status,
-                        CorporationId=excluded.CorporationId
+                        CorporationId=excluded.CorporationId,MinimumVolume=excluded.MinimumVolume
                     """
                 );
             }
@@ -961,6 +963,7 @@ internal sealed partial class ResidentEconomy
         RegisterCorporationVoting();
         RegisterCorporationWars();
         RegisterWarReports();
+        RegisterCorporationMedals();
         RegisterCorporationBlueprintLocks();
         RegisterCorporationRemovals();
         RegisterAlliances();
@@ -1406,7 +1409,8 @@ internal sealed partial class ResidentEconomy
                         row.DurationDays,
                         row.EscrowCents,
                         row.Status,
-                        row.CorporationId
+                        row.CorporationId,
+                        row.MinimumVolume
                     ),
                 state => new SavedPersonalOrder
                 {
@@ -1427,10 +1431,11 @@ internal sealed partial class ResidentEconomy
                     EscrowCents = state.EscrowCents,
                     Status = state.Status,
                     CorporationId = state.CorporationId,
+                    MinimumVolume = state.MinimumVolume,
                 },
                 ProjectSavedPersonalOrder,
                 "Id,PilotId,StationId,SystemId,RegionId,TypeId,Bid,PriceCents,Remaining,Entered,Issued,Expires,Modified,DurationDays,"
-                    + "EscrowCents,Status,CorporationId",
+                    + "EscrowCents,Status,CorporationId,MinimumVolume",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -1449,7 +1454,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(14),
                         reader.GetInt64(15),
                         (PersonalOrderStatus)reader.GetInt32(16),
-                        reader.IsDBNull(17) ? null : reader.GetInt32(17)
+                        reader.IsDBNull(17) ? null : reader.GetInt32(17),
+                        reader.GetInt32(18)
                     ),
                 state => new(state.Id),
                 readOnly: false,

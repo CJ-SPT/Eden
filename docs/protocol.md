@@ -445,6 +445,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Fleet recruitment limits and default squads](protocol/fleets.md#fleet-recruitment-limits-and-default-squads)
 - [Native fleet regroup](protocol/fleets.md#native-fleet-regroup)
 - [Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026)
 - [Fleet target tags](protocol/fleets.md#fleet-target-tags-november-14-2026)
@@ -456,6 +457,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Corporation medals](protocol/corporations.md#corporation-medals)
 - [Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
 - [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
 - [War report side filters and former ally updates](protocol/corporations.md#war-report-side-filters-and-former-ally-updates)
@@ -620,6 +622,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Information modules and salvage
 
+- [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff)
 - [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - [Automatic signature resolution](protocol/information.md#automatic-signature-resolution--november-15-2026)
 - [DED complexes and Ghost Sites](protocol/information.md#ded-complexes-and-ghost-sites)
@@ -714,6 +717,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [PLEX history and multibuy structure discovery (November 8, 2026)](protocol/industry.md#plex-history-and-multibuy-structure-discovery-november-8-2026)
 - [Renewable belts and economic service charges (November 6, 2026)](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026)
 - [Tech I starter production chain (November 6, 2026)](protocol/industry.md#tech-i-starter-production-chain-november-6-2026)
+- [Personal buy order minimum volume](protocol/industry.md#personal-buy-order-minimum-volume)
 - [Persistent personal market orders (November 6, 2026)](protocol/industry.md#persistent-personal-market-orders-november-6-2026)
 - <a id="personal-market-corporation-wallet-checkbox-compatibility-november-6-2026"></a>[Personal market corporation-wallet checkbox compatibility (November 6, 2026)](protocol/industry.md#personal-market-corporation-wallet-checkbox-compatibility-november-6-2026)
 - <a id="currency-redemption-and-loyalty-wallets"></a>[Currency redemption and loyalty wallets](protocol/industry.md#currency-redemption-and-loyalty-wallets)

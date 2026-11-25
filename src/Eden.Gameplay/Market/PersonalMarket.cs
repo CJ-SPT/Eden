@@ -10,7 +10,7 @@ public enum PersonalOrderStatus
     Expired,
 }
 
-public sealed record PersonalMarketBuy(int StationId, int TypeId, long PriceCents, int Quantity, int DurationDays);
+public sealed record PersonalMarketBuy(int StationId, int TypeId, long PriceCents, int Quantity, int DurationDays, int MinimumVolume = 1);
 
 public sealed record PersonalMarketModification(
     long OrderId,

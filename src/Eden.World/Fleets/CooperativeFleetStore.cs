@@ -153,6 +153,10 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
 
     public void SetFreeMove(long actor, long fleet, bool enabled) => Write(() => _world.SetFreeMove(actor, fleet, enabled));
 
+    public int SetMaximumSize(long actor, long fleet, int size) => Read(() => _world.SetMaximumSize(actor, fleet, size));
+
+    public void SetAutoJoinSquad(long actor, long fleet, long? squad) => Write(() => _world.SetAutoJoinSquad(actor, fleet, squad));
+
     public void SetMotd(long actor, long fleet, string text) => Write(() => _world.SetMotd(actor, fleet, text));
 
     public void SetTakesWarp(long actor, long fleet, bool enabled) => Write(() => _world.SetTakesWarp(actor, fleet, enabled));

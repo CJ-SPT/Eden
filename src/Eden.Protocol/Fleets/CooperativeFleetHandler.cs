@@ -109,11 +109,16 @@ internal sealed partial class CooperativeFleetHandler(
                     context.Notifications.Add(new FleetHierarchyNotification(hierarchy));
                     break;
                 case FleetEvent.Options options when identity is not null:
-                    context.Notifications.Add(new FleetOptionsNotification(options.Before, options.After, options.Registered));
+                    context.Notifications.Add(new FleetOptionsNotification(options.Before, options.After));
                     break;
                 case FleetEvent.Registration registration:
                     context.Notifications.Add(
-                        new FleetRegistrationNotification(registration.Before, registration.After, registration.FreeMove)
+                        new FleetRegistrationNotification(
+                            registration.Before,
+                            registration.After,
+                            registration.FreeMove,
+                            registration.AutoJoinSquadId
+                        )
                     );
                     break;
                 case FleetEvent.JoinRequest request:
@@ -555,7 +560,14 @@ internal sealed partial class CooperativeFleetHandler(
                 case ("GetMembers", []):
                     return new BlueMap<long, FleetMemberReply>(fleet.Members.ToDictionary(m => m.Pilot.Id, m => new FleetMemberReply(m)));
                 case ("GetOptions", []):
-                    return new FleetOptionsReply(fleet.FreeMove, fleet.Registered);
+                    return new FleetOptionsReply(fleet.Options);
+                case ("GetFleetMaxSize", []):
+                    return fleet.MaximumSize;
+                case ("SetFleetMaxSize", [long size]) when size is >= 1 and <= FleetRules.MaximumMembers:
+                    return fleets.SetMaximumSize(actor, id, (int)size);
+                case ("SetAutoJoinSquadID", [null or long]):
+                    fleets.SetAutoJoinSquad(actor, id, args[0] as long?);
+                    return true;
                 case ("GetJoinRequests", []):
                     return new BlueMap<long, FleetApplicantReply>(
                         fleets.JoinRequests(actor, id).ToDictionary(p => p.Id, p => new FleetApplicantReply(p))
@@ -605,7 +617,7 @@ internal sealed partial class CooperativeFleetHandler(
                     if (
                         fields.Keys.Any(k => k is not ("isFreeMove" or "isRegistered" or "autoJoinSquadID"))
                         || fields.GetValueOrDefault("isRegistered") is { } registered && !Equals(registered, fleet.Registered)
-                        || fields.GetValueOrDefault("autoJoinSquadID") is not null
+                        || fields.TryGetValue("autoJoinSquadID", out var autoJoin) && !Equals(autoJoin, fleet.AutoJoinSquadId)
                         || fields.GetValueOrDefault("isFreeMove") is not bool enabled
                     )
                     {

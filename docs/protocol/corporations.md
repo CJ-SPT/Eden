@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Corporation Kill Reports](#corporation-kill-reports)
+- [Corporation medals](#corporation-medals)
 - [Corporation and alliance wars](#corporation-and-alliance-wars)
 - [Defender allies, surrender and War Reports](#defender-allies-surrender-and-war-reports)
 - [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
@@ -85,6 +86,45 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 1. Open **Corporation → General → Kill Reports**, switch between kills and losses, and open a saved report.
+
+## Corporation medals
+
+**Corporation → Members → Decorations** lets CEOs, directors and personnel managers create and award custom medals.
+Creating a medal costs 5 million ISK. Each award costs 5 million ISK per selected member, and a member can receive
+the same medal again. Both operations use the selected corporation wallet division and request confirmation before
+charging it. The resident economy commits the fee, journal entry and medal or award together.
+
+Recipients start with private awards. In **Character Sheet → Decorations**, they can publish awards to Show Info,
+make them private or discard them. Discarding removes an award from the character's list and preserves the issuing
+corporation's award history. Issuing corporations can review their own catalogue and recipients. Checkpoint schema 230
+preserves medal art, award reasons, visibility and corporation attribution. The recipient keeps a medal after leaving
+the issuing corporation. A player sees newly awarded medals when reopening **Decorations**. The issuing connection
+receives the catalogue refresh event, and self-awards also refresh that connection's character sheet. Offline notices
+and refresh events delivered to other clients are outside this milestone.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirmed the operations and quote flow in
+`medals.pyj`, the layered ribbon and medal triples in `medalribbonranks.pyj` and the statuses and journal references in
+`appConst.pyj`. The EVE.js **261108.1** comparison used `corpService.js` (SHA-256
+`a9ef788e32125b80e5725d00c919bf837365cb5187954c93068f765cb8212d6a`) for client row shapes.
+[CCP Quantum Rise patch notes](https://www.eveonline.com/news/view/patch-notes-for-quantum-rise-1) ·
+[UniWiki Managing corporation members](https://wiki.eveuniversity.org/Managing_corporation_members#Decorations)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Alliances.CorporationMedalTests.NativeMedalsChargeTheSelectedDivisionAndPersistVisibilityAcrossCheckpoint`
+passed in 0.43 seconds. It exercises native fee quotes and confirmations, role checks, selected wallet debits, repeat
+awards, insufficient-funds rollback, private and public reads, discard, and checkpoint reload.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Create a medal from **Members → Decorations** and confirm the selected corporation wallet division pays the fee.
+2. Award the medal to a corporation member and verify that reopening **Decorations** shows the private award.
+3. Make the medal public and open the recipient's Show Info from another pilot.
 
 ## Corporation and alliance wars
 

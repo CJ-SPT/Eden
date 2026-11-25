@@ -111,7 +111,8 @@ internal sealed partial class PilotMarketStore
         long price,
         int quantity,
         int days,
-        int? corporationId = null
+        int? corporationId = null,
+        int minimumVolume = 1
     )
     {
         PersonalMarketRules.Validate(quantity, price, days);
@@ -132,6 +133,7 @@ internal sealed partial class PilotMarketStore
             PriceCents = price,
             Remaining = quantity,
             Entered = quantity,
+            MinimumVolume = minimumVolume,
             Issued = Now,
             Modified = Now,
             Expires = checked(Now + TimeSpan.FromDays(days).Ticks),
@@ -236,10 +238,7 @@ internal sealed partial class PilotMarketStore
             {
                 break;
             }
-            if (
-                candidate.Npc is { Kind: NpcMarketKind.Standard } liveOrder
-                && !StandardMarketRules.CanFill(incoming.Remaining, liveOrder.Remaining, liveOrder.MinimumVolume)
-            )
+            if (!candidate.CanFill(incoming.Remaining))
             {
                 continue;
             }
@@ -473,8 +472,9 @@ internal sealed partial class PilotMarketStore
         IReadOnlyList<MarketPurchase> items,
         int days,
         int? corporationId = null,
-        List<long>? placedOrders = null
-    ) => ExecuteBuyCore(world, catalog, pilotId, stationId, items, days, corporationId, placedOrders, false);
+        List<long>? placedOrders = null,
+        int minimumVolume = 1
+    ) => ExecuteBuyCore(world, catalog, pilotId, stationId, items, days, corporationId, placedOrders, false, minimumVolume);
 
     private MarketResult ExecuteBuyCore(
         WorldAction world,
@@ -485,7 +485,8 @@ internal sealed partial class PilotMarketStore
         int days,
         int? corporationId,
         List<long>? placedOrders,
-        bool fundedRefit
+        bool fundedRefit,
+        int minimumVolume = 1
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -519,7 +520,8 @@ internal sealed partial class PilotMarketStore
                 request.LimitPriceCents,
                 request.Quantity,
                 days,
-                corporationId
+                corporationId,
+                minimumVolume
             );
             int start = changes.Count;
             var fills = MatchOrders(world, catalog, order, changes, fundedRefit: fundedRefit);

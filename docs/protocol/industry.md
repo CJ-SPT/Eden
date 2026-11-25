@@ -1862,7 +1862,7 @@ Serialization reference reviewed: [Carbon Blue `Marshal.cpp`, af0d65b29f951260ea
 
 Connection-scoped monitoring consumes saved, owner-filtered changes, including fills and returned assets caused by another pilot. Offline owners load current balances/orders/assets on reconnect. A host-owned worker expires bounded batches without connected pilots; startup drains overdue escrow before listeners start. The shared next-expiry deadline avoids SQL for unchanged idle expiry checks. This retains normal resident-world checkpoint durability, including its existing crash rollback window; trade settlement does not introduce a separate per-trade disk flush.
 
-Supported scope: personal orders at the owner's current docked NPC station, station range, minimum volume one, and durations 1/3/7/14/30/90 days. Corporation orders and remote/ranged access remain unsupported. Self-owned opposite orders are excluded from matching.
+The original milestone admitted personal orders at the owner's docked NPC station, station range and durations of 1/3/7/14/30/90 days. Self-owned opposite orders are excluded from matching. The [minimum volume follow-up](#personal-buy-order-minimum-volume) extends the original one-unit minimum.
 
 **Automated validation:** Tool restore, solution restore and isolated-output build passed with zero warnings/errors (4.70 seconds). The final affected filter passed **246 tests in 1 minute 22 seconds**:
 
@@ -1877,6 +1877,20 @@ Coverage includes real manufacturing/listing/offline purchase/reopen, resident c
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** On a copied world after a normal rebuild/restart, inspect native My Orders/escrow/history and a two-pilot partial fill; inspect modify/cancel and the recipient's Item Hangar refresh. Native rendering and input remain unverified.
+
+### Personal buy order minimum volume
+
+Pilots can set a minimum volume from one unit up to the entered quantity on a station-range personal buy listing. The resident matcher checks a resting bid against the seller's available quantity and the bid's remaining volume. Once fewer units remain than the original minimum, a seller can fill the entire remainder in one sale. The matcher skips bids that cannot accept the offered quantity and continues in price and time order. A new buy listing can immediately cross existing asks, including individual sell stacks smaller than its minimum. Any remainder becomes a resting bid subject to the saved threshold. Order fees and full escrow use the existing settlement rules.
+
+Inert inspection of build **3662168** confirms that `buyThisTypeWindow.pyj` reads `quantityMin`, defaults to one, and passes it through `marketsvc.pyj` as the sixth argument of `PlaceBuyOrder`. The client rejects a minimum above the entered quantity. `marketsvc.GetSellCountEstimate` and `quote.GetMinVolume` use the lower of the saved minimum and remaining volume. The EVE.js `marketProxyService.js` reference applies that rule to seller fills and matches a newly placed bid against the existing asks before saving a remainder. [EVE University trading guide](https://wiki.eveuniversity.org/Trading)
+
+World migration **229** gives saved personal orders a minimum of one and checkpoints each new listing's original threshold with the order. Market quotes, own-order change events, and current and historical order replies use the existing `minVolume` integer column.
+
+**Automated validation.** The integrated build and exact filter `FullyQualifiedName=Eden.Protocol.Tests.Market.PersonalMarketTests.NativeBuyMinimumVolumeSurvivesCheckpointAndAllowsOnlyTheFullFinalRemainder` passed for the market regression in **0.97 seconds**. The case checks invalid requests, immediate crosses, quote and change fields, checkpoint and reload, rollback below the minimum, escrow, delivery and the complete final remainder.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Place a buy listing with a minimum above one and sell into it from a second pilot. After a partial fill below the original minimum, check the displayed threshold and sell the remaining quantity.
 
 ## Tech I starter production chain (November 6, 2026)
 

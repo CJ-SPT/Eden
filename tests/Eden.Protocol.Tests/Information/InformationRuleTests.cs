@@ -82,6 +82,15 @@ public sealed class InformationRuleTests
         );
 
     [Theory]
+    [InlineData(50000, 30000, 1)]
+    [InlineData(65000, 30000, 0.8408964152537145)]
+    [InlineData(80000, 30000, 0.5)]
+    [InlineData(80001, 30000, 0)]
+    [InlineData(50001, 0, 0)]
+    public void ShipScanAccuracyFollowsOptimalAndFalloffBoundaries(double distance, double falloff, double expected) =>
+        Assert.Equal(expected, InformationRules.ShipScanAccuracy(distance, 50000, falloff), 12);
+
+    [Theory]
     [InlineData(15, 30, 0.45)]
     [InlineData(35, -20, 0.15)]
     [InlineData(15, -20, 0)]

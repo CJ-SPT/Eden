@@ -16,6 +16,7 @@ using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Information;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,13 @@ public sealed partial class InformationTests
     private static IPilotInformation Store(Fixture f) => f.Db.Services.GetRequiredService<IPilotInformation>();
 
     private static long Target(Fixture f) => f.Db.Store.FindPilot(1000002)!.ShipId;
+
+    private sealed class ShipScanRolls(params double[] values) : Random
+    {
+        private readonly Queue<double> _values = new(values);
+
+        public override double NextDouble() => _values.Dequeue();
+    }
 
     private static void Space(Fixture f)
     {
@@ -149,6 +157,72 @@ public sealed partial class InformationTests
         Assert.Equal(activation.Cycle.ReadyAt, verify.Set<ModuleCooldown>().Find(module)!.ReadyAt);
         Assert.Empty(verify.Set<SavedInformationCycle>());
         Assert.Equal(47, verify.Set<OwnedItem>().Find(7000000000001L)!.Quantity);
+    }
+
+    [Fact]
+    public void PaidShipScansSampleCurrentFalloffWithoutInventingHardwareOrChargingForRejectedActivation()
+    {
+        const int damageControl = 2046;
+        const int civilianRailgun = 3638;
+        using Fixture f = Prepare();
+        long module = f.Fit(443);
+        long ship = f.ShipId;
+        var target = f.Db.Store.FindPilot(1000002)!;
+        Space(f);
+        var sourcePosition = f.Db.Store.FindPilot(1000001)!.Position!;
+        WorldDatabase database = new(f.Db.Path);
+        using LiveWorld live = new(database, f.Clock, _ => { });
+        using (WorldActionScope setup = new(database, new(ships: [target.ShipId])))
+        {
+            setup.World.RemoveRange(setup.World.FittedItems(target.PilotId, target.ShipId));
+            Fit(7000000000001, damageControl, InventoryFlag.LowSlot0);
+            Fit(7000000000002, civilianRailgun, InventoryFlag.HighSlot0);
+            Fit(7000000000003, civilianRailgun, InventoryFlag.HighSlot1);
+            setup.Commit();
+
+            void Fit(long id, int type, InventoryFlag slot) =>
+                setup.World.Add(
+                    new OwnedItem
+                    {
+                        Id = id,
+                        OwnerId = target.PilotId,
+                        LocationId = target.ShipId,
+                        TypeId = type,
+                        FlagId = (int)slot,
+                        Quantity = 1,
+                        Singleton = true,
+                    }
+                );
+        }
+        PilotInformationStore store = new(database, shipScanRandom: new ShipScanRolls(0.05, 0.99, 0.25));
+        var locks = new HashSet<long> { target.ShipId };
+        var optimal = Begin();
+        Advance(optimal);
+        Assert.Equal(new ScanItem[] { new(damageControl, 1), new(civilianRailgun, 2) }, Finish(optimal).Ship!.Hardware);
+
+        SetDistance(69000);
+        var falloff = Begin();
+        Advance(falloff);
+        var partial = Finish(falloff).Ship!;
+        Assert.Equal(target.ShipId, partial.ShipId);
+        Assert.True(partial.CapacitorCapacity > 0);
+        Assert.Equal(new ScanItem[] { new(damageControl, 1), new(civilianRailgun, 1) }, partial.Hardware);
+        Assert.Throws<InvalidDataException>(() => Finish(falloff));
+
+        var moved = Begin();
+        Advance(moved);
+        SetDistance(81000);
+        Assert.Contains("outside", Assert.Throws<InvalidDataException>(() => Finish(moved)).Message);
+        store.Stop(f.PilotId, module, moved.Cycle.ReadyAt);
+        double paid = live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(ship)!.Charge);
+        Assert.Contains("outside", Assert.Throws<InvalidDataException>(() => Begin()).Message);
+        Assert.Equal(paid, live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(ship)!.Charge));
+        Assert.Equal(moved.Cycle.ReadyAt, live.Economy.Inspect(world => world.Set<ModuleCooldown>().Find(module)!.ReadyAt));
+
+        InformationActivation Begin() => store.Begin(f.PilotId, module, DogmaEffect.ShipScan, target.ShipId, locks, f.Clock.Now);
+        void Advance(InformationActivation active) => f.Clock.Milliseconds += (long)Math.Ceiling(active.Cycle.Module.DurationMilliseconds);
+        InformationCompletion Finish(InformationActivation active) => store.Complete(f.PilotId, module, active.Cycle.ReadyAt, f.Clock.Now);
+        void SetDistance(double metres) => f.Db.Store.SetPosition(target.ShipId, sourcePosition + new SpacePosition(metres, 0, 0));
     }
 
     [Theory]

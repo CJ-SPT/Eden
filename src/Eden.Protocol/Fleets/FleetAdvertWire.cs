@@ -58,9 +58,11 @@ internal sealed record FleetApplicantReply(FleetPilot Pilot, double? Security = 
         );
 }
 
-internal sealed record FleetRegistrationNotification(bool Before, bool After, bool FreeMove) : FleetNotification("OnFleetOptionsChanged")
+internal sealed record FleetRegistrationNotification(bool Before, bool After, bool FreeMove, long? AutoJoinSquadId)
+    : FleetNotification("OnFleetOptionsChanged")
 {
-    public override object?[] Arguments => [new FleetOptionsReply(FreeMove, Before), new FleetOptionsReply(FreeMove, After)];
+    public override object?[] Arguments =>
+        [new FleetOptionsReply(new(FreeMove, Before, AutoJoinSquadId)), new FleetOptionsReply(new(FreeMove, After, AutoJoinSquadId))];
 }
 
 internal sealed record FleetJoinRequestNotification(FleetPilot Pilot) : FleetNotification("OnFleetJoinRequest")

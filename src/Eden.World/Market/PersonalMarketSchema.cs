@@ -9,6 +9,8 @@ namespace Eden.World.Market;
 
 internal static class PersonalMarketSchema
 {
+    internal const int MinimumVolumeVersion = 229;
+
     internal static void Configure(ModelBuilder model)
     {
         model.Entity<SavedWorldEconomy>().ToTable("WorldEconomy");
@@ -25,8 +27,10 @@ internal static class PersonalMarketSchema
                 {
                     table.HasCheckConstraint("CK_PersonalOrder_Quantity", "Remaining >= 0 AND Remaining <= Entered AND Entered > 0");
                     table.HasCheckConstraint("CK_PersonalOrder_Price", "PriceCents > 0 AND EscrowCents >= 0");
+                    table.HasCheckConstraint("CK_PersonalOrder_MinimumVolume", "MinimumVolume BETWEEN 1 AND Entered");
                 }
             );
+        model.Entity<SavedPersonalOrder>().Property(o => o.MinimumVolume).HasDefaultValue(1);
         model.Entity<SavedPersonalOrder>().HasIndex(o => new { o.PilotId, o.Status });
         model.Entity<SavedPersonalOrder>().HasIndex(o => new { o.Status, o.Expires });
         model
@@ -68,9 +72,10 @@ internal static class PersonalMarketSchema
                 StationId INTEGER NOT NULL, SystemId INTEGER NOT NULL, RegionId INTEGER NOT NULL, TypeId INTEGER NOT NULL,
                 Bid INTEGER NOT NULL, PriceCents INTEGER NOT NULL, Remaining INTEGER NOT NULL, Entered INTEGER NOT NULL,
                 Issued INTEGER NOT NULL, Expires INTEGER NOT NULL, Modified INTEGER NOT NULL, DurationDays INTEGER NOT NULL,
-                EscrowCents INTEGER NOT NULL, Status INTEGER NOT NULL,
+                EscrowCents INTEGER NOT NULL, Status INTEGER NOT NULL, MinimumVolume INTEGER NOT NULL DEFAULT 1,
                 CONSTRAINT CK_PersonalOrder_Quantity CHECK(Remaining >= 0 AND Remaining <= Entered AND Entered > 0),
-                CONSTRAINT CK_PersonalOrder_Price CHECK(PriceCents > 0 AND EscrowCents >= 0));
+                CONSTRAINT CK_PersonalOrder_Price CHECK(PriceCents > 0 AND EscrowCents >= 0),
+                CONSTRAINT CK_PersonalOrder_MinimumVolume CHECK(MinimumVolume BETWEEN 1 AND Entered));
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_PilotId_Status ON WorldPersonalOrder(PilotId,Status);
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_Status_Expires ON WorldPersonalOrder(Status,Expires);
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_Status_Bid_Id ON WorldPersonalOrder(Status,Bid,Id);
@@ -113,6 +118,23 @@ internal static class PersonalMarketSchema
         )
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldMarketTrade ADD COLUMN WalletAmountCents INTEGER");
+        }
+    }
+
+    internal static void UpgradeMinimumVolume(WorldDbContext world)
+    {
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPersonalOrder')")
+                .Contains("MinimumVolume")
+        )
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldPersonalOrder ADD COLUMN MinimumVolume INTEGER NOT NULL DEFAULT 1
+                    CONSTRAINT CK_PersonalOrder_MinimumVolume CHECK (MinimumVolume BETWEEN 1 AND Entered)
+                """
+            );
         }
     }
 }

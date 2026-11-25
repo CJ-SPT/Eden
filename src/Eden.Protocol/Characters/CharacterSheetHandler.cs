@@ -4,6 +4,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -18,6 +19,7 @@ internal sealed class CharacterSheetHandler(
     ICorporationRoles corporationRoles,
     IAlliances alliances,
     ICharacterDirectory directory,
+    ICorporationMedals medals,
     IMilitiaProgression? militia = null
 ) : ISelectedPilotCallHandler
 {
@@ -150,7 +152,7 @@ internal sealed class CharacterSheetHandler(
                 "GetInfoWindowDataForChar" => player
                     ? PublicCorporationInfo(profile)
                     : new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId)),
-                "GetMedalsReceived" => new PublicCharacterMedals(),
+                "GetMedalsReceived" => ReceivedMedalsReply.Create(medals.Received(pilot.PilotId, id)),
                 "GetEmploymentRecord" => new CharacterEmploymentHistory(
                     player ? corporations.Employment(id)
                     : profile.CreatedAt is long born ? [new(profile.CorporationId, born)]

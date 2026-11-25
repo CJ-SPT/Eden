@@ -108,7 +108,7 @@ The admin site's **Progression → Skill training speed** sets the server rate f
 
 The Character Sheet's **Attributes** tab now has saved neural attributes and remapping: 99 base points, 17–27 per attribute, one timed remap every 365 days, and two initial bonus remaps. Remapping preserves earned SP and recalculates the remaining training queue. The **Biography** tab supports Unicode text and formatting, saves through the client's autosave call, and retains each pilot's biography across restarts. These additions have automated coverage; native presentation and editing remain unverified. Implants, boosters and clone management remain separate work. See [attributes and biography](protocol/characters.md#character-sheet-attributes-and-biography-november-4-2026).
 
-Pilot **Show Info** has public-profile and corporation replies for another saved pilot, including a pilot on another account who is offline. The response includes saved identity, birth date and Unicode biography. The header includes the explicit no-militia field required before tab construction; medal and rank reads reflect the current empty state, and employment history shows the saved starter corporation. Automated coverage checks native reply shapes, startup requests and saved-data reads; native presentation remains unverified. See [pilot Show Info startup](protocol/characters.md#pilot-show-info-header-and-tab-startup-follow-up-november-4-2026).
+Pilot **Show Info** has public-profile and corporation replies for another saved pilot, including a pilot on another account who is offline. The response includes saved identity, birth date and Unicode biography. The header supplies the militia field required before tab construction. Decorations includes medals the pilot chose to publish. Automated coverage checks native reply shapes, startup requests and saved-data reads. See [pilot Show Info startup](protocol/characters.md#pilot-show-info-header-and-tab-startup-follow-up-november-4-2026) and [corporation medals](protocol/corporations.md#corporation-medals).
 
 The **Notes** tab reads and saves private notes about local pilots and catalog NPCs. Notes preserve Unicode and formatting up to the native 5,000-character limit, remain separate for each viewing character, and survive server restarts. Clearing a note removes only that character's saved entry. The server upgrades existing saves to schema 64 on startup. Automated coverage checks privacy, persistence and the native calls; editor presentation and close/autosave timing remain unverified. See [private pilot notes](protocol/characters.md#private-pilot-show-info-notes-november-4-2026).
 
@@ -147,8 +147,10 @@ damage and Command Bursts. [Fleet regroup](protocol/fleets.md#native-fleet-regro
 [Cooperative fleet records](protocol/fleets.md)
 
 Fleet Finder supports corporation, alliance, militia and public adverts, with standings filters and open or approval-based
-applications. Fleets and their adverts last for the running server session. Reconnect grace, saved setups and geometric
-formations remain open. [Fleet Finder](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) ·
+applications. Fleet bosses can cap the roster and choose a default squad for open applications. Fleets and their adverts
+last for the running server session. Reconnect grace, saved setups and geometric formations remain open.
+[Fleet recruitment controls](protocol/fleets.md#fleet-recruitment-limits-and-default-squads) ·
+[Fleet Finder](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) ·
 [Alliance adverts](protocol/alliances.md#shared-tools-and-affiliation-consumers--november-16-2026) ·
 [Militia fleet adverts](protocol/faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026)
 
@@ -170,6 +172,10 @@ killmails. [Corporation and alliance wars](protocol/corporations.md#corporation-
 The Corporation window's **Kill Reports** tab lists capsuleer kills credited to the corporation and losses suffered by
 its members at the time of combat. Reports retain their attribution and kill IDs across restarts.
 [Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
+
+Corporation managers can create and award custom medals from the selected corporation wallet division. Recipients can
+publish, hide or discard awards from their Character Sheet. Medal designs, awards and visibility survive restarts.
+[Corporation medals](protocol/corporations.md#corporation-medals)
 
 ## Travel and navigation
 
@@ -294,7 +300,7 @@ materials or blueprints follow their own eligibility rules.
 
 Originals support ME/TE research and copying at laboratory stations. Copies inherit research and retain limited manufacturing runs; invention consumes copy runs, datacores and optional generic decryptors. Ancient relic stacks now support their catalog Tech III invention choices and consume one relic per attempt. Outcomes are saved at installation, and delivery/cancellation cannot reroll them. Separate manufacturing/laboratory slots, fees, ownership checks, installation reservations, restart persistence and exactly-once delivery remain authoritative. Missing price references reject priced jobs rather than silently waiving component costs. See [catalog-wide production](protocol/industry.md#catalog-wide-station-production-november-9-2026), its reproducible [recipe audit](production-catalog.json), and the earlier [science implementation](protocol/industry.md#science-jobs-november-8-2026).
 
-Eden's default testing market sells all **19,727 published market types** in the pinned client catalog for **1 ISK per unit**. Each station with a market service is populated when a docked pilot accesses it, with **1,000,000 units per type** and replenishing supply. Existing and new pilots receive **1,000,000 ISK once**, recorded as a GM Cash Transfer in their wallet journal; restarting never repeats the grant. Ships, modules, ammunition, skillbooks, blueprint originals and other published market items can be purchased into Item Hangar. Purchasing an item does not implement its missing gameplay: the assembly, fitting, activation and industry limits described below still apply. NPC buyback orders for Veldspar, Scordite, Tritanium and Pyerite retain their finite demand, original prices and sales tax. The native Regional Market browser displays stock and history from actual regional trades. Personal immediate trades require docking at the selling station. Personal station-local buy/sell listings now reserve goods and fully funded ISK escrow, match partial fills across orders, charge broker/relist fees and sales tax, and support modification, cancellation and expiry while the owner is offline. Orders, payments, delivery and notifications survive save/reopen. Corporation trading, remote/ranged orders and minimum volumes above one remain separate work. New worlds can explicitly disable testing supply and grants; see [personal market orders](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
+Eden's default testing market sells all **19,727 published market types** in the pinned client catalog for **1 ISK per unit**. Each station with a market service is populated when a docked pilot accesses it, with **1,000,000 units per type** and replenishing supply. Existing and new pilots receive **1,000,000 ISK once**, recorded as a GM Cash Transfer in their wallet journal; restarting never repeats the grant. Ships, modules, ammunition, skillbooks, blueprint originals and other published market items can be purchased into Item Hangar. Purchasing an item does not implement its missing gameplay: the assembly, fitting, activation and industry limits described below still apply. NPC buyback orders for Veldspar, Scordite, Tritanium and Pyerite retain their finite demand, original prices and sales tax. The native Regional Market browser displays stock and history from actual regional trades. Personal immediate trades require docking at the selling station. Personal station-local buy/sell listings now reserve goods and fully funded ISK escrow, match partial fills across orders, charge broker/relist fees and sales tax, and support modification, cancellation and expiry while the owner is offline. Orders, payments, delivery and notifications survive save/reopen. Personal station-buy listings can set a minimum quantity. A seller can fill the entire remainder once the order drops below the original minimum. [Buy order minimum volume](protocol/industry.md#personal-buy-order-minimum-volume). New worlds can explicitly disable testing supply and grants; see [personal market orders](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 
@@ -358,9 +364,10 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
   together. [Subcapital Micro Jump Field Generator](protocol/navigation.md#subcapital-micro-jump-field-generator)
 - **Drones and information modules.** Supported hulls can control combat, mining and utility drones. Combat drones can
   assist and guard fleetmates. Scanners, probes, salvagers and tractors use their own eligibility and range rules.
-  Cargo scanners respect full cargo-scan immunity when they start and when the paid cycle finishes.
+  Ship scanners can reveal partial fittings in falloff. Cargo scanners respect full cargo-scan immunity when they start
+  and when the paid cycle finishes.
   [Drones](protocol/drones.md) · [Information modules](protocol/information.md) ·
-  [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
+  [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff) · [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - **Capital and Upwell roles.** Supported capitals have ship-specific jump, fighter, fleet hangar, maintenance, refitting and clone
   services. Upwell gunners can lock targets and launch and recall Standup fighter squadrons.
   [Capital logistics](protocol/capital-logistics.md) · [Upwell structures](protocol/structures.md)

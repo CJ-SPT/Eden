@@ -31,13 +31,14 @@ internal sealed partial class PilotMarketStore
         long pilotId,
         int stationId,
         IReadOnlyList<MarketPurchase> items,
-        int days
+        int days,
+        int minimumVolume
     )
     {
         Expire();
         using var world = live.Economy.Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = ExecuteBuy(world, catalog, pilotId, stationId, items, days);
+        var result = ExecuteBuy(world, catalog, pilotId, stationId, items, days, minimumVolume: minimumVolume);
         world.Commit();
         signal.Changed();
         return result;

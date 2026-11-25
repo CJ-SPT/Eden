@@ -105,6 +105,7 @@ public sealed class SavedPersonalOrder
     public long PriceCents { get; set; }
     public int Remaining { get; set; }
     public int Entered { get; set; }
+    public int MinimumVolume { get; set; } = 1;
     public long Issued { get; set; }
     public long Expires { get; set; }
     public long Modified { get; set; }
@@ -127,6 +128,7 @@ public sealed class SavedPersonalOrder
             Issued,
             DurationDays,
             EscrowCents,
+            MinimumVolume: MinimumVolume,
             IsCorporation: CorporationId.HasValue
         );
 }

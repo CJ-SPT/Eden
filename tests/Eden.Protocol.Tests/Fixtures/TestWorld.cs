@@ -1,4 +1,5 @@
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Market;
 using Eden.Server;
 using Eden.World.Docking;
 using Eden.World.Storage;
@@ -69,19 +70,21 @@ internal sealed class TestWorld : IDisposable
         bool regionalNpcs = false,
         bool liveWorld = false,
         bool simulationObjects = true,
-        bool freshInitialization = false
+        bool freshInitialization = false,
+        WorldEconomySettings? economy = null
     )
     {
-        if (emptyWallets && clock is null && !freshInitialization)
+        bool useSeed = emptyWallets && clock is null && !freshInitialization && economy is null;
+        if (useSeed)
         {
             TestWorldSeed.CopyTo(new WorldDatabase(Path));
         }
         else
         {
             TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
-            WorldInitialization.Initialize(new WorldDatabase(Path));
+            WorldInitialization.Initialize(new WorldDatabase(Path), economy: economy);
         }
-        if (emptyWallets && (clock is not null || freshInitialization))
+        if (emptyWallets && !useSeed)
         {
             // Feature tests supply their own budgets. Funding/migration tests use
             // emptyWallets: false to retain the real starting grant and journal.

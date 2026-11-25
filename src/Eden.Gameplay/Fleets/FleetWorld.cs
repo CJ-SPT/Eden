@@ -9,12 +9,15 @@ public sealed partial class FleetWorld(long seed)
         public Dictionary<long, FleetMember> Members { get; } = [];
         public Dictionary<long, FleetWing> Wings { get; } = [];
         public bool FreeMove { get; set; }
+        public int MaximumSize { get; set; } = FleetRules.MaximumMembers;
+        public FleetPlacement? AutoJoinPlacement { get; set; }
         public FleetAdvertSettings? Advert { get; set; }
         public long AdvertCreatedAt { get; set; }
         public long AdvertUpdatedAt { get; set; }
         public Dictionary<long, FleetPilot> JoinRequests { get; } = [];
         public string Motd { get; set; } = "";
         public IReadOnlyList<FleetTargetTag> TargetTags { get; set; } = Array.Empty<FleetTargetTag>();
+        public FleetOptions Options => new(FreeMove, Advert is not null, AutoJoinPlacement?.SquadId);
     }
 
     private sealed record Invitation(long FleetId, long Inviter, FleetPlacement Placement, long Expires, bool FromAdvert = false);
@@ -192,7 +195,9 @@ public sealed partial class FleetWorld(long seed)
             Array.AsReadOnly(fleet.Wings.Values.OrderBy(w => w.Id).ToArray()),
             fleet.FreeMove,
             fleet.Motd,
-            fleet.Advert is not null
+            fleet.Advert is not null,
+            fleet.MaximumSize,
+            fleet.AutoJoinPlacement?.SquadId
         );
 
     private Fleet MemberFleet(long actor, long fleetId) =>
@@ -331,12 +336,7 @@ public sealed partial class FleetWorld(long seed)
         var placement = Placement(fleet, requested);
         AuthorizePlacement(fleet, actor, target, placement);
         CheckSlot(fleet, target, placement);
-        if (
-            !_online.ContainsKey(target)
-            || Identity(target) is not null
-            || actor == target
-            || fleet.Members.Count >= FleetRules.MaximumMembers
-        )
+        if (!_online.ContainsKey(target) || Identity(target) is not null || actor == target || fleet.Members.Count >= fleet.MaximumSize)
         {
             throw new InvalidDataException("Invite an online pilot outside a fleet with an available position.");
         }
@@ -355,7 +355,7 @@ public sealed partial class FleetWorld(long seed)
             || Identity(actor) is not null
             || !_online.TryGetValue(actor, out var pilot)
             || !fleet.Members.ContainsKey(invitation.Inviter)
-            || fleet.Members.Count >= FleetRules.MaximumMembers
+            || fleet.Members.Count >= fleet.MaximumSize
         )
         {
             throw new InvalidDataException("This fleet invitation is no longer valid.");
@@ -555,14 +555,54 @@ public sealed partial class FleetWorld(long seed)
             fleet.Wings[groupId] = wing with { Name = name };
         }
         Publish(fleet, new FleetEvent.Hierarchy(wing.Id, squad ? groupId : null, name is null, name));
+        if (squad && name is null && fleet.AutoJoinPlacement?.SquadId == groupId)
+        {
+            ApplyAutoJoinPlacement(fleet, null);
+        }
     }
 
     public void SetFreeMove(long actor, long fleetId, bool enabled)
     {
         var fleet = BossFleet(actor, fleetId);
-        bool old = fleet.FreeMove;
+        var old = fleet.Options;
         fleet.FreeMove = enabled;
-        Publish(fleet, new FleetEvent.Options(old, enabled, fleet.Advert is not null));
+        Publish(fleet, new FleetEvent.Options(old, fleet.Options));
+    }
+
+    public int SetMaximumSize(long actor, long fleetId, int size)
+    {
+        var fleet = BossFleet(actor, fleetId);
+        if (size is < 1 or > FleetRules.MaximumMembers)
+        {
+            throw new InvalidDataException("Choose a maximum fleet size between 1 and 256.");
+        }
+        fleet.MaximumSize = size;
+        return size;
+    }
+
+    public void SetAutoJoinSquad(long actor, long fleetId, long? squad)
+    {
+        var fleet = BossFleet(actor, fleetId);
+        FleetPlacement? placement = null;
+        if (squad is long id)
+        {
+            var wing =
+                fleet.Wings.Values.SingleOrDefault(wing => wing.Squads.Any(group => group.Id == id))
+                ?? throw new InvalidDataException("Choose an existing squad in this fleet.");
+            placement = new(wing.Id, id, FleetRole.Member);
+        }
+        ApplyAutoJoinPlacement(fleet, placement);
+    }
+
+    private void ApplyAutoJoinPlacement(Fleet fleet, FleetPlacement? placement)
+    {
+        if (fleet.AutoJoinPlacement == placement)
+        {
+            return;
+        }
+        var old = fleet.Options;
+        fleet.AutoJoinPlacement = placement;
+        Publish(fleet, new FleetEvent.Options(old, fleet.Options));
     }
 
     public void SetMotd(long actor, long fleetId, string text)

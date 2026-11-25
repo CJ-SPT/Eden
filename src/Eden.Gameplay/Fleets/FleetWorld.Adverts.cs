@@ -77,7 +77,7 @@ public sealed partial class FleetWorld
         if (!registered)
         {
             fleet.AdvertCreatedAt = now;
-            Publish(fleet, new FleetEvent.Registration(false, true, fleet.FreeMove));
+            Publish(fleet, new FleetEvent.Registration(false, true, fleet.FreeMove, fleet.AutoJoinPlacement?.SquadId));
         }
         return AdvertSnapshot(fleet);
     }
@@ -96,7 +96,7 @@ public sealed partial class FleetWorld
         }
         fleet.Advert = null;
         fleet.JoinRequests.Clear();
-        Publish(fleet, new FleetEvent.Registration(true, false, fleet.FreeMove));
+        Publish(fleet, new FleetEvent.Registration(true, false, fleet.FreeMove, fleet.AutoJoinPlacement?.SquadId));
     }
 
     public IReadOnlyList<FleetAdvert> AvailableAdverts(long actor, double security) =>
@@ -142,7 +142,7 @@ public sealed partial class FleetWorld
             || !_online.TryGetValue(actor, out var pilot)
             || !_fleets.TryGetValue(fleetId, out var fleet)
             || !Visible(fleet, pilot, security)
-            || fleet.Members.Count >= Math.Min(fleet.Advert!.JoinLimit ?? FleetRules.MaximumMembers, FleetRules.MaximumMembers)
+            || fleet.Members.Count >= Math.Min(fleet.Advert!.JoinLimit ?? FleetRules.MaximumMembers, fleet.MaximumSize)
         )
         {
             throw new InvalidDataException("This fleet advert is not accepting your application.");
@@ -168,7 +168,8 @@ public sealed partial class FleetWorld
             return true;
         }
         long boss = fleet.Members.Values.Single(m => (m.Job & FleetRules.BossJob) != 0).Pilot.Id;
-        Invite(boss, fleetId, actor, new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member), now);
+        var placement = fleet.AutoJoinPlacement ?? new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member);
+        Invite(boss, fleetId, actor, placement, now);
         _invitations[actor] = _invitations[actor] with { FromAdvert = true };
         return false;
     }

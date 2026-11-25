@@ -46,6 +46,20 @@ public static class InformationRules
     public static bool CargoScanImmune(IReadOnlyDictionary<DogmaAttributeId, double>? attributes) =>
         attributes?.GetValueOrDefault(DogmaAttributeId.CargoScanResistance) >= 1;
 
+    public static double ShipScanAccuracy(double distance, double optimal, double falloff)
+    {
+        if (distance <= optimal)
+        {
+            return 1;
+        }
+        if (falloff <= 0 || distance - optimal > falloff)
+        {
+            return 0;
+        }
+        double relativeDistance = (distance - optimal) / falloff;
+        return Math.Pow(0.5, relativeDistance * relativeDistance);
+    }
+
     public static void RequireMiningSurvey(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
         if (
@@ -95,7 +109,7 @@ public static class InformationRules
             Value(DogmaAttributeId.Duration),
             Value(DogmaAttributeId.CapacitorNeed),
             Value(range),
-            Value(DogmaAttributeId.ShipScanFalloff),
+            effect == DogmaEffect.ShipScan ? Value(DogmaAttributeId.ShipScanFalloff) : 0,
             Value(DogmaAttributeId.MaxTractorVelocity),
             Value(DogmaAttributeId.AccessDifficultyBonus)
         );

@@ -277,6 +277,12 @@ internal sealed partial class PilotMarketStore
         internal long Price => Personal?.PriceCents ?? Npc!.PriceCents;
         internal long Issued => Personal?.Modified ?? Npc!.Issued;
         internal int Remaining => Personal?.Remaining ?? Npc!.Remaining;
+
+        internal bool CanFill(int requested)
+        {
+            int minimum = Personal?.MinimumVolume ?? (Npc is { Kind: NpcMarketKind.Standard } order ? order.MinimumVolume : 1);
+            return minimum <= 1 || StandardMarketRules.CanFill(requested, Remaining, minimum);
+        }
     }
 
     private List<MarketExecution> MatchOrders(
@@ -337,6 +343,10 @@ internal sealed partial class PilotMarketStore
             if (incoming.Remaining == 0)
             {
                 break;
+            }
+            if (!candidate.CanFill(incoming.Remaining))
+            {
+                continue;
             }
             var fill = PersonalMarketRules.Match(
                 incoming.Bid,
@@ -462,17 +472,37 @@ internal sealed partial class PilotMarketStore
         return trades;
     }
 
-    public void PlaceBuy(long pilotId, PersonalMarketBuy request) =>
-        ExecuteBuy(pilotId, request.StationId, [new(request.TypeId, request.PriceCents, request.Quantity)], request.DurationDays);
+    public void PlaceBuy(long pilotId, PersonalMarketBuy request)
+    {
+        if (request.MinimumVolume < 1 || request.MinimumVolume > request.Quantity)
+        {
+            throw new InvalidDataException("Choose a minimum volume between one and the buy order quantity.");
+        }
+        if (request.DurationDays == 0 && request.MinimumVolume > 1)
+        {
+            throw new InvalidDataException("Only a buy listing can set a minimum volume above one.");
+        }
+        ExecuteBuy(
+            pilotId,
+            request.StationId,
+            [new(request.TypeId, request.PriceCents, request.Quantity)],
+            request.DurationDays,
+            request.MinimumVolume
+        );
+    }
 
     public void PlaceSell(long pilotId, IReadOnlyList<MarketSale> items, int durationDays) => ExecuteSell(pilotId, items, durationDays);
 
-    private MarketResult ExecuteBuy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items, int days)
+    private MarketResult ExecuteBuy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items, int days, int minimumVolume = 1)
     {
         RequireResidentStandardMarket();
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
-            return ResidentBuy(live, pilotId, stationId, items, days);
+            return ResidentBuy(live, pilotId, stationId, items, days, minimumVolume);
+        }
+        if (minimumVolume > 1)
+        {
+            throw new InvalidOperationException("Buy-order minimum volume requires an active resident world.");
         }
         Expire();
         using WorldDbContext world = new(database.Path);

@@ -206,7 +206,7 @@ internal sealed class MarketHandler(
                             var listedPrice,
                             long listedQuantity,
                             (long)MarketDefinitions.StationRange,
-                            1L,
+                            long minimumVolume,
                             long buyDays,
                             false
                             or 0L,
@@ -220,7 +220,8 @@ internal sealed class MarketHandler(
                             checked((int)listedType),
                             MarketRequestWire.Price(listedPrice),
                             checked((int)listedQuantity),
-                            checked((int)buyDays)
+                            checked((int)buyDays),
+                            checked((int)minimumVolume)
                         )
                     );
                     monitor.Advance(context);
@@ -283,7 +284,7 @@ internal sealed class MarketHandler(
                 case "ModifyCharOrder":
                 case "CancelCharOrder":
                     return new PilotCallResult.Failure(
-                        "Choose personal station orders, station range and a minimum volume of one.",
+                        "Choose a supported personal station order with station range.",
                         ShowInformationDialog: true
                     );
                 case "GetPlexOldPriceHistory" or "GetPlexNewPriceHistory":

@@ -55,6 +55,11 @@ internal static class InformationCatalog
             || operation.DischargeAttributeID != (int)DogmaAttributeId.CapacitorNeed
             || operation.EffectCategory
                 != (active == DogmaEffect.AutomaticTargeting ? (int)PassiveEffectPhase.Active : (int)PassiveEffectPhase.Targeted)
+            || active == DogmaEffect.ShipScan
+                && (
+                    operation.RangeAttributeID != (int)DogmaAttributeId.ShipScanRange
+                    || operation.FalloffAttributeID != (int)DogmaAttributeId.ShipScanFalloff
+                )
             || (operation.ModifierInfo ?? []).Length != 0
         )
         {

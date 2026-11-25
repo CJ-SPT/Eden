@@ -2,6 +2,32 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Ship scanner falloff
+
+Ship scanners can complete a paid scan beyond optimal range. Ship Scanner I has **50 km** optimal and **30 km** falloff.
+The compact scanner has **55 km + 33 km**, and Ship Scanner II has **60 km + 36 km**. Build 3662168 binds optimal
+attribute **125** and falloff attribute **510** to `shipScan`, effect **46**. Attribute 510 defines the distance beyond
+optimal at which accuracy is halved.
+
+Eden uses surface distance and accepts targets through one falloff beyond optimal. At the paid deadline, the scanner
+checks the current distance again. Inside optimal it reveals all fitted hardware. In falloff it rolls each fitted item
+independently with reveal probability `0.5 ^ (((distance - optimal) / falloff) ^ 2)`. Results combine revealed items of
+the same type and report the target's current capacitor. Moving beyond the allowed range before completion suppresses
+the result and retains the scanner's paid cooldown.
+
+The falloff curve, cutoff and per-item sampling follow the EVE.js scanner reference, `server/src/space/modules/scannerModuleRuntime.js`
+in release 261108.1. CCP's balance record supplies the scanner ranges, and its Retribution notes confirm that scans can
+omit hardware but report truthful quantities. [CCP scanner balance](https://www.eveonline.com/news/view/rebalancing-eve-one-module-at-a-time) ·
+[CCP Retribution patch notes](https://www.eveonline.com/news/view/patch-notes-for-retribution-1) ·
+[EVE University ship scanning](https://wiki.eveuniversity.org/Ship_scanning)
+
+**Automated validation.** The focused methods `ShipScanAccuracyFollowsOptimalAndFalloffBoundaries` and
+`PaidShipScansSampleCurrentFalloffWithoutInventingHardwareOrChargingForRejectedActivation` passed all six cases in
+5.02 seconds of combined case time. They cover the range boundaries, exact half accuracy at one falloff, truthful item
+counts, movement out of range during a paid scan and payment and cooldown behavior.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Cargo scan immunity
 
 Cargo scanners reject a fully resistant ship before spending capacitor, starting a cooldown or publishing a scan effect.
@@ -390,7 +416,7 @@ Cargo and ship scanners use `dogmaIM.Activate(moduleID, effectName, targetID, re
 | `OnCargoScanComplete` | target ID, Python list of `(typeID, quantity)` tuples |
 | `OnShipScanCompleted` | ship ID, capacitor charge, capacitor capacity, Python list of hardware tuples |
 
-Results belong only to the scanning session. Cargo reads expose supported ship holds, wreck/container contents and saved NPC mining cargo without transferring ownership. Ship reads expose fitted player hardware and current capacitor; NPCs use their existing nominal capacitor profile and have no synthetic inventory modules. These are truthful optimal-range snapshots. Exact server ship-scan falloff and hardware sampling are not established by client presentation code; the three ship-scanner profiles remain **partial** for those details. No guessed falloff distribution is enabled.
+Results belong only to the scanning session. Cargo reads expose supported ship holds, wreck/container contents and saved NPC mining cargo without transferring ownership. Ship reads expose fitted player hardware and current capacitor. NPCs use their existing nominal capacitor profile and have no synthetic inventory modules. The [ship scanner falloff](#ship-scanner-falloff) record covers partial hardware results outside optimal range.
 
 `Survey` is skill **3551**, distinct from CPU Management **3426**. Its pinned modifiers enter the existing fitting graph once. Duration, native skill brain and paid deadlines share that calculation. Five online survey chipsets apply their mining critical/residue modifiers and `miningScannerUpgrade`, with real group limits. On an eligible hull with `integratedMiningScanner`, `miningScanMgr.perform_scan()` returns Python-list triples `(asteroidID, typeID, remainingQuantity)` for live deposits within the pinned **250 km** radius. Unupgraded tier-one presentation remains client-local.
 
