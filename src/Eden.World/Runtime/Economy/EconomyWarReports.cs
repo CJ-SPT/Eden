@@ -10,7 +10,7 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class ResidentEconomy
 {
-    private sealed record WarKillState(
+    internal sealed record WarKillState(
         long Id,
         long WarId,
         int VictimOrganizationId,
@@ -21,7 +21,29 @@ internal sealed partial class ResidentEconomy
         decimal IskLost,
         decimal IskDestroyed,
         string Report
-    );
+    )
+    {
+        private readonly FinalBlowOwners? _finalBlow = ReadFinalBlow(Report);
+
+        internal bool MatchesClientSide(int attackerId) =>
+            _finalBlow is { } final && WarReportRules.MatchesClientSide(attackerId, AttackerLoss, final.CorporationId, final.AllianceId);
+    }
+
+    private readonly record struct FinalBlowOwners(int CorporationId, int? AllianceId);
+
+    private sealed record WarKillMail(FinalBlowOwners? FinalBlow);
+
+    private static FinalBlowOwners? ReadFinalBlow(string report)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<WarKillMail>(report)?.FinalBlow;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     private void RegisterWarReports()
     {
@@ -113,5 +135,16 @@ internal sealed partial class ResidentEconomy
                 """
             );
         }
+    }
+}
+
+internal sealed partial class EconomyTransaction
+{
+    internal IEnumerable<ResidentEconomy.WarKillState> ReportedWarKills(long warId, int attackerId)
+    {
+        var kills = (EconomySet<SavedCorporationWarKill, ResidentEconomy.WarKillState>)Set<SavedCorporationWarKill>();
+        return kills
+            .IndexedSnapshots(nameof(SavedCorporationWarKill.WarId), warId)
+            .Where(row => row.WarId == warId && row.MatchesClientSide(attackerId));
     }
 }

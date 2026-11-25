@@ -1,16 +1,25 @@
+using Eden.Data.Catalog.Market;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Market;
 using Eden.Server;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Characters;
+using Eden.World.Combat;
 using Eden.World.Docking;
+using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -21,9 +30,10 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed partial class CapsuleerAmmunitionSupplyTests
 {
     [Theory]
-    [InlineData(CapsuleerCareer.Hauling, true)]
-    [InlineData(CapsuleerCareer.Mining, false)]
-    public async Task StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart(CapsuleerCareer career, bool funded)
+    [InlineData(CapsuleerCareer.Hauling, true, 0)]
+    [InlineData(CapsuleerCareer.Mining, false, 0)]
+    [InlineData(CapsuleerCareer.Hauling, false, 2)]
+    public async Task StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart(CapsuleerCareer career, bool funded, int podLosses)
     {
         bool mining = career == CapsuleerCareer.Mining;
         int hull = mining ? (int)CapsuleerMiningHull.Venture : (int)FreightHull.Nereus;
@@ -64,8 +74,28 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 var station = SystemObjects.Geometry(catalog, Home).Single(body => body.Id == Depot);
                 SqliteWorld.SetPosition(setup, catalog, lostShip, station.Position, Home, fixture.Clock.Now);
                 capsule = DestroyBotShip(setup, catalog, bot, fixture.Clock.Now);
+                var ships = host.GetRequiredService<SqliteWorld>();
+                if (podLosses > 0)
+                {
+                    var home = setup.Set<SavedHomeStation>().Find(bot) ?? setup.Add(new SavedHomeStation { PilotId = bot }).Entity;
+                    home.StationId = Depot;
+                    var attacker = setup.Pilots.Find(Customer)!;
+                    var party = PilotInteractionHistoryStore.Player(setup, attacker, attacker.ActiveShipId);
+                    var losses = host.GetRequiredService<PilotLossSettlement>();
+                    for (int destroyed = 0; destroyed < podLosses; destroyed++)
+                    {
+                        SqliteWorld.SetPosition(setup, catalog, capsule, station.Position, Home, fixture.Clock.Now);
+                        losses.Apply(setup, catalog, pilot, capsule, Home, pilot.ActiveShip.Position!, fixture.Clock.Now, party);
+                        capsule = pilot.ActiveShipId;
+                    }
+                }
                 setup.Set<PilotWallet>().Find(bot)!.Cents = opening;
-                var docked = host.GetRequiredService<SqliteWorld>().Dock(setup, catalog, bot, capsule, Depot);
+                var docked =
+                    podLosses == 0
+                        ? ships.Dock(setup, catalog, bot, capsule, Depot)
+                        : ships.FindPilot(setup, CapsuleerCommunityStore.MinerAccountId, bot)!;
+                Assert.Null(docked.Position);
+                Assert.Equal(Depot, docked.StationId);
                 Assert.Null(CapsuleerIndustry.Employer(setup, bot, docked.CorpId));
 
                 var seller = setup.Pilots.Find(Customer)!;
@@ -146,6 +176,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         {
             Assert.Null(world.Ships.Find(capsule));
             Assert.NotNull(world.Set<ShipLoss>().Find(lostShip));
+            Assert.Equal(
+                podLosses,
+                world.Filter<ShipLoss>(loss => loss.PilotId == bot).Count(loss => loss.TypeId == FleetDefinitions.CapsuleType)
+            );
             Assert.Contains(world.FittedItems(bot, replacement), fitted => fitted.TypeId == module && fitted.Online);
             var purchases = world.Filter<MarketExecution>(row => row.PilotId == bot).ToArray();
             Assert.Equal(new[] { hull, module }.Order(), purchases.Select(row => row.TypeId).Order());
@@ -179,5 +213,82 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 $"Replacement journey stalled. Miner {scheduler.Miner(bot)?.Work} Hauler {scheduler.Hauler(bot)?.Work}"
             );
         }
+    }
+
+    [Fact]
+    public void UnfundedBotBuysReplacementAtCombinedNpcAskPrice()
+    {
+        const int jita = 30000142;
+        const int theForge = 10000002;
+        const int hull = (int)FreightHull.Nereus;
+        const int module = (int)StarterProductionType.ExpandedCargohold;
+        const int hullPrice = 100;
+        const int firstModulePrice = 100;
+        const int secondModulePrice = 200;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PrepareCatalog(fixture);
+        PassiveCatalogFixture.LoadStarterMarket(fixture.Database.CatalogPath, new HashSet<int> { module });
+        PassiveCatalogFixture.LoadUtilityHull(fixture.Database.CatalogPath, hull);
+        RemoveUnpricedFixtureMaterials(fixture);
+        StandardMarketTests.WriteSnapshot(
+            fixture.Database,
+            fixture.Clock,
+            [Ask(1, hull, hullPrice), Ask(2, module, firstModulePrice), Ask(3, module, secondModulePrice)]
+        );
+        UseLocalOrders(fixture, fundRefits: false, standardMarket: true);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var world = host.GetRequiredService<LiveWorld>().Economy.Begin();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        long bot = world.Set<SavedCapsuleerAgent>().First(agent => agent.Career == CapsuleerCareer.Hauling).PilotId;
+        var pilot = world.Pilots.Find(bot)!;
+        long lost = pilot.ActiveShipId;
+        pilot.ActiveShip.TypeId = hull;
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, bot, hull, []);
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, bot, module, []);
+        foreach (int flag in Enumerable.Range((int)InventoryFlag.LowSlot0, 2))
+        {
+            world.Add(
+                new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    LocationId = lost,
+                    OwnerId = bot,
+                    TypeId = module,
+                    FlagId = flag,
+                    Quantity = 1,
+                    Singleton = true,
+                    Online = true,
+                }
+            );
+        }
+        var station = SystemObjects.Geometry(catalog, jita).Single(body => body.Id == FactoryStation);
+        SqliteWorld.SetPosition(world, catalog, lost, station.Position, jita, fixture.Clock.Now);
+        long capsule = DestroyBotShip(world, catalog, bot, fixture.Clock.Now);
+        var docked = host.GetRequiredService<SqliteWorld>().Dock(world, catalog, bot, capsule, FactoryStation);
+        Assert.Null(CapsuleerIndustry.Employer(world, bot, docked.CorpId));
+        var wallet = world.Set<PilotWallet>().Find(bot)!;
+        wallet.Cents = hullPrice + firstModulePrice + secondModulePrice;
+
+        var result = host.GetRequiredService<CapsuleerIndustry>()
+            .ReplaceShip(world, catalog, docked, CapsuleerCareer.Hauling, fixture.Clock.Now, null, null);
+
+        Assert.True(result.Boarded);
+        Assert.Equal(0, wallet.Cents);
+        Assert.Equal(2, world.FittedItems(bot, pilot.ActiveShipId).Count(item => item.TypeId == module && item.Online));
+        Assert.Equal(
+            new long[] { firstModulePrice, secondModulePrice },
+            world
+                .Filter<MarketExecution>(trade => trade.PilotId == bot)
+                .Where(trade => trade.TypeId == module)
+                .Select(trade => trade.PriceCents)
+                .Order()
+        );
+        world.Commit();
+
+        LiveMarketOrder Ask(long id, int type, long price) =>
+            new(id, FactoryStation, jita, theForge, type, false, price, 1, 1, fixture.Clock.Now, 90, MarketDefinitions.StationRange, 1);
     }
 }

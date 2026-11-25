@@ -8,7 +8,7 @@ namespace Eden.World.Runtime;
 // lifetime of the live world, including while transactions wait for their owners.
 internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create, Func<bool>? canCreate = null)
 {
-    private readonly ConcurrentDictionary<int, Lazy<Entry>> _systems = new();
+    private readonly ConcurrentDictionary<int, Entry> _systems = new();
     private readonly object _admission = new();
 
     internal sealed class Entry(int id, T state)
@@ -52,18 +52,13 @@ internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create, Func<bool>? 
     }
 
     internal IReadOnlyList<Entry> Existing(IEnumerable<int> systems) =>
-        systems
-            .Distinct()
-            .Order()
-            .Select(id => _systems.TryGetValue(id, out var entry) && entry.IsValueCreated ? entry.Value : null)
-            .OfType<Entry>()
-            .ToArray();
+        systems.Distinct().Order().Select(id => _systems.GetValueOrDefault(id)).OfType<Entry>().ToArray();
 
     internal Entry Get(int system)
     {
         if (_systems.TryGetValue(system, out var existing))
         {
-            return existing.Value;
+            return existing;
         }
         if (canCreate?.Invoke() == false)
         {
@@ -71,7 +66,8 @@ internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create, Func<bool>? 
         }
         lock (_admission)
         {
-            return _systems.GetOrAdd(system, id => new(() => new Entry(id, create(id)))).Value;
+            // Publish only completed runtimes so a failed admission can be retried.
+            return _systems.GetOrAdd(system, id => new Entry(id, create(id)));
         }
     }
 
@@ -87,8 +83,7 @@ internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create, Func<bool>? 
         public void Dispose() => Monitor.Exit(gate);
     }
 
-    internal IReadOnlyList<Entry> Snapshot() =>
-        _systems.Values.Where(value => value.IsValueCreated).Select(value => value.Value).OrderBy(entry => entry.Id).ToArray();
+    internal IReadOnlyList<Entry> Snapshot() => _systems.Values.OrderBy(entry => entry.Id).ToArray();
 
     internal IDisposable Enter(IEnumerable<int> systems, string operation)
     {

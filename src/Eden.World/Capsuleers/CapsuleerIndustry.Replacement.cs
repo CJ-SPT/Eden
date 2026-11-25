@@ -52,8 +52,7 @@ internal sealed partial class CapsuleerIndustry
             pilot.Position is not null
             || pilot.InStructure
             || pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
-            || world.Filter<ShipLoss>(loss => loss.CapsuleId == pilot.ShipId).FirstOrDefault(loss => loss.PilotId == pilot.PilotId)
-                is not { } loss
+            || ReplacementLoss(world, catalog, pilot.PilotId, pilot.ShipId) is not { } loss
             || LostKit(catalog, loss) is not { } kit
         )
         {
@@ -99,7 +98,7 @@ internal sealed partial class CapsuleerIndustry
             return new(false, false, orderDeadline, orderIds);
         }
 
-        var loss = ReplacementLoss(world, docked);
+        var loss = ReplacementLoss(world, catalog, pilotId, docked.ShipId);
         bool atTradeHub = CapsuleerEncounterRules.IsTradeHubStation(station) && (hubShopping || corporation is null || loss is null);
         if (!atTradeHub && (loss is null || !funded && corporation is null))
         {
@@ -259,8 +258,23 @@ internal sealed partial class CapsuleerIndustry
             .Where(part => part.Quantity > 0)
             .ToArray();
 
-    private static ShipLoss? ReplacementLoss(EconomyTransaction world, DockedPilot pilot) =>
-        world.Filter<ShipLoss>(loss => loss.CapsuleId == pilot.ShipId).FirstOrDefault(loss => loss.PilotId == pilot.PilotId);
+    private static ShipLoss? ReplacementLoss(EconomyTransaction world, CatalogDbContext catalog, long pilotId, long capsule)
+    {
+        HashSet<long>? visited = null;
+        while (world.Filter<ShipLoss>(loss => loss.CapsuleId == capsule).FirstOrDefault(loss => loss.PilotId == pilotId) is { } loss)
+        {
+            if (loss.TypeId != FleetDefinitions.CapsuleType && catalog.FittingType(loss.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
+            {
+                return loss;
+            }
+            if (!(visited ??= []).Add(capsule))
+            {
+                break;
+            }
+            capsule = loss.ShipId;
+        }
+        return null;
+    }
 
     internal CapsuleerTrafficRoute? FindReplacementHub(
         EconomyTransaction world,
@@ -274,7 +288,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        var loss = ReplacementLoss(world, pilot);
+        var loss = ReplacementLoss(world, catalog, pilot.PilotId, pilot.ShipId);
         var original = loss is null ? null : LostKit(catalog, loss);
         var kits = ReplacementKits(world, catalog, pilot.PilotId, career, loss?.TypeId, original, atTradeHub: true).ToArray();
         if (kits.Length == 0)
@@ -398,21 +412,28 @@ internal sealed partial class CapsuleerIndustry
                 .SupplyOrders(world, catalog, station, toBuy.Select(part => part.TypeId).ToArray(), pilot, corporation?.Id)
                 .ToLookup(order => order.TypeId);
             List<MarketPurchase> purchases = [];
+            decimal total = 0;
             foreach (var part in toBuy)
             {
                 long limit = Rules.LimitPrice(ReferencePrice(catalog, part.TypeId));
                 if (
-                    QuoteInput(asks[part.TypeId].Where(order => limit == 0 || order.PriceCents <= limit), part.TypeId, part.Quantity) is
-                    { } quote
+                    QuoteInput(
+                        asks[part.TypeId].TakeWhile(order => limit == 0 || order.PriceCents <= limit),
+                        part.TypeId,
+                        part.Quantity,
+                        estimateCost: !funded,
+                        out decimal cost
+                    )
+                        is not { } quote
+                    || quote.Quantity != part.Quantity
                 )
                 {
-                    purchases.Add(quote);
+                    break;
                 }
+                total += funded ? (decimal)quote.LimitPriceCents * quote.Quantity : cost;
+                purchases.Add(quote);
             }
-            if (
-                purchases.Sum(quote => (long)quote.Quantity) != toBuy.Sum(part => (long)part.Quantity)
-                || purchases.Sum(quote => (decimal)quote.LimitPriceCents * quote.Quantity) > budget
-            )
+            if (purchases.Count != toBuy.Length || total > budget)
             {
                 continue;
             }
@@ -488,8 +509,19 @@ internal sealed partial class CapsuleerIndustry
 
         long affordable = corporation.BalanceCents / remaining;
         var asks = market.SupplyOrders(world, catalog, station, [part.TypeId], pilot, corporation.Id);
-        long limit = price > 0 ? Math.Min(price, affordable) : affordable / CapsuleerRegionalStockRules.BudgetDivisor;
-        if (QuoteInput(asks.Where(order => order.PriceCents <= limit), part.TypeId, remaining) is { } quote)
+        long limit = price > 0 ? price : affordable / CapsuleerRegionalStockRules.BudgetDivisor;
+        var quote = QuoteInput(
+            asks.TakeWhile(order => order.PriceCents <= limit),
+            part.TypeId,
+            remaining,
+            estimateCost: true,
+            out decimal cost
+        );
+        if (quote?.Quantity != remaining || cost > corporation.BalanceCents)
+        {
+            quote = QuoteInput(asks.TakeWhile(order => order.PriceCents <= Math.Min(limit, affordable)), part.TypeId, remaining);
+        }
+        if (quote is not null)
         {
             var bought = market.BuyCorporationStock(world, catalog, pilot, station, corporation, [quote]);
             if (bought.Trades.Sum(trade => (long)trade.Quantity) != quote.Quantity)

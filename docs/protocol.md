@@ -162,6 +162,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Unattended nullsec PvP and map population](protocol/capsuleers.md#unattended-nullsec-pvp-and-map-population--november-23-2026)
 - [Funded refits for existing pilots](protocol/capsuleers.md#funded-refits-for-existing-pilots)
 - [Funded replacement with personal market orders](protocol/capsuleers.md#funded-replacement-with-personal-market-orders)
+- [Replacement after pod loss and market affordability](protocol/capsuleers.md#replacement-after-pod-loss-and-market-affordability)
 - [Trade hub replacement trips](protocol/capsuleers.md#trade-hub-replacement-trips)
 - [Mercoxit traffic concentration at Y-CWQY](protocol/capsuleers.md#mercoxit-traffic-concentration-at-y-cwqy)
 - [Unattended capsuleer simulation](protocol/capsuleers.md#unattended-capsuleer-simulation--november-23-2026)
@@ -454,6 +455,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 ### Corporations
 
 - [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
+- [War report side filters and former ally updates](protocol/corporations.md#war-report-side-filters-and-former-ally-updates)
 - [Defender allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports)
 - [Corporation Edit Member identity](protocol/corporations.md#edit-member-private-identity-reply-november-16-2026)
 - [Ordinary corporation member auto-removal](protocol/corporations.md#ordinary-member-auto-removal-november-15-2026)
@@ -857,6 +859,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
+- [Runtime admission and checkpoint recovery](protocol/performance.md#runtime-admission-and-checkpoint-recovery)
 - [SQL-free gameplay and cold market preparation](protocol/performance.md#sql-free-gameplay-and-cold-market-preparation)
 - [Planetary sourcing and tether waits during bot trades](protocol/performance.md#planetary-sourcing-and-tether-waits-during-bot-trades)
 - [Session frames blocked by docked bot trades](protocol/performance.md#session-frames-blocked-by-docked-bot-trades)

@@ -1199,6 +1199,27 @@ The two exact cases passed in 10.62 seconds. The combined `CapsuleerAmmunitionSu
 built with zero warnings or errors. Catalog setup, formatting policy, style, CSharpier, and line-width checks passed.
 The CSharpier check excluded the local `.artifacts` recovery directory.
 
+## Replacement after pod loss and market affordability
+
+Ship replacement follows the chain of destroyed capsules back to the lost work hull. This lets a hauling bot use its
+industrial fit or the Badger fallback when its home clone wakes after a pod loss. The lookup uses the resident loss
+index scoped to the pilot.
+
+A complete replacement quote prices immediate purchases against the settlement rules. It sums the resting price of
+each NPC fill and the submitted offer for units filled by player orders. A pilot or corporation with enough ISK for the
+complete fit can purchase it even when the last NPC ask has a higher unit price. The station and funding policies come
+from the existing replacement path. The local EVE.js 261108.1 comparison checked `finishDurablePodDeath` in
+`shipDestruction.js` and fill valuation in `marketProxyService.js`.
+[UniWiki trading](https://wiki.eveuniversity.org/Trading) ·
+[CCP market order matching](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+### Automated validation
+
+The `StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart` filter includes a wallet-funded hauler with two pod
+losses. It travels, restarts, buys the industrial hull and module, and boards with the module online.
+`UnfundedBotBuysReplacementAtCombinedNpcAskPrice` passed in 12.88 seconds using a Standard market snapshot.
+It verifies both resting fill prices, the exact wallet debit, and two online modules on the replacement.
+
 ## Dynamic paid ship replacement
 
 After a loss, a miner or traffic pilot in a bot-led corporation uses the loss manifest to plan its replacement at the

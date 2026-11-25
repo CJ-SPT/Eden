@@ -85,7 +85,16 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
             }
             if (notified.Count > 0 || previousWars.Count != current.Count)
             {
-                _wars = current.ToDictionary(war => war.Id);
+                var next = current.ToDictionary(war => war.Id);
+                foreach (var previous in previousWars.Values)
+                {
+                    if (!next.ContainsKey(previous.Id))
+                    {
+                        context.Notifications.Add(new CorporationWarRemoved(previous));
+                        notified.Add(previous.Id);
+                    }
+                }
+                _wars = next;
             }
         }
         if (_negotiations is { } previousNegotiations)
@@ -177,14 +186,30 @@ internal sealed record CorporationWarChanged(CorporationWar? Previous, Corporati
             {
                 changes["allies"] = new object?[] { CorporationWarReply.AllyEntries(previousAllies), fields["allies"] };
             }
-            var owners = new long[] { Current.AttackerId, Current.DefenderId }
-                .Concat(previousAllies.Concat(Current.Allies).Select(ally => (long)ally.OwnerId))
-                .Distinct()
-                .Select(owner => (object?)owner)
-                .ToList();
-            return [new CorporationWarReply(Current), new BlueConstructor("__builtin__.set", [owners]), changes];
+            return [new CorporationWarReply(Current), Owners(Current, previousAllies), changes];
         }
     }
+
+    internal static BlueConstructor Owners(CorporationWar war, IReadOnlyList<CorporationWarAlly> previousAllies)
+    {
+        var owners = new long[] { war.AttackerId, war.DefenderId }
+            .Concat(previousAllies.Concat(war.Allies).Select(ally => (long)ally.OwnerId))
+            .Distinct()
+            .Select(owner => (object?)owner)
+            .ToList();
+        return new BlueConstructor("__builtin__.set", [owners]);
+    }
+}
+
+internal sealed record CorporationWarRemoved(CorporationWar Previous) : PilotNotification("OnWarChanged")
+{
+    // Build 3662168's evewar.util.HandleWarChange removes the cached war when the replacement ID is None.
+    public override object?[] Arguments =>
+        [
+            new CorporationWarReply(Previous),
+            CorporationWarChanged.Owners(Previous, []),
+            new Dictionary<string, object?> { ["warID"] = new object?[] { Previous.Id, null } },
+        ];
 }
 
 internal sealed record CorporationWarInvitationsUpdated() : PilotNotification("OnMutualWarsUpdated_Remote")

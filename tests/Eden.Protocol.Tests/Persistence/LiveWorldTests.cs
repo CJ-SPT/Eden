@@ -206,6 +206,72 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task FailedShutdownResumesCheckpointsAtTheConfiguredInterval()
+    {
+        const int interval = 27;
+        const long pilotId = 90000001;
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        var configuration = database.Configuration.Active!;
+        var settings = configuration.Draft.Settings;
+        database.Configuration.Install(
+            configuration with
+            {
+                Draft = configuration.Draft with
+                {
+                    Settings = settings with { Simulation = settings.Simulation with { CheckpointSeconds = interval } },
+                },
+            }
+        );
+        TestClock simulation = new();
+        CheckpointClock clock = new(simulation);
+        int writes = 0;
+        using LiveWorld live = new(
+            database,
+            clock,
+            _ => { },
+            (snapshot, path) =>
+            {
+                if (Interlocked.Increment(ref writes) == 1)
+                {
+                    throw new IOException("Injected checkpoint failure.");
+                }
+                LiveWorld.PersistSnapshot(snapshot, path);
+            }
+        );
+
+        RenamePilot("Pending after shutdown failure");
+        Assert.Throws<IOException>(live.Dispose);
+        Assert.Null(live.LastCheckpoint);
+        await AssertNextWrite(1);
+        Assert.Null(live.LastSaveFailure);
+        Assert.Equal(1, DiskValue(fixture.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Pending after shutdown failure'"));
+
+        RenamePilot("Saved at the next configured interval");
+        await AssertNextWrite(2);
+        Assert.Equal(1, DiskValue(fixture.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Saved at the next configured interval'"));
+
+        void RenamePilot(string name)
+        {
+            using var action = live.Economy.Begin(new(pilots: [pilotId]));
+            action.Pilots.Find(pilotId)!.Name = name;
+            action.Commit();
+        }
+
+        async Task AssertNextWrite(int cycle)
+        {
+            simulation.Seconds = interval * cycle - 1;
+            clock.FireDueTimers();
+            await live.PendingSave;
+            Assert.Equal(cycle, writes);
+            simulation.Seconds++;
+            clock.FireDueTimers();
+            await live.PendingSave;
+            Assert.Equal(cycle + 1, writes);
+        }
+    }
+
+    [Fact]
     public async Task SlowCheckpointDoesNotBlockNewWorldTransactionsOrOverwriteTheirChanges()
     {
         using TestWorld db = new();

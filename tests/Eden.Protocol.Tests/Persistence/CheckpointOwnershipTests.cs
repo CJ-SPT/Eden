@@ -459,7 +459,6 @@ public sealed class CheckpointOwnershipTests(ITestOutputHelper report)
         var checkpoint = Assert.IsType<WorldCheckpoint>(live.LastCheckpoint);
         Assert.True(checkpoint.Bytes > 0);
         Assert.True(checkpoint.CopyBytes > 0);
-        Assert.Equal(TimeSpan.FromSeconds(15), LiveWorld.SaveInterval);
         double writerWait = live.PersistenceWaits.Where(w => w.Operation == writerOperation).Max(w => w.Delay).TotalMilliseconds;
         report.WriteLine(
             $"Checkpoint copy={checkpoint.Copy.TotalMilliseconds:F2} ms; "

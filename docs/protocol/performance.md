@@ -6,6 +6,31 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Runtime admission and checkpoint recovery
+
+A failed system initialization leaves the system available for another admission attempt. The registry publishes one
+complete runtime per system and preserves lock-free access to already admitted systems. Checkpoint capture sees only
+successfully admitted systems. After a failed shutdown save, the save timer resumes at the interval configured at world
+startup and retains pending changes for retry.
+
+The REA audit at `d61177af` identified the cached initialization exception and the 15-second recovery interval in the
+local World assembly. Regression fixtures inject a one-time initialization or save failure and then exercise the
+normal admission and checkpoint paths.
+
+### Automated validation
+
+The exact `RuntimeAdmissionRetriesAfterAFactoryFailureAndPublishesOneEntry` and
+`FailedShutdownResumesCheckpointsAtTheConfiguredInterval` tests passed in 9.56 seconds. An adjacent
+checkpoint-copy concurrency test timed out at the second shot on both the unchanged `d61177af` build and the fix
+candidate. The structure lookup takes the same persistence owner that the fixture holds during checkpoint copy.
+The integrated filter excludes that pre-existing timeout. It passed 196 cases in 143.83 seconds across resident
+runtime and checkpoint tests, corporation wars, affected combat, capsuleer replacement, and markets. The solution
+build completed with zero warnings or errors. The full .NET suite was outside this validation scope.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
 ## Memory reclamation after runtime churn
 
 Best-ask summaries now retain at most 131,072 order rows across regional, system and station views. At capacity the

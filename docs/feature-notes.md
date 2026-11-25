@@ -24,6 +24,7 @@
   PvP roams for eligible independent pilots heading into nullsec. Hunters use regional reports and directional
   scanning. Loaded freight can turn back after a fresh warning about the next gate.
   [Trade hub refits](protocol/capsuleers.md#trade-hub-replacement-trips) ·
+  [Replacement after pod loss](protocol/capsuleers.md#replacement-after-pod-loss-and-market-affordability) ·
   [Nullsec scouting](protocol/capsuleers.md#nullsec-scouting-and-freight-warnings) · [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
   [Independent nullsec expeditions](capsuleer-population.md#independent-nullsec-expeditions) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
@@ -156,7 +157,8 @@ ownership on both sides, an eligible high-security War HQ, and 500 million ISK p
 have no fee or HQ requirement. Combat becomes legal after 24 hours and remains legal through the 24-hour cooldown.
 Defenders can hire eligible allies, either principal can negotiate surrender, and War Reports show attributed losses and
 killmails. [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars) ·
-[Allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports)
+[Allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports) ·
+[War report side filters](protocol/corporations.md#war-report-side-filters-and-former-ally-updates)
 
 ## Travel and navigation
 

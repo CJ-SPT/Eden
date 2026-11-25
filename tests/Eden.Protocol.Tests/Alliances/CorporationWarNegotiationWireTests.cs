@@ -1,4 +1,5 @@
 using Eden.Data.World.Structures;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Notifications;
@@ -8,6 +9,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.World.Corporations;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -91,6 +93,50 @@ public sealed class CorporationWarNegotiationWireTests
         int notices = defending.Context.Notifications.Count;
         defending.Services.GetRequiredService<CorporationWarMonitor>().Advance(defending.Context);
         Assert.Equal(notices, defending.Context.Notifications.Count);
+    }
+
+    [Fact]
+    public void DefensiveAllianceFormationRemovesWarFromFormerAllyConnection()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        var (attacker, defender, warId) = StartWar(world, clock);
+        long allyPilot = CreateAlly(world);
+        using CorporationTestClient aggressor = new(world, 1000001);
+        using CorporationTestClient allyConnection = new(world, 1000002, allyPilot);
+        int ally = allyConnection.Context.Pilot.CorpId;
+        var wars = world.Services.GetRequiredService<ICorporationWars>();
+        wars.CreateAllyOffer(allyPilot, warId, defender, 0, "Assist the defending corporation");
+        long offer = Assert.Single(wars.Negotiations(Other)).Id;
+        wars.ResolveNegotiation(Other, offer, CorporationWarNegotiationKind.AllyOffer, CorporationWarNegotiationAction.Accept);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(CorporationWarRules.AllyWarmup));
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        Assert.True(live.Economy.Inspect(view => CorporationWarStore.HasActiveWar(view, attacker, ally, clock.Now)));
+        Assert.Contains(warId, Assert.IsType<Dictionary<long, object?>>(WarReply(allyConnection, "GetWars", [(long)ally])).Keys);
+        Assert.Contains(warId, Assert.IsType<Dictionary<long, object?>>(WarReply(aggressor, "GetWars", [(long)attacker])).Keys);
+        allyConnection.Context.Notifications.Clear();
+        aggressor.Context.Notifications.Clear();
+
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Other, Details()).Alliance.Id;
+        Assert.False(live.Economy.Inspect(view => CorporationWarStore.HasActiveWar(view, attacker, ally, clock.Now)));
+        var allyMonitor = allyConnection.Services.GetRequiredService<CorporationWarMonitor>();
+        allyMonitor.Poll(allyConnection.Context);
+        var removed = Assert.Single(allyConnection.Context.Notifications, notice => notice.Name == "OnWarChanged");
+        var arguments = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(removed.Arguments)), 3);
+        Assert.Equal(warId, Fields(arguments[0])["warID"]);
+        Assert.True(Assert.IsType<HashSet<long>>(arguments[1]).SetEquals([attacker, defender, ally]));
+        var removedId = BlueRead.Tuple(BlueRead.Fields(arguments[2])["warID"], 2);
+        Assert.Equal(warId, removedId[0]);
+        Assert.Null(removedId[1]);
+        Assert.Empty(Assert.IsType<Dictionary<string, object?>>(WarReply(allyConnection, "GetWars", [(long)ally])));
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        allyMonitor.Poll(allyConnection.Context);
+        Assert.Single(allyConnection.Context.Notifications, notice => notice.Name == "OnWarChanged");
+
+        aggressor.Services.GetRequiredService<CorporationWarMonitor>().Poll(aggressor.Context);
+        var updated = Assert.Single(aggressor.Context.Notifications.OfType<CorporationWarChanged>());
+        Assert.Equal(alliance, updated.Current.DefenderId);
+        Assert.Empty(updated.Current.Allies);
     }
 
     [Fact]

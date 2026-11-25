@@ -19,7 +19,10 @@ public sealed record MarketOrder(
     int Range = MarketDefinitions.StationRange,
     int MinimumVolume = 1,
     bool IsCorporation = false
-);
+)
+{
+    public bool IsNpc { get; init; }
+}
 
 public sealed record MarketSale(long ItemId, int StationId, int TypeId, long LimitPriceCents, int Quantity);
 

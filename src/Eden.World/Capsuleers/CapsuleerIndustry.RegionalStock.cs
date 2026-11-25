@@ -224,8 +224,7 @@ internal sealed partial class CapsuleerIndustry
 
             if (
                 pilot.ActiveShip.DockedLocationId != station
-                || world.Filter<ShipLoss>(loss => loss.CapsuleId == pilot.ActiveShipId).FirstOrDefault(loss => loss.PilotId == pilot.Id)
-                    is not { } loss
+                || ReplacementLoss(world, catalog, pilot.Id, pilot.ActiveShipId) is not { } loss
             )
             {
                 continue;

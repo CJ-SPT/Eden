@@ -35,7 +35,7 @@ internal sealed class CorporationWarReportStore(WorldDatabase database) : ICorpo
             Dictionary<int, int> ships = [];
             Dictionary<int, decimal> isk = [];
             Dictionary<int, WarReportGroupLosses> groups = [];
-            foreach (var row in ForWar(world, warId))
+            foreach (var row in ((EconomyTransaction)world).ReportedWarKills(warId, war.AttackerId))
             {
                 int credited = row.AttackerLoss ? war.DefenderId : war.AttackerId;
                 ships[credited] = ships.GetValueOrDefault(credited) + 1;
@@ -68,11 +68,12 @@ internal sealed class CorporationWarReportStore(WorldDatabase database) : ICorpo
                 : ownerId == war.DefenderId || ownerId is int ally && world.Set<SavedCorporationWarAlly>().Find(warId, ally) is not null
                     ? true
                 : null;
-            return ForWar(world, warId)
+            return ((EconomyTransaction)world)
+                .ReportedWarKills(warId, war.AttackerId)
                 .Where(row => (attackerLoss is null || row.AttackerLoss == attackerLoss) && (group is null || row.Group == group))
                 .OrderByDescending(row => row.Time)
                 .ThenByDescending(row => row.Id)
-                .Select(Snapshot)
+                .Select(row => Snapshot(row.WarId, row.Report, row.IskLost, row.IskDestroyed))
                 .ToArray();
         });
 
@@ -83,19 +84,16 @@ internal sealed class CorporationWarReportStore(WorldDatabase database) : ICorpo
             {
                 return null;
             }
-            var snapshot = Snapshot(row);
+            var snapshot = Snapshot(row.WarId, row.Report, row.IskLost, row.IskDestroyed);
             return string.Equals(hash, WarReportRules.Hash(snapshot.Report), StringComparison.OrdinalIgnoreCase) ? snapshot : null;
         });
 
-    private static IEnumerable<SavedCorporationWarKill> ForWar(WorldAction world, long warId) =>
-        world.Filter<SavedCorporationWarKill>(row => row.WarId == warId).AsEnumerable();
-
-    private static CorporationWarKill Snapshot(SavedCorporationWarKill row) =>
+    private static CorporationWarKill Snapshot(long warId, string report, decimal iskLost, decimal iskDestroyed) =>
         new(
-            row.WarId,
-            JsonSerializer.Deserialize<ShipCombatReport>(row.Report) ?? throw new InvalidDataException("Invalid saved war combat report."),
-            row.IskLost,
-            row.IskDestroyed
+            warId,
+            JsonSerializer.Deserialize<ShipCombatReport>(report) ?? throw new InvalidDataException("Invalid saved war combat report."),
+            iskLost,
+            iskDestroyed
         );
 
     internal static void Save(WorldAction world, CatalogDbContext catalog, ShipCombatReport report, CorporationWarStore.LossWar war)

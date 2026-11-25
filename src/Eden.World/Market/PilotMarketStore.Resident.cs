@@ -358,7 +358,10 @@ internal sealed partial class PilotMarketStore
                 DurationDays: o.DurationDays,
                 Range: o.Range,
                 MinimumVolume: o.MinimumVolume
-            ));
+            )
+            {
+                IsNpc = true,
+            });
         var personal = world
             .Set<SavedPersonalOrder>()
             .Where(o =>
@@ -415,7 +418,10 @@ internal sealed partial class PilotMarketStore
                 DurationDays: o.DurationDays,
                 Range: o.Range,
                 MinimumVolume: o.MinimumVolume
-            ));
+            )
+            {
+                IsNpc = true,
+            });
         var personal = types
             .SelectMany(type => world.StationPersonalOrders(stationId, type))
             .Where(o =>

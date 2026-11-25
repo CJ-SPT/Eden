@@ -41,6 +41,13 @@ public interface ICorporationWarReports
 
 public static class WarReportRules
 {
+    public static bool MatchesClientSide(int attackerId, bool attackerLoss, int finalCorporationId, int? finalAllianceId)
+    {
+        // Build 3662168's War Report classifies kills using the final blow's corporation and alliance IDs.
+        bool attackerKill = attackerId == finalCorporationId || attackerId == finalAllianceId;
+        return attackerKill != attackerLoss;
+    }
+
     public static string Hash(ShipCombatReport report)
     {
         // Native shared killmail identity hashes decimal IDs and FILETIME without separators.

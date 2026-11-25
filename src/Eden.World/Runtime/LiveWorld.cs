@@ -40,7 +40,6 @@ internal sealed record WorldCheckpoint(
 // Projection and file writing use the detached image.
 internal sealed partial class LiveWorld : IDisposable
 {
-    internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
     private static readonly ConcurrentDictionary<string, LiveWorld> s_worlds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private readonly OwnershipMonitor _ownershipMonitor;
@@ -65,6 +64,7 @@ internal sealed partial class LiveWorld : IDisposable
     private readonly Action<string> _report;
     private readonly Action<string> _reportFailure;
     private readonly Action<string> _reportTrace;
+    private readonly TimeSpan _checkpointInterval;
     private readonly ITimer _timer;
     private Task<Exception?> _pending = Task.FromResult<Exception?>(null);
     private long _observedDataVersion;
@@ -589,8 +589,8 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 Nanites.Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
-            var interval = TimeSpan.FromSeconds(database.Settings.Simulation.CheckpointSeconds);
-            _timer = clock.CreateTimer(_ => QueueSave(), null, interval, interval);
+            _checkpointInterval = TimeSpan.FromSeconds(database.Settings.Simulation.CheckpointSeconds);
+            _timer = clock.CreateTimer(_ => QueueSave(), null, _checkpointInterval, _checkpointInterval);
             _mapStatisticsTimer = clock.CreateTimer(_ => SampleMapPilotsOnTimer(), null, MapSampleInterval, MapSampleInterval);
         }
         catch
@@ -1049,7 +1049,7 @@ internal sealed partial class LiveWorld : IDisposable
             lock (_scheduleGate)
             {
                 _stopping = false;
-                _timer.Change(SaveInterval, SaveInterval);
+                _timer.Change(_checkpointInterval, _checkpointInterval);
                 _mapStatisticsTimer.Change(MapSampleInterval, MapSampleInterval);
             }
             throw;

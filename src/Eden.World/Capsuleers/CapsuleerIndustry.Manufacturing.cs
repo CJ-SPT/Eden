@@ -386,9 +386,14 @@ internal sealed partial class CapsuleerIndustry
         return needs.All(need => need.MaximumUnitPriceCents > 0) ? new(corporation, station, demand, needs) : null;
     }
 
-    private static MarketPurchase? QuoteInput(IEnumerable<MarketOrder> asks, int type, int quantity)
+    private static MarketPurchase? QuoteInput(IEnumerable<MarketOrder> asks, int type, int quantity) =>
+        QuoteInput(asks, type, quantity, estimateCost: false, out _);
+
+    private static MarketPurchase? QuoteInput(IEnumerable<MarketOrder> asks, int type, int quantity, bool estimateCost, out decimal cost)
     {
         int remaining = quantity;
+        int npcUnits = 0;
+        decimal npcCost = 0;
         long price = 0;
         foreach (var order in asks)
         {
@@ -396,13 +401,21 @@ internal sealed partial class CapsuleerIndustry
             {
                 continue;
             }
-            remaining -= Math.Min(remaining, order.Remaining);
+            int filled = Math.Min(remaining, order.Remaining);
+            if (estimateCost && order.IsNpc)
+            {
+                npcUnits += filled;
+                npcCost += (decimal)order.PriceCents * filled;
+            }
+            remaining -= filled;
             price = order.PriceCents;
             if (remaining == 0)
             {
                 break;
             }
         }
+        // Immediate NPC fills use their ask. Personal fills receive the final submitted limit price.
+        cost = estimateCost ? npcCost + (decimal)price * (quantity - remaining - npcUnits) : 0;
         return remaining < quantity ? new(type, price, quantity - remaining) : null;
     }
 }

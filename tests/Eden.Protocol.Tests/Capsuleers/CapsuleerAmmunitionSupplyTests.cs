@@ -2947,7 +2947,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         );
     }
 
-    private static void UseLocalOrders(CapsuleerHaulerTests.Fixture fixture, int? freightSurvival = null, bool fundRefits = true)
+    private static void UseLocalOrders(
+        CapsuleerHaulerTests.Fixture fixture,
+        int? freightSurvival = null,
+        bool fundRefits = true,
+        bool standardMarket = false
+    )
     {
         var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
         var startup = configuration.Read();
@@ -2958,7 +2963,18 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             {
                 Settings = draft.Settings with
                 {
-                    Economy = draft.Settings.Economy with { ProgressiveMarkets = false, StandardMarket = false },
+                    Economy = draft.Settings.Economy with
+                    {
+                        ChargeServiceCosts = !standardMarket && draft.Settings.Economy.ChargeServiceCosts,
+                        ProgressiveMarkets = false,
+                        StandardMarket = standardMarket,
+                        RegionalHubSupply = !standardMarket && draft.Settings.Economy.RegionalHubSupply,
+                        BeginnerMarketSupply = !standardMarket && draft.Settings.Economy.BeginnerMarketSupply,
+                    },
+                    DevelopmentSupply = draft.Settings.DevelopmentSupply with
+                    {
+                        TestingMarket = !standardMarket && draft.Settings.DevelopmentSupply.TestingMarket,
+                    },
                     Capsuleers = draft.Settings.Capsuleers with
                     {
                         FundRefits = fundRefits,

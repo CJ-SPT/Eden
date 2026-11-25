@@ -201,6 +201,27 @@ Not performed; agent client testing is disabled.
 2. Open a War Report after an opposing loss, filter by ship class, and open its killmail.
 3. Accept surrender and confirm the payment, the cooldown and the peace treaty in the native window.
 
+## War report side filters and former ally updates
+
+War Report ship counts, ISK totals, ship-class graphs, and filtered lists require the recorded loss side to agree with
+the client’s final-blow classifier. The rule also applies to archived reports. A loss with opposing damage and an
+incompatible final blow still retains its original killmail and attribution data.
+
+When withdrawing a war from a connected ally’s results, Eden sends the client’s war-removal delta on that connection.
+The war continues to appear for organizations that still participate.
+
+Inert analysis of the build 3662168 archive identified the client’s second side filter in
+`warReport.pyj` (`_GetKillsScrollList`, offsets 193–286). It uses the final corporation and alliance IDs.
+`evewar/util.pyj` handles the existing `warID` delta ending in Python None, and the client’s war lookup skips an
+evicted war. The local EVE.js 261108.1 comparison used `warStatisticMgrService.js` and `killmailState.js`.
+[UniWiki War Report](https://wiki.eveuniversity.org/War_declarations#War_Report)
+
+### Automated validation
+
+`DefensiveAllianceFormationRemovesWarFromFormerAllyConnection` verifies the decoded removal event for the ally and a
+regular war update for the aggressor. `WarReportSideFiltersMatchTheClientBeforeAndAfterCheckpoint` verifies both
+report sides, incompatible final blows, direct killmail links, and the same outcomes after reopening a checkpoint.
+
 ## Edit member private identity reply, November 16, 2026
 
 The user's screenshot reports **Unsupported local call charMgr.GetPrivateInfo**. Static inspection of

@@ -32,6 +32,30 @@ public sealed class SystemRuntimeIsolationTests
     }
 
     [Fact]
+    public async Task RuntimeAdmissionRetriesAfterAFactoryFailureAndPublishesOneEntry()
+    {
+        int attempts = 0;
+        SystemRuntimeRegistry<int> registry = new(id =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new OutOfMemoryException("Injected runtime creation failure.");
+            }
+            return id;
+        });
+
+        Assert.Throws<OutOfMemoryException>(() => registry.Get(LocalSystem));
+        Assert.Empty(registry.Existing([LocalSystem]));
+        Assert.Empty(registry.Snapshot());
+
+        var callers = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => Task.Run(() => registry.Get(LocalSystem))));
+        var admitted = Assert.Single(registry.Snapshot());
+        Assert.All(callers, entry => Assert.Same(admitted, entry));
+        Assert.Same(admitted, Assert.Single(registry.Existing([LocalSystem])));
+        Assert.Equal(2, attempts);
+    }
+
+    [Fact]
     public async Task ScopedPublicationDrainsDeferredChangesWhenTheRecipientBecomesIdle()
     {
         using TestWorld fixture = new(liveWorld: true);
