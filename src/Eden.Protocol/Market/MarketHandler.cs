@@ -267,6 +267,14 @@ internal sealed class MarketHandler(
                     var sales = entries.Select(MarketRequestWire.Sale).ToArray();
                     Changed(context, market.Sell(context.Pilot.PilotId, sales));
                     return true;
+                case "PlaceMultiSellOrder" when args is [List<object?> corporationEntries, true or 1L, 0L, _]:
+                    corporateWallet.Enter(context);
+                    var sale = corporationMarket.SellForCorporation(
+                        context.Pilot.PilotId,
+                        corporationEntries.Select(MarketRequestWire.Sale).ToArray()
+                    );
+                    Changed(context, sale.Result, funding: (sale.CorporationId, sale.WalletDivisionKey));
+                    return true;
                 case "PlacePlexSellOrder" when args is [var entry, false or 0L, long plexDays, _] && plexDays >= 0:
                     var plexSale = MarketRequestWire.Sale(entry);
                     if (plexSale.TypeId != MarketDefinitions.PlexTypeId)

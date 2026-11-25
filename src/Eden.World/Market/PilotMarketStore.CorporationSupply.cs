@@ -23,13 +23,7 @@ internal sealed partial class PilotMarketStore
         }
         Expire();
         using var world = live.Economy.Begin(new(pilots: [pilotId]));
-        var corporation = CorporationRoleStore.Current(world, pilotId);
-        var roles = CorporationRoleStore.Effective(world, pilotId, corporation).Roles;
-        int divisionKey = CorporationWalletStore.SelectedKey(world, pilotId, corporation);
-        if (!roles.Has(CorporationRole.Trader) || !CorporationWalletRules.CanTake(roles, divisionKey))
-        {
-            throw new InvalidDataException("Corporation purchases require the Trader role and withdrawal access to the selected division.");
-        }
+        var account = CorporationMarketAuthority(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = ExecuteBuyCore(
             world,
@@ -38,15 +32,53 @@ internal sealed partial class PilotMarketStore
             stationId,
             items,
             days: 0,
-            corporation.Id,
+            account.Corporation.Id,
             placedOrders: null,
             fundedRefit: false,
-            corporationWalletKey: divisionKey
+            corporationWalletKey: account.Key
         );
         world.Commit();
         signal.Changed();
-        return new(corporation.Id, divisionKey, result);
+        return new(account.Corporation.Id, account.Key, result);
     }
+
+    public CorporationMarketSale SellForCorporation(long pilotId, IReadOnlyList<MarketSale> items)
+    {
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            throw new InvalidDataException("Corporation market sales require the resident world.");
+        }
+        Expire();
+        using var world = live.Economy.Begin(new(pilots: [pilotId]));
+        var account = CorporationMarketAuthority(world, pilotId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = ExecuteSellCore(world, catalog, pilotId, items, days: 0, skipUnmatched: false, account);
+        world.Commit();
+        signal.Changed();
+        return new(account.Corporation.Id, account.Key, result);
+    }
+
+    private sealed record CorporationMarketAccount(SavedCorporation Corporation, CorporationMemberAccess Access, int Key);
+
+    private static CorporationMarketAccount CorporationMarketAuthority(WorldAction world, long pilotId)
+    {
+        var corporation = CorporationRoleStore.Current(world, pilotId);
+        var access = CorporationRoleStore.Effective(world, pilotId, corporation);
+        int divisionKey = CorporationWalletStore.SelectedKey(world, pilotId, corporation);
+        if (!access.Roles.Has(CorporationRole.Trader) || !CorporationWalletRules.CanTake(access.Roles, divisionKey))
+        {
+            throw new InvalidDataException("Corporation trades require the Trader role and withdrawal access to the selected division.");
+        }
+        return new(corporation, access, divisionKey);
+    }
+
+    private static bool IsCorporationSaleSource(WorldAction world, CorporationMarketAccount account, OwnedItem item, int stationId) =>
+        CorporationStorageRules.IsDivision(item.FlagId)
+        && item.OwnerId == account.Corporation.Id
+        && world.Set<SavedCorporationOffice>().Find(item.LocationId) is { } office
+        && office.CorporationId == account.Corporation.Id
+        && office.StationId == stationId
+        && CorporationStorageRules.CanTake(account.Access, stationId, account.Corporation.StationId, item.FlagId);
 
     public IReadOnlyList<MarketTrade> CorporationTransactions(long pilotId, long? fromDate, int? divisionKey)
     {

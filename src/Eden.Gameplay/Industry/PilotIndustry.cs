@@ -40,6 +40,7 @@ public enum IndustrySkill
     Reactions = 45746,
     MassReactions = 45748,
     AdvancedMassReactions = 45749,
+    RemoteReactions = 45750,
 }
 
 public sealed record IndustryFacility(

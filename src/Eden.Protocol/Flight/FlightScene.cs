@@ -125,7 +125,7 @@ internal sealed class FlightScene(
 
     internal void ForgetMissiles()
     {
-        foreach (var missile in _missiles.Where(m => !m.Flight.Orphaned))
+        foreach (var missile in _missiles.Where(m => !m.Cosmetic && !m.Flight.Orphaned))
         {
             update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, false));
         }
@@ -235,14 +235,17 @@ internal sealed class FlightScene(
         var current = ReadMissiles(context);
         foreach (var departed in _missiles.ExceptBy(current.Select(m => m.Id), m => m.Id))
         {
-            update(new DestinyCommand.AttackIndicator(departed.SourceShipId, departed.Id, departed.TargetId, false));
+            if (!departed.Cosmetic)
+            {
+                update(new DestinyCommand.AttackIndicator(departed.SourceShipId, departed.Id, departed.TargetId, false));
+            }
             update(new DestinyCommand.RemoveBall(departed.Id, missiles?.Impacted(departed.Id) == true));
         }
         var added = current.ExceptBy(_missiles.Select(m => m.Id), m => m.Id).ToArray();
         if (added.Length > 0)
         {
             update(new DestinyCommand.AddBalls(Ballpark.AddMissiles(added, space.Stamp(clock))));
-            foreach (var missile in added.Where(m => !m.Flight.Orphaned))
+            foreach (var missile in added.Where(m => !m.Cosmetic && !m.Flight.Orphaned))
             {
                 update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, true));
             }
@@ -259,7 +262,10 @@ internal sealed class FlightScene(
             }
             if (previous is not null && missile.Flight.Orphaned && !previous.Flight.Orphaned)
             {
-                update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, false));
+                if (!missile.Cosmetic)
+                {
+                    update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, false));
+                }
                 var point = missile.Flight.Goto;
                 update(new DestinyCommand.GotoPoint(missile.Id, point.X, point.Y, point.Z));
             }
@@ -759,7 +765,7 @@ internal sealed class FlightScene(
         send(new(stamp, new DestinyCommand.SetState(snapshot)));
         Drones.ReplayActivities();
         Npcs.Replay();
-        foreach (var missile in _missiles.Where(m => !m.Flight.Orphaned))
+        foreach (var missile in _missiles.Where(m => !m.Cosmetic && !m.Flight.Orphaned))
         {
             update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, true));
         }

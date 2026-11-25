@@ -18,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Industry;
 
-public sealed class ReactionJobTests
+public sealed partial class ReactionJobTests
 {
     private const int Input = 16643;
     private const int Fuel = 4051;

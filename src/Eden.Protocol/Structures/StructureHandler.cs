@@ -12,6 +12,7 @@ namespace Eden.Protocol.Structures;
 internal sealed class StructureHandler(
     IPilotStructures structures,
     IPlayerCorporations corporations,
+    IStructureReinforcementDefaults reinforcementDefaults,
     TimeProvider clock,
     IStructureContacts contacts,
     ISystemObjects systemObjects,
@@ -27,11 +28,9 @@ internal sealed class StructureHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service == "corpRegistry" && method == "GetStructureReinforceDefault")
+        if (service == "corpRegistry" && method is "GetStructureReinforceDefault" or "SetStructureReinforceDefault")
         {
-            return args.Length == 0 && keywords is not { Count: > 0 }
-                ? new StructureReinforceDefaultReply()
-                : new PilotCallResult.Failure("Structure reinforcement defaults do not accept arguments.");
+            return ReinforcementDefault(context.Pilot.PilotId, method, args, keywords);
         }
         if (service == "structureHangarViewMgr" && method == "GetMyHangarViewState")
         {
@@ -252,6 +251,30 @@ internal sealed class StructureHandler(
                 : new StructureDirectoryReply(entries);
         }
         catch (Exception error) when (error is InvalidDataException or OverflowException)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult ReinforcementDefault(long pilotId, string method, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        try
+        {
+            if (keywords is not { Count: > 0 })
+            {
+                if (method == "GetStructureReinforceDefault" && args.Length == 0)
+                {
+                    return new StructureReinforceDefaultReply(reinforcementDefaults.ReadHour(pilotId));
+                }
+                if (method == "SetStructureReinforceDefault" && args is [long and >= 0 and <= 23 and var hour])
+                {
+                    reinforcementDefaults.SetHour(pilotId, (int)hour);
+                    return PilotCallResult.None;
+                }
+            }
+            throw new InvalidDataException("Invalid corporation structure reinforcement default request.");
+        }
+        catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
         }

@@ -546,6 +546,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Festival and Display Launchers](protocol/combat.md#festival-and-display-launchers)
 - [Capital Flex Armor and Shield Hardeners](protocol/fitting.md#capital-flex-armor-and-shield-hardeners)
 - [Dragging loaded charges between fitting slots](protocol/fitting.md#dragging-loaded-charges-between-fitting-slots)
 - [Module online state in space](protocol/fitting.md#module-online-state-in-space)
@@ -692,6 +693,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Immediate corporation market sales](protocol/industry.md#immediate-corporation-market-sales)
+- [Remote personal refinery reaction jobs](protocol/industry.md#remote-personal-refinery-reaction-jobs)
 - [Immediate corporation market purchases](protocol/industry.md#immediate-corporation-market-purchases)
 - [Remote science installation at NPC laboratories](protocol/industry.md#remote-science-installation-at-npc-laboratories)
 - [PLEX Vault transaction history](protocol/industry.md#plex-vault-transaction-history)
@@ -871,6 +874,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Corporation default reinforcement hour](protocol/structures.md#corporation-default-reinforcement-hour)
 - [Standup fighter mobility](protocol/structures.md#standup-fighter-mobility)
 - [Standup Point Defense Batteries](protocol/structures.md#standup-point-defense-batteries)
 - [Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors)

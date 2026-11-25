@@ -13,6 +13,7 @@ using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
+using Eden.World.Structures;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +21,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = CorporationMarketSchema.Version;
+    internal const int CurrentVersion = StructureReinforcementDefaultsSchema.Version;
 
     public static void Open(
         WorldDbContext world,
@@ -223,6 +224,10 @@ internal static class WorldMigration
         CorporationRecruitmentSchema.Upgrade(world);
         CorporationVotingSchema.Upgrade(world);
         CorporationRemovalSchema.Upgrade(world);
+        if (version < StructureReinforcementDefaultsSchema.Version)
+        {
+            StructureReinforcementDefaultsSchema.Upgrade(world);
+        }
         Eden.World.Alliances.AllianceSchema.Upgrade(world);
         Eden.World.Alliances.AllianceMembershipSchema.Upgrade(world);
         Eden.World.Alliances.AllianceBillingSchema.Upgrade(world);

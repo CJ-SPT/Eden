@@ -392,6 +392,7 @@ public enum DogmaAttributeId
     RequiredSkill2 = 183,
     RequiredSkill3 = 184,
     MaxLockedTargets = 192,
+    AmmoSpeedMultiplier = 204,
     MiningRoleYieldMultiplier = 207,
     MissileDamageMultiplier = 212,
     EntityTurretType = 245,

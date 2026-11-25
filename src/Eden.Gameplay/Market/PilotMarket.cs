@@ -56,9 +56,12 @@ public sealed record MarketResult(
 
 public sealed record CorporationMarketPurchase(int CorporationId, int WalletDivisionKey, MarketResult Result);
 
+public sealed record CorporationMarketSale(int CorporationId, int WalletDivisionKey, MarketResult Result);
+
 public interface ICorporationMarket
 {
     CorporationMarketPurchase BuyForCorporation(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items);
+    CorporationMarketSale SellForCorporation(long pilotId, IReadOnlyList<MarketSale> items);
     IReadOnlyList<MarketTrade> CorporationTransactions(long pilotId, long? fromDate, int? divisionKey);
 }
 

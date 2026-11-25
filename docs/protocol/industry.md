@@ -15,7 +15,8 @@ existing same-region quote and matching rules. Items enter the corporation's Mar
 including at stations where the corporation has no office. Eligible members can dock there and deliver purchases to a
 corporation member's personal hangar. Resting corporate orders, native corporate sell orders, and
 market service at Upwell structures are outside this implementation.
-[Market Deliveries withdrawal](inventory.md#corporation-market-delivery-withdrawal)
+[Market Deliveries withdrawal](inventory.md#corporation-market-delivery-withdrawal) ·
+[Immediate corporation market sales](#immediate-corporation-market-sales)
 
 The resident market commits fills, wallet entries, and deliveries together. The account update identifies the division,
 and the order notifications identify the corporation scope. `CorpGetTransactions(fromDate, accountKey)` uses an
@@ -57,6 +58,59 @@ Not performed; agent client testing is disabled.
 
 - Buy a single item and a Multibuy basket through the second corporation wallet division. Check the Wallet and the seller
   station's Market Deliveries folder.
+
+## Immediate corporation market sales
+
+Native Sell This Item and Multisell can fill existing market bids at an NPC station and credit the selected
+corporation wallet division. The actor needs Trader and withdrawal access for the wallet division. Goods may come
+from the pilot's Item Hangar or a corporation office division at the station. A sale from a corporation office also
+requires that division's location-specific take authority. Unsold units stay in their original hangar. Remote sales
+use the same Marketing range as personal station sales.
+
+The resident transaction commits custody, volume, and wallet entries together. The gross proceeds and transaction tax
+appear as separate entries in the selected wallet journal. The division's market history records the sale with the pilot
+who placed it and the buyer, while any personal buyer gets their item and ordinary market receipt. The existing
+corporate execution fields carry the receipt through checkpoint without a schema change. Resting corporation orders
+and corporation PLEX sales are outside this implementation.
+
+Build 3662168 `code.ccp` (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`) forwards
+`(itemList, useCorp, duration, expectedBrokersFee)` from `marketsvc.MarketQuote.SellMulti` to `PlaceMultiSellOrder`.
+The Wallet tests `accountID == buyerAccountID` to classify a purchase and uses the corresponding actor field.
+Corporation sell receipts use the selling division for `accountID`, zero for the undisclosed buyer account, and the
+placing character for `sellerID`.
+EVE.js revision `261108.1` `marketProxyService.js` (SHA-256
+`f457cb1b181ceb570a5fa346c718d71a7ce7f2546a8ce175b`) confirms the wallet division and station office custody checks.
+[CCP corporation roles](https://support.eveonline.com/hc/en-us/articles/203217712-Roles-Listing) ·
+[EVE University tax](https://wiki.eveuniversity.org/Tax)
+
+### Automated validation
+
+The five cases selected by the exact methods
+`NativeCorporationSaleCreditsTheDivisionAndPreservesTheUnsoldStockAcrossCheckpoint`,
+`CorporationSaleEnforcesSourcePermissionsAndRollsBackTheWholeBatch`, and
+`CorporationSaleFillsAPersonalBidAndDeliversToTheBuyerHangar` passed. They cover both native checkbox types,
+partial NPC fills, player bids, wallet journal and transaction history on the master and second divisions,
+permission failures, rollback and checkpoint reopen. The integrated exact selection passed all 12 cases in
+15.68 seconds after an 11.95-second build with zero warnings or errors. See
+`artifacts/feature-tests/results/49fc5bd845c346dfb3398758369412c6/tests.trx`.
+
+The broader selection passed 658 of 659 cases in 254.80 seconds. The remaining test failed with a locked world
+owner file during teardown. The same failure occurred with the prior market code. The replacement resident test
+uses an underfunded basket that can pay for its first item, checks rollback of both stock entries, goods, wallet,
+and history, then funds the retry and checks both receipts after checkpoint reopen. The repaired exact case passed
+in 7.24 seconds. The broader and repaired exact reports use run directories `d721dead277c400ca7b9eac97c076319`
+and `c129fe92082447feb82e5bb295301b80` under `artifacts/feature-tests/results/`.
+The final targeted rerun passed all 22 cases in 19.18 seconds, including the four new features, corporate purchases,
+and adjacent regional and wire market cases. Its run directory is `0380b2c3167c4cddb6da12d06bee17b3`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Sell part of a stack from a corporation office through the second wallet division. Check the remaining stack,
+  the division's transaction receipt, and both wallet journal entries.
 
 ## PLEX Vault transaction history
 
@@ -1267,6 +1321,41 @@ container custody, bulk delivery, reaction jobs, the warm material monitor, and 
 
 **Optional maintainer checks.** Leave a blueprint original at an NPC laboratory and start a copy job from a nearby
 system with Scientific Networking. Deliver the finished job and check the licensed runs at the original laboratory.
+
+## Remote personal refinery reaction jobs
+
+Pilots can start, deliver, and cancel their own reaction jobs while away from an eligible refinery. Any location in the
+refinery's solar system is in range. Remote Reactions adds five stargate jumps per level, up to 25. Alpha pilots use the
+same-system range. The refinery holds the formula, inputs, and output. Installation checks refinery access, system security,
+and the formula's online reactor. Settlement checks the saved facility and job status, including fuel-related pauses.
+[EVE University Reactions](https://wiki.eveuniversity.org/Reactions) ·
+[CCP Reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions)
+
+The native facility and material-monitor calls support in-range refinery hangars. Installation and settlement reserve the
+refinery's system in the resident transaction before advancing its fuel or touching jobs. They reuse the existing inventory,
+wallet, formula reservation, and job checkpoint records. Delivery places output at the original refinery, and cancellation
+releases the formula and reaction slot.
+
+Build **3662168** `industry/const.pyj` maps reaction activity **9** to Remote Reactions **45750**, with the
+0–25-jump distance table. The pinned catalog supplies the reactor types and omits the skill from all four Alpha skill
+lists. EVE.js **261108.1** `industryConstants.js` maps the same activity and skill, and `industryRestrictions.js` checks
+the stargate distance to the selected facility on install. Their SHA-256 hashes are
+`ca3217d4f71251159ffe825f051af4fe68ce97d65be857739f46784c1b43df67` and
+`35ce309015a6cc17368cc636ad151be774bc5f8aafe560ae75f910aabc0375ec`, respectively. The stock `code.ccp` SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+
+**Automated validation.** `NativeRemoteReactionUsesRefineryAccessAndDeliversAfterCheckpoint` passed both cases in
+11.17 seconds after a zero-warning build in 13.86 seconds. The cases cover same-system and cross-system installation,
+untrained and Alpha range checks, the material monitor, refinery access revocation, checkpoint delivery, and cancellation.
+The isolated results are in
+`artifacts/remote-reactions-eab07a5c/source/artifacts/feature-tests/results/c2fb503f66f44d02a7de735c14f78229/tests.trx`.
+All 73 neighboring industry cases passed in 34.63 seconds, including the local reaction supply chain, bulk job rollback,
+remote manufacturing and science, the zero-SQL material monitor, and Upwell production pause and reopen.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** With a formula and materials in an accessible refinery, start a reaction from another
+system within skill range. Deliver the job from there and check the formula and product at the refinery.
 
 ## Remote settlement of personal NPC station industry jobs
 

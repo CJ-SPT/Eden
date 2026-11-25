@@ -168,6 +168,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         ship.Position?.SystemId
         ?? (ship.StructureId is long structure ? world.StructureSystemId(structure) : catalog.RequireStation(ship.StationId).SolarSystemId);
 
+    private static bool WithinJobRange(CatalogDbContext catalog, int source, int target, int skillLevel) =>
+        source == target
+        || skillLevel > 0
+            && catalog.Definitions.StargateDistance(source, target) is int jumps
+            && jumps <= IndustryDefinitions.FacilityJumpRange(skillLevel);
+
     private static IndustryStation JobStation(
         WorldAction world,
         CatalogDbContext catalog,
@@ -184,6 +190,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             null or IndustryActivity.Reaction => null,
             _ => throw new InvalidDataException("Choose a recognized industry activity."),
         };
+        if (stationId >= StructureRules.FirstStructureId && activity is null or IndustryActivity.Reaction)
+        {
+            return ReactionStation(world, catalog, pilotId, stationId, requireOnlineReactor: true);
+        }
         if (world is not EconomyTransaction || stationId >= StructureRules.FirstStructureId || activity == IndustryActivity.Reaction)
         {
             return CurrentStation(world, catalog, pilotId, stationId, service);
@@ -199,7 +209,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         if (system != station.SolarSystemId)
         {
             // The pinned Alpha skill lists omit both NPC industry range skills.
-            int range = 0;
+            int rangeSkill = 0;
             if (world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega)
             {
                 int manufacturing =
@@ -210,9 +220,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     service == StationService.Laboratory || service is null && HasService(catalog, station, StationService.Laboratory)
                         ? Level(world, catalog, pilotId, (int)IndustrySkill.ScientificNetworking)
                         : 0;
-                range = IndustryDefinitions.FacilityJumpRange(Math.Max(manufacturing, science));
+                rangeSkill = Math.Max(manufacturing, science);
             }
-            if (range == 0 || catalog.Definitions.StargateDistance(system, station.SolarSystemId) is not int jumps || jumps > range)
+            if (!WithinJobRange(catalog, system, station.SolarSystemId, rangeSkill))
             {
                 throw new InvalidDataException(
                     service switch
@@ -855,7 +865,14 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     private IndustryResult Finish(long pilotId, long jobId, int systemId, bool cancel)
     {
-        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        using var scope = new WorldActionScope(
+            database,
+            select: world =>
+                new(
+                    pilots: [pilotId],
+                    systems: world.Structure(OwnedJob(world, pilotId, jobId).StationId) is { } structure ? [structure.SystemId] : []
+                )
+        );
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = Finish(world, catalog, pilotId, jobId, systemId, cancel);
@@ -870,7 +887,16 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         {
             return Array.Empty<IndustryResult>();
         }
-        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        using var scope = new WorldActionScope(
+            database,
+            select: world =>
+                new(
+                    pilots: [pilotId],
+                    systems: deliveries
+                        .Select(delivery => world.Structure(OwnedJob(world, pilotId, delivery.JobId).StationId)?.SystemId)
+                        .OfType<int>()
+                )
+        );
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         List<IndustryResult> results = [];
@@ -886,12 +912,11 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     {
         var job = OwnedJob(world, pilotId, jobId);
         AdvanceFacility(world, catalog, job.StationId, Now);
-        // The job's saved NPC facility determines where a resident settlement takes place.
-        // Upwell settlement requires docking and facility access.
         var station =
-            world is EconomyTransaction && job.StationId < StructureRules.FirstStructureId
-                ? NpcStation(catalog, job.StationId, null)
-                : CurrentStation(world, catalog, pilotId, job.StationId, null);
+            job.Activity == IndustryActivity.Reaction && job.OutputCorporationId is null
+                ? ReactionStation(world, catalog, pilotId, job.StationId, requireOnlineReactor: false)
+            : world is EconomyTransaction && job.StationId < StructureRules.FirstStructureId ? NpcStation(catalog, job.StationId, null)
+            : CurrentStation(world, catalog, pilotId, job.StationId, null);
         if (station.SolarSystemId != systemId)
         {
             throw new InvalidDataException("The job belongs to a different solar system.");

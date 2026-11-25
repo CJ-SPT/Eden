@@ -10,10 +10,10 @@ internal sealed record StructureCynoBeaconRow(StructureCynoBeacon Beacon) : Blue
         new List<object?> { Beacon.Id, Beacon.TypeId, Beacon.OwnerId, Beacon.SystemId, (int)Beacon.State, Beacon.Name };
 }
 
-internal sealed record StructureReinforceDefaultReply : BlueModel
+internal sealed record StructureReinforceDefaultReply(int Hour) : BlueModel
 {
     // The deployment UI unpacks a tuple (weekday, UTC hour); 255 means no preferred weekday.
-    public override object ToBlue() => new object?[] { StructureRules.NoReinforcementWeekday, StructureRules.DefaultReinforceHour };
+    public override object ToBlue() => new object?[] { StructureRules.NoReinforcementWeekday, Hour };
 }
 
 internal sealed record StructureMapReply(long VersionTime, IReadOnlyList<StructureSnapshot> Structures, int? SunId) : BlueModel

@@ -42,12 +42,14 @@ internal static class MissileLauncherCatalog
         var ids = effects.Select(e => e.EffectID!.Value).ToHashSet();
         bool civilian = typeId == MissileDefinitions.CivilianLauncher;
         bool breacher = group == (int)MissileLauncherGroup.BreacherPod;
+        bool festival = group == (int)MissileLauncherGroup.Festival;
         if (
             effects.Count != FittingCatalog.Effects(catalog, typeId).Count
             || !new long[] { (int)DogmaEffect.Online, (int)DogmaEffect.HighPower, (int)DogmaEffect.UseMissiles }.All(ids.Contains)
-            || (!civilian && !breacher && (!ids.Contains((int)DogmaEffect.LauncherFitted) || !ids.Contains(OverloadRate)))
+            || (!civilian && !breacher && !festival && (!ids.Contains((int)DogmaEffect.LauncherFitted) || !ids.Contains(OverloadRate)))
             || ids.Contains(HullOverride) != ids.Contains(ShieldArmorOverride)
-            || (civilian && effects.Count != 3)
+            || ((civilian || festival) && effects.Count != 3)
+            || festival && !MissileDefinitions.CompatibleCharge(attributes, (int)MissileChargeGroup.Festival)
             || breacher
                 && (effects.Count != 3 || attributes.GetValueOrDefault(DogmaAttributeId.BreacherTargetList) != BreacherRules.TargetTypeList)
         )

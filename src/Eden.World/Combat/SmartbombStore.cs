@@ -360,7 +360,11 @@ internal sealed class SmartbombStore(
         bool intercepted = false;
         foreach (long id in candidates.Distinct().Order())
         {
-            if (world.Set<WorldMissile>().Find(id) is not { Status: MissileFlightStatus.Flying } row || row.SystemId != system)
+            if (
+                world.Set<WorldMissile>().Find(id) is not { Status: MissileFlightStatus.Flying } row
+                || row.SystemId != system
+                || row.GroupId == (int)MissileChargeGroup.Festival
+            )
             {
                 continue;
             }

@@ -90,13 +90,24 @@ internal sealed partial class PilotMissileStore(
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
         overloaded |= members.Any(id => PilotOverloadStore.Selected(world, database.Path, pilotId, id));
         var launchers = members.Select(id => ReadLauncher(world, catalog, pilot, id, now)).ToArray();
         if (launchers.Any(l => l.Charge.TypeId != launchers[0].Charge.TypeId))
         {
             throw new InvalidDataException("Load the same ammunition in every grouped launcher.");
+        }
+        if (launchers[0].ChargeType.GroupId == (int)MissileChargeGroup.Festival)
+        {
+            if (world is not EconomyTransaction)
+            {
+                throw new InvalidDataException("Festival launchers require the resident world.");
+            }
+            world.RequireUncloaked(pilot.ActiveShipId);
+        }
+        else
+        {
+            Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         }
         var snapshot = overloaded ? null : world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId));
         bool cached =
@@ -130,6 +141,7 @@ internal sealed partial class PilotMissileStore(
     {
         long pilotId = pilot.Id;
         var module = world.Set<OwnedItem>().Find(moduleId);
+        int group = module is null ? 0 : catalog.FittingType(module.TypeId)?.GroupId ?? 0;
         if (
             pilot.ActiveShip.Position is null
             || module is null
@@ -138,7 +150,7 @@ internal sealed partial class PilotMissileStore(
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
-            || !MissileLauncherCatalog.Supported(catalog, module.TypeId, catalog.FittingType(module.TypeId)!.GroupId)
+            || !MissileLauncherCatalog.Supported(catalog, module.TypeId, group)
         )
         {
             throw new InvalidDataException("Use an online fitted missile launcher while in space.");
@@ -146,7 +158,11 @@ internal sealed partial class PilotMissileStore(
         var loaded =
             PilotAmmunitionStore.Contents(world, module.Id) ?? throw new InvalidDataException("Load missiles before firing the launcher.");
         var chargeType = catalog.FittingType(loaded.TypeId)!;
-        if (loaded.OwnerId != pilotId || !MissileChargeCatalog.Supported(catalog, loaded.TypeId, chargeType.GroupId))
+        if (
+            loaded.OwnerId != pilotId
+            || !MissileChargeCatalog.Supported(catalog, loaded.TypeId, chargeType.GroupId)
+            || (group == (int)MissileLauncherGroup.Festival) != (chargeType.GroupId == (int)MissileChargeGroup.Festival)
+        )
         {
             throw new InvalidDataException("Load supported missile ammunition.");
         }
@@ -179,6 +195,7 @@ internal sealed partial class PilotMissileStore(
             inputs.Snapshot?.Missiles!.Charges[loaded.Id]
             ?? (IReadOnlyDictionary<DogmaAttributeId, double>)calculation!.Graph.Attributes(loaded.Id);
         bool breacher = chargeType.GroupId == (int)MissileChargeGroup.BreacherPod;
+        bool festival = chargeType.GroupId == (int)MissileChargeGroup.Festival;
         BreacherPayload? pod = null;
         if (breacher)
         {
@@ -268,16 +285,22 @@ internal sealed partial class PilotMissileStore(
             {
                 throw new InvalidDataException("The NPC is unavailable.");
             }
-            MilitiaHubStore.RequireAttack(world, npc, pilot);
+            if (!festival)
+            {
+                MilitiaHubStore.RequireAttack(world, npc, pilot);
+            }
             targetType = catalog.FittingType(npc.TypeId)!;
             target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(targetType.Radius ?? 0));
         }
         else if (structure is not null)
         {
-            StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
-            if (structure.SystemId != systemId || automatic)
+            if (structure.SystemId != systemId || structure.State == StructureState.Destroyed || automatic)
             {
                 throw new InvalidDataException("Lock a structure in this system before launching missiles.");
+            }
+            if (!festival)
+            {
+                StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
             }
             targetType = catalog.RequireItem(structure.TypeId);
             target = new(StructureCombatTargets.Position(structure), SpacePosition.Zero, (float)(targetType.Radius ?? 0));
@@ -290,7 +313,10 @@ internal sealed partial class PilotMissileStore(
             {
                 throw new InvalidDataException("No eligible attacking ship is available, or the target is unavailable.");
             }
-            aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, systemId, now);
+            if (!festival)
+            {
+                aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, systemId, now);
+            }
             targetType = catalog.FittingType(victim.ActiveShip.TypeId)!;
             target = new(contact.Position, contact.Velocity, (float)(targetType.Radius ?? 0));
         }
@@ -310,13 +336,16 @@ internal sealed partial class PilotMissileStore(
             throw new InvalidDataException("The target is outside missile targeting range.");
         }
         var drive = MissileChargeCatalog.Drive(catalog, loaded.TypeId, charge);
-        var warhead = breacher
-            ? new MissileWarhead(DamageVector.None, 1, 1, 1)
-            : MissileRules.Warhead(
-                charge,
-                (inputs.Snapshot?.Missiles!.DamageMultiplier ?? calculation!.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier))
-                    * Eden.World.Exploration.IncursionSystemEffectStore.WeaponDamage(world, systemId, now)
-            );
+        var warhead =
+            breacher || festival
+                ? new MissileWarhead(DamageVector.None, 1, 1, 1)
+                : MissileRules.Warhead(
+                    charge,
+                    (
+                        inputs.Snapshot?.Missiles!.DamageMultiplier
+                        ?? calculation!.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier)
+                    ) * Eden.World.Exploration.IncursionSystemEffectStore.WeaponDamage(world, systemId, now)
+                );
         var flight = MissileFlightRules.Launch(
             drive,
             new(origin, motion.Velocity, motion.MaximumSpeed, motion.RearDirection),
@@ -361,20 +390,22 @@ internal sealed partial class PilotMissileStore(
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = module.Id }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
-        // Retaliation begins on the offensive launch, not after flight time.
-        Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, targetId!.Value, victim is not null, now);
-        if (victim is not null)
+        if (!festival)
         {
-            CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);
-        }
-        else if (structure is not null)
-        {
-            StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, cooldown.ReadyAt);
-        }
-        else
-        {
-            NpcHostility.Record(world, catalog, npc!, pilot.ActiveShipId, now);
-            CrimewatchPersistence.Npc(world, pilotId, systemId, cooldown.ReadyAt);
+            Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, targetId!.Value, victim is not null, now);
+            if (victim is not null)
+            {
+                CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);
+            }
+            else if (structure is not null)
+            {
+                StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, cooldown.ReadyAt);
+            }
+            else
+            {
+                NpcHostility.Record(world, catalog, npc!, pilot.ActiveShipId, now);
+                CrimewatchPersistence.Npc(world, pilotId, systemId, cooldown.ReadyAt);
+            }
         }
         heat =
             calculation?.OverloadedModules.Contains(module.Id) == true
@@ -475,6 +506,10 @@ internal sealed partial class PilotMissileStore(
             if (row.Status != MissileFlightStatus.Flying)
             {
                 row.EndedAt = time;
+            }
+            if (row.GroupId == (int)MissileChargeGroup.Festival)
+            {
+                continue;
             }
             if (row.Status == MissileFlightStatus.Impact && payload.Breacher is not null)
             {

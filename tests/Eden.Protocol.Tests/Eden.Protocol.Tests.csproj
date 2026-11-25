@@ -118,6 +118,7 @@
     <EmbeddedResource Include="Fixtures/EnergyTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/HullRepairTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/MissileTierCatalog.json" />
+    <EmbeddedResource Include="Fixtures/FestivalLauncherCatalog.json" />
     <EmbeddedResource Include="Fixtures/SupportTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/TackleTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/FrigateHullCatalog.json" />

@@ -254,6 +254,9 @@ Use **Orbit** or **Keep at Range** on a nearby ship, NPC, asteroid or wreck to c
 
 ## Player Upwell structures
 
+Corporation directors can save a preferred Upwell reinforcement hour. The deployment picker starts with that hour and
+accepts a different hour for an individual deployment. [Corporation reinforcement default](protocol/structures.md#corporation-default-reinforcement-hour)
+
 Ordinary targeted warp disruption prevents Upwell docking while its active strength exceeds the ship's warp core strength.
 Pilots can retry when the effect expires or their stabilizer ties the incoming strength.
 [Warp disruption and Upwell docking](protocol/structures.md#warp-disruption-and-upwell-docking)
@@ -383,6 +386,10 @@ Immediate NPC-station purchases and Multibuy can use a corporation wallet. Trade
 selected division, with goods collected from the seller station's Market Deliveries and each fill recorded in the
 division's transaction history. [Immediate corporation market purchases](protocol/industry.md#immediate-corporation-market-purchases)
 
+Immediate corporation sales can fill NPC-station buy orders from a personal Item Hangar or an authorized corporation
+office division. The chosen corporation wallet receives the proceeds and records transaction tax.
+[Immediate corporation market sales](protocol/industry.md#immediate-corporation-market-sales)
+
 The account PLEX Vault supports transfers between owned physical stacks and the shared vault balance, plus PLEX listings and
 repricing through the regional market at NPC stations. The Wallet shows transaction history and categorized totals for the
 account's pilots. [PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale) ·
@@ -397,6 +404,8 @@ Pilots can also install personal NPC-station manufacturing jobs from space or an
 Management range. [Remote manufacturing installation](protocol/industry.md#remote-manufacturing-installation-at-npc-stations)
 Personal research, copying and invention use Scientific Networking for remote installation at NPC laboratories. Inputs
 and outputs remain at the installation station. [Remote science installation](protocol/industry.md#remote-science-installation-at-npc-laboratories)
+Remote Reactions extends the range for starting, delivering, and cancelling personal jobs at eligible Upwell refineries.
+Materials, fuel and outputs remain at the refinery. [Remote refinery reaction jobs](protocol/industry.md#remote-personal-refinery-reaction-jobs)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 
@@ -444,6 +453,9 @@ insurance. The hull must be undamaged and free of cargo and rigs.
   [Clone Soldier belt encounters](protocol/combat.md#clone-soldier-belt-encounters)
 
 ## Fitting, weapons and modules
+
+Festival and Display Launchers fire cosmetic fireworks and snowballs. Those launches consume ammunition and leave the
+target's ship and combat state intact. [Festival and Display Launchers](protocol/combat.md#festival-and-display-launchers)
 
 - **Fitting.** Swap and rearrange modules, group weapons, load charges and save personal, corporation or alliance fittings.
   Apply supported fits with Multifit. Administrators can scale CPU, power grid, calibration and drone bandwidth.

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
@@ -262,15 +263,17 @@ internal sealed partial class PilotMarketStore
             int tradeStation = incoming.Bid ? candidate.StationId : incoming.StationId;
             var buyerOrder = incoming.Bid ? incoming : candidate.Personal;
             var sellerOrder = incoming.Bid ? candidate.Personal : incoming;
-            int? corporationBuyer = corporationWalletKey.HasValue ? buyerOrder?.CorporationId : null;
+            int? corporationBuyer = incoming.Bid && corporationWalletKey.HasValue ? incoming.CorporationId : null;
+            int? corporationSeller = !incoming.Bid && corporationWalletKey.HasValue ? incoming.CorporationId : null;
             var buyerWallet =
                 !corporationBuyer.HasValue && (incoming.Bid || candidate.Personal is not null) ? Wallet(world, buyerId) : null;
-            var sellerWallet = !incoming.Bid || candidate.Personal is not null ? Wallet(world, sellerId) : null;
+            var sellerWallet =
+                !corporationSeller.HasValue && (!incoming.Bid || candidate.Personal is not null) ? Wallet(world, sellerId) : null;
             bool escrowed = buyerOrder is { DurationDays: > 0 };
-            long? divisionBalance = null;
+            long? divisionBalanceAfterBuy = null;
             if (corporationBuyer is int corporation && corporationWalletKey is int division)
             {
-                divisionBalance = CorporationWalletStore.Pay(
+                divisionBalanceAfterBuy = CorporationWalletStore.Pay(
                     world,
                     corporation,
                     sellerOrder?.CorporationId ?? sellerId,
@@ -310,8 +313,38 @@ internal sealed partial class PilotMarketStore
                 }
                 // A funded refit pays only this matched fill. Nothing is credited to the buyer's wallet.
             }
-            long tax = sellerWallet is null ? 0 : MarketRules.Fill(quantity, quantity, price, TaxRate(world, catalog, sellerId)).TaxCents;
-            if (sellerOrder?.CorporationId is not null)
+            long tax =
+                sellerWallet is not null || corporationSeller.HasValue
+                    ? MarketRules.Fill(quantity, quantity, price, TaxRate(world, catalog, sellerId)).TaxCents
+                    : 0;
+            long? divisionBalanceAfterSale = null;
+            if (corporationSeller is int sellerCorporation && corporationWalletKey is int sellerDivision)
+            {
+                divisionBalanceAfterSale = CorporationWalletStore.Pay(
+                    world,
+                    sellerCorporation,
+                    buyerOrder?.CorporationId ?? buyerId,
+                    candidate.Id,
+                    WalletEntryType.MarketTransaction,
+                    gross,
+                    now,
+                    sellerDivision
+                );
+                if (tax != 0)
+                {
+                    divisionBalanceAfterSale = CorporationWalletStore.Pay(
+                        world,
+                        sellerCorporation,
+                        Station(catalog, tradeStation).OwnerId,
+                        candidate.Id,
+                        WalletEntryType.TransactionTax,
+                        -tax,
+                        now,
+                        sellerDivision
+                    );
+                }
+            }
+            else if (sellerOrder?.CorporationId is not null)
             {
                 Payment(world, sellerOrder, WalletEntryType.MarketTransaction, gross - tax, buyerOrder?.CorporationId ?? buyerId);
             }
@@ -353,12 +386,12 @@ internal sealed partial class PilotMarketStore
                             BalanceCents = balance,
                             Time = now,
                             WalletAmountCents = walletAmount,
-                            CorporationId = buy ? corporationBuyer : null,
-                            WalletDivisionKey = buy && divisionBalance.HasValue ? corporationWalletKey : null,
+                            CorporationId = buy ? corporationBuyer : corporationSeller,
+                            WalletDivisionKey = (buy ? corporationBuyer : corporationSeller).HasValue ? corporationWalletKey : null,
                         }
                     )
                     .Entity;
-            if ((divisionBalance ?? buyerWallet?.Cents) is long balanceAfterBuy)
+            if ((divisionBalanceAfterBuy ?? buyerWallet?.Cents) is long balanceAfterBuy)
             {
                 var execution = Execution(
                     buyerId,
@@ -371,9 +404,9 @@ internal sealed partial class PilotMarketStore
                     trades.Add(execution);
                 }
             }
-            if (sellerWallet is not null)
+            if ((divisionBalanceAfterSale ?? sellerWallet?.Cents) is long balanceAfterSale)
             {
-                var execution = Execution(sellerId, false, sellerWallet.Cents, sellerOrder?.CorporationId is not null ? 0 : null);
+                var execution = Execution(sellerId, false, balanceAfterSale, sellerOrder?.CorporationId is not null ? 0 : null);
                 if (!incoming.Bid)
                 {
                     trades.Add(execution);
@@ -624,6 +657,16 @@ internal sealed partial class PilotMarketStore
         IReadOnlyList<MarketSale> items,
         int days,
         bool skipUnmatched = false
+    ) => ExecuteSellCore(world, catalog, pilotId, items, days, skipUnmatched, null);
+
+    private MarketResult ExecuteSellCore(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<MarketSale> items,
+        int days,
+        bool skipUnmatched,
+        CorporationMarketAccount? corporationAccount
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -662,7 +705,7 @@ internal sealed partial class PilotMarketStore
                 maximumAsk: days == 0 ? long.MaxValue : request.LimitPriceCents,
                 requireComplete: true
             );
-            var item = InventoryPersistence.OwnedStack(world, pilotId, request.ItemId);
+            var item = world.Set<OwnedItem>().Find(request.ItemId);
             if (
                 item is null
                 || item.TypeId != request.TypeId
@@ -670,19 +713,40 @@ internal sealed partial class PilotMarketStore
                 || item.CrystalDamage != 0
                 || request.Quantity > item.Quantity
                 || PilotIndustryStore.IsInstalled(world, item.Id)
+                || corporationAccount is not null && request.TypeId == MarketDefinitions.PlexTypeId
                 || !(
-                    item.LocationId == station.Id && item.FlagId == (int)InventoryFlag.Hangar
-                    || docked
-                        && item.LocationId == pilot.ActiveShipId
-                        && item.FlagId is (int)InventoryFlag.Cargo or (int)InventoryFlag.GeneralMiningHold
+                    item.OwnerId == pilotId
+                        && (
+                            item.LocationId == station.Id && item.FlagId == (int)InventoryFlag.Hangar
+                            || corporationAccount is null
+                                && docked
+                                && item.LocationId == pilot.ActiveShipId
+                                && item.FlagId is (int)InventoryFlag.Cargo or (int)InventoryFlag.GeneralMiningHold
+                        )
+                    || corporationAccount is not null && IsCorporationSaleSource(world, corporationAccount, item, station.Id)
                 )
             )
             {
-                throw new InvalidDataException("The selected stack or quantity is unavailable in your hangar or cargo.");
+                throw new InvalidDataException(
+                    corporationAccount is null
+                        ? "The selected stack or quantity is unavailable in your hangar or cargo."
+                        : "Choose an eligible stack in your Item Hangar or a corporation office division you can take from."
+                );
             }
-            var order = Incoming(world, catalog, pilot, station, request.TypeId, false, request.LimitPriceCents, request.Quantity, days);
+            var order = Incoming(
+                world,
+                catalog,
+                pilot,
+                station,
+                request.TypeId,
+                false,
+                request.LimitPriceCents,
+                request.Quantity,
+                days,
+                corporationAccount?.Corporation.Id
+            );
             var before = PilotInventoryStore.Read(catalog, item);
-            var fills = MatchOrders(world, catalog, order, changes);
+            var fills = MatchOrders(world, catalog, order, changes, corporationWalletKey: corporationAccount?.Key);
             if (days == 0 && fills.Count == 0)
             {
                 if (skipUnmatched)
@@ -706,7 +770,8 @@ internal sealed partial class PilotMarketStore
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Sold, trades.Count);
         world.SaveChanges();
-        return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
+        long balance = corporationAccount is not null ? trades[^1].BalanceCents : Wallet(world, pilotId).Cents;
+        return new(balance, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
     private SavedPersonalOrder OwnedOrder(WorldAction world, long pilotId, long id)

@@ -4,6 +4,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
@@ -42,7 +43,11 @@ internal static class StructureMissileSettlement
             MissileTarget? target =
                 structure is not null
                 && structure.SystemId == system
-                && StructureCombatTargets.Available(world, catalog, structure, row.UpdatedAt)
+                && (
+                    row.GroupId == (int)MissileChargeGroup.Festival
+                        ? structure.State != StructureState.Destroyed
+                        : StructureCombatTargets.Available(world, catalog, structure, row.UpdatedAt)
+                )
                     ? new(StructureCombatTargets.Position(structure), SpacePosition.Zero, row.TargetRadius)
                     : null;
             return MissileMotionHistory.Step(world, row, row.Payload(), target, now);
@@ -58,6 +63,7 @@ internal static class StructureMissileSettlement
             }
             if (
                 row.Status != MissileFlightStatus.Impact
+                || row.GroupId == (int)MissileChargeGroup.Festival
                 || StructureCombatTargets.Find(world, row.TargetId) is not { } structure
                 || !StructureCombatTargets.Available(world, catalog, structure, time)
             )

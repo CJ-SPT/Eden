@@ -111,6 +111,9 @@ internal sealed record MarketTransactionReply(MarketTrade Trade, long AccountId)
 
 internal sealed record CorporationMarketTransactionReply(MarketTrade Trade) : BlueModel
 {
+    // The client compares accountID with buyerAccountID. A seller's receipt does not expose the buyer's wallet.
+    private const long UnknownBuyerAccount = 0;
+
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
@@ -123,10 +126,10 @@ internal sealed record CorporationMarketTransactionReply(MarketTrade Trade) : Bl
             ["locationID"] = Trade.StationId,
             ["accountID"] = Trade.WalletDivisionKey,
             ["keyID"] = Trade.WalletDivisionKey,
-            ["buyerID"] = Trade.PilotId,
-            ["sellerID"] = Trade.CounterpartyId,
-            ["buyerAccountID"] = Trade.WalletDivisionKey,
-            ["sellerAccountID"] = Eden.Gameplay.Corporations.CorporationWalletRules.MasterKey,
+            ["buyerID"] = Trade.IsBuy ? Trade.PilotId : Trade.CounterpartyId,
+            ["sellerID"] = Trade.IsBuy ? Trade.CounterpartyId : Trade.PilotId,
+            ["buyerAccountID"] = Trade.IsBuy ? (long?)Trade.WalletDivisionKey : UnknownBuyerAccount,
+            ["sellerAccountID"] = Trade.IsBuy ? Eden.Gameplay.Corporations.CorporationWalletRules.MasterKey : Trade.WalletDivisionKey,
         };
 }
 

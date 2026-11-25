@@ -217,6 +217,8 @@ public enum DogmaEffect
 
     // Build 3662168: NPC hull missile capability; attributes 506/507 alone can be inert placeholders.
     MissileLaunchingForEntity = 569,
+    AmmoSpeedMultiplier = 598,
+    SnowballLaunching = 2413,
     LaserFired = 10,
     UseMissiles = 101,
     AutoTargetingMissile = 104,

@@ -2035,3 +2035,36 @@ with one live-browser case skipped. The build, Python catalog and formatting pol
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Open Killboard after updating the server and use the NPC and bot filters against a known encounter.
+
+## Festival and Display launchers
+
+Ships can fit Festival Launcher (19660) and Display Launcher (44109) in a high slot without a missile launcher hardpoint.
+Both carry 5 m³ of group 500 fireworks or snowballs and use the standard magazine load, reload and unload calls.
+`dogmaIM.Activate(moduleID, "useMissiles", targetID, repeat)` starts a paid 4-second Festival or 20-second Display cycle.
+Each cycle spends one compatible charge. The existing target lock and on-grid range rules apply to pilots, NPCs and Upwell
+structures.
+
+The resident world sends a projectile with the charge's own type, movement and target. Impact removes the projectile with
+its explosion effect. Festival shots leave health, combat history, hostile indicators, ship safety and Crimewatch timers
+untouched. Departed targets and expired projectiles use the existing missile cleanup. Fitting and flight support here covers
+the two ship launchers in group 501. Standup Festival Launcher has separate structure fitting and control.
+
+Build **3662168** catalog records have launcher group 501 and effect 101. The published group 500 charges use default
+effect 2413 (`snowBallLaunching`) with `effects.MissileDeployment` and the fitted speed effect 598. Inert inspection of the
+stock `code.ccp` (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`) found
+`eve/client/script/environment/spaceObject/missile.pyj` `Missile.LoadModel` reading the charge type graphic, source ship
+and fitting IDs, and `Missile.Release` distinguishing explosion removal. No client code was executed.
+
+The local EVE.js 261108.1 comparison used `server/src/space/combat/weaponDogma.js` and
+`server/src/space/runtime/missileEntity.js` (SHA-256 prefixes `7346A3718ACE4DAD` and `7B27B19C4725272C`) for the group pair
+and cosmetic impact. Eden reuses its existing missile ball and follow adapter.
+[UniWiki Festival Launchers](https://wiki.eveuniversity.org/Missiles#Festival_Launchers) ·
+[Carbon Destiny, revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp)
+
+**Automated validation.** Both cases in `NativeFestivalLaunchersPayCyclesAndShowHarmlessContact` passed in the
+11-case exact milestone run (15.08 seconds). They cover fitting without a hardpoint, ammunition compatibility,
+lock rejection, paid native activation, observer-visible impact, full safety, and checkpointed combat state.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Fit either launcher, load a firework, and fire at a locked wingmate under full ship safety.

@@ -1,0 +1,703 @@
+{
+  "build": 3662168,
+  "types": [
+    {
+      "id": 19660,
+      "name": "Festival Launcher",
+      "groupId": 501,
+      "groupName": "Festival Launcher",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 5.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 1.0
+        },
+        {
+          "id": 51,
+          "value": 4000.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 500.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1768,
+          "value": 11324.0
+        },
+        {
+          "id": 1795,
+          "value": 200.0
+        }
+      ]
+    },
+    {
+      "id": 32993,
+      "name": "Sodium Firework CXIV",
+      "groupId": 500,
+      "groupName": "Festival Charges",
+      "categoryId": 8,
+      "mass": 100.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10.0
+        },
+        {
+          "id": 37,
+          "value": 1000.0
+        },
+        {
+          "id": 70,
+          "value": 3000.0
+        },
+        {
+          "id": 108,
+          "value": 35.0
+        },
+        {
+          "id": 122,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 56.0
+        },
+        {
+          "id": 204,
+          "value": 1.0
+        },
+        {
+          "id": 281,
+          "value": 100000.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 644,
+          "value": 1.0
+        },
+        {
+          "id": 1075,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 44109,
+      "name": "Display Launcher",
+      "groupId": 501,
+      "groupName": "Festival Launcher",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 5.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 1.0
+        },
+        {
+          "id": 51,
+          "value": 20000.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 500.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1768,
+          "value": 11324.0
+        },
+        {
+          "id": 1795,
+          "value": 200.0
+        }
+      ]
+    },
+    {
+      "id": 53343,
+      "name": "Yoiul Festival Snowball",
+      "groupId": 500,
+      "groupName": "Festival Charges",
+      "categoryId": 8,
+      "mass": 100.0,
+      "radius": 5.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10.0
+        },
+        {
+          "id": 37,
+          "value": 1000.0
+        },
+        {
+          "id": 70,
+          "value": 3000.0
+        },
+        {
+          "id": 108,
+          "value": 35.0
+        },
+        {
+          "id": 118,
+          "value": -10.0
+        },
+        {
+          "id": 122,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 56.0
+        },
+        {
+          "id": 204,
+          "value": 1.0
+        },
+        {
+          "id": 281,
+          "value": 100000.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 644,
+          "value": 1.0
+        },
+        {
+          "id": 1075,
+          "value": 1.0
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 12,
+      "data": {
+        "descriptionID": 107005,
+        "isAssistance": 0,
+        "displayNameID": 109442,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 293,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "hiPower",
+        "propulsionChance": 0,
+        "effectID": 12,
+        "guid": "",
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 16,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 16,
+        "propulsionChance": 0,
+        "effectName": "online",
+        "guid": "",
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 101,
+      "data": {
+        "guid": "",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 101,
+        "propulsionChance": 0,
+        "effectName": "useMissiles",
+        "distribution": 2,
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 51,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 598,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 598,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 51,
+            "operation": 4,
+            "modifyingAttributeID": 204,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "ammoSpeedMultiplier",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 2413,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 2,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 2413,
+        "propulsionChance": 0,
+        "effectName": "snowBallLaunching",
+        "guid": "effects.MissileDeployment",
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19660,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 40.0
+          },
+          {
+            "attributeID": 30,
+            "value": 1.0
+          },
+          {
+            "attributeID": 47,
+            "value": 1.0
+          },
+          {
+            "attributeID": 50,
+            "value": 1.0
+          },
+          {
+            "attributeID": 51,
+            "value": 4000.0
+          },
+          {
+            "attributeID": 56,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 604,
+            "value": 500.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11324.0
+          },
+          {
+            "attributeID": 1795,
+            "value": 200.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 101,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 32993,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 10.0
+          },
+          {
+            "attributeID": 37,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 70,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 108,
+            "value": 35.0
+          },
+          {
+            "attributeID": 122,
+            "value": 1.0
+          },
+          {
+            "attributeID": 137,
+            "value": 56.0
+          },
+          {
+            "attributeID": 204,
+            "value": 1.0
+          },
+          {
+            "attributeID": 281,
+            "value": 100000.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 644,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1075,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 598,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2413,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 44109,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 40.0
+          },
+          {
+            "attributeID": 30,
+            "value": 1.0
+          },
+          {
+            "attributeID": 47,
+            "value": 1.0
+          },
+          {
+            "attributeID": 50,
+            "value": 1.0
+          },
+          {
+            "attributeID": 51,
+            "value": 20000.0
+          },
+          {
+            "attributeID": 56,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 604,
+            "value": 500.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11324.0
+          },
+          {
+            "attributeID": 1795,
+            "value": 200.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 101,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 53343,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 10.0
+          },
+          {
+            "attributeID": 37,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 70,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 108,
+            "value": 35.0
+          },
+          {
+            "attributeID": 118,
+            "value": -10.0
+          },
+          {
+            "attributeID": 122,
+            "value": 1.0
+          },
+          {
+            "attributeID": 137,
+            "value": 56.0
+          },
+          {
+            "attributeID": 204,
+            "value": 1.0
+          },
+          {
+            "attributeID": 281,
+            "value": 100000.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 644,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1075,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 598,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2413,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19660,
+      "data": {
+        "descriptionID": 89651,
+        "typeID": 19660,
+        "graphicID": 20237,
+        "capacity": 5.0,
+        "metaLevel": 0,
+        "typeNameID": 98859,
+        "iconID": 168,
+        "published": 1,
+        "radius": 1.0,
+        "marketGroupID": 1663,
+        "volume": 20.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 501
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 32993,
+      "data": {
+        "typeID": 32993,
+        "graphicID": 20239,
+        "capacity": 0.0,
+        "typeNameID": 283718,
+        "iconID": 20973,
+        "published": 1,
+        "radius": 1.0,
+        "marketGroupID": 1663,
+        "volume": 0.1,
+        "mass": 100.0,
+        "basePrice": 0.0,
+        "portionSize": 100,
+        "techLevel": 1,
+        "groupID": 500
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 44109,
+      "data": {
+        "descriptionID": 523561,
+        "typeID": 44109,
+        "graphicID": 21423,
+        "capacity": 5.0,
+        "metaLevel": 0,
+        "typeNameID": 523560,
+        "iconID": 168,
+        "published": 1,
+        "radius": 1.0,
+        "marketGroupID": 1663,
+        "volume": 20.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 501
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 53343,
+      "data": {
+        "descriptionID": 554137,
+        "typeID": 53343,
+        "graphicID": 20238,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 553789,
+        "iconID": 2943,
+        "published": 1,
+        "radius": 5.0,
+        "marketGroupID": 1663,
+        "volume": 0.1,
+        "mass": 100.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 500
+      }
+    }
+  ]
+}

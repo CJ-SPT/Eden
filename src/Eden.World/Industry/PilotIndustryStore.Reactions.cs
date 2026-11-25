@@ -1,6 +1,8 @@
 using System.Text.Json;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -20,12 +22,65 @@ internal sealed partial class PilotIndustryStore
 {
     private IndustryResult InstallReaction(long pilotId, IndustryRequest request)
     {
-        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        using var scope = new WorldActionScope(
+            database,
+            select: world =>
+                new(pilots: [pilotId], systems: world.Structure(request.FacilityId) is { } structure ? [structure.SystemId] : [])
+        );
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = InstallReaction(world, catalog, pilotId, request);
         scope.Commit();
         return result;
+    }
+
+    private static IndustryStation ReactionStation(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long stationId,
+        bool requireOnlineReactor
+    )
+    {
+        if (world is not EconomyTransaction || stationId < StructureRules.FirstStructureId)
+        {
+            return CurrentStation(world, catalog, pilotId, stationId, null);
+        }
+        var structure = PilotStructureStore.Require(world, stationId);
+        if (!PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId))
+        {
+            throw new InvalidDataException("Industry access to this structure is denied.");
+        }
+        var station = IndustryStation.From(PilotStructureStore.Snapshot(world, catalog, structure));
+        var pilot = Pilot(world, pilotId);
+        var ship = pilot.ActiveShip;
+        if (ship.Position is null && ship.DockedLocationId == stationId)
+        {
+            return station;
+        }
+        if (
+            requireOnlineReactor
+            && station.StructureServices?.Any(service =>
+                service is StructureService.CompositeReactions or StructureService.BiochemicalReactions or StructureService.HybridReactions
+            ) != true
+        )
+        {
+            throw new InvalidDataException("Choose a refinery with an online reactor for remote reactions.");
+        }
+        int system = ShipSystem(world, catalog, ship);
+        if (system != station.SolarSystemId)
+        {
+            // Build 3662168 omits Remote Reactions from all four Alpha skill lists.
+            int level =
+                world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega
+                    ? Level(world, catalog, pilotId, (int)IndustrySkill.RemoteReactions)
+                    : 0;
+            if (!WithinJobRange(catalog, system, station.SolarSystemId, level))
+            {
+                throw new InvalidDataException("Your Remote Reactions skill does not reach this refinery.");
+            }
+        }
+        return station;
     }
 
     internal static ManufacturingCharge ReactionCharge(WorldAction world, long pilot, int system, int formula, int runs, double security) =>
@@ -48,7 +103,9 @@ internal sealed partial class PilotIndustryStore
     {
         long now = Now;
         AdvanceFacility(world, catalog, request.FacilityId, now);
-        var station = CurrentStation(world, catalog, pilotId, request.FacilityId, null);
+        var station = supplyCorporation.HasValue
+            ? CurrentStation(world, catalog, pilotId, request.FacilityId, null)
+            : ReactionStation(world, catalog, pilotId, request.FacilityId, requireOnlineReactor: true);
         double security = ManufacturingCatalog.Security(catalog, station.SolarSystemId);
         var item = world.Set<OwnedItem>().Find(request.BlueprintId);
         var recipe = ReactionCatalog.Recipes(catalog).GetValueOrDefault(request.BlueprintTypeId);

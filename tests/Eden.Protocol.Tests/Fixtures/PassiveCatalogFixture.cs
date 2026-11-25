@@ -232,6 +232,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadMissileTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "MissileTierCatalog.json", types);
 
+    internal static void LoadFestivalLaunchers(string path) => Load(path, "FestivalLauncherCatalog.json", null);
+
     internal static void LoadSupportTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "SupportTierCatalog.json", types);
 
     internal static void LoadTackleTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "TackleTierCatalog.json", types);

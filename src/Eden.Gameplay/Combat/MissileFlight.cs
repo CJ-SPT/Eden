@@ -46,4 +46,7 @@ public sealed record MissileContact(
     int CorporationId,
     int LaunchStamp,
     MissileFlight Flight
-);
+)
+{
+    public bool Cosmetic => GroupId == (int)MissileChargeGroup.Festival;
+}

@@ -33,6 +33,7 @@ public enum MissileSkill
 
 public enum MissileLauncherGroup
 {
+    Festival = 501,
     Cruise = 506,
     Rocket = 507,
     Torpedo = 508,
@@ -58,6 +59,7 @@ public enum MissileChargeGroup
     AutoTargetingHeavy = 395,
     AutoTargetingCruise = 396,
     XlTorpedo = 476,
+    Festival = 500,
     AdvancedRocket = 648,
     AdvancedLight = 653,
     AdvancedHeavyAssault = 654,

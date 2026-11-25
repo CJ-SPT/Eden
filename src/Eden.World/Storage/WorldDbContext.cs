@@ -147,6 +147,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Planetary.PlanetarySchema.Configure(model);
         JetcanSchema.Configure(model);
         Eden.World.Structures.StructureSchema.Configure(model);
+        Eden.World.Structures.StructureReinforcementDefaultsSchema.Configure(model);
         Eden.World.Agents.MissionSchema.Configure(model);
         Eden.World.Capsuleers.TrafficSchema.Configure(model);
         Eden.World.Information.InformationSchema.Configure(model);

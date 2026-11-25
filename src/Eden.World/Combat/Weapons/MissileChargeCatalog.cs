@@ -29,8 +29,10 @@ internal static class MissileChargeCatalog
                 or (int)MissileChargeGroup.AutoTargetingHeavy
                 or (int)MissileChargeGroup.AutoTargetingCruise;
         bool breacher = group == (int)MissileChargeGroup.BreacherPod;
+        bool festival = group == (int)MissileChargeGroup.Festival;
         var effectId =
             breacher ? DogmaEffect.BreacherPodLaunch
+            : festival ? DogmaEffect.SnowballLaunching
             : automatic ? DogmaEffect.AutoTargetingMissile
             : DogmaEffect.MissileLaunching;
         if (
@@ -43,13 +45,14 @@ internal static class MissileChargeCatalog
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
+        var launch = effects.FirstOrDefault(e => e.EffectID == (int)effectId);
         if (
             effects.Count != FittingCatalog.Effects(catalog, typeId).Count
-            || effects is not [{ } effect]
-            || effect.EffectID != (int)effectId
-            || effect.IsWarpSafe != 0
-            || effect.EffectCategory != (int)(automatic ? PassiveEffectPhase.Active : PassiveEffectPhase.Targeted)
-            || (effect.ModifierInfo ?? []).Length != 0
+            || launch is null
+            || launch.IsWarpSafe != 0
+            || launch.EffectCategory != (int)(automatic ? PassiveEffectPhase.Active : PassiveEffectPhase.Targeted)
+            || (launch.ModifierInfo ?? []).Length != 0
+            || (festival ? !FestivalEffects(effects, launch) : effects.Count != 1)
         )
         {
             return false;
@@ -60,7 +63,7 @@ internal static class MissileChargeCatalog
             {
                 _ = Breacher(catalog, typeId, attributes);
             }
-            else
+            else if (!festival)
             {
                 _ = MissileRules.Warhead(attributes);
             }
@@ -72,6 +75,18 @@ internal static class MissileChargeCatalog
             return false;
         }
     }
+
+    private static bool FestivalEffects(IReadOnlyList<ClientDogmaeffects> effects, ClientDogmaeffects launch) =>
+        effects.Count == 2
+        && launch.IsOffensive == 0
+        && launch.Guid == "effects.MissileDeployment"
+        && effects.FirstOrDefault(e => e.EffectID == (int)DogmaEffect.AmmoSpeedMultiplier)
+            is { EffectCategory: (int)PassiveEffectPhase.Fitted, ModifierInfo: [{ } modifier] }
+        && modifier.Func == "ItemModifier"
+        && modifier.Domain == "otherID"
+        && modifier.Operation == (int)DogmaOperation.PostMultiply
+        && modifier.ModifiedAttributeID == (int)DogmaAttributeId.WeaponCycleTime
+        && modifier.ModifyingAttributeID == (int)DogmaAttributeId.AmmoSpeedMultiplier;
 
     internal static BreacherPayload Breacher(CatalogDbContext catalog, int typeId, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {

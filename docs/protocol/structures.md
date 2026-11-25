@@ -2,6 +2,40 @@
 
 [Protocol index](../protocol.md) Â· [Documentation index](../README.md)
 
+## Corporation default reinforcement hour
+
+The CEO and Directors can set their corporation's default UTC reinforcement hour in Structure Browser.
+The deployment window preselects that hour. The pilot can choose another hour before anchoring, and the
+structure saves the choice sent with the deployment. Changing the default affects future deployment
+windows. Each deployed structure keeps its saved hour.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms that
+`CorpStructureSettingsCont._ApplyReinforceChanges` forwards the selected hour to
+`corpRegistry.SetStructureReinforceDefault(hour)`. The native getter returns `(255, hour)`.
+`deploymentCont.BuildUI` initializes the picker with that pair. `structureDeployment.ConfirmDeployment`
+sends the picker values with `Anchor`, including an hour the pilot changed. EVE.js **261108.1** uses
+the equivalent getter, writer and CEO/Director authorization in `corpRegistryRuntime.js`
+(SHA-256 `41d691387ff45dce3cf4680da40291557b868f0b3f589234d0eb244b77c4e35c`).
+[EVE University structure anchoring](https://wiki.eveuniversity.org/Anchoring_structures)
+
+Schema **240** adds one resident, checkpointed preference per corporation. The initial picker value
+is **18:00 UTC** for a corporation with no saved setting.
+
+**Automated validation.** On `eab07a5c` plus the change, the three exact methods
+`NativeFirstBoundReinforcementDefaultsRoundTripIntoResidentDeploymentAndCheckpoint`,
+`NativeCorporationReinforcementDefaultsUseCurrentDirectorAuthority` and
+`Version239AddsTheCorporationDefaultWithoutChangingDeployedStructureTiming` in `StructureDeploymentDefaultsTests`
+passed in 6.99 seconds of combined case time (9.44 seconds for the runner). They cover native bound reads and
+writes, role revocation, malformed settings, deployment, checkpoint projection and migration. The affected
+selection for structure deployment and rules, corporation roles and world migrations passed all 89 cases
+in 42.36 seconds of runner time.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Change the default and open a new anchoring window to confirm the
+hour is preset. Before anchoring, choose a different hour and verify it in the new structure's settings.
+
 ## Warp disruption and Upwell docking
 
 A ship under targeted warp disruption cannot dock at an Upwell structure while the active strength exceeds its warp
