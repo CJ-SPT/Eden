@@ -168,37 +168,60 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         ship.Position?.SystemId
         ?? (ship.StructureId is long structure ? world.StructureSystemId(structure) : catalog.RequireStation(ship.StationId).SolarSystemId);
 
-    private static IndustryStation ManufacturingStation(
+    private static IndustryStation JobStation(
         WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long stationId,
-        StationService? localService = StationService.Manufacturing
+        IndustryActivity? activity = null
     )
     {
-        if (world is not EconomyTransaction || stationId >= StructureRules.FirstStructureId)
+        StationService? service = activity switch
         {
-            return CurrentStation(world, catalog, pilotId, stationId, localService);
+            IndustryActivity.Manufacturing => StationService.Manufacturing,
+            IndustryActivity.ResearchMaterial or IndustryActivity.ResearchTime or IndustryActivity.Copying or IndustryActivity.Invention =>
+                StationService.Laboratory,
+            null or IndustryActivity.Reaction => null,
+            _ => throw new InvalidDataException("Choose a recognized industry activity."),
+        };
+        if (world is not EconomyTransaction || stationId >= StructureRules.FirstStructureId || activity == IndustryActivity.Reaction)
+        {
+            return CurrentStation(world, catalog, pilotId, stationId, service);
         }
         var pilot = Pilot(world, pilotId);
         var ship = pilot.ActiveShip;
+        var station = NpcStation(catalog, stationId, service);
         if (ship.Position is null && ship.DockedLocationId == stationId)
         {
-            return NpcStation(catalog, stationId, localService);
+            return station;
         }
-        var station = NpcStation(catalog, stationId, StationService.Manufacturing);
         int system = ShipSystem(world, catalog, ship);
         if (system != station.SolarSystemId)
         {
-            // Supply Chain Management is absent from all four pinned Alpha skill lists.
-            int level =
-                world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega
-                    ? Level(world, catalog, pilotId, (int)IndustrySkill.SupplyChainManagement)
-                    : 0;
-            int range = ManufacturingRules.FacilityJumpRange(level);
+            // The pinned Alpha skill lists omit both NPC industry range skills.
+            int range = 0;
+            if (world.Set<Account>().Find(pilot.AccountId)?.CloneGrade == AccountCloneGrade.Omega)
+            {
+                int manufacturing =
+                    service == StationService.Manufacturing || service is null && HasService(catalog, station)
+                        ? Level(world, catalog, pilotId, (int)IndustrySkill.SupplyChainManagement)
+                        : 0;
+                int science =
+                    service == StationService.Laboratory || service is null && HasService(catalog, station, StationService.Laboratory)
+                        ? Level(world, catalog, pilotId, (int)IndustrySkill.ScientificNetworking)
+                        : 0;
+                range = IndustryDefinitions.FacilityJumpRange(Math.Max(manufacturing, science));
+            }
             if (range == 0 || catalog.Definitions.StargateDistance(system, station.SolarSystemId) is not int jumps || jumps > range)
             {
-                throw new InvalidDataException("Your Supply Chain Management skill does not reach this manufacturing facility.");
+                throw new InvalidDataException(
+                    service switch
+                    {
+                        StationService.Manufacturing => "Your Supply Chain Management skill does not reach this manufacturing facility.",
+                        StationService.Laboratory => "Your Scientific Networking skill does not reach this laboratory.",
+                        _ => "Your Supply Chain Management or Scientific Networking skill does not reach this facility.",
+                    }
+                );
             }
         }
         return station;
@@ -459,14 +482,19 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         );
     }
 
-    public IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId, IndustryStorage? input = null)
+    public IReadOnlyDictionary<int, long> Materials(
+        long pilotId,
+        long stationId,
+        IndustryStorage? input = null,
+        IndustryActivity? activity = null
+    )
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return WorldActionScope.Inspect(
             database,
             world =>
             {
-                _ = ManufacturingStation(world, catalog, pilotId, stationId, null);
+                _ = JobStation(world, catalog, pilotId, stationId, activity);
                 var storage = Storage(world, catalog, pilotId, stationId, input);
                 return world
                     .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == storage.Id && !i.Singleton)
@@ -686,7 +714,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         AdvanceFacility(world, catalog, request.FacilityId, Now);
         var station = supplyCorporation.HasValue
             ? CurrentStation(world, catalog, pilotId, request.FacilityId)
-            : ManufacturingStation(world, catalog, pilotId, request.FacilityId);
+            : JobStation(world, catalog, pilotId, request.FacilityId, IndustryActivity.Manufacturing);
         var item =
             world.Filter<OwnedItem>(i => i.Id == request.BlueprintId && i.OwnerId == pilotId).SingleOrDefault()
             ?? throw new InvalidDataException("The blueprint is unavailable or belongs to another pilot.");

@@ -302,7 +302,7 @@ internal sealed partial class PilotMarketStore
         long from = period?.From ?? 0;
         long until = period?.Until ?? long.MaxValue;
         return world
-            .Filter<MarketExecution>(t => t.PilotId == pilotId && t.Time >= from && t.Time < until)
+            .Filter<MarketExecution>(t => t.PilotId == pilotId && !t.CorporationId.HasValue && t.Time >= from && t.Time < until)
             .OrderByDescending(t => t.Id)
             .Take(limit ?? int.MaxValue)
             .AsEnumerable()

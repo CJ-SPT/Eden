@@ -109,6 +109,27 @@ internal sealed record MarketTransactionReply(MarketTrade Trade, long AccountId)
         };
 }
 
+internal sealed record CorporationMarketTransactionReply(MarketTrade Trade) : BlueModel
+{
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["transactionID"] = Trade.Id,
+            ["transactionDate"] = Trade.Time,
+            ["typeID"] = Trade.TypeId,
+            ["quantity"] = Trade.Quantity,
+            ["price"] = (double)Trade.PriceCents / MarketDefinitions.CentsPerIsk,
+            ["stationID"] = Trade.StationId,
+            ["locationID"] = Trade.StationId,
+            ["accountID"] = Trade.WalletDivisionKey,
+            ["keyID"] = Trade.WalletDivisionKey,
+            ["buyerID"] = Trade.PilotId,
+            ["sellerID"] = Trade.CounterpartyId,
+            ["buyerAccountID"] = Trade.WalletDivisionKey,
+            ["sellerAccountID"] = Eden.Gameplay.Corporations.CorporationWalletRules.MasterKey,
+        };
+}
+
 internal sealed record WalletEntryTypeReply(WalletEntryDefinition Type) : BlueModel
 {
     public override object ToBlue() =>
@@ -160,9 +181,10 @@ internal sealed record WalletJournalEntry(
 
 internal sealed record WalletDescription([property: JsonPropertyName("DESC")] string Reason);
 
-internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders, string Reason) : PilotNotification("OnOwnOrdersChanged")
+internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders, string Reason, bool IsCorporation = false)
+    : PilotNotification("OnOwnOrdersChanged")
 {
-    public override object?[] Arguments => [Orders.Select(order => (object?)order.ToBlue()).ToList(), Reason, false];
+    public override object?[] Arguments => [Orders.Select(order => (object?)order.ToBlue()).ToList(), Reason, IsCorporation];
 }
 
 internal sealed record MarketItemReceived(InventoryItem Item) : PilotNotification("OnMarketItemReceived")

@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation Market Delivery withdrawal](#corporation-market-delivery-withdrawal)
 - [Crystal damage in inventory](#crystal-damage-in-inventory)
 - [Fitted ship repackaging](#fitted-ship-repackaging)
 - [Inactive ship transfers and move-rule audit, November 15, 2026](#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
@@ -40,6 +41,51 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Corporation Market Delivery withdrawal
+
+The stock client's **Deliver corp stuff to → Myself / Corporation member** action can withdraw a stack from
+Market Deliveries. The actor must be docked at the source NPC station. Delivery goes to the chosen member's
+personal Item Hangar at that station, including when that member is elsewhere. Director, Accountant and Trader
+roles can take deliveries. Junior Accountants can list deliveries.
+
+Build **3662168** calls
+`invbroker.DeliverToCorpMember(memberID, stationID, [itemID, ...], quantityOrNone, ownerID, flagID)`.
+Inert inspection of `invItemFunctions.pyj._DeliverToCorpMemberID` at line 382 confirms the positional arguments
+and ignored result. The pinned archive SHA-256 is `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+Market Deliveries uses inventory container **10012** and source flag **62**.
+
+The resident transaction checks current membership and roles, the actor's docked station and every source item.
+A whole transfer retains the stack ID. A positive quantity can split one stack, preserving its blueprint metadata,
+volume override and crystal condition. Bad location, owner, flag, quantity, recipient or duplicate item IDs reject
+the batch. The source actor gets the inventory change after commit. The receiving member's existing corporation
+change feed publishes the new personal inventory entries. The route supports station Market Deliveries inventory
+items, including packaged hulls. Assembled hull custody and transfers from numbered corporate hangars are separate.
+
+EVE.js 261108.1 implements the same client action in `services/inventory/invBroker/corporationDelivery.js`
+(`604F4904A84AF47EC7FEDBCEA9C6C4246622721507AA54D477B24D5B52B3C4DD`). Its
+`services/inventory/invBrokerService.js` (`8CEC4112DE1B312B547E39B789391B0D8E18DFCA95AA61170F82AEFADC1E9651`)
+separates read and take roles on flag 62. [EVE University Market Deliveries](https://wiki.eveuniversity.org/Neocom#Market_Deliveries)
+· [EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics#Corporation_orders)
+
+**Automated validation**
+
+The integrated build passed with zero warnings or errors in 5.90 seconds. Both exact cases
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationDeliveriesTests.NativeMarketDeliveryTransfersPartialAndWholeStacksAndNotifiesTheirOwners`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationDeliveriesTests.NativeMarketDeliveryRejectsWrongStationSourceRecipientAndRoleWithoutPartialTransfer`
+passed in the 15.84-second combined run. The market purchase regression also passed its paid purchase, local
+withdrawal and checkpoint/reopen sequence. The dedicated withdrawal cases cover recipient notifications,
+single-item and split identity, batch rollback, stale roles and rejected owner, flag, station and recipient.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Buy for your corporation, dock at the selling station, then choose **Deliver corp stuff to → Myself** on the
+new Market Deliveries stack. Verify that it appears in your Item Hangar.
 
 ## Crystal damage in inventory
 

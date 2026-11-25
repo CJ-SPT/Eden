@@ -83,6 +83,8 @@ public sealed class CorporationFinancialPanelTests
             member.CallService("billMgr", "SendAutomaticPaySettings", [WireSettings(corporation, 1001)])
         );
         Assign(world, CorporationRole.Trader);
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("marketProxy", "CorpGetTransactions", [null, 1001L]));
+        Assign(world, CorporationRole.Trader | CorporationRole.AccountCanTake2);
         Assert.Empty(Assert.IsType<List<object?>>(Reply(member, "marketProxy", "CorpGetTransactions", [null, 1001L])));
         Assign(world, CorporationRole.NoRole);
         Assert.IsType<PilotCallResult.Failure>(member.CallService("marketProxy", "CorpGetTransactions", [null, 1001L]));

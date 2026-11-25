@@ -2,12 +2,52 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Cargo scanning courier packages
+
+A cargo scan now reveals the immediate contents of an intact courier package carried in a scannable hold.
+The scanner resolves Plastic Wrap by its committed package ID and reads the top-level entries still held in
+escrow. An in-progress delivery and an intact failed package both remain scannable. Nested containers or
+ships appear by type and quantity, with their contents and fittings hidden. Singleton blueprint originals and
+copies use the native quantity values **−1** and **−2** respectively.
+
+The resident scanner reads the current package at the paid deadline. The scanner can be operated by a pilot
+outside the contract, and the result goes only to the initiating session as an ordinary
+`OnCargoScanComplete` list of type and quantity pairs. Escrow, wallet and package custody retain their usual
+access rules. Unknown or unlinked Plastic Wrap is reported as a normal item. Contract creation retains its
+existing prohibition on including an existing courier package in a new contract.
+
+Build **3662168** identifies Plastic Wrap as type **3468**, freight container group **649**, and Cargo Scanner
+effect **47**, `cargoScan`, with range attribute **126**. The [native scanner record](#native-scans-and-targeting)
+establishes the pinned notification shape. EVE.js 261108.1 reads one layer of courier and ordinary containers in
+`space/modules/scannerModuleRuntime.js`, SHA-256 `1F5DDD4448F6A0C94ACBB38E3A206ACFE08C9900208C3E7FEC39C56D2C3B85DC`.
+[EVE University cargo scanning](https://wiki.eveuniversity.org/Cargo_scanning)
+
+**Automated validation**
+
+An isolated build of `81a2764d` plus this change passed with zero warnings or errors in 10.60 seconds. Exact
+filter `FullyQualifiedName=Eden.Protocol.Tests.Information.InformationTests.NativeCargoScanShowsOnlyImmediateCourierEscrowAssets`
+passed both cases in 9.49 seconds. The tests create, accept and load a real resident courier contract, scan
+it as a non-party and check the same disclosure from a sealed failed delivery. They check private results,
+nested contents, blueprint quantities and escrow preservation.
+
+The selection covering `InformationTests`, `CourierContractTests` and `CourierServiceTests` passed all
+79 cases in 56.81 seconds. The changed C# files passed formatting and line-width checks.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Scan a hauling ship carrying a courier package with a blueprint and a container. Verify the scanner sees the
+blueprint and container type and that the package remains sealed.
+
 ## Cargo scans through containers
 
 A paid cargo scan shows the immediate contents of ordinary, secure, audit-log and freight containers found in
 scannable holds. It omits the outer container and reports any container found inside it as an item. Deeper contents stay
-hidden. The scan reads the container owner's ordinary, locked and unlocked rows at the cycle deadline. It does not unlock
-items or grant inventory access. Courier package escrow remains outside this container read.
+hidden. The scan reads the container owner's ordinary, locked and unlocked rows at the cycle deadline. Items keep their
+existing access restrictions. [Courier package scans](#cargo-scanning-courier-packages) use the escrow manifest.
 
 CCP's Revelations II patch notes document scanning cargo containers. EVE University and the EVE.js 261108.1 scanner
 reference describe the one-layer limit. The pinned 3662168 catalog uses container groups **12**, **340**, **448** and

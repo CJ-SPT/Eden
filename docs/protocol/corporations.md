@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation office asset search](#corporation-office-asset-search)
 - [Corporation Kill Reports](#corporation-kill-reports)
 - [Corporation medals](#corporation-medals)
 - [Medal award notifications](#medal-award-notifications)
@@ -54,6 +55,42 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation office asset search
+
+The Corporation Assets search can find rented NPC-station offices by item category, group, type and minimum
+stack quantity. Blank filters list the corporation's offices. With filters set, each matching station appears
+once. An assembled ship counts as one item. Results reflect current resident office contents and reopen from
+the same checkpointed inventory.
+
+The CEO, Directors, Accountants and Junior Accountants can search and open the matching office asset reports.
+The report grants read access to the ordinary divisions. The Goals Deliveries hangar uses its own query role,
+and moving items requires the ordinary office hangar rights. The server checks the current corporation and
+effective roles on each request, including after a role change.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, finds the call
+`corpmgr.SearchAssets(which, categoryID, groupID, typeID, minimumQuantity)` in
+`corp_ui_accounts.CorpAccounts.Search`. The pinned client reads `locationID` and expands the selected
+station using `GetAssetInventoryForLocation`. EVE.js **261108.1** confirms the financial authority check and
+64-bit `locationID` `CRowset` in `corpmgrService.js` and `corpAssetState.js`
+(SHA-256 `0ceac2c9c0982f00e714a1f17700acc8a968ffc4ef9c83ccb763b51d8bd1368f` and
+`787dda9c937e554650a7d69c9cf3cd67b25b6e97bb7c855d2580e1cf88113af5`).
+[CCP corporation roles](https://support.eveonline.com/hc/en-us/articles/203217712-Roles-Listing) ·
+[EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics)
+
+**Automated validation.** On `81a2764d` plus the search change,
+`CorporationStorageTests.NativeOfficeAssetSearchFiltersResidentStacksAndStoredShipsAcrossCheckpoint`
+and `CorporationStorageTests.NativeOfficeAssetSearchRequiresCurrentFinancialAuthorityAndPermitsOpeningResults`
+passed in 5.18 seconds of combined case time (7.93 seconds for the runner). They cover native rows, stack and
+ship filtering, zero database commands and connections on warm searches, checkpoint reopen, role revocation
+and Goals Deliveries visibility. The affected `CorporationStorageTests`, `CorporationRoleTests`,
+`PilotInventoryTests` and `InventoryOwnershipTests` selection passed all 46 cases in 13.96 seconds of runner time.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Search for an assembled ship and a stack in different offices, then
+expand each matching result while using a character with the Junior Accountant role.
 
 ## Corporation Kill Reports
 
@@ -1416,7 +1453,11 @@ Sources: inert build **3662168** `bco_shares`, `sharesPanel.GetScrollList`/`GetE
 
 The follow-up screenshots show the now-enabled ISK header, followed by missing `billMgr.GetAutomaticPaySettings` and `marketProxy.CorpGetTransactions` requests. The pinned Bills panels also request `GetCorporationBills`, `GetCorporationBillsReceivable` and `SendAutomaticPaySettings`. These now have authenticated selected-pilot owners. The billing settings reply is the native owner-ID dictionary containing numeric bill-type boolean entries and the string `divisionID`; mixed keys use the existing explicit Blue dictionary adapter. Known bill types come from the pinned catalog. World schema **79** saves the selected division and automatic-payment preferences per corporation. Accountants/Directors can edit with withdrawal access to the selected division; Junior Accountants can read. Owner IDs and permissions are checked against current saved membership on every operation.
 
-Published Eden services do not yet issue unpaid corporation invoices or execute corporate market orders. Payable/receivable lists and corporate market history therefore correctly return empty lists; existing personal executions are never substituted. Automatic-payment preferences persist for future invoice services; this milestone does not claim invoice settlement or corporate trading. `CorpGetTransactions(fromDate, accountKey)` accepts None for either filter and validates explicit division keys. Its history surface requires financial/Trader authority. Malformed filters, forged settings and revoked access fail without changing state.
+This milestone first registered the authorized Wallet endpoints with empty histories. Automatic-payment preferences persist
+for future invoice services. `CorpGetTransactions(fromDate, accountKey)` accepts None for either filter and validates explicit
+division keys. Its history surface requires financial or Trader authority. Malformed filters, forged settings and
+revoked access fail without changing state. The later market milestone populates transaction history for purchases through
+the corporation wallet. [Immediate corporation market purchases](industry.md#immediate-corporation-market-purchases)
 
 Sources: inert build **3662168** `corpBillsPayablePanel.PopulateScroll`/`GetBillsPayable`, `corpBillsReceivablePanel.GetBillsReceivable`, `corpBillsAutoPaidPanel.GetBillsPayable`, `corpBillsAutoPaySettingsPanel` settings readers/submission, and `marketSvc.GetCorpMarketTransactions`/`corpMarketTransactionsPanel._GetTransactions`. The pinned archive hash and Carbon Blue revision in the following section remain applicable. The decoder now retains valid numeric/text mixed keys as an explicit inert `BlueDictionary`, matching Carbon `Marshal::ReadObjectDict` and `TY_DICT`. Homogeneous dictionaries keep their existing typed forms; no client execution occurred.
 

@@ -18,6 +18,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
     private long _monitor;
     private long? _station;
     private IndustryStorage? _input;
+    private IndustryActivity? _activity;
     private IReadOnlyDictionary<int, long> _available = new Dictionary<int, long>();
     public bool IsMonitoring => _station.HasValue;
 
@@ -25,6 +26,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
     {
         _station = null;
         _input = null;
+        _activity = null;
         _monitor = 0;
         _available = new Dictionary<int, long>();
     }
@@ -45,7 +47,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
         IReadOnlyDictionary<int, long> current;
         try
         {
-            current = industry.Materials(context.Pilot.PilotId, station, Access(context, _input));
+            current = industry.Materials(context.Pilot.PilotId, station, Access(context, _input), _activity);
         }
         catch (Exception error) when (error is InvalidDataException or CargoContainerPasswordRequiredException)
         {
@@ -101,7 +103,12 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
     private IndustryStorage? Access(PilotCallContext context, IndustryStorage? location) =>
         location is null ? null : location with { Access = containers?.Access(context, location.Id) };
 
-    private IndustryStorage CheckLocation(PilotCallContext context, Dictionary<string, object?> request, string key)
+    private IndustryStorage CheckLocation(
+        PilotCallContext context,
+        Dictionary<string, object?> request,
+        string key,
+        IndustryActivity? activity
+    )
     {
         var location = Values(request.GetValueOrDefault(key));
         long station = Number(request, "facilityID");
@@ -109,7 +116,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
         int flag = Integer(location, "flagID");
         if (
             Number(location, "ownerID") != context.Pilot.PilotId
-            || !industry.Locations(context.Pilot.PilotId, station).Any(entry => entry.Id == id && entry.FlagId == flag)
+            || !industry.Locations(context.Pilot.PilotId, station, activity).Any(entry => entry.Id == id && entry.FlagId == flag)
         )
         {
             throw new InvalidDataException("Choose your personal hangar or a container at this industry facility.");
@@ -120,27 +127,29 @@ internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHan
     private IndustryMonitorReply Connect(PilotCallContext context, object? request)
     {
         var values = Values(request);
-        var input = CheckLocation(context, values, "inputLocation");
+        IndustryActivity? activity = values.ContainsKey("activityID") ? (IndustryActivity)Integer(values, "activityID") : null;
+        var input = CheckLocation(context, values, "inputLocation", activity);
         long station = Number(values, "facilityID");
-        var available = industry.Materials(context.Pilot.PilotId, station, input);
+        var available = industry.Materials(context.Pilot.PilotId, station, input, activity);
         _monitor = checked(++_nextMonitor);
         _station = station;
         _available = available;
         _input = input;
+        _activity = activity;
         return new IndustryMonitorReply(_monitor, _available);
     }
 
     private long Install(PilotCallContext context, object? request)
     {
         var values = Values(request);
-        var input = CheckLocation(context, values, "inputLocation");
+        var activity = (IndustryActivity)Integer(values, "activityID");
+        var input = CheckLocation(context, values, "inputLocation", activity);
         long station = Number(values, "facilityID");
-        var output = CheckLocation(context, values, "outputLocation");
+        var output = CheckLocation(context, values, "outputLocation", activity);
         var blueprint = industry.Blueprint(context.Pilot.PilotId, Number(values, "blueprintID"));
         // Build 3662168 AttachSessionToJob includes the pilot's corporation even for personal jobs.
         // Personal ownership and payment are enforced by the hangar and wallet checks.
         var corporation = values.GetValueOrDefault("corporationID");
-        var activity = (IndustryActivity)Integer(values, "activityID");
         if (
             Number(values, "characterID") != context.Pilot.PilotId
             || !IndustryDefinitions.Activities.Contains(activity)

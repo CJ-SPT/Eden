@@ -35,6 +35,7 @@ public enum IndustrySkill
     MassProduction = 3387,
     AdvancedIndustry = 3388,
     SupplyChainManagement = 24268,
+    ScientificNetworking = 24270,
     AdvancedMassProduction = 24625,
     Reactions = 45746,
     MassReactions = 45748,
@@ -137,12 +138,17 @@ public interface IPilotIndustry : IPilotIndustrySkills
     IReadOnlyList<IndustryFacility> Facilities(long pilotId);
     IReadOnlyList<IndustryFacility> FacilitiesById(long pilotId, IReadOnlyList<long> facilityIds);
     IndustryFacility Facility(long pilotId, long stationId);
-    IReadOnlyList<IndustryInventoryLocation> Locations(long pilotId, long stationId);
+    IReadOnlyList<IndustryInventoryLocation> Locations(long pilotId, long stationId, IndustryActivity? activity = null);
     IReadOnlyList<int> ProductTypes(long? stationId = null);
     IReadOnlyList<int> ScienceProductCategories();
     IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, long? stationId = null);
     OwnedBlueprint Blueprint(long pilotId, long itemId);
-    IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId, IndustryStorage? input = null);
+    IReadOnlyDictionary<int, long> Materials(
+        long pilotId,
+        long stationId,
+        IndustryStorage? input = null,
+        IndustryActivity? activity = null
+    );
     IReadOnlyList<IndustryJobDetails> Jobs(long pilotId, bool includeCompleted);
     IndustryJobDetails Job(long pilotId, long jobId);
     IndustryResult Install(long pilotId, IndustryRequest request);
@@ -153,6 +159,9 @@ public interface IPilotIndustry : IPilotIndustrySkills
 
 public static class IndustryDefinitions
 {
+    // Build 3662168 industry.const DISTANCE_PER_LEVEL.
+    public static int FacilityJumpRange(int skillLevel) => 5 * Math.Clamp(skillLevel, 0, 5);
+
     public const int MaximumDeliveryBatch = 1000;
     public const int MinimumJobSeconds = 1;
     public const int BaseManufacturingSlots = 1;

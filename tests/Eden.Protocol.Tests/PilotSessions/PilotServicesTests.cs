@@ -550,11 +550,7 @@ public sealed class PilotServicesTests
             Request("account", "GetCashBalance", [0L])
         );
 
-        AssertUserError(
-            packets[^3],
-            "CustomInfo",
-            new() { ["info"] = "Choose personal station orders, station range and a minimum volume of one." }
-        );
+        AssertUserError(packets[^3], "CustomInfo", new() { ["info"] = "Choose a minimum volume between one and the buy order quantity." });
         AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "This contract is unavailable." });
         Assert.Equal(0d, Result(packets[^1]));
     }

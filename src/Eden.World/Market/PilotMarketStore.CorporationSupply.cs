@@ -9,11 +9,71 @@ using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Storage;
 
 namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
+    public CorporationMarketPurchase BuyForCorporation(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items)
+    {
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            throw new InvalidDataException("Corporation market purchases require the resident world.");
+        }
+        Expire();
+        using var world = live.Economy.Begin(new(pilots: [pilotId]));
+        var corporation = CorporationRoleStore.Current(world, pilotId);
+        var roles = CorporationRoleStore.Effective(world, pilotId, corporation).Roles;
+        int divisionKey = CorporationWalletStore.SelectedKey(world, pilotId, corporation);
+        if (!roles.Has(CorporationRole.Trader) || !CorporationWalletRules.CanTake(roles, divisionKey))
+        {
+            throw new InvalidDataException("Corporation purchases require the Trader role and withdrawal access to the selected division.");
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = ExecuteBuyCore(
+            world,
+            catalog,
+            pilotId,
+            stationId,
+            items,
+            days: 0,
+            corporation.Id,
+            placedOrders: null,
+            fundedRefit: false,
+            corporationWalletKey: divisionKey
+        );
+        world.Commit();
+        signal.Changed();
+        return new(corporation.Id, divisionKey, result);
+    }
+
+    public IReadOnlyList<MarketTrade> CorporationTransactions(long pilotId, long? fromDate, int? divisionKey)
+    {
+        return WorldActionScope.Inspect<IReadOnlyList<MarketTrade>>(
+            database,
+            world =>
+            {
+                var corporation = CorporationWalletStore.MarketHistoryOwner(world, pilotId, divisionKey);
+                if (world is not EconomyTransaction)
+                {
+                    return [];
+                }
+                long from = fromDate ?? 0;
+                return world
+                    .Filter<MarketExecution>(trade =>
+                        trade.CorporationId == corporation.Id
+                        && trade.Time >= from
+                        && (!divisionKey.HasValue || divisionKey == trade.WalletDivisionKey)
+                    )
+                    .OrderByDescending(trade => trade.Id)
+                    .AsEnumerable()
+                    .Select(Read)
+                    .ToArray();
+            }
+        );
+    }
+
     public IReadOnlyList<MarketOrder> CorporationOrders(long pilotId)
     {
         if (LiveWorld.Find(database.Path) is not { } live)

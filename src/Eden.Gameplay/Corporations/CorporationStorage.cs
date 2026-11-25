@@ -4,11 +4,25 @@ namespace Eden.Gameplay.Corporations;
 
 public sealed record CorporationOffice(long Id, int CorporationId, int StationId, int SystemId, long RentedAt, long FeeCents);
 
+public sealed record CorporationOfficeAssetSearch(int CategoryId, int GroupId, int TypeId, long MinimumQuantity)
+{
+    public bool HasFilters => CategoryId != 0 || GroupId != 0 || TypeId != 0 || MinimumQuantity != 0;
+}
+
 public sealed record CorporationStorageChange(
     long ActorId,
-    CorporationOffice Office,
+    CorporationOffice? Office,
     bool RentalChanged,
-    IReadOnlyList<InventoryChange> Items
+    IReadOnlyList<InventoryChange> Items,
+    bool MarketDelivery = false
+);
+
+public sealed record CorporationMarketDelivery(
+    long RecipientId,
+    int StationId,
+    int CorporationId,
+    IReadOnlyList<long> ItemIds,
+    int? Quantity
 );
 
 public interface ICorporationStorage
@@ -22,10 +36,12 @@ public interface ICorporationStorage
     CorporationOffice Office(long actorId, long officeId);
     IReadOnlyList<InventoryItem> List(long actorId, long officeId, int? flag);
     IReadOnlyList<InventoryItem> Assets(long actorId, int corporationId, int stationId);
+    IReadOnlyList<int> SearchOfficeAssets(long actorId, CorporationOfficeAssetSearch search);
     IReadOnlyList<InventoryChange> Move(long actorId, long destinationId, InventoryMoveRequest request);
     IReadOnlyList<InventoryChange> Stack(long actorId, long officeId, int flag);
     bool CanObserve(long actorId, long officeId, int flag);
     IReadOnlyList<InventoryItem> Deliveries(long actorId);
+    IReadOnlyList<InventoryChange> DeliverToMember(long actorId, CorporationMarketDelivery request);
 }
 
 public static class CorporationStorageRules
@@ -51,6 +67,18 @@ public static class CorporationStorageRules
     public static bool IsDivision(int flag) => flag is >= FirstFlag and <= LastFlag;
 
     public static bool IsHangarFlag(int flag) => IsDivision(flag) || flag == GoalDeliveriesFlag;
+
+    public static bool CanReadOfficeAssetReport(CorporationMemberAccess member) =>
+        member.Roles.Has(CorporationRole.Director | CorporationRole.Accountant | CorporationRole.JuniorAccountant);
+
+    public static bool CanTakeMarketDeliveries(CorporationRoleSet roles) =>
+        roles.Has(CorporationRole.Director | CorporationRole.Accountant | CorporationRole.Trader);
+
+    public static bool CanQueryMarketDeliveries(CorporationRoleSet roles) =>
+        CanTakeMarketDeliveries(roles) || roles.Has(CorporationRole.JuniorAccountant);
+
+    public static bool CanReadOfficeAssetReportFlag(CorporationMemberAccess member, int flag) =>
+        IsDivision(flag) || flag == GoalDeliveriesFlag && member.Roles.Has(CorporationRole.DeliveriesHangarQuery);
 
     public static bool CanQuery(CorporationMemberAccess member, int station, int headquarters, int flag) =>
         Has(member, station, headquarters, flag, CorporationRole.HangarCanQuery1);

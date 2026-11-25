@@ -46,7 +46,9 @@ internal sealed partial class PilotIndustryStore
     {
         _ = ScienceRules.TimeAttribute(request.Activity);
         AdvanceFacility(world, catalog, request.FacilityId, Now);
-        var station = CurrentStation(world, catalog, pilotId, request.FacilityId, StationService.Laboratory);
+        var station = supplyCorporation.HasValue
+            ? CurrentStation(world, catalog, pilotId, request.FacilityId, StationService.Laboratory)
+            : JobStation(world, catalog, pilotId, request.FacilityId, request.Activity);
         Eden.World.Structures.StructureIndustry.RequireService(world, catalog, pilotId, request.FacilityId, request.Activity);
         var item =
             world.Set<OwnedItem>().SingleOrDefault(i => i.Id == request.BlueprintId && i.OwnerId == pilotId)

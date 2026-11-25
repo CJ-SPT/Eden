@@ -647,6 +647,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             );
         model.Entity<MarketExecution>().HasOne<Pilot>().WithMany().HasForeignKey(t => t.PilotId);
         model.Entity<MarketExecution>().HasIndex(t => new { t.PilotId, t.Time });
+        model.Entity<MarketExecution>().HasIndex(t => new { t.CorporationId, t.Time });
         model
             .Entity<ShipEnergy>()
             .ToTable("WorldShipEnergy", t => t.HasCheckConstraint("CK_ShipEnergy_Charge", "Charge >= 0"))

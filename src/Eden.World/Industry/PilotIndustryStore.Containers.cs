@@ -11,14 +11,14 @@ namespace Eden.World.Industry;
 
 internal sealed partial class PilotIndustryStore
 {
-    public IReadOnlyList<IndustryInventoryLocation> Locations(long pilotId, long stationId)
+    public IReadOnlyList<IndustryInventoryLocation> Locations(long pilotId, long stationId, IndustryActivity? activity = null)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return WorldActionScope.Inspect(
             database,
             world =>
             {
-                var station = ManufacturingStation(world, catalog, pilotId, stationId, null);
+                var station = JobStation(world, catalog, pilotId, stationId, activity);
                 List<IndustryInventoryLocation> locations =
                 [
                     new(stationId, station.TypeId, pilotId, (int)InventoryFlag.Hangar, station.SolarSystemId),

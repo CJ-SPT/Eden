@@ -226,6 +226,7 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
                     throw new InvalidDataException("Read assets for your current corporation.");
                 }
                 var access = CorporationRoleStore.Effective(world, actorId, corporation);
+                bool reportAccess = CorporationStorageRules.CanReadOfficeAssetReport(access);
                 var office = world
                     .Set<SavedCorporationOffice>()
                     .SingleOrDefault(o => o.CorporationId == corporationId && o.StationId == stationId);
@@ -236,7 +237,10 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 return PilotInventoryStore
                     .List(world, catalog, corporationId, office.Id)
-                    .Where(i => CorporationStorageRules.CanQuery(access, stationId, corporation.StationId, i.FlagId))
+                    .Where(i =>
+                        reportAccess && CorporationStorageRules.CanReadOfficeAssetReportFlag(access, i.FlagId)
+                        || CorporationStorageRules.CanQuery(access, stationId, corporation.StationId, i.FlagId)
+                    )
                     .ToArray();
             }
         );
@@ -538,12 +542,12 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
 
     internal static void Notify(WorldAction world, CorporationStorageChange change)
     {
-        if (!change.RentalChanged && change.Items.Count == 0)
+        if (change.Office is not { } office || !change.RentalChanged && change.Items.Count == 0)
         {
             return;
         }
         string json = JsonSerializer.Serialize(change);
-        foreach (long member in world.Pilots.Where(p => p.CorporationId == change.Office.CorporationId).Select(p => p.Id))
+        foreach (long member in world.Pilots.Where(p => p.CorporationId == office.CorporationId).Select(p => p.Id))
         {
             world.Add(new SavedCorporationChange { PilotId = member, StorageJson = json });
         }

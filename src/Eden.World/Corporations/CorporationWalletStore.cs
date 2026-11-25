@@ -15,24 +15,29 @@ namespace Eden.World.Corporations;
 [Injectable]
 internal sealed partial class CorporationWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationWallet
 {
-    public void CheckMarketHistoryAccess(long actorId, int? key)
+    public void CheckMarketHistoryAccess(long actorId, int? key) =>
+        WorldActionScope.Inspect(database, world => MarketHistoryOwner(world, actorId, key));
+
+    internal static SavedCorporation MarketHistoryOwner(WorldAction world, long actorId, int? key)
     {
         if (key is { } division)
         {
             CorporationWalletRules.CheckKey(division);
         }
-        WorldActionScope.Inspect(
-            database,
-            world =>
-            {
-                var corporation = CorporationRoleStore.Current(world, actorId);
-                var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
-                if (!roles.Has(CorporationRole.Accountant | CorporationRole.JuniorAccountant | CorporationRole.Trader))
-                {
-                    throw new InvalidDataException("Corporation financial or trader access is required for market history.");
-                }
-            }
-        );
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
+        if (!roles.Has(CorporationRole.Accountant | CorporationRole.JuniorAccountant | CorporationRole.Trader))
+        {
+            throw new InvalidDataException("Corporation financial or trader access is required for market history.");
+        }
+        bool mayRead = key is int divisionKey
+            ? CorporationWalletRules.CanRead(roles, divisionKey)
+            : roles.Has(CorporationRole.Accountant | CorporationRole.JuniorAccountant);
+        if (!mayRead)
+        {
+            throw new InvalidDataException("You do not have access to the requested corporation wallet history.");
+        }
+        return corporation;
     }
 
     public IReadOnlyList<CorporationWalletDivision> Divisions(long actorId) =>

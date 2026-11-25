@@ -9,6 +9,7 @@ using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
@@ -19,7 +20,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = PlexVaultSchema.DirectTradeVersion;
+    internal const int CurrentVersion = CorporationMarketSchema.Version;
 
     public static void Open(
         WorldDbContext world,
@@ -83,6 +84,10 @@ internal static class WorldMigration
         if (version < PlexVaultSchema.DirectTradeVersion)
         {
             PlexVaultSchema.UpgradeDirectTrade(world);
+        }
+        if (version < CorporationMarketSchema.Version)
+        {
+            CorporationMarketSchema.Upgrade(world);
         }
         Eden.World.Characters.ShipCloneSchema.Upgrade(world);
         if (version is >= 6 and < ScienceSchema.Version)

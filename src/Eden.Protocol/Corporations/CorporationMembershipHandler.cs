@@ -41,27 +41,33 @@ internal sealed partial class CorporationHandler
         }
         foreach (var change in membership.Changes(context.Pilot.PilotId, _cursor))
         {
+            if (change.Storage is { MarketDelivery: true } delivery)
+            {
+                foreach (var item in delivery.Items.Where(item => item.Item.OwnerId == context.Pilot.PilotId))
+                {
+                    InventoryChangesWire.NotifyItemChange(context, item);
+                }
+            }
             if (
-                change.Storage is { } stored
+                change.Storage is { Office: { } office } stored
                 && stored.ActorId != context.Pilot.PilotId
-                && stored.Office.CorporationId == corporations.Identity(context.Pilot.PilotId).Id
+                && office.CorporationId == corporations.Identity(context.Pilot.PilotId).Id
             )
             {
                 if (stored.RentalChanged)
                 {
-                    context.Notifications.Add(new CorporationOfficeRentalChanged(stored.Office.CorporationId, stored.Office.Id));
+                    context.Notifications.Add(new CorporationOfficeRentalChanged(office.CorporationId, office.Id));
                 }
-                else if (context.Pilot.Position is null && context.Pilot.StationId == stored.Office.StationId)
+                else if (context.Pilot.Position is null && context.Pilot.StationId == office.StationId)
                 {
                     foreach (var item in stored.Items)
                     {
                         bool beforeVisible =
                             item.Previous is { } old
-                            && old.LocationId == stored.Office.Id
-                            && storage.CanObserve(context.Pilot.PilotId, stored.Office.Id, old.FlagId);
+                            && old.LocationId == office.Id
+                            && storage.CanObserve(context.Pilot.PilotId, office.Id, old.FlagId);
                         bool afterVisible =
-                            item.Item.LocationId == stored.Office.Id
-                            && storage.CanObserve(context.Pilot.PilotId, stored.Office.Id, item.Item.FlagId);
+                            item.Item.LocationId == office.Id && storage.CanObserve(context.Pilot.PilotId, office.Id, item.Item.FlagId);
                         if (afterVisible)
                         {
                             InventoryChangesWire.NotifyItemChange(context, beforeVisible ? item : item with { Previous = null });

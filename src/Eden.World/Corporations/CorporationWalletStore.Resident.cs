@@ -60,17 +60,18 @@ internal sealed partial class CorporationWalletStore
         long reference,
         WalletEntryType type,
         long amount,
-        long now
+        long now,
+        int divisionKey = CorporationWalletRules.MasterKey
     )
     {
         var owner = world.Set<SavedCorporation>().Find(corporation) ?? throw new InvalidDataException("Unknown corporation wallet.");
-        long balance = checked(owner.BalanceCents + amount);
+        long balance = checked(ReadBalance(world, owner, divisionKey) + amount);
         if (balance < 0)
         {
             throw new InvalidDataException("The corporation wallet cannot cover this payment.");
         }
-        owner.BalanceCents = balance;
-        AddEntry(world, corporation, CorporationWalletRules.MasterKey, now, counterparty, amount, balance, type, reference, "");
+        WriteBalance(world, owner, divisionKey, balance);
+        AddEntry(world, corporation, divisionKey, now, counterparty, amount, balance, type, reference, "");
         return balance;
     }
 

@@ -7,6 +7,57 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Immediate corporation market purchases
+
+The native Regional Market and Multibuy can purchase available NPC-station listings through the buyer's selected
+corporation wallet division. The buyer needs the Trader role and withdrawal access to that division. Purchases use the
+existing same-region quote and matching rules. Items enter the corporation's Market Deliveries at each seller's station,
+including at stations where the corporation has no office. Eligible members can dock there and deliver purchases to a
+corporation member's personal hangar. Resting corporate orders, native corporate sell orders, and
+market service at Upwell structures are outside this implementation.
+[Market Deliveries withdrawal](inventory.md#corporation-market-delivery-withdrawal)
+
+The resident market commits fills, wallet entries, and deliveries together. The account update identifies the division,
+and the order notifications identify the corporation scope. `CorpGetTransactions(fromDate, accountKey)` uses an
+inclusive date filter. Accountants and Junior Accountants can view any division or combine divisions. Traders can view a
+specific division they can access. Execution history stores the buyer pilot and
+division separately, and personal history excludes these rows. World schema 239 retains all earlier trades as personal
+history and checkpoints the new scope on corporate executions.
+
+Build 3662168 `code.ccp` (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`) passes the
+corporation flag as argument eight of `PlaceBuyOrder` in `marketsvc.MarketQuote.BuyStuff` and argument three of
+`BuyMultipleItems` in `MarketQuote.BuyMulti`. The Wallet's `marketSvc.Market.GetCorpMarketTransactions` consumes an
+iterable of dictionaries and reads `accountID`, `buyerAccountID`, `buyerID`, and `sellerID`.
+`marketTransactionsPanel.MarketTransaction` uses `keyID` to display the wallet division. The pinned corporation
+transactions panel offers the combined division filter to accountants and only lists divisions the trader can access.
+EVE.js revision
+`261108.1`, `server/src/services/market/marketProxyService.js` (SHA-256
+`f457cb1b181ceb570a5fa346c718d71a7ce7f2546a8ce175b`), corroborates the wallet authority, division, and ownership
+on the Multibuy order event. [EVE University corporation roles](https://wiki.eveuniversity.org/Managing_corporation_members) ·
+[CCP corporation orders and deliveries](https://support.eveonline.com/hc/en-us/articles/203280351-Corporation-Orders-and-Market-Deliveries) ·
+[CCP corporation wallets](https://support.eveonline.com/hc/en-us/articles/203209582-Corporation-Wallet-and-Corporation-Taxes)
+
+### Automated validation
+
+The exact market filters were `NativeCorporationPurchasesUseTheSelectedDivisionAndMarketDeliveriesAcrossCheckpoint`,
+`CorporationPurchasesRequireTraderAndRollBackTheWholeBatch`, and `Version238TradesRemainPersonalAfterCorporationMarketUpgrade`.
+The combined exact selection also covered Market Deliveries pickup, office asset search, remote science, and courier cargo
+scanning. All 15 cases passed. The build took 5.90 seconds with zero warnings or errors, and the test runner took 15.84 seconds.
+
+The affected selection covered the market, corporation wallets and hangars, contracts, industry, information modules, and
+world initialization and migration. All 406 cases passed in 149.84 seconds. The broader run also verified the corrected
+market information-dialog assertion against the existing order-quantity validation. Both reports are under
+`artifacts/feature-tests/results/`, with run directories `4e6332e06abc4e9cb2465920dcc7e056` and `5f70887a5eb348d3a0d0184b5b156e2a`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Buy a single item and a Multibuy basket through the second corporation wallet division. Check the Wallet and the seller
+  station's Market Deliveries folder.
+
 ## PLEX Vault transaction history
 
 Each successful physical PLEX deposit, inventory withdrawal, or market withdrawal adds one account history row alongside
@@ -1183,6 +1234,39 @@ SQL checks and the personal and ranged market order tests that use the shared ro
 
 **Optional maintainer checks.** Leave a manufacturing blueprint and materials at an NPC factory, travel to another
 system within your skill range, and install the job from Industry. Check the product at the original factory after delivery.
+
+## Remote science installation at NPC laboratories
+
+Pilots can start personal material-efficiency research, time-efficiency research, copying, and invention jobs from space
+or another station. The selected NPC laboratory holds the original, copy, or relic and any job materials. Installing from
+the current system needs no range skill. Scientific Networking adds five stargate jumps per level, up to 25 at level V,
+including routes across regions. Alpha pilots use the same-system range. The laboratory retains the inputs, blueprint
+reservation, and output location through checkpoints. [EVE University Research](https://wiki.eveuniversity.org/Research) ·
+[CCP Activities and Job Types](https://support.eveonline.com/hc/en-us/articles/203210272-Activities-and-Job-Types)
+
+Build **3662168** `industry/const.pyj` maps the four science activities to Scientific Networking **24270**. The pinned
+catalog omits it from all four Alpha skill lists. `industrySvc.pyj` sends `Job.dump()` to the native material monitor,
+which carries the selected `activityID` through later material refreshes. `GetFacilityLocations` uses the skills for the
+services offered at the station. Selecting an activity then checks that activity's skill and facility service on its own.
+The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+
+EVE.js **261108.1** `industryConstants.js` maps ME, TE, copying, and invention to the same skill, and
+`industryRestrictions.js` applies the corresponding distance to the selected facility. The source hashes are
+`ca3217d4f71251159ffe825f051af4fe68ce97d65be857739f46784c1b43df67` and
+`35ce309015a6cc17368cc636ad151be774bc5f8aafe560ae75f910aabc0375ec`, respectively.
+
+**Automated validation.** `NativeRemoteScienceUsesScientificNetworkingAndPreservesLaboratoryOutputs` passed six cases
+in 11.49 seconds after a zero-warning feature build in 14.16 seconds. The cases cover all four science activities,
+same-system use at level zero, cross-region use, Alpha limits, the separate manufacturing skill, the native material
+monitor, and checkpoint delivery at the original facility. The isolated results are in
+`artifacts/remote-science-81a2764d/source/artifacts/feature-tests/results/6b8a1a8525574989adab549ea312c06d/tests.trx`.
+The adjacent industry selection passed all 71 cases in 30.17 seconds, including remote manufacturing, facility lookup,
+container custody, bulk delivery, reaction jobs, the warm material monitor, and Upwell manufacturing.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Leave a blueprint original at an NPC laboratory and start a copy job from a nearby
+system with Scientific Networking. Deliver the finished job and check the licensed runs at the original laboratory.
 
 ## Remote settlement of personal NPC station industry jobs
 

@@ -467,6 +467,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Corporation office asset search](protocol/corporations.md#corporation-office-asset-search)
 - [Corporation mail restrictions](protocol/corporations.md#corporation-mail-restrictions)
 - [Medal award notifications](protocol/corporations.md#medal-award-notifications)
 - [Corporation medals](protocol/corporations.md#corporation-medals)
@@ -636,6 +637,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Information modules and salvage
 
+- [Cargo scanning courier packages](protocol/information.md#cargo-scanning-courier-packages)
 - [Cargo scans through containers](protocol/information.md#cargo-scans-through-containers)
 - [Ship scanning Upwell structures](protocol/information.md#ship-scanning-upwell-structures)
 - [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff)
@@ -657,6 +659,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Inventory and ship ownership
 
+- [Corporation Market Deliveries withdrawal](protocol/inventory.md#corporation-market-delivery-withdrawal)
 - [Fitted ship repackaging](protocol/inventory.md#fitted-ship-repackaging)
 - [Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
 - [Crystal damage in inventory](protocol/inventory.md#crystal-damage-in-inventory)
@@ -689,6 +692,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Immediate corporation market purchases](protocol/industry.md#immediate-corporation-market-purchases)
+- [Remote science installation at NPC laboratories](protocol/industry.md#remote-science-installation-at-npc-laboratories)
 - [PLEX Vault transaction history](protocol/industry.md#plex-vault-transaction-history)
 - [Account PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale)
 - [Remote manufacturing installation at NPC stations](protocol/industry.md#remote-manufacturing-installation-at-npc-stations)

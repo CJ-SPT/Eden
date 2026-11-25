@@ -197,6 +197,9 @@ recruitment, shares, dividends, voting and CEO succession. Alliance members can 
 executor, and the executor can transfer EverMarks to member corporations.
 [Corporation features](corporations.md) · [Alliance EverMark eligibility](protocol/alliances.md#alliance-membership-age-and-evermark-donations)
 
+Accountants and Junior Accountants can search corporation office assets by category, group, type, and minimum stack
+quantity, then open the matching station's inventory. [Corporation office asset search](protocol/corporations.md#corporation-office-asset-search)
+
 Player corporations and alliances can declare wars from the native Corporation window. Standard wars require structure
 ownership on both sides, an eligible high-security War HQ, and 500 million ISK per week. Mutual wars use invitations and
 have no fee or HQ requirement. Combat becomes legal after 24 hours and remains legal through the 24-hour cooldown.
@@ -376,6 +379,10 @@ Buy orders can accept fulfillment within a selected range. Visibility governs th
 [Procurement and Marketing](protocol/industry.md#procurement-and-marketing-at-remote-stations) ·
 [Ranged buy orders](protocol/industry.md#ranged-personal-buy-orders)
 
+Immediate NPC-station purchases and Multibuy can use a corporation wallet. Traders with withdrawal access pay from the
+selected division, with goods collected from the seller station's Market Deliveries and each fill recorded in the
+division's transaction history. [Immediate corporation market purchases](protocol/industry.md#immediate-corporation-market-purchases)
+
 The account PLEX Vault supports transfers between owned physical stacks and the shared vault balance, plus PLEX listings and
 repricing through the regional market at NPC stations. The Wallet shows transaction history and categorized totals for the
 account's pilots. [PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale) ·
@@ -388,6 +395,8 @@ Results and released assets stay at the job's saved location.
 [Remote industry settlement](protocol/industry.md#remote-settlement-of-personal-npc-station-industry-jobs)
 Pilots can also install personal NPC-station manufacturing jobs from space or another station within their Supply Chain
 Management range. [Remote manufacturing installation](protocol/industry.md#remote-manufacturing-installation-at-npc-stations)
+Personal research, copying and invention use Scientific Networking for remote installation at NPC laboratories. Inputs
+and outputs remain at the installation station. [Remote science installation](protocol/industry.md#remote-science-installation-at-npc-laboratories)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 
@@ -462,11 +471,12 @@ insurance. The hull must be undamaged and free of cargo and rigs.
   assist and guard fleetmates. Scanners, probes, salvagers and tractors use their own eligibility and range rules.
   Ship scanners can reveal partial ship fittings in falloff and complete fittings on targetable Upwell structures.
   Cargo scanners respect full cargo-scan immunity when they start and when the paid cycle finishes.
-  A successful cargo scan can inspect the first layer of a container.
+  A successful cargo scan can inspect the first layer of a container or a sealed courier package.
   [Drones](protocol/drones.md) · [Information modules](protocol/information.md) ·
   [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff) ·
   [Upwell ship scans](protocol/information.md#ship-scanning-upwell-structures) ·
   [Cargo scans through containers](protocol/information.md#cargo-scans-through-containers) ·
+  [Cargo scanning courier packages](protocol/information.md#cargo-scanning-courier-packages) ·
   [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - **Capital and Upwell roles.** Supported capitals have ship-specific jump, fighter, fleet hangar, maintenance, refitting and clone
   services. Capital Flex Armor and Shield Hardeners support all nine published variants and their resistance scripts.

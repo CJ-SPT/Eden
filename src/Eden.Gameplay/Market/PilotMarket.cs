@@ -41,7 +41,9 @@ public sealed record MarketTrade(
     long TaxCents,
     long BalanceCents,
     long Time,
-    long? WalletAmountCents = null
+    long? WalletAmountCents = null,
+    int? CorporationId = null,
+    int? WalletDivisionKey = null
 );
 
 public sealed record MarketResult(
@@ -51,6 +53,14 @@ public sealed record MarketResult(
     int SystemId,
     int RegionId
 );
+
+public sealed record CorporationMarketPurchase(int CorporationId, int WalletDivisionKey, MarketResult Result);
+
+public interface ICorporationMarket
+{
+    CorporationMarketPurchase BuyForCorporation(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items);
+    IReadOnlyList<MarketTrade> CorporationTransactions(long pilotId, long? fromDate, int? divisionKey);
+}
 
 public sealed record WalletEntryDefinition(int Id, long NameId, string Name, string Description);
 

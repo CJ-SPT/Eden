@@ -19,7 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class CorporationStorageTests
+public sealed partial class CorporationStorageTests
 {
     [Fact]
     public void CorporationTransfersAcceptLocalInactiveShipHoldsAndPreserveOwnership()

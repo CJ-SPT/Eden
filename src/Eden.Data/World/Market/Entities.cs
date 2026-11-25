@@ -19,6 +19,8 @@ public sealed class MarketExecution
     public long BalanceCents { get; set; }
     public long Time { get; set; }
     public long? WalletAmountCents { get; set; }
+    public int? CorporationId { get; set; }
+    public int? WalletDivisionKey { get; set; }
 }
 
 public sealed class MarketStation

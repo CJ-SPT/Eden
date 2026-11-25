@@ -3,6 +3,7 @@ using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Contracts;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Information;
@@ -12,6 +13,7 @@ using Eden.Data.World.Mining;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
@@ -436,6 +438,10 @@ internal sealed partial class PilotInformationStore(
 
     private static IEnumerable<ScanItem> CargoScanRows(WorldAction world, CatalogDbContext catalog, OwnedItem item)
     {
+        if (item.TypeId == CourierRules.PackageType && world is EconomyTransaction && CourierCargoScanRows(world, item) is { } contents)
+        {
+            return contents;
+        }
         if (!CargoContainerAssemblyRules.IsContainer(item.TypeId, catalog.FittingType(item.TypeId)?.GroupId ?? 0))
         {
             return [new(item.TypeId, item.Quantity)];
@@ -446,6 +452,36 @@ internal sealed partial class PilotInformationStore(
             .Where(child => child.FlagId is (int)InventoryFlag.None or (int)InventoryFlag.Locked or (int)InventoryFlag.Unlocked)
             .OrderBy(child => child.Id)
             .Select(child => new ScanItem(child.TypeId, child.Quantity));
+    }
+
+    private static ScanItem[]? CourierCargoScanRows(WorldAction world, OwnedItem package)
+    {
+        if (
+            !package.Singleton
+            || package.Quantity != 1
+            || world.Filter<SavedContract>(row => row.PackageId == package.Id).SingleOrDefault()
+                is not { Type: ContractType.Courier, Status: ContractStatus.InProgress or ContractStatus.Failed } courier
+        )
+        {
+            return null;
+        }
+        // An accepted package points to escrow by identity. Its manifest roots are the complete first layer.
+        // Child rows can contain fitted hardware or other contents that the scanner must not disclose.
+        var cargo = world
+            .Filter<SavedContractItem>(row => row.ContractId == courier.Id && row.Offered && row.ParentId == null && row.Quantity > 0)
+            .OrderBy(row => row.Id)
+            .AsEnumerable()
+            .Where(row => world.Set<SavedContractEscrow>().Find(row.ItemId)?.ContractId == courier.Id)
+            .Select(row => new ScanItem(
+                row.TypeId,
+                row.Singleton && row.CategoryId == (int)InventoryCategory.Blueprint
+                    ? row.BlueprintRuns >= 0
+                        ? -2
+                        : -1
+                    : row.Quantity
+            ))
+            .ToArray();
+        return cargo.Length == 0 ? null : cargo;
     }
 
     private static ShipScan ReadStructureScan(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now)
