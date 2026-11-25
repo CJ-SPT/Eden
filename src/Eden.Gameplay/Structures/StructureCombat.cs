@@ -27,6 +27,7 @@ public sealed record StructureBattleContext(
 )
 {
     public bool HasCore { get; init; } = true;
+    public bool WarHeadquarters { get; init; }
 }
 
 public sealed record StructureHit(StructureBattle Battle, double Applied);
@@ -43,6 +44,7 @@ public static class StructureCombatRules
     public const long LargeLowNullHullDelay = 60 * TimeSpan.TicksPerHour;
     public const long LargeHighHullDelay = 108 * TimeSpan.TicksPerHour;
     public const long FlexHullDelay = TimeSpan.TicksPerHour;
+    public const long WarHeadquartersDelay = TimeSpan.TicksPerDay;
     public const long MediumExitJitter = 90 * TimeSpan.TicksPerMinute;
     public const long LargeExitJitter = 3 * TimeSpan.TicksPerHour;
     public const long FlexExitJitter = 30 * TimeSpan.TicksPerMinute;
@@ -71,13 +73,19 @@ public static class StructureCombatRules
             _ => defense.Undamaged,
         };
 
-    public static void CheckAttack(StructureProfile structure, double security, StructureBattle battle, bool retaliation = false)
+    public static void CheckAttack(
+        StructureProfile structure,
+        double security,
+        StructureBattle battle,
+        bool retaliation = false,
+        bool warTarget = false
+    )
     {
         if (structure.Family == StructureFamily.SovereigntyHub)
         {
             throw new InvalidDataException("Sovereignty hubs require Entosis warfare.");
         }
-        if (!double.IsFinite(security) || security >= StructureRules.HighSecurityBoundary && !retaliation)
+        if (!double.IsFinite(security) || security >= StructureRules.HighSecurityBoundary && !retaliation && !warTarget)
         {
             // High-security attacks require war authority or retaliation against this exact attacking structure.
             throw new InvalidDataException("A declared war is required to attack a high-security structure.");
@@ -269,21 +277,16 @@ public static class StructureCombatRules
             throw new ArgumentOutOfRangeException(nameof(context));
         }
         long delay =
-            state == StructureState.ArmorReinforced
-                ? context.Structure.Size != StructureSize.Medium
-                    ? LargeArmorDelay
-                    : context.Wormhole
-                        ? MediumWormholeDelay
-                        : context.Security >= StructureRules.HighSecurityBoundary
-                            ? MediumHighDelay
-                            : MediumLowNullDelay
-                : context.Structure.Size == StructureSize.Flex
-                    ? FlexHullDelay
-                    : context.Wormhole
-                        ? LargeWormholeHullDelay
-                        : context.Security >= StructureRules.HighSecurityBoundary
-                            ? LargeHighHullDelay
-                            : LargeLowNullHullDelay;
+            context.WarHeadquarters ? WarHeadquartersDelay
+            : state == StructureState.ArmorReinforced
+                ? context.Structure.Size != StructureSize.Medium ? LargeArmorDelay
+                    : context.Wormhole ? MediumWormholeDelay
+                    : context.Security >= StructureRules.HighSecurityBoundary ? MediumHighDelay
+                    : MediumLowNullDelay
+            : context.Structure.Size == StructureSize.Flex ? FlexHullDelay
+            : context.Wormhole ? LargeWormholeHullDelay
+            : context.Security >= StructureRules.HighSecurityBoundary ? LargeHighHullDelay
+            : LargeLowNullHullDelay;
         long jitterLimit = context.Structure.Size switch
         {
             StructureSize.Medium => MediumExitJitter,

@@ -15,7 +15,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 | [Startup and authentication](protocol/startup.md) | Launcher accounts, handshake, encryption, character selection and initial sessions. |
 | [Characters and skills](protocol/characters.md) | Profiles, attributes, training, clones, implants and redemption. |
 | [Chat, mail and contacts](protocol/social.md) | Native chat, guests, address books, calendars and notifications. |
-| [Corporations](protocol/corporations.md) | Membership, governance, offices, wallets and shared assets. |
+| [Corporations](protocol/corporations.md) | Membership, governance, offices, wallets, shared assets and wars. |
 | [Alliances](protocol/alliances.md) | Membership, governance, bills, diplomacy and shared services. |
 | [Cooperative fleets](protocol/fleets.md) | Membership, command roles, chat, broadcasts, travel and rewards. |
 | [Personal contracts](protocol/contracts.md) | Item exchange, couriers, auctions and bulk offers. |
@@ -453,6 +453,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
 - [Corporation Edit Member identity](protocol/corporations.md#edit-member-private-identity-reply-november-16-2026)
 - [Ordinary corporation member auto-removal](protocol/corporations.md#ordinary-member-auto-removal-november-15-2026)
 - [Corporation blueprint lock/unlock votes](protocol/corporations.md#blueprint-lock-and-unlock-votes-november-15-2026)

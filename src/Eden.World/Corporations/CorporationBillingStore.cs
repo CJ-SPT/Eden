@@ -1,19 +1,59 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationBillingStore(WorldDatabase database) : ICorporationBilling
+internal sealed class CorporationBillingStore(WorldDatabase database, TimeProvider clock) : ICorporationBilling
 {
+    public IReadOnlyList<CorporationWarInvoice> WarInvoices(long actorId, bool alliance = false)
+    {
+        var resident = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("War bills require an active resident world.");
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        return resident.Economy.Inspect(world =>
+        {
+            var corporation = Authorize(world, actorId, false);
+            int debtor = corporation.Id;
+            if (alliance)
+            {
+                debtor = world.Set<SavedAllianceMember>().Find(corporation.Id)?.AllianceId ?? 0;
+                if (
+                    world.Set<SavedAlliance>().Find(debtor) is not { ClosedAt: null } owner
+                    || owner.ExecutorCorporationId != corporation.Id
+                )
+                {
+                    throw new InvalidDataException("Alliance executor financial authority is required.");
+                }
+            }
+            return (IReadOnlyList<CorporationWarInvoice>)
+                CorporationWarStore.Invoices(world, corporation.Id, now).Where(invoice => invoice.DebtorId == debtor).ToArray();
+        });
+    }
+
+    public bool PayWarInvoice(long actorId, long billId, int divisionKey, bool alliance = false)
+    {
+        CorporationWalletRules.CheckKey(divisionKey);
+        var resident = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("War bills require an active resident world.");
+        using var world = resident.Economy.Begin(TransactionParticipants.None);
+        _ = Authorize(world, actorId, true);
+        if (!CorporationWarStore.PayInvoice(world, actorId, billId, divisionKey, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), alliance))
+        {
+            return false;
+        }
+        world.Commit();
+        return true;
+    }
+
     public CorporationBillPaymentSettings Read(long actorId)
     {
         return WorldActionScope.Inspect<CorporationBillPaymentSettings>(

@@ -11,7 +11,8 @@ public sealed record AssistanceInputs(
     bool TargetOutlaw,
     bool TargetEngaged,
     bool TargetInCombat = false,
-    bool ThirdPartyMilitiaCombat = false
+    bool ThirdPartyMilitiaCombat = false,
+    bool ThirdPartyCorporationWarCombat = false
 );
 
 public sealed record AssistanceDecision(CrimewatchFlag Flag, bool NewOffense);
@@ -28,9 +29,10 @@ public static class AssistanceRules
         {
             return new(CrimewatchFlag.None, false);
         }
+        bool thirdPartyWar = input.ThirdPartyMilitiaCombat || input.ThirdPartyCorporationWarCombat;
         bool flagged =
             input.TargetFlag != CrimewatchFlag.None
-            || input.ThirdPartyMilitiaCombat
+            || thirdPartyWar
             || input.TargetEngaged
             || input.TargetOutlaw && (input.TargetInCombat || input.Security >= CrimewatchRules.HighSecurity);
         var flag =
@@ -45,7 +47,7 @@ public static class AssistanceRules
         {
             throw new InvalidDataException("Your ship safety setting prevents this remote assistance.");
         }
-        return new(flag, input.ThirdPartyMilitiaCombat || input.TargetEngaged || input.TargetOutlaw && input.TargetInCombat);
+        return new(flag, thirdPartyWar || input.TargetEngaged || input.TargetOutlaw && input.TargetInCombat);
     }
 
     public static CrimewatchTimers Apply(CrimewatchTimers source, CrimewatchTimers target, AssistanceDecision decision, long now, long end)

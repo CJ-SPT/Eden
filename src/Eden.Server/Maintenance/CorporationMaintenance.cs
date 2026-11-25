@@ -16,6 +16,7 @@ internal sealed class CorporationMaintenance(
     IAllianceMembership alliances,
     ICapsuleerAlliancePlanning capsuleerAlliances,
     IMilitiaOrganizations militia,
+    ICorporationWarMaintenance wars,
     IPilotOperationScope? operations = null
 ) : IDisposable
 {
@@ -55,6 +56,7 @@ internal sealed class CorporationMaintenance(
         militia.Advance();
         alliances.Advance();
         capsuleerAlliances.Advance();
+        wars.Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
     }
 
     public void Dispose()

@@ -8,4 +8,6 @@ public interface ICorporationBilling
 {
     CorporationBillPaymentSettings Read(long actorId);
     void Save(long actorId, CorporationBillPaymentSettings settings);
+    IReadOnlyList<CorporationWarInvoice> WarInvoices(long actorId, bool alliance = false);
+    bool PayWarInvoice(long actorId, long billId, int divisionKey, bool alliance = false);
 }

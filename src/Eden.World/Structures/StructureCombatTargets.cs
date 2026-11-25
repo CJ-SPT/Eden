@@ -6,6 +6,7 @@ using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Corporations;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Structures;
@@ -25,9 +26,13 @@ internal static class StructureCombatTargets
         StructureBattlePersistence.Advance(world, catalog, structure, now);
         var context = StructureBattlePersistence.Context(world, catalog, structure, now);
         var battle = StructureCombatRules.Advance(context, StructureBattlePersistence.Read(world, catalog, structure), now);
-        long? ship = attacker is long pilot ? world.Pilots.Find(pilot)?.ActiveShipId : null;
-        bool retaliation = ship is long id && Hostile(world, structure.Id, id, now);
-        StructureCombatRules.CheckAttack(context.Structure, context.Security, battle, retaliation);
+        var pilot = attacker is long id ? world.Pilots.Find(id) : null;
+        bool retaliation = pilot is not null && Hostile(world, structure.Id, pilot.ActiveShipId, now);
+        bool warTarget =
+            pilot is not null
+            && context.Security >= StructureRules.HighSecurityBoundary
+            && CorporationWarStore.HasActiveWar(world, pilot.CorporationId, structure.CorporationId, now);
+        StructureCombatRules.CheckAttack(context.Structure, context.Security, battle, retaliation, warTarget);
     }
 
     internal static bool Available(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now) =>

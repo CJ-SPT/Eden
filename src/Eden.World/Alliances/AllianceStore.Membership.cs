@@ -39,6 +39,7 @@ internal sealed partial class AllianceStore
         {
             throw new InvalidDataException("Leave your current alliance before applying.");
         }
+        RequireWarAdmission(world, corporation.Id, now, allianceId);
         if (MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, allianceId, now) is { } failure)
         {
             throw new InvalidDataException(failure);
@@ -131,6 +132,10 @@ internal sealed partial class AllianceStore
         {
             throw new InvalidDataException(failure);
         }
+        if (status == AllianceApplicationStatus.Accepted)
+        {
+            RequireWarAdmission(world, corporationId, now, alliance.Id);
+        }
         var before = Application(row);
         row.Text = text;
         row.Status = status;
@@ -144,6 +149,17 @@ internal sealed partial class AllianceStore
         if (status is not (AllianceApplicationStatus.Accepted or AllianceApplicationStatus.Rejected))
         {
             throw new InvalidDataException("Accept or reject this application.");
+        }
+    }
+
+    private static void RequireWarAdmission(WorldAction world, int corporationId, long now, int? allianceId = null)
+    {
+        if (
+            CorporationWarStore.PreventsJoiningAlliance(world, corporationId, now)
+            || allianceId is int alliance && CorporationWarStore.IsAttackingJoiningCorporation(world, alliance, corporationId, now)
+        )
+        {
+            throw new InvalidDataException("The corporation must resolve its current wars before joining an alliance.");
         }
     }
 
@@ -297,6 +313,7 @@ internal sealed partial class AllianceStore
         var previous = Member(member);
         MilitiaOrganizationStore.CorporationDepartedAlliance(world, member.AllianceId, member.CorporationId);
         world.Remove(member);
+        CorporationWarStore.InheritDepartingWars(world, member.AllianceId, member.CorporationId, now);
         ScheduleEmpty(world, member.AllianceId, now);
         foreach (
             var supporter in world

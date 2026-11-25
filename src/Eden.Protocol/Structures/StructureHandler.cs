@@ -1,3 +1,4 @@
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
@@ -10,10 +11,11 @@ namespace Eden.Protocol.Structures;
 [Injectable]
 internal sealed class StructureHandler(
     IPilotStructures structures,
-    Eden.Gameplay.Corporations.IPlayerCorporations corporations,
+    IPlayerCorporations corporations,
     TimeProvider clock,
     IStructureContacts contacts,
     ISystemObjects systemObjects,
+    ICorporationWars wars,
     ICapitalNavigation? capitalNavigation = null
 ) : ISelectedPilotCallHandler
 {
@@ -237,7 +239,11 @@ internal sealed class StructureHandler(
             {
                 return PilotCallResult.Unsupported;
             }
-            var entries = list.Select(s => new StructureInfoReply(s, structures.HasService(pilot, s.Id, StructureService.Docking)))
+            var warIds = wars.HeadquartersWars(list.Select(structure => structure.Id).ToArray());
+            var entries = list.Select(s => new StructureInfoReply(s, structures.HasService(pilot, s.Id, StructureService.Docking))
+                {
+                    WarIds = warIds.GetValueOrDefault(s.Id) ?? [],
+                })
                 .ToArray();
             return method == "GetStructureInfo"
                 ? entries.FirstOrDefault() is { } entry

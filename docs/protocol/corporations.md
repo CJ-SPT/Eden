@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation and alliance wars](#corporation-and-alliance-wars)
 - [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
 - [Ordinary member auto-removal, November 15, 2026](#ordinary-member-auto-removal-november-15-2026)
 - [Blueprint lock and unlock votes, November 15, 2026](#blueprint-lock-and-unlock-votes-november-15-2026)
@@ -48,6 +49,84 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation and alliance wars
+
+Directors use **Corporation → Wars** to select another eligible organization and one of their own anchored, dockable
+high-security Upwell structures as War HQ. Alliance wars use the executor corporation's authority and wallet. Owning a
+deployed Upwell structure makes a player corporation eligible, including when it belongs to an alliance. A standard
+declaration debits 500 million ISK immediately and issues the next bill. The wallet's Bills panel supports manual payment
+and the corporation's existing automatic payment settings. Each renewal has its own invoice and advances the original
+billing deadline by seven days.
+
+Hostilities start 24 hours after declaration. Unpaid bills, loss of eligibility or loss of the selected HQ start the
+24-hour combat cooldown. Losing the HQ prevents the attacker from redeclaring against the same defender for 14 days.
+Mutual invitations are free, expire after 30 days and require both organizations' consent. Either party can retract an
+accepted mutual war. A defending corporation's war follows it into an alliance. An aggressor or party to a mutual war
+must resolve its war before joining an alliance. A departing corporation inherits its alliance's current wars with their
+original combat and billing dates. An inherited offensive war without a usable HQ runs through its paid cycle and
+cooldown. Pilots who leave during hostilities can rejoin after seven days or when hostilities end.
+
+Crimewatch treats opposing pilots and eligible Upwell targets as legal during hostilities. The normal weapons and PvP
+timers still apply. Neutral remote assistance to a war participant with an active PvP timer is criminal in high security
+and suspect in low security. In high security, neutral command bursts skip those participants. War HQs use the shorter
+reinforcement window. The resident economy owns war, invitation and invoice state and saves it in checkpoint schema 227.
+Declaration and end notifications reach members and shareholders through the saved inbox.
+
+Native service coverage includes declaration, target and HQ selection, public and cached war records, bill payment,
+eligibility, peace treaties, mutual invitation settings and war-change notifications. Defender ally contracts, negotiated
+surrender and the War Report kill breakdown are separate work.
+
+### Source evidence
+
+The original build **3662168** archive has SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+Static inspection covered `evewar/const.pyj`, `warDeclare.pyj`, `war_cso.pyj`, `mutualWarInvites.pyj`,
+`notifications/common/formatters/war.pyj` and `notificationconst.pyj`. The registry cache consumes KeyVal dictionaries
+keyed by numeric war ID. Public war history uses a native indexed rowset. `OnWarChanged` includes the updated war,
+the participant owner set and a dictionary of old and new field values.
+
+The local EVE.js **261108.1** snapshot was used for independent behavior comparison. SHA-256 references under
+`server/src/services/corporation/` follow.
+
+| File | SHA-256 |
+| --- | --- |
+| `warDeclarationState.js` | `5e0a89c44dd6429034bb0a8261317f0525e57840afcac83890fa57451660fb06` |
+| `warRuntimeState.js` | `7dd95ae03e39ce4c226b26a3f6d0802f440b73222d7c944f9183398ebdd065c7` |
+| `warNotificationCenter.js` | `a47a1486d61090f49da112ae0a71fd015e340eedb7414a54cbf2fec8f1008842` |
+
+The pinned client and September 22 CCP patch use 500 million ISK per week. The EVE.js snapshot still uses 100 million.
+[CCP Wars](https://support.eveonline.com/hc/en-us/articles/115004152745-Wars) ·
+[War Eligibility](https://support.eveonline.com/hc/en-us/articles/360001975920-War-Eligibility) ·
+[Mutual War](https://support.eveonline.com/hc/en-us/articles/360005659379-Mutual-War) ·
+[War Notifications](https://support.eveonline.com/hc/en-us/articles/203279981-War-Notifications) ·
+[Version 24.01 patch notes](https://www.eveonline.com/news/view/patch-notes-version-24-01) ·
+[CCP Crimewatch changes](https://www.eveonline.com/news/view/patch-notes-for-april-2019-release) ·
+[CCP reinforcement changes](https://www.eveonline.com/news/view/patch-notes-version-20-05#h3-structures-deployables) ·
+[UniWiki War declarations](https://wiki.eveuniversity.org/War_declarations)
+
+### Automated validation
+
+The final solution build passed in 9.34 seconds with zero warnings and errors. The focused .NET run passed all
+294 selected cases in 110.59 seconds, with zero skipped. The filter covered `Alliances`, `CorporationShowInfoTests`,
+`CorporationPublicInfoTests`, `CorporationFinancialPanelTests`, `CorporationMembershipTests`, `CrimewatchTests`,
+`RemoteAssistanceTests`, `StructureTests`, `StructureAttackTests`, `StructureWeaponTests`, `CommandBurstTests`,
+`ServerServicesTests` and the exact migration case `Version226AddsCorporationWarStateAndPreservesTheExistingWorld`.
+The final filter excluded both cases of `FutureLogisticsHullSelectorsHaveKnownConsumersWithoutEnablingTheirHullCohort`
+after the exact method reproduced the same failures on unchanged main `36e86fae`.
+
+Development started with the exact `CorporationWarTests.DeclarationAndWeeklyInvoiceCommitOnceAndSurviveRestart`
+filter. The catalog setup and formatting policy suites passed 8 and 9 cases in 1.388 and 0.018 seconds respectively.
+The style, CSharpier, line-width, local-link and diff checks passed. The full .NET suite was outside this validation scope.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Declare a standard war from **Corporation → Wars**, then verify the next bill, the War HQ's Show Info and the defender's inbox.
+2. Accept a mutual war invitation and verify a green-safety tackle succeeds after warmup and is blocked again after cooldown.
 
 ## Edit member private identity reply, November 16, 2026
 

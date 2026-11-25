@@ -1,7 +1,9 @@
 using System.Text.Json.Nodes;
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Repair;
@@ -165,6 +167,101 @@ public sealed partial class RemoteAssistanceTests
             weapon[DogmaAttributeId.TrackingSpeed],
             f.Fitting.ModuleAttributes(TargetPilot(f), Gun(f, gun))[DogmaAttributeId.TrackingSpeed]
         );
+    }
+
+    [Theory]
+    [InlineData(.8, CrimewatchFlag.Criminal)]
+    [InlineData(.2, CrimewatchFlag.Suspect)]
+    public void NeutralRemoteAssistanceUsesWarSafetyAndSameAllianceIsExempt(double security, CrimewatchFlag penalty)
+    {
+        using Fixture f = Prepare();
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            string system = System.Text.Json.JsonSerializer.Serialize(new { securityStatus = security });
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142',{system})");
+        }
+        long module = f.Fit(1963);
+        long target = TargetPilot(f);
+        long sourceShip = f.ShipId;
+        Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        const int sourceCorporation = 98000009;
+        const int targetCorporation = 98000010;
+        const int opposingCorporation = 98000011;
+        const int targetAlliance = 99000002;
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId, target])))
+        {
+            action.Pilots.Find(f.PilotId)!.CorporationId = sourceCorporation;
+            action.Pilots.Find(target)!.CorporationId = targetCorporation;
+            action.Add(
+                new SavedCorporation
+                {
+                    Id = sourceCorporation,
+                    Name = "Support",
+                    Ticker = "SUP",
+                    CeoId = f.PilotId,
+                    CreatorId = f.PilotId,
+                }
+            );
+            action.Add(
+                new SavedCorporation
+                {
+                    Id = targetCorporation,
+                    Name = "Fleet",
+                    Ticker = "FLT",
+                    CeoId = target,
+                    CreatorId = target,
+                }
+            );
+            action.Add(
+                new SavedAlliance
+                {
+                    Id = targetAlliance,
+                    Name = "Defense Alliance",
+                    Ticker = "DFA",
+                    CreatorId = target,
+                    CreatorCorporationId = targetCorporation,
+                }
+            );
+            action.Add(new SavedAllianceMember { AllianceId = targetAlliance, CorporationId = targetCorporation });
+            action.Add(
+                new SavedCorporationWar
+                {
+                    Id = 1,
+                    AttackerId = opposingCorporation,
+                    DefenderId = targetAlliance,
+                    DeclaredAt = f.Clock.Now - TimeSpan.TicksPerDay,
+                    StartsAt = f.Clock.Now,
+                    Mutual = true,
+                }
+            );
+            var combat = CrimewatchPersistence.State(action, target);
+            combat.SystemId = 30000142;
+            combat.PvpUntil = f.Clock.Now + TimeSpan.TicksPerMinute;
+            action.Commit();
+        }
+        var blocked = Assert.Throws<InvalidDataException>(() => Activate(f, module, DogmaEffect.RemoteSensorBooster));
+        Assert.Contains("safety", blocked.Message);
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId, target])))
+        using (CatalogDbContext catalog = new(f.CatalogPath))
+        {
+            Assert.Null(action.Set<ModuleCooldown>().Find(module));
+            Assert.Equal(1000, action.Set<ShipEnergy>().Find(sourceShip)!.Charge);
+            var source = action.Pilots.Find(f.PilotId)!;
+            source.SafetyLevel = ShipSafetyLevel.Disabled;
+            action.Set<Account>().Find(source.AccountId)!.CloneGrade = AccountCloneGrade.Omega;
+            Assert.Equal(
+                new AssistanceDecision(penalty, true),
+                AssistancePersistence.Check(action, catalog, source, action.Pilots.Find(target)!, f.Clock.Now)
+            );
+            source.SafetyLevel = ShipSafetyLevel.Full;
+            action.Add(new SavedAllianceMember { AllianceId = targetAlliance, CorporationId = sourceCorporation });
+            action.Commit();
+        }
+        Assert.Equal(985, Activate(f, module, DogmaEffect.RemoteSensorBooster).Capacitor, 8);
+        var state = f.Db.Services.GetRequiredService<IPilotCrimewatch>().Read(f.PilotId, 30000142);
+        Assert.True(state.Timers.Pvp.Running(f.Clock.Now));
+        Assert.Equal(CrimewatchFlag.None, state.Timers.Flag(f.Clock.Now));
     }
 
     [Fact]

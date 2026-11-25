@@ -8,8 +8,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Corporations;
 
 [Injectable]
-internal sealed class CorporationPublicInfoHandler(INpcCorporationDirectory npcs, IPlayerCorporations players, IAlliances alliances)
-    : ISelectedPilotCallHandler
+internal sealed class CorporationPublicInfoHandler(
+    INpcCorporationDirectory npcs,
+    IPlayerCorporations players,
+    IAlliances alliances,
+    ICorporationWars wars
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -30,7 +34,11 @@ internal sealed class CorporationPublicInfoHandler(INpcCorporationDirectory npcs
                 throw new InvalidDataException("Choose a valid corporation.");
             }
             return players.Read((int)id) is { } player
-                ? new CorporationPublicInfoReply(player) { AllianceId = alliances.Affiliation(player.Id) }
+                ? new CorporationPublicInfoReply(player)
+                {
+                    AllianceId = alliances.Affiliation(player.Id),
+                    AllowWar = wars.IsEligible(player.Id),
+                }
                 : new CorporationPublicInfoReply(npcs.Read((int)id));
         }
         catch (InvalidDataException error)
@@ -59,6 +67,7 @@ internal sealed record CorporationPublicInfoReply(
 ) : BlueModel
 {
     internal int? AllianceId { get; init; }
+    internal bool AllowWar { get; init; }
 
     internal CorporationPublicInfoReply(PlayerCorporation corporation)
         : this(
@@ -120,7 +129,7 @@ internal sealed record CorporationPublicInfoReply(
                 ["memberCount"] = MemberCount,
                 ["allianceID"] = AllianceId,
                 ["deleted"] = Deleted,
-                ["allowWar"] = false,
+                ["allowWar"] = AllowWar,
             }
         );
 }

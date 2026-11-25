@@ -83,6 +83,8 @@ internal sealed record StructureMapRow(StructureSnapshot Structure, int? SunId) 
 
 internal sealed record StructureInfoReply(StructureSnapshot Structure, bool Access, bool NativeInstance = true) : BlueModel
 {
+    internal IReadOnlyList<long> WarIds { get; init; } = [];
+
     public override object ToBlue()
     {
         var s = Structure;
@@ -94,7 +96,7 @@ internal sealed record StructureInfoReply(StructureSnapshot Structure, bool Acce
             ["solarSystemID"] = s.SystemId,
             ["itemName"] = new BlueUnicode(s.Name),
             ["inSpace"] = s.State != StructureState.Unanchored,
-            ["wars"] = new List<object?>(),
+            ["wars"] = new BlueList<long>(WarIds),
             ["services"] = Access ? s.Services.ToDictionary(service => (long)service, _ => (object?)0d) : new Dictionary<long, object?>(),
             ["state"] = (int)s.State,
             ["stateTimerStart"] = s.TimerEnd.HasValue ? s.StateStartedAt : null,

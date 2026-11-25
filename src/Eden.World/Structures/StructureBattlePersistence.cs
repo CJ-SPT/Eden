@@ -4,6 +4,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Structures;
@@ -122,7 +123,14 @@ internal static class StructureBattlePersistence
             throw new InvalidOperationException("Structure battles require the resident world.");
         }
         var before = Read(world, catalog, structure);
-        var hit = StructureCombatRules.Apply(Context(world, catalog, structure, now), before, damage, now);
+        var context = Context(world, catalog, structure, now);
+        context = context with
+        {
+            WarHeadquarters =
+                context.Security >= StructureRules.HighSecurityBoundary
+                && CorporationWarStore.IsActiveWarHeadquarters(world, structure.Id, now),
+        };
+        var hit = StructureCombatRules.Apply(context, before, damage, now);
         if (hit.Battle.State == StructureState.Onlining && structure.HasCore)
         {
             hit = hit with { Battle = hit.Battle with { EndsAt = hit.Battle.RepairAt } };

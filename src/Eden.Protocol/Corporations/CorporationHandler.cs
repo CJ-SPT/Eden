@@ -61,6 +61,10 @@ internal sealed partial class CorporationHandler(
         {
             context.ReleaseReference("allianceRegistry");
         }
+        if ((context.Pilot.Identity.AllianceId ?? context.Pilot.CorpId) != (identity.AllianceId ?? identity.Id))
+        {
+            context.ReleaseReference("warRegistry");
+        }
         context.Flight.UpdateCorporation(identity);
         context.Roster = context.Roster.Select(p => p.PilotId == context.Pilot.PilotId ? context.Pilot : p).ToArray();
     }
@@ -221,7 +225,7 @@ internal sealed record PlayerCorporationMemberReply(CorporationMember Member) : 
     }
 }
 
-internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : BlueModel
+internal sealed record PlayerCorporationReply(PlayerCorporation Corporation, bool AllowWar = false) : BlueModel
 {
     internal static BlueConstructor Descriptor() =>
         BlueRows.Descriptor([
@@ -302,7 +306,7 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
                     logo.Color2,
                     logo.Color3,
                     logo.Typeface,
-                    false,
+                    AllowWar,
                     divisions["division1"],
                     divisions["division2"],
                     divisions["division3"],

@@ -2,13 +2,14 @@ using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Alliances;
 
 [Injectable]
-internal sealed class AllianceBillingHandler(IAllianceBilling billing) : ISelectedPilotCallHandler
+internal sealed class AllianceBillingHandler(IAllianceBilling billing, ICorporationBilling corporationBilling) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -32,9 +33,10 @@ internal sealed class AllianceBillingHandler(IAllianceBilling billing) : ISelect
             switch (method, args)
             {
                 case ("GetBills", []):
-                    return new BlueList<AllianceBillReply>(
-                        billing.Bills(actor).Where(b => b.PaidAt is null).Select(b => new AllianceBillReply(b)).ToArray()
-                    );
+                    return new BlueList<BlueModel>([
+                        .. billing.Bills(actor).Where(b => b.PaidAt is null).Select(b => new AllianceBillReply(b)),
+                        .. corporationBilling.WarInvoices(actor, alliance: true).Select(invoice => new CorporationWarBillReply(invoice)),
+                    ]);
                 case ("GetBillsReceivable", []):
                     _ = billing.Bills(actor);
                     return BlueEmpty.List;
@@ -48,7 +50,10 @@ internal sealed class AllianceBillingHandler(IAllianceBilling billing) : ISelect
                     {
                         throw new InvalidDataException("Choose a corporation wallet division.");
                     }
-                    billing.Pay(actor, id, (int)key);
+                    if (!corporationBilling.PayWarInvoice(actor, id, (int)key, alliance: true))
+                    {
+                        billing.Pay(actor, id, (int)key);
+                    }
                     return PilotCallResult.None;
                 default:
                     throw new InvalidDataException("Invalid alliance billing request.");

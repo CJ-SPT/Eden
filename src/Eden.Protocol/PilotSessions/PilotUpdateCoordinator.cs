@@ -104,7 +104,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null,
     ShipCloneMonitor? shipClones = null,
     Eden.Protocol.Structures.StructureWeaponHandler? structureWeapons = null,
-    Eden.Protocol.Exploration.IncursionAgencyMonitor? incursionAgency = null
+    Eden.Protocol.Exploration.IncursionAgencyMonitor? incursionAgency = null,
+    CorporationWarMonitor? corporationWars = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -113,6 +114,7 @@ internal sealed class PilotUpdateCoordinator(
         || hacking?.IsMonitoring == true
         || overload.IsMonitoring
         || corporations.IsMonitoring
+        || corporationWars?.IsMonitoring == true
         || fleets.IsMonitoring
         || bookmarks.IsMonitoring
         || accessGroups.IsMonitoring
@@ -196,6 +198,7 @@ internal sealed class PilotUpdateCoordinator(
         accessGroups.Reset();
         savedFittings.Reset();
         incursionAgency?.Reset();
+        corporationWars?.Reset();
         corporationContacts.Reset();
         chat.Dispose();
         fleets.Dispose();
@@ -338,6 +341,7 @@ internal sealed class PilotUpdateCoordinator(
         using (SessionPerformance.Phase("update.background"))
         {
             corporations.Advance(context);
+            corporationWars?.Poll(context);
             structureControl?.Advance(context);
             assetSafety?.Advance(context);
             corporationWallet.Advance(context);

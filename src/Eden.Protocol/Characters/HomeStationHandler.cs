@@ -138,7 +138,8 @@ internal sealed record HomeStationChanged(int Id) : PilotNotification("OnHomeSta
 internal sealed class NpcCorporationHandler(
     INpcCorporationDirectory corporations,
     ICharacterDirectory characters,
-    IPlayerCorporations players
+    IPlayerCorporations players,
+    ICorporationWars wars
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -174,7 +175,9 @@ internal sealed class NpcCorporationHandler(
                 ("corpmgr", [long corporation]) when corporation is > 0 and <= int.MaxValue => (int)corporation,
                 _ => throw new InvalidDataException("Choose a valid NPC corporation."),
             };
-            return players.Read(id) is { } player ? new PlayerCorporationReply(player) : new NpcCorporationReply(corporations.Read(id));
+            return players.Read(id) is { } player
+                ? new PlayerCorporationReply(player, wars.IsEligible(player.Id))
+                : new NpcCorporationReply(corporations.Read(id));
         }
         catch (InvalidDataException error)
         {

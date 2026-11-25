@@ -151,6 +151,11 @@ recruitment, shares, dividends, voting and CEO succession. Alliance members can 
 executor, and the executor can transfer EverMarks to member corporations.
 [Corporation features](corporations.md) · [Alliance EverMark eligibility](protocol/alliances.md#alliance-membership-age-and-evermark-donations)
 
+Player corporations and alliances can declare wars from the native Corporation window. Standard wars require structure
+ownership on both sides, an eligible high-security War HQ, and 500 million ISK per week. Mutual wars use invitations and
+have no fee or HQ requirement. Combat becomes legal after 24 hours and remains legal through the 24-hour cooldown.
+[Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
+
 ## Travel and navigation
 
 Focused Heavy Interdiction Cruiser scripts prevent combat capitals and Capital Industrial Ships from jumping through

@@ -69,7 +69,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         long now
     )
     {
-        CheckJoin(world, pilot, corporation);
+        CheckJoin(world, pilot, corporation, now);
         if (!corporation.Snapshot(0).Details.ApplicationsEnabled)
         {
             throw new InvalidDataException("This corporation is not accepting applications.");
@@ -121,7 +121,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
 
     internal static SavedCorporationApplication SubmitInvitation(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
     {
-        CheckJoin(world, pilot, corporation);
+        CheckJoin(world, pilot, corporation, now);
         var application = world
             .Filter<SavedCorporationApplication>(a => a.PilotId == pilot.Id)
             .SingleOrDefault(a => a.CorporationId == corporation.Id && !CorporationMembershipRules.Closed(a.Status));
@@ -209,7 +209,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         );
         if (status is CorporationApplicationStatus.Joined or CorporationApplicationStatus.Offered)
         {
-            CheckJoin(world, pilot, corporation);
+            CheckJoin(world, pilot, corporation, now);
         }
         if (status == CorporationApplicationStatus.Joined)
         {
@@ -402,7 +402,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
     }
 
-    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation)
+    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
     {
         CorporationMembershipRules.CheckJoin(
             pilot.CorporationId == corporation.Id,
@@ -410,6 +410,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             world.Pilots.Count(p => p.CorporationId == corporation.Id),
             corporation.MemberLimit
         );
+        if (CorporationWarStore.PreventsRejoining(world, pilot.Id, corporation.Id, now))
+        {
+            throw new InvalidDataException("Wait seven days after leaving the corporation or until its war ends before rejoining.");
+        }
         MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporation.Id);
     }
 

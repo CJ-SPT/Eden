@@ -325,6 +325,21 @@ internal sealed class PilotCallRouter(
                 return new PilotCallResult.Failure("Bind your current alliance registry.");
             }
             if (
+                service == "warRegistry"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    // Build 3662168 eveMoniker.GetWarEx supplies (ownerID, isMaster).
+                    || args[0] is not object?[] { Length: 2 } warBind
+                    || !Equals(warBind[0], (long)(context.Pilot.Identity.AllianceId ?? context.Pilot.CorpId))
+                    || warBind[1] is not (1L or true)
+                    || keywords is { Count: > 0 }
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind your current war registry.");
+            }
+            if (
                 service == "officeManager"
                 && method is "MachoResolveObject" or "MachoBindObject"
                 && (
@@ -442,6 +457,7 @@ internal sealed class PilotCallRouter(
                             or "planetOrbitalRegistryBroker"
                             or "corpRegistry"
                             or "allianceRegistry"
+                            or "warRegistry"
                         ? PilotBindingLifetime.Pilot
                         : PilotBindingLifetime.Location
                 );

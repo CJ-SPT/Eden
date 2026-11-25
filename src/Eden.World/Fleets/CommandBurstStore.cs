@@ -165,18 +165,21 @@ internal sealed partial class CommandBurstStore(WorldDatabase database, ICoopera
                         catalog.RequireItem(target.ActiveShip.TypeId).Radius ?? 0,
                         module.Radius
                     )
-                    || highsec
-                        && (
-                            HasNeutralEngagement(world, pilotId, target.Id, now)
-                            || MilitiaRules.IsThirdPartyCombat(
-                                militia,
-                                MilitiaEnlistmentStore.Effective(world, target),
-                                world.Set<SavedCrimewatch>().Find(target.Id)?.PvpUntil > now
-                            )
-                        )
                 )
                 {
                     continue;
+                }
+                if (highsec)
+                {
+                    bool inCombat = world.Set<SavedCrimewatch>().Find(target.Id)?.PvpUntil > now;
+                    if (
+                        HasNeutralEngagement(world, pilotId, target.Id, now)
+                        || MilitiaRules.IsThirdPartyCombat(militia, MilitiaEnlistmentStore.Effective(world, target), inCombat)
+                        || AssistancePersistence.IsNeutralWarAssistance(world, source, target, inCombat, now)
+                    )
+                    {
+                        continue;
+                    }
                 }
                 recipients.Add(candidate.ShipId);
             }

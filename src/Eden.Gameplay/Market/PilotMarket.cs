@@ -136,6 +136,7 @@ public enum WalletEntryType
 
     // Build 3662168 appConst.refAllianceRegistrationFee and refAllianceMaintainanceFee.
     AllianceRegistration = 48,
+    WarFee = 49,
     AllianceMaintenance = 50,
 
     // Build 3662168 appConst.refCorporationAdvertisementFee.

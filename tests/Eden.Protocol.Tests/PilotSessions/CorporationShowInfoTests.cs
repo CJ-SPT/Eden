@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -108,10 +109,12 @@ public sealed class CorporationShowInfoTests(ITestOutputHelper output)
             Assert.Null(founded["allianceID"]);
             Assert.Equal(db.Services.GetRequiredService<IPlayerCorporations>().Read(corporation)!.CreatedAt, founded["startDate"]);
         }
-        Assert.Empty(Assert.IsType<List<object?>>(replies[15]));
+        var cachedWars = Assert.IsType<BlueInstance>(replies[15]);
+        Assert.Equal("carbon.common.script.net.objectCaching.CachedMethodCallResult", cachedWars.Name);
+        Assert.Equal(BlueMarshal.Encode(new CorporationWarHistoryReply([]).Rows()), BlueRead.Bytes(BlueRead.Tuple(cachedWars.State, 3)[1]));
         var wars = Assert.IsType<Dictionary<long, object?>>(replies[16]);
         Assert.Equal(playerCorporation ? 2 : 1, wars.Count);
-        Assert.All(wars.Values, value => Assert.Empty(Assert.IsType<List<object?>>(value)));
+        Assert.All(wars.Values, value => Assert.Empty(Assert.IsType<Dictionary<string, object?>>(value)));
         Assert.Equal(NpcCorporation, db.Store.FindPilot(1000002)!.CorpId);
         using WorldDbContext saved = new(db.Path);
         Assert.Empty(saved.Set<MarketExecution>());
@@ -163,7 +166,7 @@ public sealed class CorporationShowInfoTests(ITestOutputHelper output)
         );
         var wars = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(result.Reply)));
         Assert.Equal(new long[] { 1000035, NpcCorporation }, wars.Keys);
-        Assert.All(wars.Values, value => Assert.Empty(Assert.IsType<List<object?>>(value)));
+        Assert.All(wars.Values, value => Assert.Empty(Assert.IsType<Dictionary<string, object?>>(value)));
         Assert.Same(PilotCallResult.Unsupported, fixture.Call("warsInfoMgr", "DeclareWar", [NpcCorporation]));
         Assert.Empty(fixture.Context.Notifications);
     }

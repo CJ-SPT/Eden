@@ -1,6 +1,8 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
@@ -247,6 +249,86 @@ public sealed class CrimewatchTests
     public void FlaggedPilotsAndOutlawsCanBeEngagedWithFullSafety(CrimewatchFlag flag, bool outlaw)
     {
         Assert.Equal(new(CrimewatchFlag.None, true), CrimewatchRules.Decide(new(1, ShipSafetyLevel.Full, true, true, flag, outlaw, false)));
+    }
+
+    [Fact]
+    public void AllianceWarAllowsGreenSafetyTackleOnlyDuringHostilities()
+    {
+        using Fixture fixture = TackleTests.Prepare(526);
+        long module = fixture.Fit(526);
+        Security(fixture, .8);
+        Space(fixture);
+        using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
+        using ResidentFitCache fits = new(new(fixture.Db.Path));
+        live.Economy.Warm();
+        const int attacker = 98000001;
+        const int defender = 98000002;
+        const int alliance = 99000001;
+        long starts = fixture.Clock.Now + TimeSpan.TicksPerSecond;
+        long ends = starts + TimeSpan.TicksPerDay;
+        using (var action = live.Economy.Begin(new(pilots: [fixture.PilotId, WingPilot])))
+        {
+            action.Pilots.Find(fixture.PilotId)!.CorporationId = attacker;
+            action.Pilots.Find(WingPilot)!.CorporationId = defender;
+            action.Add(
+                new SavedCorporation
+                {
+                    Id = attacker,
+                    Name = "Attackers",
+                    Ticker = "ATK",
+                    CeoId = fixture.PilotId,
+                    CreatorId = fixture.PilotId,
+                }
+            );
+            action.Add(
+                new SavedCorporation
+                {
+                    Id = defender,
+                    Name = "Defenders",
+                    Ticker = "DEF",
+                    CeoId = WingPilot,
+                    CreatorId = WingPilot,
+                }
+            );
+            action.Add(
+                new SavedAlliance
+                {
+                    Id = alliance,
+                    Name = "Defense Alliance",
+                    Ticker = "DFA",
+                    CreatorId = WingPilot,
+                    CreatorCorporationId = defender,
+                }
+            );
+            action.Add(new SavedAllianceMember { AllianceId = alliance, CorporationId = defender });
+            action.Add(
+                new SavedCorporationWar
+                {
+                    Id = 1,
+                    AttackerId = attacker,
+                    DefenderId = alliance,
+                    DeclaredAt = starts - TimeSpan.TicksPerDay,
+                    StartsAt = starts,
+                    EndingAt = starts,
+                    EndsAt = ends,
+                    Mutual = true,
+                }
+            );
+            action.Commit();
+        }
+
+        Assert.Contains("safety", Assert.Throws<InvalidDataException>(() => Attack(fixture, module)).Message);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        _ = Attack(fixture, module);
+        var state = Store(fixture).Read(fixture.PilotId, SystemId);
+        Assert.Equal(CrimewatchFlag.None, state.Timers.Flag(fixture.Clock.Now));
+        Assert.True(state.Timers.Weapons.Running(fixture.Clock.Now));
+        Assert.True(Store(fixture).Read(WingPilot, SystemId).Timers.Pvp.Running(fixture.Clock.Now));
+        Assert.Empty(state.Engagements);
+        Assert.Empty(fixture.Db.Services.GetRequiredService<IPilotSecurityStatus>().History(fixture.PilotId));
+
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(ends - fixture.Clock.Now));
+        Assert.Contains("safety", Assert.Throws<InvalidDataException>(() => Attack(fixture, module)).Message);
     }
 
     [Fact]

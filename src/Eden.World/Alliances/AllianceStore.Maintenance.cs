@@ -1,6 +1,7 @@
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Alliances;
+using Eden.World.Corporations;
 using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -38,6 +39,8 @@ internal sealed partial class AllianceStore
                 alliance is not { ClosedAt: null }
                 || world.Set<SavedCorporation>().Find(application.CorporationId) is not { ClosedAt: null }
                 || world.Set<SavedAllianceMember>().Find(application.CorporationId) is not null
+                || CorporationWarStore.PreventsJoiningAlliance(world, application.CorporationId, now)
+                || CorporationWarStore.IsAttackingJoiningCorporation(world, application.AllianceId, application.CorporationId, now)
                 || MilitiaOrganizationStore.AllianceAdmissionFailure(world, application.CorporationId, application.AllianceId, now)
                     is not null
             )
@@ -60,6 +63,7 @@ internal sealed partial class AllianceStore
                     )
                     .Entity;
                 application.Status = AllianceApplicationStatus.Effective;
+                CorporationWarStore.AdoptDefensiveWars(world, member.CorporationId, alliance.Id, member.JoinedAt);
                 if (world.Set<SavedAllianceLifecycle>().Find(alliance.Id) is { } lifecycle)
                 {
                     lifecycle.ClosureAt = null;

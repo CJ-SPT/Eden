@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Notifications;
@@ -223,6 +224,45 @@ internal sealed record InboxExpertSystemData(int TypeId) : BlueModel
     public override object ToBlue() => new Dictionary<string, object?> { ["typeID"] = TypeId };
 }
 
+internal sealed record InboxCorporationWarData(InboxNotificationType Type, CorporationWarNotificationContent Content, long CreatedAt)
+    : BlueModel
+{
+    public override object ToBlue()
+    {
+        var fields = new Dictionary<string, object?> { ["declaredByID"] = Content.AttackerId, ["againstID"] = Content.DefenderId };
+        if (Content.WarId > 0)
+        {
+            fields["warID"] = Content.WarId;
+        }
+        if (Type == InboxNotificationType.WarMutualInvitation)
+        {
+            fields["expireTimeStamp"] = CreatedAt + CorporationWarRules.InvitationLifetime;
+        }
+        else if (Type == InboxNotificationType.WarMutualAccepted)
+        {
+            fields["time"] = CreatedAt + CorporationWarRules.Warmup;
+        }
+        if (Content.StartsAt is long start)
+        {
+            fields["timeDeclared"] = CreatedAt;
+            fields["timeStarted"] = start;
+            fields["delayHours"] = (int)((start - CreatedAt) / TimeSpan.TicksPerHour);
+            fields["hostileState"] = 0;
+            fields["cost"] = Content.HeadquartersId is null ? 0 : CorporationWarRules.WeeklyFeeCents / MarketDefinitions.CentsPerIsk;
+        }
+        if (Content.HeadquartersId is long headquarters && Content.HeadquartersTypeId is int type)
+        {
+            fields["warHQ"] = new BlueUnicode(Content.HeadquartersName ?? "");
+            fields["warHQ_IdType"] = new object?[] { headquarters, type };
+        }
+        if (Content.EndsAt is long end)
+        {
+            fields["endDate"] = end;
+        }
+        return fields;
+    }
+}
+
 internal sealed record InboxNotificationReply(InboxNotification Notification) : BlueModel
 {
     internal static BlueModel Data(InboxNotification notification) =>
@@ -231,6 +271,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
         : notification.KillRight is { } killRight ? new InboxKillRightData(notification.Type, notification.SenderId, killRight.Right)
         : notification.StructureDelivery is { } delivery ? new InboxStructureDeliveryData(notification.SenderId, delivery)
         : notification.ExpertSystemTypeId is int typeId ? new InboxExpertSystemData(typeId)
+        : notification.CorporationWar is { } war ? new InboxCorporationWarData(notification.Type, war, notification.Created)
         : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>

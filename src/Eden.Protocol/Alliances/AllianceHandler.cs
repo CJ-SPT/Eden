@@ -1,4 +1,5 @@
 using Eden.Gameplay.Alliances;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Market;
@@ -8,7 +9,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Alliances;
 
 [Injectable]
-internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedPilotCallHandler
+internal sealed partial class AllianceHandler(IAlliances alliances, ICorporationWars wars) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -52,9 +53,9 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
                 case ("GetSuggestedAllianceShortNames", [var name]) when service == "corpRegistry":
                     return new AllianceTickerSuggestions(alliances.SuggestTickers(Text(name)));
                 case ("GetAlliance" or "GetAlliancePublicInfo", [long id]) when id is > 0 and <= int.MaxValue:
-                    return new AllianceReply(Require((int)id));
+                    return Reply(Require((int)id));
                 case ("GetAlliance", []):
-                    return new AllianceReply(Require(Current(context)));
+                    return Reply(Require(Current(context)));
                 case ("GetRankedAlliances", [] or [long]):
                     int limit = args is [long count] ? checked((int)Math.Clamp(count, 1, 1000)) : 100;
                     return new AllianceRankingsReply(
@@ -64,6 +65,7 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
                             .OrderByDescending(a => a.MemberCount)
                             .ThenBy(a => a.Id)
                             .Take(limit)
+                            .Select(Reply)
                             .ToArray()
                     );
                 case ("GetAllianceMembers", [long id]) when id is > 0 and <= int.MaxValue:
@@ -96,6 +98,8 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
     }
 
     private Alliance Require(int id) => alliances.Read(id) ?? throw new InvalidDataException("Unknown alliance.");
+
+    private AllianceReply Reply(Alliance alliance) => new(alliance, wars.IsEligible(alliance.Id));
 
     private int Current(PilotCallContext context) =>
         alliances.Affiliation(context.Pilot.CorpId) ?? throw new InvalidDataException("Your corporation is not in an alliance.");

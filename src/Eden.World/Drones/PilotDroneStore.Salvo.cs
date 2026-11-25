@@ -197,7 +197,7 @@ internal sealed partial class PilotDroneStore
         }
         if (StructureCombatTargets.Find(world, target) is { } structure && structure.SystemId == system)
         {
-            StructureCombatTargets.Check(world, catalog, structure, now);
+            StructureCombatTargets.Check(world, catalog, structure, now, pilot.Id);
             return new(
                 target,
                 StructureCombatTargets.Position(structure),

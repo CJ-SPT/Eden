@@ -1,4 +1,6 @@
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
@@ -102,6 +104,55 @@ public sealed class WorldMigrationTests
             Assert.Equal(0, battle.ArmorCapacity);
             Assert.Equal(0, battle.HullCapacity);
             Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        }
+    }
+
+    [Fact]
+    public void Version226AddsCorporationWarStateAndPreservesTheExistingWorld()
+    {
+        using StructureTests.Fixture fixture = new();
+        var structure = fixture.Online();
+        long ship = fixture.ShipId;
+        long cargo = fixture.Item(34, 29);
+        var database = new WorldDatabase(fixture.Db.Path);
+        using (WorldDbContext world = new(database.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                DROP TABLE WorldCorporationWarInvitationSettings;
+                DROP TABLE WorldCorporationWarInvitation;
+                DROP TABLE WorldCorporationWar;
+                PRAGMA user_version=226;
+                """
+            );
+        }
+
+        for (int reopen = 0; reopen < 2; reopen++)
+        {
+            WorldInitialization.Initialize(database, fixture.Clock);
+            using (WorldDbContext world = new(database.Path))
+            {
+                Assert.Equal(227, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+                var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporationWar')");
+                Assert.Contains("InheritedFromWarId", columns);
+                Assert.Contains("InheritedAt", columns);
+            }
+            using LiveWorld live = new(database, fixture.Clock, _ => { });
+            live.Economy.Inspect(world =>
+            {
+                var pilot = world.Pilots.Find(fixture.PilotId)!;
+                Assert.Equal(fixture.CorporationId, pilot.CorporationId);
+                Assert.Equal(ship, pilot.ActiveShipId);
+                Assert.Equal(fixture.PilotId, world.Set<SavedCorporation>().Find(fixture.CorporationId)!.CeoId);
+                var upwell = world.Set<SavedStructure>().Find(structure.Id)!;
+                Assert.Equal(fixture.CorporationId, upwell.CorporationId);
+                Assert.Equal(structure.State, upwell.State);
+                Assert.Equal(29, world.Set<OwnedItem>().Find(cargo)!.Quantity);
+                Assert.Empty(world.Set<SavedCorporationWar>());
+                Assert.Empty(world.Set<SavedCorporationWarInvitation>());
+                Assert.Empty(world.Set<SavedCorporationWarInvitationSettings>());
+                return true;
+            });
         }
     }
 

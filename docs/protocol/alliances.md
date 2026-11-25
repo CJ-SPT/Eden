@@ -5,7 +5,7 @@
 Alliances are corporation associations with resident authority and checkpoint persistence. The original six milestones
 cover identity, governance, billing, diplomacy and shared services. Later records cover
 [sovereignty](sovereignty.md) and [Faction Warfare enlistment](faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026).
-Corporation war declarations remain open.
+[Corporation and alliance wars](corporations.md#corporation-and-alliance-wars) cover executor declarations, billing and alliance membership.
 
 Gameplay references: [UniWiki Alliances](https://wiki.eveuniversity.org/Alliances),
 [corporation diplomacy](https://wiki.eveuniversity.org/Corporation_diplomacy), and

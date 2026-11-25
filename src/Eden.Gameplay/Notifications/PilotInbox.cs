@@ -21,6 +21,12 @@ public enum InboxNotificationType
 
     // Build 3662168 eve.common.script.util.notificationconst.
     StructureItemsDelivered = 199,
+    WarMutualInvitation = 229,
+    WarMutualRejected = 230,
+    WarMutualAccepted = 231,
+    WarDeclared = 232,
+    WarMutualRetracted = 238,
+    WarRetractedByConcord = 239,
     ExpertSystemExpired = 253,
 
     // Build 3662168 notifications.common.notificationconst.
@@ -58,6 +64,17 @@ public sealed record ContactNotificationContent(double Level, string Message);
 
 public sealed record KillRightNotificationContent(KillRight Right);
 
+public sealed record CorporationWarNotificationContent(
+    long WarId,
+    int AttackerId,
+    int DefenderId,
+    long? StartsAt,
+    long? EndsAt,
+    long? HeadquartersId = null,
+    int? HeadquartersTypeId = null,
+    string? HeadquartersName = null
+);
+
 public sealed record StructureDeliveryQuantity(int TypeId, long Quantity);
 
 public sealed record StructureDeliveryContent(
@@ -94,6 +111,7 @@ public sealed record InboxNotification(
 {
     public StructureDeliveryContent? StructureDelivery { get; init; }
     public int? ExpertSystemTypeId { get; init; }
+    public CorporationWarNotificationContent? CorporationWar { get; init; }
 }
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);
@@ -118,6 +136,13 @@ public static class InboxRules
     public const int MaximumUpdated = 100;
     public const int MaximumMessageLength = 120;
     public const int DeliveryBatchSize = 256;
+
+    public static bool IsWar(InboxNotificationType type) =>
+        type
+            is >= InboxNotificationType.WarMutualInvitation
+                and <= InboxNotificationType.WarDeclared
+                or InboxNotificationType.WarMutualRetracted
+                or InboxNotificationType.WarRetractedByConcord;
 
     public static void CheckMessage(string message)
     {

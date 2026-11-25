@@ -20,7 +20,7 @@ public sealed class CorporationFinancialPanelTests
     [Fact]
     public void NativeBillsAndMarketTabsReturnAuthorizedSettingsAndEmptyUnissuedHistory()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         int corporation = Prepare(world);
         using CorporationTestClient client = new(world, 1000001);
         var settings = Settings(Reply(client, "billMgr", "GetAutomaticPaySettings", []), corporation);

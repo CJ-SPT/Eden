@@ -18,8 +18,6 @@ internal sealed class CorporationInformationHandler(
     IAllianceMembership alliances
 ) : ISelectedPilotCallHandler
 {
-    private const int MaximumWarOwners = 1000;
-
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -28,17 +26,7 @@ internal sealed class CorporationInformationHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (
-            (service, method)
-            is not (
-
-                ("corporationSvc", "GetCorpInfo")
-                or
-                ("allianceRegistry", "GetEmploymentRecord")
-                or
-                ("warsInfoMgr", "GetWarsByOwnerID" or "GetWarsByOwners")
-            )
-        )
+        if ((service, method) is not (("corporationSvc", "GetCorpInfo") or ("allianceRegistry", "GetEmploymentRecord")))
         {
             return PilotCallResult.Unsupported;
         }
@@ -47,17 +35,6 @@ internal sealed class CorporationInformationHandler(
             if (keywords is { Count: > 0 })
             {
                 throw new InvalidDataException("Unexpected corporation information arguments.");
-            }
-            if (method == "GetWarsByOwners")
-            {
-                var owners = args is [HashSet<long> ids] ? ids : throw new InvalidDataException("Choose a set of war owners.");
-                if (owners.Count > MaximumWarOwners || owners.Any(owner => owner is <= 0 or > int.MaxValue))
-                {
-                    throw new InvalidDataException("Choose valid war owners within the request limit.");
-                }
-                // The native war cache expects an entry for every requested owner,
-                // including owners with no wars. An empty dictionary causes repeat fetches.
-                return new BlueMap<long, BlueModel>(owners.Order().ToDictionary(owner => owner, _ => (BlueModel)BlueEmpty.List));
             }
             if (args is not [long id] || id is <= 0 or > int.MaxValue)
             {

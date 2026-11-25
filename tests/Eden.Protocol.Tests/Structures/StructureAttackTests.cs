@@ -1,4 +1,5 @@
 using Eden.Data.World.Combat;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
@@ -159,6 +160,72 @@ public sealed class StructureAttackTests
         Assert.Equal(due, wrap.CreatedAt);
         using WorldActionScope custody = Scope(f);
         Assert.Equal(wrap.Id, custody.World.Set<OwnedItem>().Find(personal)!.LocationId);
+    }
+
+    [Fact]
+    public void ActiveWarLetsAHighSecurityTurretHitTheOpposingWarHeadquarters()
+    {
+        using Fixture f = Prepare();
+        var structure = f.Online();
+        long module = Gun(f);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            const string high = "{\"security\":0.9}";
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/solarsystemcontent','30001392',{high})");
+            const string system = "{\"securityStatus\":0.9}";
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30001392',{system})");
+        }
+        long opposingCeo = f.Db.Store.FindPilot(1000002)!.PilotId;
+        using (var prepare = Scope(f))
+        {
+            const int opposing = 98000719;
+            var owner = prepare.World.Set<SavedStructure>().Find(structure.Id)!.CorporationId;
+            prepare.World.Add(
+                new SavedCorporation
+                {
+                    Id = opposing,
+                    Name = "Opposition",
+                    Ticker = "OPP",
+                    CeoId = opposingCeo,
+                    CreatorId = opposingCeo,
+                }
+            );
+            prepare.World.Pilots.Find(f.PilotId)!.CorporationId = opposing;
+            prepare.World.Add(
+                new SavedCorporationWar
+                {
+                    Id = 1,
+                    AttackerId = owner,
+                    DefenderId = opposing,
+                    HeadquartersId = structure.Id,
+                    DeclaredAt = f.Clock.Now - TimeSpan.TicksPerDay,
+                    StartsAt = f.Clock.Now,
+                    BillDueAt = f.Clock.Now + TimeSpan.TicksPerDay,
+                }
+            );
+            prepare.World.Add(
+                new SavedStructureBattle
+                {
+                    StructureId = structure.Id,
+                    Shield = 0.1,
+                    Armor = structure.Profile.Armor,
+                    Hull = structure.Profile.Hull,
+                }
+            );
+            prepare.Commit();
+        }
+        var combat = f.Db.Services.GetRequiredService<IPilotCombat>();
+        var shot = combat.Fire(f.PilotId, module, structure.Id, SpacePosition.Zero, f.Clock.Now, 0.5);
+        Assert.True(shot.Applied > 0);
+        using var read = Scope(f);
+        var headquarters = read.World.Set<SavedStructure>().Find(structure.Id)!;
+        Assert.Equal(StructureState.ArmorReinforced, headquarters.State);
+        Assert.InRange(
+            headquarters.StateEndsAt!.Value - f.Clock.Now,
+            TimeSpan.TicksPerDay - StructureCombatRules.MediumExitJitter,
+            2 * TimeSpan.TicksPerDay + StructureCombatRules.MediumExitJitter
+        );
+        Assert.Equal(CrimewatchFlag.None, read.World.Set<SavedCrimewatch>().Find(f.PilotId)!.Timers().Flag(f.Clock.Now));
     }
 
     [Theory]

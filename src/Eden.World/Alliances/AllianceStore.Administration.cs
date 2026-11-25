@@ -45,6 +45,7 @@ internal sealed partial class AllianceStore
             level,
             wallet?.Cents ?? 0
         );
+        RequireWarAdmission(world, corporation.Id, now);
         if (MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, null, now) is { } failure)
         {
             throw new InvalidDataException(failure);
@@ -91,6 +92,7 @@ internal sealed partial class AllianceStore
                 StartedAt = now,
             }
         );
+        CorporationWarStore.AdoptDefensiveWars(world, corporation.Id, id, now);
         wallet!.Cents = balance;
         world.Add(
             new SavedServicePayment

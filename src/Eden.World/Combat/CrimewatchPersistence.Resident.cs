@@ -9,6 +9,7 @@ using Eden.Gameplay.FactionWarfare;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
+using Eden.World.Corporations;
 using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
@@ -38,17 +39,19 @@ internal static partial class CrimewatchPersistence
         {
             throw new InvalidDataException("The target is protected by a structure tether.");
         }
+        double security = Security(catalog, system);
         var target = world.Set<SavedCrimewatch>().Find(victim.Id)?.Timers() ?? CrimewatchTimers.Empty;
         return CrimewatchRules.Decide(
             new(
-                Security(catalog, system),
+                security,
                 source.SafetyLevel,
                 world.Set<Account>().Find(source.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
                 catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
                 target.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(victim.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
                 Engagement(world, source.Id, victim.Id)?.ExpiresAt > now,
-                MilitiaRules.AreEnemies(MilitiaEnlistmentStore.Effective(world, source), MilitiaEnlistmentStore.Effective(world, victim))
+                MilitiaRules.AreEnemies(MilitiaEnlistmentStore.Effective(world, source), MilitiaEnlistmentStore.Effective(world, victim)),
+                security > 0 && CorporationWarStore.HasActiveWar(world, source.CorporationId, victim.CorporationId, now)
             )
         );
     }
@@ -149,15 +152,21 @@ internal static partial class CrimewatchPersistence
         // Personal deployables carry at most a suspect flag for an unlawful attack.
         var ownerTimers = world.Set<SavedCrimewatch>().Find(owner)?.Timers() ?? CrimewatchTimers.Empty;
         bool authorized = attacker.Id == owner || Engagement(world, attacker.Id, owner)?.ExpiresAt > now;
+        double security = Security(catalog, system);
+        bool war =
+            security > 0
+            && world.Pilots.Find(owner) is { } victim
+            && CorporationWarStore.HasActiveWar(world, attacker.CorporationId, victim.CorporationId, now);
         var decision = CrimewatchRules.Decide(
             new(
-                Math.Min(Security(catalog, system), Math.BitDecrement(CrimewatchRules.HighSecurity)),
+                Math.Min(security, Math.BitDecrement(CrimewatchRules.HighSecurity)),
                 attacker.SafetyLevel,
                 false,
                 false,
                 ownerTimers.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(owner)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
-                authorized
+                authorized,
+                CorporationWarTarget: war
             )
         );
         var state = State(world, attacker.Id);

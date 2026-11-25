@@ -70,7 +70,7 @@ public sealed class AllianceBillingTests
         {
             Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "PayBill", [bill.Id, (long)key]));
             Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "PayBill", [bill.Id, (long)key]));
-            var rows = Assert.IsType<BlueList<AllianceBillReply>>(
+            var rows = Assert.IsType<BlueList<BlueModel>>(
                 Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "GetBills", [])).Reply
             );
             Assert.Empty(rows.Items);

@@ -18,6 +18,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
+using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -423,7 +424,8 @@ internal sealed partial class PilotStructureWeaponStore(
             }
             var flag = world.Set<SavedCrimewatch>().Find(victim.Id)?.Timers().Flag(now) ?? CrimewatchFlag.None;
             bool outlaw = (world.Set<SavedSecurityStatus>().Find(victim.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity;
-            StructureWeaponRules.CheckPlayer(security, flag, outlaw, retaliation);
+            bool war = security > 0 && CorporationWarStore.HasActiveWar(world, source.CorporationId, victim.CorporationId, now);
+            StructureWeaponRules.CheckPlayer(security, flag, outlaw, retaliation, war);
             return victim;
         }
         if (target.Kind != StructureTargetKind.Structure)
@@ -431,13 +433,15 @@ internal sealed partial class PilotStructureWeaponStore(
             throw new InvalidDataException("This defensive launcher cannot attack this target kind yet.");
         }
         var structure = world.Set<SavedStructure>().Find(target.Id)!;
+        bool warTarget = security > 0 && CorporationWarStore.HasActiveWar(world, source.CorporationId, structure.CorporationId, now);
         StructureCombatRules.CheckAttack(
             StructureCatalog.Require(catalog, structure.TypeId),
             security,
             StructureBattlePersistence.Read(world, catalog, structure),
-            retaliation
+            retaliation,
+            warTarget
         );
-        StructureWeaponRules.CheckPlayer(security, CrimewatchFlag.None, false, retaliation);
+        StructureWeaponRules.CheckPlayer(security, CrimewatchFlag.None, false, retaliation, warTarget);
         return null;
     }
 }

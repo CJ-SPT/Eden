@@ -90,9 +90,11 @@ public static class StructureWeaponRules
         return checked(now + (long)ticks);
     }
 
-    public static void CheckPlayer(double security, CrimewatchFlag flag, bool outlaw, bool retaliation)
+    public static void CheckPlayer(double security, CrimewatchFlag flag, bool outlaw, bool retaliation, bool warTarget = false)
     {
         // A structure's green safety belongs to the structure, independently of its operator's private engagements.
-        _ = CrimewatchRules.Decide(new(security, ShipSafetyLevel.Full, false, false, flag, outlaw, retaliation));
+        _ = CrimewatchRules.Decide(
+            new(security, ShipSafetyLevel.Full, false, false, flag, outlaw, retaliation, CorporationWarTarget: warTarget)
+        );
     }
 }

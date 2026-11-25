@@ -1,5 +1,7 @@
 using System.Collections;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -20,14 +22,20 @@ internal sealed class CorporationBillingHandler(ICorporationBilling billing) : I
         if (
             service != "billMgr"
             || method
-                is not ("GetAutomaticPaySettings" or "SendAutomaticPaySettings" or "GetCorporationBills" or "GetCorporationBillsReceivable")
+                is not (
+                    "GetAutomaticPaySettings"
+                    or "SendAutomaticPaySettings"
+                    or "GetCorporationBills"
+                    or "GetCorporationBillsReceivable"
+                    or "PayCorporationBill"
+                )
         )
         {
             return PilotCallResult.Unsupported;
         }
         try
         {
-            if (keywords is { Count: > 0 })
+            if (keywords is { Count: > 0 } && (method != "PayCorporationBill" || keywords.Keys.Any(key => key != "fromAccountKey")))
             {
                 throw new InvalidDataException("Unexpected billing arguments.");
             }
@@ -35,11 +43,29 @@ internal sealed class CorporationBillingHandler(ICorporationBilling billing) : I
             {
                 case ("GetAutomaticPaySettings", []):
                     return new CorporationBillPaymentSettingsReply(billing.Read(context.Pilot.PilotId));
-                case ("GetCorporationBills" or "GetCorporationBillsReceivable", []):
+                case ("GetCorporationBills", []):
+                    return new BlueList<CorporationWarBillReply>(
+                        billing.WarInvoices(context.Pilot.PilotId).Select(invoice => new CorporationWarBillReply(invoice)).ToArray()
+                    );
+                case ("GetCorporationBillsReceivable", []):
                     billing.Read(context.Pilot.PilotId);
-                    // No published Eden service currently issues corporation invoices.
-                    // Wallet transfers and taxes are settled immediately, not unpaid bills.
                     return BlueEmpty.List;
+                case ("PayCorporationBill", [long billId, ..]) when args.Length is 1 or 2:
+                    object? account =
+                        keywords?.GetValueOrDefault("fromAccountKey")
+                        ?? (args.Length == 2 ? args[1] : (long)context.Pilot.Identity.CorporationAccountKey);
+                    if (
+                        account is not long accountKey
+                        || accountKey is < CorporationWalletRules.MasterKey or > CorporationWalletRules.LastKey
+                    )
+                    {
+                        throw new InvalidDataException("Choose a corporation wallet division.");
+                    }
+                    if (!billing.PayWarInvoice(context.Pilot.PilotId, billId, (int)accountKey))
+                    {
+                        throw new InvalidDataException("Choose an outstanding corporation war bill.");
+                    }
+                    return PilotCallResult.None;
                 case ("SendAutomaticPaySettings", [IDictionary owners]) when owners.Count == 1:
                     var owner = owners.Keys.Cast<object>().Single();
                     if (owner is not long corporation || corporation != context.Pilot.CorpId)
@@ -85,6 +111,29 @@ internal sealed class CorporationBillingHandler(ICorporationBilling billing) : I
             return new PilotCallResult.Failure(error.Message);
         }
     }
+}
+
+internal sealed record CorporationWarBillReply(CorporationWarInvoice Invoice) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["billID"] = Invoice.Id,
+                ["billTypeID"] = CorporationWarRules.WarBillType,
+                ["amount"] = Invoice.AmountCents / (double)MarketDefinitions.CentsPerIsk,
+                ["interest"] = 0d,
+                ["debtorID"] = Invoice.DebtorId,
+                ["creditorID"] = AllianceBillingRules.ConcordCorporationId,
+                ["dueDateTime"] = Invoice.DueAt,
+                ["paid"] = 0,
+                ["paidDateTime"] = null,
+                ["paidByOwnerID"] = 0,
+                ["externalID"] = Invoice.DefenderId,
+                ["externalID2"] = Invoice.WarId,
+            }
+        );
 }
 
 internal sealed record CorporationBillPaymentSettingsReply(CorporationBillPaymentSettings Settings) : BlueModel

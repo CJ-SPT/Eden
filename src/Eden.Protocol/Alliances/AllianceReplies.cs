@@ -25,7 +25,7 @@ internal sealed record AllianceTickerTable(IReadOnlyList<AllianceTickerRow> Rows
     public override object ToBlue() => new object?[] { new object?[] { "allianceID", "shortName" }, new BlueList<AllianceTickerRow>(Rows) };
 }
 
-internal sealed record AllianceReply(Alliance Alliance) : BlueModel
+internal sealed record AllianceReply(Alliance Alliance, bool AllowWar = false) : BlueModel
 {
     internal static BlueConstructor Descriptor() =>
         BlueRows.Descriptor([
@@ -64,17 +64,17 @@ internal sealed record AllianceReply(Alliance Alliance) : BlueModel
                     Alliance.CreatedAt,
                     Alliance.MemberCount,
                     false,
-                    false,
+                    AllowWar,
                     Alliance.ClosedAt.HasValue,
                 },
             ]
         );
 }
 
-internal sealed record AllianceRankingsReply(IReadOnlyList<Alliance> Alliances) : BlueModel
+internal sealed record AllianceRankingsReply(IReadOnlyList<AllianceReply> Alliances) : BlueModel
 {
     // all_cso_alliance caches the returned iterable inside its own rankedAlliances KeyVal.
-    public override object ToBlue() => Alliances.Select(a => (object?)new AllianceReply(a).ToBlue()).ToList();
+    public override object ToBlue() => Alliances.Select(alliance => (object?)alliance.ToBlue()).ToList();
 }
 
 internal sealed record AllianceMembersReply(IReadOnlyList<AllianceMember> Members) : BlueModel
