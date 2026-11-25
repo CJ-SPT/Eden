@@ -167,20 +167,20 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress. Resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, ECM, target painters, sensor dampeners, stasis webifiers and focused warp tackle are implemented. Weapon disruption and area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress. Resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, ECM, target painters, sensor dampeners, weapon disruption, stasis webifiers and focused warp tackle are implemented. Area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
 ### Structures gap audit
 
 The defense branch covers resident gunner leases, fitting, target locks, ammunition, defensive missiles against ships and
-drones, capacitor warfare, targeted ECM, painters, dampeners and webs. The integration uses that lease for Standup fighter assignment and automatic
+drones, capacitor warfare, targeted ECM, painters, dampeners, weapon disruption and webs. The integration uses that lease for Standup fighter assignment and automatic
 recall. Ship locks on the structure survive a change of gunner. Controlled flight snapshots use the structure as the
 ballpark ego while the pilot's personal ship stays docked. Schema 214 adds structure tackle source support to main's
 schema 213 and also accepts the earlier structure-branch format.
 
 | Area | Existing coverage and remaining gaps |
 | --- | --- |
-| Defense | Launch and recall of Standup fighters, guided missiles, ECM, painters, dampeners, webs, neutralizers and scripted warp tackle work. Weapon disruption, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Defense | Launch and recall of Standup fighters, guided missiles, ECM, painters, dampeners, weapon disruptors, webs, neutralizers and scripted warp tackle work. Point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
 | Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
 | Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
 | Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
@@ -213,6 +213,47 @@ Not performed; agent client testing is disabled.
 
 Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
 the other ship retains its lock on the Astrahus.
+
+### Standup Weapon Disruptors
+
+The Standup Weapon Disruptor I and II apply tracking and missile guidance disruption together on a locked ship or NPC.
+They use structure green safety and pay capacitor at the start of each five-second cycle. Target resistance and stacking
+penalties use the shared weapon-disruption calculation. Falloff scales both sets of modifiers continuously to half at
+one falloff, the inclusive activation limit. A gunner release, target loss or cycle expiry clears both effects.
+
+| Module | Type | Cost | Optimal | Falloff | Turret optimal, falloff and tracking | Missile velocity / flight time | Explosion velocity / radius |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Standup Weapon Disruptor I | 35945 | 400 GJ | 150 km | 75 km | −60% each | −37% / −30% | −50% / +50% |
+| Standup Weapon Disruptor II | 47364 | 480 GJ | 180 km | 90 km | −66% each | −41% / −33% | −55% / +55% |
+
+Build 3662168 uses group 1719, native effect 6686 (`structureModuleEffectWeaponDisruption`), `effects.Laser` and
+weapon disruption resistance 2113. Both profiles run without scripts. The victim receives the `ewTrackingDisrupt`
+notification used for the combined module. EVE.js 261108.1 maps the native effect to its tracking-disruption
+profile and applies that profile's turret and loaded-missile modifiers in `space/modules/hostileModuleRuntime.js`,
+SHA-256 `DB747AA99975012526F576E6042BA2C1C6D7D664C58CC50E0DC31FC5E550D93F`.
+[EVE University Upwell fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures)
+
+**Automated validation**
+
+An isolated build of `31456b54` plus this change passed without warnings or errors in 39.27 seconds.
+The exact filters
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureWeaponDisruptionTests.StandupDisruptorsUsePinnedTurretAndMissileStrengthAtFalloff`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureWeaponDisruptionTests.NativeStandupDisruptorChangesFittedTurretAndLoadedMissileTogether`
+passed all three cases in 10.30 seconds. The tests cover all seven modifiers on the two NPC-facing profiles and on
+a pilot ship through native activation, including green safety, the victim notification and restoration on release.
+The selection covering `StructureWeaponDisruptionTests`, `StructureTargetEffectsTests`, `StructureEcmTests`, and
+`PlayerEwarTests.TrackingAndGuidanceDisruptionChangeOnlyMatchingWeaponsAndLoadedMissiles` passed all 15 cases in
+14.29 seconds. `AreaWeaponTests.ProjectorFamiliesApplyTheirActualEffectAndPersistMultipleRecipients` passed
+six cases in 11.12 seconds.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Apply the disruptor to a target with a turret and a loaded missile launcher and compare both sets of weapon attributes.
 
 ### Standup Target Painters and Sensor Dampeners
 

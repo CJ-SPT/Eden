@@ -25,6 +25,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Personal contacts and online status](#personal-contacts-and-online-status)
 - [Personal calendar invitation CSPA](#personal-calendar-invitation-cspa)
 - [Persistent personal calendar](#persistent-personal-calendar)
+- [Contact notification CSPA](#contact-notification-cspa)
 - [Persistent notification inbox and contact messages](#persistent-notification-inbox-and-contact-messages)
 - [Persistent mailing lists](#persistent-mailing-lists)
 - [Mailing-list organization access](#mailing-list-organization-access)
@@ -598,6 +599,38 @@ World version **48** adds `WorldCalendarEvent`, `WorldCalendarParticipant` and `
 
 **Optional maintainer checks.** Create and open a personal event, invite another pilot, and inspect the participant response after reopening. Observe rescheduling, cancellation and removal in a second client, then reconnect. Native calendar rendering, editor interaction and notification presentation remain unverified.
 
+## Contact notification CSPA
+
+The personal address book respects the recipient's CSPA setting when **Send Notification** is selected on an add
+or edit. Quiet changes remain free. Same-corporation senders and the recipient's contacts are exempt from the
+fee and the block-unknown setting. An explicit block on either side prevents notification delivery.
+
+Eden checks the current amount and wallet on approval. An updated fee requires fresh approval. The contact, task
+progress, notification, wallet debit and CONCORD journal entry commit together. Rejecting a send leaves the latest
+standing and watchlist as saved. An add to an existing contact rejects before it can send or charge again.
+
+Pinned build **3662168**, archive SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`,
+uses `CSPAChargedAction('CSPAContactNotifyCheck', ...)` for personal `AddContact` and `EditContact` in
+`addressbookService.pyj`. The agent and organization contact branches use separate calls. The approval uses the
+existing `ContactCostNotApproved` and `approvedCost` wire contract. EVE.js **261108.1**'s `charMgrService.js`,
+SHA-256 `82731fcebb67a53a6723f95464a7ffa838bc98c57344fa6c64b0e3a7a90858f1`, confirms the five contact arguments
+and notification types **89** and **90**. [EVE University Contacts](https://wiki.eveuniversity.org/Contacts#Adding_Contacts) ·
+[EVE University CSPA](https://wiki.eveuniversity.org/EVE_Mail#CONCORD_Spam_Prevention_Act)
+
+**Automated validation.** Both exact resident-world cases passed against `31456b54` with this change applied.
+`NativePaidContactAddCommitsNotificationWalletAndProgressOnceAcrossReopen` and
+`NativeContactEditRequotesAndPreservesTheLatestStandingOnRejection` took 13.49 seconds of test command time.
+They exercise the native quote, insufficient funds, an intervening edit, blocks and exemptions, duplicate-add
+rejection, and checkpoint reopen of the fee, contact, task and notification. The build took 42.23 seconds with
+zero warnings or errors. The affected `ContactsServiceTests`, `PilotContactsTests`, `InboxServiceTests`,
+`Persistence.InboxTests`, `MailContactPolicyTests` and `CalendarContactPolicyTests` passed all 25 cases in
+15.73 seconds of test command time.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Add a contact with **Send Notification** enabled, approve a configured CSPA charge,
+then inspect the recipient's notification and sender's journal.
+
 ## Persistent notification inbox and contact messages
 
 Replaced the always-empty `notificationMgr.GetAllNotifications` route with a private saved inbox. Native history calls use **`GetAllNotifications(fromID=...)`**: pinned `NotificationUIService._NotificationProvider` supplies `lastClearedNotificationId`, so this is an **exclusive newer-than cutoff**, not a request for older pages. None and zero fetch all visible history. Other reads are `GetUnprocessed()` and `GetByGroupID(groupID)`. Replies are lists of explicit KeyVal DTOs with `notificationID`, `typeID`, `senderID`, `receiverID`, Boolean `processed`, FILETIME `created` and typed `data`.
@@ -606,7 +639,7 @@ The native write calls `MarkAsProcessed([ids])`, `MarkAllAsProcessed()`, `MarkGr
 
 The first server producers are the contact form's optional **Send Notification** add/edit actions. `notificationTypeContactAdd` is **89** and `notificationTypeContactEdit` is **90**. Inert inspection of `contactManagementWindow.pyj` establishes the **120-character** single-line message limit. `contactFormatters.pyj` consumes the known `level` and `message` payload. Both history DTOs and live events carry an explicit dictionary with the standing snapshot and Unicode message. Pinned `TryUnYamlNotificationData` only parses string payloads and accepts an already-decoded mapping, so no YAML parser or executable serializer is introduced. Empty messages are valid. Silent add/edit calls still create no notification. NPC agent bookmarks do not emit personal-player notifications.
 
-Contact changes, the contact-added task event and the recipient's notification commit together. A blocked sender/recipient pair, invalid text, failed inbox write, unknown pilot or rejected contact operation leaves all three unchanged. Both existing standing and watchlist flags are retained on a failed edit. The contact remains private to its owner; sending a notification does not add a reciprocal contact. The message is a saved snapshot, so subsequent rating changes do not rewrite earlier notifications. Paid CSPA settings are not configured or implemented, and these sends do not charge ISK.
+Contact changes, the contact-added task event and the recipient's notification commit together. A blocked sender/recipient pair, invalid text, failed inbox write, unknown pilot or rejected contact operation leaves all three unchanged. Both existing standing and watchlist flags are retained on a failed edit. The contact remains private to its owner; sending a notification does not add a reciprocal contact. The message is a saved snapshot, so subsequent rating changes do not rewrite earlier notifications. Paid sends are covered by [contact notification CSPA](#contact-notification-cspa).
 
 Connected recipients receive `OnNotificationReceived(notificationID, typeID, senderID, created, data)`. A per-connection observer starts at the current durable ID on pilot selection, resets at logoff and drains at most **256 rows** per tick. Tombstones and already-read rows advance that cursor without being reannounced as unread. A history/unread/group fetch that wins the race with delivery records only its returned IDs, preventing a duplicate push without dropping notifications outside the fetched group. Remaining batches drain without requiring another publication. A process-local revision signal publishes only after a successful contact/notification commit and avoids SQLite polling on unchanged idle ticks. The native read/delete methods update their own client caches, so the server does not send duplicate deletion events. Offline recipients fetch saved history after reconnecting.
 
@@ -698,8 +731,8 @@ Reference: pinned archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF491741833
 The native **Mail & Communications Settings** panel can charge unknown senders up to **1,000,000 ISK** per message or
 accept mail only from known pilots. The default fee is zero. A recipient's own corporation and their personal
 contacts are exempt. An explicit block still rejects the message. The policy applies to explicitly addressed
-characters, including those listed alongside a group address. Personal calendar invitations use the same policy.
-Mailing list and organization audiences, fleet invitations, conversations and contact notifications use their existing rules.
+characters, including those listed alongside a group address. Personal calendar invitations and contact notifications
+use the same policy. Mailing list and organization audiences, fleet invitations and conversations use their existing rules.
 
 The first send that requires payment returns a native confirmation dialog. Eden recalculates the total and checks
 the sender's current wallet on the approved send. A changed fee requires a fresh approval. Delivery, sender wallet

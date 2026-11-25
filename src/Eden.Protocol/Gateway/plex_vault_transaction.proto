@@ -1,0 +1,16 @@
+syntax = "proto3";
+package eve_public.plex.vault.transaction;
+option csharp_namespace = "Eden.Protocol.Gateway.PlexVault.Transactions";
+
+import "google/protobuf/timestamp.proto";
+import "plex.proto";
+
+message Identifier {
+  int64 sequential = 1;
+}
+
+message Attributes {
+  google.protobuf.Timestamp timestamp = 1;
+  eve_public.plex.Currency amount_transferred = 2;
+  eve_public.plex.Currency resulting_balance = 3;
+}

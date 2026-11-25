@@ -3,6 +3,7 @@ using System.Net;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.FactionWarfare;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Maps;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
@@ -23,7 +24,8 @@ public sealed class GatewayRequests(
     Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyUpdates = null,
     IFactionWarzones? factionWarzones = null,
     IPersonalSkillPlans? personalSkillPlans = null,
-    ShipSkinGateway? shipSkins = null
+    ShipSkinGateway? shipSkins = null,
+    IPlexVault? plexVault = null
 )
 {
     private readonly ConcurrentDictionary<long, ConcurrentDictionary<int, MilitiaAdvantageState>> _factionObservations = new();
@@ -80,10 +82,10 @@ public sealed class GatewayRequests(
                         EveContribution = new Fraction { Denominator = 1 },
                         VanguardContribution = new Fraction { Denominator = 1 },
                     },
-                    // Local accounts have no PLEX holdings or purchasing service. A valid
-                    // zero balance avoids the stock wallet's failure callback re-entering
-                    // PersonalWalletPanel.Load while its tabs are still being constructed.
-                    "eve_public.plex.vault.api.BalanceRequest" => new PlexVault.BalanceResponse { Balance = new Plex.Currency() },
+                    "eve_public.plex.vault.api.BalanceRequest" => new PlexVault.BalanceResponse
+                    {
+                        Balance = PlexCurrency(ReadPlex(authenticatedAccount)),
+                    },
                     // Opportunities and Corporation Show Info share the freelance repository. Eden publishes no projects.
                     FreelanceProjects + "GetAllActiveForCorporationRequest" => new Freelance.GetAllActiveForCorporationResponse(),
                     FreelanceProjects + "GetAllBroadcastedRequest" => new Freelance.GetAllBroadcastedResponse(),
@@ -129,6 +131,42 @@ public sealed class GatewayRequests(
 
     public IReadOnlyList<Notice> ShipSkinNotices(long accountId, ShipSkinNoticeCursor cursor) =>
         shipSkins?.Notices(accountId, cursor) ?? [];
+
+    private long ReadPlex(long? authenticatedAccount) => authenticatedAccount is long account ? plexVault?.Balance(account) ?? 0 : 0;
+
+    private static Plex.Currency PlexCurrency(long quantity) => new() { TotalInCents = quantity * PlexVaultRules.CentsPerPlex };
+
+    public Notice? PlexBalanceNotice(long accountId, PlexVaultNoticeCursor cursor)
+    {
+        long next = ReadPlex(accountId);
+        long previous = cursor.AccountId == accountId ? cursor.Balance : 0;
+        cursor.AccountId = accountId;
+        cursor.Balance = next;
+        if (next == previous)
+        {
+            return null;
+        }
+        var now = clock.GetUtcNow();
+        var dispatched = Timestamp.FromDateTimeOffset(now);
+        return new()
+        {
+            Dispatched = dispatched,
+            Uuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray(bigEndian: true)),
+            InternalOrigin = "eden",
+            Payload = Any.Pack(
+                new PlexVault.BalanceChangedNotice
+                {
+                    Identifier = new() { Sequential = now.UtcDateTime.ToFileTimeUtc() },
+                    Attributes = new()
+                    {
+                        Timestamp = dispatched,
+                        AmountTransferred = PlexCurrency(next - previous),
+                        ResultingBalance = PlexCurrency(next),
+                    },
+                }
+            ),
+        };
+    }
 
     public IReadOnlyList<Notice> FactionActivityNotices(long accountId)
     {

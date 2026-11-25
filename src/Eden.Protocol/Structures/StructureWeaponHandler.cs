@@ -38,6 +38,7 @@ internal sealed class StructureWeaponHandler(
             "structureModuleEffectECM" => DogmaEffect.StructureEcm,
             "structureModuleEffectTargetPainter" => DogmaEffect.StructureTargetPainter,
             "structureModuleEffectRemoteSensorDampener" => DogmaEffect.StructureSensorDampener,
+            "structureModuleEffectWeaponDisruption" => DogmaEffect.StructureWeaponDisruption,
             _ => null,
         };
 

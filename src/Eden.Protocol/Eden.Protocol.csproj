@@ -26,7 +26,7 @@
       GrpcServices="None"
     />
     <Protobuf Include="Gateway/plan_*.proto" ProtoRoot="Gateway" GrpcServices="None" />
-    <Protobuf Include="Gateway/plex.proto;Gateway/plex_vault.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/plex.proto;Gateway/plex_vault*.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf
       Include="Gateway/solar_system.proto;Gateway/freelance_project.proto;Gateway/freelance_requests.proto"
       ProtoRoot="Gateway"

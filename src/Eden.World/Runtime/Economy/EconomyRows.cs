@@ -53,7 +53,7 @@ internal sealed partial class ResidentEconomy
     }
 }
 
-internal sealed record EconomyAccount(string UserName, long CreatedAt, long Id, AccountCloneGrade CloneGrade);
+internal sealed record EconomyAccount(string UserName, long CreatedAt, long Id, AccountCloneGrade CloneGrade, long PlexBalance);
 
 internal sealed partial class ResidentEconomy
 {
@@ -68,8 +68,10 @@ internal sealed partial class ResidentEconomy
             }
             world.Database.ExecuteSql(
                 $"""
-                INSERT INTO WorldAccount(Id,UserName,CreatedAt,CloneGrade) VALUES({row.Id},{row.UserName},{row.CreatedAt},{row.CloneGrade})
-                ON CONFLICT(Id) DO UPDATE SET UserName=excluded.UserName,CreatedAt=excluded.CreatedAt,CloneGrade=excluded.CloneGrade
+                INSERT INTO WorldAccount(Id,UserName,CreatedAt,CloneGrade,PlexBalance)
+                VALUES({row.Id},{row.UserName},{row.CreatedAt},{row.CloneGrade},{row.PlexBalance})
+                ON CONFLICT(Id) DO UPDATE SET UserName=excluded.UserName,CreatedAt=excluded.CreatedAt,
+                    CloneGrade=excluded.CloneGrade,PlexBalance=excluded.PlexBalance
                 """
             );
         }
@@ -1043,17 +1045,25 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<Account, EconomyAccount>(
                 "WorldAccount",
                 row => new(row.Id),
-                row => new(row.UserName, row.CreatedAt, row.Id, row.CloneGrade),
+                row => new(row.UserName, row.CreatedAt, row.Id, row.CloneGrade, row.PlexBalance),
                 state => new Account
                 {
                     UserName = state.UserName,
                     CreatedAt = state.CreatedAt,
                     Id = state.Id,
                     CloneGrade = state.CloneGrade,
+                    PlexBalance = state.PlexBalance,
                 },
                 ProjectAccount,
-                "UserName,CreatedAt,Id,CloneGrade",
-                reader => new(reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), (AccountCloneGrade)reader.GetInt32(4)),
+                "UserName,CreatedAt,Id,CloneGrade,PlexBalance",
+                reader =>
+                    new(
+                        reader.GetString(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        (AccountCloneGrade)reader.GetInt32(4),
+                        reader.GetInt64(5)
+                    ),
                 state => new(state.Id),
                 readOnly: false,
                 indexes: [new("UserName", row => row.UserName, new EconomyNameComparer())],

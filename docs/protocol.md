@@ -320,6 +320,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - <a id="character-settings"></a>[Character settings](protocol/characters.md#character-settings)
 - <a id="persistent-task-tracking"></a>[Persistent task tracking](protocol/characters.md#persistent-task-tracking)
 - <a id="persistent-home-stations-and-docked-clone-transfer"></a>[Persistent home stations and docked clone transfer](protocol/characters.md#persistent-home-stations-and-docked-clone-transfer)
+- [Remote home station selection at corporation offices](protocol/characters.md#remote-home-station-selection-at-corporation-offices)
 - <a id="catalog-agent-directory-and-saved-agents"></a>[Catalog agent directory and saved agents](protocol/characters.md#catalog-agent-directory-and-saved-agents)
 - <a id="persistent-personal-jump-clones"></a>[Persistent personal jump clones](protocol/characters.md#persistent-personal-jump-clones)
 - [Pochven NPC clone bays](protocol/characters.md#pochven-npc-clone-bays)
@@ -345,6 +346,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Chat, mail and contacts
 
+- [Contact notification CSPA](protocol/social.md#contact-notification-cspa)
 - [Personal calendar invitation CSPA](protocol/social.md#personal-calendar-invitation-cspa)
 - [Personal mail CSPA](protocol/social.md#personal-mail-cspa)
 - [Mailing-list organization access](protocol/social.md#mailing-list-organization-access)
@@ -684,6 +686,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Account PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale)
 - [Ranged personal buy orders](protocol/industry.md#ranged-personal-buy-orders)
 - [Ship SKIN licenses from NPC loyalty stores](protocol/industry.md#ship-skin-licenses-from-npc-loyalty-stores)
 - [Mercoxit mining pollution clouds](protocol/industry.md#mercoxit-mining-pollution-clouds)
@@ -857,6 +860,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors)
 - [Standup target painters and sensor dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners)
 - [Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm)
 - [Warp disruption and Upwell docking](protocol/structures.md#warp-disruption-and-upwell-docking)

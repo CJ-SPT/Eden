@@ -38,6 +38,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Character settings](#character-settings)
 - [Persistent task tracking](#persistent-task-tracking)
 - [Persistent home stations and docked clone transfer](#persistent-home-stations-and-docked-clone-transfer)
+- [Remote home station selection at corporation offices](#remote-home-station-selection-at-corporation-offices)
 - [Catalog agent directory and saved agents](#catalog-agent-directory-and-saved-agents)
 - [Persistent personal jump clones](#persistent-personal-jump-clones)
 - [Pochven NPC clone bays](#pochven-npc-clone-bays)
@@ -540,6 +541,43 @@ World version **45** adds `WorldHomeStation`, `WorldHomeStationPayment` and `Wor
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Change home to a school HQ or current station and reconnect to inspect the home and wallet debit. From a docked capsule elsewhere, confirm the home-panel transfer and destination hangar. Native rendering and interaction remain unverified.
+
+## Remote home station selection at corporation offices
+
+Members of an active player corporation can select an NPC station where the corporation rents an office. The existing
+candidate list reads current membership and leases from the resident world. Cancelling a lease removes the station from
+the corporation office choices. A previously selected NPC home remains a respawn destination. [CCP Corporation Offices](https://support.eveonline.com/hc/en-us/articles/203209652-Corporation-Offices)
+
+A confirmed remote relocation charges the existing **100,000 ISK** fee and starts a **365-day** cooldown. A later change
+at the current station or to the pilot's school headquarters can proceed during the cooldown and preserves its deadline.
+Remote candidates show error **3** while the cooldown is active, and the next remote change becomes available at the
+exact saved deadline. World schema **235** adds the nullable `WorldHomeStation.NextRemoteChange` column. The resident
+transaction commits the destination, cooldown, wallet debit, and Clone Transfer journal entry together and persists them
+through the existing checkpoint projection. [EVE University Home Station](https://wiki.eveuniversity.org/Home_Station)
+
+Build **3662168** `homestation/const.pyj` defines `timedelta(days=365)`. `homestation/validation.pyj` defines the current
+station and school exemptions and code **3**. The client selection page subtracts `datetime.utcnow()` from the result
+of `get_next_remote_change_time`, so the active reply uses a UTC Python `datetime` and the expired reply uses None.
+`homestation/client/service.pyj` catches `RemoteChangeNotExpectedError` to ask for confirmation and the selection page
+handles `ChangeHomeStationValidationError`. Both classes appear in `homestation/whitelist.pyj`. The stock archive
+SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The pinned NPC station catalog resolves
+each office's station type, system, region, and service operator.
+
+EVE.js **261108.1** `homeStationService.js` also reads the corporation's leases, confirms remote changes, uses the
+365-day deadline, and returns the UTC datetime as a ten-byte constructor argument. Its SHA-256 is
+`f5f277e87933bd1969c154becd3bc1eb79a85e9fd81d06e7141bd899c403db72`. Eden uses the existing outbound Blue reduction
+for native objects and the Macho exception response. [Carbon Blue Marshal.cpp](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+
+**Automated validation.** The exact `NativeOfficeSelectionChargesOnceAndUsesAnExactSavedCooldown` and
+`Version234HomeStationMigratesWithNoRemoteCooldown` filters both passed in 5.30 seconds of combined case time. They
+cover leased and unleased destinations, native confirmation and cooldown replies, local and school exemptions, lease
+removal, wallet and checkpoint state, the exact expiry boundary, and migration from version 234. The shared feature
+build reported zero warnings or errors. Results are in `artifacts/feature-tests/results/c5630c7f18a74c9198b23de5764dfb90/tests.trx`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** With a rented NPC office away from your current station, use Character Sheet → Home Station.
+Confirm the remote change and check the countdown and Clone Transfer wallet entry after reconnecting.
 
 ## Catalog agent directory and saved agents
 

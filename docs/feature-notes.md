@@ -91,7 +91,12 @@ The station Agents tab checks Event agents against the pilot's current mission a
 [Nine epic arcs](missions.md#epic-arcs) offer branching progression, cross-agent handoffs and a 90-day replay interval.
 [Supported missions](missions.md) · [Agent and research records](protocol/agents.md)
 
-Home stations now persist independently of ship travel. Select the current NPC station or your school corporation’s headquarters for **100,000 ISK**. A docked capsule away from home can use **Self-Destruct** in the home-station panel to return there in a replacement capsule; other ships, wallet and skills stay in place. New pilots retain their starting station as home. Player-corporation remote offices remain pending. See the [home-station notes](protocol/characters.md#persistent-home-stations-and-docked-clone-transfer).
+Home stations persist independently of ship travel. Select the current NPC station or your school corporation’s headquarters
+for **100,000 ISK**. Eligible pilots can also select an active corporation office at a remote NPC station every 365 days.
+A docked capsule away from home can use **Self-Destruct** in the home-station panel to return there in a replacement capsule.
+Other ships, wallet and skills stay in place. New pilots retain their starting station as home.
+[Home stations](protocol/characters.md#persistent-home-stations-and-docked-clone-transfer) ·
+[Remote corporation offices](protocol/characters.md#remote-home-station-selection-at-corporation-offices)
 
 Task tracking now retains per-pilot client counters and catalog task completions across restarts. Supported server gameplay records its own progress, and the first-warp camera query reflects actual warp entry. Build 3662168 disables its legacy achievement UI; these routes do not enable that interface. See the [task tracking notes](protocol/characters.md#persistent-task-tracking).
 
@@ -140,7 +145,11 @@ the charge. The wallet debit and mail delivery commit together. Corporation and 
 Corporation directors can restrict corporation-wide mail to Communications Officers and directors.
 [Corporation mail restrictions](protocol/corporations.md#corporation-mail-restrictions)
 
-The notification inbox now saves contact-add and contact-edit notifications, including the contact form's **Send Notification** message. Recipients can fetch history/unread groups, mark items read and delete selected items, groups or all history. Connected pilots receive native notifications; offline recipients retain them across restarts. Blocked messages fail together with the contact edit. Other gameplay notification families and paid CSPA communication remain pending; native inbox presentation is unverified. See the [notification inbox notes](protocol/social.md#persistent-notification-inbox-and-contact-messages).
+The notification inbox saves contact-add and contact-edit notifications, including the contact form's **Send Notification**
+message. Changes that send a notification apply the recipient's contact policy. The contact change, approved charge and inbox
+notification commit together. Recipients can read, mark and delete history. Offline recipients retain notifications across restarts.
+[Notification inbox](protocol/social.md#persistent-notification-inbox-and-contact-messages) ·
+[Contact notification CSPA](protocol/social.md#contact-notification-cspa)
 
 Personal calendar events support up to **50 local invitees**, saved replies, editing, rescheduling and cancellation.
 The creator confirms any CSPA fees when adding new invitees. Alliance calendars use current membership and executor
@@ -255,12 +264,14 @@ hangar. The recipient's items and inbox notification persist across restarts.
 
 Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
 missiles, neutralize capacitor, slow ships, jam sensors and disrupt warp. Target painters increase the target's signature
-radius, and remote sensor dampeners reduce its lock range and scan resolution. Loading the Standup scrambling script also blocks
+radius, remote sensor dampeners reduce lock range and scan resolution, and weapon disruptors impair turrets and missiles at once.
+Loading the Standup scrambling script also blocks
 microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner
 releases control. The structure audit tracks the remaining defensive effects, service-specific access and fees,
 player markets, clone bays, corporation offices, and specialized hull behavior.
 [Standup ECM](protocol/structures.md#standup-variable-spectrum-ecm) ·
 [Painters and dampeners](protocol/structures.md#standup-target-painters-and-sensor-dampeners) ·
+[Standup Weapon Disruptors](protocol/structures.md#standup-weapon-disruptors) ·
 [Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
 
 High GMs can force all native Upwell operating states, set operating and deployment timers, start or cancel unanchoring,
@@ -353,6 +364,9 @@ Buy orders can accept fulfillment within a selected range. Visibility governs th
 [Remote personal order management](protocol/industry.md#remote-personal-order-management) ·
 [Procurement and Marketing](protocol/industry.md#procurement-and-marketing-at-remote-stations) ·
 [Ranged buy orders](protocol/industry.md#ranged-personal-buy-orders)
+
+The account PLEX Vault supports transfers between owned physical stacks and the shared vault balance, plus PLEX listings and
+repricing through the regional market at NPC stations. [PLEX Vault and market sale](protocol/industry.md#account-plex-vault-and-market-sale)
 
 Economy worlds supply catalog-offered original blueprints and skillbooks at their NPC corporation's stations, using the pinned base price. Institutional stock defaults to 1,000 replenishing units per order and is saved independently of development stock; change it in the [first-start configuration draft](world-configuration.md#first-start). Finished ships, modules, ammunition and minerals are not institutionally supplied. The first supported production fits are a three-gun Merlin, a two-laser Venture and a Badger with expanded cargo. Their recipes, suppliers and all seven mineral sources are recorded in the [starter production audit](starter-production.json); see [milestone evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026).
 

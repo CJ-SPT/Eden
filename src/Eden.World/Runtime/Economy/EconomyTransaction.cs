@@ -431,6 +431,7 @@ internal sealed partial class EconomyTransaction(
             var accounts = (EconomySet<Account, EconomyAccount>)Set<Account>();
             if (
                 string.IsNullOrWhiteSpace(account.UserName)
+                || account.PlexBalance is < 0 or > PlexVaultRules.MaximumBalance
                 || account.CloneGrade is not (AccountCloneGrade.Alpha or AccountCloneGrade.Omega)
                 || account.Id == CapsuleerCommunityStore.MinerAccountId && account.CloneGrade != AccountCloneGrade.Omega
                 || !accounts.HasUniqueCommittedKey(new(account.Id), nameof(Account.UserName), account.UserName)
@@ -439,7 +440,7 @@ internal sealed partial class EconomyTransaction(
                         .Any(other => other.Id != account.Id && StringComparer.OrdinalIgnoreCase.Equals(other.UserName, account.UserName))
             )
             {
-                throw new InvalidDataException("Invalid resident account identity or clone grade.");
+                throw new InvalidDataException("Invalid resident account identity, clone grade or PLEX balance.");
             }
         }
         foreach (var pilot in Retained<Pilot>())

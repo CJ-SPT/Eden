@@ -21,6 +21,7 @@ public sealed class Account
     public long CreatedAt { get; set; }
     public long Id { get; set; }
     public AccountCloneGrade CloneGrade { get; set; } = AccountCloneGrade.Alpha;
+    public long PlexBalance { get; set; }
 }
 
 public sealed class Pilot
@@ -179,6 +180,7 @@ public sealed class SavedHomeStation
 {
     public long PilotId { get; set; }
     public int StationId { get; set; }
+    public long? NextRemoteChange { get; set; }
 }
 
 public sealed class SavedHomeStationPayment

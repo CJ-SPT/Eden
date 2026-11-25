@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Economy;
 
-internal sealed record EconomySavedHomeStation(long PilotId, int StationId);
+internal sealed record EconomySavedHomeStation(long PilotId, int StationId, long? NextRemoteChange);
 
 internal sealed partial class ResidentEconomy
 {
@@ -32,13 +32,13 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldHomeStation(
-                        PilotId,StationId
+                        PilotId,StationId,NextRemoteChange
                     )
                     SELECT
-                        json_extract(value,'$.PilotId'),json_extract(value,'$.StationId')
+                        json_extract(value,'$.PilotId'),json_extract(value,'$.StationId'),json_extract(value,'$.NextRemoteChange')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(PilotId) DO UPDATE SET
-                        StationId=excluded.StationId
+                        StationId=excluded.StationId,NextRemoteChange=excluded.NextRemoteChange
                     """
                 );
             }

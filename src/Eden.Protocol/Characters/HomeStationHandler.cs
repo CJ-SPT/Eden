@@ -59,7 +59,7 @@ internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitP
                         homes.Candidates(pilot).Select(candidate => new HomeStationCandidateReply(candidate)).ToArray()
                     );
                 case ("get_next_remote_change_time", []):
-                    return homes.NextRemoteChange(pilot) is long time ? time : PilotCallResult.None;
+                    return homes.NextRemoteChange(pilot) is long time ? new HomeStationRemoteDeadline(time) : PilotCallResult.None;
                 case ("set_home_station", [long id, var remote]) when id is > 0 and <= int.MaxValue:
                     bool allow = remote switch
                     {
@@ -89,11 +89,56 @@ internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitP
                     throw new InvalidDataException("Invalid home station request.");
             }
         }
+        catch (HomeStationRemoteConfirmationException)
+        {
+            return new PilotCallResult.NativeFailure(new HomeStationRemoteConfirmation());
+        }
+        catch (HomeStationRemoteValidationException error)
+        {
+            return new PilotCallResult.NativeFailure(new HomeStationRemoteValidation(error.Errors));
+        }
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
         }
     }
+}
+
+internal sealed record HomeStationRemoteDeadline(long Time) : BlueModel
+{
+    public override object ToBlue()
+    {
+        // The pinned selection page subtracts utcnow() from a naive Python datetime.
+        var time = DateTime.FromFileTimeUtc(Time);
+        int microsecond = (int)(time.Ticks % TimeSpan.TicksPerSecond / TimeSpan.TicksPerMicrosecond);
+        byte[] state =
+        [
+            (byte)(time.Year >> 8),
+            (byte)(time.Year & 0xff),
+            (byte)time.Month,
+            (byte)time.Day,
+            (byte)time.Hour,
+            (byte)time.Minute,
+            (byte)time.Second,
+            (byte)(microsecond >> 16),
+            (byte)((microsecond >> 8) & 0xff),
+            (byte)(microsecond & 0xff),
+        ];
+        return new BlueConstructor("datetime.datetime", [state]);
+    }
+}
+
+internal sealed record HomeStationRemoteConfirmation : BlueModel
+{
+    public override object ToBlue() => new BlueConstructor("homestation.error.RemoteChangeNotExpectedError", []);
+}
+
+internal sealed record HomeStationRemoteValidation(IReadOnlyList<HomeStationError> Errors) : BlueModel
+{
+    internal static List<object?> ErrorCodes(IReadOnlyList<HomeStationError> errors) =>
+        errors.Select(error => (object?)(long)error).ToList();
+
+    public override object ToBlue() => new BlueConstructor("homestation.validation.ChangeHomeStationValidationError", [ErrorCodes(Errors)]);
 }
 
 internal sealed record HomeStationRowReply(HomeStation Station) : BlueModel
@@ -124,7 +169,7 @@ internal sealed record HomeStationCandidateReply(HomeStationCandidate Candidate)
                 ["solar_system_id"] = Candidate.Station.SystemId,
                 ["is_current_station"] = Candidate.Current,
                 ["is_school_hq"] = Candidate.School,
-                ["errors"] = Candidate.Errors.Select(error => (object?)(long)error).ToList(),
+                ["errors"] = HomeStationRemoteValidation.ErrorCodes(Candidate.Errors),
             }
         );
 }

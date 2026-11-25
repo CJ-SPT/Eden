@@ -120,6 +120,7 @@ internal sealed class PilotCallContext(
         _bindings.ReleasePilotReferences();
         NotificationsBeforeFlight.Clear();
         Notifications.Clear();
+        _scheduledNotifications.Clear();
     }
 
     public DockedPilot Pilot => Flight.Pilot;
@@ -140,6 +141,18 @@ internal sealed class PilotCallContext(
 
     internal HashSet<int> ReportedSkillTypes { get; } = [];
     public List<PilotNotification> Notifications { get; } = [];
+
+    private readonly Queue<(DateTimeOffset Due, PilotNotification Notice)> _scheduledNotifications = new();
+
+    internal void ScheduleNotification(DateTimeOffset due, PilotNotification notice) => _scheduledNotifications.Enqueue((due, notice));
+
+    internal void AdvanceScheduledNotifications(DateTimeOffset now)
+    {
+        while (_scheduledNotifications.TryPeek(out var scheduled) && scheduled.Due <= now)
+        {
+            Notifications.Add(_scheduledNotifications.Dequeue().Notice);
+        }
+    }
 
     // Combat text resolves the target's slim item, including on a fatal hit.
     // Deliver it before Destiny removes that ball from the client's park.

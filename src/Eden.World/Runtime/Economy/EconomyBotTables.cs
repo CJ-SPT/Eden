@@ -701,11 +701,16 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<Eden.Data.World.Characters.SavedHomeStation, EconomySavedHomeStation>(
                 "WorldHomeStation",
                 row => new(row.PilotId),
-                row => new(row.PilotId, row.StationId),
-                state => new Eden.Data.World.Characters.SavedHomeStation { PilotId = state.PilotId, StationId = state.StationId },
+                row => new(row.PilotId, row.StationId, row.NextRemoteChange),
+                state => new Eden.Data.World.Characters.SavedHomeStation
+                {
+                    PilotId = state.PilotId,
+                    StationId = state.StationId,
+                    NextRemoteChange = state.NextRemoteChange,
+                },
                 ProjectSavedHomeStation,
-                "PilotId,StationId",
-                reader => new(reader.GetInt64(1), reader.GetInt32(2)),
+                "PilotId,StationId,NextRemoteChange",
+                reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.IsDBNull(3) ? null : reader.GetInt64(3)),
                 state => new(state.PilotId),
                 indexes: [new("PilotId", row => row.PilotId), new("StationId", row => row.StationId)],
                 primaryColumn: "PilotId"

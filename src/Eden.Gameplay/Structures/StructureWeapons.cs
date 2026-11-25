@@ -64,13 +64,20 @@ public static class StructureWeaponRules
     public static bool UsesElectronicSystems(int group) => group is EcmGroup or WebifierGroup or WarpDisruptorGroup;
 
     public static bool IsElectronicWarfare(DogmaEffect effect) =>
-        effect is DogmaEffect.StructureEcm or DogmaEffect.StructureTargetPainter or DogmaEffect.StructureSensorDampener;
+        effect
+            is DogmaEffect.StructureEcm
+                or DogmaEffect.StructureTargetPainter
+                or DogmaEffect.StructureSensorDampener
+                or DogmaEffect.StructureWeaponDisruption;
 
     public static bool MatchesElectronicWarfare(int group, DogmaEffect effect) =>
         group switch
         {
             EcmGroup => effect == DogmaEffect.StructureEcm,
-            ElectronicDefenseGroup => effect is DogmaEffect.StructureTargetPainter or DogmaEffect.StructureSensorDampener,
+            ElectronicDefenseGroup => effect
+                is DogmaEffect.StructureTargetPainter
+                    or DogmaEffect.StructureSensorDampener
+                    or DogmaEffect.StructureWeaponDisruption,
             _ => false,
         };
 

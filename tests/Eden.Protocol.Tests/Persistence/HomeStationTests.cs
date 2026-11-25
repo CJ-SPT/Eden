@@ -30,7 +30,7 @@ internal static class HomeStationTestData
     internal const int Other = 60004421;
     internal const int System = 30001407;
 
-    internal static void Prepare(TestWorld db)
+    internal static void Prepare(TestWorld db, bool fund = true, params int[] additionalStations)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
         var origin = catalog.Set<Station>().Find(Origin)!;
@@ -42,7 +42,7 @@ internal static class HomeStationTestData
                 ConstellationId = 20000020,
             }
         );
-        foreach (int station in new[] { School, Other })
+        foreach (int station in new[] { School, Other }.Concat(additionalStations))
         {
             catalog.Add(
                 new Station
@@ -97,7 +97,10 @@ internal static class HomeStationTestData
         Add("client/types", FleetDefinitions.CapsuleType, new { volume = 1000, published = 1 });
         catalog.SaveChanges();
         catalog.Database.ExecuteSqlRaw("INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601");
-        InsuranceTestData.Fund(db, 50_000_000);
+        if (fund)
+        {
+            InsuranceTestData.Fund(db, 50_000_000);
+        }
         return;
 
         void Add(string dataset, int key, object value) =>

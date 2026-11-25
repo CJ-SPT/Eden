@@ -70,6 +70,7 @@ internal sealed partial class PilotMarketStore
             || order.SystemId != request.SystemId
             || order.Bid != request.Bid
             || order.Range != request.Range
+            || request.ExpectedTypeId.HasValue && order.TypeId != request.ExpectedTypeId
         )
         {
             throw new InvalidDataException("The market order changed. Refresh before modifying it.");

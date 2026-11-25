@@ -99,11 +99,13 @@ internal sealed record IncomingMachoPacket(string Name, object?[] Fields)
     public BlueInstance UnsupportedCall(string description) =>
         Response("ErrorResponse", 15, new object?[] { 6, 0, $"Unsupported local call {description}" });
 
-    public BlueInstance UserError(PilotCallResult.NamedFailure error)
-    {
-        byte[] exception = BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [error.Name, error.Values]));
-        return Response("ErrorResponse", 15, new object?[] { 6, 2, new object?[] { exception } });
-    }
+    public BlueInstance UserError(PilotCallResult.NamedFailure error) =>
+        ExceptionResponse(BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [error.Name, error.Values])));
+
+    public BlueInstance NativeError(PilotCallResult.NativeFailure error) => ExceptionResponse(BlueMarshal.Encode(error.Exception));
+
+    private BlueInstance ExceptionResponse(byte[] exception) =>
+        Response("ErrorResponse", 15, new object?[] { 6, 2, new object?[] { exception } });
 
     public BlueInstance Ping(long now)
     {

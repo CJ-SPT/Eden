@@ -29,7 +29,8 @@ public sealed record PersonalMarketModification(
     long PreviousPriceCents,
     int Remaining,
     long Issued,
-    int Range = MarketDefinitions.StationRange
+    int Range = MarketDefinitions.StationRange,
+    int? ExpectedTypeId = null
 );
 
 public sealed record MarketEscrow(long IskCents, long ItemsValueCents);

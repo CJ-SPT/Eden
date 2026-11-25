@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
@@ -60,18 +61,26 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
     public IReadOnlyList<HomeStationCandidate> Candidates(long pilotId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return WorldActionScope.Inspect(database, world => Candidates(world, catalog, Pilot(world, pilotId)));
+        return WorldActionScope.Inspect(database, world => Candidates(world, catalog, Pilot(world, pilotId), Now));
     }
 
-    private static IReadOnlyList<HomeStationCandidate> Candidates(WorldAction world, CatalogDbContext catalog, Pilot pilot)
+    private static IReadOnlyList<HomeStationCandidate> Candidates(WorldAction world, CatalogDbContext catalog, Pilot pilot, long now)
     {
         var home = Read(world, catalog, pilot);
-        int? current = pilot.ActiveShip.Position is null && pilot.ActiveShip.StructureId is null ? pilot.ActiveShip.StationId : null;
+        int? current = pilot.ActiveShip is { Position: null, StructureId: null } ? pilot.ActiveShip.StationId : null;
         int? school = SchoolHeadquarters(catalog, pilot);
-        // Eden's pilots currently belong to NPC corporations; there are no
-        // player-corporation offices that grant additional remote candidates.
-        return new[] { current, school }
-            .OfType<int>()
+        var stations = new[] { current, school }.OfType<int>();
+        if (world is EconomyTransaction && world.Set<SavedCorporation>().Find(pilot.CorporationId) is { ClosedAt: null })
+        {
+            stations = stations.Concat(
+                world
+                    .Set<SavedCorporationOffice>()
+                    .Where(office => office.CorporationId == pilot.CorporationId)
+                    .Select(office => office.StationId)
+            );
+        }
+        bool onCooldown = ActiveRemoteChange(world, pilot.Id, now) is not null;
+        return stations
             .Distinct()
             .Select(id => Station(catalog, id))
             .OfType<CatalogStationDefinition>()
@@ -80,18 +89,24 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
                 Snapshot(station),
                 station.Id == current,
                 station.Id == school,
-                HomeStationRules.Errors(station.Id, home.Id, station.SolarSystemId, station.RegionId)
+                HomeStationRules.Errors(
+                    station.Id,
+                    home.Id,
+                    station.SolarSystemId,
+                    station.RegionId,
+                    onCooldown && station.Id != current && station.Id != school
+                )
             ))
             .ToArray();
     }
 
-    public long? NextRemoteChange(long pilotId)
-    {
-        _ = WorldActionScope.Inspect(database, world => Pilot(world, pilotId));
-        // Current station and school HQ changes never consume the remote-office
-        // cooldown. NPC-corporation pilots have no remote-office entitlement.
-        return null;
-    }
+    private static long? ActiveRemoteChange(WorldAction world, long pilotId, long now) =>
+        world is EconomyTransaction && world.Set<SavedHomeStation>().Find(pilotId)?.NextRemoteChange is long next && next > now
+            ? next
+            : null;
+
+    public long? NextRemoteChange(long pilotId) =>
+        WorldActionScope.Inspect(database, world => ActiveRemoteChange(world, Pilot(world, pilotId).Id, Now));
 
     public HomeStationChange Set(long pilotId, int stationId, bool allowRemote)
     {
@@ -99,25 +114,35 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
+        long now = Now;
         var candidate =
-            Candidates(world, catalog, pilot).SingleOrDefault(candidate => candidate.Station.Id == stationId)
-            ?? throw new InvalidDataException("Choose your current station or your school's headquarters.");
+            Candidates(world, catalog, pilot, now).SingleOrDefault(candidate => candidate.Station.Id == stationId)
+            ?? throw new InvalidDataException("Choose your current station, your school's headquarters, or a corporation office.");
         if (candidate.Errors.Count > 0)
         {
+            if (candidate.Remote)
+            {
+                throw new HomeStationRemoteValidationException(candidate.Errors);
+            }
             throw new InvalidDataException(
                 candidate.Errors.Contains(HomeStationError.AlreadyHome)
                     ? "That station is already your home."
                     : "That station cannot be selected as your home."
             );
         }
-        // allowRemote is confirmation, never permission to select an arbitrary
-        // station. All currently eligible candidates are exempt from cooldown.
-        _ = allowRemote;
+        if (candidate.Remote && !allowRemote)
+        {
+            throw new HomeStationRemoteConfirmationException();
+        }
         var wallet = world.Set<PilotWallet>().Find(pilotId);
         long balance = HomeStationRules.Pay(wallet?.Cents ?? 0);
         wallet!.Cents = balance;
         var saved = world.Set<SavedHomeStation>().Find(pilotId) ?? world.Add(new SavedHomeStation { PilotId = pilotId }).Entity;
         saved.StationId = stationId;
+        if (candidate.Remote)
+        {
+            saved.NextRemoteChange = checked(now + HomeStationRules.RemoteChangeCooldownTicks);
+        }
         world.Add(
             new SavedHomeStationPayment
             {
@@ -126,7 +151,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
                 OperatorId = Station(catalog, stationId)!.OwnerId,
                 AmountCents = HomeStationRules.RelocationFeeCents,
                 BalanceCents = balance,
-                Time = Now,
+                Time = now,
             }
         );
         world.SaveChanges();

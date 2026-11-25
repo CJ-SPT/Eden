@@ -169,12 +169,16 @@ internal sealed class PilotSessionCalls(
                     ? new PilotCallResult.NamedFailure("CustomInfo", new InformationErrorValues(validationError.Message))
                     : new PilotCallResult.NamedFailure("CustomNotify", new NotificationErrorValues(validationError.Message));
         }
-        if (result is PilotCallResult.NamedFailure userError)
+        if (result is PilotCallResult.NamedFailure or PilotCallResult.NativeFailure)
         {
             // ErrorResponse params are original command, code and payload. Code 2 wraps an
             // exception stream. Named errors retain their client-specific handling,
             // including inventory's smaller-quantity retry for cargo capacity.
-            await output.WriteAsync(packet.UserError(userError));
+            await output.WriteAsync(
+                result is PilotCallResult.NamedFailure userError
+                    ? packet.UserError(userError)
+                    : packet.NativeError((PilotCallResult.NativeFailure)result)
+            );
             latency.ReplyWritten();
             await output.FlushFlightUpdatesAsync();
             await output.FlushNotificationsAsync();

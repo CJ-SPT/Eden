@@ -58,6 +58,7 @@ internal sealed class PilotSessionTick(
             await output.FlushNotificationsAsync();
             return;
         }
+        context.AdvanceScheduledNotifications(clock.GetUtcNow());
         expertSystems?.Advance(context);
         var flight = context.Flight;
         var previousControl = context.ControlledStructureId;

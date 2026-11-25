@@ -146,8 +146,14 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
         );
     }
 
-    public void Add(long pilotId, long contactId, double standing, bool inWatchlist, string? notification = null) =>
-        SaveContact(pilotId, contactId, standing, inWatchlist, true, notification);
+    public void Add(
+        long pilotId,
+        long contactId,
+        double standing,
+        bool inWatchlist,
+        string? notification = null,
+        long approvedContactCostIsk = 0
+    ) => SaveContact(pilotId, contactId, standing, inWatchlist, true, notification, approvedContactCostIsk);
 
     public void AddAgent(long pilotId, long agentId) =>
         Write(
@@ -174,12 +180,30 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             }
         );
 
-    public void Edit(long pilotId, long contactId, double standing, bool inWatchlist, string? notification = null) =>
-        SaveContact(pilotId, contactId, standing, inWatchlist, false, notification);
+    public void Edit(
+        long pilotId,
+        long contactId,
+        double standing,
+        bool inWatchlist,
+        string? notification = null,
+        long approvedContactCostIsk = 0
+    ) => SaveContact(pilotId, contactId, standing, inWatchlist, false, notification, approvedContactCostIsk);
 
-    private void SaveContact(long pilotId, long contactId, double standing, bool inWatchlist, bool add, string? notification)
+    private void SaveContact(
+        long pilotId,
+        long contactId,
+        double standing,
+        bool inWatchlist,
+        bool add,
+        string? notification,
+        long approvedContactCostIsk
+    )
     {
         ContactRules.CheckStanding(standing);
+        if (notification is null && approvedContactCostIsk != 0)
+        {
+            throw new InvalidDataException("Approval requires a contact notification.");
+        }
         Write(
             pilotId,
             world =>
@@ -194,33 +218,20 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
                 {
                     throw new InvalidDataException(add ? "This pilot is already a contact." : "This pilot is not a contact.");
                 }
+                long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                if (notification is not null)
+                {
+                    PilotInboxStore.AddContact(world, pilotId, contactId, add, standing, notification, now, approvedContactCostIsk);
+                }
                 if (contact is null)
                 {
                     contact = new SavedContact { PilotId = pilotId, ContactId = contactId };
                     world.Add(contact);
                     using CatalogDbContext catalog = new(database.CatalogPath);
-                    PilotTaskTrackingStore.Record(
-                        world,
-                        catalog,
-                        pilotId,
-                        (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-                        TaskEvents.ContactAdded
-                    );
+                    PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.ContactAdded);
                 }
                 contact.Standing = standing;
                 contact.InWatchlist = inWatchlist;
-                if (notification is not null)
-                {
-                    PilotInboxStore.AddContact(
-                        world,
-                        pilotId,
-                        contactId,
-                        add,
-                        standing,
-                        notification,
-                        (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc()
-                    );
-                }
             },
             publishInbox: notification is not null
         );
@@ -403,7 +414,7 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
 
     private void Write(long pilotId, Action<WorldAction> operation, bool publishInbox = false)
     {
-        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        using var transaction = new WorldActionScope(database, publishInbox ? new(pilots: [pilotId]) : TransactionParticipants.None);
         var world = transaction.World;
         CheckPilot(world, pilotId);
         operation(world);

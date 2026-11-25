@@ -144,6 +144,7 @@ internal sealed class MarketHandler(
                     monitor.Advance(context);
                     return PilotCallResult.None;
                 case "ModifyCharOrder"
+                or "ModifyPlexCharOrder"
                     when args
                         is [
                             long modifyId,
@@ -167,7 +168,8 @@ internal sealed class MarketHandler(
                             MarketRequestWire.Price(oldPrice),
                             checked((int)remaining),
                             issued,
-                            checked((int)modifyRange)
+                            checked((int)modifyRange),
+                            method == "ModifyPlexCharOrder" ? MarketDefinitions.PlexTypeId : null
                         )
                     );
                     monitor.Advance(context);
@@ -232,6 +234,22 @@ internal sealed class MarketHandler(
                     var sales = entries.Select(MarketRequestWire.Sale).ToArray();
                     Changed(context, market.Sell(context.Pilot.PilotId, sales));
                     return true;
+                case "PlacePlexSellOrder" when args is [var entry, false or 0L, long plexDays, _] && plexDays >= 0:
+                    var plexSale = MarketRequestWire.Sale(entry);
+                    if (plexSale.TypeId != MarketDefinitions.PlexTypeId)
+                    {
+                        throw new InvalidDataException("Choose a PLEX stack for this market order.");
+                    }
+                    if (plexDays == 0)
+                    {
+                        Changed(context, market.Sell(context.Pilot.PilotId, [plexSale]));
+                    }
+                    else
+                    {
+                        personal.PlaceSell(context.Pilot.PilotId, [plexSale], checked((int)plexDays));
+                        monitor.Advance(context);
+                    }
+                    return true;
                 case "PlaceBuyOrder"
                     when args
                         is [
@@ -281,9 +299,11 @@ internal sealed class MarketHandler(
                     // a member's personal trade history as corporation transactions.
                     return BlueEmpty.List;
                 case "PlaceMultiSellOrder":
+                case "PlacePlexSellOrder":
                 case "PlaceBuyOrder":
                 case "BuyMultipleItems":
                 case "ModifyCharOrder":
+                case "ModifyPlexCharOrder":
                 case "CancelCharOrder":
                     return new PilotCallResult.Failure("Choose a supported personal market order.", ShowInformationDialog: true);
                 case "GetPlexOldPriceHistory" or "GetPlexNewPriceHistory":

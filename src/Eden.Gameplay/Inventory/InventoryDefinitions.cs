@@ -207,6 +207,7 @@ public enum DogmaEffect
     StructureTargetPainter = 6683,
     StructureSensorDampener = 6684,
     StructureEcm = 6685,
+    StructureWeaponDisruption = 6686,
     EnergyNosferatu = 6197,
     ShieldBoosting = 4,
     AncillaryShieldBoosting = 4936,

@@ -24,7 +24,16 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
 {
     public long Revision => signal.Revision + (LiveWorld.Find(database.Path)?.KillRightInboxRevision ?? 0);
 
-    internal static void AddContact(WorldAction world, long sender, long receiver, bool added, double level, string message, long time)
+    internal static void AddContact(
+        WorldAction world,
+        long sender,
+        long receiver,
+        bool added,
+        double level,
+        string message,
+        long time,
+        long approvedContactCostIsk
+    )
     {
         InboxRules.CheckMessage(message);
         if (
@@ -34,6 +43,7 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
         {
             throw new InvalidDataException("A blocked pilot cannot receive this contact notification.");
         }
+        MailContactPolicyStore.Charge(world, sender, [receiver], approvedContactCostIsk, time);
         world.Add(
             new SavedInboxNotification
             {

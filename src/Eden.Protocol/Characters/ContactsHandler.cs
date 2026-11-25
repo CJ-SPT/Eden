@@ -1,4 +1,5 @@
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -40,7 +41,15 @@ internal sealed class ContactsHandler(IPilotContacts contacts) : ISelectedPilotC
         }
         try
         {
-            if (keywords is { Count: > 0 })
+            if (
+                keywords is { Count: > 0 }
+                && (
+                    method is not ("AddContact" or "EditContact")
+                    || args is not [long, _, bool, true, _]
+                    || keywords.Count != 1
+                    || keywords.GetValueOrDefault("approvedCost") is null
+                )
+            )
             {
                 throw new InvalidDataException("Unexpected personal contact arguments.");
             }
@@ -59,33 +68,19 @@ internal sealed class ContactsHandler(IPilotContacts contacts) : ISelectedPilotC
                     {
                         throw new InvalidDataException("Expected a contact message.");
                     }
+                    string? notification = notify
+                        ? message is null
+                            ? ""
+                            : Text(message)
+                        : null;
+                    long approval = ContactCostWire.Approval(keywords?.GetValueOrDefault("approvedCost"));
                     if (method == "AddContact")
                     {
-                        contacts.Add(
-                            pilotId,
-                            id,
-                            Standing(standing),
-                            watchlist,
-                            notify
-                                ? message is null
-                                    ? ""
-                                    : Text(message)
-                                : null
-                        );
+                        contacts.Add(pilotId, id, Standing(standing), watchlist, notification, approval);
                     }
                     else
                     {
-                        contacts.Edit(
-                            pilotId,
-                            id,
-                            Standing(standing),
-                            watchlist,
-                            notify
-                                ? message is null
-                                    ? ""
-                                    : Text(message)
-                                : null
-                        );
+                        contacts.Edit(pilotId, id, Standing(standing), watchlist, notification, approval);
                     }
                     break;
                 case ("EditContactsRelationshipID", [var ids, var standing]):
@@ -113,6 +108,10 @@ internal sealed class ContactsHandler(IPilotContacts contacts) : ISelectedPilotC
             }
             // AddressBookSvc applies these changes to its own caches after success.
             return PilotCallResult.None;
+        }
+        catch (MailContactCostApprovalRequired quote)
+        {
+            return ContactCostWire.Requote(quote.CostIsk);
         }
         catch (InvalidDataException error)
         {

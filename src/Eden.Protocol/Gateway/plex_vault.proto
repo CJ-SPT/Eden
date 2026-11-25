@@ -3,7 +3,13 @@ package eve_public.plex.vault.api;
 option csharp_namespace = "Eden.Protocol.Gateway.PlexVault";
 
 import "plex.proto";
+import "plex_vault_transaction.proto";
 
 message BalanceResponse {
   eve_public.plex.Currency balance = 1;
+}
+
+message BalanceChangedNotice {
+  eve_public.plex.vault.transaction.Identifier identifier = 1;
+  eve_public.plex.vault.transaction.Attributes attributes = 2;
 }

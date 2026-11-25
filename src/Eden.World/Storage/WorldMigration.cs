@@ -1,4 +1,5 @@
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Configuration;
@@ -18,7 +19,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = Eden.World.Market.PersonalMarketSchema.BuyRangeVersion;
+    internal const int CurrentVersion = PlexVaultSchema.Version;
 
     public static void Open(
         WorldDbContext world,
@@ -66,6 +67,14 @@ internal static class WorldMigration
         {
             WorldVersions35To49.Apply(world, version);
             WorldVersions50To68.Apply(world, version);
+        }
+        if (version < HomeStationSchema.RemoteOfficeVersion)
+        {
+            HomeStationSchema.UpgradeRemoteOffice(world);
+        }
+        if (version < PlexVaultSchema.Version)
+        {
+            PlexVaultSchema.Upgrade(world);
         }
         Eden.World.Characters.ShipCloneSchema.Upgrade(world);
         if (version is >= 6 and < ScienceSchema.Version)

@@ -122,6 +122,7 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
         using PeriodicTimer timer = new(TimeSpan.FromSeconds(1));
         ShipSkinNoticeCursor skinNotices = new();
+        PlexVaultNoticeCursor plexNotices = new();
         string authorization = context.RequestHeaders.GetValue("authorization") ?? "";
         async Task Receive()
         {
@@ -135,6 +136,7 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
                 if (authentication.Account(authorization) is not long account)
                 {
                     skinNotices = new();
+                    plexNotices = new();
                     continue;
                 }
                 foreach (
@@ -145,6 +147,10 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
                 )
                 {
                     await output.WriteAsync(notice, stopping.Token);
+                }
+                if (requests.PlexBalanceNotice(account, plexNotices) is { } plexNotice)
+                {
+                    await output.WriteAsync(plexNotice, stopping.Token);
                 }
             }
         }

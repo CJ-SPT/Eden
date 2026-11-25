@@ -7,6 +7,42 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Account PLEX Vault and market sale
+
+The vault is shared by pilots on an account. `invbroker.DepositPlexToVault` moves whole units of physical PLEX **44992**
+from an owned stack in an NPC station hangar, a current docked Upwell hangar, or the active ship's cargo. Withdrawals
+deliver to the current docked Item Hangar or active ship's cargo, checking ownership, location, quantity, and cargo capacity.
+The inventory mutation and account balance commit together in the resident world. Save version 236 initializes existing
+accounts at zero and uses the account and inventory checkpoint projections to retain both sides of each transfer.
+
+The public gateway serves `BalanceRequest` from the authenticated account in hundredths of a PLEX and publishes balance
+changes to that account's notice stream. Build **3662168** `invControllers.pyj`, `inventory/plexVault.pyj` and
+`market/sellMulti.pyj` use `InventoryToVault`, `VaultToInventory` and `VaultToMarket`. The stock listeners in
+`vgs/common/listeners.pyj` register after the broker replies, so the session queues the matching reference in a later
+`OnPlexDeposited`, `OnPlexItemAddedToInventory`, `OnPlexDepositFailed` or `OnPlexWithdrawFailed` notification.
+`marketsvc.pyj` sends `PlacePlexSellOrder` with one sell entry and uses the ordinary quote fields for `ModifyPlexCharOrder`.
+
+**Sell PLEX** withdraws to the current NPC station and submits to Eden's existing regional market, including normal
+settlement, taxes and sell order expiry. Global order pooling, purchases delivered straight into the vault, vault transaction
+history, vault-to-direct-trade and New Eden Store spending remain pending.
+
+The stock `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+EVE.js **261108.1** `invBroker/plexVault.js` (SHA-256 `10a36dd41c2645b56e3ee017f4baec29f75e4642f87750ddbb81a95ee8b21c46`)
+and `marketProxyService.js` (SHA-256 `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`) provide the
+reference transfer and sale wire shapes.
+[EVE University PLEX Vault](https://wiki.eveuniversity.org/PLEX_Vault) ·
+[CCP PLEX Vault](https://support.eveonline.com/hc/en-us/articles/115003168285-PLEX-Vault) ·
+[CCP Global PLEX Market](https://www.eveonline.com/news/view/global-plex-market-now-live)
+
+**Automated validation.** The shared exact filter passed all 10 new cases in 13.74 seconds, including all three
+`PlexVaultTests` cases. The cases check stock transfer and sale signatures, acknowledgement after the reference, failed
+transfers, gateway account isolation and balance updates, repricing, checkpoint reopen, and migration from version 235.
+The affected market, gateway, home station, contacts, combat, and persistence selection passed 268 cases in 112.87 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Move part of a PLEX stack into the vault and use Sell PLEX from an NPC station.
+
 ## Ranged personal buy orders
 
 Personal buy listings at NPC stations support station, solar-system, 1–5, 10, 20, 30 and 40 jumps, and region fulfillment

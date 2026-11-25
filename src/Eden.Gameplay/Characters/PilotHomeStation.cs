@@ -15,7 +15,18 @@ public enum HomeStationError
     Triglavian = 6,
 }
 
-public sealed record HomeStationCandidate(HomeStation Station, bool Current, bool School, IReadOnlyList<HomeStationError> Errors);
+public sealed record HomeStationCandidate(HomeStation Station, bool Current, bool School, IReadOnlyList<HomeStationError> Errors)
+{
+    public bool Remote => !Current && !School;
+}
+
+public sealed class HomeStationRemoteConfirmationException() : Exception("Confirm the remote home station change.");
+
+public sealed class HomeStationRemoteValidationException(IReadOnlyList<HomeStationError> errors)
+    : Exception("That corporation office cannot be selected as your home station.")
+{
+    public IReadOnlyList<HomeStationError> Errors { get; } = errors;
+}
 
 public sealed record HomeStationChange(HomeStation Station, long BalanceCents);
 
@@ -49,7 +60,10 @@ public static class HomeStationRules
     public const int FirstWormholeSystem = 31000000;
     public const int LastWormholeSystem = 31999999;
 
-    public static IReadOnlyList<HomeStationError> Errors(int stationId, int homeId, int systemId, int regionId)
+    // Build 3662168 homestation.const uses timedelta(days=365).
+    public const long RemoteChangeCooldownTicks = 365 * TimeSpan.TicksPerDay;
+
+    public static IReadOnlyList<HomeStationError> Errors(int stationId, int homeId, int systemId, int regionId, bool remoteCooldown = false)
     {
         List<HomeStationError> errors = [];
         if (stationId == homeId)
@@ -63,6 +77,10 @@ public static class HomeStationRules
         if (regionId == PochvenRegion)
         {
             errors.Add(HomeStationError.Triglavian);
+        }
+        if (remoteCooldown)
+        {
+            errors.Add(HomeStationError.RemoteCooldown);
         }
         return errors;
     }
