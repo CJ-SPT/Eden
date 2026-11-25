@@ -5,6 +5,8 @@ namespace Eden.Gameplay.Notifications;
 
 public enum InboxNotificationType
 {
+    // Build 3662168 notifications.common.notificationconst.notificationTypeCharMedalMsg.
+    CorporationMedalAwarded = 3,
     AllianceMaintenanceBill = 4,
     MilitiaCorporationStandingRemoval = 60,
     MilitiaCorporationStandingWarning = 62,
@@ -73,6 +75,8 @@ public sealed record ContactNotificationContent(double Level, string Message);
 
 public sealed record KillRightNotificationContent(KillRight Right);
 
+public sealed record MedalAwardNotificationContent(long MedalId, int CorporationId, string Reason);
+
 public sealed record WarNegotiationNotificationContent(int FromOwnerId, int ToOwnerId, long ActorId, long AmountCents);
 
 public sealed record CorporationWarNotificationContent(
@@ -126,6 +130,7 @@ public sealed record InboxNotification(
     public StructureDeliveryContent? StructureDelivery { get; init; }
     public int? ExpertSystemTypeId { get; init; }
     public CorporationWarNotificationContent? CorporationWar { get; init; }
+    public MedalAwardNotificationContent? MedalAward { get; init; }
 }
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);

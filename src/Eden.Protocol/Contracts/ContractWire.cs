@@ -11,6 +11,11 @@ internal static class ContractWire
     internal static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 }
 
+internal sealed record ContractDeletionReply(ContractDeletionResult Result) : BlueModel
+{
+    public override object ToBlue() => new object?[] { new BlueList<long>(Result.Deleted), new BlueList<long>(Result.Failed) };
+}
+
 internal sealed record ContractRow(PersonalContract Contract) : BlueModel
 {
     public override object ToBlue() =>

@@ -146,6 +146,10 @@ fleet warp and regroup independently. Fleets support eligible mission reward and
 damage and Command Bursts. [Fleet regroup](protocol/fleets.md#native-fleet-regroup) ·
 [Cooperative fleet records](protocol/fleets.md)
 
+Fleet Composition shows hulls, docking status and leadership skills for pilots in the viewer's command scope.
+Fleet members can see the fleet's system locations through the map's **My Fleet** filter.
+[Fleet composition](protocol/fleets.md#fleet-composition-and-map-locations)
+
 Fleet Finder supports corporation, alliance, militia and public adverts, with standings filters and open or approval-based
 applications. Fleet bosses can cap the roster and choose a default squad for open applications. Fleets and their adverts
 last for the running server session. Reconnect grace, saved setups and geometric formations remain open.
@@ -175,7 +179,9 @@ its members at the time of combat. Reports retain their attribution and kill IDs
 
 Corporation managers can create and award custom medals from the selected corporation wallet division. Recipients can
 publish, hide or discard awards from their Character Sheet. Medal designs, awards and visibility survive restarts.
-[Corporation medals](protocol/corporations.md#corporation-medals)
+Award notices reach the recipient's inbox even when the pilot is offline.
+[Corporation medals](protocol/corporations.md#corporation-medals) ·
+[Medal award notifications](protocol/corporations.md#medal-award-notifications)
 
 ## Travel and navigation
 
@@ -275,6 +281,10 @@ The personal contract wizard now supports the global inventory binding used by P
 
 Bulk ship contracts now create one personal item-exchange offer per assembled ship, up to the pinned client's **30-ship** limit and the pilot's available skill slots. Each offer keeps its own price, fees, fitted contents and later settlement. The complete batch commits together; a rejected ship, insufficient funds or a failed write leaves all ships and funds unchanged. Native requests and progress notifications have automated coverage; client presentation remains unverified. See the [bulk ship contract notes](protocol/contracts.md#bulk-fitted-ship-contract-creation).
 
+Issuers can cancel or reclaim multiple eligible personal contracts from **My Contracts**. The batch returns eligible
+goods and rewards from escrow and reports each contract it could not cancel.
+[Bulk contract cancellation](protocol/contracts.md#bulk-personal-contract-cancellation)
+
 Personal auctions now support public offers and private assignments, held bids, automatic outbid refunds, repeated late-bid extensions and buyouts. Ordinary auction winners collect their goods after expiry; issuers collect proceeds separately. Buyouts deliver goods immediately. Bid history, claims, wallet entries and fitted hull contents survive restarts. Native calls have automated coverage; client presentation remains unverified. See the [auction notes](protocol/contracts.md#personal-auction-contracts).
 
 Personal courier contracts now support public offers and private assignments between NPC stations. Acceptance creates a sealed package with its actual cargo volume and holds collateral; delivery settles the reward, collateral and public deposit together. Packages survive restarts and can survive ship destruction and wreck recovery. Failure pays the issuer, while breaking an intact package releases its goods to the hauler. Search, progress lists, wallet history and native calls have automated coverage; client presentation remains unverified. See the [courier notes](protocol/contracts.md#personal-courier-contracts).
@@ -364,10 +374,12 @@ Native **Stack All** now consolidates compatible personal stacks in Item Hangar 
   together. [Subcapital Micro Jump Field Generator](protocol/navigation.md#subcapital-micro-jump-field-generator)
 - **Drones and information modules.** Supported hulls can control combat, mining and utility drones. Combat drones can
   assist and guard fleetmates. Scanners, probes, salvagers and tractors use their own eligibility and range rules.
-  Ship scanners can reveal partial fittings in falloff. Cargo scanners respect full cargo-scan immunity when they start
-  and when the paid cycle finishes.
+  Ship scanners can reveal partial ship fittings in falloff and complete fittings on targetable Upwell structures.
+  Cargo scanners respect full cargo-scan immunity when they start and when the paid cycle finishes.
   [Drones](protocol/drones.md) · [Information modules](protocol/information.md) ·
-  [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff) · [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
+  [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff) ·
+  [Upwell ship scans](protocol/information.md#ship-scanning-upwell-structures) ·
+  [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - **Capital and Upwell roles.** Supported capitals have ship-specific jump, fighter, fleet hangar, maintenance, refitting and clone
   services. Upwell gunners can lock targets and launch and recall Standup fighter squadrons.
   [Capital logistics](protocol/capital-logistics.md) · [Upwell structures](protocol/structures.md)

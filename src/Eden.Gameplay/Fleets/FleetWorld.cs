@@ -226,6 +226,17 @@ public sealed partial class FleetWorld(long seed)
 
     public CooperativeFleet Read(long actor, long fleetId) => Snapshot(MemberFleet(actor, fleetId));
 
+    public IReadOnlyList<(FleetPilot Pilot, bool Detailed)> Composition(long actor, long fleetId)
+    {
+        var fleet = MemberFleet(actor, fleetId);
+        var viewer = fleet.Members[actor];
+        bool boss = Boss(fleet, actor);
+        return fleet
+            .Members.Values.OrderBy(member => member.Pilot.Id)
+            .Select(member => (member.Pilot, boss || FleetRules.Subordinate(viewer, member)))
+            .ToArray();
+    }
+
     public CooperativeFleet Create(long actor)
     {
         if (!_online.TryGetValue(actor, out var pilot) || Identity(actor) is not null)

@@ -2,6 +2,42 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet composition and map locations
+
+The fleet boss and commanders can inspect current hulls, docked locations and trained leadership skills for
+pilots in their command scope. The fleet boss sees the full fleet. The map's **My Fleet** filter uses the same
+bound reply and receives pilot IDs and systems for the full roster. Outside the viewer's command scope,
+other pilots' detail fields are empty. Current membership is required for either view.
+
+Fleet presence supplies the system, hull and docked location. Leadership, Wing Command and Fleet Command levels
+come from the resident skill rows. The pinned catalog identifies their type IDs as **3348**, **11574** and **24764**,
+with training ranks **1**, **8** and **12**. The reply uses the current server state on each call.
+
+Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirms the bound
+`fleetSvc.GetFleetComposition()` call, the no-argument native request and client cache, and the fields used
+by `fleetCompositionWnd.pyj` and `mapFilterFleet.pyj`. The composition window displays the skill and ID arrays
+in reverse order, starting with Fleet Command. EVE.js **261108.1** uses a list of KeyVals in
+`server/src/services/fleets/fleetPayloads.js` (SHA-256
+`bad4210618f0053dfb1a075f3bdaaaa94452f32b5c120e455e83c2d49487fea9`).
+[Fleet composition window](https://wiki.eveuniversity.org/Fleet_User_Interface#Fleet_composition)
+
+**Automated validation.** `NativeFleetCompositionProvidesCommandDetailsAndMapLocationsToCurrentMembers`
+passed. It checks role-based details, map fields, trained levels, undocking and loss of access after departure.
+The warmed native read recorded zero SQL commands, connections or fitting calculations.
+
+The November 25, 2026 milestone also covers medal award notifications, bulk personal contract cancellation
+and ship scanning of Upwell structures. All four exact cases passed in 10.07 seconds. The solution built with
+zero warnings and errors. All 258 focused cases passed in 121.18 seconds, and the catalog and formatting
+policy suites passed all 17 cases. Style, CSharpier and line-width checks passed with the local
+`.artifacts` archive excluded from the formatter.
+
+```text
+FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~FleetRulesTests|FullyQualifiedName~InformationTests|FullyQualifiedName~StructureTargetingTests|FullyQualifiedName~StructureEquipmentTests|FullyQualifiedName~StructureAttackTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~CorporationMedalTests|FullyQualifiedName~InboxServiceTests|FullyQualifiedName~Persistence.InboxTests|FullyQualifiedName~ContractServiceTests|FullyQualifiedName~ContractAssetServiceTests|FullyQualifiedName~Persistence.ContractTests|FullyQualifiedName~AuctionContractTests|FullyQualifiedName~CourierContractTests|FullyQualifiedName~DetachedCheckpointTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Fleet recruitment limits and default squads
 
 The fleet boss can set a maximum size from **1 to 256** and select or clear an existing default squad.

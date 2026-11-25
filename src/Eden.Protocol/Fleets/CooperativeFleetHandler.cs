@@ -39,6 +39,8 @@ internal sealed partial class CooperativeFleetHandler(
             return;
         }
         var pilot = context.Pilot;
+        bool inTransit = IsInTransit(context);
+        long? docked = pilot.Position is null && !inTransit ? pilot.DockedLocationId : null;
         _pilot = pilot.PilotId;
         if (
             _presence is not { } last
@@ -49,7 +51,8 @@ internal sealed partial class CooperativeFleetHandler(
             || last.ShipTypeId != pilot.ShipTypeId
             || last.SystemId != pilot.SystemId
             || last.Position != pilot.Position
-            || last.InTransit != IsInTransit(context)
+            || last.InTransit != inTransit
+            || last.DockedLocationId != docked
         )
         {
             _presence = new(
@@ -59,8 +62,9 @@ internal sealed partial class CooperativeFleetHandler(
                 pilot.ShipTypeId,
                 pilot.SystemId,
                 pilot.Position,
-                IsInTransit(context),
-                pilot.Identity.AllianceId
+                inTransit,
+                pilot.Identity.AllianceId,
+                DockedLocationId: docked
             );
             fleets.Update(_session, _presence);
         }
@@ -559,6 +563,10 @@ internal sealed partial class CooperativeFleetHandler(
                     return new FleetWingsReply(fleet.Wings);
                 case ("GetMembers", []):
                     return new BlueMap<long, FleetMemberReply>(fleet.Members.ToDictionary(m => m.Pilot.Id, m => new FleetMemberReply(m)));
+                case ("GetFleetComposition", []):
+                    return new BlueList<FleetCompositionReply>(
+                        fleets.Composition(actor, id).Select(row => new FleetCompositionReply(row)).ToArray()
+                    );
                 case ("GetOptions", []):
                     return new FleetOptionsReply(fleet.Options);
                 case ("GetFleetMaxSize", []):

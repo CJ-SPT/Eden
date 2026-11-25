@@ -10,6 +10,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [Corporation Kill Reports](#corporation-kill-reports)
 - [Corporation medals](#corporation-medals)
+- [Medal award notifications](#medal-award-notifications)
 - [Corporation and alliance wars](#corporation-and-alliance-wars)
 - [Defender allies, surrender and War Reports](#defender-allies-surrender-and-war-reports)
 - [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
@@ -98,9 +99,8 @@ Recipients start with private awards. In **Character Sheet → Decorations**, th
 make them private or discard them. Discarding removes an award from the character's list and preserves the issuing
 corporation's award history. Issuing corporations can review their own catalogue and recipients. Checkpoint schema 230
 preserves medal art, award reasons, visibility and corporation attribution. The recipient keeps a medal after leaving
-the issuing corporation. A player sees newly awarded medals when reopening **Decorations**. The issuing connection
-receives the catalogue refresh event, and self-awards also refresh that connection's character sheet. Offline notices
-and refresh events delivered to other clients are outside this milestone.
+the issuing corporation. The issuing connection receives the catalogue refresh event. Recipients get
+[medal award notifications](#medal-award-notifications).
 
 Inert inspection of build **3662168**, archive SHA-256
 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirmed the operations and quote flow in
@@ -125,6 +125,36 @@ Not performed; agent client testing is disabled.
 1. Create a medal from **Members → Decorations** and confirm the selected corporation wallet division pays the fee.
 2. Award the medal to a corporation member and verify that reopening **Decorations** shows the private award.
 3. Make the medal public and open the recipient's Show Info from another pilot.
+
+## Medal award notifications
+
+An award records a notification in each recipient's **Corporation** inbox with the medal, issuing corporation and
+award reason. The resident transaction commits the notification alongside the award, fee and wallet journal.
+Connected recipients also receive `OnMedalIssued`, which refreshes **Decorations**. The regular inbox read and
+delivery cursor prevent a fetched notification from appearing twice. Unread notices remain available after a restart.
+
+Build **3662168** `notificationconst.pyj` assigns type 3 to `notificationTypeCharMedalMsg` and places it in the
+Corporation group. `notificationUtil.pyj` reads `medalID` and `corpID` for the native formatter. In `medals.pyj`,
+`OnMedalIssued` refreshes the recipient's medals and takes no required arguments. The EVE.js **261108.1** reference
+`corporationNotifications.js` (SHA-256 `101462c93041e9de1f42ae8707f4e90c0a34a96483fb3d6d55b8cc686dddd3c9`)
+also targets the recipient connection with this event.
+[CCP Quantum Rise patch notes](https://www.eveonline.com/news/view/patch-notes-for-quantum-rise-1) ·
+[UniWiki award flow](https://wiki.eveuniversity.org/Managing_corporation_members#Decorations)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Alliances.CorporationMedalTests.MedalAwardsNotifyOnlyTheirRecipientsAndUnreadNoticesSurviveCheckpoint`
+passed in 4.83 seconds. It verifies recipient-only delivery, the native fields and Decorations refresh, no notice
+for quotes or failed awards, and unread notification persistence after an offline award.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Award a medal while its recipient has Decorations open and confirm the view refreshes and the unread notice appears.
+2. Award another medal while the recipient is signed out, then verify the notification after sign-in.
 
 ## Corporation and alliance wars
 

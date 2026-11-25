@@ -4,6 +4,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -56,6 +57,7 @@ internal sealed class InboxHandler(IPilotInbox inbox, IPilotInventory inventory)
         var batch = inbox.Changes(context.Pilot.PilotId, _cursor);
         var pilot = context.Pilot;
         HashSet<long>? deliveredItems = null;
+        bool decorationChanged = false;
         foreach (var notification in batch.Items)
         {
             if (notification.KillRight is { Right: var right })
@@ -75,6 +77,10 @@ internal sealed class InboxHandler(IPilotInbox inbox, IPilotInventory inventory)
                 }
             }
             bool fetched = _fetched.Remove(notification.Id);
+            if (notification.ReceiverId == _pilot && notification.MedalAward is not null)
+            {
+                decorationChanged = true;
+            }
             // Earned and used events also invalidate the target's client cache. The inbox row belongs to the right owner.
             if (notification.ReceiverId == _pilot && !fetched && !notification.Processed && !notification.Deleted)
             {
@@ -90,6 +96,10 @@ internal sealed class InboxHandler(IPilotInbox inbox, IPilotInventory inventory)
             {
                 (deliveredItems ??= []).UnionWith(delivery.ItemIds);
             }
+        }
+        if (decorationChanged)
+        {
+            context.Notifications.Add(new DecorationIssued());
         }
         if (deliveredItems is { Count: > 0 })
         {
@@ -329,6 +339,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
         : notification.StructureDelivery is { } delivery ? new InboxStructureDeliveryData(notification.SenderId, delivery)
         : notification.ExpertSystemTypeId is int typeId ? new InboxExpertSystemData(typeId)
         : notification.CorporationWar is { } war ? new InboxCorporationWarData(notification.Type, war, notification.Created)
+        : notification.MedalAward is { } medal ? new InboxMedalAwardData(medal)
         : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>
@@ -345,6 +356,17 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
                 ["data"] = Data(Notification),
             }
         );
+}
+
+internal sealed record InboxMedalAwardData(MedalAwardNotificationContent Content) : BlueModel
+{
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["medalID"] = Content.MedalId,
+            ["corpID"] = Content.CorporationId,
+            ["reason"] = new BlueUnicode(Content.Reason),
+        };
 }
 
 internal sealed record InboxNotificationReceived(InboxNotification Notification) : PilotNotification("OnNotificationReceived")

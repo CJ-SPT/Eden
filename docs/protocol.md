@@ -445,6 +445,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Fleet composition and map locations](protocol/fleets.md#fleet-composition-and-map-locations)
 - [Fleet recruitment limits and default squads](protocol/fleets.md#fleet-recruitment-limits-and-default-squads)
 - [Native fleet regroup](protocol/fleets.md#native-fleet-regroup)
 - [Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026)
@@ -457,6 +458,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Medal award notifications](protocol/corporations.md#medal-award-notifications)
 - [Corporation medals](protocol/corporations.md#corporation-medals)
 - [Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
 - [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
@@ -622,6 +624,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Information modules and salvage
 
+- [Ship scanning Upwell structures](protocol/information.md#ship-scanning-upwell-structures)
 - [Ship-scanner falloff](protocol/information.md#ship-scanner-falloff)
 - [Cargo scan immunity](protocol/information.md#cargo-scan-immunity)
 - [Automatic signature resolution](protocol/information.md#automatic-signature-resolution--november-15-2026)
@@ -804,6 +807,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Personal contracts
 
+- [Bulk personal contract cancellation](protocol/contracts.md#bulk-personal-contract-cancellation)
 - [courier package Show Info volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026)
 - [Resident contract settlement and search](protocol/contracts.md#resident-contract-settlement-and-search)
 - <a id="contract-search-endpoint-access"></a>[Contract search endpoint access](protocol/contracts.md#contract-search-endpoint-access)

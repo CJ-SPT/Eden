@@ -3,7 +3,9 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Skills;
 using Eden.World.Storage;
 
 namespace Eden.World.Fleets;
@@ -121,6 +123,36 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
     public bool CanBind(long actor, long fleet) => Read(() => _world.CanBind(actor, fleet, Now));
 
     public CooperativeFleet Read(long actor, long fleet) => Read(() => _world.Read(actor, fleet));
+
+    public IReadOnlyList<FleetCompositionMember> Composition(long actor, long fleet)
+    {
+        if (database is null || LiveWorld.Find(database.Path) is not { } resident)
+        {
+            throw new InvalidDataException("Fleet composition requires a running world.");
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return resident.Economy.Inspect(world =>
+            Read(() => _world.Composition(actor, fleet))
+                .Select(member =>
+                {
+                    var (pilot, detailed) = member;
+                    return new FleetCompositionMember(
+                        pilot.Id,
+                        pilot.SystemId,
+                        detailed ? pilot.DockedLocationId : null,
+                        detailed ? pilot.ShipTypeId : null,
+                        detailed
+                            ? new(
+                                PilotSkillReader.Level(world, catalog, pilot.Id, (int)FleetLeadershipSkill.Leadership),
+                                PilotSkillReader.Level(world, catalog, pilot.Id, (int)FleetLeadershipSkill.WingCommand),
+                                PilotSkillReader.Level(world, catalog, pilot.Id, (int)FleetLeadershipSkill.FleetCommand)
+                            )
+                            : null
+                    );
+                })
+                .ToArray()
+        );
+    }
 
     public void Invite(long actor, long fleet, long target, FleetPlacement placement) =>
         Write(() => _world.Invite(actor, fleet, target, placement, Now));

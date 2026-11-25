@@ -20,6 +20,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Personal courier contracts](#personal-courier-contracts)
 - [Personal auction contracts](#personal-auction-contracts)
 - [Bulk fitted-ship contract creation](#bulk-fitted-ship-contract-creation)
+- [Bulk personal contract cancellation](#bulk-personal-contract-cancellation)
 
 ## Courier package Show Info volume — November 9, 2026
 
@@ -270,6 +271,18 @@ References: inert inspection of the same build **3662168** `code.ccp` archive/ha
 
 **Optional maintainer checks.** Create contracts for two fitted ships and inspect progress, the returned contracts and each price. Accept one and cancel the other, then inspect native fitting/cargo displays after reconnecting. Native rendering, input and contract-window behavior remain unverified.
 
+
+## Bulk personal contract cancellation
+
+The Contracts window can cancel multiple personal offers in one action. Inert inspection of build **3662168** `contractentry.pyj` and `contracts.pyj` confirms that `contractProxy.DeleteMultipleContracts` takes one list of contract IDs and returns two lists, one for deleted IDs and one for failed IDs. The client reports both counts and updates its contract cache for the deleted IDs. The inspected archive's SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. EVE.js **261108.1** implements the same reply in `contractProxyService.js` and checks each contract in `contractRuntimeState.js`. [EVE University contract cancellation](https://wiki.eveuniversity.org/Contracts#Cancelling_a_Contract)
+
+Eden validates positive, distinct IDs up to one 100-row contracts page before beginning. It applies the existing issuer cancellation and escrow reclaim rules to each selection. Outstanding or rejected personal contracts without an auction bid can be reclaimed. Unavailable or unauthorized contracts, already reclaimed contracts, auctions with bids, and contracts in other states appear in the failed list. The committed cancellations return escrow goods and reward ISK exactly once, update the saved contract states, and emit ordinary inventory, wallet and escrow changes. Both lists preserve the order of their entries in the submitted selection.
+
+**Automated validation.** The exact test `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ContractServiceTests.NativeBulkCancellationReturnsPerContractResultsAndCheckpointsEscrowOnce` passed in **4.72 seconds**. It checks mixed deletion results, malformed and repeated IDs, inventory and wallet changes, checkpoint reopening, and retry without a second refund.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Select several of your own outstanding contracts in the native Contracts window, use the multi-delete action, and inspect the returned items and the contract status.
 
 ## Resident contract settlement and search
 

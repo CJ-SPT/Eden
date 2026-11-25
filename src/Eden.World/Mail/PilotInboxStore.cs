@@ -96,6 +96,7 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
                 n.Type == InboxNotificationType.ContactAdded || n.Type == InboxNotificationType.ContactEdited
             ),
             InboxGroup.Bills => rows.Where(n => n.Type == InboxNotificationType.AllianceMaintenanceBill),
+            InboxGroup.Corporation => rows.Where(n => n.Type == InboxNotificationType.CorporationMedalAwarded),
             InboxGroup.War => rows.Where(n =>
                 (n.Type >= InboxNotificationType.WarMutualInvitation && n.Type <= InboxNotificationType.WarDeclared)
                 || n.Type == InboxNotificationType.WarMutualRetracted

@@ -20,6 +20,7 @@ using Eden.World.Industry;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -466,37 +467,66 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 {
                     return true;
                 }
-                if (contract.Type == ContractType.Auction && contract.AcceptorId is not null)
+                if (ReclaimError(contract) is { } error)
                 {
-                    throw new InvalidDataException("Collect auction proceeds and goods through auction settlement.");
+                    throw new InvalidDataException(error);
                 }
-                if (contract.Status is not (ContractStatus.Outstanding or ContractStatus.Rejected))
-                {
-                    throw new InvalidDataException("This contract cannot be reclaimed.");
-                }
-                List<InventoryChange> changes = [];
-                foreach (var entry in world.Set<SavedContractEscrow>().Where(e => e.ContractId == contractId).ToArray())
-                {
-                    changes.Add(new(Transfer(world, catalog, entry.ItemId, pilotId, pilotId), null));
-                    world.Remove(entry);
-                }
-                long now = Now;
-                Pay(
-                    world,
-                    contract,
-                    pilotId,
-                    MarketDefinitions.SccCorporationId,
-                    WalletEntryType.ContractRewardRefund,
-                    contract.RewardCents,
-                    now
-                );
-                contract.Status = contract.Expires <= now ? ContractStatus.Deleted : ContractStatus.Cancelled;
-                contract.Completed = now;
-                contract.Reclaimed = true;
-                Change(world, contractId, pilotId, ContractChangeKind.Reclaimed, changes, Balance(world, pilotId));
+                Reclaim(world, catalog, contract, Now);
                 return true;
             }
         );
+
+    public ContractDeletionResult DeleteMany(long pilotId, IReadOnlyList<long> contractIds)
+    {
+        ContractRules.CheckDeletionBatch(contractIds);
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Bulk contract cancellation requires a resident world.");
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        using var world = live.Economy.Begin(TransactionParticipants.None);
+        _ = Pilot(world, pilotId);
+        long now = Now;
+        List<long> deleted = [];
+        List<long> failed = [];
+        foreach (long id in contractIds)
+        {
+            var contract = world.Set<SavedContract>().Find(id);
+            if (contract is null || contract.IssuerId != pilotId || contract.Reclaimed || ReclaimError(contract) is not null)
+            {
+                failed.Add(id);
+                continue;
+            }
+            Reclaim(world, catalog, contract, now);
+            deleted.Add(id);
+        }
+        if (deleted.Count > 0)
+        {
+            world.AfterCommit(signal.Publish);
+            world.Commit();
+        }
+        return new(deleted, failed);
+    }
+
+    private static string? ReclaimError(SavedContract contract) =>
+        contract.Type == ContractType.Auction && contract.AcceptorId is not null
+            ? "Collect auction proceeds and goods through auction settlement."
+        : contract.Status is not (ContractStatus.Outstanding or ContractStatus.Rejected) ? "This contract cannot be reclaimed."
+        : null;
+
+    private static void Reclaim(WorldAction world, CatalogDbContext catalog, SavedContract contract, long now)
+    {
+        long contractId = contract.Id;
+        long pilotId = contract.IssuerId;
+        List<InventoryChange> changes = [];
+        foreach (var entry in world.Filter<SavedContractEscrow>(e => e.ContractId == contractId).ToArray())
+        {
+            changes.Add(new(Transfer(world, catalog, entry.ItemId, pilotId, pilotId), null));
+            world.Remove(entry);
+        }
+        Pay(world, contract, pilotId, MarketDefinitions.SccCorporationId, WalletEntryType.ContractRewardRefund, contract.RewardCents, now);
+        contract.Status = contract.Expires <= now ? ContractStatus.Deleted : ContractStatus.Cancelled;
+        contract.Completed = now;
+        contract.Reclaimed = true;
+        Change(world, contractId, pilotId, ContractChangeKind.Reclaimed, changes, Balance(world, pilotId));
+    }
 
     public void Dismiss(long pilotId, long contractId) =>
         Write(

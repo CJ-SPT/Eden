@@ -2,6 +2,27 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Ship scanning Upwell structures
+
+A locked, targetable Upwell structure within ship-scan range now returns its complete fitted hardware and current
+capacitor through `OnShipScanCompleted`. The scan uses the structure's surface distance, including normal scanner falloff
+for range eligibility. Every fitted combat module, rig and service module is reported, including offline fittings.
+Repeated modules are counted by type. The scanner reads the committed structure fit and capacitor at the paid deadline.
+Destruction, lost locks and invalid range cancel the result without refund. The scan belongs to the initiating pilot and
+works without docking or fitting access. Hangar contents, fuel and loaded charges are outside the fitting report.
+
+EVE University documents complete Upwell scan results. The EVE.js 261108.1 scanner admits structures through its standard
+target-inventory callback. Eden uses the same native result arguments as ship scans, verified against the pinned client
+under [native scans and targeting](#native-scans-and-targeting). The pinned Astrahus profile **35832** supplies a **45 km**
+radius and **200,000 GJ** base capacitor. [EVE University ship scanning](https://wiki.eveuniversity.org/Ship_scanning)
+
+**Automated validation.** `NativeShipScannerReturnsCompleteUpwellFitThroughFalloffAndCancelsAfterDestruction` passed in
+1.63 seconds of test execution. Its resident protocol flow checks the complete offline equipment and service fit,
+capacitor, owner-independent access, private results and destruction before disclosure. The initial fixture registered the
+structure without a valid inventory owner. The passing case creates the owning corporation through the resident service.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Ship scanner falloff
 
 Ship scanners can complete a paid scan beyond optimal range. Ship Scanner I has **50 km** optimal and **30 km** falloff.
@@ -416,7 +437,7 @@ Cargo and ship scanners use `dogmaIM.Activate(moduleID, effectName, targetID, re
 | `OnCargoScanComplete` | target ID, Python list of `(typeID, quantity)` tuples |
 | `OnShipScanCompleted` | ship ID, capacitor charge, capacitor capacity, Python list of hardware tuples |
 
-Results belong only to the scanning session. Cargo reads expose supported ship holds, wreck/container contents and saved NPC mining cargo without transferring ownership. Ship reads expose fitted player hardware and current capacitor. NPCs use their existing nominal capacitor profile and have no synthetic inventory modules. The [ship scanner falloff](#ship-scanner-falloff) record covers partial hardware results outside optimal range.
+Results belong only to the scanning session. Cargo reads expose supported ship holds, wreck/container contents and saved NPC mining cargo without transferring ownership. Ship reads expose fitted player hardware and current capacitor. NPCs use their existing nominal capacitor profile and have no synthetic inventory modules. See [ship scanner falloff](#ship-scanner-falloff) for partial hardware results and [Upwell structure scans](#ship-scanning-upwell-structures) for their complete fitting reports.
 
 `Survey` is skill **3551**, distinct from CPU Management **3426**. Its pinned modifiers enter the existing fitting graph once. Duration, native skill brain and paid deadlines share that calculation. Five online survey chipsets apply their mining critical/residue modifiers and `miningScannerUpgrade`, with real group limits. On an eligible hull with `integratedMiningScanner`, `miningScanMgr.perform_scan()` returns Python-list triples `(asteroidID, typeID, remainingQuantity)` for live deposits within the pinned **250 km** radius. Unupgraded tier-one presentation remains client-local.
 

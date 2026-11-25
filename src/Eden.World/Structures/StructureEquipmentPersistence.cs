@@ -43,11 +43,16 @@ internal static class StructureEquipmentPersistence
             ))
             .ToArray();
 
-    internal static StructureFittingState Read(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
+    internal static StructureFittingState Read(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedStructure structure,
+        IReadOnlyList<StructureFittedEquipment>? equipment = null
+    )
     {
         var hull = catalog.FittingAttributes(structure.TypeId);
         var hullModifiers = StructureEquipmentCatalog.HullModifiers(catalog, structure.TypeId);
-        var equipment = Equipment(world, catalog, structure);
+        equipment ??= Equipment(world, catalog, structure);
         var charges = Charges(world, catalog, structure, equipment);
         double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(structure.SystemId);
         var live = LiveWorld.Find(world.WorldPath);

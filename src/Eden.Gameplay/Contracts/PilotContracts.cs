@@ -164,6 +164,8 @@ public sealed record ContractPageInfo(
 
 public sealed record ContractOwnerFilter(long OwnerId, int? Status, int Type, bool? IssuedTo, int Limit, long? BeforeId);
 
+public sealed record ContractDeletionResult(IReadOnlyList<long> Deleted, IReadOnlyList<long> Failed);
+
 public interface IPilotContracts
 {
     long Revision { get; }
@@ -174,6 +176,7 @@ public interface IPilotContracts
     PersonalContract Accept(long pilotId, long contractId);
     void Reject(long pilotId, long contractId);
     void Delete(long pilotId, long contractId);
+    ContractDeletionResult DeleteMany(long pilotId, IReadOnlyList<long> contractIds);
     void Dismiss(long pilotId, long contractId);
     void Complete(long pilotId, long contractId);
     void Fail(long pilotId, long contractId);
@@ -197,6 +200,7 @@ public static class ContractRules
     public const int MaximumTitle = 50;
     public const int MaximumDescription = 4000;
     public const int ChangeBatchSize = 32;
+    public const int MaximumDeletionBatch = ContractSearchRules.PageSize;
     public const long MaximumAmountCents = 1_000_000_000_000_000;
     public const long FirstJournalId = 12_000_000_000_000;
     private const long MinimumBrokerIsk = 10_000;
@@ -245,6 +249,18 @@ public static class ContractRules
         )
         {
             throw new InvalidDataException("Choose valid contract terms, quantities and expiry.");
+        }
+    }
+
+    public static void CheckDeletionBatch(IReadOnlyList<long> contractIds)
+    {
+        if (
+            contractIds.Count is < 1 or > MaximumDeletionBatch
+            || contractIds.Any(id => id <= 0)
+            || contractIds.Distinct().Count() != contractIds.Count
+        )
+        {
+            throw new InvalidDataException("Choose distinct contract IDs from one contracts page.");
         }
     }
 

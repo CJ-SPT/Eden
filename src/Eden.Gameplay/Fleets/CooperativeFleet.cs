@@ -54,7 +54,26 @@ public sealed record FleetPilot(
     SpacePosition? Position,
     bool InTransit = false,
     int? AllianceId = null,
-    MilitiaFaction? WarFaction = null
+    MilitiaFaction? WarFaction = null,
+    long? DockedLocationId = null
+);
+
+// Leadership skill type IDs in build 3662168.
+public enum FleetLeadershipSkill
+{
+    Leadership = 3348,
+    WingCommand = 11574,
+    FleetCommand = 24764,
+}
+
+public sealed record FleetLeadershipLevels(int Leadership, int WingCommand, int FleetCommand);
+
+public sealed record FleetCompositionMember(
+    long PilotId,
+    int SystemId,
+    long? DockedLocationId,
+    int? ShipTypeId,
+    FleetLeadershipLevels? Leadership
 );
 
 public sealed record FleetAffiliation(int CorporationId, int? AllianceId, MilitiaFaction? WarFaction = null);
@@ -176,6 +195,7 @@ public interface ICooperativeFleets
     CooperativeFleet Create(long actor);
     bool CanBind(long actor, long fleet);
     CooperativeFleet Read(long actor, long fleet);
+    IReadOnlyList<FleetCompositionMember> Composition(long actor, long fleet);
     void Invite(long actor, long fleet, long target, FleetPlacement placement);
     void Accept(long actor, long fleet);
     void Reject(long actor, long fleet);

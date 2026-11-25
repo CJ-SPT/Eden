@@ -98,6 +98,7 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                     or "AcceptContract"
                     or "CompleteContract"
                     or "DeleteContract"
+                    or "DeleteMultipleContracts"
                     or "DeleteNotification"
                     or "GetLoginInfo"
                     or "GetMyContractEscrow"
@@ -161,6 +162,8 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                 case ("DeleteContract", [long id]):
                     contracts.Delete(pilot, id);
                     return true;
+                case ("DeleteMultipleContracts", [List<object?> ids]) when ids.Count <= ContractRules.MaximumDeletionBatch:
+                    return new ContractDeletionReply(contracts.DeleteMany(pilot, ids.Select(ContractRequestWire.Id).ToArray()));
                 case ("CompleteContract", [long id, (long)ContractStatus.Finished]):
                     contracts.Complete(pilot, id);
                     return true;

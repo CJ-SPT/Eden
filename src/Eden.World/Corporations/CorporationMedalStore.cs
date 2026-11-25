@@ -1,8 +1,11 @@
 using System.Text.Json;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Mail;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
+using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -10,7 +13,7 @@ using Eden.World.Storage;
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationMedalStore(WorldDatabase database, TimeProvider clock) : ICorporationMedals
+internal sealed class CorporationMedalStore(WorldDatabase database, TimeProvider clock, InboxChangeSignal inbox) : ICorporationMedals
 {
     private ResidentEconomy Economy =>
         LiveWorld.Find(database.Path)?.Economy ?? throw new InvalidDataException("Corporation medals require a running world.");
@@ -63,6 +66,7 @@ internal sealed class CorporationMedalStore(WorldDatabase database, TimeProvider
         long now = Now;
         long cost = CorporationMedalRules.FeeCents * recipients.Count;
         Charge(world, corporation, division, actorId, medalId, now, cost, WalletEntryType.MedalIssuing);
+        string notification = JsonSerializer.Serialize(new MedalAwardNotificationContent(medalId, corporation.Id, reason));
         foreach (long recipientId in recipients)
         {
             var award = new CorporationMedalAward(medalId, recipientId, actorId, now, reason, CorporationMedalStatus.Private);
@@ -75,7 +79,18 @@ internal sealed class CorporationMedalStore(WorldDatabase database, TimeProvider
                     DataJson = JsonSerializer.Serialize(award),
                 }
             );
+            world.Add(
+                new SavedInboxNotification
+                {
+                    Type = InboxNotificationType.CorporationMedalAwarded,
+                    SenderId = actorId,
+                    ReceiverId = recipientId,
+                    Created = now,
+                    Message = notification,
+                }
+            );
         }
+        world.AfterCommit(inbox.Publish);
         world.Commit();
         return true;
     }

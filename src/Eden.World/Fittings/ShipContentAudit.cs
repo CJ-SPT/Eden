@@ -423,17 +423,6 @@ internal static class ShipContentAudit
                 )
             );
         }
-        if (type.GroupId == (int)InformationGroup.ShipScanner)
-        {
-            checks.Add(
-                new(
-                    ContentOperation.ConsumerCoverage,
-                    false,
-                    ShipContentMilestone.InformationAndSalvage,
-                    "Paid ship scans sample pilot fittings through falloff. Upwell structure targets remain unavailable."
-                )
-            );
-        }
         if (
             type.GroupId == (int)InformationGroup.TractorBeam
             && InventoryDefinitions.RequiresSpecificShip(catalog.FittingAttributes(type.Id))

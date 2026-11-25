@@ -18,6 +18,32 @@ internal sealed record FleetOptionsReply(FleetOptions Options) : BlueModel
         );
 }
 
+internal sealed record FleetCompositionReply(FleetCompositionMember Member) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "util.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["characterID"] = Member.PilotId,
+                ["solarSystemID"] = Member.SystemId,
+                ["stationID"] = Member.DockedLocationId,
+                ["shipTypeID"] = Member.ShipTypeId,
+                ["skills"] = Member.Leadership is { } levels
+                    ? new List<object?> { levels.Leadership, levels.WingCommand, levels.FleetCommand }
+                    : new List<object?>(),
+                ["skillIDs"] = Member.Leadership is not null
+                    ? new List<object?>
+                    {
+                        (int)FleetLeadershipSkill.Leadership,
+                        (int)FleetLeadershipSkill.WingCommand,
+                        (int)FleetLeadershipSkill.FleetCommand,
+                    }
+                    : new List<object?>(),
+            }
+        );
+}
+
 internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
 {
     internal static BlueInstance OptOuts(FleetMember member) =>

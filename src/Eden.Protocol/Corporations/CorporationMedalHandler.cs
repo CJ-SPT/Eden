@@ -60,10 +60,6 @@ internal sealed class CorporationMedalHandler(ICorporationMedals medals) : ISele
                         return Confirmation("ConfirmGivingMedal", recipients.Count);
                     }
                     context.Notifications.Add(new CorporationDecorationAdded(id));
-                    if (recipientIds.Contains(pilot))
-                    {
-                        context.Notifications.Add(new DecorationIssued());
-                    }
                     return PilotCallResult.None;
                 case ("GetAllCorpMedals", [long corporation]) when corporation is > 0 and <= int.MaxValue:
                     return new CorporationMedalCatalogueReply(medals.Catalogue(pilot, (int)corporation));

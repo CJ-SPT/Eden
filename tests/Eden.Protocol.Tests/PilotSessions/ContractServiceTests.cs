@@ -1,7 +1,9 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Contracts;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Docking;
@@ -9,9 +11,11 @@ using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Contracts;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,6 +48,111 @@ public sealed class ContractServiceTests
         long next = Created(f.Owner.Call("CreateContract", [Request(f.Item)]));
         f.Guest.Advance();
         Assert.Equal(next, Assert.Single(f.Guest.Context.Notifications.OfType<ContractEvent>()).ContractId);
+    }
+
+    [Fact]
+    public async Task NativeBulkCancellationReturnsPerContractResultsAndCheckpointsEscrowOnce()
+    {
+        const long issuer = ContractAssetTestData.Pilot;
+        const long other = ContractAssetTestData.Other;
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        long offered;
+        long otherOffered;
+        using (var world = live.Economy.Begin(TransactionParticipants.None))
+        {
+            offered = Seed(issuer);
+            otherOffered = Seed(other);
+            world.Commit();
+
+            long Seed(long pilot)
+            {
+                world.Add(new PilotWallet { PilotId = pilot, Cents = 100_000_000 });
+                return world
+                    .Add(
+                        new OwnedItem
+                        {
+                            Id = InventoryPersistence.NextId(world),
+                            OwnerId = pilot,
+                            TypeId = InventoryDefinitions.CivilianMinerType,
+                            LocationId = ContractAssetTestData.Station,
+                            FlagId = (int)InventoryFlag.Hangar,
+                            Quantity = 20,
+                        }
+                    )
+                    .Entity.Id;
+            }
+        }
+        var contracts = db.Services.GetRequiredService<IPilotContracts>();
+        var wallet = db.Services.GetRequiredService<IPilotWalletReader>();
+        var initialAssets = db.Services.GetRequiredService<IPilotContractAssets>();
+        int issuerQuantity = MinerQuantity(initialAssets, issuer);
+        int otherQuantity = MinerQuantity(initialAssets, other);
+        long expired;
+        long outstanding;
+        long foreign;
+        long refunded;
+        using (Client owner = new(db, clock, 1000001))
+        using (Client guest = new(db, clock, 1000002))
+        {
+            owner.Select();
+            guest.Select();
+            expired = Create(owner, offered, other, 12d);
+            clock.AdvanceWallTime(TimeSpan.FromDays(1));
+            outstanding = Create(owner, offered, other, 34d);
+            foreign = Create(guest, otherOffered, issuer, 56d);
+            long balance = wallet.Balance(issuer);
+            owner.Advance();
+            owner.Context.Notifications.Clear();
+            Assert.IsType<PilotCallResult.Failure>(owner.Call("DeleteMultipleContracts", [new List<object?> { outstanding, true }]));
+            Assert.IsType<PilotCallResult.Failure>(owner.Call("DeleteMultipleContracts", [new List<object?> { outstanding, outstanding }]));
+            Assert.Equal(balance, wallet.Balance(issuer));
+            Assert.Equal(ContractStatus.Outstanding, contracts.Details(issuer, outstanding).Contract.Status);
+            Assert.Empty(owner.Context.Notifications.OfType<ContractEvent>());
+
+            var result = BlueRead.Tuple(
+                Reply(owner.Call("DeleteMultipleContracts", [new List<object?> { expired, foreign, outstanding, long.MaxValue }])),
+                2
+            );
+            Assert.Equal(new object?[] { expired, outstanding }, Assert.IsType<List<object?>>(result[0]));
+            Assert.Equal(new object?[] { foreign, long.MaxValue }, Assert.IsType<List<object?>>(result[1]));
+            Assert.Equal(new[] { expired, outstanding }, owner.Context.Notifications.OfType<ContractEvent>().Select(e => e.ContractId));
+            Assert.Equal(2, owner.Context.Notifications.OfType<ItemChanged>().Count());
+            refunded = balance + 4_600;
+            Assert.Equal(refunded, wallet.Balance(issuer));
+        }
+        await live.FlushAsync();
+        db.Services.Dispose();
+        using var reopened = ServerServices.Build(new(db.Path), clock, liveWorld: true);
+        var saved = reopened.GetRequiredService<IPilotContracts>();
+        var savedWallet = reopened.GetRequiredService<IPilotWalletReader>();
+        Assert.Equal(ContractStatus.Deleted, saved.Details(issuer, expired).Contract.Status);
+        Assert.Equal(ContractStatus.Cancelled, saved.Details(issuer, outstanding).Contract.Status);
+        Assert.Equal(ContractStatus.Outstanding, saved.Details(other, foreign).Contract.Status);
+        var retry = saved.DeleteMany(issuer, [expired, outstanding]);
+        Assert.Empty(retry.Deleted);
+        Assert.Equal(new[] { expired, outstanding }, retry.Failed);
+        Assert.Equal(refunded, savedWallet.Balance(issuer));
+        var assets = reopened.GetRequiredService<IPilotContractAssets>();
+        Assert.Equal(issuerQuantity, MinerQuantity(assets, issuer));
+        Assert.Equal(otherQuantity - 7, MinerQuantity(assets, other));
+
+        static int MinerQuantity(IPilotContractAssets assets, long pilot) =>
+            assets
+                .Station(pilot, ContractAssetTestData.Station)
+                .Where(asset => asset.TypeId == InventoryDefinitions.CivilianMinerType)
+                .Sum(asset => asset.Quantity);
+
+        static long Create(Client client, long item, long recipient, double reward)
+        {
+            var request = Request(item);
+            var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
+            fields["assignedToID"] = recipient;
+            fields["price"] = 0L;
+            fields["reward"] = reward;
+            return Created(client.Call("CreateContract", [request]));
+        }
     }
 
     internal static BlueNewObject Request(long item) =>
