@@ -183,6 +183,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [First bot career ships](protocol/capsuleers.md#first-bot-career-ships)
 - [Earned bot career training](protocol/capsuleers.md#earned-bot-career-training)
 - [Regional procurement for bot corporations](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
+- [Earned replacements on the Standard market](protocol/capsuleers.md#earned-replacements-on-the-standard-market)
 - [Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 - [Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production)
 - [Miner II datacores from R&D agents](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents)

@@ -2951,7 +2951,8 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         CapsuleerHaulerTests.Fixture fixture,
         int? freightSurvival = null,
         bool fundRefits = true,
-        bool standardMarket = false
+        bool standardMarket = false,
+        bool earnedPatrol = false
     )
     {
         var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
@@ -2978,6 +2979,11 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     Capsuleers = draft.Settings.Capsuleers with
                     {
                         FundRefits = fundRefits,
+                        EarnedPvpShips = earnedPatrol || draft.Settings.Capsuleers.EarnedPvpShips,
+                        GateCamps = !earnedPatrol && draft.Settings.Capsuleers.GateCamps,
+                        NullsecExpeditions = !earnedPatrol && draft.Settings.Capsuleers.NullsecExpeditions,
+                        RoamingGangs = !earnedPatrol && draft.Settings.Capsuleers.RoamingGangs,
+                        RoamPercent = earnedPatrol ? 100 : draft.Settings.Capsuleers.RoamPercent,
                         Freight = freightSurvival is int survival
                             ? draft.Settings.Capsuleers.Freight with
                             {

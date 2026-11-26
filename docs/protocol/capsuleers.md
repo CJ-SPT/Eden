@@ -83,6 +83,50 @@ Not performed; agent client testing is disabled.
 
 Compare ship losses, replacement orders and staged fleet composition at two adjacent corporate depots.
 
+## Earned replacements on the Standard market
+
+When a bot boards a replacement assembled from its saved loss fitting, it retains the PvP assignment of the lost
+hull. Boarding and updating the assignment commit together. At a corporate headquarters, resupply before an elective
+earned PvP departure uses stock above the complete spare kit required after recent fleet losses.
+
+The resident replay uses two bot corporations in separate regions with the Standard market enabled and **Fund bot
+refits** disabled. The buyer starts with an empty treasury. Two controlled pirate bounties fund its bids through
+corporation tax. The supplier starts with working capital and uses finite Standard-market mineral asks priced from
+the November 21, 2026 Jita snapshot. Its operators manufacture the Incursus, 75mm Gatling Railgun I and Antimatter
+Charge S from build 3662168 recipes. The courier brings the purchased kits across a gate. The replay reconciles
+the mineral order volumes and debits, supplier production margin, buyer escrow, freight deliveries and both losses
+across checkpoint reopen. The starting fit follows the weapons and ammunition recorded in zKillboard loss 139930491.
+After the second recovery, the scheduler launches the replacement on a nullsec roam following another reopen.
+One complete spare kit stays in the depot through departure.
+
+The EVE.js 261108.1 market proxy (`server/src/services/market/marketProxyService.js`) provides the corporation
+wallet and market custody reference. Bounty tax, corporation market orders, fitting and ship-loss settlement use
+Eden's resident gameplay owners.
+[EVE University corporation tax](https://wiki.eveuniversity.org/Tax) ·
+[EVE University corporation market orders](https://wiki.eveuniversity.org/Corporation_logistics#Corporation_orders)
+
+**Automated validation**
+
+The exact `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.RegionalTradePaysForTwoLossesWithBountyTaxAndProductionMargin`
+filter passed both cases in 12.42 seconds after a 6.77-second build. The replay controls the bounty size,
+starting assets, mineral volumes, and combat results. The run measures wallet and stock settlement, restart
+recovery, and patrol departure for the supplied fit and prices.
+
+The affected `FullyQualifiedName~` selection passed 82 cases in 87.44 seconds. It included
+`CapsuleerAmmunitionSupplyTests`, `StandardMarketTests`, `CapsuleerWorkRulesTests`,
+`EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery`, and
+`ResupplyPaysTheSellerAndPersistsOneQuarterBudgetAcrossRetries`. The solution built in 0.95 seconds with zero
+warnings or errors. Both Python policy suites passed all 17 cases. Style, CSharpier, line width and Markdown
+links passed with the ignored local `.artifacts` archive excluded from the CSharpier scan.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ## Roaming gang rallies, scout commitment, and logistics
 
 A station can recruit compatible combat pilots already docked at staging or up to two reciprocal nullsec jumps away.

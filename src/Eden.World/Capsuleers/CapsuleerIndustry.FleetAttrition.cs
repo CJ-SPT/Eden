@@ -37,6 +37,24 @@ internal sealed partial class CapsuleerIndustry
         Ship? candidate = null
     )
     {
+        var parts = OffensiveFleetReserve(world, catalog, pilot, now, candidate);
+        if (parts.Length == 0)
+        {
+            return true;
+        }
+        var personal = Hangar(world, pilot.PilotId, pilot.StationId).ToLookup(item => item.TypeId);
+        var depot = DepotStacks(world, pilot.CorpId, pilot.StationId).ToLookup(item => item.TypeId);
+        return MissingParts(MissingParts(parts, personal), depot).Length == 0;
+    }
+
+    internal static ReplacementPart[] OffensiveFleetReserve(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        long now,
+        Ship? candidate = null
+    )
+    {
         int hull = candidate?.TypeId ?? pilot.ShipTypeId;
         if (
             !CapsuleerPatrolFit.CombatHull(catalog, hull)
@@ -48,13 +66,13 @@ internal sealed partial class CapsuleerIndustry
             || parts.Any(part => !IsMarketSupply(catalog, part.TypeId))
         )
         {
-            return true;
+            return [];
         }
-
-        var personal = Hangar(world, pilot.PilotId, pilot.StationId).ToLookup(item => item.TypeId);
-        var depot = DepotStacks(world, employer.Id, pilot.StationId).ToLookup(item => item.TypeId);
-        return MissingParts(MissingParts(parts, personal), depot).Length == 0;
+        return parts;
     }
+
+    internal static long DepotStockQuantity(WorldAction world, int corporation, int station, int type) =>
+        DepotStacks(world, corporation, station).Where(item => item.TypeId == type).Sum(item => (long)item.Quantity);
 
     private static IEnumerable<ShipLoss> RecentFleetLosses(EconomyTransaction world, int corporation, IEnumerable<Pilot> members, long now)
     {

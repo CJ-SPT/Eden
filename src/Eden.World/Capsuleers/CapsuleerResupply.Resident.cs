@@ -219,7 +219,8 @@ internal sealed partial class CapsuleerResupply
         long pilotId,
         ResupplyProgress? saved,
         long now,
-        out FittingCalculation? currentFit
+        out FittingCalculation? currentFit,
+        IReadOnlyList<ReplacementPart>? fleetReserve = null
     )
     {
         using var phase = SessionPerformance.Phase("traffic.resupply");
@@ -296,21 +297,30 @@ internal sealed partial class CapsuleerResupply
         {
             int remaining = need.Quantity;
             var stock = hangar[need.TypeId];
+            int availableFromStock = remaining;
+            if (fleetReserve?.FirstOrDefault(part => part.TypeId == need.TypeId) is { } reserved)
+            {
+                long localQuantity =
+                    stock.Sum(item => (long)item.Quantity)
+                    + CapsuleerIndustry.DepotStockQuantity(world, pilot.CorporationId, ship.StationId, need.TypeId);
+                availableFromStock = (int)Math.Clamp(localQuantity - reserved.Quantity, 0, remaining);
+            }
             foreach (var stack in stock)
             {
-                if (remaining <= 0)
+                if (availableFromStock <= 0)
                 {
                     break;
                 }
-                int quantity = Capacity(need, Math.Min(remaining, checked((int)stack.Quantity)));
+                int quantity = Capacity(need, Math.Min(availableFromStock, checked((int)stack.Quantity)));
                 if (quantity > 0)
                 {
                     Load(world, catalog, pilotId, ship.Id, ship.StationId, stack.Id, quantity, need.Drone, now, CapacityAttributes());
                     inventoryChanged = true;
                     remaining -= quantity;
+                    availableFromStock -= quantity;
                 }
             }
-            int capacity = Capacity(need, remaining);
+            int capacity = Capacity(need, availableFromStock);
             if (
                 CapsuleerIndustry.IssueReserve(world, catalog, pilotId, pilot.CorporationId, ship.StationId, need.TypeId, capacity) is
                 { } reserve

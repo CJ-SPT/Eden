@@ -29,6 +29,7 @@
   scanning. Loaded freight can turn back after a fresh warning about the next gate.
   [Trade hub refits](protocol/capsuleers.md#trade-hub-replacement-trips) ·
   [Replacement after pod loss](protocol/capsuleers.md#replacement-after-pod-loss-and-market-affordability) ·
+  [Earned replacements on the Standard market](protocol/capsuleers.md#earned-replacements-on-the-standard-market) ·
   [Nullsec scouting](protocol/capsuleers.md#nullsec-scouting-and-freight-warnings) · [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
   [Independent nullsec expeditions](capsuleer-population.md#independent-nullsec-expeditions) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·

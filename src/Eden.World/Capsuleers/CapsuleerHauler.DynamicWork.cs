@@ -176,7 +176,8 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var supplies = resupply.Dock(database, world, _operation.Catalog, pilotId, Work.Resupply, Now, out var fit);
+        var reserve = CapsuleerIndustry.OffensiveFleetReserve(world, _operation.Catalog, Pilot, Now);
+        var supplies = resupply.Dock(database, world, _operation.Catalog, pilotId, Work.Resupply, Now, out var fit, reserve);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
         return CapsuleerCorporations.Organization(world, pilotId).PvpFitGoal is not null

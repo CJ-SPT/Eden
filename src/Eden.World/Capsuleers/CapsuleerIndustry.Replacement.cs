@@ -69,7 +69,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return false;
         }
-        BoardKit(world, catalog, pilot, kit, now);
+        BoardKit(world, catalog, pilot, kit, now, replacesShip: loss.ShipId);
         return true;
     }
 
@@ -142,13 +142,13 @@ internal sealed partial class CapsuleerIndustry
         if (atTradeHub)
         {
             CancelReplacementBids(world, catalog, bids);
-            var result = ShopReplacement(world, catalog, docked, career, now, now, loss?.TypeId, kit, corporation, hangar, funded, true);
+            var result = ShopReplacement(world, catalog, docked, career, now, now, loss, kit, corporation, hangar, funded, true);
             return result with { MarketChanged = result.MarketChanged || bids.Length > 0 };
         }
         if (usable && missing.Length == 0)
         {
             CancelReplacementBids(world, catalog, bids);
-            BoardKit(world, catalog, docked, kit!, now);
+            BoardKit(world, catalog, docked, kit!, now, replacesShip: loss!.ShipId);
             return new(true, bids.Length > 0, null);
         }
         if (funded)
@@ -160,7 +160,7 @@ internal sealed partial class CapsuleerIndustry
                 career,
                 now,
                 orderDeadline.Value,
-                loss?.TypeId,
+                loss,
                 kit,
                 corporation,
                 hangar,
@@ -184,7 +184,7 @@ internal sealed partial class CapsuleerIndustry
                 CancelReplacementBids(world, catalog, bids);
                 return new(false, true, now, []);
             }
-            return ShopReplacement(world, catalog, docked, career, now, orderDeadline.Value, loss?.TypeId, kit, corporation, hangar, false);
+            return ShopReplacement(world, catalog, docked, career, now, orderDeadline.Value, loss, kit, corporation, hangar, false);
         }
 
         bool marketChanged = false;
@@ -347,7 +347,7 @@ internal sealed partial class CapsuleerIndustry
         CapsuleerCareer career,
         long now,
         long orderDeadline,
-        int? lostHull,
+        ShipLoss? loss,
         ReplacementKit? original,
         SavedCorporation? corporation,
         ILookup<int, OwnedItem> hangar,
@@ -358,7 +358,7 @@ internal sealed partial class CapsuleerIndustry
         int station = docked.StationId;
         long pilot = docked.PilotId;
         var depot = ReplacementDepot(world, corporation, station);
-        var kits = ReplacementKits(world, catalog, pilot, career, lostHull, original, atTradeHub);
+        var kits = ReplacementKits(world, catalog, pilot, career, loss?.TypeId, original, atTradeHub);
         if (QuoteReplacement(world, catalog, pilot, station, kits, corporation, hangar, depot, funded) is not { } plan)
         {
             return new(false, false, Math.Min(now, orderDeadline), []);
@@ -378,7 +378,8 @@ internal sealed partial class CapsuleerIndustry
                 throw new InvalidDataException("Replacement offers changed before purchase.");
             }
         }
-        BoardKit(world, catalog, docked, plan.Kit, now, requireOnlineFit: atTradeHub);
+        long? replacedShip = ReferenceEquals(plan.Kit, original) ? loss?.ShipId : null;
+        BoardKit(world, catalog, docked, plan.Kit, now, requireOnlineFit: atTradeHub, replacesShip: replacedShip);
         return new(true, plan.Purchases.Length > 0, null);
     }
 
@@ -448,7 +449,8 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot docked,
         ReplacementKit kit,
         long now,
-        bool requireOnlineFit = false
+        bool requireOnlineFit = false,
+        long? replacesShip = null
     )
     {
         long pilotId = docked.PilotId;
@@ -484,6 +486,14 @@ internal sealed partial class CapsuleerIndustry
                 var modules = charge.Select(magazine => fitted.Single(item => item.FlagId == magazine.Slot).Id).ToArray();
                 PilotAmmunitionStore.Load(world, catalog, pilotId, shipId, modules, sources[charge.Key], station, now);
             }
+        }
+        if (
+            replacesShip is long lost
+            && CapsuleerCorporations.Organization(world, pilotId) is { EarnedPvpShipId: long earned } organization
+            && earned == lost
+        )
+        {
+            CapsuleerCorporations.SaveOrganization(world, pilotId, organization with { EarnedPvpShipId = shipId });
         }
         return shipId;
     }
