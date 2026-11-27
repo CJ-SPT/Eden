@@ -19,9 +19,8 @@ are `allianceFormationEligibility.js`, `allianceViewState.js`, `allianceApplicat
 
 The owning wire contract is Windows client build **3662168**, `code.ccp` SHA-256
 `238ef5811fcecd77db8ecdb8f143f0e74bbd337d225a2582ed25132def900d8c` for the prepared installation
-at `E:\EdenDev\3662168`; its `start.ini` identifies V24.01/build 3662168. This prepared archive differs from the original
-signed archive hash recorded by the development preparation script. The updated `E:\Eve` installation is build 3693310
-and is not the contract authority for this work.
+at `E:\EdenDev\3662168` at the time of the original alliance implementation. Its `start.ini` identifies V24.01/build 3662168.
+The prepared archive differs from the signed original recorded by the development preparation script.
 Static Python bytecode inspection covers `ui/services/alliances/all_cso*.pyj`,
 `ui/services/corporation/bco_alliance.pyj`, and the non-sovereignty `ui/shared/neocom/Alliances/all_ui*.pyj` panels.
 It confirms `corpRegistry.CreateAlliance(name, shortName, description, url)`, application management,
@@ -31,6 +30,41 @@ The evejs `allianceViewState.js` snapshot SHA-256 is
 `ebaee4bb2f6dcfe0b4cf6a864cb05b9a38d3963e06f268cf3ecb5a83c441909b`.
 All new wire models use the existing codec. Its reference remains
 [Carbon Blue Marshal.cpp, af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
+
+## Alliance registry binding after formation
+
+The Create Alliance dialog runs `corpRegistry.CreateAlliance` inside `PerformSessionChange` and closes after the call
+completes. When the incoming session delta sets `allianceid`, the client alliance service immediately binds its registry
+moniker. Build 3662168's `eveMoniker.GetAlliance` calls `GetAllianceEx(session.allianceid, 1)`, which constructs the
+`allianceRegistry` moniker with `(allianceID, isMaster)`. Eden's scalar-only validation rejected that tuple in both
+`MachoResolveObject` and `MachoBindObject`, leaving the client without a working registry after formation.
+
+Both calls accept the native master tuple and check the ID against resident corporation affiliation before dispatching
+an embedded request. The existing scalar form remains accepted for the current alliance. The founding session delta
+precedes the creation reply, as it does in the EVE.js founding flow.
+
+Static client evidence comes from the signed build-3662168 archive with SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The relevant functions are
+`all_ui_home.CreateAllianceWnd.Confirm_thread`, `all_cso.Alliances.OnSessionChanged` and `GetMoniker`, and
+`eveMoniker.GetAlliance` and `GetAllianceEx`. The installed build 3749835 has the same binding and window sequence
+in archive SHA-256 `870a30c0e01909c1427d3996ad9aca5110ae798d4b6d837b053211f72a830e9f`.
+EVE.js `allianceRegistryRuntime.js` (`073f759c9ea8`)
+also accepts tuple and scalar parameters. Its `allianceFoundingState.js` (`f5781a5c0fc2`) records the founding
+flow, with affiliation synchronization in `corporationSessionAffiliationSync.js`.
+
+**Automated validation.** The exact test
+`Eden.Protocol.Tests.Alliances.AllianceMembershipTests.NativeCreationPublishesAllianceSessionChangeBeforeReply`
+failed on unchanged code with five RPC errors following creation. It passed in 7.77 seconds after the fix.
+The replay verifies the session delta order, native resolve and bind replies, the first bound alliance read,
+embedded and bound member reads, and rejection of a foreign alliance tuple. The solution build reported zero
+warnings or errors. The build and focused run took 40.83 seconds, with 135 passing cases using
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationWarServiceTests`.
+Eight catalog and nine formatting policy tests passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** On a server running this revision, create an alliance and verify that the dialog
+closes and the Alliance Home and Members tabs load.
 
 ## Alliance membership age and EverMark donations
 

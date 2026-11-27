@@ -20,12 +20,38 @@ public sealed class AllianceMembershipTests
     public async Task NativeCreationPublishesAllianceSessionChangeBeforeReply()
     {
         using TestWorld world = new(liveWorld: true);
-        Corporation(world);
+        int corporation = Corporation(world);
         using var scope = world.Services.CreateScope();
         var details = Details();
+        object?[] allianceBinding = [(long)AllianceRules.FirstAllianceId, 1L];
+        const string corporationRegistry = "N=10001:42-2";
+        const string allianceRegistry = "N=10001:42-3";
         Queue<object?> input = new([
             PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [Ceo]),
-            PilotServicesTests.Request("corpRegistry", "CreateAlliance", [details.Name, details.Ticker, details.Description, details.Url]),
+            PilotServicesTests.Request("corpRegistry", "MachoBindObject", [(long)corporation, null]),
+            PilotServicesTests.Request(
+                null,
+                "CreateAlliance",
+                [details.Name, details.Ticker, details.Description, details.Url],
+                corporationRegistry
+            ),
+            PilotServicesTests.Request("allianceRegistry", "MachoResolveObject", [allianceBinding]),
+            PilotServicesTests.Request("allianceRegistry", "MachoBindObject", [allianceBinding, null]),
+            PilotServicesTests.Request(null, "GetAlliance", [], allianceRegistry),
+            PilotServicesTests.Request(
+                "allianceRegistry",
+                "MachoBindObject",
+                [
+                    allianceBinding,
+                    new object?[]
+                    {
+                        "GetMembers",
+                        Array.Empty<object?>(),
+                        new Dictionary<string, object?> { ["machoVersion"] = 1L },
+                    },
+                ]
+            ),
+            PilotServicesTests.Request(null, "GetMembers", [], allianceRegistry),
         ]);
         List<BlueInstance> packets = [];
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
@@ -45,17 +71,48 @@ public sealed class AllianceMembershipTests
                     CancellationToken.None
                 )
         );
-        int id = world.Services.GetRequiredService<IAlliances>().List().Single().Id;
-        var changes = packets
-            .Where(p => p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal))
-            .Select(p => BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(BlueRead.Tuple(p.State, 14)[4], 3)[1], 2)[1]))
-            .ToArray();
-        Assert.Contains(changes, change => change.TryGetValue("allianceid", out var value) && Equals(BlueRead.Tuple(value, 2)[1], id));
-        Assert.DoesNotContain(packets, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
-        Assert.True(
-            packets.FindLastIndex(p => p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal))
-                < packets.FindLastIndex(p => p.Name.EndsWith(".CallRsp", StringComparison.Ordinal))
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var alliance = Assert.Single(alliances.List());
+        int id = alliance.Id;
+        var errors = packets
+            .Where(p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal))
+            .Select(p => BlueRead.Tuple(BlueRead.Tuple(p.State, 14)[4], 3)[2]);
+        Assert.Empty(errors);
+        var replies = packets.Where(p => p.Name.EndsWith(".CallRsp", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(8, replies.Length);
+        Assert.Equal((long)id, BlueMarshal.Decode(ReplyBytes(replies[2])));
+        int changeIndex = packets.FindIndex(p =>
+        {
+            if (!p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal))
+            {
+                return false;
+            }
+            var change = BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(BlueRead.Tuple(p.State, 14)[4], 3)[1], 2)[1]);
+            return change.TryGetValue("allianceid", out var value) && Equals(BlueRead.Tuple(value, 2)[1], id);
+        });
+        Assert.InRange(changeIndex, 0, packets.IndexOf(replies[2]) - 1);
+        Assert.Equal((long)PilotLogin.NodeId, BlueMarshal.Decode(ReplyBytes(replies[3])));
+        BlueObjectReference reference = new(allianceRegistry, 3);
+        var none = Assert.IsType<PilotCallResult.Success>(PilotCallResult.None).Reply;
+        var members = new AllianceMembersReply(alliances.Members(id));
+        var wars = world.Services.GetRequiredService<ICorporationWars>();
+        Assert.Equal(BlueMarshal.Encode(new BoundPilotReply(reference, none)), ReplyBytes(replies[4]));
+        Assert.Equal(BlueMarshal.Encode(new AllianceReply(alliance, wars.IsEligible(id))), ReplyBytes(replies[5]));
+        Assert.Equal(BlueMarshal.Encode(new BoundPilotReply(reference, members)), ReplyBytes(replies[6]));
+        Assert.Equal(BlueMarshal.Encode(members), ReplyBytes(replies[7]));
+
+        using CorporationTestClient founder = new(world, 1000001);
+        object?[] wrongAlliance = [(long)id + 1, 1L];
+        Assert.IsType<PilotCallResult.Failure>(founder.CallService("allianceRegistry", "MachoResolveObject", [wrongAlliance]));
+        Assert.IsType<PilotCallResult.Failure>(
+            founder.CallService(
+                "allianceRegistry",
+                "MachoBindObject",
+                [wrongAlliance, new object?[] { "GetMembers", Array.Empty<object?>() }]
+            )
         );
+
+        static byte[] ReplyBytes(BlueInstance packet) => BlueRead.Bytes(BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 1)[0]);
     }
 
     [Fact]

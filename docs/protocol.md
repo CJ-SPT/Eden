@@ -115,6 +115,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Alliances
 
+- [Alliance registry binding after formation](protocol/alliances.md#alliance-registry-binding-after-formation)
 - [Alliance membership age and EverMark donations](protocol/alliances.md#alliance-membership-age-and-evermark-donations)
 - [Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances)
 - [First-claim hub procurement](protocol/alliances.md#first-claim-hub-procurement)

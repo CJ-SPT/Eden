@@ -332,8 +332,16 @@ internal sealed class PilotCallRouter(
                 && (
                     keywords is { Count: > 0 }
                     || args.Length != (method == "MachoResolveObject" ? 1 : 2)
-                    || args[0] is not long allianceId
-                    || alliances?.Affiliation(context.Pilot.CorpId) != allianceId
+                    || alliances?.Affiliation(context.Pilot.CorpId) is not int allianceId
+                    // Build 3662168 eveMoniker.GetAllianceEx supplies (allianceID, isMaster).
+                    || (
+                        !Equals(args[0], (long)allianceId)
+                        && (
+                            args[0] is not object?[] allianceBind
+                            || allianceBind is not [long requested, 1L or true]
+                            || requested != allianceId
+                        )
+                    )
                 )
             )
             {
