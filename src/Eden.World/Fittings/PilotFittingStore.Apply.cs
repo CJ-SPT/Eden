@@ -13,6 +13,48 @@ namespace Eden.World.Fittings;
 
 internal sealed partial class PilotFittingStore
 {
+    // Build 3662168 evetypes.const.TYPE_LIST_CANNOT_BE_UNFITTED.
+    private const int CannotBeUnfittedTypeList = 338;
+
+    public IReadOnlyList<InventoryChange> Strip(long pilotId, long shipId)
+    {
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+        var ship = world.Ships.Find(shipId) ?? throw new InvalidDataException("Unknown fitting ship.");
+        RequireFittingShip(pilot, ship);
+        CheckFittingService(world, catalog, ship, pilotId);
+
+        var modules = PilotInventoryStore
+            .List(world, catalog, pilotId, shipId)
+            .Where(item => InventoryDefinitions.IsFittedSlot(item.FlagId) && !InventoryDefinitions.IsRigSlot(item.FlagId))
+            .ToArray();
+        if (modules.Length == 0)
+        {
+            return [];
+        }
+        if (
+            catalog.Read(CatalogData.Client.Typelist, CannotBeUnfittedTypeList) is not null
+            && modules.Any(CatalogTypeLists.Read(catalog, CannotBeUnfittedTypeList).Contains)
+        )
+        {
+            throw new InvalidDataException("This ship has equipment that cannot be unfitted.");
+        }
+
+        var changes = PilotInventoryStore.Move(
+            world,
+            catalog,
+            pilotId,
+            ship.DockedLocationId,
+            new(modules.Select(module => module.Id).ToArray(), shipId, (int)InventoryFlag.Hangar, null),
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            fittingShip: ship
+        );
+        transaction.Commit();
+        return changes;
+    }
+
     public AppliedFitting Apply(long pilotId, ApplyFittingRequest request)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [request.ShipId]));

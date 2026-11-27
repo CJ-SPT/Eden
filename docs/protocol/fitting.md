@@ -484,6 +484,32 @@ It passed 188 tests in 54 seconds. The solution build and both Python policy sui
 **Optional maintainer check.** While docked, simulate a fit for your active hull with the parts in your Item Hangar.
 Click **Fit Ship** and verify the installed modules and loaded ammunition after leaving simulation.
 
+## Strip fitting from a docked ship
+
+Build **3662168** `menusvc.StripFitting` prompts for confirmation and passes the selected ship ID to
+`invCache.StripFitting`. The wrapper binds that ship with `GetInventoryFromId`, calls `StripFitting()` with no
+wire arguments, then scatters the local `OnFittingStripped` event for that ship. Inert inspection verified these
+calls and `evetypes.const.TYPE_LIST_CANNOT_BE_UNFITTED` (**338**) in the original archive, SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The pinned catalog's restricted list is empty.
+The local Eve.js **261108.1** reference skips rigs and returns True when it moves equipment, or None when empty.
+[EVE University asset management](https://wiki.eveuniversity.org/Managing_Your_Assets) documents the docked workflow.
+
+The bound operation strips a local, owned, assembled ship into the personal Item Hangar while docked. It reuses
+the fitting service checks and the existing atomic inventory move for all removable modules and their loaded
+charges. Rigs, cargo and separate holds stay aboard. Equipment on the restricted list blocks the entire
+operation. Cargo capacity is checked against the stripped fitting, and a rejected strip restores every module
+and magazine. Successful changes update inventory and module online effects. Stripping the active ship also
+refreshes its magazine, weapon banks and dogma attributes.
+
+**Automated validation.** `StripFittingTests` covers active and inactive ships through the native binding,
+loaded charge recovery, rig retention, checkpoint reopening and rollback on protected equipment or cargo overflow.
+The strip, apply fitting, inactive inventory and ammunition classes passed 51 cases.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Strip a docked ship with a loaded weapon and a rig, then confirm the weapon and
+rounds appear in the Item Hangar and the rig stays installed.
+
 ## Bulk and corporation saved fittings — November 11, 2026
 
 Milestone 4 completes existing fitting-plan management with native `SaveManyFittings` and `DeleteManyFittings` on

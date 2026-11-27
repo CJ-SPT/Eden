@@ -463,6 +463,8 @@ target's ship and combat state intact. [Festival and Display Launchers](protocol
 
 - **Fitting.** Swap and rearrange modules, group weapons, load charges and save personal, corporation or alliance fittings.
   Apply supported fits with Multifit. Administrators can scale CPU, power grid, calibration and drone bandwidth.
+  [Strip Fitting](protocol/fitting.md#strip-fitting-from-a-docked-ship) moves removable modules and loaded charges from an
+  owned docked ship to the Item Hangar. Rigs and cargo stay aboard.
   Fitting simulation uses the selected pilot's ship and combat-drone skill bonuses.
   Drag loaded charges between compatible modules in the fitting window.
   In space, fitted modules can go offline without cost. Bringing them online away from a fitting service requires 95% capacitor.

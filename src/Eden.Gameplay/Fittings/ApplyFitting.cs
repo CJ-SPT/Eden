@@ -21,4 +21,5 @@ public sealed record AppliedFitting(IReadOnlyList<InventoryChange> Changes, IRea
 public interface IPilotApplyFitting
 {
     AppliedFitting Apply(long pilotId, ApplyFittingRequest request);
+    IReadOnlyList<InventoryChange> Strip(long pilotId, long shipId);
 }

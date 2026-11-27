@@ -549,6 +549,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Strip fitting from a docked ship](protocol/fitting.md#strip-fitting-from-a-docked-ship)
 - [Festival and Display Launchers](protocol/combat.md#festival-and-display-launchers)
 - [Capital Flex Armor and Shield Hardeners](protocol/fitting.md#capital-flex-armor-and-shield-hardeners)
 - [Dragging loaded charges between fitting slots](protocol/fitting.md#dragging-loaded-charges-between-fitting-slots)
