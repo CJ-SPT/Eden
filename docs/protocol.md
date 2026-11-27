@@ -381,6 +381,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [High-angle turret coverage](protocol/combat.md#high-angle-turret-coverage)
 - [Clone Soldier belt encounters](protocol/combat.md#clone-soldier-belt-encounters)
 - [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges)
 - [Server killboard](protocol/combat.md#server-killboard)

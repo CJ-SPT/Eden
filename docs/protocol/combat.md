@@ -401,6 +401,21 @@ and [Carbon Destiny GetSurfaceDist](https://github.com/carbonengine/destiny/blob
 **Optional maintainer checks.** Observe the disintegrator spool and Vorton arc graphics from a second client. Check the
 Breacher impact and Breach Control HUD presentation on the defending client.
 
+### High-angle turret coverage
+
+The pinned build 3662168 fixtures and the admissions from `18891ea0` distinguish unrestricted turrets from
+the high-angle profiles. The energy, hybrid and projectile tests verify each restricted type ID and the
+Dreadnought and Lancer Dreadnought group restrictions. The four Lux energy weapons remain unavailable.
+
+| Turret family | Unrestricted | High-angle | Ammunition profiles |
+| --- | ---: | ---: | ---: |
+| Energy | 204 | 8 | 200 |
+| Hybrid | 216 | 7 | 224 |
+| Projectile | 160 | 7 | 144 |
+
+**Automated validation.** The three updated tier methods passed their exact filters. The energy, hybrid,
+projectile and advanced weapon classes passed 120 cases.
+
 ## Smartbombs, November 12, 2026
 
 All 125 published static group-72 modules fit high slots without consuming hardpoints. Each paid pulse uses the fitted range,

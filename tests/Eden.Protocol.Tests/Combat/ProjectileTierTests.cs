@@ -8,6 +8,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
 using Eden.World.Catalog;
@@ -73,13 +74,15 @@ public sealed class ProjectileTierTests
     }
 
     [Fact]
-    public void All160UnrestrictedGunsAnd144ChargesHaveCompleteProfilesAndMatchingAmmunition()
+    public void ProjectileTurretsAndChargesHaveMatchingProfilesAndPinnedHullRestrictions()
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadProjectileTiers(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
         var guns = catalog.Set<ItemType>().Where(t => t.GroupId == CombatDefinitions.ProjectileWeaponGroup).ToArray();
         var supported = guns.Where(t => WeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
+        var weaponAttributes = supported.ToDictionary(t => t.Id, t => PilotFittingStore.ReadAttributes(catalog, t.Id));
+        var restricted = supported.Where(t => InventoryDefinitions.RequiresSpecificShip(weaponAttributes[t.Id])).ToArray();
         var charges = catalog
             .Set<ItemType>()
             .Where(t =>
@@ -89,7 +92,17 @@ public sealed class ProjectileTierTests
             )
             .ToArray();
         Assert.Equal(167, guns.Length);
-        Assert.Equal(160, supported.Length);
+        Assert.Equal(160, supported.Length - restricted.Length);
+        Assert.Equal(new[] { 37289, 37304, 37305, 41080, 41081, 41082, 41083 }, restricted.Select(t => t.Id).Order());
+        Assert.All(
+            restricted,
+            t =>
+            {
+                var restrictions = ShipFittingRestrictions.Read(weaponAttributes[t.Id]);
+                Assert.Equal(new[] { (int)HullClass.Dreadnought, (int)HullClass.LancerDreadnought }, restrictions.Groups.Order());
+                Assert.Empty(restrictions.Types);
+            }
+        );
         Assert.Equal(144, charges.Length);
         Assert.All(charges, t => Assert.True(TurretChargeCatalog.Supported(catalog, t.Id, t.GroupId)));
         var payloads = charges.ToDictionary(t => t.Id, t => PilotFittingStore.ReadAttributes(catalog, t.Id));
@@ -101,7 +114,7 @@ public sealed class ProjectileTierTests
                 Assert.Equal(ModuleRack.High, definition.Rack);
                 Assert.True(definition.Turret);
                 Assert.Equal(DogmaEffect.ProjectileFired, FittingCatalog.DefaultEffect(catalog, t.Id));
-                var attributes = PilotFittingStore.ReadAttributes(catalog, t.Id);
+                var attributes = weaponAttributes[t.Id];
                 Assert.Equal(0, attributes[DogmaAttributeId.CapacitorNeed]);
                 Assert.Contains(
                     charges,
@@ -109,7 +122,6 @@ public sealed class ProjectileTierTests
                 );
             }
         );
-        Assert.All(guns.Except(supported), t => Assert.Null(FittingCatalog.Definition(catalog, t.Id)));
         var tiers = supported
             .Select(t => catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(t.Id))!.Read<ClientTypes>().MetaGroupID)
             .ToHashSet();
