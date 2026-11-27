@@ -72,11 +72,11 @@ internal sealed class SovereigntyMonitor(IPilotEntosis entosis, IAlliances allia
         else if (_alliance is int previousAlliance && _owned.Keys.Any(id => id != system))
         {
             // An allianceid session change does not clear the pinned client's per-system sovereignty caches.
-            // Refresh former territory only when its tracked claim or hub actually disappeared.
-            var surviving = entosis.ClaimsForAlliance(previousAlliance).ToDictionary(claim => claim.SystemId, claim => claim.HubId);
+            // Refresh former territory when its tracked claim changes or disappears.
+            var surviving = entosis.ClaimsForAlliance(previousAlliance).ToDictionary(claim => claim.SystemId);
             foreach (var (id, before) in _owned)
             {
-                if (id != system && surviving.GetValueOrDefault(id) != before.HubId)
+                if (id != system && surviving.GetValueOrDefault(id) != before.Claim)
                 {
                     Publish(context, id, entosis.Hub(id));
                 }

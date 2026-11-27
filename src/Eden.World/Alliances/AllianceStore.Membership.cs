@@ -211,6 +211,7 @@ internal sealed partial class AllianceStore
         member.ChosenExecutorId = corporationId;
         Record(world, new(0, member.AllianceId, corporation.Id, MemberBefore: before, MemberAfter: Member(member)));
         Recompute(world, member.AllianceId);
+        entosis.ReconcileAllianceClaimCustody(world, member.AllianceId);
         world.Commit();
     }
 
@@ -327,7 +328,7 @@ internal sealed partial class AllianceStore
         Record(world, new(0, allianceId, 0, Before: before, After: Snapshot(world, allianceId)));
     }
 
-    internal static void Depart(WorldAction world, SavedAllianceMember member, long now)
+    internal void Depart(WorldAction world, SavedAllianceMember member, long now, bool dissolving = false)
     {
         var before = Snapshot(world, member.AllianceId)!;
         var previous = Member(member);
@@ -365,6 +366,10 @@ internal sealed partial class AllianceStore
         }
         Record(world, new(0, member.AllianceId, member.CorporationId, MemberBefore: previous));
         Recompute(world, member.AllianceId);
+        if (!dissolving)
+        {
+            entosis.ReconcileAllianceClaimCustody(world, member.AllianceId);
+        }
         Record(world, new(0, member.AllianceId, member.CorporationId, Before: before, After: Snapshot(world, member.AllianceId)));
     }
 }

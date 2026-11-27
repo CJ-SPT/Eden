@@ -30,6 +30,41 @@ internal sealed partial class PilotEntosisStore
         SovereigntyDevelopmentPersistence.ReconcileCapital(world, allianceId, at);
     }
 
+    internal void ReconcileAllianceClaimCustody(WorldAction world, int allianceId)
+    {
+        if (
+            world.Set<SavedAlliance>().Find(allianceId) is not { ClosedAt: null, ExecutorCorporationId: int executor }
+            || !IsAllianceMember(world, allianceId, executor)
+        )
+        {
+            return;
+        }
+        var claims = world
+            .Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == allianceId)
+            .AsEnumerable()
+            .Where(claim => !IsAllianceMember(world, allianceId, claim.CorporationId))
+            .ToArray();
+        foreach (var claim in claims)
+        {
+            claim.CorporationId = executor;
+            if (world.Set<SavedStructure>().Find(claim.HubId) is { State: not StructureState.Destroyed } hub)
+            {
+                hub.CorporationId = executor;
+            }
+            foreach (var node in world.Filter<SavedSovereigntyNode>(row => row.HubId == claim.HubId))
+            {
+                node.CorporationId = executor;
+            }
+        }
+        if (claims.Length > 0)
+        {
+            world.AfterCommit(() => Interlocked.Increment(ref _viewRevision));
+        }
+    }
+
+    private static bool IsAllianceMember(WorldAction world, int allianceId, int corporationId) =>
+        world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId == allianceId;
+
     private void RemoveCampaignNodes(WorldAction world, int system)
     {
         foreach (var node in world.Filter<SavedSovereigntyNode>(row => row.SourceSystemId == system).ToArray())
@@ -65,28 +100,38 @@ internal sealed partial class PilotEntosisStore
         StructureIndustry.StopUnavailableShipyards(world, catalog, system, at);
     }
 
-    private void ReconcileClosedAllianceClaims()
+    private void ReconcileSavedAllianceClaims()
     {
-        // Older checkpoints could retain sovereignty after the owning alliance had closed.
-        var closedOwners = Live.Economy.Inspect(world =>
+        // Older checkpoints could retain sovereignty after closure or keep a departed corporation as custodian.
+        var owners = Live.Economy.Inspect(world =>
             world
                 .Set<SavedSovereigntyClaim>()
+                .AsEnumerable()
+                .Where(claim =>
+                    world.Set<SavedAlliance>().Find(claim.AllianceId) is { } alliance
+                    && (
+                        alliance.ClosedAt.HasValue
+                        || alliance.ExecutorCorporationId.HasValue && !IsAllianceMember(world, claim.AllianceId, claim.CorporationId)
+                    )
+                )
                 .Select(claim => claim.AllianceId)
                 .Distinct()
-                .AsEnumerable()
-                .Where(id => world.Set<SavedAlliance>().Find(id)?.ClosedAt is not null)
                 .ToArray()
         );
-        if (closedOwners.Length == 0)
+        if (owners.Length == 0)
         {
             return;
         }
         using var world = Live.Economy.Begin(TransactionParticipants.None);
-        foreach (int allianceId in closedOwners)
+        foreach (int allianceId in owners)
         {
             if (world.Set<SavedAlliance>().Find(allianceId)?.ClosedAt is long closedAt)
             {
                 DropAllianceClaims(world, allianceId, closedAt);
+            }
+            else
+            {
+                ReconcileAllianceClaimCustody(world, allianceId);
             }
         }
         world.Commit();

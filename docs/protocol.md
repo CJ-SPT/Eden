@@ -1027,6 +1027,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sovereignty
 
+- [Sovereignty hub custody after corporation departure](protocol/sovereignty.md#sovereignty-hub-custody-after-corporation-departure)
 - [Sovereignty cleanup on alliance dissolution](protocol/sovereignty.md#sovereignty-cleanup-on-alliance-dissolution)
 - [Alliance Systems window](protocol/sovereignty.md#alliance-systems-window)
 - [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims)

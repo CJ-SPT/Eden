@@ -13,7 +13,7 @@ namespace Eden.World.Sovereignty;
 
 internal sealed partial class PilotEntosisStore
 {
-    private bool _closedAllianceClaimsReconciled;
+    private bool _savedAllianceClaimsReconciled;
 
     private sealed record EntosisTarget(long Id, int TypeId, int SystemId, SpacePosition Position);
 
@@ -23,10 +23,10 @@ internal sealed partial class PilotEntosisStore
         {
             return;
         }
-        if (!_closedAllianceClaimsReconciled)
+        if (!_savedAllianceClaimsReconciled)
         {
-            ReconcileClosedAllianceClaims();
-            _closedAllianceClaimsReconciled = true;
+            ReconcileSavedAllianceClaims();
+            _savedAllianceClaimsReconciled = true;
         }
         if (!Live.Economy.Inspect(world => world.Set<SavedSovereigntyClaim>().Any() || world.Set<SavedSovereigntyActivityEvent>().Any()))
         {

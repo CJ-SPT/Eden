@@ -254,7 +254,7 @@ internal sealed partial class AllianceStore
         var before = Snapshot(world, alliance.Id)!;
         foreach (var member in world.Filter<SavedAllianceMember>(m => m.AllianceId == alliance.Id).ToArray())
         {
-            Depart(world, member, at);
+            Depart(world, member, at, dissolving: true);
         }
         foreach (var application in world.Filter<SavedAllianceApplication>(a => a.AllianceId == alliance.Id).ToArray())
         {

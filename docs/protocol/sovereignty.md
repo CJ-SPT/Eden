@@ -2,6 +2,33 @@
 
 [Earlier sovereignty implementation record](https://github.com/CJ-SPT/Eden/blob/c31ac05af42c133567e203bb6859799c19af3852/docs/protocol/sovereignty.md)
 
+## Sovereignty hub custody after corporation departure
+
+A sovereignty claim belongs to the alliance. Hub management requires roles in the owning corporation. If that
+corporation leaves, its hub and campaign command nodes pass to the active executor corporation in the same resident
+transaction. The new owner inherits the existing hub, claim timestamp, campaign and upgrades. When an alliance has
+no executor, it keeps the claim and grants management when executor support resolves. An empty alliance remains
+subject to its existing downtime closure. First sovereignty maintenance also repairs old saves in which a surviving
+alliance still assigns a hub to a former member despite having an executor.
+[CCP Sovereignty Hub](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub) ·
+[UniWiki Sovereignty](https://wiki.eveuniversity.org/Sovereignty)
+
+EVE.js **261108.1** transfers hub custody to the active executor or waits for one in
+`allianceDepartureState.js::settleDepartureSovereignty`
+(`58206ff6dedfa7fca3b3769ba20df4856ff267aee67174cd4f23a2862406e4ff`) and
+`allianceSovereigntyLifecycle.js::transferAllianceSovereigntyOwnership`
+(`1ad250dfd2b68dedb5efea76a0a80071089818433875aa1e729baf20c3c89a7`). Eden refreshes claim and structure owners
+using the existing `ProcessSovStatusChanged` and `OnSolarSystemSovStructuresUpdated` notifications from the pinned
+build **3662168** `sovSvc.pyj` (`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`).
+
+**Automated validation.** `SovereigntyClaimCustodyTests` covers immediate transfer,
+executor election after restart, and repair of a checkpoint with an outdated custodian.
+It verifies management permissions, remote status updates, and preservation of the
+existing hub, campaign nodes and upgrades. The custody, dissolution, membership,
+corporation closure, upgrade and warfare filters passed 46 cases.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Sovereignty cleanup on alliance dissolution
 
 At the saved downtime deadline, an alliance that closes for nonpayment or after its last corporation leaves loses each

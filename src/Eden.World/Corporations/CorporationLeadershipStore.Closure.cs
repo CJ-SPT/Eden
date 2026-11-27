@@ -26,7 +26,7 @@ internal sealed partial class CorporationLeadershipStore
             && world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(corporation.Id) is { } allianceMember
         )
         {
-            Eden.World.Alliances.AllianceStore.Depart(world, allianceMember, now);
+            alliances.Depart(world, allianceMember, now);
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var members = world.Pilots.Where(pilot => pilot.CorporationId == corporation.Id).OrderBy(pilot => pilot.Id).ToArray();

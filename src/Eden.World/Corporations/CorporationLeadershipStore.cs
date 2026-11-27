@@ -5,13 +5,15 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.World.Alliances;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed partial class CorporationLeadershipStore(WorldDatabase database, TimeProvider clock) : ICorporationLeadership
+internal sealed partial class CorporationLeadershipStore(WorldDatabase database, TimeProvider clock, AllianceStore alliances)
+    : ICorporationLeadership
 {
     public void PayDividend(long actorId, bool shareholders, long amountCents)
     {

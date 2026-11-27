@@ -92,6 +92,7 @@ internal sealed partial class AllianceStore
                 );
                 Record(world, new(0, alliance.Id, member.CorporationId, MemberAfter: Member(member)));
                 Recompute(world, alliance.Id);
+                entosis.ReconcileAllianceClaimCustody(world, alliance.Id);
                 Record(world, new(0, alliance.Id, member.CorporationId, Before: before, After: Snapshot(world, alliance.Id)));
             }
             Record(
