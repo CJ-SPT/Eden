@@ -36,7 +36,7 @@
       CopyToPublishDirectory="PreserveNewest"
     />
     <Content
-      Include="../../tools/catalog/build-3662168.json"
+      Include="../../tools/catalog/build-3662168.json;../../tools/catalog/cfsd.py;../../tools/catalog/legacy_fsd.py"
       Link="catalog-tools/%(Filename)%(Extension)"
       CopyToOutputDirectory="PreserveNewest"
       CopyToPublishDirectory="PreserveNewest"

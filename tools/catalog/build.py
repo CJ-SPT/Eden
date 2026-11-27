@@ -15,7 +15,9 @@ import tempfile
 import urllib.request
 import zipfile
 
+import cfsd
 from coverage import verify_inventory
+import legacy_fsd
 from reconcile import compare
 
 BUILD = 3662168
@@ -178,17 +180,22 @@ def read_client(db, root, code, index, work, server_command):
                              ((k, json.loads(v)) for k, v in cache.execute("SELECT key,value FROM cache")))
                 write_source(db, "index/" + name, uri, digest(path),
                              enumerate({"key": k, "value": v} for k, v in cache.execute("SELECT key,value FROM indexes")))
-        else:
+        elif uri.endswith(".fsdbinary") and cfsd.supports(name):
+            write_source(db, "client/" + name, uri, digest(path), cfsd.records(path, name))
+        elif uri.endswith(".static"):
             schema = resources.get(uri.rsplit(".", 1)[0] + ".schema")
+            write_source(db, "client/" + name, uri, digest(path), legacy_fsd.read_records(path, schema))
+        else:
             loader = loaders[name + "loader"] if uri.endswith(".fsdbinary") else None
-            jobs.append([uri, str(path), str(schema) if schema else None, loader, str(work / (name + ".jsonl"))])
-    jobs_path = work / "jobs.json"
-    jobs_path.write_text(json.dumps(jobs))
-    subprocess.run([sys.executable, "-E", "-s", "-B", str(HERE / "decode_client.py"),
-                    str(root), str(jobs_path), str(code)], check=True)
-    for uri, path, _, _, output in jobs:
-        with open(output, encoding="utf-8") as stream:
-            write_source(db, "client/" + Path(uri).stem, uri, digest(Path(path)), map(json.loads, stream))
+            jobs.append([uri, str(path), None, loader, str(work / (name + ".jsonl"))])
+    if jobs:
+        jobs_path = work / "jobs.json"
+        jobs_path.write_text(json.dumps(jobs))
+        subprocess.run([sys.executable, "-E", "-s", "-B", str(HERE / "decode_client.py"),
+                        str(root), str(jobs_path), str(code)], check=True)
+        for uri, path, _, _, output in jobs:
+            with open(output, encoding="utf-8") as stream:
+                write_source(db, "client/" + Path(uri).stem, uri, digest(Path(path)), map(json.loads, stream))
 
     path = verified(binaries / "staticdata/mapObjects.db")
     with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as source:

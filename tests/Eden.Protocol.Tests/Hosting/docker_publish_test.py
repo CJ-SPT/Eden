@@ -43,7 +43,7 @@ class DockerPublishTests(unittest.TestCase):
                 "tools/skill_client_overlay.py", "tools/Import-LiveMarket.py", "tools/Publish-Docker.sh",
                 "tools/catalog/build.py", "tools/catalog/coverage.py", "tools/catalog/reconcile.py",
                 "tools/catalog/decode_client.py", "tools/catalog/client_worker.py", "tools/catalog/project.sql",
-                "tools/catalog/build-3662168.json",
+                "tools/catalog/build-3662168.json", "tools/catalog/cfsd.py", "tools/catalog/legacy_fsd.py",
             ))
             for relative in paths:
                 destination = source / relative
@@ -71,6 +71,8 @@ class DockerPublishTests(unittest.TestCase):
                 self.assertGreater((output / "wwwroot/_framework/blazor.web.js").stat().st_size, 0)
                 self.assertGreater((output / "data-tools/Import-LiveMarket.py").stat().st_size, 0)
                 self.assertGreater((output / "catalog-tools/build.py").stat().st_size, 0)
+                self.assertGreater((output / "catalog-tools/cfsd.py").stat().st_size, 0)
+                self.assertGreater((output / "catalog-tools/legacy_fsd.py").stat().st_size, 0)
                 return self.compilations(cache_path), output
 
             cold, _ = publish("cold", FIRST_REVISION)

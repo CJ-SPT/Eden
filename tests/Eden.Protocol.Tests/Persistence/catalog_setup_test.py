@@ -1,6 +1,8 @@
 """Run with Python 3.11+ from the repository root."""
 from contextlib import closing
 from pathlib import Path
+import pickle
+import struct
 import sqlite3
 import sys
 import tempfile
@@ -8,7 +10,9 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools/catalog"))
 from build import publish
+import cfsd
 from generate_models import Emitter, Shape, generate
+import legacy_fsd
 from runtime_policy import scan_code, violations
 
 
@@ -82,6 +86,26 @@ class CatalogPublicationTests(unittest.TestCase):
             publish(self.catalog, lambda candidate, work: candidate.write_bytes(b"invalid candidate"), self.verify)
         self.assertEqual(self.original_catalog, self.catalog.read_bytes())
         self.assertEqual(self.original_world, self.world.read_bytes())
+
+
+class NativeCatalogReaderTests(unittest.TestCase):
+    def test_cfsd_rejects_incomplete_root_map(self):
+        signature = bytes.fromhex("83ef52a27b97fc8bafdb9906dad1047736bc2eafc25d8f6c")
+        # Valid envelope and root layout with a bucket entry missing from its declared table.
+        sections = struct.pack("<QQQ", 24, 12, 1)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "schoolmap.fsdbinary"
+            path.write_bytes(signature + struct.pack("<Q", len(sections)) + sections)
+            with self.assertRaisesRegex(ValueError, "cFSD range"):
+                list(cfsd.records(path, "schoolmap"))
+
+    def test_legacy_fsd_rejects_schema_that_loads_arbitrary_objects(self):
+        schema = b"cos\nsystem\n."
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "resource.static"
+            path.write_bytes(struct.pack("<I", len(schema)) + schema)
+            with self.assertRaisesRegex(pickle.UnpicklingError, "Unsupported FSD schema type"):
+                list(legacy_fsd.read_records(path))
 
 
 class CatalogModelGenerationTests(unittest.TestCase):

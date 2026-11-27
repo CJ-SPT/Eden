@@ -72,6 +72,11 @@ For offline generation, supply the export with `--sde-archive` or reuse the cach
 `%LOCALAPPDATA%\Eden\catalog-input`. Configure `EDEN_PYTHON` to point to a specific Python executable. The generated
 `catalog.sqlite` can be transferred to Linux and installed using `--catalog`.
 
+The catalog builder reads schema-driven legacy FSD and the pinned `schools`, `schoolmap`, `types`, and `typedogma`
+cFSD tables with native Python code. The Windows client loaders still supply the other cFSD layouts needed for a complete
+build. Decoder changes can be checked against a known-good catalog with
+[`catalog_value_parity.py`](../tests/Eden.Protocol.Tests/Persistence/catalog_value_parity.py).
+
 On a machine with a verified catalog, offline setup can use just `--catalog` and `--administrator`. If you will use the
 Standard market without network access, copy its `market-orders` directory from a compatible server before approving
 world setup. Progressive, Testing and NPC-only markets have no snapshot requirement.
