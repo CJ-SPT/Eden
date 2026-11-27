@@ -144,6 +144,74 @@ public sealed class PersonalMarketTests
         Assert.Single(f.Market.Transactions(Seller));
     }
 
+    [Fact]
+    public async Task PurchasedCrystalsKeepTheirDefaultConditionBesideExistingNonstandardStacks()
+    {
+        using Fixture f = new(live: true);
+        const int crystal = 12563;
+        var database = new WorldDatabase(f.Db.Path);
+        int station = f.Pilot.StationId;
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemGroup VALUES (375,'Advanced Pulse Laser Crystal',8);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (12563,'Scorch S',375);
+                INSERT INTO SourceRecord VALUES ('client/types','12563','{{"published":1,"marketGroupID":1,"volume":1}}');
+                """
+            );
+        }
+        long stock;
+        long worn;
+        long custom;
+        using (var setup = new WorldActionScope(database, TransactionParticipants.None))
+        {
+            stock = AddCrystals(Seller, 5);
+            worn = AddCrystals(Buyer, 1, damage: 0.25);
+            custom = AddCrystals(Buyer, 1, volume: 2);
+            setup.Commit();
+
+            long AddCrystals(long owner, int quantity, double damage = 0, double? volume = null)
+            {
+                long id = InventoryPersistence.NextId(setup.World);
+                setup.World.Add(
+                    new OwnedItem
+                    {
+                        Id = id,
+                        OwnerId = owner,
+                        TypeId = crystal,
+                        LocationId = station,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = quantity,
+                        CrystalDamage = damage,
+                        VolumeOverride = volume,
+                    }
+                );
+                return id;
+            }
+        }
+
+        f.Market.PlaceSell(Seller, [new(stock, station, crystal, 1_000, 5)], 1);
+        var first = Assert.Single(f.Market.Buy(Buyer, station, [new(crystal, 1_000, 2)]).Changes).Item;
+        Assert.Equal(2, first.Quantity);
+        Assert.Equal(0, first.CrystalDamage);
+        var second = Assert.Single(f.Market.Buy(Buyer, station, [new(crystal, 1_000, 3)]).Changes).Item;
+        Assert.Equal(first.Id, second.Id);
+        Assert.Equal(5, second.Quantity);
+
+        await f.Db.Services.GetRequiredService<LiveWorld>().FlushAsync();
+        using WorldDbContext saved = new(f.Db.Path);
+        var stacks = saved.Set<OwnedItem>().Where(item => item.OwnerId == Buyer && item.TypeId == crystal).ToDictionary(item => item.Id);
+        Assert.Equal(3, stacks.Count);
+        Assert.Equal(1, stacks[worn].Quantity);
+        Assert.Equal(0.25, stacks[worn].CrystalDamage);
+        Assert.Equal(1, stacks[custom].Quantity);
+        Assert.Equal(2d, stacks[custom].VolumeOverride);
+        Assert.Equal(5, stacks[first.Id].Quantity);
+        Assert.Equal(0, stacks[first.Id].CrystalDamage);
+        Assert.Null(stacks[first.Id].VolumeOverride);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

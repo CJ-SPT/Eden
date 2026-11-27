@@ -697,6 +697,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Market and industry output stack condition](protocol/industry.md#market-and-industry-output-stack-condition)
 - [Immediate corporation market sales](protocol/industry.md#immediate-corporation-market-sales)
 - [Remote personal refinery reaction jobs](protocol/industry.md#remote-personal-refinery-reaction-jobs)
 - [Immediate corporation market purchases](protocol/industry.md#immediate-corporation-market-purchases)

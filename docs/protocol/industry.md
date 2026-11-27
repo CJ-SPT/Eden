@@ -7,6 +7,34 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Market and industry output stack condition
+
+Fresh packaged inventory output now merges only into a compatible stack with default condition and volume. A saved
+non-singleton crystal stack with wear could previously absorb new units and apply its damage to the entire stack,
+making the new crystals unavailable for resale. A custom-volume stack could likewise apply its volume to fresh stock.
+Market purchases and escrow returns, manufacturing deliveries, and other users of the same inventory helper retain
+the condition and quantity of those existing stacks. Compatible undamaged output still stacks across deliveries.
+
+The change uses Eden's existing crystal wear fields for pinned build 3662168. EVE.js 261108.1 also excludes damaged
+charges from stack candidates in `isStackableInventoryItem` in `server/src/services/inventory/itemStore.js`
+(SHA-256 `87d5030dce9cd9d8d8ecf6c21759e54f435f006f73761e2e5ea43944a43c6691`).
+[Pinned crystal wear evidence](fitting.md#fitting-expansion-milestone-16-energy-turrets-and-persistent-frequency-crystals) ·
+[EVE University crystal damage](https://wiki.eveuniversity.org/Crystal_damage)
+
+### Automated validation
+
+`PurchasedCrystalsKeepTheirDefaultConditionBesideExistingNonstandardStacks` exercises two purchases from a personal
+listing in the resident world and verifies the worn, custom-volume, and fresh stacks in the checkpoint.
+The focused personal market, corporation market, inventory merge and industry container classes passed 81 cases.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Buy fresh crystals and confirm their quantity and wear in the Item Hangar.
+
 ## Immediate corporation market purchases
 
 The native Regional Market and Multibuy can purchase available NPC-station listings through the buyer's selected

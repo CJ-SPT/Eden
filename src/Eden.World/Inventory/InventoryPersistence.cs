@@ -65,6 +65,9 @@ internal static partial class InventoryPersistence
                 && i.FlagId == flag
                 && i.TypeId == typeId
                 && !i.Singleton
+                && !i.Online
+                && i.VolumeOverride == null
+                && i.CrystalDamage == 0
                 && world.Entry(i).State != EntityState.Deleted
             )
             .OrderBy(i => i.Id)
