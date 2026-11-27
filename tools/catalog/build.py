@@ -42,6 +42,13 @@ def verified(path, expected_name=None):
     return path
 
 
+def original_code(root):
+    for path in (root / "tq/code.ccp", root / ".eden-original-code.ccp"):
+        if path.is_file() and digest(path) == HASHES["code.ccp"]:
+            return path
+    raise ValueError(f"Select the original build {BUILD} code.ccp or .eden-original-code.ccp under {root}.")
+
+
 def compact(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
@@ -105,12 +112,11 @@ def pickle_records(path, name):
 
 
 
-def read_planets(db, root, regions, work):
+def read_planets(db, root, regions, work, server_command):
     paths = {str(path): str(work / (Path(uri).stem + ".region.jsonl")) for uri, path in regions.items()}
     manifest = work / "regions.json"
     manifest.write_text(json.dumps(paths))
-    subprocess.run(["dotnet", "run", "--no-build", "--project", str(HERE.parents[1] / "src/Eden.Server"),
-                    "--", "--decode-planet-files", str(manifest)], check=True)
+    subprocess.run([*server_command, "--decode-planet-files", str(manifest)], check=True)
     for uri, path in regions.items():
         with open(paths[str(path)], encoding="utf-8-sig") as stream:
             write_source(db, "planet/" + Path(uri).stem, uri, digest(path), map(json.loads, stream))
@@ -139,9 +145,7 @@ def read_loose(db, root):
                          digest(sample), enumerate({"epoch": float(row["epoch"]), "flux": float(row["flux"])} for row in rows))
 
 
-def read_client(db, root, work):
-    index = verified(root / "tq/resfileindex.txt")
-    verified(root / "tq/code.ccp")
+def read_client(db, root, code, index, work, server_command):
     resources = {}
     regions = {}
     for line in index.read_text().splitlines():
@@ -155,7 +159,7 @@ def read_client(db, root, work):
             else:
                 resources[uri] = path
     read_loose(db, root)
-    read_planets(db, root, regions, work)
+    read_planets(db, root, regions, work, server_command)
     binaries = root / "tq/bin64"
     loaders = {p.stem.lower(): p.stem for p in binaries.glob("*Loader.pyd")}
     jobs = []
@@ -180,7 +184,8 @@ def read_client(db, root, work):
             jobs.append([uri, str(path), str(schema) if schema else None, loader, str(work / (name + ".jsonl"))])
     jobs_path = work / "jobs.json"
     jobs_path.write_text(json.dumps(jobs))
-    subprocess.run([sys.executable, str(HERE / "decode_client.py"), str(root), str(jobs_path)], check=True)
+    subprocess.run([sys.executable, "-E", "-s", "-B", str(HERE / "decode_client.py"),
+                    str(root), str(jobs_path), str(code)], check=True)
     for uri, path, _, _, output in jobs:
         with open(output, encoding="utf-8") as stream:
             write_source(db, "client/" + Path(uri).stem, uri, digest(Path(path)), map(json.loads, stream))
@@ -201,27 +206,36 @@ def create_model_views(db):
         db.execute(f"""CREATE VIEW "{view}" AS SELECT Key,Data FROM SourceRecord WHERE Dataset='{literal}'""")
 
 
-def build(root, archive, destination):
+def build(root, archive, destination, server_command=None):
+    if server_command is None:
+        server_command = ["dotnet", "run", "--no-build", "--project", str(HERE.parents[1] / "src/Eden.Server"), "--"]
     if destination.name.lower() == "world.sqlite":
         raise ValueError("Choose a separate catalog destination. world.sqlite is the player save.")
     if destination.exists():
         with closing(sqlite3.connect(destination.as_uri() + "?mode=ro", uri=True)) as previous:
             if not previous.execute("SELECT 1 FROM sqlite_master WHERE name='SourceDataset'").fetchone():
                 raise ValueError("Existing destination is not an Eden catalog")
+    index = verified(root / "tq/resfileindex.txt")
+    code = original_code(root)
     destination.parent.mkdir(parents=True, exist_ok=True)
     if not archive.exists():
+        print(f"Downloading the build {BUILD} static data export...", flush=True)
         archive.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=archive.parent) as temp:
             download = Path(temp) / ARCHIVE
             urllib.request.urlretrieve(URL, download)
-            verified(download).replace(archive)
+            try:
+                verified(download).rename(archive)
+            except FileExistsError:
+                # Another setup may have downloaded the same export while this one was running.
+                pass
+
     def populate(candidate, work):
-        subprocess.run(["dotnet", "run", "--no-build", "--project", str(HERE.parents[1] / "src/Eden.Server"),
-                        "--", "--create-catalog", str(candidate)], check=True)
+        subprocess.run([*server_command, "--create-catalog", str(candidate)], check=True)
         db = sqlite3.connect(candidate)
         try:
             read_sde(db, archive)
-            read_client(db, root, work)
+            read_client(db, root, code, index, work, server_command)
             db.executescript((HERE / "project.sql").read_text())
             verify_inventory(db)
             compare(db)
@@ -237,10 +251,9 @@ def build(root, archive, destination):
             db.close()
 
     def validate(candidate):
-        subprocess.run(["dotnet", "run", "--no-build", "--project", str(HERE.parents[1] / "src/Eden.Server"),
-                        "--", "--verify-catalog", str(candidate)], check=True)
+        subprocess.run([*server_command, "--verify-catalog", str(candidate)], check=True)
     publish(destination, populate, validate)
-    print(f"Activated {destination}")
+    print(f"Catalog built at {destination}")
 
 
 def publish(destination, populate, validate):
@@ -255,11 +268,26 @@ def publish(destination, populate, validate):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("client", type=Path)
-    server = HERE.parents[1] / "src/Eden.Server"
-    data = os.environ.get("EDEN_DATA_DIR", "")
-    directory = server / (data if data.strip() else "data")
-    archive_cache = Path(os.environ["LOCALAPPDATA"]) / "Eden/catalog-input"
-    parser.add_argument("--archive", type=Path, default=archive_cache / ARCHIVE)
-    parser.add_argument("--output", type=Path, default=directory / "catalog.sqlite")
+    parser.add_argument("--archive", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--server-executable", type=Path)
+    parser.add_argument("--server-assembly", type=Path)
     args = parser.parse_args()
-    build(args.client.resolve(), args.archive.resolve(), args.output.resolve())
+    if sys.platform != "win32" or sys.version_info < (3, 11) or struct.calcsize("P") != 8:
+        parser.error("Catalog authoring requires 64-bit Windows Python 3.11 or newer.")
+    if args.server_assembly and not args.server_executable:
+        parser.error("--server-assembly requires --server-executable.")
+    if args.server_executable and not args.output:
+        parser.error("--output is required with --server-executable.")
+
+    server_command = None
+    if args.server_executable:
+        server_command = [str(args.server_executable.resolve())]
+        if args.server_assembly:
+            server_command.append(str(args.server_assembly.resolve()))
+    archive = args.archive or Path(os.environ["LOCALAPPDATA"]) / "Eden/catalog-input" / ARCHIVE
+    output = args.output
+    if output is None:
+        data = os.environ.get("EDEN_DATA_DIR", "")
+        output = HERE.parents[1] / "src/Eden.Server" / (data if data.strip() else "data") / "catalog.sqlite"
+    build(args.client.resolve(), archive.resolve(), output.resolve(), server_command)

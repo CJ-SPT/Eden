@@ -39,7 +39,9 @@ internal static class CatalogSources
             || db.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single() != 1
         )
         {
-            throw new InvalidDataException("Unsupported catalog schema. Run tools/Setup-Catalog.ps1 with the staged client.");
+            throw new InvalidDataException(
+                "Unsupported catalog schema. Use a matching Eden catalog. Run Eden with --setup --help for usage."
+            );
         }
         var build = db.Set<SourceRecord>().SingleOrDefault(r => r.Dataset == "sde/_sde" && r.Key == "\"sde\"");
         if (build?.Read<JsonElement>().GetProperty("buildNumber").GetInt32() != PinnedBuild)

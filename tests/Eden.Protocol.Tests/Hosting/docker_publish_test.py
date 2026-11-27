@@ -41,6 +41,9 @@ class DockerPublishTests(unittest.TestCase):
                 "global.json", "Directory.Build.props", "Directory.Build.targets", ".editorconfig",
                 "assets/icons/eden-server.ico", "tools/Build-SkillClient.py", "tools/mod_client_loader.py",
                 "tools/skill_client_overlay.py", "tools/Import-LiveMarket.py", "tools/Publish-Docker.sh",
+                "tools/catalog/build.py", "tools/catalog/coverage.py", "tools/catalog/reconcile.py",
+                "tools/catalog/decode_client.py", "tools/catalog/client_worker.py", "tools/catalog/project.sql",
+                "tools/catalog/build-3662168.json",
             ))
             for relative in paths:
                 destination = source / relative
@@ -67,6 +70,7 @@ class DockerPublishTests(unittest.TestCase):
                     self.assertGreater((output / (project + ".dll")).stat().st_size, 0)
                 self.assertGreater((output / "wwwroot/_framework/blazor.web.js").stat().st_size, 0)
                 self.assertGreater((output / "data-tools/Import-LiveMarket.py").stat().st_size, 0)
+                self.assertGreater((output / "catalog-tools/build.py").stat().st_size, 0)
                 return self.compilations(cache_path), output
 
             cold, _ = publish("cold", FIRST_REVISION)

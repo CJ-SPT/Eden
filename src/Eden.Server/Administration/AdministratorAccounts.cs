@@ -20,7 +20,11 @@ internal sealed class AdministratorAccounts(string worldPath)
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(worldPath).ToUpperInvariant())))[..24];
     internal bool Provisioned => File.Exists(_path);
 
-    internal void SetPassword(string name, string password)
+    internal void SetPassword(string name, string password) => SavePassword(name, password, overwrite: true);
+
+    internal bool TryCreate(string name, string password) => SavePassword(name, password, overwrite: false);
+
+    private bool SavePassword(string name, string password, bool overwrite)
     {
         name = name.Trim();
         if (
@@ -45,7 +49,12 @@ internal sealed class AdministratorAccounts(string worldPath)
                 JsonSerializer.Serialize(file, credential, JsonSerializerOptions.Web);
                 file.Flush(flushToDisk: true);
             }
-            File.Move(temporary, _path, overwrite: true);
+            File.Move(temporary, _path, overwrite);
+            return true;
+        }
+        catch (IOException) when (!overwrite && Provisioned)
+        {
+            return false;
         }
         finally
         {

@@ -6,7 +6,7 @@
 
 | Guide | Use it for |
 | --- | --- |
-| [Windows client setup](development-client.md) | Stage the pinned client, build the catalog, start a world and move saves. |
+| [Server data and Windows client setup](development-client.md) | Install the catalog on Windows or Linux, move saves, and stage the pinned client for developer testing. |
 | [Desktop launcher and remote hosting](launcher.md) | Connect accounts, configure developer access and set up remote chat trust. |
 | [Docker deployment](docker.md) | Build and run the Linux server with persistent data and TLS. |
 | [Saved world configuration](world-configuration.md) | Set market presets, bot populations, progression and other world rules. |

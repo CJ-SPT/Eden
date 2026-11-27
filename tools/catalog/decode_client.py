@@ -7,10 +7,10 @@ import zipfile
 import zlib
 
 
-def main(root, jobs):
+def main(root, jobs, code=None):
     binaries = root / "tq/bin64"
     library = jobs.parent / "client-python.zip"
-    with zipfile.ZipFile(root / "tq/code.ccp") as source, zipfile.ZipFile(library, "w") as target:
+    with zipfile.ZipFile(code or root / "tq/code.ccp") as source, zipfile.ZipFile(library, "w") as target:
         for entry in dict.fromkeys(source.namelist()):
             if entry.endswith(".pyj"):
                 target.writestr(entry[:-1] + "c", zlib.decompress(source.read(entry)))
@@ -28,4 +28,5 @@ def main(root, jobs):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve())
+    code = Path(sys.argv[3]).resolve() if len(sys.argv) > 3 else None
+    main(Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(), code)

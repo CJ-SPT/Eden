@@ -1,8 +1,9 @@
-# Windows client setup
+# Server data and Windows client setup
 
 [Documentation index](README.md) / [Launcher hosting](launcher.md)
 
-Prepare the pinned client, create local data and connect to Eden. Commands run from the repository root.
+Prepare Eden's server data on Windows or Linux and set up the pinned Windows client for developer testing.
+Source commands run from the repository root.
 
 ## Setup and operations
 
@@ -27,6 +28,9 @@ Follow the [contributor testing policy](../AGENTS.md#testing) and [automated val
 
 ## Stage the client
 
+For normal player setup, use **Prepare a new Eden client** in [Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher#run).
+Use the development script for the optional native startup and development login procedures below.
+
 Use a shared EVE installation containing the sibling directories `tq` and `ResFiles`. Choose a separate, empty destination with room for both directories. The example paths below can be changed.
 
 ```powershell
@@ -41,9 +45,36 @@ The server administration **Optional data** page can import [live market orders]
 for the Standard preset and [zKill-backed traffic](capsuleer-population.md#zkill-backed-travelers) for simulated pilots.
 Other market presets and generated traffic work without these downloads. Eden adopts new snapshots on restart.
 
-From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, a stable .NET 10 SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
+Use `--setup --catalog <file>` to install a verified build 3662168 catalog on either platform. The command copies and
+verifies the catalog before publishing it beside the chosen world. If the catalog is already installed, `--setup` alone
+verifies it in place. Stop Eden before changing server data and keep your saved world and associated files together.
 
-Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. By default, setup writes to `src/Eden.Server/data/catalog.sqlite`. Use `-Output` to write a catalog for another server. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
+The [quick start](../README.md#start-here) shows commands for published executables and a source checkout. With a
+runtime-dependent publish, invoke `dotnet Eden.Server.dll --setup` with the same options. Use absolute input paths when
+running from source. Setup and standard startup both honor `--world <file>` and `EDEN_DATA_DIR`. Setup exits after
+preparing files and administrator access. Start Eden normally to [approve the world](world-configuration.md#first-start).
+
+| Option | Use it for |
+| --- | --- |
+| `--catalog <file>` | Import an existing build 3662168 catalog on Windows or Linux. |
+| `--build-catalog <client-folder>` | Generate a catalog on Windows from the original client folder containing `tq` and `ResFiles`. |
+| `--sde-archive <zip>` | Use a local copy of the pinned CCP export with `--build-catalog`. |
+| `--import-market` | Prepare the Standard market snapshot if a compatible snapshot is needed. |
+| `--administrator <name>` | Prompt for a password and provision the first administrator. Existing credentials are preserved. |
+| `--admin-password-stdin` | Supply the password and confirmation as two standard-input lines with `--administrator` in unattended setup. |
+| `--world <file>` | Choose the save path. Eden installs the catalog alongside that path. Use the same flag on startup. |
+
+Catalog generation requires the pinned Windows client libraries, 64-bit Python 3.11 or newer, and at least 8 GB of free
+space for the catalog, temporary records, and an existing installation. The first run downloads the
+[CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip).
+On a launcher-prepared client, Eden can use the verified original script archive preserved by the launcher.
+For offline generation, supply the export with `--sde-archive` or reuse the cached export under
+`%LOCALAPPDATA%\Eden\catalog-input`. Configure `EDEN_PYTHON` to point to a specific Python executable. The generated
+`catalog.sqlite` can be transferred to Linux and installed using `--catalog`.
+
+On a machine with a verified catalog, offline setup can use just `--catalog` and `--administrator`. If you will use the
+Standard market without network access, copy its `market-orders` directory from a compatible server before approving
+world setup. Progressive, Testing and NPC-only markets have no snapshot requirement.
 
 ### Exporting station and structure geometry
 
@@ -65,10 +96,13 @@ and intermediate glTF files. Unchanged resource hashes reuse completed profiles;
 
 The generated payload is `src/Eden.Data/Catalog/Flight/static-collision-3662168.json.gz`; its coverage, missing types,
 source hashes and primitive counts are in [the provenance manifest](protocol/static-collision-3662168.json).
-Build the server after regeneration to embed the new payload. To rebuild the catalog and geometry together, add
-`-CollisionGeometry` to `Setup-Catalog.ps1`; its `-GeometryResources`, `-GeometryConverter` and `-GeometryWorkers`
-parameters forward the corresponding exporter options. Catalog rebuilding retains the server-stop procedure above;
-geometry export alone reads existing files and does not require stopping a server.
+Build the server after regeneration to embed the new payload. To rebuild the catalog and geometry together on Windows,
+run this against a staged client with the server stopped. The `-GeometryResources`, `-GeometryConverter` and
+`-GeometryWorkers` parameters pass through the corresponding exporter options.
+
+```powershell
+.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -CollisionGeometry
+```
 
 The default export covers 384 model-backed types using 117 meshes (798 KiB compressed, 7.14 MiB raw JSON).
 Fifteen catalog entries have no graphic, including office containers, two obsolete stations and unfinished structure
@@ -82,9 +116,9 @@ those extra types are outside this station/structure runtime integration. Moving
 
 Start the server with `dotnet run --no-build --project src/Eden.Server`. The server uses `src/Eden.Server/data/world.sqlite` from source or `data/world.sqlite` beside the published executable. Set `EDEN_DATA_DIR` to choose a different data directory for the server and catalog setup. Relative values resolve from the server folder. An explicit `--world` path takes precedence and uses the catalog beside that save.
 
-If startup reports a missing `catalog.sqlite`, copy your matching catalog to the path in the error or run `Setup-Catalog.ps1`
-with `-Output` set to that path. If you double-click `Eden.Server.exe` on Windows, its console displays the error until you
-press a key. Set `EDEN_NO_PAUSE_ON_ERROR=1` for automation that starts Eden in a dedicated Windows console.
+If startup reports a missing `catalog.sqlite`, run Eden with `--setup --catalog <file>` and the same data path as startup.
+If you double-click `Eden.Server.exe` on Windows, its console displays the error until you press a key.
+Set `EDEN_NO_PAUSE_ON_ERROR=1` for automation that starts Eden in a dedicated Windows console.
 
 New worlds seed Eden Pilot and Eden Wing.
 Existing saves migrate on startup. Eden loads the world into memory and checkpoints committed changes every 15 seconds

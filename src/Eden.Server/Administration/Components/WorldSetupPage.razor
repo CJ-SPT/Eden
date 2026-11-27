@@ -12,9 +12,16 @@
     }
     @if (setup.Previous?.Settings is null or { Economy.StandardMarket: true })
     {
-        <p>The Standard market uses captured public market orders. If you haven't installed a compatible snapshot,
-            run this command on the server before creating the world.</p>
-        <pre><code>@setup.MarketImportCommand</code></pre>
+        @if (setup.HasCompatibleMarketSnapshot())
+        {
+            <p>The Standard market snapshot is ready.</p>
+        }
+        else
+        {
+            <p>The Standard market requires a compatible snapshot. On the server, run Eden with
+                <code>--setup --import-market</code> and pass <code>@setup.WorldPath</code> as the <code>--world</code> value.
+                Reload this page after the import completes.</p>
+        }
     }
     <form method="post" action="/api/admin/world/setup" class="card">
         <AntiforgeryToken />

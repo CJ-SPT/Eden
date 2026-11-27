@@ -49,11 +49,7 @@ public static class WorldInitialization
         var mods = new Eden.World.Modding.ModStore(database);
         bool modsChanged = mods.BeginActivation();
         bool skillsChanged = modsChanged || (!mods.OwnsCatalog && Eden.World.Skills.SkillPackageActivation.Activate(database));
-        string catalogPath = database.CatalogPath;
-        if (!File.Exists(catalogPath))
-        {
-            throw new MissingCatalogException(catalogPath, catalogPath != database.OriginalCatalogPath);
-        }
+        string catalogPath = database.RequireCatalogPath();
         // Activation can replace the catalog. Capture its resulting generation and
         // reuse one read connection throughout reconciliation, including belt batches.
         using var catalogReads = new CatalogReadScope().Begin();

@@ -23,6 +23,24 @@
     <ProjectReference Include="../Eden.Protocol/Eden.Protocol.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Content
+      Include="../../tools/catalog/build.py;../../tools/catalog/coverage.py;../../tools/catalog/reconcile.py"
+      Link="catalog-tools/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
+    <Content
+      Include="../../tools/catalog/decode_client.py;../../tools/catalog/client_worker.py;../../tools/catalog/project.sql"
+      Link="catalog-tools/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
+    <Content
+      Include="../../tools/catalog/build-3662168.json"
+      Link="catalog-tools/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <Content Include="../../tools/mod_client_loader.py" Link="skill-tools/mod_client_loader.py" CopyToOutputDirectory="PreserveNewest" />

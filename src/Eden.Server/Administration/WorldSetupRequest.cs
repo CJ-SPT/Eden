@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json;
 using Eden.Gameplay.Configuration;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
@@ -17,14 +18,20 @@ internal sealed class WorldSetupRequest(WorldDatabase database, WorldSetupState 
     public WorldConfigurationDraft? Previous { get; } =
         state.NewWorld ? null : new WorldConfigurationStore(database, TimeProvider.System).Read().Active.Draft;
 
-    internal string MarketImportCommand =>
-        (OperatingSystem.IsWindows() ? "& " : "")
-        + $"{QuoteShellArgument(OptionalDataImporter.MarketPython)} -I {QuoteShellArgument(OptionalDataImporter.MarketScript)}"
-        + $" --catalog {QuoteShellArgument(Path.GetFullPath(database.CatalogPath))}"
-        + $" --output {QuoteShellArgument(database.MarketSnapshot.Root)}";
+    internal string WorldPath => Path.GetFullPath(database.Path);
 
-    private static string QuoteShellArgument(string argument) =>
-        "'" + argument.Replace("'", OperatingSystem.IsWindows() ? "''" : "'\"'\"'", StringComparison.Ordinal) + "'";
+    internal bool HasCompatibleMarketSnapshot()
+    {
+        try
+        {
+            _ = database.MarketSnapshot.ReadManifest();
+            return true;
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or JsonException)
+        {
+            return false;
+        }
+    }
 
     internal static void RequireEstablished(string? profile)
     {

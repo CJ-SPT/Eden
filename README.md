@@ -7,36 +7,38 @@ pilots mine, trade, and form corporations.
 
 **Client required** · EVE Online 24.01 for Windows, build 3662168. Supply the matching client and resource cache separately.
 
-**[Set up on Windows](#start-here)** · [Connect and play](#connect-and-play) · [Host with Docker](docs/docker.md) ·
+**[Set up the server](#start-here)** · [Connect and play](#connect-and-play) · [Host with Docker](docs/docker.md) ·
 [Gameplay coverage](docs/feature-notes.md#gameplay-overview) · [Documentation](docs/README.md) ·
 [Discord](https://discord.gg/ZTxJrZKAXe)
 
 ## Start here
 
-### Start a local server on Windows
+### Set up a local server on Windows or Linux
 
-You’ll need PowerShell 7, 64-bit Python 3.11 or later, and a stable .NET 10 SDK.
-[Download the .NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+Use Eden's built-in setup command from a self-contained server download or build it from source with the
+[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). On Windows, you can generate the catalog directly from
+the build 3662168 client folder containing `tq` and `ResFiles`. On Linux, supply the `catalog.sqlite` generated on Windows.
 
-From the repository root, run these commands in PowerShell 7. Replace `E:\Eve` with the folder containing your matching
-`tq` and `ResFiles` directories. Use a separate, empty folder in place of `E:\EdenDev\3662168`.
+| Installation | Setup command |
+| --- | --- |
+| Windows | `.\Eden.Server.exe --setup --build-catalog "C:/Eve" --import-market --administrator admin` |
+| Linux | `./Eden.Server --setup --catalog "/home/you/eden-inputs/catalog.sqlite" --import-market --administrator admin` |
+| From source | `dotnet run --project src/Eden.Server -- --setup --catalog "/absolute/path/to/catalog.sqlite" --import-market --administrator admin` |
 
-```powershell
-.\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve' -DevelopmentRoot 'E:\EdenDev\3662168'
-.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'
-dotnet run --no-build --project src/Eden.Server
-```
+Each example prepares the catalog, imports the Standard market snapshot, and prompts for the first administrator's password.
+Catalog generation uses 64-bit Python 3.11 or newer. Market import uses Python 3.8 or newer. Both can download their inputs.
+If you have a catalog file, use `--catalog` on either platform. If the data directory already contains the catalog,
+omit both catalog arguments. [Offline setup and data paths](docs/development-client.md#creating-and-recreating-the-databases)
 
-The first command copies and verifies the client. Catalog setup builds the server and downloads the matching game data on
-its first run. For staging, offline setup, and troubleshooting, see the [Windows client guide](docs/development-client.md).
-For a new save, [import the Standard market snapshot](docs/world-configuration.md#market-presets) and follow the server console to
-[World setup](docs/world-configuration.md#first-start). Account creation and sign-in open once the world is ready.
+Once setup exits successfully, start Eden with its normal command (`.\Eden.Server.exe`, `./Eden.Server`, or
+`dotnet run --project src/Eden.Server`). Open the [World setup](docs/world-configuration.md#first-start) link printed in
+the server console, sign in, and approve the world. Game account creation and sign-in open once the world is ready.
 
 ### Connect and play
 
 1. Open Eden Launcher. In **Settings**, connect to `http://127.0.0.1:26002` for a local server, or use the API address from
    your server host.
-2. Select the staged client folder and choose **Use this client**.
+2. Select your prepared Windows client and choose **Use this client**, or use **Prepare a new Eden client** in the launcher.
 3. Choose **Add account** to create an account or sign in. Select the account and click **Play**.
 
 [Get Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher#run) ·
@@ -50,7 +52,7 @@ and Python client extensions. [World settings](docs/world-configuration.md) · [
 
 ## Local game data
 
-- `catalog.sqlite` contains game definitions for build 3662168. Catalog setup generates it locally.
+- `catalog.sqlite` contains game definitions for build 3662168. Eden setup verifies and installs it, and can generate it on Windows.
 - `world.sqlite` saves accounts, pilots, assets, and simulation state. Eden creates it when an administrator approves first-start settings.
 
 The default data directory is `src/Eden.Server/data` when running from source and `data` beside a published executable.

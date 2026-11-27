@@ -13,6 +13,15 @@
 !tools/mod_client_loader.py
 !tools/skill_client_overlay.py
 !tools/Publish-Docker.sh
+!tools/Import-LiveMarket.py
+!tools/catalog/
+!tools/catalog/build.py
+!tools/catalog/build-3662168.json
+!tools/catalog/client_worker.py
+!tools/catalog/coverage.py
+!tools/catalog/decode_client.py
+!tools/catalog/project.sql
+!tools/catalog/reconcile.py
 src/Eden.Server/data*
 **/bin
 **/obj

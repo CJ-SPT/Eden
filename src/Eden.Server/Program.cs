@@ -14,6 +14,7 @@ using Eden.Server.Gateway;
 using Eden.Server.Launcher;
 using Eden.Server.Logging;
 using Eden.Server.Maintenance;
+using Eden.Server.Setup;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -26,10 +27,14 @@ namespace Eden.Server;
 internal static class Program
 {
     private const string SetAdministratorPassword = "--set-admin-password";
-    private const string AdministratorPasswordStdin = "--admin-password-stdin";
+    private const string AdministratorPasswordStdin = ServerSetup.PasswordStdinOption;
 
     private static async Task<int> Main(string[] args)
     {
+        if (args.Contains(ServerSetup.Option))
+        {
+            return await ServerSetup.RunAsync(args);
+        }
         try
         {
             await RunAsync(args);
@@ -136,18 +141,7 @@ internal static class Program
         }
         if (administrator is not null)
         {
-            if (administratorPasswordStdin != Console.IsInputRedirected)
-            {
-                throw new InvalidDataException(
-                    $"Use an interactive terminal or redirect two password lines with {AdministratorPasswordStdin}."
-                );
-            }
-
-            string password = ReadAdministratorPassword(administratorPasswordStdin, "Administrator password: ");
-            if (password != ReadAdministratorPassword(administratorPasswordStdin, "Confirm password: "))
-            {
-                throw new InvalidDataException("Passwords do not match.");
-            }
+            string password = ServerConsole.ReadAdministratorPassword(administratorPasswordStdin);
             new AdministratorAccounts(worldPath).SetPassword(administrator, password);
             Console.WriteLine("Local administrator provisioned. Previous administrator sessions have been revoked.");
             return;
@@ -249,6 +243,7 @@ internal static class Program
                 }
                 if (needsSetup)
                 {
+                    database.RequireCatalogPath();
                     readiness.RequireSetup(null);
                 }
                 if (api is not null)
@@ -324,9 +319,9 @@ internal static class Program
             if (accountName is not null)
             {
                 Console.Write("New password: ");
-                string password = ReadPassword();
+                string password = ServerConsole.ReadPassword();
                 Console.Write("Confirm password: ");
-                if (password != ReadPassword())
+                if (password != ServerConsole.ReadPassword())
                 {
                     throw new InvalidDataException("Passwords do not match.");
                 }
@@ -561,43 +556,6 @@ internal static class Program
         catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
         {
             return null;
-        }
-    }
-
-    private static string ReadAdministratorPassword(bool fromStdin, string prompt)
-    {
-        if (fromStdin)
-        {
-            return Console.ReadLine()
-                ?? throw new InvalidDataException("Standard input must contain the password and confirmation on separate lines.");
-        }
-        Console.Write(prompt);
-        return ReadPassword();
-    }
-
-    private static string ReadPassword()
-    {
-        if (Console.IsInputRedirected)
-        {
-            throw new InvalidOperationException("Password setup requires an interactive terminal.");
-        }
-        List<char> characters = [];
-        while (true)
-        {
-            var key = Console.ReadKey(intercept: true);
-            if (key.Key == ConsoleKey.Enter)
-            {
-                Console.WriteLine();
-                return new string(characters.ToArray());
-            }
-            if (key.Key == ConsoleKey.Backspace && characters.Count > 0)
-            {
-                characters.RemoveAt(characters.Count - 1);
-            }
-            else if (!char.IsControl(key.KeyChar) && characters.Count < 129)
-            {
-                characters.Add(key.KeyChar);
-            }
         }
     }
 }

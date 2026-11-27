@@ -34,36 +34,15 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 
 ## First start
 
-Start Eden normally with the pinned catalog available. For a new save, the console prints **World setup required**. The
-launcher connects to show setup status while game account creation, sign-in and launch wait.
+Run [Eden's setup command](../README.md#start-here) with `--administrator <name>` to prepare the administrator account.
+Include `--import-market` for the default Standard market. Start Eden with the same data path when setup finishes.
+For a new save, the console prints **World setup required**. The launcher displays setup status until game account
+creation, sign-in and launch open.
 
-If the console asks for an administrator, open a second terminal and run the command below. Use the same `--world` path if you
-selected one on startup. Enter the administrator password when prompted. The running server then prints the setup URL.
-
-```powershell
-dotnet run --no-build --project src/Eden.Server -- --set-admin-password Corey
-```
-
-If the interactive prompt fails to capture the password on Linux, run this from the repository root in Bash. Use the world
-path printed by the running server. Bash reads both entries without echo and pipes them to Eden as two lines.
-
-```bash
-(
-  IFS= read -rsp 'Administrator password: ' eden_admin_password || exit 1
-  printf '\n'
-  IFS= read -rsp 'Confirm password: ' eden_admin_confirmation || exit 1
-  printf '\n'
-  printf '%s\n' "$eden_admin_password" "$eden_admin_confirmation" |
-    dotnet run --configuration Release --project src/Eden.Server -- \
-      --world "$PWD/src/Eden.Server/data/world.sqlite" \
-      --set-admin-password admin --admin-password-stdin
-)
-```
-
-Sign in at the printed URL (by default `http://127.0.0.1:26003/world/setup`). New saves use Established Universe careers and
-traffic with the Standard market. Install a compatible snapshot beside the saved world before approving setup. Its captured
-orders are available from first market access without production unlocks. Bots can use activity income to buy PvP ships.
-The existing testing wallet grant for human pilots is enabled on first start. [Market import](#market-presets)
+Sign in at the URL printed in the server console (by default `http://127.0.0.1:26003/world/setup`). New saves use
+Established Universe careers and traffic with the Standard market. Standard requires a compatible snapshot beside the save.
+Its captured orders are available from first market access without production unlocks. Bots can use activity income to
+buy PvP ships. The existing testing wallet grant for human pilots is enabled on first start. [Market import](#market-presets)
 
 For custom starting settings, open **Advanced settings**, download the configuration draft, edit it, and paste the complete JSON
 into the form. Set `settings.developmentSupply.testingGrants` to false to disable testing wallet grants. The draft also supports
@@ -98,14 +77,15 @@ The existing hub and starter supply supplements do not alter imported orders. Th
 are hidden for Standard because the imported quantities and prices are authoritative. Initial wallet grants
 remain under Progression.
 
-When setting up a new world, use the command below to import the snapshot. For a running world, open **Optional data**
-and choose **Import market orders** or **Re-import market orders**. The server downloads and validates the data in the background,
-and the page shows the installed capture and the import result. Standard requires a compatible snapshot. Testing, Progressive
-and NPC-only markets work without one.
+When setting up a new world, pass `--import-market` to [Eden's setup command](../README.md#start-here). Setup reuses an
+installed compatible snapshot. For a running world, open **Optional data** and choose **Import market orders** or
+**Re-import market orders**. The server downloads and validates the data in the background, and the page shows the
+installed capture and the import result. Standard requires a compatible snapshot. Testing, Progressive and NPC-only
+markets work without one.
 
-Market imports require Python 3.8 or newer on the server. The Docker image includes it. On other installations,
-use Python on the server's PATH or set `EDEN_PYTHON` to the executable. To import manually from the repository
-root, point the importer at the server's installed catalog and write beside its saved world:
+Set `EDEN_PYTHON` to the executable if Eden needs a Python installation outside the server's PATH. The Docker image
+includes Python. To import manually from the repository root, point the importer at the installed catalog and write
+beside the saved world.
 
 ```powershell
 python tools/Import-LiveMarket.py --catalog src/Eden.Server/data/catalog.sqlite --output src/Eden.Server/data/market-orders
@@ -131,7 +111,7 @@ an offline snapshot, with no network requests during gameplay and no automatic c
 
 Keep `market-orders/` beside the world when deploying or restoring it, including its manifest and referenced
 generation directory. If Standard is already active and the files are missing or incompatible, restore or re-import
-the snapshot with the command above before starting Eden. The files are runtime data excluded from Git. Failed imports
+the snapshot before starting Eden. The files are runtime data excluded from Git. Failed imports
 leave the previous manifest active. Servers keep their current immutable snapshot until restart, so an import can be staged while running.
 Do not remove a generation still referenced by a running server. Selection and activation reject missing or
 incompatible manifests; regional checksums and order validation reject corrupt data before publishing orders.

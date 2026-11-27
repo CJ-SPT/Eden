@@ -74,6 +74,16 @@ public sealed record WorldDatabase(string Path)
     public string CatalogPath => _catalogPath ??= Eden.World.Skills.SkillPackageActivation.CatalogPath(Path, OriginalCatalogPath);
     internal IReadOnlyDictionary<int, Eden.Gameplay.Skills.PublishedSkillDefinition> PublishedSkills => Catalog.PublishedSkills;
 
+    internal string RequireCatalogPath()
+    {
+        string catalogPath = CatalogPath;
+        if (!File.Exists(catalogPath))
+        {
+            throw new MissingCatalogException(catalogPath, catalogPath != OriginalCatalogPath);
+        }
+        return catalogPath;
+    }
+
     internal void ResetSkillCatalog()
     {
         _catalogPath = null;

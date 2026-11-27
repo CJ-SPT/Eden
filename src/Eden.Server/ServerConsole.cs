@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Eden.Server.Setup;
 using Eden.World.Catalog;
 
 namespace Eden.Server;
@@ -26,11 +27,64 @@ internal static class ServerConsole
             return;
         }
 
-        Console.Error.WriteLine("If you already have the matching catalog, copy it to the path above.");
-        Console.Error.WriteLine("To build it, run this from the Eden repository in PowerShell with your staged EVE client folder:");
-        string output = path.Replace("'", "''", StringComparison.Ordinal);
-        Console.Error.WriteLine($"  ./tools/Setup-Catalog.ps1 -DevelopmentRoot '<staged client folder>' -Output '{output}'");
-        Console.Error.WriteLine("Then start Eden again. See docs/development-client.md for client staging and catalog setup.");
+        Console.Error.WriteLine(
+            "Run Eden with --setup --catalog <file> to install a verified catalog. Use the same --world and data directory."
+        );
+        Console.Error.WriteLine("On Windows, use --setup --build-catalog <client-folder> to generate the catalog from the pinned client.");
+        Console.Error.WriteLine("Run Eden with --setup --help for usage, then start Eden again after setup.");
+    }
+
+    internal static string ReadAdministratorPassword(bool fromStdin)
+    {
+        if (fromStdin != Console.IsInputRedirected)
+        {
+            throw new InvalidDataException(
+                $"Use an interactive terminal or redirect two password lines with {ServerSetup.PasswordStdinOption}."
+            );
+        }
+        string password = Read("Administrator password: ");
+        if (password != Read("Confirm password: "))
+        {
+            throw new InvalidDataException("Passwords do not match.");
+        }
+        return password;
+
+        string Read(string prompt)
+        {
+            if (fromStdin)
+            {
+                return Console.ReadLine()
+                    ?? throw new InvalidDataException("Standard input must contain the password and confirmation on separate lines.");
+            }
+            Console.Write(prompt);
+            return ReadPassword();
+        }
+    }
+
+    internal static string ReadPassword()
+    {
+        if (Console.IsInputRedirected)
+        {
+            throw new InvalidOperationException("Password setup requires an interactive terminal.");
+        }
+        List<char> characters = [];
+        while (true)
+        {
+            var key = Console.ReadKey(intercept: true);
+            if (key.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                return new string(characters.ToArray());
+            }
+            if (key.Key == ConsoleKey.Backspace && characters.Count > 0)
+            {
+                characters.RemoveAt(characters.Count - 1);
+            }
+            else if (!char.IsControl(key.KeyChar) && characters.Count < 129)
+            {
+                characters.Add(key.KeyChar);
+            }
+        }
     }
 
     [DllImport("kernel32.dll", ExactSpelling = true)]

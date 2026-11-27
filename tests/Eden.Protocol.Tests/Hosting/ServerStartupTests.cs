@@ -128,8 +128,8 @@ public sealed class ServerStartupTests
             string diagnostic = await error;
             Assert.Contains("Eden could not start because its game data catalog (catalog.sqlite) is missing.", diagnostic);
             Assert.Contains($"Expected file: {catalog}", diagnostic);
-            Assert.Contains("./tools/Setup-Catalog.ps1 -DevelopmentRoot", diagnostic);
-            Assert.Contains($"-Output '{catalog.Replace("'", "''", StringComparison.Ordinal)}'", diagnostic);
+            Assert.Contains("--setup --catalog <file>", diagnostic);
+            Assert.Contains("--setup --build-catalog <client-folder>", diagnostic);
             Assert.DoesNotContain("Unhandled exception", diagnostic);
             Assert.DoesNotContain("Press any key", diagnostic);
             Assert.DoesNotContain("listening", await output);

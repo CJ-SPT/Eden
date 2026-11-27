@@ -6,8 +6,11 @@ Eden runs as a Linux container under Docker Engine or Docker Desktop in Linux-co
 
 ## Prepare the data and TLS configuration
 
-1. Generate the pinned `catalog.sqlite` on Windows using the [catalog setup guide](development-client.md#creating-and-recreating-the-databases). By default, Compose uses `src/Eden.Server/data` from this checkout. On another machine, copy the catalog there, or set `EDEN_HOST_DATA_DIR` to the directory that contains it. With only a catalog, Eden waits for [first-start world setup](world-configuration.md#first-start).
-2. To continue an existing world, stop its current host before copying the data directory. Include `world.sqlite`, `catalog.sqlite`, and the associated files listed in the [Windows migration guide](development-client.md#moving-an-existing-server). Run one Eden instance per data directory. On Linux, give the container user (UID/GID 1654) write access to the data directory and world files and read access to the catalog, configuration and TLS certificate.
+1. Prepare the pinned `catalog.sqlite` using the [catalog setup guide](development-client.md#creating-and-recreating-the-databases).
+   Use Eden's `--setup --build-catalog` on Windows to generate the file if you need one. Place it in the host data directory
+   so setup can verify it in the container. Compose defaults to `src/Eden.Server/data` in this checkout. Set
+   `EDEN_HOST_DATA_DIR` to use another directory.
+2. To continue an existing world, stop its current host before copying the data directory. Include `world.sqlite`, `catalog.sqlite`, and the associated files listed in the [save migration guide](development-client.md#moving-an-existing-server). Run one Eden instance per data directory. On Linux, give the container user (UID/GID 1654) write access to the data directory and world files and read access to the catalog, configuration and TLS certificate.
 3. Create `deploy` in the checkout. Copy `server.docker.example.json` to `deploy/server.json` and place your PKCS#12 certificate at `deploy/server.pfx`. Change `GameAddress` and `GatewayAddress` to the host name players will use. The certificate must cover that name. Set `EDEN_CERTIFICATE_PASSWORD` in the shell or a local Compose `.env` file for a password-protected PFX. Set `EDEN_HOST_CONFIG_DIR` if your configuration lives elsewhere.
 
 Compose publishes TCP 26000 (game), 26001 (HTTPS gateway), 26002 (HTTPS launcher API) and 5222 (native chat). It publishes to host loopback by default. For remote players, set `EDEN_BIND_IP` to the intended host address and allow the four TCP ports through the host firewall. Keep `ListenAddress` at `0.0.0.0` inside the container. If you change server ports, update the Compose mappings and advertised addresses together. See the [Docker port publishing guide](https://docs.docker.com/get-started/docker-concepts/running-containers/publishing-ports/).
@@ -199,11 +202,14 @@ EDEN_ADMIN_ORIGIN=https://eden.example.com:26003
 
 The browser must trust the deployment certificate and resolve the hostname to the published address. Permit TCP 26003 from the networks that need administrator access. `EDEN_ADMIN_BIND_IP` controls only the admin port. `EDEN_ADMIN_ORIGIN` must match the scheme, hostname and port that administrators enter in the browser.
 
-If the world already has an administrator, use the existing credentials. Otherwise provision one while the service is stopped. The command prompts for the password and confirmation.
+For a new world, run setup in a one-off container with the service stopped. Include `--import-market` for the default
+Standard market. The setup command reads the catalog in `/data` and prompts for the first administrator's password.
+If the world already has an administrator, use the existing credentials. For a custom save path, pass the same container-side
+`--world` path to setup and normal startup.
 
 ```sh
 docker compose stop eden
-docker compose run --build --rm eden --config /config/server.json --set-admin-password Corey
+docker compose run --build --rm eden --setup --import-market --administrator admin
 ```
 
 Build and recreate the service with both Compose files, then open `EDEN_ADMIN_ORIGIN` in your browser.

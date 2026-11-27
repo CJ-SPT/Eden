@@ -56,8 +56,9 @@ public sealed partial class AdministrationTests
         Assert.Equal("/world/setup", signIn.Headers.Location?.OriginalString);
         string page = await client.GetStringAsync("/world/setup");
         Assert.Contains("Established Universe", page);
-        Assert.Contains("data-tools", page);
-        Assert.Contains("Import-LiveMarket.py", page);
+        Assert.Contains("--setup --import-market", page);
+        Assert.Contains("--world", page);
+        Assert.Contains(path, WebUtility.HtmlDecode(page));
         Assert.DoesNotContain("name=\"profile\"", page);
         using var retiredDraft = await client.GetAsync("/api/admin/world/setup-draft?profile=unknown");
         Assert.Equal(HttpStatusCode.BadRequest, retiredDraft.StatusCode);
@@ -82,6 +83,9 @@ public sealed partial class AdministrationTests
         Assert.False(File.Exists(path));
         StandardMarketTests.InstallSetupSnapshot(database);
 
+        string readyPage = await client.GetStringAsync("/world/setup");
+        Assert.Contains("The Standard market snapshot is ready.", readyPage);
+        Assert.DoesNotContain("--setup --import-market", readyPage);
         using var accepted = await client.PostAsync("/api/admin/world/setup", SetupForm(token, WorldSetupStore.Export(custom)));
         Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
         await setup.Approved.WaitAsync(TimeSpan.FromSeconds(10));
