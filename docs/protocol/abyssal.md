@@ -38,6 +38,25 @@ automated fixture. The catalog is authoritative for hulls, NPC dogma and graphic
 encounter compositions and reward quantities are explicit Eden policies, not a claim
 to reproduce CCP's private encounter or drop distributions.
 
+## Directional scanning in Abyssal Deadspace
+
+The World directional scanner checks the pilot's saved ship location and rejects
+directional scans inside Abyssal pockets. A rejected scan does not start the cooldown.
+Scanning resumes through the existing build-3662168
+[ConeScan binding](information.md#directional-scanning-completion-november-8-2026) on return to ordinary space.
+
+[EVE University](https://wiki.eveuniversity.org/Abyssals) describes the pocket restriction. EVE.js 261108.1
+also checks for it in `server/src/services/exploration/scanMgrService.js` (SHA-256
+`a565e0c5064a31153ca0febdf70f4486d8babeb74c4d93bfe5deedf420ea02ee`).
+
+**Automated validation.** `DirectionalScannerRejectsAbyssalSpaceAndResumesAfterReturn`
+uses the native scanner binding and a resident three-room run. The exact-method test
+reproduced the successful pocket scan before the fix and passed after it. The return
+scan succeeds without advancing the clock after rejection. The focused Information
+and Abyssal classes passed 130 cases.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestone 1: resident solo foundation — November 14, 2026
 
 Tranquil Dark filament 56132 admits a solo cruiser in open space. Admission validates

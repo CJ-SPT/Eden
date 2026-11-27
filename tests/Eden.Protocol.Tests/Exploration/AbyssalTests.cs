@@ -5,10 +5,12 @@ using Eden.Data.World.Loot;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Information;
 using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Information;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
@@ -23,6 +25,67 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class AbyssalTests
 {
+    [Fact]
+    public void DirectionalScannerRejectsAbyssalSpaceAndResumesAfterReturn()
+    {
+        using Fixture f = new();
+        PassiveCatalogFixture.LoadInformation(f.CatalogPath);
+        Prepare(f);
+        long ship = f.ShipId;
+        long filament = f.Grant(AbyssalRules.TranquilDarkFilament, cargo: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using var scope = f.Db.Services.CreateScope();
+        const long account = 1000001;
+        var pilot = f.Db.Store.FindPilot(account)!;
+        using PilotCallContext context = new(
+            account,
+            pilot.Account,
+            [pilot],
+            selected => new FlightSession(f.Db.Store, selected, f.Clock, new(), []),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var abyss = scope.ServiceProvider.GetRequiredService<IAbyssalDeadspace>();
+        var systems = scope.ServiceProvider.GetRequiredService<ISystemObjects>();
+
+        context.Flight.Snapshot();
+        Assert.IsType<DirectionalScanReply>(Assert.IsType<PilotCallResult.Success>(Scan()).Reply);
+        f.Clock.AdvanceWallTime(InformationRules.DirectionalScanCooldown);
+        Assert.Same(PilotCallResult.None, Call("abyssalMgr", "AbyssalEntranceDeployment", filament, (long)AbyssalMode.Cruiser));
+        context.Flight.Snapshot();
+        Assert.True(AbyssalRules.IsSystem(context.Pilot.SystemId));
+        var failure = Assert.IsType<PilotCallResult.Failure>(Scan());
+        Assert.Equal("Directional scan is unavailable inside Abyssal Deadspace.", failure.Message);
+
+        for (int room = 0; room < AbyssalRules.RoomCount; room++)
+        {
+            var run = abyss.Read(f.PilotId)!;
+            KillRoom(f, live, run.Id);
+            f.Db.Store.SetPosition(ship, AbyssalRules.ConduitPosition(room), run.SystemId);
+            var moved = abyss.Activate(f.PilotId, ship, run.ConduitId);
+            int system = moved.Pilot.SystemId;
+            context.Flight.RelocateAbyssal(moved.Pilot, AbyssalRules.IsSystem(system) ? abyss.Objects(system) : systems.Load(system));
+            context.ReleaseLocationReferences();
+        }
+
+        context.Flight.Snapshot();
+        Assert.Equal(pilot.SystemId, context.Pilot.SystemId);
+        Assert.IsType<DirectionalScanReply>(Assert.IsType<PilotCallResult.Success>(Scan()).Reply);
+
+        PilotCallResult Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
+
+        PilotCallResult Scan()
+        {
+            var binding = Assert.IsType<BlueObjectReference>(
+                Assert.IsType<PilotCallResult.Success>(Call("scanMgr", "GetSystemScanMgr")).Reply.ToBlue()
+            );
+            string service = router.ResolveService(context, [1L, (long)PilotLogin.NodeId, null, 0L], binding.Id);
+            return Call(service, "ConeScan", Math.Tau, InformationRules.MaximumDirectionalRange, 1d, 0d, 0d);
+        }
+    }
+
     [Fact]
     public void CurrentDungeonUsesTheSavedRoomBeforeBallparkBinding()
     {

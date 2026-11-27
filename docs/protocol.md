@@ -43,7 +43,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 | [Agent missions and research](protocol/agents.md) | Offers, objectives, standings, storylines, career chains, epic arcs, militia missions and R&D agents. |
 | [Information modules and salvage](protocol/information.md) | Scanning, hacking, targeting, tractors and salvage. |
 | [Wormholes](protocol/wormholes.md) | Connections, mass and lifetime, Sleeper encounters and native system effects. |
-| [Abyssal Deadspace](protocol/abyssal.md) | Filaments, pocket timers, room encounters, ship loss and recovery. |
+| [Abyssal Deadspace](protocol/abyssal.md) | Filaments, pocket timers, room encounters, ship loss, recovery and [directional scanning](protocol/abyssal.md#directional-scanning-in-abyssal-deadspace). |
 | [Mining, industry and markets](protocol/industry.md) | Resource gathering, manufacturing, science, reactions and market supply. |
 | [Planetary industry](protocol/planetary.md) | Colonies, extraction, factories and orbital cargo. |
 | [Player Upwell structures](protocol/structures.md) | Anchoring, docking, services, moon extraction, combat and asset safety. |

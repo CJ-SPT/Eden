@@ -6,6 +6,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Loot;
@@ -158,10 +159,15 @@ internal sealed partial class PilotInformationStore
             {
                 var pilot = Pilot(world, pilotId);
                 var position = Position(pilot);
+                int system = System(catalog, pilot);
+                if (AbyssalRules.IsSystem(system))
+                {
+                    throw new InvalidDataException("Directional scan is unavailable inside Abyssal Deadspace.");
+                }
                 double maximum = PilotFittingStore
                     .ShipAttributes(world, catalog, pilot)
                     .GetValueOrDefault(DogmaAttributeId.MaxDirectionalScanRange, InformationRules.MaximumDirectionalRange);
-                return new DirectionalObserver(pilot.ActiveShipId, System(catalog, pilot), position, maximum);
+                return new DirectionalObserver(pilot.ActiveShipId, system, position, maximum);
             }
         );
     }
