@@ -4,12 +4,13 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 using Eden.World.Storage;
 
 namespace Eden.World.Alliances;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock, InboxChangeSignal inbox)
+internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock, InboxChangeSignal inbox, PilotEntosisStore entosis)
     : IAlliances,
         IAllianceMembership,
         IAllianceBilling,

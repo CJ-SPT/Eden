@@ -236,6 +236,9 @@ saved medical home, and the bridge reply preserves the client's three-part tuple
 read the world's sovereignty claims. [Map startup](protocol/navigation.md#native-map-startup) ·
 [Home-station marker](protocol/navigation.md#map-home-station-row) · [Alliance Systems window](protocol/sovereignty.md#alliance-systems-window)
 
+Alliance dissolution clears sovereignty claims and destroys their hubs at downtime. The cleared territory persists
+through checkpoints and restart. [Alliance dissolution](protocol/sovereignty.md#sovereignty-cleanup-on-alliance-dissolution)
+
 Undocking now uses each NPC station model's catalogued exit lane and launches with the pinned client's initial velocity. Static collisions retain thrust and tangential movement instead of cancelling the course. All 44 NPC station models have automated coverage, including Amsen VI - AIR Laboratories. Launches remain outside Eden's spherical station collision boundary, so exact placement at the visible hangar mouth remains approximate. See the [undocking correction](protocol/navigation.md#station-exit-lanes-and-collision-response).
 
 Personal Locations saves private and shared folders and bookmarks across reconnects and restarts. Save stations, map

@@ -2,6 +2,50 @@
 
 [Earlier sovereignty implementation record](https://github.com/CJ-SPT/Eden/blob/c31ac05af42c133567e203bb6859799c19af3852/docs/protocol/sovereignty.md)
 
+## Sovereignty cleanup on alliance dissolution
+
+At the saved downtime deadline, an alliance that closes for nonpayment or after its last corporation leaves loses each
+remaining claim. Eden removes the claim and capture hub, marks the structure destroyed, drops installed upgrades, fuel
+and hub workforce configuration, and shuts down services that depended on the claim. It also removes campaign command
+nodes by source system, including nodes in neighboring systems, and clears the current and pending capital. A paid
+Entosis cycle on a removed target stops scoring immediately and keeps its ship reservation until the paid interval ends.
+A later claim requires the normal new-hub deployment and capture. [CCP closure guidance](https://support.eveonline.com/hc/en-us/articles/203209062-Corporation-Alliance-Closure) ·
+[CCP Sovereignty Hub](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub) ·
+[UniWiki Sovereignty](https://wiki.eveuniversity.org/Sovereignty)
+
+Closure and claim loss commit under the same resident owner and project through the existing checkpoint. The first
+sovereignty maintenance pass repairs older checkpoints that still assign claims to an already-closed alliance, using
+its saved closure time. Campaign defeat and dissolution share the same hub cleanup for resource and service state.
+
+EVE.js **261108.1** drops core sovereignty structures, hub and campaign data, and affected capital selections in
+`allianceSovereigntyLifecycle.js::dropAllianceSovereigntyClaims`
+(`1ad250dfd2b68dedb5efea76a0a80071089818433875aa1e729baf20c3c89a7`).
+`allianceDepartureState.js` (`58206ff6dedfa7fca3b3769ba20df4856ff267aee67174cd4f23a2862406e4ff`) calls it during
+durable alliance closure. The pinned build **3662168** archive SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. In `sovSvc.pyj`,
+`ProcessSovStatusChanged` line 74 clears a system's claim on a None status, and
+`OnSolarSystemSovStructuresUpdated` line 127 replaces its structure list. The client retains system caches on
+`allianceid` changes, so the monitor refreshes a founder's previously observed remote territory when dissolution
+removes it, as well as publishing changes in the local system.
+
+**Automated validation.** The exact-method run passed six cases in 9.81 seconds after a 1.26-second build.
+It covers unpaid and empty-alliance deadlines, claim and hub teardown, campaign nodes in another system,
+unrelated claims and Skyhooks, paid Entosis expiry, legacy checkpoint repair, and observation of the claim
+and structure updates. The dissolution and legacy cases checkpoint the removal and reopen the saved world
+to verify that the claims remain absent.
+
+The solution built with zero warnings and errors. All 260 focused cases passed, with 88.33 seconds for the build
+and tests together. The `FullyQualifiedName~` selectors were `Eden.Protocol.Tests.Sovereignty`,
+`Eden.Protocol.Tests.Alliances`, `Eden.Protocol.Tests.Maps.SovereigntyTests`, `MapStartupTests`,
+`CapsuleerAllianceTests`, `CorporationClosureTests`, and `DetachedCheckpointTests`. The run also included the exact
+`PharoluxJumpRechecksAccessAndJammerDeadline` and `SotiyoPausesAndCompletesPinnedAeonRecipeWithSovereigntyUpgrade`
+cases. All eight catalog checks and nine formatting policy checks passed, along with `Format.ps1 -Check` and
+whitespace verification.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a claimed system through alliance dissolution and refresh the sovereignty map after reconnecting.
+
 ## Alliance Systems window
 
 Build **3662168** `FormAlliancesSystems.Load` calls `stationSvc.GetSystemsForAlliance(session.allianceid)` before building
@@ -566,7 +610,7 @@ current ownership removes that capital; a sole remaining holding becomes capital
 transition deadline persist through restart. These choices follow
 [CCP's summer sovereignty report](https://www.eveonline.com/news/view/summer-2015-nullsec-and-sov-status-report) and the
 [single-system deployment clarification](https://www.eveonline.com/es/news/view/summer-of-sov-transition-and-deployment).
-Alliance departure/dissolution cleanup beyond capital invalidation remains milestone 6.
+[Alliance dissolution cleanup](#sovereignty-cleanup-on-alliance-dissolution) clears both capitals as it removes the closing alliance's claims.
 Effective capital changes retain their timestamps so an inactive constellation settling through multiple transitions
 uses the bonus that applied during each interval, including across checkpoint/reopen.
 

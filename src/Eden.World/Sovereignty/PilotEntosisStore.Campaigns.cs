@@ -1,5 +1,4 @@
 using Eden.Data.World.Sovereignty;
-using Eden.Data.World.Structures;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
@@ -223,11 +222,7 @@ internal sealed partial class PilotEntosisStore
 
     private void SettleCampaign(WorldAction world, CatalogDbContext catalog, SavedSovereigntyConflict conflict, long at)
     {
-        foreach (var node in world.Filter<SavedSovereigntyNode>(row => row.SourceSystemId == conflict.SystemId).ToArray())
-        {
-            StopTarget(world, node.Id);
-            world.Remove(node);
-        }
+        RemoveCampaignNodes(world, conflict.SystemId);
         conflict.DefenderPoints = Math.Clamp(conflict.DefenderPoints, 0, 100);
         if (conflict.DefenderPoints == 100)
         {
@@ -245,25 +240,7 @@ internal sealed partial class PilotEntosisStore
             conflict.WindowEnd = nextWindow.EndsAt;
             return;
         }
-        StopTarget(world, conflict.HubId);
-        if (world.Set<SavedStructure>().Find(conflict.HubId) is { } structure)
-        {
-            structure.State = StructureState.Destroyed;
-            structure.StateStartedAt = at;
-            structure.StateEndsAt = null;
-        }
-        if (world.Set<SavedSovereigntyClaim>().Find(conflict.SystemId) is { } claim)
-        {
-            world.Remove(claim);
-        }
-        if (world.Set<SavedSovereigntyHub>().Find(conflict.SystemId) is { } hub)
-        {
-            world.Remove(hub);
-        }
-        SovereigntyResourcePersistence.DestroyHub(world, catalog, conflict.HubId, at);
-        Eden.World.Structures.CapitalNavigationStore.StopUnavailableServices(world, conflict.SystemId, at);
-        Eden.World.Structures.StructureIndustry.StopUnavailableShipyards(world, catalog, conflict.SystemId, at);
-        world.Remove(conflict);
+        DestroyClaimedHub(world, catalog, conflict.SystemId, conflict.HubId, at);
         SovereigntyDevelopmentPersistence.ReconcileCapital(world, conflict.DefenderAllianceId, at);
         // No winner receives a free replacement hull or automatic claim.
         conflict.Phase = SovereigntyPhase.Secure;

@@ -69,6 +69,19 @@ internal sealed class SovereigntyMonitor(IPilotEntosis entosis, IAlliances allia
                 }
             }
         }
+        else if (_alliance is int previousAlliance && _owned.Keys.Any(id => id != system))
+        {
+            // An allianceid session change does not clear the pinned client's per-system sovereignty caches.
+            // Refresh former territory only when its tracked claim or hub actually disappeared.
+            var surviving = entosis.ClaimsForAlliance(previousAlliance).ToDictionary(claim => claim.SystemId, claim => claim.HubId);
+            foreach (var (id, before) in _owned)
+            {
+                if (id != system && surviving.GetValueOrDefault(id) != before.HubId)
+                {
+                    Publish(context, id, entosis.Hub(id));
+                }
+            }
+        }
         var capital = alliance is null ? null : entosis.Capital(context.Pilot.PilotId);
         if (_revision >= 0 && _alliance == alliance && capital != _capital)
         {

@@ -248,7 +248,7 @@ internal sealed partial class AllianceStore
         row.ClosureAt ??= AllianceBillingRules.NextDowntime(now);
     }
 
-    private static void CloseAlliance(WorldAction world, SavedAlliance alliance, long at)
+    private void CloseAlliance(WorldAction world, SavedAlliance alliance, long at)
     {
         MilitiaOrganizationStore.OrganizationClosed(world, alliance.Id);
         var before = Snapshot(world, alliance.Id)!;
@@ -272,6 +272,7 @@ internal sealed partial class AllianceStore
         }
         alliance.ClosedAt = at;
         alliance.ExecutorCorporationId = null;
+        entosis.DropAllianceClaims(world, alliance.Id, at);
         Record(world, new(0, alliance.Id, 0, Before: before, After: Snapshot(world, alliance.Id)));
     }
 }

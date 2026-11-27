@@ -110,10 +110,10 @@ The pinned Windows client is build **3662168**, signed archive SHA-256
 
 Shared fitting authority, current-membership fleet adverts, loyalty age eligibility, and the Alliance Systems,
 capital and prime-time reads were cross-checked alongside the existing access, chat and war integrations.
-Sovereignty claim and infrastructure cleanup on alliance dissolution remains tracked in the sovereignty milestones.
+Alliance dissolution now clears territory and its dependent hub systems at downtime.
 [UniWiki alliance mechanics](https://wiki.eveuniversity.org/Alliances) ·
 [CCP closure guidance](https://support.eveonline.com/hc/en-us/articles/203209062-Corporation-Alliance-Closure) ·
-[Sovereignty milestones](sovereignty.md)
+[Sovereignty cleanup on alliance dissolution](sovereignty.md#sovereignty-cleanup-on-alliance-dissolution)
 
 **Automated validation.** Three new regressions reproduced the original ranking, ticker and corporation affiliation bugs.
 The final exact-method run passed 17 cases in 13.58 seconds after a 12.38-second build. It covered the native alliance

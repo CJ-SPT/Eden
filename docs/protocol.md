@@ -1027,6 +1027,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sovereignty
 
+- [Sovereignty cleanup on alliance dissolution](protocol/sovereignty.md#sovereignty-cleanup-on-alliance-dissolution)
 - [Alliance Systems window](protocol/sovereignty.md#alliance-systems-window)
 - [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims)
 - [Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep)
