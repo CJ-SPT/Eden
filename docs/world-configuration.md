@@ -44,6 +44,22 @@ selected one on startup. Enter the administrator password when prompted. The run
 dotnet run --no-build --project src/Eden.Server -- --set-admin-password Corey
 ```
 
+If the interactive prompt fails to capture the password on Linux, run this from the repository root in Bash. Use the world
+path printed by the running server. Bash reads both entries without echo and pipes them to Eden as two lines.
+
+```bash
+(
+  IFS= read -rsp 'Administrator password: ' eden_admin_password || exit 1
+  printf '\n'
+  IFS= read -rsp 'Confirm password: ' eden_admin_confirmation || exit 1
+  printf '\n'
+  printf '%s\n' "$eden_admin_password" "$eden_admin_confirmation" |
+    dotnet run --configuration Release --project src/Eden.Server -- \
+      --world "$PWD/src/Eden.Server/data/world.sqlite" \
+      --set-admin-password admin --admin-password-stdin
+)
+```
+
 Sign in at the printed URL (by default `http://127.0.0.1:26003/world/setup`). New saves use Established Universe careers and
 traffic with the Standard market. Install a compatible snapshot beside the saved world before approving setup. Its captured
 orders are available from first market access without production unlocks. Bots can use activity income to buy PvP ships.

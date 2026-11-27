@@ -25,12 +25,20 @@ namespace Eden.Server;
 
 internal static class Program
 {
+    private const string SetAdministratorPassword = "--set-admin-password";
+    private const string AdministratorPasswordStdin = "--admin-password-stdin";
+
     private static async Task<int> Main(string[] args)
     {
         try
         {
             await RunAsync(args);
             return 0;
+        }
+        catch (InvalidDataException error) when (args.Contains(SetAdministratorPassword) || args.Contains(AdministratorPasswordStdin))
+        {
+            Console.Error.WriteLine(error.Message);
+            return 1;
         }
         catch (Exception error)
         {
@@ -107,7 +115,7 @@ internal static class Program
             return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
         long startupStarted = Stopwatch.GetTimestamp();
-        foreach (string option in new[] { "--world", "--config", "--set-admin-password", "--admin-port" })
+        foreach (string option in new[] { "--world", "--config", SetAdministratorPassword, "--admin-port" })
         {
             if (args.Contains(option) && (Value(option) is not { } value || value.StartsWith("--", StringComparison.Ordinal)))
             {
@@ -120,12 +128,23 @@ internal static class Program
             Directory.GetCurrentDirectory(),
             AppContext.BaseDirectory
         );
-        if (Value("--set-admin-password") is { } administrator)
+        bool administratorPasswordStdin = args.Contains(AdministratorPasswordStdin);
+        string? administrator = Value(SetAdministratorPassword);
+        if (administratorPasswordStdin && administrator is null)
         {
-            Console.Write("Administrator password: ");
-            string password = ReadPassword();
-            Console.Write("Confirm password: ");
-            if (password != ReadPassword())
+            throw new InvalidDataException($"{AdministratorPasswordStdin} requires {SetAdministratorPassword} <name>.");
+        }
+        if (administrator is not null)
+        {
+            if (administratorPasswordStdin != Console.IsInputRedirected)
+            {
+                throw new InvalidDataException(
+                    $"Use an interactive terminal or redirect two password lines with {AdministratorPasswordStdin}."
+                );
+            }
+
+            string password = ReadAdministratorPassword(administratorPasswordStdin, "Administrator password: ");
+            if (password != ReadAdministratorPassword(administratorPasswordStdin, "Confirm password: "))
             {
                 throw new InvalidDataException("Passwords do not match.");
             }
@@ -543,6 +562,17 @@ internal static class Program
         {
             return null;
         }
+    }
+
+    private static string ReadAdministratorPassword(bool fromStdin, string prompt)
+    {
+        if (fromStdin)
+        {
+            return Console.ReadLine()
+                ?? throw new InvalidDataException("Standard input must contain the password and confirmation on separate lines.");
+        }
+        Console.Write(prompt);
+        return ReadPassword();
     }
 
     private static string ReadPassword()
