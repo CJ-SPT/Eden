@@ -19,6 +19,9 @@ internal static partial class IncursionSiteCatalog
     internal const int Uroborus = 5201;
 
     private const int IndustrialProxyEntry = 2894;
+
+    // Build 3662168 labels the faction of dungeon 5114 as Unknown.
+    private const int TruePowerHeadquartersCatalogFaction = 500021;
     private const int Uitra = 2208;
     private const int UroborusFlagship = 3071;
     private const int Jel = 3524;
@@ -209,7 +212,8 @@ internal static partial class IncursionSiteCatalog
                 new(1009290, new(20_000, 5_000, 3_000), 0),
                 new(1007044, new(-23_000, 15_000, -12_000), 1, 1, 0),
                 new(1007056, new(24_000, -16_000, 17_000), 2, 2, 1),
-            ]
+            ],
+            CatalogFaction: TruePowerHeadquartersCatalogFaction
         ),
         new(
             IncursionSiteKind.Headquarters,

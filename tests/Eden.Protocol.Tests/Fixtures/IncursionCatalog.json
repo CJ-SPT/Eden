@@ -1626,10 +1626,10 @@
       "key": 5114,
       "data": {
         "entryTypeID": 10645,
-        "entryObjectID": 10,
+        "entryObjectID": 1009453,
         "archetypeID": 63,
         "difficulty": 5,
-        "factionID": 500019,
+        "factionID": 500021,
         "dungeonNameID": 114111,
         "dungeonID": 5114,
         "connections": [

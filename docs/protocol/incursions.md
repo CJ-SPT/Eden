@@ -1,5 +1,18 @@
 # Sansha Incursions
 
+## Pinned headquarters dungeon profile
+
+Build 3662168 tags True Power Provisional Headquarters (`client/dungeons` row `5114`) with catalog faction `500021`
+(Unknown), archetype `63` and entry object `1009453`. Eden validates that faction for this dungeon and uses Sansha's Nation
+for the encounter and beacon owner. The source row SHA-256 is
+`dfab5232c0b0d767904e6c7df728c872d9299a11df378982fec4c616f22f59a2`. EVE.js
+`server/src/services/incursion/incursionLifecycleContract.js` records the same faction for this ID.
+
+Updating the test fixture to the pinned values reproduced the startup exception on revision `99cb8d27`. After the fix,
+`AllVariantsUsePinnedArchetypesAndLowSecuritySelectsUroborus` loaded all 15 sites from the installed `catalog.sqlite`
+through `EDEN_TEST_INCURSION_CATALOG` in 4.39 seconds including test runner startup. The focused Incursion, Agency and
+world setup run passed 66 tests in 37 seconds of test execution.
+
 [Documentation index](../README.md) · [Protocol records](../protocol.md)
 
 ## Incursion loyalty point journal

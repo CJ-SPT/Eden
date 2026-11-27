@@ -79,7 +79,8 @@ internal static partial class IncursionSiteCatalog
         int Slot = 0,
         int EntryType = EntryBeaconType,
         ImmutableArray<SpacePosition> Grids = default,
-        ImmutableArray<GatePlan> GatePlans = default
+        ImmutableArray<GatePlan> GatePlans = default,
+        int CatalogFaction = (int)NpcPirateFaction.Sansha
     );
 
     private static readonly ImmutableArray<Design> s_designs =
@@ -257,7 +258,7 @@ internal static partial class IncursionSiteCatalog
         }
         if (
             dungeon.ArchetypeID != design.Archetype
-            || dungeon.FactionID != (int)NpcPirateFaction.Sansha
+            || dungeon.FactionID != design.CatalogFaction
             || dungeon.EntryTypeID != design.EntryType
             || dungeon.EntryObjectID is not long entry
             || dungeon.DungeonNameID is not long name

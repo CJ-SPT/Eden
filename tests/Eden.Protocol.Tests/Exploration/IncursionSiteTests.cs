@@ -132,16 +132,27 @@ public sealed class IncursionSiteTests
     [Fact]
     public void AllVariantsUsePinnedArchetypesAndLowSecuritySelectsUroborus()
     {
-        using TestWorld fixture = new();
-        var database = new WorldDatabase(fixture.Path);
-        PassiveCatalogFixture.LoadIncursions(database.CatalogPath);
-        using CatalogDbContext catalog = new(database.CatalogPath);
+        string? catalogPath = Environment.GetEnvironmentVariable("EDEN_TEST_INCURSION_CATALOG");
+        using TestWorld? fixture = string.IsNullOrWhiteSpace(catalogPath) ? new() : null;
+        if (fixture is not null)
+        {
+            catalogPath = new WorldDatabase(fixture.Path).CatalogPath;
+            PassiveCatalogFixture.LoadIncursions(catalogPath);
+        }
+        using CatalogDbContext catalog = new(catalogPath!);
         var variants = Enum.GetValues<IncursionSiteKind>()
             .SelectMany(kind => IncursionSiteCatalog.Variants(catalog, kind, IncursionSecurity.High))
             .ToArray();
         Assert.Equal(14, variants.Length);
         Assert.Equal(14, variants.Select(site => site.Slot).Distinct().Count());
         Assert.Equal(4, variants.Count(site => site.Kind == IncursionSiteKind.Scout && site.Gates.IsEmpty));
+        var headquarters = Assert.Single(
+            variants,
+            site => site.Encounter.DungeonId == IncursionSiteCatalog.TruePowerProvisionalHeadquarters
+        );
+        Assert.Equal(NpcPirateFaction.Sansha, headquarters.Encounter.Faction);
+        Assert.Equal(3, headquarters.Gates.Length);
+        Assert.Contains(headquarters.Encounter.Objects, body => body.Id == 1009453 && body.OwnerId == (int)NpcPirateFaction.Sansha);
         var flagship = Assert.Single(IncursionSiteCatalog.Variants(catalog, IncursionSiteKind.Mothership, IncursionSecurity.Low));
         Assert.Equal(5201, flagship.Encounter.DungeonId);
         Assert.True(IncursionSiteCatalog.IsMothershipFlagship(flagship.Encounter.DungeonId, 3071));

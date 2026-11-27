@@ -631,6 +631,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sansha Incursions
 
+- [Pinned headquarters dungeon profile](protocol/incursions.md#pinned-headquarters-dungeon-profile)
 - [Incursion loyalty point journal](protocol/incursions.md#incursion-loyalty-point-journal)
 - [Roaming Sansha populations](protocol/incursions.md#roaming-sansha-populations)
 - [Security campaigns and system effects](protocol/incursions.md#security-campaigns-and-system-effects)
