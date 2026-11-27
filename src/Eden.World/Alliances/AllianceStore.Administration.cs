@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Economy;
@@ -140,8 +141,39 @@ internal sealed partial class AllianceStore
 
     public IReadOnlyList<string> SuggestTickers(string name)
     {
-        string ticker = new(name.ToUpperInvariant().Where(char.IsLetterOrDigit).Take(AllianceRules.MaximumTickerLength).ToArray());
-        return ticker.Length == 0 || List().Any(row => row.Details.Ticker == ticker) ? [] : [ticker];
+        const int suggestionCount = 3;
+        const int maximumAlternateSuffix = 9999;
+        string stem = new(
+            name.Normalize().ToUpperInvariant().Where(char.IsLetterOrDigit).Take(AllianceRules.MaximumTickerLength).ToArray()
+        );
+        if (stem.Length == 0)
+        {
+            stem = "ALLY";
+        }
+        return Resident.Economy.Inspect(world =>
+        {
+            var used = world
+                .Set<SavedAlliance>()
+                .Select(row => row.Ticker)
+                .Concat(world.Set<SavedCorporation>().Select(row => row.Ticker))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return Enumerable
+                .Range(1, stem.Length)
+                .Reverse()
+                .Select(length => stem[..length])
+                .Concat(
+                    Enumerable
+                        .Range(1, maximumAlternateSuffix)
+                        .Select(number =>
+                        {
+                            string suffix = number.ToString(CultureInfo.InvariantCulture);
+                            return stem[..Math.Min(stem.Length, AllianceRules.MaximumTickerLength - suffix.Length)] + suffix;
+                        })
+                )
+                .Where(used.Add)
+                .Take(suggestionCount)
+                .ToArray();
+        });
     }
 
     internal static SavedAlliance Executor(WorldAction world, long actorId)

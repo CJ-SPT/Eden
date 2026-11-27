@@ -147,6 +147,45 @@ public sealed class AllianceCreationTests
     }
 
     [Fact]
+    public void RankingsReturnEveryAllianceWhenTheClientSelectsAll()
+    {
+        using TestWorld world = new(liveWorld: true);
+        Corporation(world);
+        Corporation(world, Other, "Other Founders", "OTH");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        int first = alliances.Create(Ceo, Details()).Alliance.Id;
+        int second = alliances.Create(Other, Details("Second Alliance", "SEC")).Alliance.Id;
+        using CorporationTestClient client = new(world, 1000001);
+
+        IReadOnlyList<AllianceReply> Ranked(long limit) =>
+            Assert
+                .IsType<AllianceRankingsReply>(
+                    Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "GetRankedAlliances", [limit])).Reply
+                )
+                .Alliances;
+
+        Assert.Equal([first, second], Ranked(0).Select(row => row.Alliance.Id));
+        Assert.Equal(first, Assert.Single(Ranked(1)).Alliance.Id);
+    }
+
+    [Fact]
+    public void SuggestedTickerCanBeUsedWhenTheFirstChoiceIsAlreadyTaken()
+    {
+        using TestWorld world = new(liveWorld: true);
+        Corporation(world, name: "First Corporation", ticker: "NORTH");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        using CorporationTestClient client = new(world, 1000001);
+
+        var suggestions = Assert.IsType<AllianceTickerSuggestions>(
+            Assert.IsType<PilotCallResult.Success>(client.Call("GetSuggestedAllianceShortNames", ["Northern Alliance"])).Reply
+        );
+        Assert.NotEmpty(suggestions.Tickers);
+        Assert.DoesNotContain("NORTH", suggestions.Tickers);
+        var created = alliances.Create(Ceo, new("Northern Alliance", suggestions.Tickers[0], "", ""));
+        Assert.Equal(suggestions.Tickers[0], created.Alliance.Details.Ticker);
+    }
+
+    [Fact]
     public void DuplicateIdentityAndNonExecutorEditsLeaveStateUnchanged()
     {
         using TestWorld world = new(liveWorld: true);

@@ -1,3 +1,4 @@
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Market;
@@ -111,7 +112,19 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
                     .OrderByDescending(e => e.Id)
                     .Take(1000)
                     .AsEnumerable()
-                    .Select(e => e.Snapshot())
+                    .Select(entry =>
+                    {
+                        var snapshot = entry.Snapshot();
+                        // The native maintenance journal formats its reference as an alliance owner name.
+                        return
+                            entry.EntryType == WalletEntryType.AllianceMaintenance
+                            && world.Set<SavedAllianceBill>().Find(entry.ReferenceId) is { } bill
+                            ? snapshot with
+                            {
+                                ReferenceId = bill.AllianceId,
+                            }
+                            : snapshot;
+                    })
                     .ToArray();
             }
         );

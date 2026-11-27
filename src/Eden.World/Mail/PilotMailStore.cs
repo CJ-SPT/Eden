@@ -238,6 +238,13 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
                 && world.Set<SavedAlliance>().Find((int)organization) is { ClosedAt: null }
             )
             {
+                if (
+                    world.Set<SavedCorporation>().Find(sender.CorporationId) is not { ClosedAt: null } alliedCorporation
+                    || !CorporationRoleStore.Has(world, pilotId, alliedCorporation, CorporationRole.ChatManager)
+                )
+                {
+                    throw new InvalidDataException("Only Communications Officers and Directors can mail the alliance.");
+                }
                 foreach (
                     int corporation in world.Filter<SavedAllianceMember>(m => m.AllianceId == organization).Select(m => m.CorporationId)
                 )

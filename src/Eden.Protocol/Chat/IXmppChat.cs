@@ -15,6 +15,7 @@ public interface IXmppChat
     void Send(Guid connection, ChatRoom room, string text, string id);
     void Invite(Guid connection, ChatRoom room, long target);
     IReadOnlyList<ChatPilot> Members(Guid connection, ChatRoom room);
+    IReadOnlyList<long> AllianceMotdEditors(int allianceId, IReadOnlyList<long> occupants);
     ChatRoomInfo RoomInfo(Guid connection, ChatRoom room);
     IReadOnlyList<ChatRoomInfo> PublicRooms();
     ChatPilot? User(long pilotId);

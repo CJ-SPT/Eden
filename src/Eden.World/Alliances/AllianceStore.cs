@@ -44,14 +44,24 @@ internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider
         );
 
     public IReadOnlyList<AllianceMember> Members(int allianceId) =>
-        Resident.Economy.Inspect(world =>
-            (IReadOnlyList<AllianceMember>)
-                world
-                    .Filter<SavedAllianceMember>(row => row.AllianceId == allianceId)
-                    .OrderBy(row => row.CorporationId)
-                    .Select(row => new AllianceMember(row.CorporationId, row.AllianceId, row.JoinedAt, row.ChosenExecutorId))
-                    .ToArray()
-        );
+        Resident.Economy.Inspect<IReadOnlyList<AllianceMember>>(world => ReadMembers(world, allianceId).ToArray());
+
+    public IReadOnlyList<AllianceMember> MembersForPilot(long pilotId) =>
+        Resident.Economy.Inspect<IReadOnlyList<AllianceMember>>(world =>
+        {
+            var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+            var viewer =
+                world.Set<SavedAllianceMember>().Find(pilot.CorporationId)
+                ?? throw new InvalidDataException("Your corporation is not in an alliance.");
+            return ReadMembers(world, viewer.AllianceId).Select(member => member.ForViewer(viewer.CorporationId)).ToArray();
+        });
+
+    private static IEnumerable<AllianceMember> ReadMembers(WorldAction world, int allianceId) =>
+        world
+            .Filter<SavedAllianceMember>(row => row.AllianceId == allianceId)
+            .OrderBy(row => row.CorporationId)
+            .AsEnumerable()
+            .Select(Member);
 
     public int DaysInAlliance(int allianceId, int corporationId) =>
         Resident.Economy.Inspect(world =>

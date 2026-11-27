@@ -1,6 +1,7 @@
 using Eden.Data.World.Alliances;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Calendar;
+using Eden.Gameplay.Corporations;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 
@@ -92,7 +93,9 @@ internal sealed partial class AllianceStore
                         .Events.Append(new(entry, actorId, value.Description, [new(actorId, CalendarResponse.Accepted)]))
                         .ToArray(),
                 };
-            }
+            },
+            role: CorporationRole.ChatManager,
+            executorOnly: false
         );
         return id;
     }
@@ -118,7 +121,9 @@ internal sealed partial class AllianceStore
                 };
                 Record(world, new(0, state.AllianceId, 0, Calendar: new(0, CalendarChangeKind.Edited, changed.Event, oldTime)));
                 return state with { Events = state.Events.Select(e => e.Event.Id == eventId ? changed : e).ToArray() };
-            }
+            },
+            role: CorporationRole.ChatManager,
+            executorOnly: false
         );
     }
 
@@ -164,6 +169,8 @@ internal sealed partial class AllianceStore
                 var changed = entry.Event with { Deleted = true, Modified = Math.Max(Now, entry.Event.Modified + 1) };
                 Record(world, new(0, state.AllianceId, 0, Calendar: new(0, CalendarChangeKind.Cancelled, changed, changed.Time)));
                 return state with { Events = state.Events.Select(e => e.Event.Id == eventId ? e with { Event = changed } : e).ToArray() };
-            }
+            },
+            role: CorporationRole.ChatManager,
+            executorOnly: false
         );
 }

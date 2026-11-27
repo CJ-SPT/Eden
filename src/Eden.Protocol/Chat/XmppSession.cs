@@ -9,6 +9,7 @@ namespace Eden.Protocol.Chat;
 [Injectable]
 public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
 {
+    private const string MucAdminNamespace = "http://jabber.org/protocol/muc#admin";
     private static readonly TimeSpan KeepAliveInterval = TimeSpan.FromMinutes(1);
 
     public async Task RunAsync(Stream stream, CancellationToken cancellation, Action<long>? established = null)
@@ -378,21 +379,35 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                 )
             );
         }
-        if (ns is XmppWire.DiscoItemsNamespace or "http://jabber.org/protocol/muc#admin")
+        if (ns is XmppWire.DiscoItemsNamespace or MucAdminNamespace)
         {
+            var members = chat.Members(connection.Id, target);
+            IEnumerable<(ChatPilot Pilot, string Affiliation)> occupants = members.Select(member => (member, "member"));
+            if (ns == MucAdminNamespace && target.Kind == ChatRoomKind.Alliance)
+            {
+                // Build 3662168's GetUsersWithAffiliation treats every returned JID as a match for its requested affiliation.
+                string? affiliation = (string?)payload.Element(XName.Get("item", ns))?.Attribute("affiliation");
+                if (affiliation is not (null or "member" or "admin"))
+                {
+                    return XmppWire.Result(request, new XElement(payload.Name));
+                }
+                var editors = chat.AllianceMotdEditors(checked((int)target.Id), members.Select(member => member.Id).ToArray()).ToHashSet();
+                occupants = members
+                    .Select(member => (Pilot: member, Affiliation: editors.Contains(member.Id) ? "admin" : "member"))
+                    .Where(occupant => affiliation is null || affiliation == occupant.Affiliation);
+            }
             return XmppWire.Result(
                 request,
                 new XElement(
                     payload.Name,
-                    chat.Members(connection.Id, target)
-                        .Select(member => new XElement(
-                            XName.Get("item", ns),
-                            new XAttribute("jid", XmppWire.UserJid(member.Id, chat.Endpoint.Domain)),
-                            new XAttribute("nick", member.Id),
-                            new XAttribute("role", "participant"),
-                            new XAttribute("affiliation", "member"),
-                            XmppWire.UserData(member)
-                        ))
+                    occupants.Select(occupant => new XElement(
+                        XName.Get("item", ns),
+                        new XAttribute("jid", XmppWire.UserJid(occupant.Pilot.Id, chat.Endpoint.Domain)),
+                        new XAttribute("nick", occupant.Pilot.Id),
+                        new XAttribute("role", "participant"),
+                        new XAttribute("affiliation", occupant.Affiliation),
+                        XmppWire.UserData(occupant.Pilot)
+                    ))
                 )
             );
         }

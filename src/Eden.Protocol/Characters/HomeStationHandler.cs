@@ -184,7 +184,8 @@ internal sealed class NpcCorporationHandler(
     INpcCorporationDirectory corporations,
     ICharacterDirectory characters,
     IPlayerCorporations players,
-    ICorporationWars wars
+    ICorporationWars wars,
+    CorporationHandler monitor
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -220,9 +221,12 @@ internal sealed class NpcCorporationHandler(
                 ("corpmgr", [long corporation]) when corporation is > 0 and <= int.MaxValue => (int)corporation,
                 _ => throw new InvalidDataException("Choose a valid NPC corporation."),
             };
-            return players.Read(id) is { } player
-                ? new PlayerCorporationReply(player, wars.IsEligible(player.Id))
-                : new NpcCorporationReply(corporations.Read(id));
+            if (players.Read(id) is { } player)
+            {
+                monitor.ObserveCorporation(player);
+                return new PlayerCorporationReply(player, wars.IsEligible(player.Id));
+            }
+            return new NpcCorporationReply(corporations.Read(id));
         }
         catch (InvalidDataException error)
         {

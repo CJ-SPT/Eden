@@ -1,4 +1,5 @@
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 
 namespace Eden.Gameplay.Alliances;
 
@@ -24,8 +25,8 @@ public interface IAllianceSocial
     AllianceSocialBook Read(long actorId);
     long Revision(int allianceId);
     double? Standing(int allianceId, long contactId);
-    void SetStanding(long actorId, IReadOnlyList<long> contacts, double standing);
-    void DeleteContacts(long actorId, IReadOnlyList<long> contacts);
+    void SetStanding(long actorId, IReadOnlyList<long> contacts, double standing, bool directorOnly = false);
+    void DeleteContacts(long actorId, IReadOnlyList<long> contacts, bool directorOnly = false);
     long CreateLabel(long actorId, string name, int? color);
     void EditLabel(long actorId, long labelId, string? name, int? color);
     void DeleteLabel(long actorId, long labelId);
@@ -34,11 +35,11 @@ public interface IAllianceSocial
     void DeleteBulletin(long actorId, long id);
     void OrderBulletins(long actorId, IReadOnlyList<long> ids);
     string ReadMotd(int allianceId);
+    IReadOnlyList<long> MotdEditors(int allianceId, IReadOnlyList<long> occupants);
     void SetMotd(long actorId, int allianceId, string text);
 }
 
 public static class AllianceSocialRules
 {
-    // Eden limit. The pinned client passes 15 to GetBulletins, but does not establish the server's storage limit.
-    public const int MaximumBulletins = 15;
+    public const int MaximumBulletins = CorporationCommunicationRules.MaximumBulletins;
 }

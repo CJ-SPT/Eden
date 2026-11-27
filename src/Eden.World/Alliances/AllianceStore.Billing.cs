@@ -17,7 +17,7 @@ internal sealed partial class AllianceStore
 {
     public IReadOnlyList<AllianceBill> Bills(long actorId)
     {
-        AdvanceBilling();
+        Advance();
         return Resident.Economy.Inspect(world =>
         {
             var corporation = Financial(world, actorId, false);
@@ -38,7 +38,7 @@ internal sealed partial class AllianceStore
     public void Pay(long actorId, long billId, int divisionKey)
     {
         CorporationWalletRules.CheckKey(divisionKey);
-        AdvanceBilling();
+        Advance();
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = Financial(world, actorId, true);
         int alliance = world.Set<SavedAllianceMember>().Find(corporation.Id)!.AllianceId;
@@ -70,9 +70,9 @@ internal sealed partial class AllianceStore
             ?? throw new InvalidDataException("Your corporation is not in an alliance.");
         var alliance = Active(world, allianceId);
         var role = write ? CorporationRole.Accountant : CorporationRole.Accountant | CorporationRole.JuniorAccountant;
-        if (alliance.ExecutorCorporationId != corporation.Id || !CorporationRoleStore.Has(world, actorId, corporation, role))
+        if (write && alliance.ExecutorCorporationId != corporation.Id || !CorporationRoleStore.Has(world, actorId, corporation, role))
         {
-            throw new InvalidDataException("Alliance executor financial authority is required.");
+            throw new InvalidDataException("Alliance financial authority is required.");
         }
         return corporation;
     }
@@ -198,64 +198,42 @@ internal sealed partial class AllianceStore
                 })
             );
 
-    private void AdvanceBilling()
+    private bool AdvanceBilling(WorldAction world, SavedAlliance alliance, long through, long now)
     {
-        long now = Now;
-        if (BillingDeadline() > now)
+        var lifecycle = world.Set<SavedAllianceLifecycle>().Find(alliance.Id);
+        if (lifecycle?.ClosureAt is long closing && closing <= through)
         {
-            return;
+            CloseAlliance(world, alliance, closing);
+            return true;
         }
-        using var world = Resident.Economy.Begin(TransactionParticipants.None);
-        bool closed = false;
-        foreach (var alliance in world.Set<SavedAlliance>().Where(a => a.ClosedAt == null).ToArray())
+        if (!world.Filter<SavedAllianceMember>(m => m.AllianceId == alliance.Id).Any())
         {
-            var lifecycle = world.Set<SavedAllianceLifecycle>().Find(alliance.Id);
-            if (lifecycle?.ClosureAt is long closing && closing <= now)
+            ScheduleEmpty(world, alliance.Id, through);
+            return false;
+        }
+        var bill = world.Filter<SavedAllianceBill>(b => b.AllianceId == alliance.Id && !b.Renewed).OrderBy(b => b.DueAt).FirstOrDefault();
+        if (bill is null)
+        {
+            Issue(world, alliance.Id, alliance.CreatedAt, alliance.CreatedAt + AllianceBillingRules.MaintenancePeriod.Ticks);
+            bill = world.Filter<SavedAllianceBill>(b => b.AllianceId == alliance.Id && !b.Renewed).Single();
+        }
+        while (bill.DueAt <= through)
+        {
+            if (!bill.PaidAt.HasValue && !AutoPay(world, alliance, bill, now))
             {
-                CloseAlliance(world, alliance, closing);
-                closed = true;
-                continue;
-            }
-            if (!world.Filter<SavedAllianceMember>(m => m.AllianceId == alliance.Id).Any())
-            {
-                ScheduleEmpty(world, alliance.Id, now);
-                continue;
-            }
-            var bill = world
-                .Filter<SavedAllianceBill>(b => b.AllianceId == alliance.Id && !b.Renewed)
-                .OrderBy(b => b.DueAt)
-                .FirstOrDefault();
-            if (bill is null)
-            {
-                Issue(world, alliance.Id, alliance.CreatedAt, alliance.CreatedAt + AllianceBillingRules.MaintenancePeriod.Ticks);
-                bill = world.Filter<SavedAllianceBill>(b => b.AllianceId == alliance.Id && !b.Renewed).Single();
-            }
-            while (bill.DueAt <= now)
-            {
-                if (!bill.PaidAt.HasValue)
+                long closingAt = AllianceBillingRules.NextDowntime(bill.DueAt);
+                if (closingAt <= through)
                 {
-                    _ = AutoPay(world, alliance, bill, now);
+                    CloseAlliance(world, alliance, closingAt);
+                    return true;
                 }
-                if (!bill.PaidAt.HasValue)
-                {
-                    long closingAt = AllianceBillingRules.NextDowntime(bill.DueAt);
-                    if (closingAt <= now)
-                    {
-                        CloseAlliance(world, alliance, closingAt);
-                        closed = true;
-                    }
-                    break;
-                }
-                bill.Renewed = true;
-                Issue(world, alliance.Id, bill.DueAt, bill.DueAt + AllianceBillingRules.MaintenancePeriod.Ticks);
-                bill = world.Filter<SavedAllianceBill>(b => b.AllianceId == alliance.Id && !b.Renewed).Single();
+                break;
             }
+            bill.Renewed = true;
+            Issue(world, alliance.Id, bill.DueAt, bill.DueAt + AllianceBillingRules.MaintenancePeriod.Ticks);
+            bill = world.Filter<SavedAllianceBill>(b => b.AllianceId == alliance.Id && !b.Renewed).Single();
         }
-        world.Commit();
-        if (closed)
-        {
-            database.NotifyAccessGroupsChanged();
-        }
+        return false;
     }
 
     internal static void ScheduleEmpty(WorldAction world, int allianceId, long now)

@@ -77,7 +77,7 @@ internal sealed class AllianceSocialHandler(IAllianceSocial social, AllianceSoci
                     social.SetStanding(actor, [id], Standing(value));
                     break;
                 case ("SetRelationship", [var value, long id]):
-                    social.SetStanding(actor, [id], Standing(value));
+                    social.SetStanding(actor, [id], Standing(value), directorOnly: true);
                     break;
                 case ("EditContactsRelationshipID", [var ids, var value]):
                     social.SetStanding(actor, Ids(ids), Standing(value));
@@ -86,7 +86,7 @@ internal sealed class AllianceSocialHandler(IAllianceSocial social, AllianceSoci
                     social.DeleteContacts(actor, Ids(ids));
                     break;
                 case ("DeleteRelationship", [long id]):
-                    social.DeleteContacts(actor, [id]);
+                    social.DeleteContacts(actor, [id], directorOnly: true);
                     break;
                 case ("CreateLabel", [var name, var color]):
                     long createdLabel = social.CreateLabel(actor, AllianceHandler.Text(name), Color(color));

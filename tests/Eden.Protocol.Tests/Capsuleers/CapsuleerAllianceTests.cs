@@ -75,7 +75,13 @@ public sealed class CapsuleerAllianceTests
                         StandardMarket = false,
                         ChargeServiceCosts = false,
                     },
-                    Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6, NewSovereigntyClaims = claimsEnabled },
+                    Capsuleers = draft.Settings.Capsuleers with
+                    {
+                        TrafficMultiplier = 6,
+                        NewSovereigntyClaims = claimsEnabled,
+                        // This scenario asserts that the corporation pays for replacing the lost expedition fit.
+                        FundRefits = false,
+                    },
                 },
             },
             "First claim fixture"

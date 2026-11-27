@@ -3,11 +3,13 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using Eden.Data.World.Corporations;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Chat;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Tests.Alliances;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Chat;
@@ -20,6 +22,83 @@ namespace Eden.Protocol.Tests.Chat;
 
 public sealed class ChatMotdTests
 {
+    [Fact]
+    public async Task AllianceAffiliationQueriesListOnlyCurrentMotdEditorsAsAdmins()
+    {
+        using TestWorld world = new(liveWorld: true);
+        const long founder = AllianceCreationTests.Ceo;
+        const long regular = AllianceCreationTests.Other;
+        int corporation = AllianceCreationTests.Corporation(world);
+        var membership = world.Services.GetRequiredService<ICorporationMembership>();
+        var application = membership.Apply(regular, corporation, "Application");
+        CorporationApplicationUpdate Update(CorporationApplicationStatus status) =>
+            new(application.Id, regular, corporation, application.Text, status, "Welcome", application.AppliedAt);
+        membership.Update(founder, Update(CorporationApplicationStatus.Offered));
+        membership.Update(regular, Update(CorporationApplicationStatus.Joined));
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(founder, AllianceCreationTests.Details()).Alliance.Id;
+
+        using CorporationTestClient ceo = new(world, 1000001);
+        using CorporationTestClient member = new(world, 1000002);
+        var certificate = world.Services.GetRequiredService<ChatCertificate>();
+        await using var server = world.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        string channel = $"alliance_{alliance}";
+        string jid = channel + "@conference.eden.chat";
+        await using var first = await Connect(ceo, founder);
+        await using var second = await Connect(member, regular);
+        await first.JoinAsync(channel, "first");
+        await first.UntilAsync(e => (string?)e.Attribute("id") == "first");
+        await second.JoinAsync(channel, "second");
+        await second.UntilAsync(e => (string?)e.Attribute("id") == "second");
+
+        Assert.Empty(await Query("owner"));
+        Assert.Equal([$"{founder}@eden.chat"], await Query("admin"));
+        Assert.Equal([$"{regular}@eden.chat"], await Query("member"));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("XmppChatMgr", "SetMotd", [jid, "Denied"]));
+
+        ceo.Reply("UpdateMember", CorporationRoleTests.MemberArguments(regular, new((long)CorporationRole.Director)));
+        Assert.Equal([$"{founder}@eden.chat", $"{regular}@eden.chat"], await Query("admin"));
+        Assert.Empty(await Query("member"));
+        Assert.Same(PilotCallResult.None, member.CallService("XmppChatMgr", "SetMotd", [jid, "Welcome"]));
+
+        ceo.Reply("UpdateMember", CorporationRoleTests.MemberArguments(regular, new()));
+        Assert.Equal([$"{founder}@eden.chat"], await Query("admin"));
+        Assert.Equal([$"{regular}@eden.chat"], await Query("member"));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("XmppChatMgr", "SetMotd", [jid, "Revoked"]));
+
+        Task<XmppChatTests.NativeClient> Connect(CorporationTestClient client, long pilot)
+        {
+            var token = Assert.IsType<PilotCallResult.Success>(
+                client.CallService("chatAuthenticationService", "GetAuthenticationToken", [])
+            );
+            return XmppChatTests.NativeClient.ConnectAsync(
+                server.Endpoint!,
+                certificate.Certificate,
+                pilot,
+                Eden.Protocol.Serialization.BlueMarshal.Text(token.Reply.ToBlue())
+            );
+        }
+
+        async Task<string[]> Query(string affiliation)
+        {
+            XNamespace muc = "http://jabber.org/protocol/muc#admin";
+            await second.SendAsync(
+                $"<iq type='get' id='roles' to='{jid}'><query xmlns='{muc}'><item affiliation='{affiliation}'/></query></iq>"
+            );
+            var response = (await second.UntilAsync(e => (string?)e.Attribute("id") == "roles"))[^1];
+            Assert.Equal("result", (string?)response.Attribute("type"));
+            return Assert
+                .Single(response.Elements(muc + "query"))
+                .Elements(muc + "item")
+                .Select(item =>
+                {
+                    Assert.Equal(affiliation, (string?)item.Attribute("affiliation"));
+                    return item.Attribute("jid")!.Value;
+                })
+                .ToArray();
+        }
+    }
+
     [Fact]
     public async Task NativeCorporationMotdCallBroadcastsSubjectAndRejoinsReceiveSavedText()
     {

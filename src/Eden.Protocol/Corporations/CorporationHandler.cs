@@ -21,6 +21,7 @@ internal sealed partial class CorporationHandler(
     ICorporationShares shares,
     ICorporationStorage storage,
     IAllianceMembership allianceMembership,
+    IAlliances alliances,
     AllianceSocialMonitor allianceSocial
 ) : ISelectedPilotCallHandler
 {

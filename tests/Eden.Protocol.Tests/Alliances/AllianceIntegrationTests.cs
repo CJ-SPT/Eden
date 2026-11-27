@@ -51,6 +51,48 @@ public sealed class AllianceIntegrationTests
         );
 
     [Fact]
+    public void CachedCorporationAffiliationFollowsFoundingAndDeparture()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Corporation(world);
+        using CorporationTestClient founder = new(world, 1000001);
+        using CorporationTestClient outsider = new(world, 1000002);
+        using CorporationTestClient uncached = new(world, 1000002);
+        Assert.IsType<PilotCallResult.Success>(founder.Call("GetCorporation", []));
+        Assert.IsType<PilotCallResult.Success>(outsider.CallService("corpmgr", "GetCorporations", [(long)corporation]));
+
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        AssertAffiliation(founder, null, alliance);
+        AssertAffiliation(outsider, null, alliance);
+        uncached.Advance();
+        Assert.DoesNotContain(uncached.Context.Notifications, notice => notice.Name == "OnCorporationChanged");
+
+        world.Services.GetRequiredService<IAllianceMembership>().Remove(Ceo, corporation);
+        Assert.IsType<PilotCallResult.Failure>(
+            founder.CallService("allianceRegistry", "MachoBindObject", [new object?[] { (long)alliance, 1L }, null])
+        );
+        AssertAffiliation(founder, alliance, null);
+        AssertAffiliation(outsider, alliance, null);
+        return;
+
+        void AssertAffiliation(CorporationTestClient client, int? before, int? after)
+        {
+            client.Context.Notifications.Clear();
+            using var metrics = SessionPerformance.Begin("alliance affiliation notifications", _ => { }, force: true)!;
+            client.Advance();
+            client.Advance();
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            var change = Assert.Single(client.Context.Notifications, notice => notice.Name == "OnCorporationChanged");
+            var update = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(change.Arguments)), 2);
+            Assert.Equal((long)corporation, update[0]);
+            var fields = BlueRead.Fields(update[1]);
+            Assert.Equal(new object?[] { (long?)before, (long?)after }, fields["allianceID"]);
+            Assert.Equal(new object?[] { (long)corporation, (long)corporation }, fields["corporationID"]);
+        }
+    }
+
+    [Fact]
     public async Task AllianceFittingsAuthorizeCurrentMembersTransferExecutorAndReopen()
     {
         TestClock clock = new();

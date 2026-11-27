@@ -16,10 +16,11 @@ internal sealed partial class AllianceStore
         {
             return;
         }
-        AdvanceBilling();
         long now = Now;
+        bool billingDue = BillingDeadline() <= now;
         if (
-            !Resident.Economy.Inspect(world =>
+            !billingDue
+            && !Resident.Economy.Inspect(world =>
                 world.Filter<SavedAllianceApplication>(a => a.Status == AllianceApplicationStatus.Accepted && a.EffectiveAt <= now).Any()
             )
         )
@@ -27,14 +28,26 @@ internal sealed partial class AllianceStore
             return;
         }
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
-        foreach (
-            var application in world
-                .Filter<SavedAllianceApplication>(a => a.Status == AllianceApplicationStatus.Accepted && a.EffectiveAt <= now)
-                .ToArray()
-        )
+        var applications = world
+            .Filter<SavedAllianceApplication>(a => a.Status == AllianceApplicationStatus.Accepted && a.EffectiveAt <= now)
+            .OrderBy(application => application.EffectiveAt)
+            .ThenBy(application => application.Id)
+            .ToArray();
+        bool closed = false;
+        foreach (var application in applications)
         {
-            var previous = Application(application);
+            if (application.Status != AllianceApplicationStatus.Accepted)
+            {
+                continue;
+            }
             var alliance = world.Set<SavedAlliance>().Find(application.AllianceId);
+            // On restart, renew earlier invoices before admission and let later invoices count the admitted corporation.
+            if (alliance is { ClosedAt: null } && AdvanceBilling(world, alliance, application.EffectiveAt!.Value, now))
+            {
+                closed = true;
+                continue; // Dissolution already rejected the outstanding applications.
+            }
+            var previous = Application(application);
             if (
                 alliance is not { ClosedAt: null }
                 || world.Set<SavedCorporation>().Find(application.CorporationId) is not { ClosedAt: null }
@@ -92,7 +105,17 @@ internal sealed partial class AllianceStore
                 )
             );
         }
+        if (billingDue)
+        {
+            foreach (var alliance in world.Set<SavedAlliance>().Where(alliance => alliance.ClosedAt == null).ToArray())
+            {
+                closed |= AdvanceBilling(world, alliance, now, now);
+            }
+        }
         world.Commit();
-        database.NotifyAccessGroupsChanged();
+        if (closed || applications.Length > 0)
+        {
+            database.NotifyAccessGroupsChanged();
+        }
     }
 }

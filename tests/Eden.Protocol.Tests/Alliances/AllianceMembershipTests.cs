@@ -1,5 +1,6 @@
 using Eden.Data.World.Alliances;
 using Eden.Gameplay.Alliances;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Alliances;
@@ -9,6 +10,7 @@ using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using static Eden.Protocol.Tests.Alliances.AllianceCreationTests;
 
@@ -199,7 +201,37 @@ public sealed class AllianceMembershipTests
     }
 
     [Fact]
-    public void ReplacementWithdrawalAndStaleDeadlineCannotAdmitAnApplicant()
+    public void OnlyNewOrRejectedApplicationsCanBeDeleted()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        Corporation(world);
+        int applicant = Corporation(world, Other, "Applicant Corporation", "APPL");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        using CorporationTestClient client = new(world, 1000002);
+        membership.Apply(Other, alliance, "Join");
+        Assert.Null(client.Reply("DeleteAllianceApplication", [(long)alliance]));
+        Assert.Empty(membership.Applications(Other, false));
+        membership.Apply(Other, alliance, "Try again");
+        membership.Decide(Ceo, applicant, "Rejected", AllianceApplicationStatus.Rejected);
+        Assert.Null(client.Reply("DeleteAllianceApplication", [(long)alliance]));
+        Assert.Empty(membership.Applications(Other, false));
+        membership.Apply(Other, alliance, "Join again");
+        membership.Decide(Ceo, applicant, "Accepted", AllianceApplicationStatus.Accepted);
+        var accepted = Assert.Single(membership.Applications(Other, false));
+        long head = membership.Head;
+        Assert.IsType<PilotCallResult.Failure>(client.Call("DeleteAllianceApplication", [(long)alliance]));
+        Assert.Equal(head, membership.Head);
+        Assert.Equal(accepted, Assert.Single(membership.Applications(Other, false)));
+        clock.AdvanceWallTime(TimeSpan.FromDays(1));
+        membership.Advance();
+        Assert.Equal(alliance, alliances.Affiliation(applicant));
+    }
+
+    [Fact]
+    public void LeavingClearsApplicationCachesAndAllowsTheCorporationToReapply()
     {
         TestClock clock = new();
         using TestWorld world = new(clock: clock, liveWorld: true);
@@ -209,16 +241,152 @@ public sealed class AllianceMembershipTests
         var membership = world.Services.GetRequiredService<IAllianceMembership>();
         int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
         membership.Apply(Other, alliance, "Join");
-        membership.Decide(Ceo, applicant, "Join", AllianceApplicationStatus.Accepted);
-        membership.Withdraw(Other, alliance);
-        clock.AdvanceWallTime(TimeSpan.FromDays(2));
+        membership.Decide(Ceo, applicant, "Accepted", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(TimeSpan.FromDays(1));
         membership.Advance();
-        Assert.Null(alliances.Affiliation(applicant));
+        using CorporationTestClient executor = new(world, 1000001);
+        using CorporationTestClient member = new(world, 1000002);
+        var effective = Assert.Single(CachedApplications(member, false));
+        Assert.Equal(AllianceApplicationStatus.Effective, effective.Status);
+        Assert.Equal(effective, Assert.Single(CachedApplications(executor, true)));
+
+        Assert.IsType<PilotCallResult.Success>(member.CallService("allianceRegistry", "DeleteMember", [(long)applicant]));
+        member.Advance();
+        executor.Advance();
+        Assert.Empty(CachedApplications(member, false));
+        Assert.Empty(CachedApplications(executor, true));
+        foreach (var client in new[] { member, executor })
+        {
+            var removed = Assert.Single(client.Context.Notifications.OfType<AllianceApplicationChanged>());
+            Assert.Equal(effective, removed.Change.ApplicationBefore);
+            Assert.Null(removed.Change.ApplicationAfter);
+            var fields = BlueRead.Fields(removed.Arguments[2]);
+            Assert.Equal(new object?[] { alliance, null }, BlueRead.Tuple(fields["allianceID"], 2));
+        }
+        Assert.Contains(membership.History(applicant), row => row.AllianceId == alliance);
+
+        member.Context.Notifications.Clear();
+        Assert.Null(member.Reply("ApplyToJoinAlliance", [(long)alliance, "Rejoin"]));
+        member.Advance();
+        var added = Assert.Single(member.Context.Notifications.OfType<AllianceApplicationChanged>());
+        Assert.Null(added.Change.ApplicationBefore);
+        Assert.Equal(AllianceApplicationStatus.New, added.Change.ApplicationAfter!.Status);
+        Assert.Equal("Rejoin", Assert.Single(CachedApplications(member, false)).Text);
+
+        static IReadOnlyList<AllianceApplication> CachedApplications(CorporationTestClient client, bool forAlliance)
+        {
+            var call = forAlliance
+                ? client.CallService("allianceRegistry", "GetApplications", [])
+                : client.Call("GetAllianceApplications", []);
+            return Assert.IsType<AllianceApplicationsReply>(Assert.IsType<PilotCallResult.Success>(call).Reply).Applications;
+        }
+    }
+
+    [Fact]
+    public void ExecutorVotesStayPrivateAndNullableUpdatesKeepTheMemberRow()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int founder = Corporation(world);
+        int applicant = Corporation(world, Other, "Applicant Corporation", "APPL");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        membership.Apply(Other, alliance, "Join");
+        membership.Decide(Ceo, applicant, "Accepted", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(TimeSpan.FromDays(1));
+        membership.Advance();
+        using CorporationTestClient executor = new(world, 1000001);
+        using CorporationTestClient member = new(world, 1000002);
+
+        var privateReply = Assert.IsType<AllianceMembersReply>(
+            Assert.IsType<PilotCallResult.Success>(member.CallService("allianceRegistry", "GetMembers", [])).Reply
+        );
+        Assert.Null(privateReply.Members.Single(row => row.CorporationId == founder).ChosenExecutorId);
+        Assert.Equal(founder, privateReply.Members.Single(row => row.CorporationId == applicant).ChosenExecutorId);
+        var publicReply = Assert.IsType<AlliancePublicMembersReply>(
+            Assert.IsType<PilotCallResult.Success>(member.CallService("allianceRegistry", "GetAllianceMembers", [(long)alliance])).Reply
+        );
+        Assert.All(publicReply.Members, row => Assert.Null(row.ChosenExecutorId));
+
+        membership.DeclareSupport(Ceo, applicant);
+        executor.Advance();
+        member.Advance();
+        var ownVote = Assert.Single(executor.Context.Notifications.OfType<AllianceMemberChanged>());
+        Assert.Equal(applicant, ownVote.Change.MemberAfter!.ChosenExecutorId);
+        Assert.Empty(member.Context.Notifications.OfType<AllianceMemberChanged>());
+
+        membership.Remove(Ceo, founder);
+        member.Advance();
+        var ownUpdate = Assert.Single(
+            member.Context.Notifications.OfType<AllianceMemberChanged>(),
+            change => change.Change.CorporationId == applicant
+        );
+        var fields = BlueRead.Fields(BlueMarshal.Decode(BlueMarshal.Encode(ownUpdate.Arguments[2])));
+        Assert.Equal(new object?[] { (long)applicant, (long)applicant }, BlueRead.Tuple(fields["corporationID"], 2));
+        Assert.Equal(new object?[] { (long)founder, null }, BlueRead.Tuple(fields["chosenExecutorID"], 2));
+        var departure = Assert.Single(
+            member.Context.Notifications.OfType<AllianceMemberChanged>(),
+            change => change.Change.CorporationId == founder
+        );
+        var removed = BlueRead.Fields(departure.Arguments[2]);
+        Assert.Equal(new object?[] { founder, null }, BlueRead.Tuple(removed["corporationID"], 2));
+        Assert.Equal(new object?[] { null, null }, BlueRead.Tuple(removed["chosenExecutorID"], 2));
+    }
+
+    [Fact]
+    public void MemberVotesUseCommittedCorporationAndOnlyTheCeoCanApply()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int founder = Corporation(world);
+        int applicant = Corporation(world, Other, "Applicant Corporation", "APPL");
+        TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        long director = world
+            .Services.GetRequiredService<ICharacterCreation>()
+            .Create(1000001, new("Alliance Director", 1, 1, 1, 64, [1], [2], 18));
+        var corporations = world.Services.GetRequiredService<IPlayerCorporations>();
+        var corporationMembers = world.Services.GetRequiredService<ICorporationMembership>();
+        var roles = world.Services.GetRequiredService<ICorporationRoles>();
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        Join(Other);
+        CorporationRolePatch directorRoles = new((long)CorporationRole.Director, null, null, null, null, null, null, null);
+        roles.UpdateMembers(Other, [new(director, null, null, null, directorRoles, null, null)]);
+        Assert.True(corporations.Identity(director).Access!.Roles.Has(CorporationRole.Director));
+        using CorporationTestClient client = new(world, 1000001, director);
+        Assert.IsType<PilotCallResult.Failure>(client.Call("ApplyToJoinAlliance", [(long)alliance, "Join"]));
         Assert.Empty(membership.Applications(Other, false));
-        membership.Apply(Other, alliance, "Try again");
-        membership.Decide(Ceo, applicant, "Rejected", AllianceApplicationStatus.Rejected);
-        Assert.Null(alliances.Affiliation(applicant));
-        Assert.Equal(AllianceApplicationStatus.Rejected, Assert.Single(membership.Applications(Other, false)).Status);
+
+        roles.UpdateMembers(Other, [new(director, null, null, null, directorRoles with { Roles = 0 }, null, null)]);
+        membership.Apply(Other, alliance, "Join");
+        membership.Decide(Ceo, applicant, "Accepted", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(TimeSpan.FromDays(1));
+        membership.Advance();
+        client.Advance();
+        Join(Ceo);
+        Assert.Equal(founder, corporations.Identity(director).Id);
+        Assert.Equal(applicant, client.Context.Pilot.CorpId);
+        Assert.Equal(alliance, client.Context.Pilot.Identity.AllianceId);
+        var result = client.CallService(
+            "allianceRegistry",
+            "MachoBindObject",
+            [new object?[] { (long)alliance, 1L }, new object?[] { "GetMembers", Array.Empty<object?>() }]
+        );
+        var bound = Assert.IsType<BoundPilotReply>(Assert.IsType<PilotCallResult.Success>(result).Reply);
+        var members = Assert.IsType<AllianceMembersReply>(bound.Reply).Members;
+        Assert.Equal(founder, members.Single(row => row.CorporationId == founder).ChosenExecutorId);
+        Assert.Null(members.Single(row => row.CorporationId == applicant).ChosenExecutorId);
+
+        void Join(long recruiter)
+        {
+            var invitation = corporationMembers.Invite(recruiter, director);
+            corporationMembers.Update(
+                director,
+                new(invitation.Id, director, invitation.CorporationId, "", CorporationApplicationStatus.Joined, "", invitation.AppliedAt)
+            );
+        }
     }
 
     [Theory]

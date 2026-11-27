@@ -16,7 +16,11 @@ public sealed record Alliance(
     int MemberCount
 );
 
-public sealed record AllianceMember(int CorporationId, int AllianceId, long JoinedAt, int? ChosenExecutorId);
+public sealed record AllianceMember(int CorporationId, int AllianceId, long JoinedAt, int? ChosenExecutorId)
+{
+    // Build 3662168 displays None as Secret in the member list.
+    public AllianceMember ForViewer(int? corporationId) => CorporationId == corporationId ? this : this with { ChosenExecutorId = null };
+}
 
 public sealed record AllianceCreation(Alliance Alliance, long BalanceCents);
 
@@ -27,6 +31,7 @@ public interface IAlliances
     int? PilotAffiliation(long pilotId);
     IReadOnlyList<Alliance> List();
     IReadOnlyList<AllianceMember> Members(int allianceId);
+    IReadOnlyList<AllianceMember> MembersForPilot(long pilotId);
     int DaysInAlliance(int allianceId, int corporationId);
     IReadOnlyList<int> MembersOlderThan(int allianceId, int minimumDays);
     AllianceCreation Create(long actorId, AllianceDetails details);

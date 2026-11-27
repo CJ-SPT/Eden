@@ -332,7 +332,7 @@ internal sealed class PilotCallRouter(
                 && (
                     keywords is { Count: > 0 }
                     || args.Length != (method == "MachoResolveObject" ? 1 : 2)
-                    || alliances?.Affiliation(context.Pilot.CorpId) is not int allianceId
+                    || alliances?.PilotAffiliation(context.Pilot.PilotId) is not int allianceId
                     // Build 3662168 eveMoniker.GetAllianceEx supplies (allianceID, isMaster).
                     || (
                         !Equals(args[0], (long)allianceId)

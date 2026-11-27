@@ -1,6 +1,7 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Calendar;
 using Eden.Gameplay.Chat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Alliances;
@@ -43,6 +44,98 @@ public sealed class AllianceSocialTests
         BlueMarshal.Decode(
             BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(client.CallService(service, method, args, keywords)).Reply)
         );
+
+    [Fact]
+    public void DiplomatsAndCommunicationsOfficersUseTheirCurrentAllianceRoles()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int corporation = Corporation(world);
+        var membership = world.Services.GetRequiredService<ICorporationMembership>();
+        var application = membership.Apply(Other, corporation, "Application");
+        CorporationApplicationUpdate Update(CorporationApplicationStatus status) =>
+            new(application.Id, Other, corporation, application.Text, status, "Welcome", application.AppliedAt);
+        membership.Update(Ceo, Update(CorporationApplicationStatus.Offered));
+        membership.Update(Other, Update(CorporationApplicationStatus.Joined));
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+
+        using CorporationTestClient ceo = new(world, 1000001);
+        using CorporationTestClient member = new(world, 1000002);
+        long bulletin = Assert.IsType<long>(Reply(ceo, "allianceRegistry", "AddBulletin", ["Orders", "Bring ships"]));
+        long eventTime = clock.Now + TimeSpan.FromDays(1).Ticks;
+        object?[] eventArgs = [eventTime, 60L, "Operation", "Alliance only", true];
+        object?[] mailArgs = [new List<object?>(), null, (long)alliance, "Operations", "Bring ships", null, null];
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("calendarMgr", "CreateAllianceEvent", eventArgs));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("mailMgr", "SendMail", mailArgs));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "DeleteBulletin", [bulletin]));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "AddAllianceContact", [Ceo, 5d]));
+
+        ceo.Reply("UpdateMember", CorporationRoleTests.MemberArguments(Other, new((long)CorporationRole.Diplomat)));
+        Assert.Null(Reply(member, "allianceRegistry", "AddAllianceContact", [Ceo, 5.5d]));
+        long label = Assert.IsType<long>(Reply(member, "allianceRegistry", "CreateLabel", ["Diplomatic", null]));
+        Assert.Null(Reply(member, "allianceRegistry", "AssignLabels", [new List<object?> { Ceo }, label]));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "SetRelationship", [0L, Ceo]));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("calendarMgr", "CreateAllianceEvent", eventArgs));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("mailMgr", "SendMail", mailArgs));
+
+        ceo.Reply("UpdateMember", CorporationRoleTests.MemberArguments(Other, new((long)CorporationRole.ChatManager)));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "EditAllianceContact", [Ceo, -5d]));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "AddBulletin", ["New", "Denied"]));
+        long revision = Assert.Single(world.Services.GetRequiredService<IAllianceSocial>().Read(Other).Bulletins).EditedAt;
+        Assert.Equal(
+            bulletin,
+            Assert.IsType<long>(
+                Reply(
+                    member,
+                    "allianceRegistry",
+                    "AddBulletin",
+                    ["Updated", "Bring ammunition"],
+                    new() { ["bulletinID"] = bulletin, ["editDateTime"] = revision }
+                )
+            )
+        );
+        Assert.Null(Reply(member, "allianceRegistry", "DeleteBulletin", [bulletin]));
+        long message = Assert.IsType<long>(Reply(member, "mailMgr", "SendMail", mailArgs));
+        Assert.Equal(alliance, Assert.Single(world.Services.GetRequiredService<IPilotMail>().Headers(Ceo, [message])).OrganizationId);
+        long eventId = Assert.IsType<long>(Reply(member, "calendarMgr", "CreateAllianceEvent", eventArgs));
+        Assert.Null(Reply(member, "calendarMgr", "DeleteEvent", [eventId, (long)alliance]));
+    }
+
+    [Fact]
+    public void AlliedDirectorsCanManageBulletinsWithTheNativeLimitAndContiguousOrder()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        var setup = Admit(world, clock);
+        using CorporationTestClient member = new(world, 1000002);
+        var ids = Enumerable
+            .Range(0, CorporationCommunicationRules.MaximumBulletins)
+            .Select(i => Assert.IsType<long>(Reply(member, "allianceRegistry", "AddBulletin", [$"Bulletin {i}", "Alliance only"])))
+            .ToArray();
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "AddBulletin", ["Overflow", "Denied"]));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "AddAllianceContact", [Ceo, 5d]));
+
+        Array.Reverse(ids);
+        Assert.Null(Reply(member, "allianceRegistry", "UpdateBulletinOrder", [ids.Cast<object?>().ToList()]));
+        Assert.Null(Reply(member, "allianceRegistry", "DeleteBulletin", [ids[0]]));
+        long last = Assert.IsType<long>(Reply(member, "allianceRegistry", "AddBulletin", ["Replacement", "Last"]));
+        var reply = Assert.IsType<AllianceBulletinsReply>(
+            Assert.IsType<PilotCallResult.Success>(member.CallService("allianceRegistry", "GetBulletins", [])).Reply
+        );
+        var rows = Assert.IsType<List<object?>>(reply.ToBlue());
+        var values = rows.Select(row =>
+            {
+                var constructor = Assert.IsType<BlueConstructor>(Assert.IsType<AllianceBulletinReply>(row).ToBlue());
+                Assert.Equal("blue.DBRow", constructor.Name);
+                return Assert.IsType<object?[]>(constructor.Arguments[1]);
+            })
+            .ToArray();
+        Assert.Equal(ids.Skip(1).Append(last), values.Select(bulletin => Assert.IsType<long>(bulletin[0])));
+        Assert.Equal(Enumerable.Range(0, ids.Length), values.Select(bulletin => Assert.IsType<int>(bulletin[6])));
+
+        world.Services.GetRequiredService<IAllianceMembership>().Remove(Other, setup.Member);
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "DeleteBulletin", [last]));
+    }
 
     [Fact]
     public async Task SharedContactsLabelsAndBulletinsAuthorizeEditsNotifyPeersAndReopen()
@@ -190,12 +283,16 @@ public sealed class AllianceSocialTests
                 CalendarResponse.Maybe,
                 calendar.Attendance(Ceo, eventId, setup.Alliance).Single(a => a.PilotId == Other).Response
             );
-            Assert.Throws<InvalidDataException>(() => calendar.Edit(Other, eventId, time, new(time, 60, "Unauthorized", "", false)));
             member.Advance();
             Assert.Single(member.Context.Notifications.OfType<CalendarEventCreated>());
+            Assert.Null(
+                Reply(member, "calendarMgr", "EditAllianceEvent", [eventId, time, time, 60L, "Updated by allied CEO", "Updated", false])
+            );
+            Assert.Equal("Updated", calendar.Details(Ceo, eventId, setup.Alliance).Text);
             member.Context.Notifications.Clear();
             world.Services.GetRequiredService<IAllianceMembership>().Remove(Other, setup.Member);
             Assert.Throws<InvalidDataException>(() => calendar.Details(Other, eventId, setup.Alliance));
+            Assert.Throws<InvalidDataException>(() => calendar.Edit(Other, eventId, time, new(time, 60, "Unauthorized", "", false)));
             Assert.Throws<InvalidDataException>(() => calendar.Respond(Other, eventId, setup.Alliance, CalendarResponse.Accepted));
             var date = DateTime.FromFileTimeUtc(time);
             Assert.Empty(calendar.Month(Other, date.Month, date.Year));

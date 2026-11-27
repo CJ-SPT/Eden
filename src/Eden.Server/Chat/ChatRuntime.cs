@@ -311,6 +311,10 @@ internal sealed class ChatRuntime(
         }
     }
 
+    // The caller obtains the occupant snapshot before this read, so the chat gate stays outside the world read.
+    public IReadOnlyList<long> AllianceMotdEditors(int allianceId, IReadOnlyList<long> occupants) =>
+        allianceSocial?.MotdEditors(allianceId, occupants) ?? [];
+
     public ChatRoomInfo RoomInfo(Guid connection, ChatRoom room)
     {
         lock (_gate)

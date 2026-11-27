@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Alliances;
@@ -13,8 +14,10 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Eden.Protocol.Tests.Alliances.AllianceCreationTests;
 
@@ -66,8 +69,19 @@ public sealed class AllianceBillingTests
         var bill = Assert.Single(billing.Bills(Ceo));
         int key = CorporationWalletRules.MasterKey + 1;
         Fund(world, corporation, bill.AmountCents * 2, key);
+        world.Services.GetRequiredService<ICorporationWallet>().SelectDivision(Ceo, key);
         using (CorporationTestClient client = new(world, 1000001))
         {
+            var balance = Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "GetBillBalance", [bill.Id]));
+            Assert.Equal(bill.AmountCents * 2 / (double)MarketDefinitions.CentsPerIsk, balance.Reply.ToBlue());
+            Assert.IsType<PilotCallResult.Failure>(client.CallService("allianceRegistry", "GetBillBalance", [0L]));
+            var rowsBefore = Assert.IsType<BlueList<BlueModel>>(
+                Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "GetBills", [])).Reply
+            );
+            var row = Assert.IsType<AllianceBillReply>(Assert.Single(rowsBefore.Items));
+            var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(row.ToBlue()).State);
+            Assert.Equal(alliance, fields["externalID"]);
+            Assert.Equal(-1, fields["externalID2"]);
             Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "PayBill", [bill.Id, (long)key]));
             Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "PayBill", [bill.Id, (long)key]));
             var rows = Assert.IsType<BlueList<BlueModel>>(
@@ -80,7 +94,7 @@ public sealed class AllianceBillingTests
             world.Services.GetRequiredService<ICorporationWallet>().Journal(Ceo, true, key),
             row => row.EntryType == WalletEntryType.AllianceMaintenance
         );
-        Assert.Equal((-bill.AmountCents, bill.Id), (entry.AmountCents, entry.ReferenceId));
+        Assert.Equal((-bill.AmountCents, (long)alliance), (entry.AmountCents, entry.ReferenceId));
         var notification = Assert.Single(world.Services.GetRequiredService<IPilotInbox>().Read(Ceo, new(Group: InboxGroup.Bills)));
         Assert.Equal((InboxNotificationType.AllianceMaintenanceBill, alliance), (notification.Type, notification.AllianceId));
         var wire = Assert.IsType<Dictionary<string, object?>>(InboxNotificationReply.Data(notification).ToBlue());
@@ -89,9 +103,79 @@ public sealed class AllianceBillingTests
         using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
         var saved = Assert.Single(reopened.GetRequiredService<IAllianceBilling>().Bills(Ceo));
         Assert.Equal((clock.Now, corporation, key), (saved.PaidAt, saved.PaidByCorporationId, saved.DivisionKey));
-        Assert.Equal(bill.AmountCents, reopened.GetRequiredService<ICorporationWallet>().Balance(Ceo, key));
+        var reopenedWallet = reopened.GetRequiredService<ICorporationWallet>();
+        Assert.Equal(bill.AmountCents, reopenedWallet.Balance(Ceo, key));
+        Assert.Equal((long)alliance, Assert.Single(reopenedWallet.Journal(Ceo, true, key)).ReferenceId);
         Assert.Single(reopened.GetRequiredService<IPilotInbox>().Read(Ceo, new(Group: InboxGroup.Bills)));
         await reopened.GetRequiredService<LiveWorld>().FlushAsync();
+    }
+
+    [Fact]
+    public async Task NativeAutomaticPaymentSettingsUseAllianceDebtorAndExecutorDivisionAcrossRestart()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int corporation = Corporation(world);
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        var bill = Assert.Single(world.Services.GetRequiredService<IAllianceBilling>().Bills(Ceo));
+        int key = CorporationWalletRules.MasterKey + 1;
+        Fund(world, corporation, bill.AmountCents, key);
+        using (CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
+                    ('client/billtypes','2','{{"billTypeName":"Rental Bill"}}'),
+                    ('client/billtypes','5','{{"billTypeName":"Alliance Maintenance"}}');
+                """
+            );
+        }
+        using (CorporationTestClient client = new(world, 1000001))
+        {
+            var initial = ReadAutomaticPaymentSettings(client);
+            var initialRules = Assert.IsType<Dictionary<long, object?>>(initial[alliance]);
+            Assert.Equal(false, initialRules[AllianceBillingRules.MaintenanceBillType]);
+            Dictionary<long, object?> snapshot = new()
+            {
+                [corporation] = new BlueDictionary([("divisionID", (long)key), (2L, false)]),
+                [alliance] = new Dictionary<long, object?> { [AllianceBillingRules.MaintenanceBillType] = true },
+            };
+            Assert.IsType<PilotCallResult.Success>(client.CallService("billMgr", "SendAutomaticPaySettings", [snapshot]));
+            var saved = ReadAutomaticPaymentSettings(client);
+            Assert.Equal(2, saved.Count);
+            var corporationFields = Assert.IsType<BlueDictionary>(saved[corporation]).Entries;
+            Assert.Contains(
+                corporationFields,
+                field => field.Key is (string or byte[]) && BlueMarshal.Text(field.Key) == "divisionID" && Equals(field.Value, (long)key)
+            );
+            Assert.DoesNotContain(corporationFields, field => Equals(field.Key, (long)AllianceBillingRules.MaintenanceBillType));
+            var allianceRules = Assert.IsType<Dictionary<long, object?>>(saved[alliance]);
+            Assert.Equal(true, allianceRules[AllianceBillingRules.MaintenanceBillType]);
+            Dictionary<long, object?> forged = new()
+            {
+                [corporation] = new BlueDictionary([("divisionID", (long)CorporationWalletRules.MasterKey), (2L, true)]),
+                [alliance + 1] = new Dictionary<long, object?> { [AllianceBillingRules.MaintenanceBillType] = false },
+            };
+            Assert.IsType<PilotCallResult.Failure>(client.CallService("billMgr", "SendAutomaticPaySettings", [forged]));
+        }
+        world.Services.Dispose();
+        using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
+        var preferences = reopened.GetRequiredService<ICorporationBilling>().Read(Ceo);
+        Assert.Equal(key, preferences.DivisionKey);
+        Assert.Contains(preferences.Rules, rule => rule.BillTypeId == AllianceBillingRules.MaintenanceBillType && rule.Enabled);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(bill.DueAt - clock.Now));
+        reopened.GetRequiredService<IAllianceMembership>().Advance();
+        Assert.NotNull(reopened.GetRequiredService<IAllianceBilling>().Bills(Ceo)[0].PaidAt);
+        var wallet = reopened.GetRequiredService<ICorporationWallet>();
+        Assert.Equal(0, wallet.Balance(Ceo, key));
+        Assert.Single(wallet.Journal(Ceo, true, key));
+        await reopened.GetRequiredService<LiveWorld>().FlushAsync();
+    }
+
+    private static Dictionary<long, object?> ReadAutomaticPaymentSettings(CorporationTestClient client)
+    {
+        var reply = Assert.IsType<PilotCallResult.Success>(client.CallService("billMgr", "GetAutomaticPaySettings", [])).Reply;
+        return Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
     }
 
     [Fact]
@@ -124,6 +208,39 @@ public sealed class AllianceBillingTests
         );
         Assert.Single(world.Services.GetRequiredService<ICorporationWallet>().Journal(Ceo, true, CorporationWalletRules.MasterKey));
         Assert.Equal(2, world.Services.GetRequiredService<IPilotInbox>().Read(Ceo, new(Group: InboxGroup.Bills)).Count);
+    }
+
+    [Theory]
+    [InlineData(28, 2)]
+    [InlineData(30, 1)]
+    public async Task LateMaintenanceKeepsBillingAndAdmissionInDeadlineOrder(int acceptedDay, int nextInvoiceCorporations)
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int founder = Corporation(world);
+        int applicant = Corporation(world, Other, "Applicant Corporation", "APPL");
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        var initial = Assert.Single(world.Services.GetRequiredService<IAllianceBilling>().Bills(Ceo));
+        Fund(world, founder, initial.AmountCents, auto: true);
+        clock.AdvanceWallTime(TimeSpan.FromDays(acceptedDay));
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        membership.Apply(Other, alliance, "Join");
+        membership.Decide(Ceo, applicant, "Join", AllianceApplicationStatus.Accepted);
+        world.Services.Dispose();
+        using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
+        clock.AdvanceWallTime(TimeSpan.FromDays(32 - acceptedDay));
+        var bills = reopened.GetRequiredService<IAllianceBilling>().Bills(Ceo);
+        Assert.Collection(
+            bills,
+            paid => Assert.NotNull(paid.PaidAt),
+            next =>
+                Assert.Equal(
+                    (initial.DueAt, nextInvoiceCorporations, initial.AmountCents * nextInvoiceCorporations),
+                    (next.IssuedAt, next.CorporationCount, next.AmountCents)
+                )
+        );
+        Assert.Equal(alliance, reopened.GetRequiredService<IAlliances>().Affiliation(applicant));
+        await reopened.GetRequiredService<LiveWorld>().FlushAsync();
     }
 
     [Fact]
@@ -219,6 +336,15 @@ public sealed class AllianceBillingTests
         membership.Decide(Ceo, applicant, "Join", AllianceApplicationStatus.Accepted);
         clock.AdvanceWallTime(TimeSpan.FromDays(1));
         membership.Advance();
+        using (CorporationTestClient member = new(world, 1000002))
+        {
+            var response = Assert.IsType<PilotCallResult.Success>(member.CallService("allianceRegistry", "GetBills", []));
+            Assert.Single(Assert.IsType<BlueList<BlueModel>>(response.Reply).Items);
+            Assert.IsType<PilotCallResult.Success>(member.CallService("allianceRegistry", "GetBillsReceivable", []));
+            Assert.IsType<PilotCallResult.Failure>(
+                member.CallService("allianceRegistry", "PayBill", [bill.Id, (long)CorporationWalletRules.MasterKey])
+            );
+        }
         membership.DeclareSupport(Other, applicant);
         membership.DeclareSupport(Ceo, applicant);
         Assert.Throws<InvalidDataException>(() => billing.Pay(Ceo, bill.Id, CorporationWalletRules.MasterKey));

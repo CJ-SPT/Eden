@@ -40,7 +40,9 @@ internal sealed class AllianceBillingHandler(IAllianceBilling billing, ICorporat
                 case ("GetBillsReceivable", []):
                     _ = billing.Bills(actor);
                     return BlueEmpty.List;
+                // The native alliance panel supplies its selected bill ID. The balance belongs to the active division.
                 case ("GetBillBalance", []):
+                case ("GetBillBalance", [long billId]) when billId > 0:
                     return billing.Balance(actor) / (double)MarketDefinitions.CentsPerIsk;
                 case ("PayBill", [long id, ..]) when args.Length is 1 or 2 && (args.Length == 1 || args[1] is long):
                     object? requested =
@@ -84,7 +86,7 @@ internal sealed record AllianceBillReply(AllianceBill Bill) : BlueModel
                 ["paidDateTime"] = Bill.PaidAt,
                 ["paidByOwnerID"] = Bill.PaidByCorporationId,
                 ["externalID"] = Bill.AllianceId,
-                ["externalID2"] = Bill.CorporationCount,
+                ["externalID2"] = -1,
             }
         );
 }

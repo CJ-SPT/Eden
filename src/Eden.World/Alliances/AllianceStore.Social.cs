@@ -5,6 +5,7 @@ using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
+using Eden.World.Corporations;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -13,6 +14,8 @@ namespace Eden.World.Alliances;
 
 internal sealed partial class AllianceStore
 {
+    private const CorporationRole MotdRole = CorporationRole.Director;
+
     public AllianceSocialBook Read(long actorId)
     {
         using var coherent = Resident.EnterPersistence("resident alliance social read", TransactionParticipants.None);
@@ -54,25 +57,43 @@ internal sealed partial class AllianceStore
     internal static int MemberAlliance(WorldAction world, long actorId)
     {
         var pilot = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown alliance member.");
-        int id =
-            world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId
-            ?? throw new InvalidDataException("Your corporation is not in an alliance.");
-        _ = Active(world, id);
-        return id;
+        return CorporationAlliance(world, pilot.CorporationId).Id;
     }
+
+    private static SavedAlliance CorporationAlliance(WorldAction world, int corporationId) =>
+        Active(
+            world,
+            world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId
+                ?? throw new InvalidDataException("Your corporation is not in an alliance.")
+        );
 
     public double? Standing(int allianceId, long contactId) =>
         Social(allianceId).Contacts.SingleOrDefault(c => c.ContactId == contactId)?.Standing;
 
-    private void ChangeSocial(long actorId, Func<WorldAction, AllianceSocialBook, AllianceSocialBook> change, int? expected = null)
+    private void ChangeSocial(
+        long actorId,
+        Func<WorldAction, AllianceSocialBook, AllianceSocialBook> change,
+        int? expected = null,
+        CorporationRole role = CorporationRole.Director,
+        bool executorOnly = true
+    )
     {
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
-        int allianceId = Executor(world, actorId).Id;
-        if (expected.HasValue && expected != allianceId)
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        var alliance = CorporationAlliance(world, corporation.Id);
+        if (expected.HasValue && expected != alliance.Id)
         {
             throw new InvalidDataException("Choose your current alliance.");
         }
-        var state = Social(world, allianceId);
+        if (executorOnly && alliance.ExecutorCorporationId != corporation.Id)
+        {
+            throw new InvalidDataException("Alliance executor authority is required.");
+        }
+        if (!CorporationRoleStore.Has(world, actorId, corporation, role))
+        {
+            throw new InvalidDataException("You do not have the corporation role required for this alliance action.");
+        }
+        var state = Social(world, alliance.Id);
         SaveSocial(world, state, change(world, state));
         world.Commit();
     }
@@ -108,7 +129,7 @@ internal sealed partial class AllianceStore
         }
     }
 
-    public void SetStanding(long actorId, IReadOnlyList<long> contacts, double standing)
+    public void SetStanding(long actorId, IReadOnlyList<long> contacts, double standing, bool directorOnly = false)
     {
         ContactRules.CheckStanding(standing);
         ChangeSocial(
@@ -122,18 +143,20 @@ internal sealed partial class AllianceStore
                     entries[id] = new(id, standing, entries.GetValueOrDefault(id)?.LabelMask ?? 0);
                 }
                 return state with { Contacts = entries.Values.OrderBy(c => c.ContactId).ToArray() };
-            }
+            },
+            role: directorOnly ? CorporationRole.Director : CorporationRole.Diplomat
         );
     }
 
-    public void DeleteContacts(long actorId, IReadOnlyList<long> contacts) =>
+    public void DeleteContacts(long actorId, IReadOnlyList<long> contacts, bool directorOnly = false) =>
         ChangeSocial(
             actorId,
             (world, state) =>
             {
                 CheckTargets(world, state.AllianceId, contacts);
                 return state with { Contacts = state.Contacts.Where(c => !contacts.Contains(c.ContactId)).ToArray() };
-            }
+            },
+            role: directorOnly ? CorporationRole.Director : CorporationRole.Diplomat
         );
 
     public long CreateLabel(long actorId, string name, int? color)
@@ -153,7 +176,8 @@ internal sealed partial class AllianceStore
                     throw new InvalidDataException("No alliance contact labels remain available.");
                 }
                 return state with { Labels = state.Labels.Append(new(id, name.Trim(), color)).ToArray() };
-            }
+            },
+            role: CorporationRole.Diplomat
         );
         return id;
     }
@@ -191,7 +215,8 @@ internal sealed partial class AllianceStore
                         .Labels.Select(l => l.Id == labelId ? l with { Name = name?.Trim() ?? l.Name, Color = color ?? l.Color } : l)
                         .ToArray(),
                 };
-            }
+            },
+            role: CorporationRole.Diplomat
         );
     }
 
@@ -211,7 +236,8 @@ internal sealed partial class AllianceStore
                     Labels = state.Labels.Where(l => l.Id != labelId).ToArray(),
                     Contacts = state.Contacts.Select(c => c with { LabelMask = c.LabelMask & ~labelId }).ToArray(),
                 };
-            }
+            },
+            role: CorporationRole.Diplomat
         );
     }
 
@@ -234,7 +260,8 @@ internal sealed partial class AllianceStore
                         )
                         .ToArray(),
                 };
-            }
+            },
+            role: CorporationRole.Diplomat
         );
 
     public long SaveBulletin(long actorId, string title, string body, long? id, long? editedAt)
@@ -245,7 +272,7 @@ internal sealed partial class AllianceStore
             actorId,
             (world, state) =>
             {
-                var rows = state.Bulletins.ToList();
+                var rows = state.Bulletins.Select((bulletin, order) => bulletin with { Order = order }).ToList();
                 if (id is long existing)
                 {
                     int index = rows.FindIndex(b => b.Id == existing);
@@ -266,13 +293,15 @@ internal sealed partial class AllianceStore
                 {
                     if (editedAt.HasValue || rows.Count >= AllianceSocialRules.MaximumBulletins)
                     {
-                        throw new InvalidDataException("An alliance can have at most fifteen bulletins.");
+                        throw new InvalidDataException("An alliance can have at most ten bulletins.");
                     }
                     saved = world.Next("AllianceBulletin");
                     rows.Add(new(saved, title, body, actorId, Now, rows.Count));
                 }
                 return state with { Bulletins = rows.ToArray() };
-            }
+            },
+            role: id.HasValue ? CorporationRole.ChatManager : CorporationRole.Director,
+            executorOnly: false
         );
         return saved;
     }
@@ -286,8 +315,16 @@ internal sealed partial class AllianceStore
                 {
                     throw new InvalidDataException("Unknown alliance bulletin.");
                 }
-                return state with { Bulletins = state.Bulletins.Where(b => b.Id != id).ToArray() };
-            }
+                return state with
+                {
+                    Bulletins = state
+                        .Bulletins.Where(b => b.Id != id)
+                        .Select((bulletin, order) => bulletin with { Order = order })
+                        .ToArray(),
+                };
+            },
+            role: CorporationRole.ChatManager,
+            executorOnly: false
         );
 
     public void OrderBulletins(long actorId, IReadOnlyList<long> ids) =>
@@ -308,14 +345,29 @@ internal sealed partial class AllianceStore
                 {
                     Bulletins = state.Bulletins.Select(b => b with { Order = ranks[b.Id] }).OrderBy(b => b.Order).ToArray(),
                 };
-            }
+            },
+            executorOnly: false
         );
 
     public string ReadMotd(int allianceId) => Social(allianceId).Motd;
 
+    public IReadOnlyList<long> MotdEditors(int allianceId, IReadOnlyList<long> occupants) =>
+        Resident.Economy.Inspect(world =>
+        {
+            if (
+                world.Set<SavedAlliance>().Find(allianceId) is not { ClosedAt: null, ExecutorCorporationId: int executor }
+                || world.Set<SavedAllianceMember>().Find(executor)?.AllianceId != allianceId
+                || world.Set<SavedCorporation>().Find(executor) is not { ClosedAt: null } corporation
+            )
+            {
+                return (IReadOnlyList<long>)[];
+            }
+            return occupants.Where(pilot => CorporationRoleStore.Has(world, pilot, corporation, MotdRole)).Distinct().ToArray();
+        });
+
     public void SetMotd(long actorId, int allianceId, string text)
     {
         ChatRules.CheckMotd(text);
-        ChangeSocial(actorId, (_, state) => state with { Motd = text }, allianceId);
+        ChangeSocial(actorId, (_, state) => state with { Motd = text }, allianceId, MotdRole);
     }
 }

@@ -20,6 +20,7 @@ internal sealed partial class CorporationHandler
             _observedPilot = context.Pilot.PilotId;
             _cursor = membership.Head(context.Pilot.PilotId);
             _allianceCursor = allianceMembership.Head;
+            _observedCorporationAlliances.Clear();
         }
         Advance(context);
     }
@@ -30,6 +31,7 @@ internal sealed partial class CorporationHandler
         _lastMilitia = null;
         _cursor = 0;
         _allianceCursor = 0;
+        _observedCorporationAlliances.Clear();
         allianceSocial.Reset();
     }
 

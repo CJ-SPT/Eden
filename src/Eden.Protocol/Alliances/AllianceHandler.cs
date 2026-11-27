@@ -11,6 +11,8 @@ namespace Eden.Protocol.Alliances;
 [Injectable]
 internal sealed partial class AllianceHandler(IAlliances alliances, ICorporationWars wars) : ISelectedPilotCallHandler
 {
+    private const int DefaultRankingLimit = 100;
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -57,7 +59,13 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
                 case ("GetAlliance", []):
                     return Reply(Require(Current(context)));
                 case ("GetRankedAlliances", [] or [long]):
-                    int limit = args is [long count] ? checked((int)Math.Clamp(count, 1, 1000)) : 100;
+                    // The native Show All option sends zero as the requested maximum.
+                    int limit = args switch
+                    {
+                        [0L] => int.MaxValue,
+                        [long count] => (int)Math.Clamp(count, 1, int.MaxValue),
+                        _ => DefaultRankingLimit,
+                    };
                     return new AllianceRankingsReply(
                         alliances
                             .List()
@@ -70,7 +78,7 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
                     );
                 case ("GetAllianceMembers", [long id]) when id is > 0 and <= int.MaxValue:
                     Require((int)id);
-                    return new AlliancePublicMembersReply(alliances.Members((int)id));
+                    return new AlliancePublicMembersReply(alliances.Members((int)id).Select(member => member.ForViewer(null)).ToArray());
                 case ("GetDaysInAlliance", [long id, long corporation])
                     when id is > 0 and <= int.MaxValue && corporation is > 0 and <= int.MaxValue:
                     return alliances.DaysInAlliance((int)id, (int)corporation);
@@ -83,7 +91,7 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
                 case ("GetDaysInAlliance" or "GetAllianceMembersOlderThan", _):
                     throw new InvalidDataException("Choose a valid alliance and corporation or a nonnegative membership age.");
                 case ("GetMembers", []):
-                    return new AllianceMembersReply(alliances.Members(Current(context)));
+                    return new AllianceMembersReply(alliances.MembersForPilot(context.Pilot.PilotId));
                 case ("UpdateAlliance", [var description, var url]):
                     alliances.Update(context.Pilot.PilotId, Text(description), Text(url));
                     return PilotCallResult.None;
@@ -102,7 +110,7 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
     private AllianceReply Reply(Alliance alliance) => new(alliance, wars.IsEligible(alliance.Id));
 
     private int Current(PilotCallContext context) =>
-        alliances.Affiliation(context.Pilot.CorpId) ?? throw new InvalidDataException("Your corporation is not in an alliance.");
+        alliances.PilotAffiliation(context.Pilot.PilotId) ?? throw new InvalidDataException("Your corporation is not in an alliance.");
 
     internal static string Text(object? value) =>
         value is string or byte[] ? BlueMarshal.Text(value) : throw new InvalidDataException("Expected alliance text.");

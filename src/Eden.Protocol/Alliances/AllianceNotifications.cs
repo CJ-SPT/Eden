@@ -53,6 +53,8 @@ internal static class AllianceNotificationFields
         var old = before?.Arguments[1] as object?[];
         var current = after?.Arguments[1] as object?[];
         Dictionary<string, object?> fields = [];
+        bool hasOldValue = false;
+        bool hasNewValue = false;
         for (int index = 0; index < columns.Length; index++)
         {
             object? previous = old?[index];
@@ -60,7 +62,15 @@ internal static class AllianceNotificationFields
             if (!Equals(previous, next) || before is null || after is null)
             {
                 fields[(string)((object?[])columns[index]!)[0]!] = new object?[] { previous, next };
+                hasOldValue |= previous is not null;
+                hasNewValue |= next is not null;
             }
+        }
+        // Build 3662168 classifies all-None old/new values as a row insertion/removal.
+        if (old is not null && current is not null && (!hasOldValue || !hasNewValue))
+        {
+            var key = (string)((object?[])columns[0]!)[0]!;
+            fields[key] = new object?[] { old[0], current[0] };
         }
         return fields;
     }

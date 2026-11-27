@@ -34,6 +34,10 @@ internal sealed partial class AllianceStore
         AllianceMembershipRules.ValidateApplication(text);
         var corporation = CorporationRoleStore.Current(world, actorId);
         CorporationRoleStore.RequireDirector(world, actorId, corporation);
+        if (corporation.CeoId != actorId)
+        {
+            throw new InvalidDataException("Only your corporation's CEO can apply to join an alliance.");
+        }
         _ = Active(world, allianceId);
         if (world.Set<SavedAllianceMember>().Find(corporation.Id) is not null)
         {
@@ -59,7 +63,7 @@ internal sealed partial class AllianceStore
             world.Remove(previous);
         }
         var row = applications.SingleOrDefault(a => a.AllianceId == allianceId);
-        AllianceApplication? before = row is null ? null : Application(row);
+        AllianceApplication? before = row is { Status: not AllianceApplicationStatus.Effective } ? Application(row) : null;
         row ??= world
             .Add(
                 new SavedAllianceApplication
@@ -87,9 +91,9 @@ internal sealed partial class AllianceStore
         var row =
             world.Filter<SavedAllianceApplication>(a => a.CorporationId == corporation.Id && a.AllianceId == allianceId).SingleOrDefault()
             ?? throw new InvalidDataException("Unknown alliance application.");
-        if (row.Status == AllianceApplicationStatus.Effective)
+        if (row.Status is not (AllianceApplicationStatus.New or AllianceApplicationStatus.Rejected))
         {
-            throw new InvalidDataException("An effective membership must be left through the member list.");
+            throw new InvalidDataException("Only new or rejected alliance applications can be deleted.");
         }
         Record(world, new(0, allianceId, corporation.Id, ApplicationBefore: Application(row)));
         world.Remove(row);
@@ -172,7 +176,16 @@ internal sealed partial class AllianceStore
             var rows = forAlliance
                 ? world.Filter<SavedAllianceApplication>(a => a.AllianceId == allianceId)
                 : world.Filter<SavedAllianceApplication>(a => a.CorporationId == corporation.Id);
-            return (IReadOnlyList<AllianceApplication>)rows.OrderBy(a => a.Id).AsEnumerable().Select(Application).ToArray();
+            return (IReadOnlyList<AllianceApplication>)
+                rows.OrderBy(a => a.Id)
+                    .AsEnumerable()
+                    // Old saves retain completed applications after the corresponding membership ends.
+                    .Where(a =>
+                        a.Status != AllianceApplicationStatus.Effective
+                        || world.Set<SavedAllianceMember>().Find(a.CorporationId)?.AllianceId == a.AllianceId
+                    )
+                    .Select(Application)
+                    .ToArray();
         });
 
     public void DeclareSupport(long actorId, int corporationId)
@@ -266,6 +279,13 @@ internal sealed partial class AllianceStore
                             c.ApplicationBefore is null && c.ApplicationAfter is null
                             || director && (executor || c.CorporationId == corporation.Id)
                         )
+                        .Select(c =>
+                            c with
+                            {
+                                MemberBefore = c.MemberBefore?.ForViewer(corporation.Id),
+                                MemberAfter = c.MemberAfter?.ForViewer(corporation.Id),
+                            }
+                        )
                         .ToArray();
             })
         ?? [];
@@ -333,6 +353,16 @@ internal sealed partial class AllianceStore
                 StartedAt = now,
             }
         );
+        if (
+            world
+                .Filter<SavedAllianceApplication>(a => a.CorporationId == member.CorporationId && a.AllianceId == member.AllianceId)
+                .SingleOrDefault() is
+            { Status: AllianceApplicationStatus.Effective } application
+        )
+        {
+            // Keep the durable record while removing the completed application from live client caches.
+            Record(world, new(0, member.AllianceId, member.CorporationId, ApplicationBefore: Application(application)));
+        }
         Record(world, new(0, member.AllianceId, member.CorporationId, MemberBefore: previous));
         Recompute(world, member.AllianceId);
         Record(world, new(0, member.AllianceId, member.CorporationId, Before: before, After: Snapshot(world, member.AllianceId)));

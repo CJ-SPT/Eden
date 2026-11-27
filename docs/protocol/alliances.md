@@ -66,6 +66,81 @@ Eight catalog and nine formatting policy tests passed.
 **Optional maintainer checks.** On a server running this revision, create an alliance and verify that the dialog
 closes and the Alliance Home and Members tabs load.
 
+## Alliance feature compatibility audit
+
+The pinned Windows client is build **3662168**, signed archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The comparison uses EVE.js **261108.1**.
+
+- `FormAlliancesRankings.ShowRankings` prompts to show every alliance when `maxLen` is zero. Eden now returns the
+  full active ranking for zero and honors positive limits. `SetShortNameWnd.ConstructLayout` populates its radio
+  buttons from `shortName` rows. Suggestions exclude reserved corporation and alliance tickers and offer alternatives
+  when the first candidate is unavailable. EVE.js `allianceRegistryRuntime.js` (`073f759c9ea8`) also treats zero
+  as unlimited, and `corpRegistryRuntime.js` (`41d691387ff4`) supplies multiple ticker candidates.
+- `bco_corporations.CorporationsO.GetCorporation` caches rows for both registry and public reads. `OnCorporationChanged`
+  updates those rows. Eden now refreshes the observed affiliations when the committed alliance change head advances.
+  An unchanged `corporationID` pair accompanies the nullable `allianceID` pair, so the client's
+  `BaseCorpObject.GetAddRemoveFromChange` treats joining and leaving as updates to existing rows. The reference sends
+  corporation changes during alliance settlement in `corporationNotifications.js` (`101462c93041`).
+- The native application menu offers deletion for New and Rejected applications. Accepted applications retain their
+  due times. The applicant must be the CEO. Departure removes completed applications from live lists and caches,
+  while saved membership and application history support rejoining and autonomous recruitment. The applicable client
+  functions are `all_ui_applications.GetApplicationMenu` and `base_corporation.CheckCanApplyToJoinAlliance`.
+  `all_ui_members.__GetLabel` displays Secret for an undisclosed executor vote. Replies and notifications now apply
+  the same corporation-level visibility as EVE.js `allianceViewState.js` (`ebaee4bb2f6d`). Nullable changes
+  retain an identity field when needed by the client alliance cache's add/remove classifier.
+- Alliance bill balance reads accept the selected bill ID. Member accountants can view invoices, and payment requires
+  the current executor's wallet authority. The automatic settings maps use the bill's debtor alliance ID and share
+  the corporation division selected by the client. Legacy preferences still load. Maintenance wallet entries
+  send the alliance owner ID for the journal's name lookup while retaining the bill ID in storage. Restart
+  catch-up settles admission and maintenance in due-time order, with billing first at a tied deadline.
+  Evidence includes `all_cso.GetBillBalance`, `CorpBillsPayablePanel`, `CorpBillsAutoPaidPanel`,
+  `CorpBillsAutoPaySettings`, and `walletEntryFormat._FmtWalletEntryManual`. The EVE.js counterparts are
+  `billMgrService.js` (`d025d8987907`) and `billRuntimeState.js` (`21716142f6a8`).
+- Executor Diplomats can manage alliance contacts and labels. Allied Directors can create and sort bulletins,
+  Communications Officers can edit and delete them, and the native bulletin cap is ten. Deletion keeps order contiguous.
+  Associated controls are `AddressBookSvc.ShowLabelMenuAndManageBtn`, `FormAlliancesBulletins` and
+  `base_corporation.GetBulletinEntries`. The native calendar and mail use Communications Officer authority for
+  alliance events and broadcasts. See `CalendarSvc.GetEventMenu`, `CalendarNewEventWnd.SetupReadOnlyElements`,
+  and `NewNewMessage.ValidateCorpOrAlliance`. Compared EVE.js `allianceRegistryRuntime.js` (`073f759c9ea8`),
+  `calendarAccess.js` (`5303c18b2ba5`), and `mailMgrService.js` (`cf0491958c10`).
+- Alliance chat returns only the requested owner, admin or member affiliation. Online pilots with current MOTD authority
+  appear as admins. The pinned `XmppChatService.IsOwnerOrOperatorOfChannel` and `chatutil.GetUsersFromResponse` treat
+  returned JIDs as matches for the requested affiliation, so returning all occupants exposed the edit control to ordinary
+  members. The filtered list follows EVE.js `xmppStubServer.js` (`9058203c0dc4`).
+
+Shared fitting authority, current-membership fleet adverts, loyalty age eligibility, and the Alliance Systems,
+capital and prime-time reads were cross-checked alongside the existing access, chat and war integrations.
+Sovereignty claim and infrastructure cleanup on alliance dissolution remains tracked in the sovereignty milestones.
+[UniWiki alliance mechanics](https://wiki.eveuniversity.org/Alliances) ·
+[CCP closure guidance](https://support.eveonline.com/hc/en-us/articles/203209062-Corporation-Alliance-Closure) ·
+[Sovereignty milestones](sovereignty.md)
+
+**Automated validation.** Three new regressions reproduced the original ranking, ticker and corporation affiliation bugs.
+The final exact-method run passed 17 cases in 13.58 seconds after a 12.38-second build. It covered the native alliance
+bind, vote privacy during a stale session, rejoining, billing and restart ordering, social authority, and TLS/XMPP affiliation
+queries. The affiliation notification test asserted zero SQL commands and connections. The bulletin test inspects the native
+outbound model because Eden's inbound decoder deliberately rejects that row constructor.
+
+The initial broader run passed 276 of 277. The expedition replacement case failed identically on unchanged `f444f916`:
+the two replacement purchases totaled 20 ISK, and the fixture inherited the funded-refit default while expecting a
+corporation debit. The fixture now explicitly selects corporation funding and retains the exact treasury assertion.
+All three cases of `FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem` passed in 19.85 seconds
+after a 6.17-second build.
+
+The final solution build had zero warnings and errors, and all 277 focused tests passed. Build and tests took 104.18
+seconds. The `FullyQualifiedName~` selectors were `Eden.Protocol.Tests.Alliances`, `PilotServicesTests`,
+`PlayerCorporationTests`, `CorporationScreenTests`, `CorporationFinancialPanelTests`, `CorporationWalletTests`,
+`CorporationWalletStartupTests`, `CorporationCalendarTests`, `CalendarServiceTests`, `MailTests`, `ChatMotdTests`,
+`XmppChatTests`, `CapsuleerAllianceTests`, `SovereigntyProtocolTests`, `SovereigntyDevelopmentProtocolTests`,
+`SovereigntyWarfareProtocolTests`, `SavedFittingsTests` and `MilitiaOrganizationTests`. All eight catalog checks
+and nine formatting policy checks passed, along with CSharpier, line width and whitespace verification.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Use Show All in the alliance directory and check the returned rankings. Verify automatic
+payment settings under the alliance bill owner after reconnecting. Check the Alliance chat MOTD menu as a regular member
+and then as a current executor Director.
+
 ## Alliance membership age and EverMark donations
 
 The personal and corporation EverMark panels in build **3662168** ask `allianceRegistry.GetDaysInAlliance(allianceID, corporationID)`
