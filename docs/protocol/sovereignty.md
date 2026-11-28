@@ -126,9 +126,9 @@ and the courier returns to headquarters after any paid travel restriction ends.
 
 The route, cargo and deployed hub ID are checkpointed. A lost ship, unavailable hub or lost expedition authority clears
 or ends the assignment. Normal paid cycle reservations and capture progress survive a checkpoint, and an active scoring
-lease has to be acquired again. Bot scoring uses the human-activity generation so an empty server cannot finish a claim
-from a stale lease. The scope covers the first claim and return, with local equipment availability and funds determining
-admission. Defense and upkeep are tracked in the [bot development plan](../bot-development-plan.md).
+lease has to be acquired again. A pause invalidates the scoring lease. When unattended capsuleer activity is enabled,
+the [alliance review](alliances.md#autonomous-bot-alliances) and first expedition can advance with zero selected players.
+Local equipment availability and funds determine admission.
 
 Pinned build 3662168 supplies the Squall hull (81008), Entosis Link I (34593), hold rules and the hub's catalog capture
 duration. The existing EVE.js snapshot's neutral-versus-owned capture contract is recorded in
@@ -142,6 +142,9 @@ cases in 11.86 seconds including runner startup. It covers a real sell order for
 the Squall kit, infrastructure cargo across checkpoint reopen, reciprocal gate travel, neutral deployment, fuel payment,
 an empty-server interruption, ordinary claim settlement and the trip back to headquarters. Development corrected an
 artificial gate placed inside the fixture star and gave the return an operational dock stop for immediate settlement.
+
+The [November 28 unattended replay](alliances.md#autonomous-bot-alliances) confirms the first claim and return with zero
+selected players, followed by a paid response to a home disruption and command node, reagent delivery and invoice settlement.
 
 Tool and solution restore and the solution build passed with zero warnings and errors. The affected .NET selection
 passed 339 cases in 2 minutes 10 seconds. The `FullyQualifiedName~` filter combined `Eden.Protocol.Tests.Sovereignty`,

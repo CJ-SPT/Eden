@@ -42,7 +42,7 @@ internal sealed partial class CapsuleerAlliances(
     );
     private readonly Lock _gate = new();
     private long? _lastReview;
-    private int? _nextSystem;
+    private int? _nextSystemIndex;
 
     public void Advance()
     {
@@ -51,35 +51,38 @@ internal sealed partial class CapsuleerAlliances(
             return;
         }
         var activity = presence.Read();
-        if (activity.ActiveSystems.Count == 0)
+        if (!activity.Active)
         {
             return;
         }
         lock (_gate)
         {
-            long timestamp = clock.GetTimestamp();
-            if (_lastReview is long last && clock.GetElapsedTime(last, timestamp) < s_reviewInterval)
+            if (!ReviewDue(activity))
             {
                 return;
             }
 
-            _lastReview = timestamp;
             using CatalogDbContext catalog = new(database.CatalogPath);
             int[] systems = catalog.Definitions.GlobalDefinition(s_stationSystems);
+            using var world = live.Economy.Begin(TransactionParticipants.None);
+            activity = live.CapsuleerActivity.Read();
+            if (!ReviewDue(activity))
+            {
+                return;
+            }
+            _lastReview = activity.ElapsedTicks;
             if (systems.Length == 0)
             {
                 return;
             }
-            int start = _nextSystem ?? Array.BinarySearch(systems, activity.ActiveSystems[0]);
-            start = start >= 0 ? start : ~start % systems.Length;
+            int start = _nextSystemIndex ?? InitialSystemIndex(systems, activity);
             int examined = Math.Min(systems.Length, SystemsPerReview);
-            using var world = live.Economy.Begin(TransactionParticipants.None);
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             for (int offset = 0; offset < examined; offset++)
             {
                 int index = (start + offset) % systems.Length;
                 // A failing local review rolls back and returns to the normal rotation.
-                _nextSystem = (index + 1) % systems.Length;
+                _nextSystemIndex = (index + 1) % systems.Length;
                 if (ReviewSystem(world, catalog, systems[index], now))
                 {
                     world.Commit();
@@ -87,6 +90,21 @@ internal sealed partial class CapsuleerAlliances(
                 }
             }
         }
+    }
+
+    private bool ReviewDue(HumanActivitySnapshot activity) =>
+        activity.Active && (_lastReview is not long last || activity.ElapsedTicks - last >= s_reviewInterval.Ticks);
+
+    private static int InitialSystemIndex(int[] systems, HumanActivitySnapshot activity)
+    {
+        if (activity.ActiveSystems.Count > 0)
+        {
+            int index = Array.BinarySearch(systems, activity.ActiveSystems[0]);
+            return index >= 0 ? index : ~index % systems.Length;
+        }
+        // Start in a later batch as the persisted activity clock advances between hosts.
+        long elapsedReviews = activity.ElapsedTicks / s_reviewInterval.Ticks;
+        return (int)(elapsedReviews * SystemsPerReview % systems.Length);
     }
 
     private bool ReviewSystem(EconomyTransaction world, CatalogDbContext catalog, int system, long now)

@@ -262,9 +262,11 @@ setting takes precedence. Native bill settlement, membership history, approval d
 carry forward across checkpoints. Alliance membership feeds the existing gang, escort and patrol ally checks. The feature
 uses the existing save schema.
 
-The server's corporation maintenance timer reviews up to 32 station systems per 15 seconds, with at most one formation or
-accepted application per review. It rotates past unobserved headquarters while any player is in the world. The native scheduler
-continues to settle already accepted applications and bills on their saved wall-clock deadlines.
+The corporation maintenance timer reviews up to 32 station systems per 15 seconds of active capsuleer simulation,
+with at most one committed planning action per review. It rotates through headquarters while capsuleer activity is
+running, including with zero selected players when **Run bots without players** is enabled. A pause within the running
+server preserves the remaining active time before the next review. The native scheduler continues to settle already
+accepted applications and bills on their saved wall-clock deadlines.
 
 The fee, skill and admission delay follow [EVE University](https://wiki.eveuniversity.org/Alliances) and Eden's existing
 [formation](#formation-and-public-identity--november-16-2026) and
@@ -274,8 +276,8 @@ The fee, skill and admission delay follow [EVE University](https://wiki.eveunive
 ### Automated validation
 
 The resident integration fixture begins with independent corporations on an existing save. It exercises the funding threshold,
-the empty-world pause, exact fee settlement, the accepted application across a restart, effective gang affiliation, manual
-application priority, the reserved third slot and recurring maintenance.
+the pause when unattended activity is disabled, exact fee settlement, the accepted application across a restart, effective
+gang affiliation, manual application priority, the reserved third slot and recurring maintenance.
 
 - The exact filter
   `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAllianceTests.FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart`
@@ -285,6 +287,21 @@ application priority, the reserved third slot and recurring maintenance.
   `CapsuleerAmmunitionSupplyTests`, `RoamingGangTests`, `CorporationWalletTests`, `CorporationFinancialPanelTests`,
   `CorporationMembershipTests`, `CorporationRoleTests` and `CorporationPublicInfoTests`.
 - The two Python policy suites passed all 17 cases. Formatting and diff whitespace checks passed.
+
+The November 28, 2026 resident replays added unattended cases with zero selected players. Two exact method filters passed
+eight cases in 24.94 seconds after a 6.22-second build. `FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart`
+covers formation, automatic alliance policy, the 15-second active review interval, and membership and dues deadlines through
+a checkpoint. `FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem` uses a funded alliance and fixture market
+suppliers to exercise a paid hub purchase, a first claim and return, paid responses to a staged hub disruption and command node,
+reagent delivery, and settlement of the native invoice. The interrupted capture spends a spare unit of Strontium Clathrates.
+
+The solution built in 0.75 seconds with zero warnings and errors. The broader `FullyQualifiedName~` selection combined
+`CapsuleerAllianceTests`, `CapsuleerCorporationTests`, `Eden.Protocol.Tests.Alliances`, `Eden.Protocol.Tests.Sovereignty`,
+`CapsuleerMaintenanceTests`, `CapsuleerPopulationSettingsTests`, `PersonalMarketTests` and
+`Eden.Protocol.Tests.Market.ResidentEconomyTests`. It passed 336 of 337 cases in 125.34 seconds.
+`RegisteredResidentRowsCoverEveryScalarColumnOfTheirSavedModels` failed with the same `NullReferenceException` on the
+isolated base commit `ceb215a5`. Both Python policy suites passed all 17 cases in 1.83 seconds. Formatting and diff
+checks passed with the local recovery archive excluded from CSharpier.
 
 ### Live acceptance
 
@@ -305,9 +322,9 @@ can take custody of that hub.
 
 A docked, active bot submits one seven-day order at the catalog reference sell price. Normal corporate escrow and
 broker fees apply. The order may spend only the balance above a month's alliance bill reserve. The existing market
-settles any seller and places the package in the ordering pilot's station hangar. The review runs while anyone is online,
-including when headquarters and the potential claim are unobserved. The buy order and owned inventory checkpoint
-through the resident economy. They require no new save fields.
+settles any seller and places the package in the ordering pilot's station hangar. Headquarters and the potential claim
+can both be unobserved while the [alliance review runs](#autonomous-bot-alliances). The buy order and owned inventory
+checkpoint through the resident economy. They require no new save fields.
 
 Build 3662168 type 32458 is published and trades under market group 1275. Its packaged volume is 60,000 cubic meters.
 EVE.js package 261108.1 `server/src/space/modules/entosisLinkRuntime.js` distinguishes neutral hub capture from

@@ -49,10 +49,15 @@ public sealed class CapsuleerAllianceTests
     private const long PersonalContribution = 10000;
 
     [Theory]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    [InlineData(false, false)]
-    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(bool expedition, bool claimsEnabled)
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, false)]
+    [InlineData(true, true, true)]
+    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(
+        bool expedition,
+        bool claimsEnabled,
+        bool unattended
+    )
     {
         const int station = 60015157;
         const int hubType = EntosisRules.HubTypeId;
@@ -78,6 +83,7 @@ public sealed class CapsuleerAllianceTests
                     Capsuleers = draft.Settings.Capsuleers with
                     {
                         TrafficMultiplier = 6,
+                        RunWithoutPlayers = unattended,
                         NewSovereigntyClaims = claimsEnabled,
                         // This scenario asserts that the corporation pays for replacing the lost expedition fit.
                         FundRefits = false,
@@ -180,7 +186,7 @@ public sealed class CapsuleerAllianceTests
             maintenance.Tick();
             Assert.Empty(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
 
-            using var occupied = host.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+            using var occupied = StartAllianceActivity(host, unattended);
             maintenance.Tick();
             Assert.Empty(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
             using (var unfund = live.Economy.Begin(TransactionParticipants.None))
@@ -215,12 +221,16 @@ public sealed class CapsuleerAllianceTests
             );
             bidId = order.Id;
             Assert.Equal(reserve, live.Economy.Read(world => world.Set<SavedCorporation>().Find(corporation)!.BalanceCents));
+            if (unattended)
+            {
+                AssertUnattended(host);
+            }
             await live.FlushAsync();
         }
 
         using (var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
-            using var observing = reopened.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+            using var observing = StartAllianceActivity(reopened, unattended);
             LiveWorld restored = reopened.GetRequiredService<LiveWorld>();
             using (var deposit = restored.Economy.Begin(TransactionParticipants.None))
             {
@@ -236,7 +246,7 @@ public sealed class CapsuleerAllianceTests
         }
 
         using var delivered = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
-        using var present = delivered.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        using var present = StartAllianceActivity(delivered, unattended);
         delivered.GetRequiredService<CorporationMaintenance>().Tick();
         delivered
             .GetRequiredService<LiveWorld>()
@@ -256,7 +266,7 @@ public sealed class CapsuleerAllianceTests
             });
         if (expedition)
         {
-            await ExerciseExpedition(fixture, corporation, station, delivered, present);
+            await ExerciseExpedition(fixture, corporation, station, delivered, present, unattended);
         }
     }
 
@@ -265,7 +275,8 @@ public sealed class CapsuleerAllianceTests
         int corporation,
         int station,
         ServiceProvider delivered,
-        IHumanPresenceLease present
+        IHumanPresenceLease? present,
+        bool unattended
     )
     {
         const int squall = CapsuleerAllianceRules.ExpeditionSquall;
@@ -321,10 +332,10 @@ public sealed class CapsuleerAllianceTests
         });
 
         await deliveryWorld.FlushAsync();
-        present.Dispose();
+        present?.Dispose();
         delivered.Dispose();
         using var claiming = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
-        using var observer = claiming.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        using var observer = StartAllianceActivity(claiming, unattended);
         var claimWorld = claiming.GetRequiredService<LiveWorld>();
         var claims = claiming.GetRequiredService<ISovereignty>();
         bool Paid() => claimWorld.Economy.Read(world => world.Filter<SavedEntosisCycle>(cycle => cycle.PilotId == courier).Any());
@@ -342,17 +353,24 @@ public sealed class CapsuleerAllianceTests
             );
             return true;
         });
-        observer.Dispose();
-        fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(30));
-        var neutral = claiming.GetRequiredService<IPilotEntosis>().Hub(target)!;
-        Assert.Null(neutral.Claim);
-        Assert.Equal(0, neutral.Capture.ProgressTicks);
-        using var resumed = claiming.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        if (!unattended)
+        {
+            observer!.Dispose();
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(30));
+            var neutral = claiming.GetRequiredService<IPilotEntosis>().Hub(target)!;
+            Assert.Null(neutral.Claim);
+            Assert.Equal(0, neutral.Capture.ProgressTicks);
+        }
+        using var resumed = unattended ? null : StartAllianceActivity(claiming, unattended: false);
         Advance(claiming, () => claims.Read(target) is not null, 1600);
         Assert.Equal(corporation, claims.Read(target)!.CorporationId);
         claimWorld.Economy.Read(world =>
         {
-            Assert.Empty(world.Filter<OwnedItem>(item => item.OwnerId == courier).Where(item => item.TypeId == strontium));
+            // The observed replay spends the spare unit on the cycle that expires during the pause.
+            Assert.Equal(
+                unattended ? 1 : 0,
+                world.Filter<OwnedItem>(item => item.OwnerId == courier).Where(item => item.TypeId == strontium).Sum(item => item.Quantity)
+            );
             return true;
         });
         Advance(claiming, () => claimWorld.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.SovereigntyExpedition is null, 500);
@@ -419,9 +437,13 @@ public sealed class CapsuleerAllianceTests
             world.Filter<SavedSovereigntyFuel>(fuel => fuel.HubId == home.HubId).Single().Amount
         );
         await claimWorld.FlushAsync();
-        resumed.Dispose();
+        resumed?.Dispose();
         claiming.Dispose();
         using var finished = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        if (unattended)
+        {
+            StartAllianceActivity(finished, unattended: true);
+        }
         finished.GetRequiredService<CorporationMaintenance>().Tick();
         Assert.Equal(home, finished.GetRequiredService<ISovereignty>().Read(target));
         finished
@@ -436,6 +458,10 @@ public sealed class CapsuleerAllianceTests
 
         void Advance(ServiceProvider host, Func<bool> ready, int seconds)
         {
+            if (unattended)
+            {
+                AssertUnattended(host);
+            }
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
             scheduler.PopulationPrepared(HeadquartersSystem);
             var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
@@ -607,7 +633,9 @@ public sealed class CapsuleerAllianceTests
             return true;
         });
 
+        Assert.Null(live.Economy.Read(world => world.Set<SavedAlliance>().Find(claim.AllianceId)!.AutomaticMaintenancePayment));
         maintenance.Tick();
+        Assert.True(live.Economy.Read(world => world.Set<SavedAlliance>().Find(claim.AllianceId)!.AutomaticMaintenancePayment));
         var bill = live.Economy.Read(world => world.Filter<SavedAllianceBill>(bill => bill.AllianceId == claim.AllianceId).Single());
         long beforeBill = beforeFuel - price * delivery;
         fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(bill.DueAt - fixture.Clock.Now));
@@ -624,9 +652,11 @@ public sealed class CapsuleerAllianceTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart(bool automatic)
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart(bool automatic, bool unattended)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
@@ -655,7 +685,12 @@ public sealed class CapsuleerAllianceTests
             {
                 Settings = draft.Settings with
                 {
-                    Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6, AutomaticAlliances = automatic },
+                    Capsuleers = draft.Settings.Capsuleers with
+                    {
+                        TrafficMultiplier = 6,
+                        AutomaticAlliances = automatic,
+                        RunWithoutPlayers = unattended,
+                    },
                 },
             },
             "Alliance fixture"
@@ -696,7 +731,7 @@ public sealed class CapsuleerAllianceTests
                 setup.Commit();
             }
 
-            using (host.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem))
+            using (StartAllianceActivity(host, unattended))
             {
                 maintenance.Tick();
                 Assert.Empty(alliances.List());
@@ -713,12 +748,32 @@ public sealed class CapsuleerAllianceTests
                 funding.Set<SavedCorporation>().Find(founder.Id)!.BalanceCents++;
                 funding.Commit();
             }
-            fixture.Clock.Seconds += 60;
+            var presence = host.GetRequiredService<IHumanPresence>();
+            long elapsed = presence.Read().ElapsedTicks;
+            if (unattended)
+            {
+                fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+            }
+            else
+            {
+                host.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
+                Assert.False(presence.Read().Active);
+                fixture.Clock.Seconds += 60;
+            }
             maintenance.Tick();
             Assert.Empty(alliances.List());
+            Assert.Equal(elapsed, presence.Read().ElapsedTicks);
 
-            using var present = host.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+            using var present = unattended ? null : StartAllianceActivity(host, unattended: false);
+            fixture.Clock.Seconds += 14;
             maintenance.Tick();
+            Assert.Empty(alliances.List());
+            fixture.Clock.Seconds++;
+            maintenance.Tick();
+            if (unattended)
+            {
+                AssertUnattended(host);
+            }
             if (!automatic)
             {
                 Assert.Empty(alliances.List());
@@ -762,7 +817,7 @@ public sealed class CapsuleerAllianceTests
         var worker = reopened.GetRequiredService<CorporationMaintenance>();
         var roster = reopened.GetRequiredService<IAlliances>();
         var membership = reopened.GetRequiredService<IAllianceMembership>();
-        using var occupied = reopened.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        using var occupied = StartAllianceActivity(reopened, unattended);
         fixture.Clock.UtcNow = DateTimeOffset.FromFileTime(admission - 1);
         worker.Tick();
         Assert.Null(roster.Affiliation(wing.Id));
@@ -807,6 +862,10 @@ public sealed class CapsuleerAllianceTests
         var bills = reopened.GetRequiredService<IAllianceBilling>().Bills(founder.Ceo);
         Assert.Equal(founder.Id, bills[0].PaidByCorporationId);
         Assert.Equal(AllianceBillingRules.Amount(CapsuleerAllianceRules.TargetCorporations), bills[1].AmountCents);
+        if (unattended)
+        {
+            AssertUnattended(reopened);
+        }
         restored.Economy.Read(world =>
         {
             Assert.Single(world.Set<SavedServicePayment>(), charge => charge.Kind == WalletEntryType.AllianceRegistration);
@@ -817,6 +876,26 @@ public sealed class CapsuleerAllianceTests
             return true;
         });
         await restored.FlushAsync();
+    }
+
+    private static IHumanPresenceLease? StartAllianceActivity(ServiceProvider host, bool unattended)
+    {
+        if (!unattended)
+        {
+            return host.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        }
+        host.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
+        AssertUnattended(host);
+        return null;
+    }
+
+    private static void AssertUnattended(ServiceProvider host)
+    {
+        var activity = host.GetRequiredService<IHumanPresence>().Read();
+        Assert.True(activity.Active);
+        Assert.True(activity.RunsWithoutPlayers);
+        Assert.Equal(0, activity.SelectedSessions);
+        Assert.Empty(activity.ActiveSystems);
     }
 
     private static (int Id, long Ceo) Charter(
