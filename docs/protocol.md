@@ -181,6 +181,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Activity-funded PvP ships](protocol/capsuleers.md#activity-funded-pvp-ships)
 - [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)
 - [Bot work selection and purchase costs](protocol/capsuleers.md#bot-work-selection-and-purchase-costs)
+- [Unattended miner patrol handoff](protocol/capsuleers.md#unattended-miner-patrol-handoff)
 - [Queue recovery at 10,000 pilots](protocol/capsuleers.md#queue-recovery-at-10000-pilots)
 - [Autonomous pilot creation under load](protocol/capsuleers.md#autonomous-pilot-creation-under-load)
 - [Bot population limits and work regions](protocol/capsuleers.md#bot-population-limits-and-work-regions)

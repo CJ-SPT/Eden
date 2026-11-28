@@ -695,6 +695,35 @@ Not performed; agent client testing is disabled.
 
 None.
 
+## Unattended miner patrol handoff
+
+With the two-spare-kit rule active, a corporate miner can board its fitted combat ship at an unattended nullsec
+station and hand off to the existing flight worker. The station production and replacement checks run first.
+The flight worker applies the configured unattended roam chance and the usual departure checks. It can return
+the pilot to the parked mining ship if the replacement reserve falls.
+
+Eden uses build 3662168 system security and the scheduler's observation state for this decision. The EVE.js
+261108.1 reference for background flight and combat is `server/src/space/runtime/scene/tick.js`.
+
+**Automated validation**
+
+All three cases of `MinerRoamsAfterRestartAndReturnsToMiningWhenReserveDrops` passed in 13.03 seconds after a
+9.77-second build. The unattended case had zero selected humans and used a 100% roam setting. It preserved the
+scheduled departure across reopen, started a nullsec patrol, and returned to mining after a spare gun was removed.
+
+All 116 adjacent cases passed in 159.11 seconds. The filter included `CapsuleerHandoffTests`,
+`CapsuleerWorkRulesTests`, `PatrolHullTests`, `RoamingGangTests`, `HuntReserve`, and the neighboring offscreen
+factory and courier replays. The solution build, 17 Python policy cases, style, CSharpier and line-width checks passed.
+CSharpier excluded the checkout's ignored local archive.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ## Queue recovery at 10,000 pilots
 
 On the historical 90-second workstation replay, the follow-up reduced the final overdue queue from 2,973 to 411 jobs.

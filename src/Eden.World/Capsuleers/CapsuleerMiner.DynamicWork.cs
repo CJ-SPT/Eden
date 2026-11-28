@@ -32,7 +32,7 @@ internal sealed partial class CapsuleerMiner
         return true;
     }
 
-    private bool TryTakeHuntingWork()
+    private bool TryTakeHuntingWork(bool background)
     {
         var policy = database.Settings.Capsuleers;
         var catalog = _operation.Catalog;
@@ -92,7 +92,7 @@ internal sealed partial class CapsuleerMiner
             _operation.MarketChanged |= industry.TryReplenishHuntReserve(world, catalog, Pilot, now, combat);
             return WaitForHuntReserve();
         }
-        if (Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != true)
+        if (Live is null || background && !CapsuleerTrafficRoutes.IsNullsec(catalog.Definitions, Pilot.SystemId))
         {
             return false;
         }

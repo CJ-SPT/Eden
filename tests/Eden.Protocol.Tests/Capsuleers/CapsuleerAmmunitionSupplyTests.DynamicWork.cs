@@ -15,6 +15,7 @@ using Eden.Server;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Runtime;
@@ -135,9 +136,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task MinerRoamsAfterRestartAndReturnsToMiningWhenReserveDrops(bool unprofitableBid)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task MinerRoamsAfterRestartAndReturnsToMiningWhenReserveDrops(bool unprofitableBid, bool unattended)
     {
         const int frigate = (int)TechOneHullType.Merlin;
         const int gun = (int)CombatWeaponType.GatlingRailgun75mm;
@@ -145,6 +147,20 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PrepareCatalog(fixture);
         UseLocalOrders(fixture);
+        if (unattended)
+        {
+            var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
+            var startup = configuration.Read();
+            var draft = startup.Active.Draft;
+            configuration.Save(
+                startup.Generation,
+                draft with
+                {
+                    Settings = draft.Settings with { Capsuleers = draft.Settings.Capsuleers with { RoamPercent = 100 } },
+                },
+                "Use a deterministic roam chance for the unattended replay"
+            );
+        }
         using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
         {
             const string security = "{\"securityStatus\":-0.2}";
@@ -160,6 +176,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         long venture;
         long combat;
         long? lowBid = null;
+        CapsuleerJob handoffJob;
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
             var live = host.GetRequiredService<LiveWorld>();
@@ -248,7 +265,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(evaluation, CapsuleerCommunityStore.MinerAccountId, miner)!;
                 Assert.True(CapsuleerIndustry.HasWorkDemand(evaluation, catalog, pilot, fixture.Clock.Now, requireProductBlueprint: true));
             }
-            using var selected = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+            using var selected = StartActivity(host);
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
             var worker = host.GetRequiredService<CapsuleerMaintenance>();
             for (int turn = 0; turn < 60 && !live.HaulerCheckpoints.ContainsKey(miner); turn++)
@@ -261,11 +278,13 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             var handedOff = Assert.IsType<HaulerObservation>(scheduler.Hauler(miner));
             Assert.Equal(combat, handedOff.Pilot.ShipId);
             Assert.Null(handedOff.Pilot.Position);
+            handoffJob = Assert.Single(scheduler.Jobs(), job => job.PilotId == miner);
+            Assert.Equal((CapsuleerAction.Trade, handedOff.Work.DueTicks), (handoffJob.Action, handoffJob.DueTicks));
             Assert.Equal(
                 CapsuleerCareer.Hauling,
                 live.Economy.Read(world => CapsuleerCorporations.Organization(world, miner).ActiveWorker)
             );
-            selected.Dispose();
+            selected?.Dispose();
             await live.FlushAsync();
         }
 
@@ -273,7 +292,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         var restored = reopened.GetRequiredService<LiveWorld>();
         var schedulerAfter = reopened.GetRequiredService<CapsuleerScheduler>();
         var maintenance = reopened.GetRequiredService<CapsuleerMaintenance>();
-        using var online = reopened.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+        var savedJob = restored.Economy.Read(world => world.Set<SavedCapsuleerJob>().Find(miner)!);
+        Assert.Equal(
+            (handoffJob.Sequence, handoffJob.Action, handoffJob.DueTicks),
+            (savedJob.Sequence, savedJob.Action, savedJob.DueTicks)
+        );
+        using var online = StartActivity(reopened);
         for (int turn = 0; turn < 120 && restored.HaulerCheckpoints.GetValueOrDefault(miner)?.Work.Ratting?.Patrol is null; turn++)
         {
             fixture.Clock.Seconds++;
@@ -327,5 +351,19 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             Assert.Equal(CapsuleerCareer.Mining, CapsuleerCorporations.Organization(world, miner).ActiveWorker);
             return 0;
         });
+
+        IDisposable? StartActivity(ServiceProvider host)
+        {
+            var presence = host.GetRequiredService<IHumanPresence>();
+            if (!unattended)
+            {
+                return presence.Select(Customer, Home);
+            }
+            host.GetRequiredService<CapsuleerActivitySource>().StartUnattended();
+            var activity = presence.Read();
+            Assert.True(activity.Active);
+            Assert.Empty(activity.ActiveSystems);
+            return null;
+        }
     }
 }

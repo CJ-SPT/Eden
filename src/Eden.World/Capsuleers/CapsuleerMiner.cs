@@ -898,7 +898,7 @@ internal sealed partial class CapsuleerMiner(
         {
             _operation.MarketChanged |= industry.SellMiningSurplus(oreMarket, _operation.Catalog, Pilot, Now);
         }
-        if (moonSupply is null && moon is null && TryTakeHuntingWork())
+        if (moonSupply is null && moon is null && TryTakeHuntingWork(background))
         {
             return;
         }
