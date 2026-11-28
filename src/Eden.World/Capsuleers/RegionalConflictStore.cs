@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Sovereignty;
@@ -5,7 +6,9 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
@@ -129,22 +132,43 @@ internal static class RegionalConflictStore
         long elapsed,
         DockedPilot? leader = null,
         long now = 0,
-        double force = double.PositiveInfinity
+        double force = double.PositiveInfinity,
+        PilotEntosisStore? entosis = null,
+        bool screensOnly = false
     )
     {
         var source = catalog.RequireSystem(catalog.RequireStation(station).SolarSystemId);
+        List<RegionalRoute> routes = [];
+        if (leader?.Identity.AllianceId is int defender && entosis is not null)
+        {
+            routes.AddRange(ScreenRoutes(world, catalog, entosis, defender, station, (HullClass)leader.ShipGroupId, elapsed, now));
+        }
+        if (screensOnly && routes.Count == 0)
+        {
+            return null;
+        }
         var region = Ensure(world, catalog, station, elapsed);
+        if (screensOnly)
+        {
+            return RegionalConflictRules.Plan(
+                region,
+                source.ConstellationId,
+                routes,
+                [],
+                elapsed,
+                world.Settings.Capsuleers.RegionalOperationsPerGroup,
+                screensOnly: true
+            );
+        }
         var journeys = CapsuleerTrafficRoutes.RegionalRoutes(catalog, station, world.Settings.Capsuleers);
         int? alliance = leader?.Identity.AllianceId;
-        List<RegionalRoute> routes = [];
         foreach (var journey in journeys.Prepend(new(station, station, [source.Id])))
         {
             int target = journey.Systems[^1];
             var targetSystem = catalog.RequireSystem(target);
             var claim = alliance is not null ? world.Set<SavedSovereigntyClaim>().Find(target) : null;
             bool allied = claim is not null && claim.AllianceId == alliance;
-            bool contested = allied && PilotEntosisStore.ContestedHub(world, claim!, now);
-            if (targetSystem.RegionId != source.RegionId || !contested && world.Set<SavedCapsuleerPopulation>().Find(target) is null)
+            if (targetSystem.RegionId != source.RegionId || world.Set<SavedCapsuleerPopulation>().Find(target) is null)
             {
                 continue;
             }
@@ -171,7 +195,6 @@ internal static class RegionalConflictStore
                     new(targetSystem.ConstellationId, journey.DestinationStationId, target, journey.Systems, gate, belt)
                     {
                         FriendlyAllianceSpace = allied,
-                        ContestedAllianceHub = contested,
                     }
                 );
             }
@@ -257,6 +280,113 @@ internal static class RegionalConflictStore
             offensiveShift
         );
     }
+
+    internal static bool HasScreenDemand(WorldAction world, PilotEntosisStore entosis, int? alliance, long now) =>
+        alliance is int defender && world.Settings.Capsuleers.RegionalConflicts && entosis.HasDefenseDemand(world, defender, now);
+
+    private static IEnumerable<RegionalRoute> ScreenRoutes(
+        WorldAction world,
+        CatalogDbContext catalog,
+        PilotEntosisStore entosis,
+        int alliance,
+        int station,
+        HullClass hull,
+        long elapsed,
+        long now
+    )
+    {
+        var holdings = world.Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance).ToArray();
+        var objectives = entosis.DefenseTargets(world, holdings, now).ToArray();
+        if (objectives.Length == 0)
+        {
+            yield break;
+        }
+        // Operations are stored with the launching fleet's region. Coverage follows the grid across those regions.
+        var covered = world
+            .Set<SavedRegionalConflict>()
+            .AsEnumerable()
+            .SelectMany(row => row.State.Operations)
+            .Where(order => order.Objective == RegionalObjective.Screen && order.ScreenClaimSystemId.HasValue && order.ExpiresAt > elapsed)
+            .Select(order => order.TargetGridId)
+            .ToHashSet();
+        var policy = world.Settings.Capsuleers;
+        Dictionary<int, CapsuleerTrafficRoute?> routes = [];
+        foreach (var objective in objectives)
+        {
+            var target = objective.Target;
+            if (
+                catalog.Definitions.SystemSecurity.GetValueOrDefault(target.SystemId, 1) > 0
+                || !entosis.DefenseNeeded(world, objective.ClaimSystemId, alliance, target.SystemId, target.Id, now)
+            )
+            {
+                continue;
+            }
+            if (!routes.TryGetValue(target.SystemId, out var route))
+            {
+                route = CapsuleerTrafficRoutes.ToClaimSystem(
+                    catalog,
+                    station,
+                    target.SystemId,
+                    hull,
+                    FrozenSet<int>.Empty,
+                    RoamingGangRules.MaximumJumps,
+                    policy
+                );
+                routes.Add(target.SystemId, route);
+            }
+            if (route is not null)
+            {
+                yield return new(catalog.RequireSystem(target.SystemId).ConstellationId, station, target.SystemId, route.Systems, 0, 0)
+                {
+                    FriendlyAllianceSpace = true,
+                    Screen = new(
+                        objective.ClaimSystemId,
+                        target.Id,
+                        objective.HostileLink,
+                        objective.ClaimProgress,
+                        objective.TargetProgress,
+                        covered.Contains(target.Id)
+                    ),
+                };
+            }
+        }
+    }
+
+    internal static bool CanContinueScreen(
+        WorldAction world,
+        PilotEntosisStore entosis,
+        RegionalOperation order,
+        int? alliance,
+        long now
+    ) =>
+        order is { Objective: RegionalObjective.Screen, ScreenClaimSystemId: int source }
+        && alliance is int defender
+        && entosis.DefenseNeeded(world, source, defender, order.TargetSystemId, order.TargetGridId, now);
+
+    internal static StaticSpaceObject? ScreenGrid(
+        WorldAction world,
+        CatalogDbContext catalog,
+        PilotEntosisStore entosis,
+        RegionalOperation order,
+        int? alliance,
+        long now
+    ) =>
+        CanContinueScreen(world, entosis, order, alliance, now)
+            ? PilotEntosisStore.ExpeditionTarget(world, catalog, order.TargetSystemId, order.TargetGridId)
+            : null;
+
+    internal static long[] ScreenOpponents(
+        WorldAction world,
+        CatalogDbContext catalog,
+        PilotEntosisStore entosis,
+        RegionalOperation order,
+        int? alliance,
+        long now,
+        IReadOnlyList<PilotSighting> visible
+    ) =>
+        visible.Count != 0 && alliance is int defender && CanContinueScreen(world, entosis, order, defender, now)
+            ? entosis.VisibleHostileEntosisShips(world, catalog, order.TargetSystemId, order.TargetGridId, defender, now, visible)
+            : [];
 
     internal static void Launch(WorldAction world, RegionalOperation operation, RoamingGang gang)
     {
@@ -406,6 +536,7 @@ internal static class RegionalConflictStore
                 report.ObserverGroupId == operation.Key.GroupId
                 && report.PilotId == contact.PilotId
                 && report.ExpiresAt > elapsed
+                && (operation.Objective != RegionalObjective.Screen || report.GridId == operation.TargetGridId)
                 && report.Kind is RegionalReportKind.Attack or RegionalReportKind.Loss
             ) == true;
         return reportedAttacker
@@ -413,7 +544,7 @@ internal static class RegionalConflictStore
             || contact.RegionalGroupId is { } other
                 && region is not null
                 && RegionalConflictRules.Rivals(region, operation.Key.GroupId, other)
-                && operation.Objective is RegionalObjective.Raid or RegionalObjective.Intercept or RegionalObjective.Screen
+                && operation.Objective is RegionalObjective.Raid or RegionalObjective.Intercept
             || operation.Objective == RegionalObjective.Defend && operation.TargetPilotId == contact.PilotId;
     }
 

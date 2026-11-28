@@ -38,6 +38,7 @@ internal sealed partial class CapsuleerHauler
             || !policy.RoamingPvp
             || !HasPvpShip
             || Work.Journey?.Kind == TrafficJourneyKind.GangRally
+            || Work.Gang is { Phase: not RoamingGangPhase.Complete, Regional.Objective: RegionalObjective.Screen }
             || OnNullsecExpedition && !expedition
             || Work.Journey?.Kind == TrafficJourneyKind.PvpShopping
             || Work.Retreating
@@ -118,6 +119,12 @@ internal sealed partial class CapsuleerHauler
         {
             return null;
         }
+        var gang = InActiveGang ? Work.Gang : null;
+        var order = gang?.Regional;
+        if (gang is { Regional.Objective: RegionalObjective.Screen, Phase: not RoamingGangPhase.Hunting })
+        {
+            return null;
+        }
         if (Work.ActiveTicks < patrol.NextLook)
         {
             return activity.TargetId == 0 ? null : defense.PatrolTarget(Pilot, activity.TargetId, _target.Position, Now);
@@ -126,13 +133,13 @@ internal sealed partial class CapsuleerHauler
         {
             NextLook = Work.ActiveTicks + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks,
             LeaveGridAt =
-                patrol.LeaveGridAt > 0
-                    ? patrol.LeaveGridAt
-                    : PatrolRules.GridDeparture(pilotId, Pilot.SystemId, _target.Id, Work.ActiveTicks, Work.Gang),
+                order is { Objective: RegionalObjective.Screen } ? order.ExpiresAt
+                : patrol.LeaveGridAt > 0 ? patrol.LeaveGridAt
+                : PatrolRules.GridDeparture(pilotId, Pilot.SystemId, _target.Id, Work.ActiveTicks, Work.Gang),
         };
         var seen = defense.Observe(Pilot, Work.ActiveTicks);
         ObserveRegional(seen, _target.Id);
-        var gang = InActiveGang ? Work.Gang : null;
+        var screenOpponents = ScreenOpponents(order, seen);
         int? regionalGroup =
             database.Settings.Capsuleers.RegionalConflicts && Live is { } live
                 ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId)
@@ -143,7 +150,11 @@ internal sealed partial class CapsuleerHauler
             .Where(contact =>
                 !Member(contact.PilotId)
                 && !PatrolRules.Friendly(Pilot, contact, regionalGroup)
-                && (gang?.Regional is not { } order || RegionalConflictStore.CanTarget(database, order, contact, Work.ActiveTicks))
+                && (
+                    order is null
+                    || screenOpponents.Contains(contact.ShipId)
+                    || RegionalConflictStore.CanTarget(database, order, contact, Work.ActiveTicks)
+                )
             )
             .Where(contact => defense.PatrolTarget(Pilot, contact.ShipId, _target.Position, Now) is not null)
             .ToArray();

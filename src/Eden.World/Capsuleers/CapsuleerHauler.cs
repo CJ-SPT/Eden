@@ -870,6 +870,12 @@ internal sealed partial class CapsuleerHauler(
             Work.SovereigntyExpedition is { HubId: long hubId } && Work.TargetId == hubId
                 ? PilotEntosisStore.ExpeditionTarget(world, catalog, Pilot.SystemId, hubId)
                 : null;
+        var screen =
+            Work.Gang?.Regional is { Objective: RegionalObjective.Screen } order
+            && Work.TargetId == order.TargetGridId
+            && Pilot.SystemId == order.TargetSystemId
+                ? ScreenGrid(world, catalog, order)
+                : null;
         transaction.Commit();
         transaction.Dispose();
         var activity = Live?.CapsuleerActivity.Read();
@@ -878,6 +884,7 @@ internal sealed partial class CapsuleerHauler(
         );
         _target =
             hub
+            ?? screen
             ?? refinery
             ?? office
             ?? MilitiaFlightTarget(Work.MilitiaPatrol)
@@ -1330,7 +1337,9 @@ internal sealed partial class CapsuleerHauler(
             target,
             Work.Stamp,
             CapsuleerTrafficFlight.ApproachRange,
-            Work.SovereigntyExpedition?.HubId == target.Id ? HubWarpStandOff
+            Work.SovereigntyExpedition?.HubId == target.Id
+                || Work.Gang?.Regional is { Objective: RegionalObjective.Screen } screen && screen.TargetGridId == target.Id
+                    ? HubWarpStandOff
                 : Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role)
                 : 0
         );
@@ -1428,6 +1437,11 @@ internal sealed partial class CapsuleerHauler(
         }
         if (Work.MilitiaPatrol is { } patrol && ArriveAtMilitiaPatrolTarget(patrol))
         {
+            return;
+        }
+        if (Work.Gang is { Phase: RoamingGangPhase.Returning, Regional.Objective: RegionalObjective.Screen } && !Work.GangReturning)
+        {
+            ApplyGangReturn();
             return;
         }
         if (Work.Ratting is { Phase: RattingPhase.TravellingToBelt })

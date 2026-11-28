@@ -6,13 +6,13 @@
 
 Bot-led corporations stage regional offense around their nullsec headquarters constellation. Their daily
 six-hour UTC form-up windows overlap with neighboring corporations and vary by corporation. Escorts,
-witnessed local defense and screening an allied sovereign hub under attack can launch outside those windows.
+witnessed local defense and screens for allied sovereignty objectives can launch outside those windows.
 
 The regional planner compares the actual fitted roster's hull strength with recent opposing combat sightings.
 It prioritizes an exposed freight contact when the available gang can contest the grid and passes on known
 stronger opposition. Specialist freight hulls appear in the same reports. The planner uses normal travel,
-visibility and combat rules. An allied hub's active campaign or ongoing valid attack can send a gang to
-screen an approach gate. It returns after the contest ends.
+visibility and combat rules. In the destination system, a gang can warp to the contested hub or campaign node and
+engage visible opposing Entosis ships. It returns after the contest ends. [Sovereignty screens](sovereignty.md#regional-fleets-at-sovereignty-objectives)
 
 EVE.js 261108.1 references include `server/src/services/faction/factionWarfareAuthority.js` and
 `server/src/services/sovereignty/sovCampaignState.js`. Eden retains the pinned build 3662168 Crimewatch,
@@ -3090,7 +3090,8 @@ An available gang chooses its next objective in this order:
    Local defense can launch and visit a public grid without leaving the home system.
 2. **Escort** an existing owned shipment that is already loaded and still in its source system. The guards follow the
    shipment's actual connected route. The freighter waits at gates for the main body, with a finite rendezvous deadline.
-3. **Intercept** recently sighted rival freight, or alternate raids on a rival extraction site with patrols of its
+3. **Screen** an allied hub or command node under contest using its actual grid and source claim.
+4. **Intercept** recently sighted rival freight, or alternate raids on a rival extraction site with patrols of its
    transport corridor. Destination selection uses public catalog geography and prepared community locations.
 
 Pilots publish bounded, expiring contact reports from their existing observations. Reports retain a pilot, ship,

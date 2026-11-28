@@ -144,23 +144,30 @@ public sealed class RegionalConflictTests
         var region = Region();
         RegionalRoute home = new(1, 600, 300, [300], 500, 400);
         RegionalRoute rival = new(2, 601, 301, [300, 301], 501, 401);
+        var contested = home with { Screen = new(300, 700, false, 0.5, 0.5) };
         Assert.Null(RegionalConflictRules.Plan(region, 1, [home, rival], [], 0, 1, offensiveShift: false));
         var screen = Assert.IsType<RegionalOperation>(
-            RegionalConflictRules.Plan(region, 1, [home with { ContestedAllianceHub = true }, rival], [], 0, 1, offensiveShift: false)
+            RegionalConflictRules.Plan(region, 1, [contested, rival], [], 0, 1, offensiveShift: false)
         );
-        Assert.Equal((RegionalObjective.Screen, 300, 500L), (screen.Objective, screen.TargetSystemId, screen.TargetGridId));
+        Assert.Equal((RegionalObjective.Screen, 300, 700L), (screen.Objective, screen.TargetSystemId, screen.TargetGridId));
+        Assert.Equal(300, screen.ScreenClaimSystemId);
         var started = RegionalConflictRules.Launch(region, screen, 99, 1);
         var returned = RegionalConflictRules.Finish(started, screen.Key, true);
         Assert.Null(
+            RegionalConflictRules.Plan(returned, 1, [contested, rival], [], RegionalConflictRules.LaunchInterval, 1, offensiveShift: false)
+        );
+        var other = Assert.IsType<RegionalOperation>(
             RegionalConflictRules.Plan(
-                returned,
+                started,
                 1,
-                [home with { ContestedAllianceHub = true }, rival],
+                [contested, home with { Screen = new(301, 701, true, 0.5, 0.1) }],
                 [],
                 RegionalConflictRules.LaunchInterval,
-                1,
-                offensiveShift: false
+                2,
+                offensiveShift: false,
+                screensOnly: true
             )
         );
+        Assert.Equal((300, 701L, (int?)301), (other.TargetSystemId, other.TargetGridId, other.ScreenClaimSystemId));
     }
 }

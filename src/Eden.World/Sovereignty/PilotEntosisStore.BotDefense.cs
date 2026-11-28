@@ -1,4 +1,5 @@
 using Eden.Data.World.Sovereignty;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Sovereignty;
 using Eden.World.Catalog;
@@ -18,6 +19,12 @@ internal sealed record SovereigntyDefenseObjective(
 
 internal sealed partial class PilotEntosisStore
 {
+    internal bool HasDefenseDemand(WorldAction world, int alliance, long now) =>
+        world
+            .Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance)
+            .AsEnumerable()
+            .Any(claim => DefenseObjectives(world, claim, now).Any());
+
     internal IEnumerable<SovereigntyDefenseObjective> DefenseTargets(
         WorldAction world,
         IReadOnlyList<SavedSovereigntyClaim> holdings,
@@ -101,6 +108,37 @@ internal sealed partial class PilotEntosisStore
             .Filter<SavedEntosisCycle>(cycle => cycle.HubId == target)
             .AsEnumerable()
             .Any(cycle => cycle.AllianceId != defender && cycle.EndsAt > now && cycle.Contributing && CanScore(cycle.ModuleId));
+
+    internal long[] VisibleHostileEntosisShips(
+        WorldAction world,
+        CatalogDbContext catalog,
+        int system,
+        long grid,
+        int defender,
+        long now,
+        IReadOnlyList<PilotSighting> visible
+    )
+    {
+        if (Target(world, system, grid) is not { } target)
+        {
+            return [];
+        }
+        return world
+            .Filter<SavedEntosisCycle>(cycle => cycle.HubId == grid)
+            .AsEnumerable()
+            .Where(cycle =>
+                cycle.AllianceId != defender
+                && cycle.StartedAt <= now
+                && cycle.EndsAt > now
+                && cycle.Contributing
+                && visible.Any(contact => contact.ShipId == cycle.ShipId && contact.PilotId == cycle.PilotId)
+                && CanScore(cycle.ModuleId)
+                && Valid(world, catalog, cycle, target)
+            )
+            .Select(cycle => cycle.ShipId)
+            .Distinct()
+            .ToArray();
+    }
 
     internal static bool ContestedHub(WorldAction world, SavedSovereigntyClaim claim, long now) =>
         world.Set<SavedSovereigntyConflict>().Find(claim.SystemId) is { } conflict

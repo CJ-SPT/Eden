@@ -493,6 +493,47 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Regional fleets at sovereignty objectives
+
+An available allied combat gang can screen a disrupted or actively attacked hub, or a live command node in a campaign
+for an allied claim. The planner uses native defense objectives and the fleet's normal route bounds and work policy.
+Ready ships can respond outside their routine roaming window. The gang departs from its existing station and can follow
+a round trip to the grid when the destination has no station. Its saved order records the grid, destination system and
+source claim. Separate command nodes can receive separate screens while the ordinary regional operation limits apply.
+
+Fleet members use their existing crew and combat behavior. On grid, they can select a visible ship with a validated
+opposing paid Entosis cycle, or a visible aggressor reported on that grid. The guns, tackle, and support modules act
+through the existing combat owners. The fleet returns when the objective or claim no longer needs defense, when the
+order expires, or when normal combat tactics call for withdrawal. Older gate screens finish through the return path.
+
+The warp target comes from the build 3662168 sovereignty owner. In the local EVE.js 261108.1 reference,
+`server/src/space/modules/entosisLinkRuntime.js` resolves command nodes by campaign source and target identity and
+distinguishes attacking and defending links. Regional dispatch uses Eden's bot fleet policy.
+[CCP command-node events](https://support.eveonline.com/hc/en-us/articles/203728981-Command-Nodes-Event) ·
+[UniWiki sovereignty warfare](https://wiki.eveuniversity.org/Sovereignty_Hub#Capturing_existing_structures)
+
+### Automated validation
+
+The final focused run combined the exact
+`RegionalConflictWorldTests.UnattendedScreenReachesItsSavedSovereigntyGridAndFightsAVisibleEntosisAttacker` method filter with
+`RegionalConflictTests`. All nine cases passed in 19.08 seconds after a 20.01-second build. A regional gang reached the saved
+hub or cross-system campaign node after checkpoint and reopen. The gang ignored a visible ship until it ran a paid opposing
+Entosis cycle, then damaged the ship and used ammunition. In both cases it docked at its launch station after the objective
+resolved. The command-node system had no prepared capsuleer population.
+
+The broader focused run passed 346 cases in 229.47 seconds before the final gate-patrol guard and return assertions.
+It covered regional operations, roaming gangs, capsuleer alliances, sovereignty, traffic navigation, defense frames,
+maintenance and remote repair. The catalog setup and formatting policy suites passed eight and nine cases,
+respectively. The final solution build took 20.88 seconds.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Bot claims after a campaign victory
 
 When attackers capture a command node, an alliance earns credit if a valid bot link contributes at the completion

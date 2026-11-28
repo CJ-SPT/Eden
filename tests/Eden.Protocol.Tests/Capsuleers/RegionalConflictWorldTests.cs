@@ -1,21 +1,31 @@
 using System.Text.Json;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Sovereignty;
+using Eden.Data.World.Structures;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Sovereignty;
+using Eden.Gameplay.Structures;
+using Eden.Gameplay.Targeting;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.Protocol.Tests.Sovereignty;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -23,6 +33,8 @@ using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +49,357 @@ public sealed class RegionalConflictWorldTests
     private const int AwayStation = 60003760;
     private const long Human = 90000001;
     private const int SupportMediumSlot = (int)InventoryFlag.MediumSlot0 + 3;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnattendedScreenReachesItsSavedSovereigntyGridAndFightsAVisibleEntosisAttacker(bool campaign)
+    {
+        const int screenCorporation = CorporationRules.FirstCorporationId;
+        const int hostileCorporation = screenCorporation + 1;
+        const int screenAlliance = AllianceRules.FirstAllianceId;
+        const int hostileAlliance = screenAlliance + 1;
+        const int attackerHull = 603;
+        const int fuel = 6;
+        using var fixture = new RoamingGangTests.Fixture(
+            regional: !campaign,
+            unattended: true,
+            additionalCatalogData: PassiveCatalogFixture.LoadSovereignty
+        );
+        int sourceSystem = campaign ? Home : Away;
+        long hub;
+        long attackerShip;
+        long module;
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var setup = fixture.Live.Economy.Begin(TransactionParticipants.None))
+        {
+            var crew = setup
+                .Filter<SavedCapsuleerHauler>(hauler => hauler.SourceStationId == HomeStation)
+                .AsEnumerable()
+                .Where(hauler => setup.Set<SavedCapsuleerSuspension>().Find(hauler.PilotId) is null)
+                .OrderBy(hauler => hauler.PilotId)
+                .ToArray();
+            Assert.NotEmpty(crew);
+            AddAlliance(setup, screenCorporation, screenAlliance, crew[0].PilotId, HomeStation, Home, "Screen", "SCRN");
+            AddAlliance(setup, hostileCorporation, hostileAlliance, Human, AwayStation, Away, "Intruder", "INTR");
+            foreach (var member in crew)
+            {
+                setup.Pilots.Find(member.PilotId)!.CorporationId = screenCorporation;
+            }
+
+            var pilot = setup.Pilots.Find(Human)!;
+            attackerShip = pilot.ActiveShipId;
+            pilot.CorporationId = hostileCorporation;
+            pilot.ActiveShip.TypeId = attackerHull;
+            setup.Set<Account>().Find(pilot.AccountId)!.CloneGrade = AccountCloneGrade.Omega;
+            CapsuleerCommunityStore.GrantRequirements(setup, catalog, Human, SovereigntyCaptureFixture.LinkOne, []);
+            setup.RemoveRange(setup.Filter<OwnedItem>(item => item.LocationId == attackerShip).ToArray());
+            module = InventoryPersistence.NextId(setup);
+            setup.Add(
+                new OwnedItem
+                {
+                    Id = module,
+                    OwnerId = Human,
+                    LocationId = attackerShip,
+                    TypeId = SovereigntyCaptureFixture.LinkOne,
+                    FlagId = (int)InventoryFlag.HighSlot0,
+                    Quantity = 1,
+                    Singleton = true,
+                    Online = true,
+                }
+            );
+            InventoryPersistence.MergeOutput(
+                setup,
+                catalog,
+                Human,
+                attackerShip,
+                (int)InventoryFlag.Cargo,
+                SovereigntyCaptureFixture.Strontium,
+                fuel
+            );
+
+            var profile = EntosisCatalog.Hub(catalog);
+            hub = Math.Max(setup.NextItemId(), StructureRules.FirstStructureId + 1);
+            setup.Add(
+                new SavedStructure
+                {
+                    Id = hub,
+                    TypeId = EntosisRules.HubTypeId,
+                    CorporationId = screenCorporation,
+                    SystemId = sourceSystem,
+                    State = StructureState.ShieldVulnerable,
+                    StateStartedAt = fixture.Clock.Now,
+                    X = profile.StarDistance,
+                }
+            );
+            setup.Add(
+                new SavedSovereigntyHub
+                {
+                    SystemId = sourceSystem,
+                    HubId = hub,
+                    CaptureDuration = profile.CaptureDuration,
+                    UpdatedAt = fixture.Clock.Now,
+                }
+            );
+            setup.Add(
+                new SavedSovereigntyClaim
+                {
+                    SystemId = sourceSystem,
+                    HubId = hub,
+                    CorporationId = screenCorporation,
+                    AllianceId = screenAlliance,
+                    ClaimedAt = fixture.Clock.Now,
+                }
+            );
+            setup.Add(new SavedSovereigntyPrime { AllianceId = screenAlliance, CurrentHour = fixture.Clock.UtcNow.Hour });
+            setup.Commit();
+        }
+
+        var initial = Assert.IsType<SovereigntyHub>(fixture.Host.GetRequiredService<IPilotEntosis>().Hub(sourceSystem));
+        Assert.True(SovereigntyWarfareRules.Open(initial.Conflict!.Window, fixture.Clock.Now));
+        long grid = hub;
+        using (var setup = fixture.Live.Economy.Begin(TransactionParticipants.None))
+        {
+            var conflict = setup.Set<SavedSovereigntyConflict>().Find(sourceSystem)!;
+            if (campaign)
+            {
+                Assert.Equal(
+                    fixture.Database.Catalog.Systems[Home].ConstellationId,
+                    fixture.Database.Catalog.Systems[Away].ConstellationId
+                );
+                Assert.Null(setup.Set<SavedCapsuleerPopulation>().Find(Away));
+                conflict.Phase = SovereigntyPhase.Campaign;
+                conflict.Value = 0;
+                conflict.CampaignAt = fixture.Clock.Now;
+                conflict.DefenderPoints = SovereigntyWarfareRules.InitialDefenderPoints;
+                conflict.NextSpawnAt = fixture.Clock.Now + TimeSpan.TicksPerHour;
+                grid = setup.NextItemId();
+                var position = SovereigntyWarfareRules.NodePosition(grid, []);
+                setup.Add(
+                    new SavedSovereigntyNode
+                    {
+                        Id = grid,
+                        SystemId = Away,
+                        SourceSystemId = sourceSystem,
+                        HubId = hub,
+                        CorporationId = screenCorporation,
+                        AllianceId = screenAlliance,
+                        X = position.X,
+                        Y = position.Y,
+                        Z = position.Z,
+                        UpdatedAt = fixture.Clock.Now,
+                    }
+                );
+            }
+            else
+            {
+                // Begin with a disrupted hub before the next attacking pilot reaches its grid.
+                conflict.Value = 0.4;
+            }
+            setup.Commit();
+        }
+
+        var gang = fixture.Form();
+        var order = Assert.IsType<RegionalOperation>(gang.Regional);
+        Assert.Equal((RegionalObjective.Screen, Away, grid), (order.Objective, order.TargetSystemId, order.TargetGridId));
+        Assert.Equal(sourceSystem, order.ScreenClaimSystemId);
+        Assert.Equal(new[] { Home, Away }, order.Systems);
+        Assert.False(order.ReachedObjective);
+        Assert.Equal(0, fixture.Host.GetRequiredService<IHumanPresence>().Read().SelectedSessions);
+        await fixture.Live.FlushAsync();
+        fixture.Restart(unattended: true);
+        _ = fixture.Scheduler.Jobs();
+        var restored = Assert.IsType<RegionalOperation>(RegionalConflictStore.Operation(fixture.Database, order.Key));
+        Assert.Equal(grid, restored.TargetGridId);
+        Assert.Equal(sourceSystem, restored.ScreenClaimSystemId);
+        Assert.Equal(order.ExpiresAt, restored.ExpiresAt);
+
+        TickUntil(550, () => RegionalConflictStore.Operation(fixture.Database, order.Key)?.ReachedObjective == true);
+        var arrived = gang
+            .Members.Select(member => fixture.Scheduler.Hauler(member.PilotId))
+            .OfType<HaulerObservation>()
+            .First(member => member.Pilot.SystemId == Away && member.Pilot.Position is not null && member.Work.TargetId == grid);
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var setup = fixture.Live.Economy.Begin(TransactionParticipants.None))
+        {
+            var position = arrived.Pilot.Position! + new SpacePosition(1_000, 0, 0);
+            SqliteWorld.SetPosition(setup, catalog, attackerShip, position, Away, fixture.Clock.Now);
+            var pilot = setup.Pilots.Find(Human)!;
+            var defense = ShipHealth.DefenseFrom(Eden.World.Fittings.PilotFittingStore.ShipAttributes(setup, catalog, pilot));
+            var state = setup.Set<ShipHealthState>().Find(attackerShip) ?? setup.Add(new ShipHealthState { ShipId = attackerShip }).Entity;
+            state.ShieldCharge = defense.Shield;
+            state.ArmorDamage = 0;
+            state.StructureDamage = 0;
+            state.UpdatedAt = fixture.Clock.Now;
+            setup.Commit();
+        }
+        var hostile = fixture.Host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        var space = fixture.Host.GetRequiredService<SharedSpace>();
+        space.Publish(new(PilotContact.From(hostile), SpacePosition.Zero, null, 0, null));
+        var presence = fixture.Host.GetRequiredService<CapsuleerDefense>();
+        Assert.Contains(presence.Observe(arrived.Pilot, arrived.Work.ActiveTicks), contact => contact.ShipId == attackerShip);
+        var health = fixture.Host.GetRequiredService<IPilotHealth>();
+        double before = Remaining();
+        for (int turn = 0; turn < 20; turn++)
+        {
+            fixture.Tick();
+            Assert.False(Targeted());
+        }
+        Assert.Equal(before, Remaining());
+
+        fixture.Host.GetRequiredService<IPilotTargetLocks>().Add(attackerShip, grid);
+        var entosis = fixture.Host.GetRequiredService<IPilotEntosis>();
+        var warmup = entosis.Activate(Human, attackerShip, module, grid, 2, fixture.Clock.Now).Cycle;
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(warmup.EndsAt - fixture.Clock.Now));
+        var cycle = Assert.IsType<EntosisActivation>(entosis.Renew(Human, module, fixture.Clock.Now)).Cycle;
+        Assert.Equal(cycle.StartedAt, cycle.WarmupUntil);
+        Assert.Equal(fuel - 2, FuelRemaining());
+        var weapons = gang.Members.ToDictionary(
+            member => member.PilotId,
+            member => presence.Profile(member.PilotId).RattingWeapons.Select(weapon => weapon.Weapon.ItemId).ToHashSet()
+        );
+        var magazines = gang.Members.ToDictionary(member => member.PilotId, member => Charges(member.PilotId));
+        bool tracked = false;
+        bool paid = false;
+        TickUntil(
+            250,
+            () =>
+            {
+                foreach (var member in gang.Members.Where(member => TargetedBy(member.PilotId)))
+                {
+                    tracked = true;
+                    paid |= Charges(member.PilotId) < magazines[member.PilotId];
+                }
+                return tracked && paid && Remaining() < before;
+            },
+            () => $"Tracked {tracked}, paid {paid}, health {before} -> {Remaining()}"
+        );
+        var held = Assert.IsType<SovereigntyClaim>(fixture.Host.GetRequiredService<ISovereignty>().Read(sourceSystem));
+        Assert.Equal((screenAlliance, hub), (held.AllianceId, held.HubId));
+
+        space.Leave(attackerShip);
+        fixture.Host.GetRequiredService<IPilotTargetLocks>().Remove(attackerShip, grid);
+        entosis.Advance(Away, fixture.Clock.Now);
+        using (var resolved = fixture.Live.Economy.Begin(TransactionParticipants.None))
+        {
+            if (campaign)
+            {
+                resolved.Remove(resolved.Set<SavedSovereigntyNode>().Find(grid)!);
+            }
+            else
+            {
+                resolved.Set<SavedSovereigntyConflict>().Find(sourceSystem)!.Value = 1;
+            }
+            resolved.Commit();
+        }
+        TickUntil(
+            550,
+            () => gang.Members.All(member => fixture.Scheduler.Hauler(member.PilotId)?.Pilot is { Position: null, StationId: HomeStation })
+        );
+        Assert.Equal(0, fixture.Host.GetRequiredService<IHumanPresence>().Read().SelectedSessions);
+        Assert.Equal(0, fixture.Scheduler.Read().Failures);
+
+        bool Targeted() => gang.Members.Any(member => TargetedBy(member.PilotId));
+
+        bool TargetedBy(long pilotId) => fixture.Live.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.Defense?.TargetId == attackerShip;
+
+        double Remaining()
+        {
+            var state = health.Read(Human, fixture.Clock.Now).Remaining;
+            return state.Shield + state.Armor + state.Structure;
+        }
+
+        int FuelRemaining() =>
+            fixture.Live.Economy.Read(world =>
+                world
+                    .Filter<OwnedItem>(item => item.LocationId == attackerShip)
+                    .Where(item => item.TypeId == SovereigntyCaptureFixture.Strontium)
+                    .Sum(item => item.Quantity)
+            );
+
+        long Charges(long pilotId) =>
+            fixture.Live.Economy.Read(world =>
+                world.Set<OwnedItem>().Where(item => weapons[pilotId].Contains(item.LocationId)).Sum(item => (long)item.Quantity)
+            );
+
+        void TickUntil(int seconds, Func<bool> ready, Func<string>? diagnostics = null)
+        {
+            for (int turn = 0; turn < seconds && !ready(); turn++)
+            {
+                fixture.Tick();
+            }
+            if (ready())
+            {
+                return;
+            }
+            Assert.Fail(
+                diagnostics?.Invoke()
+                    + Environment.NewLine
+                    + string.Join(
+                        Environment.NewLine,
+                        gang.Members.Select(member =>
+                        {
+                            var observation = fixture.Scheduler.Hauler(member.PilotId);
+                            var combat = observation?.Work.Defense;
+                            return $"{member.PilotId} in {observation?.Pilot.SystemId}: {observation?.Work.Activity} "
+                                + $"{observation?.Work.WaitingReason}, grid {observation?.Work.TargetId}, "
+                                + $"patrol target {observation?.Work.Ratting?.TargetId}, combat target {combat?.TargetId}, "
+                                + $"locks {combat?.Locks.Length}, unavailable modules {combat?.Cycles.Count(cycle => cycle.Unavailable)}";
+                        })
+                    )
+            );
+        }
+
+        void AddAlliance(
+            EconomyTransaction setup,
+            int corporation,
+            int alliance,
+            long founder,
+            int station,
+            int system,
+            string name,
+            string ticker
+        )
+        {
+            var details = PlayerCorporationTests.Details(name + " Company", ticker) with { ApplicationsEnabled = false };
+            setup.Add(
+                new SavedCorporation
+                {
+                    Id = corporation,
+                    Name = details.Name,
+                    Ticker = details.Ticker,
+                    DetailsJson = JsonSerializer.Serialize(details),
+                    CeoId = founder,
+                    CreatorId = founder,
+                    MemberLimit = 10,
+                    StationId = station,
+                    SystemId = system,
+                    CreatedAt = fixture.Clock.Now,
+                    BalanceCents = 10 * AllianceRules.MaintenancePerCorporationCents,
+                }
+            );
+            setup.Add(
+                new SavedAlliance
+                {
+                    Id = alliance,
+                    Name = name,
+                    Ticker = ticker,
+                    CreatorId = founder,
+                    CreatorCorporationId = corporation,
+                    ExecutorCorporationId = corporation,
+                    CreatedAt = fixture.Clock.Now,
+                }
+            );
+            setup.Add(
+                new SavedAllianceMember
+                {
+                    AllianceId = alliance,
+                    CorporationId = corporation,
+                    JoinedAt = fixture.Clock.Now,
+                }
+            );
+        }
+    }
 
     [Fact]
     public async Task PatrolPreparesThermodynamicsThroughTheResidentCheckpoint()

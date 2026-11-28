@@ -251,10 +251,10 @@ internal sealed partial class CapsuleerHauler
         _work = Work with { Retreating = false, DueTicks = 0, LaneDeparting = false, WaitingReason = null };
     }
 
-    private void FlyToBelt()
+    private void FlyToBelt(StaticSpaceObject? grid = null)
     {
         var activity = Work.Ratting!;
-        _target = SiteTarget(activity) ?? Objects.Single(o => o.Id == activity.Belts[activity.BeltIndex]);
+        _target = grid ?? SiteTarget(activity) ?? Objects.Single(o => o.Id == activity.Belts[activity.BeltIndex]);
         _work = Work with
         {
             Activity = HaulerActivity.Flying,

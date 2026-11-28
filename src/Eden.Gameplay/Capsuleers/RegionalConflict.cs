@@ -68,6 +68,7 @@ public sealed record RegionalOperation(
     long ExpiresAt
 )
 {
+    public int? ScreenClaimSystemId { get; init; }
     public RegionalOperationStatus Status { get; init; }
     public long GangId { get; init; }
     public long GangSequence { get; init; }
@@ -88,8 +89,17 @@ public sealed record RegionalConflictRegion(int RegionId, long Revision)
 public sealed record RegionalRoute(int GroupId, int StationId, int SystemId, int[] Systems, long GateId, long BeltId)
 {
     public bool FriendlyAllianceSpace { get; init; }
-    public bool ContestedAllianceHub { get; init; }
+    public RegionalScreenObjective? Screen { get; init; }
 }
+
+public sealed record RegionalScreenObjective(
+    int ClaimSystemId,
+    long GridId,
+    bool HostileLink,
+    double ClaimProgress,
+    double TargetProgress,
+    bool Covered = false
+);
 
 public sealed record RegionalEscortCandidate(long PilotId, long ShipId, int StationId, int[] Systems, long GateId);
 
@@ -294,7 +304,8 @@ public static class RegionalConflictRules
         long elapsed,
         int maximumActive,
         double force = double.PositiveInfinity,
-        bool offensiveShift = true
+        bool offensiveShift = true,
+        bool screensOnly = false
     )
     {
         var group = region.Groups.FirstOrDefault(candidate => candidate.Id == groupId);
@@ -327,6 +338,35 @@ public static class RegionalConflictRules
             {
                 Reason = reason,
             };
+        RegionalOperation? PlanScreen()
+        {
+            var route = routes
+                .Where(candidate =>
+                    candidate.Screen is { Covered: false } screen
+                    && !region.Operations.Any(operation =>
+                        operation.Objective == RegionalObjective.Screen
+                        && operation.TargetGridId == screen.GridId
+                        && operation.ExpiresAt > elapsed
+                    )
+                )
+                .OrderByDescending(candidate => candidate.Screen!.HostileLink)
+                .ThenBy(candidate => candidate.Systems.Length)
+                .ThenBy(candidate => candidate.Screen!.ClaimProgress)
+                .ThenBy(candidate => candidate.Screen!.TargetProgress)
+                .ThenBy(candidate => candidate.Screen!.GridId)
+                .FirstOrDefault();
+            return route?.Screen is { } objective
+                ? Create(RegionalObjective.Screen, route, 0, "Screening a contested sovereignty objective.", objective.GridId) with
+                {
+                    OpponentGroupId = null,
+                    ScreenClaimSystemId = objective.ClaimSystemId,
+                }
+                : null;
+        }
+        if (screensOnly)
+        {
+            return PlanScreen();
+        }
         foreach (
             var report in region
                 .Reports.Where(report =>
@@ -337,14 +377,15 @@ public static class RegionalConflictRules
                         || report.Kind == RegionalReportKind.CombatShip
                             && report.OtherGroupId is { } other
                             && Rivals(region, groupId, other)
-                            && routes.Any(route => route.SystemId == report.SystemId && route.GroupId == groupId)
+                            && routes.Any(route => route.Screen is null && route.SystemId == report.SystemId && route.GroupId == groupId)
                     )
+                    && !routes.Any(route => route.Screen?.GridId == report.GridId)
                 )
                 .OrderByDescending(report => report.Kind is RegionalReportKind.Attack or RegionalReportKind.Loss)
                 .ThenByDescending(report => report.SeenAt)
         )
         {
-            var route = routes.FirstOrDefault(route => route.SystemId == report.SystemId);
+            var route = routes.FirstOrDefault(route => route.Screen is null && route.SystemId == report.SystemId);
             if (route is not null && report.GridId != 0)
             {
                 return Create(
@@ -377,29 +418,16 @@ public static class RegionalConflictRules
                 Reason = "Escorting an owned freight shipment along its actual route.",
             };
         }
-        var screen = routes
-            .Where(route => route.ContestedAllianceHub && route.GateId != 0)
-            .Where(route =>
-                !region.Operations.Any(operation =>
-                    operation.Objective == RegionalObjective.Screen
-                    && operation.TargetSystemId == route.SystemId
-                    && operation.ExpiresAt > elapsed
-                )
-            )
-            .MinBy(route => route.Systems.Length);
-        if (screen is not null)
+        if (PlanScreen() is { } screen)
         {
-            return Create(RegionalObjective.Screen, screen, 0, "Screening the approach to a contested alliance hub.") with
-            {
-                OpponentGroupId = null,
-            };
+            return screen;
         }
         if (!offensiveShift || elapsed < group.NextOffensiveAt)
         {
             return null;
         }
         var rivals = routes
-            .Where(route => !route.FriendlyAllianceSpace && Rivals(region, groupId, route.GroupId))
+            .Where(route => route.Screen is null && !route.FriendlyAllianceSpace && Rivals(region, groupId, route.GroupId))
             .OrderBy(route => route.Systems.Length)
             .ThenBy(route => TravelerRoutineRules.Mix((ulong)route.StationId ^ (ulong)group.NextSequence))
             .ToArray();

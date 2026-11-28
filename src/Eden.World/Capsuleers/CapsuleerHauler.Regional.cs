@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
+using Eden.World.Catalog;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -24,7 +25,9 @@ internal sealed partial class CapsuleerHauler
                 !database.Settings.Capsuleers.RegionalConflicts
                 || current?.Status != RegionalOperationStatus.Active
                 || Work.ActiveTicks >= order.ExpiresAt
-                || order.Objective == RegionalObjective.Screen && !RegionalScreenContinues(order.TargetSystemId)
+                || order.Objective == RegionalObjective.Screen
+                    && gang.Phase != RoamingGangPhase.Returning
+                    && !RegionalScreenContinues(order)
             )
             {
                 gang = ReturnGang(gang, "The regional operation ended; returning home.");
@@ -49,16 +52,16 @@ internal sealed partial class CapsuleerHauler
         }
     }
 
-    private bool RegionalScreenContinues(int system)
+    private bool RegionalScreenContinues(RegionalOperation order)
     {
         int? alliance = Pilot.Identity.AllianceId;
         long now = Now;
-        return _operation.HasWorld
-            ? RegionalConflictStore.ShouldScreen(_operation.World, system, alliance, now)
-            : Live?.Economy.Read(world => RegionalConflictStore.ShouldScreen(world, system, alliance, now)) == true;
+        return _operation?.HasWorld == true
+            ? RegionalConflictStore.CanContinueScreen(_operation.World, entosis, order, alliance, now)
+            : Live?.Economy.Read(world => RegionalConflictStore.CanContinueScreen(world, entosis, order, alliance, now)) == true;
     }
 
-    private RegionalOperation? PlanRegional(ref CapsuleerTrafficRoute route, IReadOnlyList<RoamingGangMember> members)
+    private RegionalOperation? PlanRegional(ref CapsuleerTrafficRoute route, IReadOnlyList<RoamingGangMember> members, bool screensOnly)
     {
         if (!database.Settings.Capsuleers.RegionalConflicts || Live is not { } live)
         {
@@ -72,13 +75,30 @@ internal sealed partial class CapsuleerHauler
             Work.ActiveTicks,
             Pilot,
             Now,
-            members.Sum(member => PvpTactics.Threat(member.Hull))
+            members.Sum(member => PvpTactics.Threat(member.Hull)),
+            entosis: entosis,
+            screensOnly: screensOnly
         );
         if (operation is not null)
         {
             route = new(Pilot.StationId, operation.DestinationStationId, operation.Systems);
         }
         return operation;
+    }
+
+    private StaticSpaceObject? ScreenGrid(WorldAction world, CatalogDbContext catalog, RegionalOperation order) =>
+        RegionalConflictStore.ScreenGrid(world, catalog, entosis, order, Pilot.Identity.AllianceId, Now);
+
+    private IReadOnlyCollection<long> ScreenOpponents(RegionalOperation? order, IReadOnlyList<PilotSighting> visible)
+    {
+        if (order is not { Objective: RegionalObjective.Screen } || visible.Count == 0 || Live is not { } live)
+        {
+            return [];
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        int? alliance = Pilot.Identity.AllianceId;
+        long now = Now;
+        return live.Economy.Read(world => RegionalConflictStore.ScreenOpponents(world, catalog, entosis, order, alliance, now, visible));
     }
 
     private bool RegionalLaunchBlocked()
@@ -129,8 +149,15 @@ internal sealed partial class CapsuleerHauler
             || Work.RegionalObjectiveVisited
             || Work.GangReturning
             || order.TargetGridId == 0
-            || !Objects.Any(body => body.Id == order.TargetGridId)
         )
+        {
+            return false;
+        }
+        var grid =
+            order.Objective == RegionalObjective.Screen
+                ? ScreenGrid(_operation.World, _operation.Catalog, order)
+                : Objects.FirstOrDefault(body => body.Id == order.TargetGridId);
+        if (grid is null)
         {
             return false;
         }
@@ -143,7 +170,7 @@ internal sealed partial class CapsuleerHauler
                 LastObservedAt = Now,
             },
         };
-        FlyToBelt();
+        FlyToBelt(grid);
         return true;
     }
 

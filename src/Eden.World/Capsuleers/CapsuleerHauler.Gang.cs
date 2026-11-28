@@ -4,6 +4,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
 
@@ -148,16 +149,21 @@ internal sealed partial class CapsuleerHauler
             _work = Work with { Activity = HaulerActivity.Docked, DueTicks = departure, WaitingReason = "Forming roaming gang." };
             return true;
         }
+        bool remoteScreen =
+            gang.Regional is { Objective: RegionalObjective.Screen }
+            && gang.Systems.Length > 1
+            && gang.HomeStationId == gang.DestinationStationId;
         if (
             gang.Regional is not null
             && gang.HomeStationId == gang.DestinationStationId
+            && !remoteScreen
             && !Work.RegionalObjectiveVisited
             && gang.Phase != RoamingGangPhase.Returning
         )
         {
             return LaunchLocalRegional(gang);
         }
-        if (Pilot.StationId == gang.DestinationStationId)
+        if (Pilot.StationId == gang.DestinationStationId && (!remoteScreen || Work.RegionalObjectiveVisited))
         {
             if (WaitForRegionalShipment())
             {
@@ -217,15 +223,25 @@ internal sealed partial class CapsuleerHauler
             !policy.Enabled
             || !policy.RoamingGangs
             || !policy.RoamingPvp
-            || !CanStartLocalPvp
-            || !HasPvpShip
-            || !authorizedHunt && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident && DynamicWorkPilot(resident)
             || Work.Retreating
             || Work.Freight?.Stacks.Length > 0
             || Work.Resupply?.DestinationStationId is not null
-            || database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId) > 0
-            || !PatrolRules.Choose(pilotId, Work.ActivitySequence + 1, policy.RoamPercent)
         )
+        {
+            return false;
+        }
+        bool roamingWindow =
+            CanStartLocalPvp
+            && database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId) <= 0
+            && PatrolRules.Choose(pilotId, Work.ActivitySequence + 1, policy.RoamPercent);
+        bool canScreen = policy.RegionalConflicts && Pilot.Identity.AllianceId.HasValue;
+        if ((!roamingWindow && !canScreen) || !HasPvpShip)
+        {
+            return false;
+        }
+        var world = _operation.World;
+        bool routine = roamingWindow && (authorizedHunt || world is not EconomyTransaction resident || !DynamicWorkPilot(resident));
+        if (!routine && (!canScreen || !RegionalConflictStore.HasScreenDemand(world, entosis, Pilot.Identity.AllianceId, Now)))
         {
             return false;
         }
@@ -241,7 +257,6 @@ internal sealed partial class CapsuleerHauler
         Dictionary<long, HaulerProgress> schedules = [];
         RoamingGangMember[] members = [];
         int? regionalGroup = policy.RegionalConflicts ? RegionalConflictStore.GroupForPilot(Live!, database.Catalog, pilotId) : null;
-        var world = _operation.World;
         foreach (var (row, rally) in GangRecruits(world))
         {
             var saved = world.Pilots.SingleOrDefault(other => other.Id == row.PilotId);
@@ -340,9 +355,9 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var regional = PlanRegional(ref route, members);
+        var regional = PlanRegional(ref route, members, screensOnly: !routine);
         if (
-            regional is null && (route.Systems.Length == 1 || RegionalLaunchBlocked())
+            regional is null && (!routine || route.Systems.Length == 1 || RegionalLaunchBlocked())
             || regional?.Objective is not (RegionalObjective.Defend or RegionalObjective.Escort or RegionalObjective.Screen)
                 && !CanLaunchOffensiveFleet
         )
