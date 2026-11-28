@@ -10,7 +10,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Ammunition;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacitorBoosting boosting) : IModuleEffectSource
+internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacitorBoosting boosting, MagazineWire? magazines = null)
+    : IModuleEffectSource
 {
     // Build 3662168 effect 48 has no spatial effect guid. Godma drives its HUD.
     internal const string EffectName = "powerBooster";
@@ -18,6 +19,8 @@ internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacito
     private sealed record Cycle(long ShipId, CapacitorBooster Module, long Started, long StartTime, long Repeats, bool Stopping = false);
 
     private readonly Dictionary<long, Cycle> _cycles = [];
+
+    internal bool IsMonitoring => _cycles.Count > 0 || magazines?.IsMonitoring == true;
 
     public void CancelModule(PilotCallContext context, long module)
     {
@@ -40,6 +43,7 @@ internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacito
 
     public void Advance(PilotCallContext context)
     {
+        magazines?.Advance(context);
         if (!context.Selected)
         {
             return;
@@ -59,7 +63,7 @@ internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacito
             {
                 try
                 {
-                    Start(context, cycle.Module.ItemId, cycle.Repeats - 1, true);
+                    Start(context, cycle.Module.ItemId, cycle.Repeats - 1, cycle);
                     continue;
                 }
                 catch (Exception error) when (error is InvalidDataException or OverflowException)
@@ -71,14 +75,29 @@ internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacito
         }
     }
 
-    private void Start(PilotCallContext context, long module, long repeats, bool continuing = false)
+    private void Start(PilotCallContext context, long module, long repeats, Cycle? previous = null)
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var result = boosting.Inject(context.Pilot.PilotId, module, now);
         Cycle cycle = new(context.Pilot.ShipId, result.Module, started, now, repeats);
         _cycles[module] = cycle;
-        if (!continuing)
+        if (previous?.Module.DurationMilliseconds != cycle.Module.DurationMilliseconds)
+        {
+            // The HUD prefers the module's duration attribute to the effect payload.
+            context.Notifications.Add(
+                new ModuleAttributesChanged([
+                    new(
+                        context.Pilot.PilotId,
+                        new DogmaItemKey.Item(module),
+                        DogmaAttributeId.Duration,
+                        now,
+                        cycle.Module.DurationMilliseconds
+                    ),
+                ])
+            );
+        }
+        if (previous is null)
         {
             NotifyEffect(context, cycle, true);
         }

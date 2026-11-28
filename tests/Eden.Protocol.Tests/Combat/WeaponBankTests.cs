@@ -70,6 +70,76 @@ public sealed class WeaponBankTests
         Assert.Equal(101, f.Total(222));
     }
 
+    [Theory]
+    [InlineData(222, 9)]
+    [InlineData(215, 10)]
+    public void NativeWeaponGroupingChecksTheLoadedChargeTypeAndQuantity(int secondCharge, int secondQuantity)
+    {
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
+        long second = SecondGun(f);
+        f.Load(quantity: 10);
+        long stack = f.Buy(secondCharge, secondQuantity);
+        f.Ammo.Load(f.Pilot.PilotId, f.Pilot.ShipId, [second], [stack], f.Pilot.StationId, f.Clock.Now);
+        f.Clock.Milliseconds += 5000;
+        using var context = f.Context();
+        WeaponBankHandler handler = new(Banks(f), f.Inventory, []);
+        var before = f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId);
+
+        Assert.IsType<PilotCallResult.Failure>(handler.Call(context, "dogmaIM", "LinkWeapons", [f.Pilot.ShipId, f.Gun, second]));
+        var groupAll = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "dogmaIM", "LinkAllWeapons", [f.Pilot.ShipId]));
+        Assert.Empty(Assert.IsType<WeaponBanksWire>(groupAll.Reply).Banks);
+        Assert.Empty(Banks(f).Read(f.Pilot.PilotId, f.Pilot.ShipId));
+        Assert.Equal(before, f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId));
+    }
+
+    [Fact]
+    public void LinkAllRetainsTheExistingWeaponBankMaster()
+    {
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
+        long second = SecondGun(f);
+        var banks = Banks(f);
+        using var context = f.Context();
+        WeaponBankHandler handler = new(banks, f.Inventory, []);
+        Assert.IsType<PilotCallResult.Success>(handler.Call(context, "dogmaIM", "LinkWeapons", [f.Pilot.ShipId, second, f.Gun]));
+        var result = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "dogmaIM", "LinkAllWeapons", [f.Pilot.ShipId]));
+        var bank = Assert.Single(Assert.IsType<WeaponBanksWire>(result.Reply).Banks);
+        Assert.Equal(second, bank.MasterId);
+        Assert.Equal(f.Gun, Assert.Single(bank.SlaveIds));
+    }
+
+    [Theory]
+    [InlineData(7)]
+    [InlineData(15)]
+    public void NativePartialBankUnloadTreatsQuantityAsOneTotal(int quantity)
+    {
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
+        long second = SecondGun(f);
+        var pilot = f.Pilot;
+        Banks(f).Change(pilot.PilotId, pilot.ShipId, WeaponBankOperation.Link, second, f.Gun);
+        f.Load(quantity: 20);
+        f.Clock.Milliseconds += 5000;
+        using var scope = f.Db.Services.CreateScope();
+        using var context = f.Context();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        object?[] cargo = [pilot.ShipId, pilot.PilotId, (long)InventoryFlag.Cargo];
+        var before = f.Ammo.Read(pilot.PilotId, pilot.ShipId);
+        Assert.IsType<PilotCallResult.Failure>(Unload(21));
+        Assert.Equal(before, f.Ammo.Read(pilot.PilotId, pilot.ShipId));
+
+        var reply = Assert.IsType<PilotCallResult.Success>(Unload(quantity));
+        var ids = Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply))).Cast<long>().ToArray();
+        var stacks = f.Inventory.List(pilot.PilotId, pilot.ShipId).Where(item => ids.Contains(item.Id)).ToArray();
+        Assert.Equal(quantity, stacks.Sum(item => item.Quantity));
+        Assert.Equal(quantity <= 10 ? 1 : 2, ids.Length);
+        var magazines = f.Ammo.Read(pilot.PilotId, pilot.ShipId);
+        Assert.Equal(20 - quantity, magazines.Sum(magazine => magazine.Quantity));
+        Assert.Equal(10 - Math.Max(0, quantity - 10), Assert.Single(magazines, magazine => magazine.ModuleId == f.Gun).Quantity);
+        Assert.Equal(20, f.Total(222));
+
+        PilotCallResult Unload(int count) =>
+            router.Call(context, "dogmaIM", "UnloadAmmo", new object?[] { pilot.ShipId, second, cargo, (long)count }, _ => { });
+    }
+
     [Fact]
     public void ResidentFitsStayWarmAcrossGroupedShotsAndRefreshAfterAnAmmoChange()
     {

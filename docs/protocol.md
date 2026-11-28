@@ -391,6 +391,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [Target cancellation, assistance and encounter damage accounting](protocol/combat.md#target-cancellation-assistance-and-encounter-damage-accounting)
+
 - [Missile contact after undocking and disconnecting](protocol/combat.md#missile-contact-after-undocking-and-disconnecting)
 - [High-angle turret coverage](protocol/combat.md#high-angle-turret-coverage)
 - [Clone Soldier belt encounters](protocol/combat.md#clone-soldier-belt-encounters)
@@ -456,6 +458,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Compatibility and route audits
 
+- [Module, fitting and combat audit](protocol/compatibility.md#module-fitting-and-combat-audit)
 - [Third emulator bug audit](protocol/compatibility.md#third-emulator-bug-audit)
 - [Second emulator bug audit](protocol/compatibility.md#second-emulator-bug-audit)
 - [Emulator bug audit](protocol/compatibility.md#emulator-bug-audit)
@@ -574,6 +577,10 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Faction navy pursuit and service access, November 20, 2026](protocol/faction-warfare.md#faction-navy-pursuit-and-service-access--november-20-2026)
 
 ### Fitting and module families
+
+- [Capacitor booster cycle and reload HUD](protocol/fitting.md#capacitor-booster-cycle-and-reload-hud)
+- [Remote fit preview and fitting receipts](protocol/fitting.md#remote-fit-preview-and-fitting-receipts)
+- [Weapon bank grouping and ammunition holds](protocol/fitting.md#weapon-bank-grouping-and-ammunition-holds)
 
 - [Station repair for carried hulls and fittings](protocol/fitting.md#station-repair-for-carried-hulls-and-fittings)
 - [Strip fitting from a docked ship](protocol/fitting.md#strip-fitting-from-a-docked-ship)

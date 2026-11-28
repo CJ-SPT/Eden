@@ -2,7 +2,11 @@ namespace Eden.Gameplay.Combat;
 
 public sealed record WeaponBank(long MasterId, IReadOnlyList<long> SlaveIds);
 
-public sealed record GroupableWeapon(long Id, int TypeId);
+public sealed record GroupableWeapon(long Id, int TypeId)
+{
+    public int? ChargeTypeId { get; init; }
+    public int ChargeQuantity { get; init; }
+}
 
 public enum WeaponBankOperation
 {
@@ -40,13 +44,15 @@ public static class WeaponGrouping
         }
         if (operation == WeaponBankOperation.LinkAll)
         {
+            var masters = groups.Keys.ToHashSet();
             groups.Clear();
-            foreach (var type in weapons.GroupBy(w => w.TypeId))
+            foreach (var type in weapons.GroupBy(w => (w.TypeId, w.ChargeTypeId, w.ChargeQuantity)))
             {
                 var ids = type.Select(w => w.Id).ToArray();
                 if (ids.Length > 1)
                 {
-                    groups[ids[0]] = ids.Skip(1).ToList();
+                    long retainedMaster = ids.FirstOrDefault(masters.Contains, ids[0]);
+                    groups[retainedMaster] = ids.Where(id => id != retainedMaster).ToList();
                 }
             }
             return Snapshot();
@@ -87,6 +93,7 @@ public static class WeaponGrouping
         }
         if (operation == WeaponBankOperation.Merge)
         {
+            RequireMatchingCharges(sourceMaster);
             destination.Add(sourceMaster);
             if (groups.Remove(sourceMaster, out var merged))
             {
@@ -104,11 +111,26 @@ public static class WeaponGrouping
                 sourceId = peeled[^1];
                 peeled.RemoveAt(peeled.Count - 1);
             }
+            RequireMatchingCharges(sourceId);
             destination.Add(sourceId);
         }
         return Snapshot();
 
         WeaponBankChange Snapshot(long? detached = null) =>
             new(groups.Where(g => g.Value.Count > 0).Select(g => new WeaponBank(g.Key, g.Value.ToArray())).ToArray(), detached);
+
+        void RequireMatchingCharges(long incomingId)
+        {
+            var target = weapons.SingleOrDefault(w => w.Id == masterId);
+            var incoming = weapons.SingleOrDefault(w => w.Id == incomingId);
+            if (target is null || incoming is null)
+            {
+                throw new InvalidDataException("Select online fitted weapons.");
+            }
+            if (target.ChargeTypeId != incoming.ChargeTypeId || target.ChargeQuantity != incoming.ChargeQuantity)
+            {
+                throw new InvalidDataException("Group weapons with the same loaded ammunition and quantity, or empty magazines.");
+            }
+        }
     }
 }

@@ -159,6 +159,10 @@ internal sealed class ShipDogmaBuilder(
             : InventoryDefinitions.IsMiningGroup(module.GroupId) ? mining.ModuleAttributes(pilot.PilotId, module)
             : fitting.ModuleAttributes(pilot.PilotId, module)
         ).ToDictionary(a => a.Key, a => a.Value);
+        if (module.GroupId == CapacitorBoosterDefinitions.Group && attributes.GetValueOrDefault(DogmaAttributeId.NextActivationTime) <= now)
+        {
+            attributes[DogmaAttributeId.NextActivationTime] = 0;
+        }
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         if (module.CategoryId != (int)InventoryCategory.Module)
         {
@@ -199,6 +203,10 @@ internal sealed class ShipDogmaBuilder(
             if (source.ActiveEffect(pilot, module.Id) is { } active)
             {
                 effects[active.Effect] = active;
+                if (active is { Effect: DogmaEffect.CapacitorBoosting, DurationMilliseconds: double duration })
+                {
+                    attributes[DogmaAttributeId.Duration] = duration;
+                }
             }
         }
         return new(new DogmaItemKey.Item(module.Id), Item(module), attributes, effects, now);
@@ -245,7 +253,7 @@ internal sealed class ShipDogmaBuilder(
             shipInfo[module.Id] = PrimeModule(pilot, module);
             instances[module.Id] = new(module.Id, module.Online);
         }
-        var magazines = ammunition.Read(pilot.PilotId, pilot.ShipId);
+        var magazines = magazinesWire.Visible(pilot, modules, ammunition.Read(pilot.PilotId, pilot.ShipId));
         Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];
         if (magazines.Count > 0)
         {
@@ -265,11 +273,12 @@ internal sealed class ShipDogmaBuilder(
     {
         var snapshot = resources.Read(pilot.PilotId, pilot.ShipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         var instances = Instances(pilot, snapshot);
-        foreach (var module in inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)))
+        var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
+        foreach (var module in modules)
         {
             instances[module.Id] = new(module.Id, module.Online);
         }
-        var magazines = ammunition.Read(pilot.PilotId, pilot.ShipId);
+        var magazines = magazinesWire.Visible(pilot, modules, ammunition.Read(pilot.PilotId, pilot.ShipId));
         Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];
         if (magazines.Count > 0)
         {

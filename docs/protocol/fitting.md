@@ -2,6 +2,52 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Capacitor booster cycle and reload HUD
+
+In space, a capacitor booster reports the duration of its paid cycle to Godma, including changes when overheating
+starts or ends at a cycle boundary. Repriming an active booster uses that same duration. The paid cycle continues to
+consume one charge (or the catalog charge rate) per activation.
+
+Reload sends the module's reload deadline and the native reload animation before publishing the new charge quantity.
+The charge sublocation updates at the committed deadline, then the button's reload lock clears. A client that reconnects
+and primes during the reload uses the same saved deadline. The existing ammunition transaction reserves the stacks and
+enforces the deadline while the HUD shows the reload.
+
+The pinned Windows client is build 3662168, original archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`shipmodulebutton.pyj::GetEffectTiming` reads the effect's duration attribute first (offsets 18–145) and
+`ShowReloadLeft` uses milliseconds. `godma.pyj::GetReloadTimes` derives the window from `nextActivationTime` and
+`reloadTime`. EVE.js 261108.1 publishes the reload window before it publishes the loaded charge in
+`dogmaService.js` (SHA-256 prefix `2d54d3db0e48`). `localCycleRuntime.js` (`bd87197a9275`) applies the injection
+and charge consumption at the start of the funded cycle. [EVE University capacitor boosters](https://wiki.eveuniversity.org/Capacitor)
+
+## Remote fit preview and fitting receipts
+
+- Ghost Fitting reads an owned remote ship at its saved dockable location. Loaded charges are reported at the
+  matching fitted slots so the simulator can reconstruct the fit. The location and solar system must match.
+- The fitting UI's available turret hardpoints reflect the actual installed turrets, including offline modules.
+- Fitting one unit from a stack preserves its custom volume and builds the fitting receipt from the committed item.
+
+Build 3662168 `tryFit.GhostFitShip` uses `fittingSvc.FittingDictForRemoteShip` and calls
+`invbroker.GetContainerContents(shipID, dockableLocationID, solarSystemID)`.
+The task tracker calls the bound `GetAvailableTurretSlots` on a high-slot change.
+EVE.js 261108.1 references are `invBrokerService.js` (`8cec4112de1b`) and `fittingOperations.js` (`c0f37f9719aa`).
+The resident stack split uses the same item condition and volume fields as the compatible SQL fitting path.
+
+## Weapon bank grouping and ammunition holds
+
+- Matching fitted weapon types also need compatible loaded ammunition and charge counts for grouping. Group All
+  retains an existing eligible bank master.
+- A partial unload takes the requested quantity across the whole bank. The native request carries the bank master
+  and one quantity.
+- Manual loading resolves the named stacks in the ship's specialized ammunition hold. Exchanging charge types
+  preserves the source hold's capacity and returns any removed charges to that hold.
+
+Build 3662168 `clientDogmaLocation.pyj::UnloadAmmoToContainer` resolves the bank master and forwards one quantity.
+`DropLoadChargeToModule` passes the selected charge row's `locationID` through to `LoadAmmo`.
+EVE.js 261108.1 references are `moduleGroupingRules.js`, `moduleGroupingRuntime.js`, and
+`moduleOperation.js` (`c27f281deb63`). [EVE University fitting guide](https://wiki.eveuniversity.org/Fitting_Guidelines)
+
 ## Station repair for carried hulls and fittings
 
 Station repair resolves a carried hull and its fitted modules through the carrier's current docking location. An assembled

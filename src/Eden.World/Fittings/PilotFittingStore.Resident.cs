@@ -35,6 +35,25 @@ namespace Eden.World.Fittings;
 
 internal sealed partial class PilotFittingStore
 {
+    public int AvailableTurretSlots(long pilotId, long shipId)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return LiveWorld.Find(database.Path) is { } live
+            ? live.Economy.Read(Read, new(pilots: [pilotId], ships: [shipId]))
+            : WorldActionScope.Inspect(database, Read, consistentFileRead: true);
+
+        int Read(WorldAction world)
+        {
+            var pilot = world.Pilots.Find(pilotId);
+            var ship = world.Ships.Find(shipId);
+            if (pilot is null || ship is null || ship.OwnerId != pilotId)
+            {
+                throw new InvalidDataException("Choose an owned ship to read its fitting.");
+            }
+            return checked((int)ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft));
+        }
+    }
+
     internal static Dictionary<DogmaAttributeId, double> ShipAttributes(
         WorldAction world,
         CatalogDbContext catalog,
@@ -315,6 +334,7 @@ internal sealed partial class PilotFittingStore
                             OwnerId = pilotId,
                             TypeId = item.TypeId,
                             Quantity = 1,
+                            VolumeOverride = item.VolumeOverride,
                         }
                     )
                     .Entity;
@@ -327,20 +347,7 @@ internal sealed partial class PilotFittingStore
             changed.Add((fitted, previous));
         }
         world.SaveChanges();
-        var result = changed
-            .Select(c => new InventoryChange(
-                before.Values.First(i => i.TypeId == c.Item.TypeId) with
-                {
-                    Id = c.Item.Id,
-                    LocationId = c.Item.LocationId,
-                    FlagId = c.Item.FlagId,
-                    Quantity = c.Item.Quantity,
-                    Singleton = c.Item.Singleton,
-                    Online = c.Item.Online,
-                },
-                c.Previous
-            ))
-            .ToArray();
+        var result = changed.Select(c => new InventoryChange(PilotInventoryStore.Read(catalog, c.Item), c.Previous)).ToArray();
         foreach (
             var change in result.Where(change =>
                 change.Item.LocationId == ship.Id

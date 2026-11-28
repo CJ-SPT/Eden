@@ -103,20 +103,26 @@ internal sealed class TargetingHandler(
             foreach (long id in _pending.Keys.Concat(_locked).ToArray())
             {
                 var target = context.Flight.FindTarget(id);
+                _pending.TryGetValue(id, out var pending);
                 if (
                     target is null
                     || Distance(context, target) > range
                     || !NpcEwarRules.CanTarget(incoming, id)
                     || (_locked.Contains(id) && !shared.Contains(_shipId, id))
+                    || (pending is not null && !shared.ContainsPending(_shipId, id))
                 )
                 {
                     Remove(context, id);
                 }
-                else if (_pending.TryGetValue(id, out var pending) && clock.GetElapsedTime(pending.Started).TotalSeconds >= pending.Seconds)
+                else if (pending is not null && clock.GetElapsedTime(pending.Started).TotalSeconds >= pending.Seconds)
                 {
+                    if (!shared.CompletePending(_shipId, id, pending.Silent))
+                    {
+                        Remove(context, id);
+                        continue;
+                    }
                     _pending.Remove(id);
                     _locked.Add(id);
-                    shared.Add(_shipId, id, pending.Silent);
                     Notify(context, TargetChange.Added, id);
                     pending.Completion.TrySetResult(new PilotCallResult.Success(new TargetLockReply(true, _locked.Order().ToArray())));
                 }

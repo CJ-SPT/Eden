@@ -9,6 +9,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Repair;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Content;
 using Eden.Gameplay.Docking;
@@ -31,14 +32,13 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed partial class RemoteAssistanceTests
 {
-    private static Fixture Prepare()
+    private static Fixture Prepare(double security = 0)
     {
         Fixture f = new();
         PassiveCatalogFixture.LoadRemoteAssistance(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath, writable: true);
-        catalog.Database.ExecuteSqlRaw(
-            "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":0}}')"
-        );
+        string system = System.Text.Json.JsonSerializer.Serialize(new { securityStatus = security });
+        catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142',{system})");
         foreach (
             var attribute in new[]
             {
@@ -57,6 +57,118 @@ public sealed partial class RemoteAssistanceTests
             catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO TypeAttribute VALUES (601,{(int)attribute},{value})");
         }
         return f;
+    }
+
+    [Fact]
+    public void HighSecurityAssistanceToASuspectAppliesTheCriminalTimerAndSchedulesConcord()
+    {
+        using Fixture f = Prepare(.8);
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (11,'Entity');
+                INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (301,'CONCORD Drone',11);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3885,'CONCORD Police Captain',301),(11125,'CONCORD Police Commander',301);
+                """
+            );
+            foreach (int type in new[] { ConcordRules.CaptainType, ConcordRules.CommanderType })
+            {
+                foreach (
+                    var (attribute, value) in new[]
+                    {
+                        (DogmaAttributeId.StructureHitPoints, 1000),
+                        (DogmaAttributeId.WeaponCycleTime, 1000),
+                        (DogmaAttributeId.DamageMultiplier, 1),
+                        (DogmaAttributeId.EmDamage, 1),
+                    }
+                )
+                {
+                    catalog.Database.ExecuteSql(
+                        $"INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES ({(int)attribute},{attribute.ToString()})"
+                    );
+                    catalog.Database.ExecuteSql($"INSERT INTO TypeAttribute VALUES ({type},{(int)attribute},{value})");
+                }
+            }
+        }
+        long module = f.Fit(1963);
+        long sourceShip = f.ShipId;
+        long suspectId = TargetPilot(f);
+        Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        long inheritedUntil = f.Clock.Now + TimeSpan.FromMinutes(1).Ticks;
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId, suspectId])))
+        {
+            var source = action.Pilots.Find(f.PilotId)!;
+            source.SafetyLevel = ShipSafetyLevel.Partial;
+            action.Set<Account>().Find(source.AccountId)!.CloneGrade = AccountCloneGrade.Omega;
+            CrimewatchPersistence.State(action, suspectId).SuspectUntil = inheritedUntil;
+            action.Commit();
+        }
+        Assert.Throws<InvalidDataException>(() => Activate(f, module, DogmaEffect.RemoteSensorBooster));
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId])))
+        {
+            action.Pilots.Find(f.PilotId)!.SafetyLevel = ShipSafetyLevel.Disabled;
+            action.Commit();
+        }
+
+        var activated = Activate(f, module, DogmaEffect.RemoteSensorBooster);
+        var result = live.Economy.Inspect(action =>
+            (action.Set<SavedCrimewatch>().Find(f.PilotId)!.Timers(), action.Set<SavedConcordResponse>().Find(sourceShip)?.PilotId)
+        );
+        Assert.Equal(inheritedUntil, result.Item1.Suspect.ExpiresAt);
+        Assert.Equal(activated.Contact.ExpiresAt + CrimewatchRules.FlagDuration.Ticks, result.Item1.Criminal.ExpiresAt);
+        Assert.Equal(f.PilotId, result.Item2);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OnlyLiveSharedEngagementsAllowAssistanceUnderFullSafety(bool shared)
+    {
+        using Fixture f = Prepare(.8);
+        long module = f.Fit(1963);
+        long recipient = TargetPilot(f);
+        TestCatalog.AddSchool(f.CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        long opponent = f
+            .Db.Services.GetRequiredService<ICharacterCreation>()
+            .Create(1000001, new("Shared Rival", 1, 1, 1, 64, [1], [2], 18));
+        Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        long end = f.Clock.Now + TimeSpan.FromMinutes(1).Ticks;
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId, recipient, opponent])))
+        {
+            action.Add(
+                new SavedEngagement
+                {
+                    LowerPilotId = recipient,
+                    HigherPilotId = opponent,
+                    ExpiresAt = end,
+                }
+            );
+            action.Add(
+                new SavedEngagement
+                {
+                    LowerPilotId = f.PilotId,
+                    HigherPilotId = opponent,
+                    ExpiresAt = shared ? end : f.Clock.Now,
+                }
+            );
+            CrimewatchPersistence.State(action, recipient).PvpUntil = end;
+            action.Commit();
+        }
+
+        if (!shared)
+        {
+            Assert.Throws<InvalidDataException>(() => Activate(f, module, DogmaEffect.RemoteSensorBooster));
+            Assert.Empty(Store(f).Incoming(Target(f)));
+            return;
+        }
+        var activated = Activate(f, module, DogmaEffect.RemoteSensorBooster);
+        Assert.Equal(activated.Contact, Assert.Single(Store(f).Incoming(Target(f))));
+        var state = f.Db.Services.GetRequiredService<IPilotCrimewatch>().Read(f.PilotId, 30000142);
+        Assert.Equal(end, state.Timers.Pvp.ExpiresAt);
+        Assert.Equal(CrimewatchFlag.None, state.Timers.Flag(f.Clock.Now));
     }
 
     private static long Target(Fixture f) => f.Db.Store.FindPilot(1000002)!.ShipId;
@@ -647,7 +759,7 @@ public sealed partial class RemoteAssistanceTests
     [Theory]
     [InlineData(11978)]
     [InlineData(11989)]
-    public void FutureLogisticsHullSelectorsHaveKnownConsumersWithoutEnablingTheirHullCohort(int type)
+    public void AdmittedLogisticsHullsHaveOperationalRemoteAssistanceSelectors(int type)
     {
         using Fixture f = Prepare();
         using CatalogDbContext catalog = new(f.CatalogPath);
@@ -666,7 +778,7 @@ public sealed partial class RemoteAssistanceTests
             Assert.Equal(ModifierSelector.Group, parsed.Selector);
             Assert.Equal(RemoteAssistanceRules.TrackingGroup, parsed.SelectionId);
         }
-        Assert.False(HullCatalog.CanAssemble(catalog, catalog.FittingType(type)!, (int)InventoryCategory.Ship));
+        Assert.True(HullCatalog.CanAssemble(catalog, catalog.FittingType(type)!, (int)InventoryCategory.Ship));
     }
 
     [Theory]

@@ -34,6 +34,7 @@ public sealed class CargoCapacityException(double available, double required) : 
 public interface IPilotInventory
 {
     IReadOnlyList<InventoryItem> List(long pilotId, long locationId);
+    IReadOnlyList<InventoryItem> PreviewDockedShip(long pilotId, long shipId, long dockableId, int systemId);
     IReadOnlyDictionary<long, double> CrystalDamage(long pilotId, IReadOnlyCollection<long> itemIds);
     IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request);
 }
@@ -42,6 +43,7 @@ public interface IPilotFitting
 {
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId);
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId);
+    int AvailableTurretSlots(long pilotId, long shipId);
     double SignatureRadius(long itemId, int typeId);
     IReadOnlyList<InventoryChange> Fit(long pilotId, IReadOnlyList<long> itemIds, long sourceId, int flagId);
     IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId);

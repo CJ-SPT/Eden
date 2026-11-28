@@ -1,3 +1,5 @@
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Exploration;
 using Eden.Data.World.Inventory;
@@ -213,6 +215,7 @@ public sealed class AbyssalTests
             Assert.Equal(room == 2 ? origin.SystemId : run.SystemId, moved.Pilot.SystemId);
         }
         Assert.Null(abyss.Read(f.PilotId));
+        Assert.Equal(0, live.Economy.Inspect(world => world.Set<SavedCombatDamage>().Count()));
         await live.FlushAsync();
         using var disk = WorldConnections.FileConnection(f.Db.Path);
         using WorldDbContext saved = new(disk);
@@ -221,6 +224,7 @@ public sealed class AbyssalTests
         Assert.Equal(origin.SystemId, saved.Positions.Find(ship)!.SystemId);
         Assert.Equal(3, saved.Set<OwnedItem>().Where(i => i.LocationId == ship && i.TypeId == 56132).Sum(i => i.Quantity));
         Assert.Equal(3, saved.Set<WorldWreck>().Count());
+        Assert.Empty(saved.Set<SavedCombatDamage>());
         Assert.Equal(6, saved.Set<OwnedItem>().Where(i => i.LocationId == ship && i.TypeId == 48112).Sum(i => i.Quantity));
     }
 

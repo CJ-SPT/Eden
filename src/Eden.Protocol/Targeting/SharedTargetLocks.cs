@@ -37,18 +37,36 @@ internal sealed class SharedTargetLocks : IPilotTargetLocks, IPilotLockBreaks
     {
         lock (_gate)
         {
-            if (_locks.Add((ship, target)))
+            AddLocked(ship, target, silent);
+        }
+    }
+
+    internal bool CompletePending(long ship, long target, bool silent)
+    {
+        lock (_gate)
+        {
+            if (!_pending.Contains((ship, target)))
             {
-                _outgoing[ship] = _outgoing.GetValueOrDefault(ship) + 1;
+                return false;
             }
-            if (_pending.Remove((ship, target)))
-            {
-                RemovedOutgoing(ship);
-            }
-            if (silent)
-            {
-                _silent.Add((ship, target));
-            }
+            AddLocked(ship, target, silent);
+            return true;
+        }
+    }
+
+    private void AddLocked(long ship, long target, bool silent)
+    {
+        if (_locks.Add((ship, target)))
+        {
+            _outgoing[ship] = _outgoing.GetValueOrDefault(ship) + 1;
+        }
+        if (_pending.Remove((ship, target)))
+        {
+            RemovedOutgoing(ship);
+        }
+        if (silent)
+        {
+            _silent.Add((ship, target));
         }
     }
 

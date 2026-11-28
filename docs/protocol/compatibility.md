@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Module, fitting and combat audit](#module-fitting-and-combat-audit)
 - [Third emulator bug audit](#third-emulator-bug-audit)
 - [Second emulator bug audit](#second-emulator-bug-audit)
 - [Emulator bug audit](#emulator-bug-audit)
@@ -19,6 +20,87 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## Module, fitting and combat audit
+
+The audit started at Eden `7ac09a13` and fixed 13 defects. The topic records include the client call sites and
+reference implementation evidence.
+
+- [Capacitor booster cycle and reload HUD](fitting.md#capacitor-booster-cycle-and-reload-hud)
+- [Remote fit preview and fitting receipts](fitting.md#remote-fit-preview-and-fitting-receipts)
+- [Weapon bank grouping and ammunition holds](fitting.md#weapon-bank-grouping-and-ammunition-holds)
+- [Target cancellation, assistance and encounter damage accounting](combat.md#target-cancellation-assistance-and-encounter-damage-accounting)
+
+### Automated validation
+
+The focused selection matched 17 cases. On baseline `7ac09a13`, 16 cases reproduced the defects and the
+unmatched-engagement control passed in 13.33 seconds. All 17 cases passed with the fixes in 18.16 seconds.
+The adjacent selection recorded 447 passes in 299.23 seconds and exposed two outdated logistics-hull assertions.
+Both assertions also failed at `7ac09a13`. They now check the current admission policy while retaining the
+remote-assistance effect checks. The two corrected cases and 37 cargo-container cases passed in 20.50 seconds,
+bringing the combined adjacent coverage to 486 passing cases. The full suite was outside the selected filters.
+
+The final solution build took 51.32 seconds and finished with zero warnings or errors. `Format.ps1 -Check`
+passed in 88.64 seconds in the isolated verification worktree. The catalog setup and formatting policies
+passed 8 and 9 cases respectively.
+
+<details>
+<summary>Test filters</summary>
+
+Prefix each suffix with `Eden.Protocol.Tests.` and join the `FullyQualifiedName` selectors with `|`.
+The focused selection uses `=`.
+
+```text
+Ammunition.CapacitorBoosterTests.NativeBoosterReloadKeepsTheChargeHiddenUntilItsPaidWindowCompletes
+Ammunition.CapacitorBoosterTests.NativeBoosterCyclePublishesThePaidDurationWhenOverloadChanges
+Combat.WeaponBankTests.NativeWeaponGroupingChecksTheLoadedChargeTypeAndQuantity
+Combat.WeaponBankTests.LinkAllRetainsTheExistingWeaponBankMaster
+Combat.WeaponBankTests.NativePartialBankUnloadTreatsQuantityAsOneTotal
+Ammunition.AmmunitionTests.NativeManualReloadUsesTheNamedAmmunitionHoldAndPreservesItsCapacity
+Targeting.TargetingTests.RemovedSharedScanCannotTurnIntoALockWhileTheTargetIsStillVisible
+Combat.RemoteAssistanceTests.HighSecurityAssistanceToASuspectAppliesTheCriminalTimerAndSchedulesConcord
+Combat.RemoteAssistanceTests.OnlyLiveSharedEngagementsAllowAssistanceUnderFullSafety
+Exploration.AbyssalTests.ThreeRoomsRequireKillsAndReturnWithCheckpointedRewards
+Fittings.ApplyFittingTests.NativeGhostFittingReadsTheOwnedRemoteShipAndItsLoadedCharges
+Fittings.ApplyFittingTests.AvailableTurretSlotsReflectOccupiedHardpointsEvenWhenTheTurretIsOffline
+Fittings.ApplyFittingTests.FittingAUnitFromACustomVolumeStackPreservesItsVolumeAndReceipt
+```
+
+The adjacent selection uses `~`.
+
+```text
+Ammunition.
+Combat.WeaponBankTests
+Combat.PilotTurretTests
+Combat.PilotMissileTests
+Combat.PilotCombatTests
+Combat.RemoteAssistanceTests
+Combat.RemoteAssistanceRuleTests
+Combat.ConcordTests
+Targeting.TargetingTests
+Exploration.AbyssalTests
+Fittings.ApplyFittingTests
+Persistence.InactiveShipInventoryTests
+Thermal.RemainingModuleHeatTests
+Thermal.OverloadFittingTests
+Persistence.PassiveFittingTests
+Thermal.MissileHeatTests
+```
+
+The follow-up filter uses `=Combat.RemoteAssistanceTests.AdmittedLogisticsHullsHaveOperationalRemoteAssistanceSelectors`
+and `~Inventory.CargoContainerAssemblyTests`, with the same namespace prefix.
+
+</details>
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Overheat a repeating capacitor booster and toggle heat off while it is cycling.
+2. Use the booster's last charge with auto-reload enabled. Watch the completed cycle, reload sweep, and new charge count.
+3. Use Ghost Fitting on an owned ship with loaded charges at a remote station.
 
 ## Third emulator bug audit
 

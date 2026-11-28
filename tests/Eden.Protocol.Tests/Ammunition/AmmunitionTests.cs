@@ -701,6 +701,53 @@ public sealed class AmmunitionTests
         }
     }
 
+    [Fact]
+    public void NativeManualReloadUsesTheNamedAmmunitionHoldAndPreservesItsCapacity()
+    {
+        using Fixture f = new(liveWorld: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            const int attribute = (int)DogmaAttributeId.SpecialAmmoHoldCapacity;
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES ({attribute},'specialAmmoHoldCapacity');
+                INSERT INTO TypeAttribute VALUES (601,{attribute},0.05);
+                """
+            );
+        }
+        var pilot = f.Pilot;
+        int antimatter = (int)HybridChargeType.AntimatterSmall;
+        int iron = (int)HybridChargeType.IronSmall;
+        f.Load(antimatter, 30);
+        f.Clock.Milliseconds += 5000;
+        long reserved = f.Buy(iron, 5);
+        f.Inventory.Move(pilot.PilotId, [reserved], pilot.StationId, pilot.ShipId, (int)InventoryFlag.AmmoHold, null);
+        long cargo = f.Buy(iron, 5);
+        f.Inventory.Move(pilot.PilotId, [cargo], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null);
+        using var scope = f.Db.Services.CreateScope();
+        using var context = f.Context();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.IsType<PilotCallResult.Failure>(Reload([reserved, cargo]));
+        var tooLarge = Assert.IsType<PilotCallResult.NamedFailure>(Reload([reserved]));
+        Assert.Equal("NotEnoughCargoSpace", tooLarge.Name);
+        Assert.Equal(30, Assert.Single(f.Ammo.Read(pilot.PilotId, pilot.ShipId)).Quantity);
+
+        f.Ammo.Unload(pilot.PilotId, pilot.ShipId, [f.Gun], pilot.StationId, (int)InventoryFlag.Hangar, 10, f.Clock.Now);
+        Assert.Same(PilotCallResult.None, Reload([reserved]));
+        var magazine = Assert.Single(f.Ammo.Read(pilot.PilotId, pilot.ShipId));
+        Assert.Equal(iron, magazine.TypeId);
+        Assert.Equal(5, magazine.Quantity);
+        Assert.Equal(f.Clock.Now + 5000 * TimeSpan.TicksPerMillisecond, magazine.ReadyAt);
+        var returned = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.ShipId), i => i.FlagId == (int)InventoryFlag.AmmoHold);
+        Assert.Equal(antimatter, returned.TypeId);
+        Assert.Equal(20, returned.Quantity);
+        Assert.Equal(30, f.Total(antimatter));
+        Assert.Equal(10, f.Total(iron));
+
+        PilotCallResult Reload(List<object?> stacks) =>
+            router.Call(context, "dogmaIM", "LoadAmmo", new object?[] { pilot.ShipId, f.Gun, stacks, pilot.ShipId }, _ => { });
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

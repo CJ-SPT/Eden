@@ -173,10 +173,10 @@ internal sealed partial class PilotAmmunitionStore
         return modules;
     }
 
-    private static void CheckCargo(WorldAction world, CatalogDbContext catalog, Pilot pilot)
+    private static void CheckCargo(WorldAction world, CatalogDbContext catalog, Pilot pilot, int flagId = (int)InventoryFlag.Cargo)
     {
-        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
-        double used = InventoryPersistence.UsedVolume(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilot.Id, pilot.ActiveShipId, flagId);
+        double used = InventoryPersistence.UsedVolume(world, catalog, pilot.Id, pilot.ActiveShipId, flagId);
         if (used > capacity + InventoryDefinitions.ResourceTolerance)
         {
             throw new CargoCapacityException(0, used - capacity);
@@ -237,26 +237,26 @@ internal sealed partial class PilotAmmunitionStore
     {
         var pilot = Pilot(world, pilotId, shipId);
         world.RequireUncloaked(shipId);
-        int sourceFlag = sourceId == shipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar;
         if (
             (sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.DockedLocationId))
             || chargeIds.Count == 0
             || chargeIds.Distinct().Count() != chargeIds.Count
         )
         {
-            throw new InvalidDataException("Load distinct ammunition stacks from your cargo or current docked station hangar.");
+            throw new InvalidDataException("Load distinct ammunition stacks from your ship's holds or current docked station hangar.");
         }
         var modules = Modules(world, catalog, pilot, moduleIds, now);
         var fitting = FittingCalculation.Read(world, catalog, pilot);
         var sources = world
             .Set<OwnedItem>()
-            .Where(i => Enumerable.Contains(chargeIds, i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId && i.FlagId == sourceFlag)
+            .Where(i => Enumerable.Contains(chargeIds, i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId)
             .OrderBy(i => i.Id)
             .ToArray();
         if (sources.Length != chargeIds.Count || sources.Select(i => i.TypeId).Distinct().Count() != 1)
         {
             throw new InvalidDataException("Choose available stacks of one ammunition type.");
         }
+        int sourceFlag = SourceFlag(sources, sourceId == shipId);
         int typeId = sources[0].TypeId;
         var chargeType = catalog.RequireItem(typeId);
         var chargeAttributes = Attributes(catalog, typeId);
@@ -308,6 +308,7 @@ internal sealed partial class PilotAmmunitionStore
             if (loaded is not null && (loaded.TypeId != typeId || crystal))
             {
                 var old = PilotInventoryStore.Read(catalog, loaded);
+                CheckReturnedCharge(sourceFlag, old);
                 loaded.LocationId = sourceId;
                 loaded.FlagId = sourceFlag;
                 changes.Add(new(PilotInventoryStore.Read(catalog, loaded), old));
@@ -404,7 +405,7 @@ internal sealed partial class PilotAmmunitionStore
                 throw new InvalidDataException("Supply ammunition for every weapon in the group.");
             }
         }
-        CheckCargo(world, catalog, pilot);
+        CheckCargo(world, catalog, pilot, sourceId == shipId ? sourceFlag : (int)InventoryFlag.Cargo);
         return new(changes, magazines, duration);
     }
 }

@@ -4,6 +4,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
+using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 using Eden.World.Inventory;
@@ -72,7 +73,13 @@ internal sealed partial class PilotWeaponBankStore(WorldDatabase database, TimeP
                 && catalog.FittingType(i.TypeId)?.GroupId != (int)MissileLauncherGroup.BreacherPod
                 && WeaponCatalog.Supported(catalog, i.TypeId, catalog.FittingType(i.TypeId)!.GroupId)
             )
-            .Select(i => new GroupableWeapon(i.Id, i.TypeId))
+            .Select(i =>
+            {
+                var charge = PilotAmmunitionStore.Contents(world, i.Id);
+                return charge is { Quantity: > 0 }
+                    ? new GroupableWeapon(i.Id, i.TypeId) { ChargeTypeId = charge.TypeId, ChargeQuantity = charge.Quantity }
+                    : new GroupableWeapon(i.Id, i.TypeId);
+            })
             .ToArray();
         var before = Read(world, shipId);
         var result = WeaponGrouping.Change(before, weapons, operation, masterId, sourceId);

@@ -113,6 +113,7 @@ internal sealed class PilotUpdateCoordinator(
         autoMining?.IsMonitoring == true
         || hacking?.IsMonitoring == true
         || overload.IsMonitoring
+        || capacitorBoosters.IsMonitoring
         || corporations.IsMonitoring
         || corporationWars?.IsMonitoring == true
         || fleets.IsMonitoring

@@ -250,6 +250,37 @@ public sealed class TargetingTests
     }
 
     [Fact]
+    public async Task RemovedSharedScanCannotTurnIntoALockWhileTheTargetIsStillVisible()
+    {
+        using Fixture fixture = new();
+        var (pilot, targeting) = fixture.Client(1000001);
+        var (wing, observer) = fixture.Client(1000002);
+        long source = pilot.Pilot.ShipId;
+        long target = wing.Pilot.ShipId;
+        var reply = Assert.IsType<PilotCallResult.Success>(targeting.Call(pilot, "dogmaIM", "AddTarget", [target]));
+        var scan = Assert.IsType<TargetLockReply>(reply.Reply);
+        Assert.True(fixture.Locks.ContainsPending(source, target));
+
+        fixture.Locks.RemoveShip(target);
+        Assert.NotNull(pilot.Flight.FindTarget(target));
+        fixture.Clock.Seconds = 10;
+        targeting.Advance(pilot);
+        observer.Advance(wing);
+
+        var cancelled = Assert.IsType<PilotCallResult.NamedFailure>(await scan.Completion!);
+        Assert.Equal("TargetingAttemptCancelled", cancelled.Name);
+        Assert.False(targeting.IsLocked(target));
+        Assert.False(fixture.Locks.HasOutgoing(source));
+        Assert.Equal(new object?[] { "lost", target, null }, Assert.Single(pilot.Notifications).Arguments);
+        Assert.Empty(wing.Notifications);
+
+        _ = targeting.CallWire(pilot, "dogmaIM", "AddTarget", [target]);
+        fixture.Clock.Seconds = 20;
+        targeting.Advance(pilot);
+        Assert.True(targeting.IsLocked(target));
+    }
+
+    [Fact]
     public void ChecksRangeSelfDockingAndPendingSlotsAndAllowsRetryAfterCancellation()
     {
         using Fixture fixture = new();

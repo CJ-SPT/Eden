@@ -4,6 +4,23 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## Target cancellation, assistance and encounter damage accounting
+
+- Cancelling a shared pending target scan prevents it from becoming a lock later, even if the target remains visible.
+- High-security assistance to a suspect or outlaw applies the criminal timer required by its safety decision. The
+  resident transaction schedules CONCORD when that timer is active.
+- Assistance checks active limited engagements against each opponent. A pilot who shares every active engagement
+  with the recipient can help without a third-party engagement penalty.
+- Abyssal and simulated mission kills clear the destroyed NPC's damage ledger when that encounter settles it.
+  Completion and reward state remain durable across checkpoint reopen.
+
+Build 3662168 `TargetMgr._LockTarget` handles `TargetingAttemptCancelled` at offset 126. `OnTarget` handles the
+`lost` event at offsets 56–74. `CrimewatchService.GetSafetyLevelRestrictionForAidingTarget` is a client preflight.
+The server resolves the actual engagements and commits the timer. EVE.js 261108.1 `targeting.js`
+(`94ca06738818`) validates pending scans before completion, and `killmailTracker.js` (`97cbfc3c26c5`) bounds
+its damage ledger. [CCP criminal timer](https://support.eveonline.com/hc/en-us/articles/203268591-Criminal-Timer) ·
+[CCP limited engagements](https://support.eveonline.com/hc/en-us/articles/203268611-Duels-Limited-Engagements)
+
 ## Missile contact after undocking and disconnecting
 
 Undocking from an NPC station can leave the saved ship position's system implicit. The missile service now keeps its validated

@@ -47,7 +47,8 @@ public static class AssistanceRules
         {
             throw new InvalidDataException("Your ship safety setting prevents this remote assistance.");
         }
-        return new(flag, thirdPartyWar || input.TargetEngaged || input.TargetOutlaw && input.TargetInCombat);
+        bool newOffense = flag != input.TargetFlag || thirdPartyWar || input.TargetEngaged || input.TargetOutlaw && input.TargetInCombat;
+        return new(flag, newOffense);
     }
 
     public static CrimewatchTimers Apply(CrimewatchTimers source, CrimewatchTimers target, AssistanceDecision decision, long now, long end)

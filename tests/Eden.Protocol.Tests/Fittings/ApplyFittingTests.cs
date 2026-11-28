@@ -8,6 +8,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Ammunition;
 using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,114 @@ public sealed class ApplyFittingTests
     private const int Antimatter = 222;
     private const int Iron = 215;
     private const int Drone = 2454;
+
+    [Fact]
+    public void NativeGhostFittingReadsTheOwnedRemoteShipAndItsLoadedCharges()
+    {
+        const long remoteShip = 1000000000098;
+        const long foreignShip = remoteShip + 1;
+        const int remoteStation = 60015159;
+        const int remoteSystem = 30001392;
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        var pilot = fixture.Pilot;
+        TestCatalog.AddSchool(new WorldDatabase(fixture.Db.Path).CatalogPath, 18, 1, 1, remoteSystem, remoteStation, 601);
+        fixture.Load(Iron);
+        var magazine = Assert.Single(fixture.Ammo.Read(pilot.PilotId, pilot.ShipId));
+        var live = fixture.Db.Services.GetRequiredService<LiveWorld>();
+        using (var world = live.Economy.Begin())
+        {
+            world.Add(
+                new Ship
+                {
+                    Id = remoteShip,
+                    OwnerId = pilot.PilotId,
+                    TypeId = pilot.ShipTypeId,
+                    StationId = remoteStation,
+                }
+            );
+            world.Add(
+                new Ship
+                {
+                    Id = foreignShip,
+                    OwnerId = 90000002,
+                    TypeId = pilot.ShipTypeId,
+                    StationId = remoteStation,
+                }
+            );
+            world.Set<OwnedItem>().Find(fixture.Gun)!.LocationId = remoteShip;
+            world.Commit();
+        }
+        using var scope = fixture.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using var context = fixture.Context();
+        Assert.NotEqual(remoteStation, context.Pilot.StationId);
+        var result = Assert.IsType<PilotCallResult.Success>(
+            router.Call(
+                context,
+                "invbroker",
+                "GetContainerContents",
+                new object?[] { remoteShip, (long)remoteStation, (long)remoteSystem },
+                _ => { }
+            )
+        );
+        var contents = Assert.IsType<BlueList<InventoryRow>>(result.Reply);
+        var module = Assert.Single(contents.Items, item => item.TypeId == Railgun);
+        var charge = Assert.Single(contents.Items, item => item.TypeId == Iron);
+        Assert.Equal((fixture.Gun, remoteShip, magazine.FlagId), (module.Id, module.LocationId, module.FlagId));
+        Assert.Equal((remoteShip, magazine.FlagId, magazine.Quantity), (charge.LocationId, charge.FlagId, charge.Quantity));
+        Assert.NotEmpty(BlueMarshal.Encode(contents));
+        foreach (
+            var args in new object?[][]
+            {
+                [foreignShip, (long)remoteStation, (long)remoteSystem],
+                [remoteShip, pilot.DockedLocationId, (long)remoteSystem],
+                [remoteShip, (long)remoteStation, (long)pilot.SystemId],
+            }
+        )
+        {
+            Assert.IsType<PilotCallResult.Failure>(router.Call(context, "invbroker", "GetContainerContents", args, _ => { }));
+        }
+        Assert.Empty(context.Notifications);
+        Assert.Single(fixture.Inventory.List(pilot.PilotId, fixture.Gun));
+    }
+
+    [Fact]
+    public void AvailableTurretSlotsReflectOccupiedHardpointsEvenWhenTheTurretIsOffline()
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        using var scope = fixture.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using var context = fixture.Context();
+        var pilot = context.Pilot;
+        string boundShip = Bind(router, context);
+
+        Assert.Equal(1L, Remaining(boundShip));
+        Assert.Equal(1L, Remaining("@ship"));
+        fixture.Fitting.SetOnline(pilot.PilotId, pilot.ShipId, fixture.Gun, false);
+        Assert.Equal(1L, Remaining(boundShip));
+        fixture.Inventory.Move(pilot.PilotId, pilot.DockedLocationId, new([fixture.Gun], pilot.ShipId, (int)InventoryFlag.Hangar, null));
+        Assert.Equal(2L, Remaining(boundShip));
+
+        object? Remaining(string service) =>
+            BlueMarshal.Decode(BlueMarshal.Encode(CallWire(router, context, service, "GetAvailableTurretSlots", [])));
+    }
+
+    [Fact]
+    public void FittingAUnitFromACustomVolumeStackPreservesItsVolumeAndReceipt()
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        var pilot = fixture.Pilot;
+        long custom = Grant(fixture, Miner, 2, volume: 17);
+        var changes = fixture.Fitting.Fit(pilot.PilotId, [custom], pilot.DockedLocationId, (int)InventoryFlag.HighSlot1);
+
+        var source = Assert.Single(changes, change => change.Item.Id == custom);
+        Assert.Equal(17, source.Item.Volume);
+        Assert.Equal(2, source.Previous!.Quantity);
+        Assert.Equal(1, source.Item.Quantity);
+        var fitted = Assert.Single(changes, change => change.Item.LocationId == pilot.ShipId);
+        Assert.Equal(17, fitted.Item.Volume);
+        Assert.Equal(fitted.Item, Assert.Single(fixture.Inventory.List(pilot.PilotId, pilot.ShipId), item => item.TypeId == Miner));
+    }
 
     [Theory]
     [InlineData(false, 3)]

@@ -8,6 +8,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Thermal;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -16,6 +17,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -168,6 +170,138 @@ public sealed class CapacitorBoosterTests
             context.Notifications.OfType<ModuleAttributesChanged>().SelectMany(n => n.Changes),
             change => change.Attribute == DogmaAttributeId.Quantity && change.Value == 0
         );
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeBoosterReloadKeepsTheChargeHiddenUntilItsPaidWindowCompletes(bool reconnect)
+    {
+        using Fixture f = new();
+        const int charge = CapacitorBoosterDefinitions.ChargeOneHundred;
+        long module = Prepare(f, charge, 1);
+        long spare = f.Grant(charge, 9, cargo: true);
+        using var context = Client(f);
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var handler = scope.ServiceProvider.GetRequiredService<CapacitorBoosterHandler>();
+        Assert.Same(
+            PilotCallResult.None,
+            router.Call(context, "dogmaIM", "Activate", new object?[] { module, CapacitorBoosterHandler.EffectName, null, 99L }, _ => { })
+        );
+        Assert.Empty(Ammo(f).Read(f.PilotId, f.ShipId));
+        Assert.NotNull(handler.ActiveEffect(context.Pilot, module));
+        f.Clock.Milliseconds += 15000;
+        handler.Advance(context);
+        Assert.False(context.Notifications.OfType<ShipEffectChanged>().Last().Active);
+
+        context.Notifications.Clear();
+        Assert.Same(
+            PilotCallResult.None,
+            router.Call(context, "dogmaIM", "LoadAmmo", new object?[] { f.ShipId, module, spare, f.ShipId }, _ => { })
+        );
+        var reloading = Assert.Single(context.Notifications.OfType<ChargeLoading>());
+        Assert.Equal(module, Assert.Single(Assert.IsType<List<object?>>(reloading.Arguments[0])));
+        Assert.Equal(charge, reloading.Arguments[1]);
+        Assert.Equal(10000d, reloading.Arguments[2]);
+        var started = Assert.Single(context.Notifications.OfType<ModuleAttributesChanged>());
+        var ready = Assert.Single(started.Changes, change => change.Attribute == DogmaAttributeId.NextActivationTime);
+        Assert.Equal((double)(f.Clock.Now + 10000 * TimeSpan.TicksPerMillisecond), ready.Value);
+        Assert.True(context.Notifications.IndexOf(started) < context.Notifications.IndexOf(reloading));
+        Assert.Empty(context.Notifications.OfType<GodmaItemPrimed>());
+        Assert.Equal(3, Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId)).Quantity);
+        Assert.Throws<InvalidDataException>(() => Boosting(f).Inject(f.PilotId, module, f.Clock.Now));
+
+        using var reopened = f.Db.Services.CreateScope();
+        var services = reconnect ? reopened.ServiceProvider : scope.ServiceProvider;
+        var dogma = services.GetRequiredService<ShipDogmaBuilder>();
+        var pending = dogma.AllInfo(context.Pilot);
+        Assert.Empty(pending.Charges);
+        Assert.Empty(pending.ShipState.Quantities);
+        Assert.Equal(ready.Value, pending.ShipInfo[module].Attributes[DogmaAttributeId.NextActivationTime]);
+        handler = services.GetRequiredService<CapacitorBoosterHandler>();
+        context.Notifications.Clear();
+        f.Clock.Milliseconds += 9999;
+        handler.Advance(context);
+        Assert.Empty(context.Notifications);
+        f.Clock.Milliseconds++;
+        handler.Advance(context);
+
+        var prime = Assert.Single(context.Notifications.OfType<GodmaItemPrimed>());
+        Assert.Equal(3d, prime.Item.Attributes[DogmaAttributeId.Quantity]);
+        Assert.Contains(
+            context.Notifications.OfType<ModuleAttributesChanged>().SelectMany(update => update.Changes),
+            change => change.Attribute == DogmaAttributeId.NextActivationTime && change.Value == 0
+        );
+        Assert.Empty(context.Notifications.OfType<ChargeLoading>());
+        context.Notifications.Clear();
+        handler.Advance(context);
+        Assert.Empty(context.Notifications);
+        Assert.Same(
+            PilotCallResult.None,
+            handler.Call(context, "dogmaIM", "Activate", [module, CapacitorBoosterHandler.EffectName, null, 0L])
+        );
+        Assert.Equal(2, Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId)).Quantity);
+    }
+
+    [Fact]
+    public void NativeBoosterCyclePublishesThePaidDurationWhenOverloadChanges()
+    {
+        using Fixture f = new();
+        PassiveCatalogFixture.LoadActiveTiers(
+            f.CatalogPath,
+            new HashSet<int> { CapacitorBoosterDefinitions.SmallTechOne, CapacitorBoosterDefinitions.ChargeOneHundred }
+        );
+        PassiveCatalogFixture.LoadOverload(f.CatalogPath);
+        f.Train(OverloadRules.ThermodynamicsSkill, 3);
+        long module = Prepare(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using var context = Client(f);
+        using var scope = f.Db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<CapacitorBoosterHandler>();
+        var overloading = f.Db.Services.GetRequiredService<IPilotOverloading>();
+        int effect = Assert
+            .Single(
+                f.Db.Services.GetRequiredService<IPilotModuleConditions>().Read(f.PilotId, f.ShipId),
+                condition => condition.Condition.ItemId == module
+            )
+            .OverloadEffect;
+        Assert.Same(
+            PilotCallResult.None,
+            handler.Call(context, "dogmaIM", "Activate", [module, CapacitorBoosterHandler.EffectName, null, 2L])
+        );
+        var started = Assert.Single(context.Notifications.OfType<ShipEffectChanged>());
+        double cold = started.Effect.DurationMilliseconds!.Value;
+        Assert.Equal(cold, PaidDuration());
+        Assert.IsType<ModuleAttributesChanged>(context.Notifications[0]);
+        overloading.Set(new(f.PilotId, f.ShipId, module, effect, OverloadScope.Module, true, f.Clock.Now));
+
+        context.Notifications.Clear();
+        f.Clock.Milliseconds += (long)cold;
+        handler.Advance(context);
+        double hot = PaidDuration();
+        Assert.True(hot < cold);
+        Assert.Equal(hot, handler.ActiveEffect(context.Pilot, module)!.DurationMilliseconds);
+        Assert.Empty(context.Notifications.OfType<ShipEffectChanged>());
+        var dogma = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>();
+        var fitted = Assert.Single(f.Inventory.List(f.PilotId, f.ShipId), item => item.Id == module);
+        Assert.Equal(hot, dogma.PrimeModule(context.Pilot, fitted).Attributes[DogmaAttributeId.Duration]);
+
+        overloading.Set(new(f.PilotId, f.ShipId, module, effect, OverloadScope.Module, false, f.Clock.Now));
+        context.Notifications.Clear();
+        f.Clock.Milliseconds += (long)Math.Ceiling(hot);
+        handler.Advance(context);
+        Assert.Equal(cold, PaidDuration());
+        Assert.Empty(context.Notifications.OfType<ShipEffectChanged>());
+        Assert.Empty(Ammo(f).Read(f.PilotId, f.ShipId));
+
+        double PaidDuration() =>
+            Assert
+                .Single(
+                    context.Notifications.OfType<ModuleAttributesChanged>().SelectMany(update => update.Changes),
+                    change => change.Item == new DogmaItemKey.Item(module) && change.Attribute == DogmaAttributeId.Duration
+                )
+                .Value;
     }
 
     [Fact]

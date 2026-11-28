@@ -141,6 +141,7 @@ internal static partial class NpcDamagePersistence
             )
             {
                 PilotMissionStore.Killed(world, catalog, npc, now);
+                ClearUnreportedDamage(world, npc.Id);
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
             if (npc.Role != NpcRole.MissionStructure)
@@ -151,6 +152,7 @@ internal static partial class NpcDamagePersistence
             if (npc.AnchorKind == NpcAnchorKind.Abyssal)
             {
                 Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
+                ClearUnreportedDamage(world, npc.Id);
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
             if (incursionSite || NpcPopulationRules.IsIncursionPatrol(npc.AnchorKind))
@@ -267,6 +269,9 @@ internal static partial class NpcDamagePersistence
         }
         return new(new(npc.Id, defense, result.Remaining), result.Applied, result.Remaining.Destroyed, reward);
     }
+
+    private static void ClearUnreportedDamage(WorldAction world, long npcId) =>
+        world.RemoveRange(world.Filter<SavedCombatDamage>(row => row.VictimId == npcId));
 
     private static bool EligibleForBounty(FleetPilot member, int system, SpacePosition kill, WorldAction world)
     {

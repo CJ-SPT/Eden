@@ -1,6 +1,8 @@
 using System.Globalization;
 using Eden.Data.Catalog;
+using Eden.Data.World.Contracts;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -21,6 +23,48 @@ namespace Eden.World.Inventory;
 
 internal sealed partial class PilotInventoryStore
 {
+    public IReadOnlyList<InventoryItem> PreviewDockedShip(long pilotId, long shipId, long dockableId, int systemId)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect<IReadOnlyList<InventoryItem>>(
+            database,
+            world =>
+            {
+                var ship = world.Ships.Find(shipId);
+                if (
+                    ship is not { Position: null, StoredInId: null }
+                    || ship.OwnerId != pilotId
+                    || ship.DockedLocationId != dockableId
+                    || world.Set<SavedContractEscrow>().Find(shipId) is not null
+                )
+                {
+                    throw new InvalidDataException("Choose a ship in your personal Item Hangar at the requested location.");
+                }
+                int? actualSystem = ship.StructureId is long structure
+                    ? world.Set<SavedStructure>().Find(structure)?.SystemId
+                    : catalog.FindStation(ship.StationId)?.SolarSystemId;
+                if (actualSystem != systemId)
+                {
+                    throw new InvalidDataException("The ship is not docked in the requested solar system.");
+                }
+                var contents = List(world, catalog, pilotId, shipId);
+                var slots = contents
+                    .Where(item => InventoryDefinitions.IsFittedSlot(item.FlagId))
+                    .ToDictionary(item => item.Id, item => item.FlagId);
+                var modules = slots.Keys.ToArray();
+                // The client builds a fitting from rows at ship scope, including charges in module slots.
+                var charges = world
+                    .Filter<OwnedItem>(item => item.OwnerId == pilotId && Enumerable.Contains(modules, item.LocationId))
+                    .AsEnumerable()
+                    .Select(item => Read(catalog, item))
+                    .Where(item => item.CategoryId == (int)InventoryCategory.Charge)
+                    .Select(item => item with { LocationId = shipId, FlagId = slots[item.LocationId] });
+                return contents.Concat(charges).OrderBy(item => item.Id).ToArray();
+            },
+            consistentFileRead: true
+        );
+    }
+
     public IReadOnlyDictionary<long, double> CrystalDamage(long pilotId, IReadOnlyCollection<long> itemIds)
     {
         Dictionary<long, double> result = [];

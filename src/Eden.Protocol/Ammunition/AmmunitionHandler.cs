@@ -55,6 +55,7 @@ internal sealed class AmmunitionHandler(
         }
         try
         {
+            magazines.Advance(context);
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             AmmunitionTransfer transfer;
             long? structureId = null;

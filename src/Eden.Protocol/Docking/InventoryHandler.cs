@@ -178,6 +178,41 @@ internal sealed class InventoryHandler(
             : new BlueMap<long, double>(inventory.CrystalDamage(pilot.PilotId, items));
     }
 
+    private PilotCallResult PreviewDockedShip(DockedPilot pilot, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        // Build 3662168 fittingSvc.FittingDictForRemoteShip passes ship, dockable location and solar system.
+        if (args is not [long shipId, long dockableId, long systemId] || systemId is <= 0 or > int.MaxValue || keywords is { Count: > 0 })
+        {
+            return new PilotCallResult.Failure("Invalid docked ship fitting request.");
+        }
+        try
+        {
+            return new BlueList<InventoryRow>(
+                inventory.PreviewDockedShip(pilot.PilotId, shipId, dockableId, (int)systemId).Select(Item).ToArray()
+            );
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult AvailableTurrets(DockedPilot pilot, long shipId, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (args.Length != 0 || keywords is { Count: > 0 })
+        {
+            return new PilotCallResult.Failure("GetAvailableTurretSlots takes no arguments.");
+        }
+        try
+        {
+            return fitting.AvailableTurretSlots(pilot.PilotId, shipId);
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
     private PilotCallResult ItemInfo(PilotCallContext context, long id)
     {
         var pilot = context.Pilot;
@@ -469,7 +504,7 @@ internal sealed class InventoryHandler(
             }
             if (method == "GetAvailableTurretSlots")
             {
-                return checked((int)fitting.Attributes(ship.TypeId).GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft));
+                return AvailableTurrets(pilot, container, args, keywords);
             }
             if (method is "Add" or "MultiAdd")
             {
@@ -480,6 +515,7 @@ internal sealed class InventoryHandler(
         {
             ("invbroker", "SplitStack") => SplitFromWire(context, args, keywords),
             ("invbroker", "GetDamageForCrystals") => CrystalDamage(pilot, args, keywords),
+            ("invbroker", "GetContainerContents") when args.Length == 3 => PreviewDockedShip(pilot, args, keywords),
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] =>
                 PilotCallResult.None,
             ("corpFittingMgr", "GetCommunityFittings") => BlueEmpty.IndexedDictionary,
@@ -536,6 +572,7 @@ internal sealed class InventoryHandler(
                 (long)InventoryFlag.StructureDeliveries
             ),
             ("@hangar" or "@ship", "List") => List(pilot, service, args.FirstOrDefault() as long?),
+            ("@ship", "GetAvailableTurretSlots") => AvailableTurrets(pilot, pilot.ShipId, args, keywords),
             ("@pilot", "List") => BlueEmpty.List,
             ("@hangar" or "@ship", "Add" or "MultiAdd") => MoveFromWire(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => ShipDogmaBuilder.Item(pilot, service[1..]),

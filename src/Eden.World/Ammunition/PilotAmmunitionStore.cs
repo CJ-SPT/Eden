@@ -215,10 +215,10 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
     private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
         catalog.FittingAttributes(typeId);
 
-    private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int flagId = (int)InventoryFlag.Cargo)
     {
-        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
-        double used = InventoryPersistence.UsedVolume(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilot.Id, pilot.ActiveShipId, flagId);
+        double used = InventoryPersistence.UsedVolume(world, catalog, pilot.Id, pilot.ActiveShipId, flagId);
         if (used > capacity + InventoryDefinitions.ResourceTolerance)
         {
             throw new CargoCapacityException(0, used - capacity);
@@ -255,26 +255,26 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
     {
         var pilot = Pilot(world, pilotId, shipId);
         Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, shipId);
-        int sourceFlag = sourceId == shipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar;
         if (
             (sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.DockedLocationId))
             || chargeIds.Count == 0
             || chargeIds.Distinct().Count() != chargeIds.Count
         )
         {
-            throw new InvalidDataException("Load distinct ammunition stacks from your cargo or current docked station hangar.");
+            throw new InvalidDataException("Load distinct ammunition stacks from your ship's holds or current docked station hangar.");
         }
         var modules = Modules(world, catalog, pilot, moduleIds, now);
         var fitting = FittingCalculation.Read(world, catalog, pilot);
         var sources = world
             .Set<OwnedItem>()
-            .Where(i => chargeIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId && i.FlagId == sourceFlag)
+            .Where(i => chargeIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId)
             .OrderBy(i => i.Id)
             .ToArray();
         if (sources.Length != chargeIds.Count || sources.Select(i => i.TypeId).Distinct().Count() != 1)
         {
             throw new InvalidDataException("Choose available stacks of one ammunition type.");
         }
+        int sourceFlag = SourceFlag(sources, sourceId == shipId);
         int typeId = sources[0].TypeId;
         var chargeType = catalog.RequireItem(typeId);
         var chargeAttributes = Attributes(catalog, typeId);
@@ -353,6 +353,7 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
             if (loaded is not null && (loaded.TypeId != typeId || crystal))
             {
                 var old = PilotInventoryStore.Read(catalog, loaded);
+                CheckReturnedCharge(sourceFlag, old);
                 loaded.LocationId = sourceId;
                 loaded.FlagId = sourceFlag;
                 changes.Add(new(PilotInventoryStore.Read(catalog, loaded), old));
@@ -449,8 +450,26 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
                 throw new InvalidDataException("Supply ammunition for every weapon in the group.");
             }
         }
-        CheckCargo(world, catalog, pilot);
+        CheckCargo(world, catalog, pilot, sourceId == shipId ? sourceFlag : (int)InventoryFlag.Cargo);
         return new(changes, magazines, duration);
+    }
+
+    private static int SourceFlag(IReadOnlyList<OwnedItem> sources, bool ship)
+    {
+        int flag = sources[0].FlagId;
+        if ((ship ? !ShipHoldRules.IsHold(flag) : flag != (int)InventoryFlag.Hangar) || sources.Any(item => item.FlagId != flag))
+        {
+            throw new InvalidDataException("Choose ammunition stacks from one accessible hold or item hangar.");
+        }
+        return flag;
+    }
+
+    private static void CheckReturnedCharge(int sourceFlag, InventoryItem charge)
+    {
+        if (ShipHoldRules.Definition(sourceFlag) is { } hold && !hold.Allows(charge))
+        {
+            throw new InvalidDataException("The source hold cannot accept the previous ammunition.");
+        }
     }
 
     public AmmunitionTransfer Unload(
@@ -489,18 +508,29 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
             return new([], []);
         }
         var modules = Modules(world, catalog, pilot, moduleIds, now, unloading: true);
+        bool partialBank = quantity.HasValue && modules.Length > 1;
+        if (partialBank)
+        {
+            long master = PilotWeaponBankStore.Members(world, shipId, moduleIds[0])[0];
+            modules = modules.OrderByDescending(module => module.Id == master).ToArray();
+        }
+        int? remaining = quantity;
         List<InventoryChange> items = [];
         List<MagazineChange> magazines = [];
         long nextId = InventoryPersistence.NextId(world);
         foreach (var module in modules)
         {
+            if (remaining == 0)
+            {
+                break;
+            }
             var loaded = Contents(world, module.Id);
             if (loaded is null)
             {
                 continue;
             }
             var previous = Read(world, module, loaded);
-            int moved = quantity ?? loaded.Quantity;
+            int moved = partialBank ? Math.Min(remaining!.Value, loaded.Quantity) : quantity ?? loaded.Quantity;
             if (moved > loaded.Quantity)
             {
                 throw new InvalidDataException("The magazine no longer contains that quantity.");
@@ -533,6 +563,11 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
                 items.Add(new(PilotInventoryStore.Read(catalog, split), null));
                 magazines.Add(new(previous, Read(world, module, loaded)));
             }
+            remaining -= moved;
+        }
+        if (remaining > 0 && items.Count > 0)
+        {
+            throw new InvalidDataException("The weapon bank no longer contains that quantity.");
         }
         world.SaveChanges();
         CheckCargo(world, catalog, pilot);

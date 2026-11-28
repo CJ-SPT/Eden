@@ -1,15 +1,17 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Ammunition;
 
-[Injectable]
+[Injectable(InjectionType.Scoped)]
 internal sealed class MagazineWire(
     TimeProvider clock,
     IPilotFitting fitting,
@@ -20,6 +22,12 @@ internal sealed class MagazineWire(
     Eden.Gameplay.Structures.IPilotStructureAmmunition? structureAmmunition = null
 )
 {
+    private sealed record BoosterReload(long PilotId, Magazine Current, Magazine? Visible);
+
+    private readonly Dictionary<long, BoosterReload> _boosterReloads = [];
+
+    internal bool IsMonitoring => _boosterReloads.Count > 0;
+
     internal static DogmaItemKey.Charge Key(Magazine magazine) => new(magazine.ShipId, magazine.FlagId, magazine.TypeId);
 
     internal DogmaItemInfo<double> Prime(long pilotId, Magazine magazine)
@@ -80,32 +88,37 @@ internal sealed class MagazineWire(
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         foreach (var change in changes)
         {
+            var magazine = change.Current ?? change.Previous!;
+            bool structure = structureAmmunition?.Handles(magazine.ShipId) == true;
+            var module = structure
+                ? null
+                : inventory
+                    .List(context.Pilot.PilotId, context.Pilot.ShipId)
+                    .SingleOrDefault(i => i.Id == magazine.ModuleId && InventoryDefinitions.IsFittedSlot(i.FlagId));
+            if (
+                reload > 0
+                && context.Pilot.Position is not null
+                && change.Current is { } loaded
+                && loaded.ShipId == context.Pilot.ShipId
+                && loaded.ReadyAt > now
+                && module?.GroupId == CapacitorBoosterDefinitions.Group
+            )
+            {
+                BeginBoosterReload(context, change, loaded, now);
+                continue;
+            }
             if (change.Previous is { } old && (change.Current is null || old.TypeId != change.Current.TypeId))
             {
                 NotifyQuantity(context, old, 0, now);
             }
             if (change.Current is { } current)
             {
-                if (change.Previous?.TypeId != current.TypeId)
-                {
-                    context.Notifications.Add(new GodmaItemPrimed(current.ShipId, Prime(context.Pilot.PilotId, current)));
-                }
-                // Godma primes its row, but clientDogmaLocation fits a tuple
-                // sublocation only on attributeQuantity (build 3662168).
-                NotifyState(context, current, now);
+                NotifyLoaded(context, current, change.Previous, now);
                 if (reload > 0)
                 {
                     context.Notifications.Add(new ChargeLoading([current.ModuleId], current.TypeId, reload));
                 }
             }
-            var magazine = change.Current ?? change.Previous!;
-            if (structureAmmunition?.Handles(magazine.ShipId) == true)
-            {
-                continue;
-            }
-            var module = inventory
-                .List(context.Pilot.PilotId, context.Pilot.ShipId)
-                .SingleOrDefault(i => i.Id == magazine.ModuleId && InventoryDefinitions.IsFittedSlot(i.FlagId));
             if (module is null)
             {
                 continue;
@@ -145,6 +158,109 @@ internal sealed class MagazineWire(
                 ))
                 .ToArray();
             context.Notifications.Add(new ModuleAttributesChanged(values));
+        }
+    }
+
+    private void NotifyLoaded(PilotCallContext context, Magazine current, Magazine? previous, long now)
+    {
+        if (previous?.TypeId != current.TypeId)
+        {
+            context.Notifications.Add(new GodmaItemPrimed(current.ShipId, Prime(context.Pilot.PilotId, current)));
+        }
+        // The tuple sublocation attaches only when Godma receives attributeQuantity (build 3662168).
+        NotifyState(context, current, now);
+    }
+
+    private void BeginBoosterReload(PilotCallContext context, MagazineChange change, Magazine loaded, long now)
+    {
+        var visible = change.Previous;
+        if (visible is not null && visible.TypeId != loaded.TypeId)
+        {
+            NotifyQuantity(context, visible, 0, now);
+            visible = null;
+        }
+        _boosterReloads[loaded.ModuleId] = new(context.Pilot.PilotId, loaded, visible);
+        double duration = (loaded.ReadyAt - now) / (double)TimeSpan.TicksPerMillisecond;
+        context.Notifications.Add(
+            new ModuleAttributesChanged([
+                new(context.Pilot.PilotId, new DogmaItemKey.Item(loaded.ModuleId), DogmaAttributeId.ReloadTime, now, duration),
+                new(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Item(loaded.ModuleId),
+                    DogmaAttributeId.NextActivationTime,
+                    now,
+                    loaded.ReadyAt
+                ),
+            ])
+        );
+        context.Notifications.Add(new ChargeLoading([loaded.ModuleId], loaded.TypeId, duration));
+    }
+
+    internal IReadOnlyList<Magazine> Visible(DockedPilot pilot, IReadOnlyList<InventoryItem> modules, IReadOnlyList<Magazine> magazines)
+    {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (pilot.Position is null || magazines.All(magazine => magazine.ReadyAt <= now))
+        {
+            return magazines;
+        }
+        List<Magazine> visible = [];
+        foreach (var magazine in magazines)
+        {
+            if (
+                magazine.ReadyAt <= now
+                || !modules.Any(module => module.Id == magazine.ModuleId && module.GroupId == CapacitorBoosterDefinitions.Group)
+            )
+            {
+                visible.Add(magazine);
+                continue;
+            }
+            if (
+                !_boosterReloads.TryGetValue(magazine.ModuleId, out var reload)
+                || reload.PilotId != pilot.PilotId
+                || reload.Current != magazine
+            )
+            {
+                _boosterReloads[magazine.ModuleId] = reload = new(pilot.PilotId, magazine, null);
+            }
+            if (reload.Visible is { } prior)
+            {
+                visible.Add(prior);
+            }
+        }
+        return visible;
+    }
+
+    internal void Advance(PilotCallContext context)
+    {
+        if (!IsMonitoring || !context.Selected)
+        {
+            return;
+        }
+        long pilot = context.Pilot.PilotId;
+        long ship = context.Pilot.ShipId;
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        IReadOnlyList<Magazine>? current = null;
+        foreach (var reload in _boosterReloads.Values.ToArray())
+        {
+            var magazine = reload.Current;
+            if (reload.PilotId != pilot || magazine.ShipId != ship)
+            {
+                _boosterReloads.Remove(magazine.ModuleId);
+            }
+            else if (magazine.ReadyAt <= now)
+            {
+                _boosterReloads.Remove(magazine.ModuleId);
+                current ??= ammunition?.Read(pilot, ship) ?? [magazine];
+                if (current.Contains(magazine))
+                {
+                    NotifyLoaded(context, magazine, reload.Visible, now);
+                    context.Notifications.Add(
+                        new ModuleAttributesChanged([
+                            new(pilot, new DogmaItemKey.Item(magazine.ModuleId), DogmaAttributeId.NextActivationTime, now, 0),
+                        ])
+                    );
+                }
+            }
         }
     }
 }

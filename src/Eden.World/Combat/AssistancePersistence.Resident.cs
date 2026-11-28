@@ -45,7 +45,7 @@ internal static partial class AssistancePersistence
                 world.Set<Account>().Find(source.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
                 timers.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(target.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
-                world.Set<SavedEngagement>().Any(e => (e.LowerPilotId == target.Id || e.HigherPilotId == target.Id) && e.ExpiresAt > now),
+                security > 0 && IsThirdPartyEngagement(world, source.Id, target.Id, now),
                 targetInCombat,
                 MilitiaRules.IsThirdPartyCombat(
                     MilitiaEnlistmentStore.Effective(world, source),
@@ -56,6 +56,14 @@ internal static partial class AssistancePersistence
             )
         );
     }
+
+    private static bool IsThirdPartyEngagement(WorldAction world, long sourceId, long targetId, long now) =>
+        world
+            .Filter<SavedEngagement>(e => e.LowerPilotId == targetId && e.ExpiresAt > now)
+            .AsEnumerable()
+            .Select(e => e.HigherPilotId)
+            .Concat(world.Filter<SavedEngagement>(e => e.HigherPilotId == targetId && e.ExpiresAt > now).Select(e => e.LowerPilotId))
+            .Any(opponent => (CrimewatchPersistence.Engagement(world, sourceId, opponent)?.ExpiresAt ?? 0) <= now);
 
     internal static bool IsNeutralWarAssistance(WorldAction world, Pilot source, Pilot target, bool targetInCombat, long now)
     {
