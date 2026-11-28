@@ -29,6 +29,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Persistent notification inbox and contact messages](#persistent-notification-inbox-and-contact-messages)
 - [Persistent mailing lists](#persistent-mailing-lists)
 - [Mailing-list organization access](#mailing-list-organization-access)
+- [Live organization mail and mailbox selection](#live-organization-mail-and-mailbox-selection)
 - [Mail arrival notification arity](#mail-arrival-notification-arity)
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Personal mail CSPA](#personal-mail-cspa)
@@ -695,6 +696,22 @@ case passed. It verifies native owner search, rule precedence, eviction and the 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer check.** Search for an alliance in the list Access editor, allow its pilots to join a closed list, and block one member corporation.
+
+## Live organization mail and mailbox selection
+
+Build **3662168** `mailSvc.pyj` lines 1396–1433 derive the corporation or alliance label from the sixth
+`OnMailSent` argument. Eden had sent None for every delivery even when the saved mailbox copy had an
+organization label. Live arrivals now carry the destination for those copies. An outside pilot included as a
+direct recipient still receives an Inbox copy. `GetMailHeaders` and `SyncMail` include the saved destination.
+EVE.js `mailNotifications.js` also carries the organization field in the native callback.
+
+The same pinned module sends an explicit label mask with `ReplaceLabels` and uses distinct argument shapes
+for ID-list, all-mail and label/list-filtered operations. The RPC dispatcher now checks the shape for the
+requested operation before applying changes. Omitting a `ReplaceLabels` mask previously cleared the labels.
+An explicit zero mask still clears them. [EVE University EVE Mail](https://wiki.eveuniversity.org/EVE_Mail)
+
+The original archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+Regression cases cover the live alliance arrival arguments and label preservation after a missing argument.
 
 ## Mail arrival notification arity
 

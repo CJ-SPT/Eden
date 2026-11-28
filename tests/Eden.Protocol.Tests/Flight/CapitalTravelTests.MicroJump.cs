@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Fleets;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -8,12 +11,76 @@ using Eden.Gameplay.Ships;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Tests.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Flight;
 
 public sealed partial class CapitalTravelTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MicroJumpSettlementHonorsPanicAppliedDuringSpool(bool protectSource)
+    {
+        const int Bustard = 12731;
+        const int MediumMicroJumpDrive = 33915;
+        using Fixture fixture = new(protectSource ? Bustard : Archon, Helium, extendCatalog: PassiveCatalogFixture.LoadSpatialModules);
+        long module = fixture.FitCapitalModule(protectSource ? MediumMicroJumpDrive : SpatialModuleRules.CapitalField);
+        var source = fixture.Db.Store.FindPilot(1000001)!;
+        var target = fixture.Db.Store.FindPilot(1000002)!;
+        var origin = new SpacePosition(1_000_000_000, 0, 0);
+        var targetStart = origin + new SpacePosition(0, 9000, 0);
+        fixture.Db.Store.SetPosition(source.ShipId, origin, NullSystem);
+        fixture.Db.Store.SetPosition(target.ShipId, targetStart, NullSystem);
+        var engine = fixture.Db.Services.GetRequiredService<IPilotSpatialModules>();
+        var cycle = engine.Activate(
+            source.PilotId,
+            module,
+            protectSource ? DogmaEffect.MicroJumpDrive : DogmaEffect.CapitalMicroJumpField,
+            new(1, 0, 0),
+            SpacePosition.Zero,
+            fixture.Clock.Now
+        );
+        long protectedShip = protectSource ? source.ShipId : target.ShipId;
+        using (var action = fixture.Live.Economy.Begin(new(systems: [NullSystem], ships: [protectedShip])))
+        {
+            action.Add(
+                new WorldCommandBurst
+                {
+                    Id = action.Next("WorldCommandBurst"),
+                    ShipId = protectedShip,
+                    SystemId = NullSystem,
+                    ExpiresAt = cycle.EndsAt + 1,
+                    BoostsJson = JsonSerializer.Serialize(IndustrialProtectionRules.Buffs),
+                    IndustrialProtection = true,
+                }
+            );
+            action.Commit();
+        }
+        var jump = engine.CompleteJump(
+            source.PilotId,
+            source.ShipId,
+            module,
+            cycle.StartedAt,
+            cycle.EndsAt,
+            [new(target.PilotId, target.ShipId, targetStart)]
+        );
+        if (protectSource)
+        {
+            Assert.Null(jump);
+            Assert.Equal(origin, fixture.Db.Store.FindPilot(1000001)!.Position);
+        }
+        else
+        {
+            Assert.Empty(Assert.IsType<MicroJumpResult>(jump).Passengers);
+            Assert.Equal(origin + new SpacePosition(250_000, 0, 0), fixture.Db.Store.FindPilot(1000001)!.Position);
+        }
+        Assert.Equal(targetStart, fixture.Db.Store.FindPilot(1000002)!.Position);
+        Assert.Equal(0, engine.Status(target.ShipId).FieldScrambledUntil);
+        Assert.Equal(cycle.ReadyAt, fixture.Live.Economy.Inspect(world => world.Set<ModuleCooldown>().Find(module)!.ReadyAt));
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]

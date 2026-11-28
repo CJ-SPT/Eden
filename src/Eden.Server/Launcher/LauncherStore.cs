@@ -166,7 +166,7 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
                 string nextRefresh = Token();
                 refresh.Used = true;
                 session.AccessHash = Hash(access);
-                session.AccessExpires = now + AccessSeconds;
+                session.AccessExpires = Math.Min(now + AccessSeconds, session.Expires);
                 world.Add(new SavedLauncherRefresh(Hash(nextRefresh), session.Id));
                 bool developer = world.Set<SavedLauncherCredential>().Find(account.Id)?.Roles == (long)PilotRole.Developer;
                 return new(account.Id, account.UserName, access, session.AccessExpires, nextRefresh, developer);
@@ -191,22 +191,23 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
             .Filter<SavedLauncherSession>(row => row.AccessHash == hash && row.AccessExpires > now && !row.Revoked && row.Expires > now)
             .SingleOrDefault();
 
-    public Task<string> IssueTicketAsync(string access, CancellationToken cancellationToken = default)
+    public Task<(string Ticket, long ExpiresAt)> IssueTicketAsync(string access, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         string ticket = _ticketPrefix + Token();
         string hash = Hash(access);
-        Commit(world =>
+        long expiresAt = Commit(world =>
         {
             long now = Now;
             var session = Access(world, hash, now) ?? throw Unauthorized();
             world.RemoveRange(world.Filter<SavedLauncherTicket>(row => row.Expires <= now).ToArray());
-            world.Add(new SavedLauncherTicket(Hash(ticket), session.Id, now + TicketSeconds));
-            return true;
+            long expires = Math.Min(now + TicketSeconds, session.Expires);
+            world.Add(new SavedLauncherTicket(Hash(ticket), session.Id, expires));
+            return expires;
         });
         // Short-lived tickets commit to the resident owner and its normal
         // checkpoint. Login must not wait for projecting/saving the whole world.
-        return Task.FromResult(ticket);
+        return Task.FromResult((ticket, expiresAt));
     }
 
     public void AuthorizeAccess(string access)

@@ -133,6 +133,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         }
         Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(
             world,
+            catalog,
             pilot.Id,
             pilot.ActiveShipId,
             now,
@@ -438,6 +439,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
             && InventoryDefinitions.IsMediumSlot(item.FlagId)
             && (!field || candidates is not null && world is EconomyTransaction)
             && !Scrambled(world, shipId, now)
+            && !Eden.World.Flight.PilotCapitalTravelStore.ProtectedIndustry(world, shipId, now)
             && ReadStatus(world, catalog, shipId).CloakModuleId == 0
         )
         {

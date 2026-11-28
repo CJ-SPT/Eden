@@ -90,7 +90,11 @@ internal sealed record MailSent(MailHeader Header, MailEntryState State) : Pilot
             Header.SentAt,
             new BlueList<long>(Header.Recipients),
             Header.ListId,
-            null,
+            // The client adds an organization label whenever this field is present.
+            // A direct recipient outside the organization has only the Inbox copy.
+            (State.Labels & (long)(SystemMailLabel.Corporation | SystemMailLabel.Alliance)) != 0
+                ? Header.OrganizationId
+                : null,
             new BlueUnicode(Header.Subject),
             (int)State.Status,
         ];

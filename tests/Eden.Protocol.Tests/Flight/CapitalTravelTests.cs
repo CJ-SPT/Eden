@@ -114,6 +114,14 @@ public sealed partial class CapitalTravelTests
         Assert.Null(fixture.Travel.Timers(host.Pilot.PilotId));
         Assert.Contains(host.Packets, packet => ContainsText(packet, "OnItemChange"));
 
+        long passengerId = passenger.Pilot.PilotId;
+        Assert.Single(fixture.Travel.FleetPortals(passengerId));
+        Assert.IsType<PilotCallResult.Success>(passenger.Call("userSvc", "UserLogOffCharacter"));
+        Assert.IsType<PilotCallResult.Success>(passenger.Call("charUnboundMgr", "SelectCharacterID", passengerId));
+        passenger.Packets.Clear();
+        await passenger.TickAsync();
+        Assert.DoesNotContain(passenger.Packets, packet => ContainsText(packet, "OnBridgeModeChange"));
+
         fixture.Clock.Seconds += 17;
         await passenger.TickAsync();
         Assert.Empty(fixture.Travel.FleetPortals(passenger.Pilot.PilotId));
@@ -481,6 +489,28 @@ public sealed partial class CapitalTravelTests
         Assert.Equal(JanStation, fixture.Db.Store.FindPilot(1000001)!.StationId);
         Assert.Contains(fixture.Inventory.List(freighterPilot, JanStation), item => item.TypeId == Cargo && item.Quantity == 14);
         Assert.Equal(beacon.Beacon.Id, fixture.Travel.Field(beacon.PilotId)?.Beacon.Id);
+    }
+
+    [Fact]
+    public void CynosuralFieldRemainsActiveWhenItsEmitterUndocksFromTheLocalStation()
+    {
+        using Fixture fixture = new(emitterHull: Rapier, generator: CapitalTravelRules.StandardGenerator);
+        var emitter = fixture.Db.Store.FindPilot(1000002)!;
+        fixture.Db.Store.SetPosition(emitter.ShipId, s_station, Jan);
+        var docking = fixture.Db.Services.GetRequiredService<IStationDocking>();
+        docking.Dock(emitter.PilotId, emitter.ShipId, JanStation);
+        fixture.Db.Store.SetPosition(emitter.ShipId, s_station + new SpacePosition(10_000, 0, 0));
+        Assert.Null(fixture.Live.Economy.Inspect(world => world.Positions.Find(emitter.ShipId)!.SystemId));
+        Assert.Equal(Jan, fixture.Db.Store.FindPilot(1000002)!.SystemId);
+
+        using Client freighter = fixture.Select(1000001);
+        using Client operatorClient = fixture.Select(1000002);
+        var field = fixture.Light(operatorClient);
+        Assert.Equal(field, Assert.Single(fixture.Travel.Fields(Jan)));
+        Assert.Equal(field, Assert.Single(fixture.Travel.FleetFields(freighter.Pilot.PilotId)));
+        Assert.Equal(1, fixture.Travel.BeaconCounts()[Jan]);
+        Assert.IsType<PilotCallResult.Failure>(operatorClient.Call("dogmaIM", "Activate", fixture.Module, "cynosuralGeneration", null, 0));
+        Assert.Equal(910, Quantity(fixture, operatorClient, LiquidOzone));
     }
 
     [Fact]

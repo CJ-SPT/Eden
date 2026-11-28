@@ -177,7 +177,7 @@ public sealed partial class SqliteWorld
         if (world is EconomyTransaction)
         {
             long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, catalog, pilotId, shipId, now);
             Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
             Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         }

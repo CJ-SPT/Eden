@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Emulator bug audit](#emulator-bug-audit)
 - [EVE.js comparison for account and station clone reads](#evejs-comparison-for-account-and-station-clone-reads)
 - [EVE.js comparison for map, character and dungeon routes](#evejs-comparison-for-map-character-and-dungeon-routes)
 - [In-game text for routine rejections](#in-game-text-for-routine-rejections)
@@ -16,6 +17,88 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## Emulator bug audit
+
+The audit fixed 16 player-facing and host defects in Eden. The topic records explain the corrected behavior and preserve the
+relevant build 3662168 and EVE.js evidence.
+
+- [Launcher credential deadlines](startup.md#launcher-credential-deadlines)
+- [Maintenance and checkpoint failure isolation](performance.md#maintenance-and-checkpoint-failure-isolation)
+- [Market delivery and industry job corrections](industry.md#market-delivery-and-industry-job-corrections)
+- [Live organization mail and mailbox selection](social.md#live-organization-mail-and-mailbox-selection)
+- [Fleet departure and bridge notifications](fleets.md#fleet-departure-and-bridge-notifications)
+- [Cynosural cycles and travel restrictions](navigation.md#cynosural-cycles-and-travel-restrictions)
+
+### Automated validation
+
+Against the original `63ec0c4f` server, 23 of the 25 focused cases failed in 16.73 seconds. The two industry resume
+controls passed. All 25 cases passed against the corrected server in 22.48 seconds using the same exact-method selection.
+
+The solution built with zero warnings or errors. The 22-class follow-up filter passed 406 cases in 385.42 seconds,
+with one optional Rhea acquisition case skipped because `EDEN_CAPITAL_MARKET_CATALOG` was unset. This selection covered
+launcher authentication, checkpointing, industry and markets, corporation wallets, mail, fleets, flight and structures.
+The Python catalog and formatting policy suites passed all 17 cases.
+The full formatting and line-width checks passed in a clean checkout in 38.81 seconds, including restore. The working checkout
+contains a local `.artifacts` archive that CSharpier also scans.
+
+<details>
+<summary>Test filters</summary>
+
+Prefix each suffix with `Eden.Protocol.Tests.` and join the `FullyQualifiedName` selectors with `|`.
+The exact-method selection uses `=`.
+
+```text
+Launcher.LauncherAccountTests.RefreshedAccessExpiresAtTheRememberedSessionDeadline
+Launcher.LauncherApiTests.LaunchReplyReportsTheExactTicketDeadlineNearSessionExpiry
+Economy.EconomicLifecycleTests.FailedMarketDemandDoesNotBlockBeltRenewal
+Persistence.LiveWorldTests.SlowCheckpointStaysSuccessfulWhenTheLogSinkThrows
+Market.StandardMarketTests.StationAsksClearAfterUndockingWhileSystemAndRegionAsksRemain
+Market.CorporationMarketSaleTests.NativeCorporationSaleCreditsTheDivisionAndPreservesTheUnsoldStockAcrossCheckpoint
+Market.PersonalMarketTests.FullHangarStackDoesNotPreventDeliveryOfPurchasedItems
+Structures.StructureTests.ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen
+PilotSessions.MailServiceTests.MissingReplacementMaskLeavesExistingMailLabelsIntact
+Alliances.AllianceSocialTests.AllianceMailSnapshotsRecipientsAndCalendarChecksLiveMembershipAcrossReopen
+PilotSessions.CooperativeFleetTests.FleetDepartureStillNotifiesClientAfterPendingEventsOverflow
+Flight.CapitalTravelTests.CovertMobileBeaconSupportsFleetPortalWithHostFuel
+Flight.CapitalTravelTests.JumpPortalPublishesAndRejectsRepeatActivationWithAnImplicitOriginSystem
+Flight.CapitalTravelTests.CynosuralFieldRemainsActiveWhenItsEmitterUndocksFromTheLocalStation
+Flight.CapitalTravelTests.MicroJumpSettlementHonorsPanicAppliedDuringSpool
+Flight.GateCloakTests.DeveloperTranslocationEndsGateCloakInSpaceAndWhenDocking
+```
+
+The class selection uses `~`.
+
+```text
+Launcher.LauncherAccountTests
+Launcher.LauncherApiTests
+Launcher.LoginTicketCheckpointTests
+Launcher.LauncherCleanupTests
+Launcher.PasswordConcurrencyTests
+Hosting.ServerServicesTests
+Persistence.LiveWorldTests
+Persistence.IncrementalCheckpointTests
+Economy.EconomicLifecycleTests
+Market.StandardMarketTests
+Market.PersonalMarketTests
+Market.CorporationMarketSaleTests
+Structures.StructureTests
+PilotSessions.CorporationWalletTests
+Industry.StarterProductionTests
+Alliances.AllianceSocialTests
+PilotSessions.MailServiceTests
+PilotSessions.MailArrivalContractTests
+PilotSessions.CooperativeFleetTests
+Flight.CapitalTravelTests
+Flight.GateCloakTests
+Flight.TypedFlightTests
+```
+
+</details>
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
 
 ## EVE.js comparison for account and station clone reads
 

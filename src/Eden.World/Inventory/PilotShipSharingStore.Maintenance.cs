@@ -167,7 +167,7 @@ internal sealed partial class PilotShipSharingStore
         {
             throw new InvalidDataException("Approach an available shared ship maintenance bay.");
         }
-        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, catalog, pilotId, shipId, now);
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.ChangeShip, now);
         var fit = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         if (PilotHealthStore.Read(world, shipId, ShipHealth.DefenseFrom(fit), now).Remaining.Destroyed)

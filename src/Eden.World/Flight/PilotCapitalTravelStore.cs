@@ -76,12 +76,12 @@ internal sealed partial class PilotCapitalTravelStore(
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         long now = Now;
         var field = action.Set<SavedCynosuralField>().Find(pilotId);
-        if (Active(action, field, now))
+        if (Active(action, catalog, field, now))
         {
             throw new InvalidDataException("A cynosural field is already active on this ship.");
         }
         RequireCynoSystem(catalog, system);
-        RequireReady(action, pilot, now);
+        RequireReady(action, catalog, pilot, now);
         var item = action.Set<OwnedItem>().Find(moduleId);
         if (
             item is not { Online: true, Singleton: true }
@@ -256,8 +256,9 @@ internal sealed partial class PilotCapitalTravelStore(
             ? economy.Inspect(
                 world =>
                 {
+                    using CatalogDbContext catalog = new(database.CatalogPath);
                     var row = world.Set<SavedCynosuralField>().Find(pilotId);
-                    return Active(world, row, now) ? Contact(row!) : null;
+                    return Active(world, catalog, row, now) ? Contact(row!) : null;
                 },
                 new(pilots: [pilotId])
             )
@@ -270,14 +271,17 @@ internal sealed partial class PilotCapitalTravelStore(
         return LiveWorld.Find(database.Path) is { Economy: var economy } && economy.MayHaveCynos(now)
             ? economy.Inspect(
                 world =>
-                    ProjectFields(world, world.Filter<SavedCynosuralField>(row => row.SystemId == systemId), now)
+                {
+                    using CatalogDbContext catalog = new(database.CatalogPath);
+                    return ProjectFields(world, catalog, world.Filter<SavedCynosuralField>(row => row.SystemId == systemId), now)
                         .Concat(
                             MobileRows(world, systemId, now)
                                 .AsEnumerable()
                                 .Where(row => MobileBeaconActive(row, now))
                                 .Select(MobileBeaconContact)
                         )
-                        .ToArray(),
+                        .ToArray();
+                },
                 new(systems: [systemId])
             )
             : [];
@@ -295,7 +299,9 @@ internal sealed partial class PilotCapitalTravelStore(
             return [];
         }
         return economy.Inspect(world =>
-            ProjectFields(world, world.Filter<SavedCynosuralField>(row => row.FleetId == fleet), now)
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            return ProjectFields(world, catalog, world.Filter<SavedCynosuralField>(row => row.FleetId == fleet), now)
                 .Where(field => fleets.Identity(field.PilotId)?.FleetId == fleet)
                 .Concat(
                     world
@@ -304,8 +310,8 @@ internal sealed partial class PilotCapitalTravelStore(
                         .Where(row => MobileBeaconActive(row, now))
                         .Select(MobileBeaconContact)
                 )
-                .ToArray()
-        );
+                .ToArray();
+        });
     }
 
     public IReadOnlyDictionary<int, int> BeaconCounts() =>
@@ -313,10 +319,11 @@ internal sealed partial class PilotCapitalTravelStore(
             .Find(database.Path)
             ?.Economy.Inspect(world =>
             {
+                using CatalogDbContext catalog = new(database.CatalogPath);
                 long now = Now;
                 return world
                     .Set<SavedCynosuralField>()
-                    .Where(row => row.TypeId != CapitalTravelRules.CovertField && Active(world, row, now))
+                    .Where(row => row.TypeId != CapitalTravelRules.CovertField && Active(world, catalog, row, now))
                     .Select(row => row.SystemId)
                     .AsEnumerable()
                     .Concat(
@@ -334,7 +341,14 @@ internal sealed partial class PilotCapitalTravelStore(
     public bool DoomsdayMovementLocked(long shipId) =>
         LiveWorld.Find(database.Path)?.Economy.Inspect(world => AreaWeaponStore.DoomsdayLocked(world, shipId, Now, movement: true)) == true;
 
-    internal static void RequireMobile(WorldAction world, long pilotId, long shipId, long now, bool allowSiegeMicroJump = false)
+    internal static void RequireMobile(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long now,
+        bool allowSiegeMicroJump = false
+    )
     {
         if (AreaWeaponStore.DoomsdayLocked(world, shipId, now, movement: true))
         {
@@ -353,11 +367,15 @@ internal sealed partial class PilotCapitalTravelStore(
             );
         }
         var field = world.Set<SavedCynosuralField>().Find(pilotId);
-        if (field?.ShipId == shipId && Active(world, field, now))
+        if (field?.ShipId == shipId && Active(world, catalog, field, now))
         {
             throw new InvalidDataException("Wait for the active cynosural field to expire before moving the ship.");
         }
-        if (world.Set<SavedJumpPortal>().Find(pilotId) is { } portal && portal.ShipId == shipId && PortalActive(world, portal, now))
+        if (
+            world.Set<SavedJumpPortal>().Find(pilotId) is { } portal
+            && portal.ShipId == shipId
+            && PortalActive(world, catalog, portal, now)
+        )
         {
             throw new InvalidDataException("Wait for the active jump portal to close before moving the ship.");
         }
@@ -420,7 +438,7 @@ internal sealed partial class PilotCapitalTravelStore(
         long now
     )
     {
-        RequireReady(world, pilot, now);
+        RequireReady(world, catalog, pilot, now);
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, system);
         LanceDisruption.RequireTravel(world, pilot.ActiveShipId, now);
         long shipId = pilot.ActiveShipId;
@@ -512,7 +530,7 @@ internal sealed partial class PilotCapitalTravelStore(
             || field.FleetId == 0
             || fleets.Identity(pilotId)?.FleetId != field.FleetId
             || fleets.Identity(field.PilotId)?.FleetId != field.FleetId
-            || !Active(world, field, now)
+            || !Active(world, catalog, field, now)
         )
         {
             throw new InvalidDataException("That fleet cynosural field is no longer available.");
@@ -538,9 +556,9 @@ internal sealed partial class PilotCapitalTravelStore(
             ? pilot
             : throw new InvalidDataException("Use your active ship in space.");
 
-    private static void RequireReady(WorldAction world, Pilot pilot, long now)
+    private static void RequireReady(WorldAction world, CatalogDbContext catalog, Pilot pilot, long now)
     {
-        RequireMobile(world, pilot.Id, pilot.ActiveShipId, now);
+        RequireMobile(world, catalog, pilot.Id, pilot.ActiveShipId, now);
         world.RequireUncloaked(pilot.ActiveShipId);
         EntosisPersistence.RequireTravel(world, pilot.ActiveShipId, now);
         if (
@@ -596,17 +614,35 @@ internal sealed partial class PilotCapitalTravelStore(
             ? new(x, y, z)
             : throw new InvalidDataException("The solar system has no jump coordinates.");
 
-    private static bool Active(WorldAction world, SavedCynosuralField? field, long now) =>
+    private static bool Active(WorldAction world, CatalogDbContext catalog, SavedCynosuralField? field, long now) =>
         field is { } row
         && row.EndsAt > now
-        && world.Positions.Find(row.ShipId)?.SystemId == row.SystemId
         && world.Pilots.Find(row.PilotId)?.ActiveShipId == row.ShipId
+        && InSpaceInSystem(world, catalog, row.ShipId, row.SystemId)
         && world.Set<OwnedItem>().Find(row.ModuleId) is { Online: true } item
         && item.LocationId == row.ShipId
         && world.Set<ShipLoss>().Find(row.ShipId) is null;
 
-    private static CynosuralField[] ProjectFields(WorldAction world, IQueryable<SavedCynosuralField> rows, long now) =>
-        rows.Where(row => row.EndsAt > now).AsEnumerable().Where(row => Active(world, row, now)).Select(Contact).ToArray();
+    private static bool InSpaceInSystem(WorldAction world, CatalogDbContext catalog, long shipId, int systemId)
+    {
+        if (world.Positions.Find(shipId) is not { } position)
+        {
+            return false;
+        }
+        if (position.SystemId is int savedSystemId)
+        {
+            return savedSystemId == systemId;
+        }
+        // A native NPC station undock can leave the position's system implicit.
+        return world.Ships.Find(shipId) is { } ship && catalog.FindStation(ship.StationId)?.SolarSystemId == systemId;
+    }
+
+    private static CynosuralField[] ProjectFields(
+        WorldAction world,
+        CatalogDbContext catalog,
+        IQueryable<SavedCynosuralField> rows,
+        long now
+    ) => rows.Where(row => row.EndsAt > now).AsEnumerable().Where(row => Active(world, catalog, row, now)).Select(Contact).ToArray();
 
     private static CynosuralField Contact(SavedCynosuralField row) =>
         new(

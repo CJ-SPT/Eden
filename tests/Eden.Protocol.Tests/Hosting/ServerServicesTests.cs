@@ -33,11 +33,11 @@ public sealed class ServerServicesTests
         var account = accounts.Register(new("Launcher Integration", password));
         var session = accounts.SignIn(new("Launcher Integration", password, false));
         var identity = services.GetRequiredService<ILoginIdentity>();
-        string ticket = await accounts.IssueTicketAsync(session.AccessToken);
+        string ticket = (await accounts.IssueTicketAsync(session.AccessToken)).Ticket;
         Assert.Equal(account.AccountId, await identity.ValidateTicketAsync(ticket, CancellationToken.None));
         Assert.Null(await identity.ValidateTicketAsync(ticket, CancellationToken.None));
         Assert.Equal((long)PilotRole.Player, identity.ReadRoles(account.AccountId));
-        string expired = await accounts.IssueTicketAsync(session.AccessToken);
+        string expired = (await accounts.IssueTicketAsync(session.AccessToken)).Ticket;
         clock.AdvanceWallTime(TimeSpan.FromSeconds(LauncherStore.TicketSeconds));
         Assert.Null(await identity.ValidateTicketAsync(expired, CancellationToken.None));
     }

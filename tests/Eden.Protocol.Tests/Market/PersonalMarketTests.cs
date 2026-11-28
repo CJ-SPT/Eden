@@ -100,6 +100,41 @@ public sealed class PersonalMarketTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void FullHangarStackDoesNotPreventDeliveryOfPurchasedItems(bool resident)
+    {
+        using Fixture f = new(resident);
+        f.List();
+        const long stack = Stack + 10;
+        int station = f.Pilot.StationId;
+        using (var setup = new WorldActionScope(new(f.Db.Path), TransactionParticipants.None))
+        {
+            setup.World.Add(
+                new OwnedItem
+                {
+                    Id = stack,
+                    OwnerId = Buyer,
+                    TypeId = Ammo,
+                    LocationId = station,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = int.MaxValue,
+                }
+            );
+            setup.Commit();
+        }
+
+        var purchase = f.Buy(2);
+        var delivery = Assert.Single(purchase.Changes);
+        Assert.Null(delivery.Previous);
+        Assert.NotEqual(stack, delivery.Item.Id);
+        Assert.Equal(2, delivery.Item.Quantity);
+        Assert.Equal(Budget - 2000, f.Market.Balance(Buyer));
+        Assert.Equal(98, f.Order().Remaining);
+        Assert.Equal(int.MaxValue, WorldActionScope.Inspect(new(f.Db.Path), world => world.Set<OwnedItem>().Find(stack)!.Quantity));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void RemoteBuyerFillsPlayerListingAndGoodsRemainAtSellerStation(bool inSpace)
     {
         using Fixture f = new();

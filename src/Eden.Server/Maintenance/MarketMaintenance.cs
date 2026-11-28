@@ -56,31 +56,54 @@ internal sealed class MarketMaintenance(
             }
             using (ExecutionContext.SuppressFlow())
             {
-                _pending = Task.Run(() =>
+                _pending = Task.Run(Advance);
+            }
+        }
+    }
+
+    private void Advance()
+    {
+        Exception? failure = null;
+        Run(
+            "Market order expiry",
+            () =>
+            {
+                if (market.NextExpiry <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                 {
-                    try
+                    market.Expire();
+                }
+            }
+        );
+        if (demand is not null)
+        {
+            Run("Market demand", () => demand.AdvanceDemand());
+        }
+        if (resources is not null && clock.GetUtcNow() >= _nextResourceCheck)
+        {
+            Run(
+                "Belt renewal",
+                () =>
+                {
+                    if (resources.Renew() == 0)
                     {
-                        using var operation = operations?.Begin();
-                        if (market.NextExpiry <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
-                        {
-                            market.Expire();
-                        }
-                        demand?.AdvanceDemand();
-                        if (resources is not null && clock.GetUtcNow() >= _nextResourceCheck)
-                        {
-                            if (resources.Renew() == 0)
-                            {
-                                _nextResourceCheck = clock.GetUtcNow().AddSeconds(database?.Settings.Simulation.ResourceCheckSeconds ?? 60);
-                            }
-                        }
-                        Volatile.Write(ref _lastFailure, null);
+                        _nextResourceCheck = clock.GetUtcNow().AddSeconds(database?.Settings.Simulation.ResourceCheckSeconds ?? 60);
                     }
-                    catch (Exception error)
-                    {
-                        Volatile.Write(ref _lastFailure, error);
-                        ServerLog.Console.Error($"Economic maintenance failed; retrying next interval: {error.Message}");
-                    }
-                });
+                }
+            );
+        }
+        Volatile.Write(ref _lastFailure, failure);
+
+        void Run(string name, Action advance)
+        {
+            try
+            {
+                using var operation = operations?.Begin();
+                advance();
+            }
+            catch (Exception error)
+            {
+                failure ??= error;
+                ServerLog.Console.Error($"{name} failed; retrying next interval: {error.Message}");
             }
         }
     }

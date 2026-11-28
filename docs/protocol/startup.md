@@ -530,3 +530,13 @@ Launcher registration, password verification, session rotation, replay revocatio
 consumption use indexed resident records. Authentication mutations wait for their detached checkpoint before returning. Expired
 sessions and their child tokens are removed in bounded resident batches. Existing launcher tables and token hashes are loaded when
 the world starts. The existing launcher protocol and cryptographic verification are shared across saved worlds and resident sessions.
+
+## Launcher credential deadlines
+
+Refreshing a remembered session caps the access token at the session's original 30-day deadline. A game ticket expires at the
+earlier of its 180-second lifetime and the parent session deadline. The launch response returns the expiry recorded by the
+issuing transaction. Both credentials are rejected at the exact advertised deadline. The API v1 response fields are unchanged.
+
+`LauncherAccountTests.RefreshedAccessExpiresAtTheRememberedSessionDeadline` checks the final second of a remembered session.
+`LauncherApiTests.LaunchReplyReportsTheExactTicketDeadlineNearSessionExpiry` submits an original build 3662168 manifest prefix
+and checks ticket consumption on either side of the deadline.

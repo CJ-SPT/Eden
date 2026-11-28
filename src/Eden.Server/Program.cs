@@ -212,7 +212,7 @@ internal static class Program
             );
             AdministratorAccounts administrators = new(worldPath);
             LauncherReadiness readiness = new();
-            var api = online ? LauncherApi.Create(options, readiness, TimeProvider.System) : null;
+            var api = online ? LauncherApi.Create(options, readiness) : null;
             bool runtimeStopsApi = false;
             if (api is not null)
             {

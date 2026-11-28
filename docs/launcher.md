@@ -76,7 +76,7 @@ certificate, even when the server reads it from a PEM file.
 
 ## Authentication
 
-API v1 provides metadata, registration, sign-in, refresh, logout and launch tickets. Access tokens last 15 minutes; optional remembered sessions rotate and expire after 30 days. Refresh replay revokes the token family. Game tickets are single-use with a 180-second lifetime. Credentials and token hashes use additive Launcher tables in the world database, independent of gameplay migration numbering.
+API v1 provides metadata, registration, sign-in, refresh, logout and launch tickets. Access tokens last up to 15 minutes and optional remembered sessions rotate and expire after 30 days. Refresh replay revokes the token family. Game tickets are single-use and last up to 180 seconds. Both token and ticket deadlines are capped by the parent session expiry. Credentials and token hashes use additive Launcher tables in the world database, independent of gameplay migration numbering.
 
 Remembered sign-ins survive server restarts and Docker updates that reuse the same world save. Keep **Remember me on this
 computer** selected when signing in to the launcher. The launcher saves the sign-in for the API address you used.

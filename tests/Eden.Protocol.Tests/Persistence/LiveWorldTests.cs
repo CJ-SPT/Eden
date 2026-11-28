@@ -117,6 +117,41 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
         Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Circuit saved'"));
     }
 
+    [Fact]
+    public async Task SlowCheckpointStaysSuccessfulWhenTheLogSinkThrows()
+    {
+        using TestWorld db = new();
+        int warnings = 0;
+        using LiveWorld live = new(
+            new(db.Path),
+            new TestClock(),
+            message =>
+            {
+                if (message.StartsWith("World checkpoint ", StringComparison.Ordinal))
+                {
+                    warnings++;
+                    throw new IOException("Simulated checkpoint log failure.");
+                }
+            },
+            copy: (source, target) =>
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(300));
+                source.BackupDatabase(target);
+            }
+        );
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Database.ExecuteSqlRaw("UPDATE WorldPilot SET Name='Saved despite logging' WHERE Id=90000001");
+        }
+
+        await live.FlushAsync();
+
+        Assert.Equal(1, warnings);
+        Assert.NotNull(live.LastCheckpoint);
+        Assert.Null(live.LastSaveFailure);
+        Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Saved despite logging'"));
+    }
+
     private sealed class CheckpointSynchronizationContext : SynchronizationContext
     {
         internal int Posts;
@@ -753,7 +788,7 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
         var account = launcher.Register(new("Resident account", "resident test password"));
         Assert.Equal(1, DiskValue(db.Path, $"SELECT COUNT(*) FROM LauncherCredential WHERE AccountId={account.AccountId}"));
         var session = launcher.SignIn(new("Resident account", "resident test password", true));
-        string ticket = await launcher.IssueTicketAsync(session.AccessToken);
+        string ticket = (await launcher.IssueTicketAsync(session.AccessToken)).Ticket;
         Assert.Equal(0, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
         await live.FlushAsync();
         Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
@@ -795,8 +830,8 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
         const string password = "resident test password";
         var first = launcher.Register(new("First concurrent pilot", password));
         var second = launcher.Register(new("Second concurrent pilot", password));
-        string firstTicket = await launcher.IssueTicketAsync(launcher.SignIn(new(first.UserName, password, false)).AccessToken);
-        string secondTicket = await launcher.IssueTicketAsync(launcher.SignIn(new(second.UserName, password, false)).AccessToken);
+        string firstTicket = (await launcher.IssueTicketAsync(launcher.SignIn(new(first.UserName, password, false)).AccessToken)).Ticket;
+        string secondTicket = (await launcher.IssueTicketAsync(launcher.SignIn(new(second.UserName, password, false)).AccessToken)).Ticket;
         await live.FlushAsync();
         Interlocked.Exchange(ref pauseNextWrite, 1);
         live.ObjectsChanged();

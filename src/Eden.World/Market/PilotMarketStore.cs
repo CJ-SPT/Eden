@@ -316,7 +316,8 @@ internal sealed partial class PilotMarketStore(
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var station = Station(catalog, pilot.ActiveShip.StationId);
-        if (pilot.ActiveShip.Position is null && HasMarket(catalog, station))
+        int stationId = pilot.ActiveShip is { Position: null, StructureId: null } ? station.Id : 0;
+        if (stationId != 0 && HasMarket(catalog, station))
         {
             Seed(world, catalog, station, typeId, includeDemand: scope is null);
         }
@@ -355,7 +356,7 @@ internal sealed partial class PilotMarketStore(
         }
         query = scope switch
         {
-            MarketScope.Station => query.Where(o => o.StationId == station.Id && !o.Bid),
+            MarketScope.Station => query.Where(o => o.StationId == stationId && !o.Bid),
             MarketScope.System => query.Where(o => o.SystemId == system && !o.Bid),
             MarketScope.Region => query.Where(o => !o.Bid),
             null => query,
@@ -399,7 +400,7 @@ internal sealed partial class PilotMarketStore(
         }
         personal = scope switch
         {
-            MarketScope.Station => personal.Where(o => o.StationId == station.Id && !o.Bid),
+            MarketScope.Station => personal.Where(o => o.StationId == stationId && !o.Bid),
             MarketScope.System => personal.Where(o => o.SystemId == system && !o.Bid),
             MarketScope.Region => personal.Where(o => !o.Bid),
             _ => personal,
@@ -435,7 +436,7 @@ internal sealed partial class PilotMarketStore(
             }
         }
         transaction.Commit();
-        return new(pilotId, pilot.ActiveShipId, station.Id, system, region, Array.AsReadOnly(book), expires, activeUntil);
+        return new(pilotId, pilot.ActiveShipId, stationId, system, region, Array.AsReadOnly(book), expires, activeUntil);
     }
 
     private static MarketTrade Read(MarketExecution trade) =>

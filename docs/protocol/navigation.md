@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Cynosural cycles and travel restrictions](#cynosural-cycles-and-travel-restrictions)
 - [Space position diagnostics](#space-position-diagnostics)
 - [Peer gate and cloak history](#peer-gate-and-cloak-history)
 - [Peer movement history](#peer-movement-history)
@@ -56,6 +57,23 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Cynosural cycles and travel restrictions
+
+The audit of Eden `63ec0c4f` found that undocking at an NPC station can leave the ship's saved system implicit.
+Cynosural fields and jump portals now resolve that position to the system of the station the ship undocked from.
+An emitter appears in the system and fleet beacon lists during its existing cycle, and a portal retains its fleet contact and paid
+deadline. A second activation cannot charge capacitor or replace an active portal.
+
+Developer translocation clears a ship's saved stargate cloak in the same transaction as changing its position or
+docking. Micro jump settlement checks current P.A.N.I.C. protection after the paid spool. An affected ship stays
+in place when its own drive completes or a nearby field resolves. The existing paid cycle and reactivation deadline
+remain in effect.
+
+The build-3662168 route inventory records `cynoTravelSvc.BridgeToBeaconStructure`. Its catalog fixture records
+the industrial portal, medium and capital micro jump modules, and `industrialInvulnConst.pyj` supplies the P.A.N.I.C.
+effects. EVE.js 261108.1 rejects a second portal activation in `structureCynoBeaconMgrService.js` (`cd040a90eb66`),
+and `microJumpDriveRuntime.js` (`dc0619d26b35`) resolves micro jumps after the spool. [CCP's portal release notes](https://www.eveonline.com/news/view/patch-notes-version-20-04) document the paid industrial cycle. [CCP's P.A.N.I.C. guide](https://support.eveonline.com/hc/en-us/articles/213529785-Pulse-Activated-Nexus-Invulnerability-Core-P-A-N-I-C) documents the prohibition on jumps during protection. [EVE University](https://wiki.eveuniversity.org/Capital_Ship_Modules#Pulse_Activated_Nexus_Invulnerability_Core) describes the affected ships and movement restrictions.
 
 ## Space position diagnostics
 

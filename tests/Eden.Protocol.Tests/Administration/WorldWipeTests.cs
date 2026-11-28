@@ -33,7 +33,7 @@ public sealed class WorldWipeTests
         var launcher = fixture.Services.GetRequiredService<LauncherStore>();
         var account = launcher.Register(new("Wipe Survivor", AccountPassword));
         var session = launcher.SignIn(new("Wipe Survivor", AccountPassword, true));
-        string ticket = await launcher.IssueTicketAsync(session.AccessToken);
+        string ticket = (await launcher.IssueTicketAsync(session.AccessToken)).Ticket;
         var mods = fixture.Services.GetRequiredService<ModStore>();
         string identity = mods.WorldIdentity();
         mods.WriteState("test.world", "pilot", "90000001");

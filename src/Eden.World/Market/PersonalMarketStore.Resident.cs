@@ -335,7 +335,7 @@ internal sealed partial class PilotMarketStore
                     divisionBalanceAfterSale = CorporationWalletStore.Pay(
                         world,
                         sellerCorporation,
-                        Station(catalog, tradeStation).OwnerId,
+                        MarketDefinitions.SccCorporationId,
                         candidate.Id,
                         WalletEntryType.TransactionTax,
                         -tax,

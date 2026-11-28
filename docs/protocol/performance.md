@@ -7463,3 +7463,11 @@ Live configuration revision 22 still caps active bots at 6,000. The 70% managed 
 ### Optional maintainer checks
 
 None.
+
+## Maintenance and checkpoint failure isolation
+
+A market expiry or demand failure leaves the other scheduled economic jobs eligible to run that turn, including belt renewal.
+Each economic job enters its own operation scope, so an earlier failure can unwind its transaction before the next job runs.
+The timer retries the failed job on its next interval. A slow checkpoint also preserves the outcome of the durable write when its
+warning sink throws. `EconomicLifecycleTests.FailedMarketDemandDoesNotBlockBeltRenewal` and
+`LiveWorldTests.SlowCheckpointStaysSuccessfulWhenTheLogSinkThrows` cover both failure paths.

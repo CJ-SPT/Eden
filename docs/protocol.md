@@ -350,6 +350,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Chat, mail and contacts
 
+- [Live organization mail and mailbox selection](protocol/social.md#live-organization-mail-and-mailbox-selection)
 - [Contact notification CSPA](protocol/social.md#contact-notification-cspa)
 - [Personal calendar invitation CSPA](protocol/social.md#personal-calendar-invitation-cspa)
 - [Personal mail CSPA](protocol/social.md#personal-mail-cspa)
@@ -446,6 +447,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Compatibility and route audits
 
+- [Emulator bug audit](protocol/compatibility.md#emulator-bug-audit)
 - [EVE.js comparison for account and station clone reads](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
 - [EVE.js comparison for map, character and dungeon routes](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
 - [In-game text for routine rejections](protocol/compatibility.md#in-game-text-for-routine-rejections)
@@ -457,6 +459,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Cooperative fleets
 
+- [Fleet departure and bridge notifications](protocol/fleets.md#fleet-departure-and-bridge-notifications)
 - [Individual fleet invitation CSPA](protocol/fleets.md#individual-fleet-invitation-cspa)
 - [Fleet group invitations](protocol/fleets.md#fleet-group-invitations)
 - [Fleet group moves](protocol/fleets.md#fleet-group-moves)
@@ -706,6 +709,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Market delivery and industry job corrections](protocol/industry.md#market-delivery-and-industry-job-corrections)
 - [Packaged equipment and Metal Scraps reprocessing](protocol/industry.md#packaged-equipment-and-metal-scraps-reprocessing)
 
 - [Market and industry output stack condition](protocol/industry.md#market-and-industry-output-stack-condition)
@@ -793,6 +797,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Navigation and travel
 
+- [Cynosural cycles and travel restrictions](protocol/navigation.md#cynosural-cycles-and-travel-restrictions)
 - [Faction Warfare map kills](protocol/navigation.md#faction-warfare-map-kills)
 - [Bookmark approach](protocol/navigation.md#bookmark-approach)
 - [Space position diagnostics](protocol/navigation.md#space-position-diagnostics)
@@ -929,6 +934,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
+- [Maintenance and checkpoint failure isolation](protocol/performance.md#maintenance-and-checkpoint-failure-isolation)
 - [Runtime admission and checkpoint recovery](protocol/performance.md#runtime-admission-and-checkpoint-recovery)
 - [SQL-free gameplay and cold market preparation](protocol/performance.md#sql-free-gameplay-and-cold-market-preparation)
 - [Planetary sourcing and tether waits during bot trades](protocol/performance.md#planetary-sourcing-and-tether-waits-during-bot-trades)
@@ -1054,6 +1060,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Startup and authentication
 
+- [Launcher credential deadlines](protocol/startup.md#launcher-credential-deadlines)
 - [Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)
 - [Startup reconciliation and catalog warm-up](protocol/startup.md#startup-reconciliation-and-catalog-warm-up-november-15-2026)
 - [Gateway stream shutdown](protocol/startup.md#gateway-stream-shutdown-november-15-2026)

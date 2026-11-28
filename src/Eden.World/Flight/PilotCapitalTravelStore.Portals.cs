@@ -43,7 +43,7 @@ internal sealed partial class PilotCapitalTravelStore
         {
             throw new InvalidDataException("Use an eligible Titan, Black Ops ship or Rorqual in a fleet to open a jump portal.");
         }
-        RequireReady(world, host, now);
+        RequireReady(world, catalog, host, now);
         AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
         RequireCynoSystem(catalog, request.SystemId);
         var destination = PortalDestination(world, catalog, host.Id, request, now);
@@ -107,9 +107,12 @@ internal sealed partial class PilotCapitalTravelStore
         return LiveWorld.Find(database.Path) is { Economy: var economy } && economy.MayHaveCynos(now)
             ? economy.Inspect(
                 world =>
-                    world.Set<SavedJumpPortal>().Find(pilotId) is { } portal && PortalActive(world, portal, now)
+                {
+                    using CatalogDbContext catalog = new(database.CatalogPath);
+                    return world.Set<SavedJumpPortal>().Find(pilotId) is { } portal && PortalActive(world, catalog, portal, now)
                         ? PortalContact(portal, PortalModuleType(world, portal))
-                        : null,
+                        : null;
+                },
                 new(pilots: [pilotId])
             )
             : null;
@@ -127,13 +130,15 @@ internal sealed partial class PilotCapitalTravelStore
             return [];
         }
         return economy.Inspect(world =>
-            world
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            return world
                 .Filter<SavedJumpPortal>(portal => portal.FleetId == fleet && portal.EndsAt > now)
                 .AsEnumerable()
-                .Where(portal => PortalActive(world, portal, now) && fleets.Identity(portal.PilotId)?.FleetId == fleet)
+                .Where(portal => PortalActive(world, catalog, portal, now) && fleets.Identity(portal.PilotId)?.FleetId == fleet)
                 .Select(portal => PortalContact(portal, PortalModuleType(world, portal)))
-                .ToArray()
-        );
+                .ToArray();
+        });
     }
 
     private JumpPlan PlanPortal(WorldAction world, CatalogDbContext catalog, Pilot passenger, CapitalJumpRequest request, long now)
@@ -150,7 +155,7 @@ internal sealed partial class PilotCapitalTravelStore
             || row.BeaconId != request.BeaconId
             || fleets.Identity(passenger.Id)?.FleetId != row.FleetId
             || fleets.Identity(row.PilotId)?.FleetId != row.FleetId
-            || !PortalActive(world, row, now)
+            || !PortalActive(world, catalog, row, now)
         )
         {
             throw new InvalidDataException("That fleet jump portal is unavailable.");
@@ -224,10 +229,10 @@ internal sealed partial class PilotCapitalTravelStore
         return destination;
     }
 
-    private static bool PortalActive(WorldAction world, SavedJumpPortal row, long now) =>
+    private static bool PortalActive(WorldAction world, CatalogDbContext catalog, SavedJumpPortal row, long now) =>
         row.EndsAt > now
-        && world.Positions.Find(row.ShipId)?.SystemId == row.Origin
         && world.Pilots.Find(row.PilotId)?.ActiveShipId == row.ShipId
+        && InSpaceInSystem(world, catalog, row.ShipId, row.Origin)
         && world.Set<OwnedItem>().Find(row.ModuleId) is { Online: true, Singleton: true } fitted
         && fitted.TypeId
             is CapitalTravelRules.CovertPortalGenerator

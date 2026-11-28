@@ -115,6 +115,11 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
                     .Select(entry =>
                     {
                         var snapshot = entry.Snapshot();
+                        if (entry.EntryType == WalletEntryType.TransactionTax)
+                        {
+                            // Older corporation sales recorded the station owner in the tax journal entry.
+                            return snapshot with { CounterpartyId = MarketDefinitions.SccCorporationId };
+                        }
                         // The native maintenance journal formats its reference as an alliance owner name.
                         return
                             entry.EntryType == WalletEntryType.AllianceMaintenance

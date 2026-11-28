@@ -270,7 +270,7 @@ internal sealed class PilotJumpBridgeStore(WorldDatabase database, SqliteWorld s
             throw new InvalidDataException("Approach within the Ansiblex activation range.");
         }
         world.RequireUncloaked(shipId);
-        PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        PilotCapitalTravelStore.RequireMobile(world, catalog, pilotId, shipId, now);
         Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         EntosisPersistence.RequireTravel(world, shipId, now);
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, exit.Structure.SystemId);

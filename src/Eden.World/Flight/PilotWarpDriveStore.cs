@@ -16,8 +16,9 @@ internal sealed class PilotWarpDriveStore(WorldDatabase database) : IPilotWarpDr
     {
         var live = LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Warp requires the resident world.");
         using var transaction = live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
+        using CatalogDbContext catalog = new(database.CatalogPath);
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(transaction, shipId, now);
-        PilotCapitalTravelStore.RequireMobile(transaction, pilotId, shipId, now);
+        PilotCapitalTravelStore.RequireMobile(transaction, catalog, pilotId, shipId, now);
         Eden.World.Combat.LanceDisruption.RequireTravel(transaction, shipId, now);
         if (Eden.World.Propulsion.PilotSpatialModuleStore.FieldScrambled(transaction, shipId, now))
         {
@@ -32,7 +33,6 @@ internal sealed class PilotWarpDriveStore(WorldDatabase database) : IPilotWarpDr
         {
             throw new InvalidDataException("An active ship in space is required to warp.");
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var attributes = PilotFittingStore.ShipAttributes(transaction, catalog, pilot);
         if (!attributes.TryGetValue(DogmaAttributeId.WarpCapacitorNeed, out double need))
         {

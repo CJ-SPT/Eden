@@ -9,6 +9,37 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed partial class CapitalTravelTests
 {
+    [Fact]
+    public void JumpPortalPublishesAndRejectsRepeatActivationWithAnImplicitOriginSystem()
+    {
+        using Fixture fixture = new(UtilityDroneRules.Rorqual, Oxygen, structures: true);
+        var (beacon, _) = fixture.PrepareNavigation();
+        fixture.AdmitBridgePilot(NavigationCorporation);
+        long module = fixture.FitCapitalModule(CapitalTravelRules.IndustrialPortalGenerator);
+        var source = fixture.Db.Store.FindPilot(1000001)!;
+        fixture.Db.Store.SetPosition(source.ShipId, s_station, Jan);
+        var docking = fixture.Db.Services.GetRequiredService<IStationDocking>();
+        docking.Dock(source.PilotId, source.ShipId, JanStation);
+        fixture.Db.Store.SetPosition(source.ShipId, s_station + new SpacePosition(20_000, 0, 0));
+        Assert.Null(fixture.Live.Economy.Inspect(world => world.Positions.Find(source.ShipId)!.SystemId));
+        using Client host = fixture.Select(1000001);
+        using Client passenger = fixture.Select(1000002);
+        fixture.Join(passenger);
+
+        Assert.IsType<PilotCallResult.Success>(Open());
+        var portal = Assert.IsType<JumpPortal>(fixture.Travel.Portal(source.PilotId));
+        Assert.Equal(module, portal.ModuleId);
+        Assert.Equal(Jan, portal.Origin);
+        Assert.Equal(portal, Assert.Single(fixture.Travel.FleetPortals(passenger.Pilot.PilotId)));
+        var resources = fixture.Db.Services.GetRequiredService<IPilotShipResources>();
+        double capacitor = resources.Read(source.PilotId, source.ShipId, fixture.Clock.Now).Capacitor;
+        Assert.IsType<PilotCallResult.Failure>(Open());
+        Assert.Equal(portal, fixture.Travel.Portal(source.PilotId));
+        Assert.Equal(capacitor, resources.Read(source.PilotId, source.ShipId, fixture.Clock.Now).Capacitor);
+
+        PilotCallResult Open() => host.Call("structureCynoBeaconMgr", "CmdBridgeToStructureBeacon", beacon.Id, NullSystem);
+    }
+
     [Theory]
     [InlineData(32880, true)] // Venture.
     [InlineData(648, false)] // Badger.

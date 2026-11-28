@@ -161,7 +161,8 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
             MailSelection selection = (method, args) switch
             {
                 ("AssignLabels" or "RemoveLabels" or "ReplaceLabels", [List<object?> ids, long mask]) => WithLabels(ids, mask),
-                (_, [List<object?> ids]) => new MailSelection.Ids(Ids(ids)),
+                ("MarkAsRead" or "MarkAsUnread" or "MoveToTrash" or "MoveFromTrash" or "DeleteMail", [List<object?> ids]) =>
+                    new MailSelection.Ids(Ids(ids)),
                 (_, [long mask]) when method.EndsWith("ByLabel", StringComparison.Ordinal) => new MailSelection.Label(mask),
                 (_, [long listId]) when listId > 0 && method.EndsWith("ByList", StringComparison.Ordinal) => new MailSelection.List(listId),
                 ("MoveAllFromTrash" or "EmptyTrash", []) => new MailSelection.Trash(),

@@ -7,6 +7,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Alliances;
 using Eden.Protocol.Calendar;
 using Eden.Protocol.Corporations;
+using Eden.Protocol.Mail;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
@@ -263,6 +264,8 @@ public sealed class AllianceSocialTests
         using (CorporationTestClient ceo = new(world, 1000001))
         using (CorporationTestClient member = new(world, 1000002))
         {
+            var recipientMail = member.Services.GetRequiredService<MailHandler>();
+            recipientMail.Enter(member.Context);
             message = Assert.IsType<long>(
                 Reply(
                     ceo,
@@ -284,6 +287,11 @@ public sealed class AllianceSocialTests
                 calendar.Attendance(Ceo, eventId, setup.Alliance).Single(a => a.PilotId == Other).Response
             );
             member.Advance();
+            recipientMail.Advance(member.Context);
+            var delivery = Assert.Single(member.Context.Notifications.OfType<MailSent>());
+            var deliveryArgs = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(delivery.Arguments)), 8);
+            Assert.Equal(message, deliveryArgs[0]);
+            Assert.Equal((long)setup.Alliance, deliveryArgs[5]);
             Assert.Single(member.Context.Notifications.OfType<CalendarEventCreated>());
             Assert.Null(
                 Reply(member, "calendarMgr", "EditAllianceEvent", [eventId, time, time, 60L, "Updated by allied CEO", "Updated", false])

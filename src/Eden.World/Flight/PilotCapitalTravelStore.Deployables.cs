@@ -52,7 +52,7 @@ internal sealed partial class PilotCapitalTravelStore
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = ActivePilot(world, pilotId, shipId);
         long now = Now;
-        RequireReady(world, pilot, now);
+        RequireReady(world, catalog, pilot, now);
         RequireLiving(world, pilot, PilotFittingStore.ShipAttributes(world, catalog, pilot), now);
         var saved = pilot.ActiveShip.Position!;
         int system = saved.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;

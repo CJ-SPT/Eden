@@ -76,6 +76,36 @@ public sealed partial class CooperativeFleetTests
     }
 
     [Fact]
+    public void FleetDepartureStillNotifiesClientAfterPendingEventsOverflow()
+    {
+        using TestWorld world = new(liveWorld: true);
+        using FleetClient leader = new(world, 1000001);
+        using FleetClient member = new(world, 1000002);
+        long id = Join(leader, member);
+        member.Context.Notifications.Clear();
+        var fleets = world.Services.GetRequiredService<ICooperativeFleets>();
+        fleets.Kick(leader.PilotId, id, member.PilotId);
+        for (int index = 0; index < FleetRules.MaximumPendingEvents; index++)
+        {
+            fleets.NotifyStandingChanged(member.PilotId, member.Context.Pilot.CorpId, 1);
+        }
+
+        member.Advance();
+        Assert.Null(member.Context.Pilot.Identity.Fleet);
+        Assert.Null(member.Context.ResolveReference(member.Reference!.Id));
+        var leave = Assert.Single(member.Context.Notifications.OfType<FleetLeaveNotification>());
+        Assert.Equal(member.PilotId, leave.PilotId);
+
+        member.Context.Notifications.Clear();
+        for (int index = 0; index <= FleetRules.MaximumPendingEvents; index++)
+        {
+            fleets.NotifyStandingChanged(member.PilotId, member.Context.Pilot.CorpId, 1);
+        }
+        member.Advance();
+        Assert.Empty(member.Context.Notifications.OfType<FleetLeaveNotification>());
+    }
+
+    [Fact]
     public void NativeHierarchyRolesOptionsAndBroadcastsReachOnlyAuthorizedMembers()
     {
         TestClock clock = new();

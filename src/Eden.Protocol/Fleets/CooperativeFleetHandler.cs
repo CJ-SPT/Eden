@@ -79,11 +79,14 @@ internal sealed partial class CooperativeFleetHandler(
         foreach (var delivery in fleets.Drain(pilot.PilotId))
         {
             var value = delivery.Event;
-            if (
-                value is not (FleetEvent.Invitation or FleetEvent.StandingChanged)
-                && delivery.FleetId != identity?.FleetId
-                && !(identity is null && value is FleetEvent.Left { PilotId: var departed } && departed == pilot.PilotId)
-            )
+            // A post-departure overflow replaces the original leave event with a resync under no fleet ID.
+            bool departed =
+                identity is null
+                && (
+                    value is FleetEvent.Left { PilotId: var leaving } && leaving == pilot.PilotId
+                    || value is FleetEvent.Resync { Member: null } && pilot.Identity.Fleet is not null
+                );
+            if (value is not (FleetEvent.Invitation or FleetEvent.StandingChanged) && delivery.FleetId != identity?.FleetId && !departed)
             {
                 continue;
             }
@@ -302,6 +305,7 @@ internal sealed partial class CooperativeFleetHandler(
         _watchHealth.Clear();
         _sentTags = null;
         _sentCynos = [];
+        _sentPortals = [];
         _tagFleet = null;
     }
 

@@ -151,6 +151,25 @@ public sealed class MailServiceTests
         Assert.IsType<long>(Reply(client.Call("SendMail", Draft(), "mailMgr", new() { ["approvedCost"] = 0L })));
     }
 
+    [Fact]
+    public void MissingReplacementMaskLeavesExistingMailLabelsIntact()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var store = MailTestData.Store(db);
+        long id = store.Send(MailTestData.Sender, MailTestData.Draft, Guid.NewGuid());
+        using CourierServiceTests.Client client = new(db, clock, 1000002);
+        client.Refresh();
+        long label = Assert.IsType<long>(Reply(client.Call("CreateLabel", ["Mining", null], "mailMgr")));
+        List<object?> ids = [id];
+        Assert.Null(Reply(client.Call("AssignLabels", [ids, label], "mailMgr")));
+
+        Assert.IsType<PilotCallResult.Failure>(client.Call("ReplaceLabels", [ids], "mailMgr"));
+        Assert.Equal(label | (long)SystemMailLabel.Inbox, Assert.Single(store.Sync(MailTestData.Recipient, null, 0).Status).Labels);
+        Assert.Null(Reply(client.Call("ReplaceLabels", [ids, 0L], "mailMgr")));
+        Assert.Equal(0L, Assert.Single(store.Sync(MailTestData.Recipient, null, 0).Status).Labels);
+    }
+
     [Theory]
     [InlineData("MarkAsRead")]
     [InlineData("MarkAllAsRead")]

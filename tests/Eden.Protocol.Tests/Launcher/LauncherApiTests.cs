@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Eden.Gameplay.Docking;
+using Eden.Protocol.Tests.Administration;
 using Eden.Server.Authentication;
 using Eden.Server.Launcher;
 using Eden.World.Storage;
@@ -47,7 +48,7 @@ public sealed class LauncherApiTests
             };
             var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
             using var identity = new DevelopmentIdentity(TimeProvider.System, store, options);
-            await using var api = LauncherApi.Create(options, store, identity, TimeProvider.System);
+            await using var api = LauncherApi.Create(options, store, identity);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await api.StartAsync(timeout.Token);
             using var client = new HttpClient(
@@ -81,7 +82,7 @@ public sealed class LauncherApiTests
         var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
         store.Initialize();
         using var identity = new DevelopmentIdentity(TimeProvider.System, store, options);
-        await using var api = LauncherApi.Create(options, store, identity, TimeProvider.System);
+        await using var api = LauncherApi.Create(options, store, identity);
         await api.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
         var server = await client.GetFromJsonAsync<ServerReply>("server");
@@ -105,6 +106,46 @@ public sealed class LauncherApiTests
         await api.StopAsync();
     }
 
+    [PinnedSkillClientFact]
+    public async Task LaunchReplyReportsTheExactTicketDeadlineNearSessionExpiry()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        LauncherOptions options = new() { ApiPort = AvailablePort() };
+        LauncherStore store = new(new(world.Path), clock);
+        const string name = "Expiring Launch Pilot";
+        const string password = "launch test password";
+        var account = store.Register(new(name, password));
+        var session = store.SignIn(new(name, password, false));
+        using var identity = new DevelopmentIdentity(clock, store, options);
+        await using var api = LauncherApi.Create(options, store, identity);
+        await api.StartAsync();
+        using HttpClient client = new() { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+        string root = Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!;
+        byte[] manifest = await File.ReadAllBytesAsync(Path.Combine(root, "tq", "manifest.dat"));
+        Convert.FromHexString(ClientManifest.OriginalCodeHash).CopyTo(manifest, ClientManifest.CodeHashOffset);
+        LaunchRequest request = new(3662168, Convert.ToBase64String(ClientManifest.ReadOriginalPrefix(manifest)));
+        clock.UtcNow = DateTimeOffset.FromUnixTimeSeconds(session.ExpiresAt - 1);
+
+        var first = await Launch();
+        var second = await Launch();
+
+        Assert.Equal(session.ExpiresAt, first.ExpiresAt);
+        Assert.Equal(session.ExpiresAt, second.ExpiresAt);
+        Assert.Equal(account.AccountId, await store.ConsumeTicketAsync(first.Ticket));
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        Assert.Null(await store.ConsumeTicketAsync(second.Ticket));
+        await api.StopAsync();
+
+        async Task<LaunchReply> Launch()
+        {
+            using var response = await client.PostAsJsonAsync("launch-tickets", request);
+            response.EnsureSuccessStatusCode();
+            return (await response.Content.ReadFromJsonAsync<LaunchReply>())!;
+        }
+    }
+
     [Fact]
     public async Task AccountEndpointsWaitForWorldReadiness()
     {
@@ -112,7 +153,7 @@ public sealed class LauncherApiTests
         LauncherReadiness readiness = new();
         const string administrationUrl = "http://127.0.0.1:26003";
         readiness.RequireSetup(administrationUrl);
-        await using var api = LauncherApi.Create(options, readiness, TimeProvider.System);
+        await using var api = LauncherApi.Create(options, readiness);
         await api.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
 
@@ -172,7 +213,7 @@ public sealed class LauncherApiTests
         var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
         store.Initialize();
         using var identity = new DevelopmentIdentity(TimeProvider.System, store, options);
-        await using var api = LauncherApi.Create(options, store, identity, TimeProvider.System);
+        await using var api = LauncherApi.Create(options, store, identity);
         await api.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
         for (int attempt = 0; attempt < 20; attempt++)

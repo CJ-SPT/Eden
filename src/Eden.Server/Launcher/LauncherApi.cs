@@ -19,7 +19,6 @@ internal static class LauncherApi
         LauncherOptions settings,
         LauncherStore accounts,
         DevelopmentIdentity identity,
-        TimeProvider clock,
         string? chatCertificatePem = null,
         SkillClientPublisher? skillPublisher = null,
         Eden.World.Modding.ModStore? mods = null
@@ -27,10 +26,10 @@ internal static class LauncherApi
     {
         LauncherReadiness readiness = new();
         readiness.Open(new(accounts, identity, chatCertificatePem, skillPublisher, mods));
-        return Create(settings, readiness, clock);
+        return Create(settings, readiness);
     }
 
-    public static WebApplication Create(LauncherOptions settings, LauncherReadiness readiness, TimeProvider clock)
+    public static WebApplication Create(LauncherOptions settings, LauncherReadiness readiness)
     {
         settings.Validate();
         byte[]? certificateAuthority = LoadCertificateAuthority(settings.CertificateAuthorityPath);
@@ -182,12 +181,8 @@ internal static class LauncherApi
                     }
                     accounts.AuthorizeAccess(Access(context));
                     byte[] manifest = identity.SignManifest(request.ManifestPrefix, request.ChatBundleSha256, package?.CodeSha256);
-                    string ticket = await accounts.IssueTicketAsync(Access(context), context.RequestAborted);
-                    return new LaunchReply(
-                        ticket,
-                        clock.GetUtcNow().ToUnixTimeSeconds() + LauncherStore.TicketSeconds,
-                        Convert.ToBase64String(manifest)
-                    );
+                    var (ticket, expiresAt) = await accounts.IssueTicketAsync(Access(context), context.RequestAborted);
+                    return new LaunchReply(ticket, expiresAt, Convert.ToBase64String(manifest));
                 }
             )
             .RequireRateLimiting("sign-in");

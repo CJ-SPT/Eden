@@ -6,6 +6,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Market;
@@ -33,6 +34,36 @@ public sealed class StandardMarketTests
     private const int Tritanium = 34;
     private const int Pyerite = 35;
     private const long StartingBalance = 10_000_000;
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void StationAsksClearAfterUndockingWhileSystemAndRegionAsksRemain(bool resident, bool standard)
+    {
+        TestClock clock = new();
+        using TestWorld fixture = standard ? Create(clock) : new(clock: clock);
+        WorldDatabase database = new(fixture.Path);
+        if (!standard)
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath, writable: true);
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/stationoperations','14','{{\"services\":[7]}}')"
+            );
+        }
+        using var host = ServerServices.Build(database, clock, liveWorld: resident);
+        var market = host.GetRequiredService<IPilotMarket>();
+        long ship = fixture.Store.FindPilot(1000001)!.ShipId;
+        Assert.NotEmpty(market.BestAsks(Pilot, MarketScope.Station));
+
+        fixture.Store.SetPosition(ship, SpacePosition.Zero, SystemId);
+        Assert.Empty(market.BestAsks(Pilot, MarketScope.Station));
+        Assert.NotEmpty(market.BestAsks(Pilot, MarketScope.System));
+        Assert.NotEmpty(market.BestAsks(Pilot, MarketScope.Region));
+
+        fixture.Store.SetPosition(ship, null);
+        Assert.NotEmpty(market.BestAsks(Pilot, MarketScope.Station));
+    }
 
     [Theory]
     [InlineData(false)]

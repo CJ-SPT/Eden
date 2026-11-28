@@ -2,6 +2,24 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet departure and bridge notifications
+
+When an observer's departure is followed by enough pending events to overflow its queue, the fleet owner
+replaces the queued leave with a resync for a pilot who is no longer in a fleet. The adapter now accepts that
+resync when the client's prior session still shows membership and sends `OnFleetLeave(pilotID)`. A pilot who
+was already outside a fleet receives no leave from an unrelated resync.
+
+Character logoff now clears the previous pilot's observed jump portals along with the other fleet snapshots.
+This prevents a later selection in the same connection from receiving a stale bridge removal.
+
+Inert inspection of build **3662168** `fleetSvc.pyj` lines 250 and 1385 confirms
+`OnBridgeModeChange(shipID, solarsystemID, itemID, active)` and `OnFleetLeave(charID)`. EVE.js `fleetRuntime.js`
+uses these event names and arguments. The original archive SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The regressions exercise the bounded fleet queue and same-connection character reselection with a live portal.
+[EVE University Fleet interface](https://wiki.eveuniversity.org/Fleet_interface) ·
+[EVE University Jump drives](https://wiki.eveuniversity.org/Jump_drives#Bridging)
+
 ## Individual fleet invitation CSPA
 
 An individual fleet invitation respects the recipient's Mail & Communications settings. A charge prompts the

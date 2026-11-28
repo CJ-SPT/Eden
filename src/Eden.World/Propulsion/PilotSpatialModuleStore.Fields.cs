@@ -56,6 +56,7 @@ internal sealed partial class PilotSpatialModuleStore
                 || CrimewatchPersistence.System(catalog, victim.ActiveShip) != system
                 || world.Set<ShipLoss>().Find(candidate.ShipId) is not null
                 || Scrambled(world, candidate.ShipId, now)
+                || Eden.World.Flight.PilotCapitalTravelStore.ProtectedIndustry(world, candidate.ShipId, now)
                 || world.TetherProtected(candidate.ShipId, now)
                 || ReadStatus(world, catalog, candidate.ShipId).Cloaked(now)
             )

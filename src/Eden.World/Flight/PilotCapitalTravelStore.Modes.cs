@@ -27,7 +27,7 @@ internal sealed partial class PilotCapitalTravelStore
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
         var pilot = ActivePilot(action, pilotId, shipId);
-        RequireReady(action, pilot, now);
+        RequireReady(action, catalog, pilot, now);
         var item = action.Set<OwnedItem>().Find(moduleId);
         int hull = catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId;
         if (

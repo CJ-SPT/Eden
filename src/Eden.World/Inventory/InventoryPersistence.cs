@@ -68,6 +68,7 @@ internal static partial class InventoryPersistence
                 && !i.Online
                 && i.VolumeOverride == null
                 && i.CrystalDamage == 0
+                && i.Quantity <= int.MaxValue - quantity
                 && world.Entry(i).State != EntityState.Deleted
             )
             .OrderBy(i => i.Id)

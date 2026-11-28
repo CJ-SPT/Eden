@@ -7,6 +7,26 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Market delivery and industry job corrections
+
+- Station ask summaries now use the current NPC station while docked. Undocking clears the station summary while
+  keeping the system and region summaries available. This applies to the Standard market and development supply.
+- The corporation wallet journal identifies the Secure Commerce Commission as the transaction-tax recipient for
+  immediate corporation sales, including older saved entries that recorded the station owner.
+  [EVE University trading](https://wiki.eveuniversity.org/Trading)
+- Market and production deliveries skip stacks that cannot hold the full incoming quantity. When every compatible
+  stack is full, delivery creates a separate stack and preserves the existing quantities.
+- Cancelling a job while a structure service is offline clears the pause markers, releases the blueprint reservation,
+  and reports the job as cancelled. Older saves that retain a pause marker also report the terminal status.
+  [EVE University Upwell structures](https://wiki.eveuniversity.org/Upwell_structures)
+
+The build 3662168 [route inventory](../client-routes/routes.csv) locates `MarketQuote.GetStationAsks` in `marketsvc.pyj`
+and `IndustryService.CancelJob` in `industrySvc.pyj`. The stock `code.ccp` SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. EVE.js 261108.1 checks current docking for
+station asks in `marketProxyService.js` (SHA-256 `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`)
+and clears `pauseDate` on cancellation in `industryRuntimeState.js` (SHA-256
+`bf6ab290bd622ed029fd8ed6e2214b4604ff874f6becd585842ffe4eac01d63c`).
+
 ## Packaged equipment and Metal Scraps reprocessing
 
 The native Reprocessing window can quote and process personal packaged ships, packaged modules, and Metal Scraps

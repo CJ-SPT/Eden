@@ -63,6 +63,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal Action<int>? CheckpointStepCompleted { get; set; }
     private readonly Action<string> _report;
     private readonly Action<string> _reportFailure;
+    private readonly Action<string> _reportWarning;
     private readonly Action<string> _reportTrace;
     private readonly TimeSpan _checkpointInterval;
     private readonly ITimer _timer;
@@ -529,6 +530,7 @@ internal sealed partial class LiveWorld : IDisposable
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
+        _reportWarning = report ?? ServerLog.Console.Warning;
         _reportTrace = report ?? ServerLog.Console.Trace;
         _persist = persist;
         _copy = copy;
@@ -939,7 +941,7 @@ internal sealed partial class LiveWorld : IDisposable
             );
             if ((completed.Wait + completed.Capture + completed.Copy).TotalMilliseconds >= SlowOwnershipMilliseconds)
             {
-                ServerLog.Console.Warning(timing);
+                Report(timing, _reportWarning);
             }
             else
             {
@@ -1008,15 +1010,19 @@ internal sealed partial class LiveWorld : IDisposable
         }
     }
 
-    private void Report(string message, bool failure = false, bool trace = false)
+    private void Report(string message, bool failure = false, bool trace = false) =>
+        Report(
+            message,
+            failure ? _reportFailure
+                : trace ? _reportTrace
+                : _report
+        );
+
+    private static void Report(string message, Action<string> report)
     {
         try
         {
-            (
-                failure ? _reportFailure
-                : trace ? _reportTrace
-                : _report
-            )(message);
+            report(message);
         }
         catch (Exception)
         {

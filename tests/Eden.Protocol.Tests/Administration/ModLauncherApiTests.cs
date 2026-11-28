@@ -55,7 +55,7 @@ public sealed class ModLauncherApiTests
         accounts.Register(new("Mod test pilot", "mod test password"));
         var session = accounts.SignIn(new("Mod test pilot", "mod test password", false));
         using var identity = new DevelopmentIdentity(TimeProvider.System, accounts, options);
-        await using var app = LauncherApi.Create(options, accounts, identity, TimeProvider.System, mods: store);
+        await using var app = LauncherApi.Create(options, accounts, identity, mods: store);
         await app.StartAsync();
         using HttpClient http = new() { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
         var advertised = (await http.GetFromJsonAsync<ServerReply>("/api/v1/server"))!;

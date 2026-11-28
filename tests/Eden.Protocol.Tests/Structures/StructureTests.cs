@@ -1,4 +1,5 @@
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Data.World.Structures;
@@ -664,9 +665,11 @@ public sealed class StructureTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen(bool resident)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen(bool resident, bool cancel)
     {
         using Fixture f = new(liveWorld: resident);
         var structure = f.Online(35825);
@@ -714,7 +717,29 @@ public sealed class StructureTests
         Assert.Throws<InvalidDataException>(() => industry.Deliver(f.PilotId, paused.Id, Fixture.SystemId));
         using (WorldDbContext reopened = new(f.Db.Path))
         {
-            Assert.Equal(stoppedAt, reopened.Set<Eden.Data.World.Industry.IndustryJob>().Find(paused.Id)!.SuspendedAt);
+            Assert.Equal(stoppedAt, reopened.Set<IndustryJob>().Find(paused.Id)!.SuspendedAt);
+        }
+        if (cancel)
+        {
+            var cancelled = industry.Cancel(f.PilotId, paused.Id, Fixture.SystemId);
+            Assert.Equal(IndustryJobStatus.Cancelled, cancelled.Job.Status);
+            Assert.Null(cancelled.Job.SuspendedAt);
+            Assert.Null(industry.Blueprint(f.PilotId, blueprint).JobId);
+            Assert.Empty(industry.Jobs(f.PilotId, includeCompleted: false));
+            using (WorldDbContext reopened = new(f.Db.Path))
+            {
+                var stored = reopened.Set<IndustryJob>().Find(paused.Id)!;
+                Assert.Equal(IndustryJobStatus.Cancelled, stored.Status);
+                Assert.Null(stored.SuspendedAt);
+                // Older checkpoints could keep the pause marker on a cancelled job.
+                stored.SuspendedAt = stoppedAt;
+                reopened.SaveChanges();
+            }
+            var history = Assert.Single(industry.Jobs(f.PilotId, includeCompleted: true));
+            Assert.Equal(IndustryJobStatus.Cancelled, history.Status);
+            Assert.Null(history.SuspendedAt);
+            Assert.Empty(industry.Cancel(f.PilotId, paused.Id, Fixture.SystemId).Changes);
+            return;
         }
         f.Structures.DepositFuel(f.PilotId, structure.Id, f.Item(4051, 1000), 1000);
         f.Structures.SetServiceOnline(f.PilotId, structure.Id, module, true);

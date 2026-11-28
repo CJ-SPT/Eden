@@ -153,6 +153,57 @@ public sealed class EconomicLifecycleTests
     }
 
     [Fact]
+    public async Task FailedMarketDemandDoesNotBlockBeltRenewal()
+    {
+        using Fixture f = new(resident: true);
+        AddBelt(f);
+        var field = f.Db.Services.GetRequiredService<IAsteroidField>();
+        var original = field.List(System);
+        Assert.NotEmpty(original);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=0");
+            f.Clock.UtcNow = DateTimeOffset.FromFileTime(world.Set<SavedBeltRenewal>().Min(b => b.NextRenewal));
+        }
+        Assert.Empty(field.List(System));
+        var timerClock = new CheckpointClock(f.Clock);
+        FailingDemand demand = new();
+        await using MarketMaintenance maintenance = new(
+            f.Personal,
+            timerClock,
+            f.Db.Services.GetRequiredService<IResourceRenewal>(),
+            demand: demand
+        );
+        maintenance.Start();
+        f.Clock.AdvanceWallTime(MarketMaintenance.Interval);
+        timerClock.FireDueTimers();
+        await maintenance.Pending;
+
+        Assert.IsType<InvalidOperationException>(maintenance.LastFailure);
+        Assert.Equal(original, field.List(System));
+
+        f.Clock.AdvanceWallTime(MarketMaintenance.Interval);
+        timerClock.FireDueTimers();
+        await maintenance.Pending;
+        Assert.Equal(2, demand.Attempts);
+        Assert.Null(maintenance.LastFailure);
+    }
+
+    private sealed class FailingDemand : IMarketDemandMaintenance
+    {
+        internal int Attempts { get; private set; }
+
+        public int AdvanceDemand(int limit)
+        {
+            if (++Attempts == 1)
+            {
+                throw new InvalidOperationException("Simulated demand failure.");
+            }
+            return 0;
+        }
+    }
+
+    [Fact]
     public void ReprocessingQuotesAndChargesExactlyOnceAndRejectionPreservesMoneyAndOre()
     {
         using Fixture f = new();

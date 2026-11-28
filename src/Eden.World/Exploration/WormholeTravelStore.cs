@@ -398,7 +398,7 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
 
     private static Connection Validate(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long entranceId, long now)
     {
-        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, catalog, pilotId, shipId, now);
         Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         var authority = WormholeCatalog.Read(catalog);
         long sourceId = entranceId - (entranceId - WormholeRules.FirstEndpointId) % 2;

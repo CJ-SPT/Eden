@@ -1,3 +1,4 @@
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Corporations;
@@ -73,7 +74,16 @@ public sealed class CorporationMarketSaleTests
         Assert.Equal(gross - tax, wallet.Balance(Member, Division));
         var journal = wallet.Journal(Member, true, Division);
         Assert.Equal(gross, Assert.Single(journal, entry => entry.EntryType == WalletEntryType.MarketTransaction).AmountCents);
-        Assert.Equal(-tax, Assert.Single(journal, entry => entry.EntryType == WalletEntryType.TransactionTax).AmountCents);
+        var taxEntry = Assert.Single(journal, entry => entry.EntryType == WalletEntryType.TransactionTax);
+        Assert.Equal(-tax, taxEntry.AmountCents);
+        Assert.Equal(MarketDefinitions.SccCorporationId, taxEntry.CounterpartyId);
+        using (var action = live.Economy.Begin())
+        {
+            var storedTax = action.Set<SavedWalletLedger>().Find(taxEntry.Id)!;
+            Assert.Equal(MarketDefinitions.SccCorporationId, storedTax.CounterpartyId);
+            storedTax.CounterpartyId = bid.OwnerId;
+            action.Commit();
+        }
         await live.FlushAsync();
         world.Services.Dispose();
         using var reopened = ServerServices.Build(new(world.Path), liveWorld: true);
@@ -84,6 +94,15 @@ public sealed class CorporationMarketSaleTests
         var restored = reopened.GetRequiredService<LiveWorld>();
         Assert.Equal(2, Quantity(restored, itemId));
         Assert.Equal(gross - tax, reopened.GetRequiredService<ICorporationWallet>().Balance(Member, Division));
+        Assert.Equal(
+            MarketDefinitions.SccCorporationId,
+            Assert
+                .Single(
+                    reopened.GetRequiredService<ICorporationWallet>().Journal(Member, true, Division),
+                    entry => entry.EntryType == WalletEntryType.TransactionTax
+                )
+                .CounterpartyId
+        );
     }
 
     [Fact]

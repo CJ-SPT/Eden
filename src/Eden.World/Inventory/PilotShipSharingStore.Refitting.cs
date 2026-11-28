@@ -61,7 +61,7 @@ internal sealed partial class PilotShipSharingStore
         using var world = BeginRefit(pilotId, shipId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var pilot = RequireRefitShip(world, pilotId, shipId, now);
+        var pilot = RequireRefitShip(world, catalog, pilotId, shipId, now);
         RequireIdleModules(world, shipId, [moduleId], now);
         var (system, position) = RefitPosition(catalog, pilot);
         bool pay = online && (WeaponsTimerActive(world, pilotId, now) || !HasFittingService(world, catalog, pilot, system, position));
@@ -78,7 +78,7 @@ internal sealed partial class PilotShipSharingStore
 
     private void RequireRefit(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, IReadOnlyList<long> items, long now)
     {
-        var pilot = RequireRefitShip(world, pilotId, shipId, now);
+        var pilot = RequireRefitShip(world, catalog, pilotId, shipId, now);
         if (WeaponsTimerActive(world, pilotId, now))
         {
             throw new InvalidDataException("The weapons timer prevents refitting in space.");
@@ -91,7 +91,7 @@ internal sealed partial class PilotShipSharingStore
         }
     }
 
-    private static Pilot RequireRefitShip(WorldAction world, long pilotId, long shipId, long now)
+    private static Pilot RequireRefitShip(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long now)
     {
         var pilot = world.Pilots.Find(pilotId);
         if (pilot?.ActiveShipId != shipId || pilot.ActiveShip.Position is null || pilot.ActiveShip.OwnerId != pilotId)
@@ -99,7 +99,7 @@ internal sealed partial class PilotShipSharingStore
             throw new InvalidDataException("Change your fitting only on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
-        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, catalog, pilotId, shipId, now);
         return pilot;
     }
 

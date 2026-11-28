@@ -20,6 +20,33 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed class GateCloakTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DeveloperTranslocationEndsGateCloakInSpaceAndWhenDocking(bool docked)
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var gate = db.Objects.Single(body => body.DestinationGateId.HasValue);
+        var travel = db.Services.GetRequiredService<IPilotGateTravel>();
+        var spatial = db.Services.GetRequiredService<IPilotSpatialModules>();
+        var translocation = db.Services.GetRequiredService<IPilotTranslocation>();
+        db.Store.SetPosition(pilot.ShipId, gate.Position);
+        travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId!.Value);
+        Assert.True(spatial.Status(pilot.ShipId).GateCloaked(clock.Now));
+
+        var moved = translocation.Move(pilot.PilotId, pilot.ShipId, docked ? pilot.StationId : gate.Id);
+
+        Assert.Equal(pilot.SystemId, moved.Pilot.SystemId);
+        Assert.Equal(docked, moved.Pilot.Position is null);
+        Assert.Equal(0, spatial.Status(pilot.ShipId).GateCloakUntil);
+        using var checkpoint = Assert.IsType<WorldSnapshot>(db.Services.GetRequiredService<LiveWorld>().CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext saved = new(checkpoint.Database);
+        Assert.Equal(0, saved.Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Find(pilot.ShipId)!.GateCloakUntil);
+    }
+
     [Fact]
     public void HealthReadsFollowGateTransfersAndUseCurrentDamageOnReturn()
     {

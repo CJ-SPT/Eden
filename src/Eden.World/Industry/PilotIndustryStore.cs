@@ -613,8 +613,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             job.StartTime,
             EndTime(world, job, Now),
             job.DurationSeconds,
-            job.SuspendedAt.HasValue ? IndustryJobStatus.Paused
-                : Active(job) && Ready(world, job, Now) ? IndustryJobStatus.Ready
+            !Active(job) ? job.Status
+                : job.SuspendedAt.HasValue ? IndustryJobStatus.Paused
+                : Ready(world, job, Now) ? IndustryJobStatus.Ready
                 : job.Status,
             job.CompletedAt,
             job.CostCents,
@@ -624,7 +625,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             job.Probability,
             job.Status == IndustryJobStatus.Delivered ? job.SuccessfulRuns ?? job.Runs : null,
             job.OptionalTypeId,
-            job.SuspendedAt,
+            Active(job) ? job.SuspendedAt : null,
             job.OutputLocationId,
             job.OutputFlagId,
             world.Set<OwnedItem>().Find(job.BlueprintId)?.LocationId
@@ -991,6 +992,8 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         job.Status = status;
         job.CompletedAt = Now;
+        job.SuspendedAt = null;
+        job.CapsuleerSuspendedTicks = null;
         if (!cancel && job.Activity == IndustryActivity.Manufacturing)
         {
             MarketProgressionStore.Claim(world, catalog, job);

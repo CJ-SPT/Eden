@@ -20,7 +20,7 @@ public sealed partial class SqliteWorld
     {
         long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, now);
-        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, catalog, pilotId, shipId, now);
         AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
         LanceDisruption.RequireTravel(world, shipId, now);
         Eden.World.Fleets.CommandBurstStore.RequirePhenomenaInactive(world, shipId, now);

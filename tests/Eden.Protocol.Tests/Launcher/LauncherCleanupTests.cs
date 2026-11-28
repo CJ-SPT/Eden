@@ -67,13 +67,13 @@ public sealed class LauncherCleanupTests
         Assert.Equal(1, Count(world.Path, "LauncherSession"));
         Assert.Equal(1, Count(world.Path, "LauncherRefresh"));
         Assert.Equal(0, Count(world.Path, "LauncherTicket"));
-        Assert.NotNull(await reopened.IssueTicketAsync(current.AccessToken));
+        Assert.NotEmpty((await reopened.IssueTicketAsync(current.AccessToken)).Ticket);
         clock.AdvanceWallTime(TimeSpan.FromSeconds(LauncherStore.AccessSeconds));
         await Assert.ThrowsAsync<LauncherException>(() => reopened.IssueTicketAsync(current.AccessToken));
         var renewed = reopened.Refresh(current.RefreshToken!);
         Assert.Equal(current.AccountId, renewed.AccountId);
         Assert.NotEqual(current.RefreshToken, renewed.RefreshToken);
-        Assert.NotNull(await reopened.IssueTicketAsync(renewed.AccessToken));
+        Assert.NotEmpty((await reopened.IssueTicketAsync(renewed.AccessToken)).Ticket);
         Assert.Equal(2, Count(world.Path, "WorldPilot"));
     }
 

@@ -10,6 +10,7 @@ using Eden.World.Characters;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Fleets;
+using Eden.World.Propulsion;
 using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -178,6 +179,7 @@ internal sealed partial class PilotTranslocationStore(
                 ship.Position.SystemId = target.System.Id;
                 (ship.Position.X, ship.Position.Y, ship.Position.Z) = (point.X, point.Y, point.Z);
             }
+            GateCloakPersistence.Cancel(world, ship.Id);
             ShipHeatPersistence.CancelForTravel(world, ship.Id);
             world.SaveChanges();
             var current = PilotFleetStore.Read(catalog, ship);

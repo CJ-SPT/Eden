@@ -255,9 +255,9 @@ internal sealed partial class PilotMarketStore
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         // Ship.StationId still identifies the last NPC station while docked at an Upwell structure.
-        var localStation = pilot.ActiveShip.StructureId is null ? Station(catalog, pilot.ActiveShip.StationId) : null;
+        var localStation = pilot.ActiveShip is { Position: null, StructureId: null } ? Station(catalog, pilot.ActiveShip.StationId) : null;
         int stationId = localStation?.Id ?? 0;
-        if (pilot.ActiveShip.Position is null && localStation is not null && HasMarket(catalog, localStation))
+        if (localStation is not null && HasMarket(catalog, localStation))
         {
             using var seed = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.seedLocal");
             Seed(world, catalog, localStation, typeId, includeDemand: scope is null);

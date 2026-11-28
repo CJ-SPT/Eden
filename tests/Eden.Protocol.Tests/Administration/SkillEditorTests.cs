@@ -165,7 +165,7 @@ public sealed class SkillEditorTests
         accounts.Register(new("Skill package pilot", "test password"));
         var session = accounts.SignIn(new("Skill package pilot", "test password", false));
         using var identity = new DevelopmentIdentity(TimeProvider.System, accounts, options);
-        await using var api = LauncherApi.Create(options, accounts, identity, TimeProvider.System, skillPublisher: publisher);
+        await using var api = LauncherApi.Create(options, accounts, identity, skillPublisher: publisher);
         await api.StartAsync();
         using HttpClient http = new() { BaseAddress = new Uri($"http://127.0.0.1:{port}/api/v1/") };
         var advertised = (await http.GetFromJsonAsync<ServerReply>("server"))!;

@@ -37,7 +37,7 @@ public sealed class LoginTicketCheckpointTests
         store.Initialize();
         var account = store.Register(new("Concurrent tickets", Password));
         var session = store.SignIn(new("Concurrent tickets", Password, true));
-        string initial = await store.IssueTicketAsync(session.AccessToken);
+        string initial = (await store.IssueTicketAsync(session.AccessToken)).Ticket;
         live.ObjectsChanged();
         pause = true;
         Task saving = live.FlushAsync();
@@ -53,7 +53,7 @@ public sealed class LoginTicketCheckpointTests
                         Task.Run(async () =>
                         {
                             using var metrics = SessionPerformance.Capture("ticket", samples.Add);
-                            string ticket = await store.IssueTicketAsync(session.AccessToken);
+                            string ticket = (await store.IssueTicketAsync(session.AccessToken)).Ticket;
                             return await store.ConsumeTicketAsync(ticket);
                         })
                     )
@@ -98,8 +98,8 @@ public sealed class LoginTicketCheckpointTests
         store.Initialize();
         var account = store.Register(new("Restart tickets", Password));
         var session = store.SignIn(new("Restart tickets", Password, true));
-        string used = await store.IssueTicketAsync(session.AccessToken);
-        string unused = await store.IssueTicketAsync(session.AccessToken);
+        string used = (await store.IssueTicketAsync(session.AccessToken)).Ticket;
+        string unused = (await store.IssueTicketAsync(session.AccessToken)).Ticket;
         await live.FlushAsync();
         string restoredPath = Path.Combine(Path.GetDirectoryName(world.Path)!, "restored.sqlite");
         File.Copy(world.Path, restoredPath);
@@ -114,7 +114,7 @@ public sealed class LoginTicketCheckpointTests
         Assert.Null(await reopened.ConsumeTicketAsync("eden3.invalid"));
         var refreshed = reopened.Refresh(session.RefreshToken!);
         Assert.Equal(account.AccountId, refreshed.AccountId);
-        string current = await reopened.IssueTicketAsync(refreshed.AccessToken);
+        string current = (await reopened.IssueTicketAsync(refreshed.AccessToken)).Ticket;
         var attempts = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => Task.Run(() => reopened.ConsumeTicketAsync(current))));
         Assert.Single(attempts, id => id == account.AccountId);
         Assert.Equal(3, attempts.Count(id => id is null));
