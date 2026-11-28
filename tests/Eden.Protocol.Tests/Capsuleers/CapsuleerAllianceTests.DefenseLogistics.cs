@@ -9,6 +9,7 @@ using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
@@ -25,6 +26,7 @@ using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,13 +34,171 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class CapsuleerAllianceTests
 {
+    private const int DefenseFuelSupplier = 60003760;
+    private const int DefenseFuelType = SovereigntyCaptureFixture.Strontium;
+    private const long DefenseFuelPrice = 100;
+
+    [Fact]
+    public async Task DryGuardStocksFuelWhileClaimsAreQuietAndRespondsAcrossRestart()
+    {
+        const int shipment = 4;
+        long reserve = AllianceBillingRules.Amount(1);
+        long funded = reserve + 100_000 * MarketDefinitions.CentsPerIsk;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        PrepareHeldClaims(fixture, regionalSupplier: true);
+
+        int corporation;
+        int headquarters;
+        long pilot;
+        long ship;
+        SovereigntyClaim oldest;
+        SovereigntyClaim later;
+        using (var seeded = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = seeded.GetRequiredService<LiveWorld>();
+            var claims = seeded.GetRequiredService<ISovereignty>();
+            (corporation, headquarters, pilot, _) = SeedHeldClaims(seeded, fixture, primaryFuel: 0, backupFuel: 0, treasury: funded);
+            oldest = Assert.IsType<SovereigntyClaim>(claims.Read(OldestDefenseSystem));
+            later = Assert.IsType<SovereigntyClaim>(claims.Read(LaterDefenseSystem));
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            long sellerStock;
+            using (var setup = live.Economy.Begin(TransactionParticipants.None))
+            {
+                var economy = setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!;
+                economy.TestingMarket = false;
+                economy.TestingGrants = false;
+                ship = setup.Pilots.Find(pilot)!.ActiveShipId;
+                var legacy = new HaulerProgress(HaulerActivity.Docked, 0, 0, ship, headquarters, 0, new NavigationState().Capture())
+                {
+                    HomeDefenseAllianceId = later.AllianceId,
+                };
+                new HaulerCheckpoint(pilot, legacy).Apply(setup);
+                sellerStock = StockDefenseFuel(setup, catalog, funded, shipment);
+                setup.Commit();
+            }
+            ListDefenseFuel(seeded, sellerStock, shipment);
+            await live.FlushAsync();
+        }
+
+        long purchase;
+        long chargedBalance;
+        int readyFuel;
+        int fuelPerCycle;
+        using (var resupplying = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = resupplying.GetRequiredService<LiveWorld>();
+            var entosis = resupplying.GetRequiredService<IPilotEntosis>();
+            var scheduler = resupplying.GetRequiredService<CapsuleerScheduler>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            var profile = EntosisCatalog.Module(catalog.FittingAttributes(CapsuleerAllianceRules.ExpeditionLink), 1);
+            long duration = EntosisCatalog.Defense(catalog, false).Duration;
+            fuelPerCycle = profile.FuelQuantity;
+            int minimumFuel = CapsuleerHauler.RequiredExpeditionCycles(duration, profile) * fuelPerCycle;
+            live.Economy.Read(world =>
+            {
+                var legacy = Assert.IsType<HaulerProgress>(HaulerCheckpoint.Read(world, live, pilot));
+                Assert.Equal((ship, (int?)later.AllianceId, 0), (legacy.ShipId, legacy.HomeDefenseAllianceId, FuelInHold(world, ship)));
+                Assert.Null(legacy.SovereigntyExpedition);
+                Assert.Empty(DefenseFuelFills(world, pilot));
+                return true;
+            });
+            Assert.Equal(1d, entosis.Hub(oldest.SystemId)!.Conflict!.Capture.Value);
+            Assert.Equal(1d, entosis.Hub(later.SystemId)!.Conflict!.Capture.Value);
+
+            StartDefenseReplay(resupplying);
+            AdvanceDefenseReplay(
+                resupplying,
+                fixture,
+                pilot,
+                750,
+                () => scheduler.Hauler(pilot)?.Work.CorporationSupply?.RegionalStock is not null
+            );
+            var supply = scheduler.Hauler(pilot)!.Work;
+            Assert.Equal(DefenseFuelSupplier, supply.CorporationSupply!.RegionalStock!.Supplier);
+            Assert.Null(supply.HomeDefenseAllianceId);
+            Assert.Null(supply.SovereigntyExpedition);
+            Assert.Empty(entosis.Cycles(pilot));
+
+            AdvanceDefenseReplay(
+                resupplying,
+                fixture,
+                pilot,
+                1700,
+                () =>
+                    scheduler.Hauler(pilot)
+                        is { Pilot.Position: null, Work: { CorporationSupply: null, SovereigntyExpedition: null } } guard
+                    && guard.Pilot.DockedLocationId == headquarters
+                    && guard.Work.HomeDefenseAllianceId == later.AllianceId
+                    && live.Economy.Read(world => FuelInHold(world, ship)) >= minimumFuel
+            );
+            Assert.Empty(entosis.Cycles(pilot));
+            Assert.Equal(1d, entosis.Hub(oldest.SystemId)!.Conflict!.Capture.Value);
+            Assert.Equal(1d, entosis.Hub(later.SystemId)!.Conflict!.Capture.Value);
+            (purchase, chargedBalance, readyFuel) = live.Economy.Read(world =>
+            {
+                var execution = Assert.Single(DefenseFuelFills(world, pilot));
+                Assert.Equal((DefenseFuelPrice, shipment), (execution.PriceCents, execution.Quantity));
+                var order = Assert.Single(
+                    world.Filter<SavedPersonalOrder>(entry => entry.CorporationId == corporation),
+                    entry => entry.Bid && entry.StationId == DefenseFuelSupplier && entry.TypeId == DefenseFuelType
+                );
+                Assert.Equal((PersonalOrderStatus.Filled, 0), (order.Status, order.Remaining));
+                long fee = PilotMarketStore.SupplyBrokerFee(world, catalog, pilot, DefenseFuelSupplier, order.PriceCents, order.Entered);
+                long balance = world.Set<SavedCorporation>().Find(corporation)!.BalanceCents;
+                Assert.Equal(funded - DefenseFuelPrice * shipment - fee, balance);
+                Assert.True(balance >= reserve);
+                int fuel = FuelInHold(world, ship);
+                Assert.Equal(shipment, DefenseDepotFuel(world, corporation, headquarters) + fuel);
+                return (execution.Id, balance, fuel);
+            });
+            await live.FlushAsync();
+        }
+
+        using var defending = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = defending.GetRequiredService<LiveWorld>();
+        var restoredEntosis = defending.GetRequiredService<IPilotEntosis>();
+        var restoredClaims = defending.GetRequiredService<ISovereignty>();
+        restored.Economy.Read(world =>
+        {
+            var guard = Assert.IsType<HaulerProgress>(HaulerCheckpoint.Read(world, restored, pilot));
+            Assert.Equal((ship, (int?)later.AllianceId, readyFuel), (guard.ShipId, guard.HomeDefenseAllianceId, FuelInHold(world, ship)));
+            Assert.Null(guard.SovereigntyExpedition);
+            Assert.Equal(purchase, Assert.Single(DefenseFuelFills(world, pilot)).Id);
+            return true;
+        });
+
+        Assert.Equal(1d, restoredEntosis.Hub(later.SystemId)!.Conflict!.Capture.Value);
+        using (var disruption = restored.Economy.Begin(TransactionParticipants.None))
+        {
+            var conflict = disruption.Set<SavedSovereigntyConflict>().Find(later.SystemId)!;
+            conflict.Value = 0.05;
+            conflict.UpdatedAt = fixture.Clock.Now;
+            disruption.Commit();
+        }
+        StartDefenseReplay(defending);
+        AdvanceDefenseReplay(defending, fixture, pilot, 900, () => restoredEntosis.Cycles(pilot).Any(cycle => cycle.HubId == later.HubId));
+        var cycle = Assert.Single(restoredEntosis.Cycles(pilot));
+        Assert.Equal((ship, later.HubId), (cycle.ShipId, cycle.HubId));
+        Assert.Equal(readyFuel - fuelPerCycle, restored.Economy.Read(world => FuelInHold(world, ship)));
+        AdvanceDefenseReplay(defending, fixture, pilot, 1300, () => restoredEntosis.Hub(later.SystemId)!.Conflict!.Capture.Value == 1);
+        Assert.Equal(oldest, restoredClaims.Read(oldest.SystemId));
+        Assert.Equal(later, restoredClaims.Read(later.SystemId));
+        restored.Economy.Read(world =>
+        {
+            Assert.Equal(chargedBalance, world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+            Assert.Equal(purchase, Assert.Single(DefenseFuelFills(world, pilot)).Id);
+            return true;
+        });
+        AssertUnattended(defending);
+    }
+
     [Fact]
     public async Task LostDefenderReplenishesAllianceFromRegionalFuelAcrossRestart()
     {
-        const int supplier = 60003760;
-        const int strontium = SovereigntyCaptureFixture.Strontium;
+        const int supplier = DefenseFuelSupplier;
+        const int strontium = DefenseFuelType;
         const int shipment = 3;
-        const long unitPrice = 100;
+        const long unitPrice = DefenseFuelPrice;
         long reserve = AllianceBillingRules.Amount(1);
         long funded = reserve + 100_000 * MarketDefinitions.CentsPerIsk;
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
@@ -76,7 +236,7 @@ public sealed partial class CapsuleerAllianceTests
                 conflict.UpdatedAt = fixture.Clock.Now;
                 disruption.Commit();
             }
-            Start(host);
+            StartDefenseReplay(host);
             Advance(host, 600, () => entosis.Cycles(primary).Any(cycle => cycle.HubId == later.HubId));
             var lostCycle = Assert.Single(entosis.Cycles(primary));
             lostShip = lostCycle.ShipId;
@@ -103,20 +263,11 @@ public sealed partial class CapsuleerAllianceTests
                     PilotInteractionHistoryStore.Player(loss, seller, seller.ActiveShipId)
                 );
                 loss.Add(new SavedCapsuleerSuspension { PilotId = primary });
-                if (loss.Positions.Find(seller.ActiveShipId) is { } sellerPosition)
-                {
-                    loss.Remove(sellerPosition);
-                }
-                seller.ActiveShip.StationId = supplier;
-                var sellerWallet = loss.Set<PilotWallet>().Find(Observer) ?? loss.Add(new PilotWallet { PilotId = Observer }).Entity;
-                sellerWallet.Cents = funded;
-                sellerStock = InventoryPersistence
-                    .MergeOutput(loss, catalog, Observer, supplier, (int)InventoryFlag.Hangar, strontium, shipment)
-                    .Item.Id;
+                sellerStock = StockDefenseFuel(loss, catalog, funded, shipment);
                 backupShip = loss.Pilots.Find(backup)!.ActiveShipId;
                 loss.Commit();
             }
-            host.GetRequiredService<IPersonalMarket>().PlaceSell(Observer, [new(sellerStock, supplier, strontium, unitPrice, shipment)], 7);
+            ListDefenseFuel(host, sellerStock, shipment);
             scheduler.PopulationPrepared(HeadquartersSystem);
             entosis.Advance(later.SystemId, fixture.Clock.Now);
             live.Economy.Read(world =>
@@ -210,7 +361,7 @@ public sealed partial class CapsuleerAllianceTests
             Assert.Equal(purchase, Assert.Single(SupplierFills(world)).Id);
             return true;
         });
-        Start(reopened);
+        StartDefenseReplay(reopened);
         Advance(reopened, 850, () => restored.Economy.Read(world => DepotFuel(world)) == shipment);
         Assert.Equal(chargedBalance, CorporationBalance(restored));
         Assert.Empty(restoredEntosis.Cycles(backup));
@@ -225,10 +376,12 @@ public sealed partial class CapsuleerAllianceTests
             reopened,
             1300,
             () =>
-                restoredScheduler.Hauler(backup) is { Work.SovereigntyExpedition: null, Pilot.Position: null } worker
+                restoredScheduler.Hauler(backup) is { Work.SovereigntyExpedition.Returning: true, Pilot.Position: null } worker
                 && worker.Pilot.DockedLocationId == headquarters
                 && restoredEntosis.Cycles(backup).Count == 0
         );
+        Advance(reopened, 120, () => restoredScheduler.Hauler(backup) is { Work.SovereigntyExpedition: null });
+        Assert.Null(restoredScheduler.Hauler(backup)!.Work.HomeDefenseAllianceId);
         Assert.Equal(oldest, restoredClaims.Read(oldest.SystemId));
         Assert.Equal(later, restoredClaims.Read(later.SystemId));
         Assert.InRange(restored.Economy.Read(world => DepotFuel(world) + FuelInHold(world, backupShip)), 0, 1);
@@ -236,57 +389,90 @@ public sealed partial class CapsuleerAllianceTests
         Assert.Equal(purchase, restored.Economy.Read(world => Assert.Single(SupplierFills(world)).Id));
         AssertUnattended(reopened);
 
-        void Advance(ServiceProvider host, int seconds, Func<bool>? ready = null)
-        {
-            var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
-            for (int step = 0; step < seconds && ready?.Invoke() != true; step++)
-            {
-                fixture.Clock.Seconds++;
-                maintenance.Tick();
-            }
-            AssertUnattended(host);
-            if (ready is not null && !ready())
-            {
-                var scheduler = host.GetRequiredService<CapsuleerScheduler>();
-                var worker = scheduler.Hauler(backup);
-                Assert.Fail(
-                    $"Timed out at {fixture.Clock.UtcNow}. Backup in {worker?.Pilot.SystemId}, "
-                        + $"work {worker?.Work.Activity} {worker?.Work.WaitingReason}, expedition {worker?.Work.SovereigntyExpedition}, "
-                        + $"supply {worker?.Work.CorporationSupply}, scheduler failure {scheduler.Read().LastFailure}."
-                );
-            }
-        }
+        void Advance(ServiceProvider host, int seconds, Func<bool> ready) => AdvanceDefenseReplay(host, fixture, backup, seconds, ready);
 
-        static void Start(ServiceProvider host)
-        {
-            StartAllianceActivity(host, unattended: true);
-            host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(HeadquartersSystem);
-        }
+        int DepotFuel(WorldAction world) => DefenseDepotFuel(world, corporation, headquarters);
 
-        int DepotFuel(WorldAction world) =>
-            world
-                .Filter<OwnedItem>(item => item.OwnerId == corporation)
-                .Where(item =>
-                    item.LocationId == headquarters
-                    && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag
-                    && item.TypeId == strontium
-                )
-                .Sum(item => item.Quantity);
-
-        static int FuelInHold(WorldAction world, long shipId) =>
-            world
-                .Filter<OwnedItem>(item => item.LocationId == shipId)
-                .Where(item => item.TypeId == strontium && item.FlagId == (int)InventoryFlag.Cargo)
-                .Sum(item => item.Quantity);
-
-        MarketExecution[] SupplierFills(WorldAction world) =>
-            world
-                .Filter<MarketExecution>(entry => entry.PilotId == backup)
-                .Where(entry => entry.IsBuy && entry.TypeId == strontium && entry.StationId == supplier && entry.CounterpartyId == Observer)
-                .ToArray();
+        MarketExecution[] SupplierFills(WorldAction world) => DefenseFuelFills(world, backup);
 
         long CorporationBalance(LiveWorld live) =>
             live.Economy.Read(world => world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+    }
+
+    private static long StockDefenseFuel(EconomyTransaction world, CatalogDbContext catalog, long balance, int shipment)
+    {
+        var seller = world.Pilots.Find(Observer)!;
+        if (world.Positions.Find(seller.ActiveShipId) is { } sellerPosition)
+        {
+            world.Remove(sellerPosition);
+        }
+        seller.ActiveShip.StationId = DefenseFuelSupplier;
+        var wallet = world.Set<PilotWallet>().Find(Observer) ?? world.Add(new PilotWallet { PilotId = Observer }).Entity;
+        wallet.Cents = balance;
+        return InventoryPersistence
+            .MergeOutput(world, catalog, Observer, DefenseFuelSupplier, (int)InventoryFlag.Hangar, DefenseFuelType, shipment)
+            .Item.Id;
+    }
+
+    private static void ListDefenseFuel(ServiceProvider host, long stock, int shipment) =>
+        host.GetRequiredService<IPersonalMarket>()
+            .PlaceSell(Observer, [new(stock, DefenseFuelSupplier, DefenseFuelType, DefenseFuelPrice, shipment)], 7);
+
+    private static int FuelInHold(WorldAction world, long ship) =>
+        world
+            .Filter<OwnedItem>(item => item.LocationId == ship)
+            .Where(item => item.TypeId == DefenseFuelType && item.FlagId == (int)InventoryFlag.Cargo)
+            .Sum(item => item.Quantity);
+
+    private static int DefenseDepotFuel(WorldAction world, int corporation, int headquarters) =>
+        world
+            .Filter<OwnedItem>(item => item.OwnerId == corporation)
+            .Where(item =>
+                item.LocationId == headquarters
+                && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag
+                && item.TypeId == DefenseFuelType
+            )
+            .Sum(item => item.Quantity);
+
+    private static MarketExecution[] DefenseFuelFills(WorldAction world, long buyer) =>
+        world
+            .Filter<MarketExecution>(entry => entry.PilotId == buyer)
+            .Where(entry =>
+                entry.IsBuy && entry.TypeId == DefenseFuelType && entry.StationId == DefenseFuelSupplier && entry.CounterpartyId == Observer
+            )
+            .ToArray();
+
+    private static void StartDefenseReplay(ServiceProvider host)
+    {
+        StartAllianceActivity(host, unattended: true);
+        host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(HeadquartersSystem);
+    }
+
+    private static void AdvanceDefenseReplay(
+        ServiceProvider host,
+        CapsuleerHaulerTests.Fixture fixture,
+        long pilot,
+        int seconds,
+        Func<bool> ready
+    )
+    {
+        var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
+        for (int step = 0; step < seconds && !ready(); step++)
+        {
+            fixture.Clock.Seconds++;
+            maintenance.Tick();
+        }
+        AssertUnattended(host);
+        if (!ready())
+        {
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            var worker = scheduler.Hauler(pilot);
+            Assert.Fail(
+                $"Timed out at {fixture.Clock.UtcNow}. Pilot {pilot} in {worker?.Pilot.SystemId}, "
+                    + $"work {worker?.Work.Activity} {worker?.Work.WaitingReason}, expedition {worker?.Work.SovereigntyExpedition}, "
+                    + $"supply {worker?.Work.CorporationSupply}, scheduler failure {scheduler.Read().LastFailure}."
+            );
+        }
     }
 
     private sealed class LostDefenseCargo : IShipLootRoll

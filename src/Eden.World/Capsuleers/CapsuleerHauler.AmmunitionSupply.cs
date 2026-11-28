@@ -88,9 +88,11 @@ internal sealed partial class CapsuleerHauler
         return true;
     }
 
-    private HashSet<int> AvoidedSupplierSystems() =>
-        (Work.Routine?.Threats ?? [])
-            .Where(observed => observed.ExpiresAt > Work.ActiveTicks)
+    private HashSet<int> AvoidedSupplierSystems() => AvoidedSupplierSystems(Work);
+
+    private static HashSet<int> AvoidedSupplierSystems(HaulerProgress work) =>
+        (work.Routine?.Threats ?? [])
+            .Where(observed => observed.ExpiresAt > work.ActiveTicks)
             .Select(observed => observed.SystemId)
             .ToHashSet();
 

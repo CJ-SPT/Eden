@@ -280,6 +280,49 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Sovereignty standby readiness
+
+An executor's headquarters guard needs a route to a held hub, an online Entosis link, and enough cargo fuel for the link's
+native warmup and a full hub defense. The route uses the fitted hull, permitted work regions and the pilot's threat memory.
+Standby rechecks the saved guard's active ship, dock, route and fuel. A pilot can yield the post to a ready colleague or leave
+it for ordinary work when no affordable or owned fuel can bring the fit to readiness.
+
+The guard can top up its fitted ship even when the held hubs are quiet. It draws on its hangar and the corporation's paid
+stock before quoting the local market. Corporate buys retain the alliance dues reserve. When fuel is unavailable locally,
+the usual paid regional freight can collect it. Delivery, withdrawal, and guard selection use the resident world and existing
+checkpoints. Active defense still takes priority over standby.
+
+Build 3662168 supplies the defense duration and fitted link characteristics. The EVE.js 261108.1 reference assigns fuel
+consumption to the ordinary module runtime, as recorded in [Entosis replacement and fuel stock](#entosis-replacement-and-fuel-stock).
+[CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[UniWiki Entosis Link](https://wiki.eveuniversity.org/Entosis_Link)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.DryGuardStocksFuelWhileClaimsAreQuietAndRespondsAcrossRestart` replay passed in
+10.88 seconds after a 13.95-second feature build. It opens a saved standby assignment with zero fuel and both holdings
+secure. The pilot clears the assignment, pays once for four units and their broker fee, and hauls the fuel to headquarters.
+The same fitted ship loads enough for standby while both hubs are still quiet. After reopening again, a new disruption
+sends that ship to the later claim. The first paid cycle consumes cargo, the hub recovers, both claims survive, and the
+corporation keeps its dues reserve with no second purchase. Zero human pilots were selected.
+
+The dry guard and `LostDefenderReplenishesAllianceFromRegionalFuelAcrossRestart` passed together in 14.21 seconds.
+The loss replay verifies the backup docks at headquarters, clears its completed expedition, and stays available for
+ordinary work when fuel is too low for standby. The final solution build took 0.80 seconds with zero warnings or errors.
+
+The final focused filter passed 314 cases in 124.73 seconds after a 6.52-second build. It selected `Sovereignty` and
+`Alliances`, `CapsuleerAllianceTests`, `CapsuleerPopulationSettingsTests`, `CapsuleerMaintenanceTests`,
+`BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts`, and `PersonalMarketTests`. The two Python policy
+suites passed 17 cases. Formatting and whitespace checks passed with the local recovery archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Bot attacks on rival sovereignty
 
 With **Regional conflicts** and **Start new sovereignty claims** enabled, a bot executor that already holds territory

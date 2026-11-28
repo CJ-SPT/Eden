@@ -1,5 +1,6 @@
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Sovereignty;
@@ -109,7 +110,7 @@ internal sealed partial class CapsuleerHauler
         return (!resupplying && TryResupplySovereignty(world, catalog, corporation, holdings))
             || TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
             || TryAttackSovereignty(world, catalog, corporation, home, active, prepare)
-            || StandByAtSovereignty(world, catalog, corporation, home);
+            || StandByAtSovereignty(world, catalog, corporation, holdings, prepare);
     }
 
     private bool TryLaunchSovereigntyClaim(
@@ -297,7 +298,8 @@ internal sealed partial class CapsuleerHauler
             }
         }
 
-        var profile = ExpeditionProfile(world, catalog, expedition.ModuleId);
+        var pilot = world.Pilots.Find(pilotId)!;
+        var profile = ExpeditionProfile(world, catalog, pilot, expedition.ModuleId);
         if (
             expedition.Attack is { } attack
             && !PilotEntosisStore.AttackCanWarmUp(world, attack.SystemId, hubId, Now, TimeSpan.FromMilliseconds(profile.Duration).Ticks)
@@ -306,7 +308,7 @@ internal sealed partial class CapsuleerHauler
             ReturnFromSovereignty(expedition);
             return;
         }
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, world.Pilots.Find(pilotId)!);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         double range = Math.Min(profile.Range, attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange));
         if (Pilot.Position!.DistanceTo(target.Position) - Pilot.Flight.ShipRadius - target.Radius > range)
         {
@@ -339,7 +341,7 @@ internal sealed partial class CapsuleerHauler
             WaitAtSovereignty(expedition.LockReadyAt - Work.ActiveTicks);
             return;
         }
-        long fuel = ExpeditionFuel(world, profile);
+        long fuel = ExpeditionFuel(world, pilot, profile);
         if (fuel == 0 || Live?.CapsuleerActivity.Read() is not { Active: true } activity)
         {
             ReturnFromSovereignty(expedition);
@@ -393,19 +395,18 @@ internal sealed partial class CapsuleerHauler
         && world.Set<SavedAlliance>().Find(expedition.AllianceId) is { ClosedAt: null } alliance
         && alliance.ExecutorCorporationId == expedition.CorporationId;
 
-    private EntosisProfile ExpeditionProfile(WorldAction world, CatalogDbContext catalog, long moduleId)
+    private static EntosisProfile ExpeditionProfile(WorldAction world, CatalogDbContext catalog, Pilot pilot, long moduleId)
     {
-        var pilot = world.Pilots.Find(pilotId)!;
         var fitting = FittingCalculation.Read(world, catalog, pilot);
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fitting);
         return EntosisCatalog.Module(fitting.Graph.Attributes(moduleId), attributes.GetValueOrDefault(EntosisCatalog.DurationMultiplier));
     }
 
-    private long ExpeditionFuel(WorldAction world, EntosisProfile profile) =>
+    private static long ExpeditionFuel(WorldAction world, Pilot pilot, EntosisProfile profile) =>
         world
-            .Filter<OwnedItem>(row => row.LocationId == Pilot.ShipId)
+            .Filter<OwnedItem>(row => row.LocationId == pilot.ActiveShipId)
             .Where(row =>
-                row.OwnerId == pilotId
+                row.OwnerId == pilot.Id
                 && row.FlagId == (int)InventoryFlag.Cargo
                 && row.TypeId == profile.FuelType
                 && !row.Singleton

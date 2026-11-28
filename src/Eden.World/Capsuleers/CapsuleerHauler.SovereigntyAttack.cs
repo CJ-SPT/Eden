@@ -82,7 +82,7 @@ internal sealed partial class CapsuleerHauler
                 continue;
             }
             var profile = module.HasValue
-                ? ExpeditionProfile(world, catalog, module.Value)
+                ? ExpeditionProfile(world, catalog, world.Pilots.Find(pilotId)!, module.Value)
                 : EntosisCatalog.Module(catalog.FittingAttributes(CapsuleerAllianceRules.ExpeditionLink), 1);
             // Allow a minute per leg for gate travel, final warp and lock before committing the launch.
             long leadTime = TimeSpan.FromMilliseconds(profile.Duration).Ticks + TimeSpan.TicksPerMinute * route.Systems.Length;

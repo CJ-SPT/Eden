@@ -145,7 +145,11 @@ internal sealed partial class CapsuleerHauler
         bool useCurrentFit = false
     )
     {
-        var profile = useCurrentFit && FittedEntosisModule(world, catalog) is { } link ? ExpeditionProfile(world, catalog, link.Id) : null;
+        var pilot = world.Pilots.Find(pilotId)!;
+        var profile =
+            useCurrentFit && FittedEntosisModule(world, catalog, pilot) is { } link
+                ? ExpeditionProfile(world, catalog, pilot, link.Id)
+                : null;
         var outfit = ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance, duration, Now, profile);
         _operation.MarketChanged |= outfit.MarketChanged;
         if (!outfit.Ready)
@@ -163,62 +167,114 @@ internal sealed partial class CapsuleerHauler
 
     private long? ReadyEntosisModule(WorldAction world, CatalogDbContext catalog, long duration)
     {
-        var module = FittedEntosisModule(world, catalog);
+        var pilot = world.Pilots.Find(pilotId)!;
+        var module = FittedEntosisModule(world, catalog, pilot);
         if (module is null)
         {
             return null;
         }
-        var profile = ExpeditionProfile(world, catalog, module.Id);
-        return ExpeditionFuel(world, profile) >= RequiredExpeditionCycles(duration, profile) ? module.Id : null;
+        var profile = ExpeditionProfile(world, catalog, pilot, module.Id);
+        return ExpeditionFuel(world, pilot, profile) >= RequiredExpeditionCycles(duration, profile) ? module.Id : null;
     }
 
-    private OwnedItem? FittedEntosisModule(WorldAction world, CatalogDbContext catalog) =>
-        (HullClass)Pilot.ShipGroupId == HullClass.Interceptor
+    private static OwnedItem? FittedEntosisModule(WorldAction world, CatalogDbContext catalog, Pilot pilot) =>
+        catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId == (int)HullClass.Interceptor
             ? null
             : world
-                .Filter<OwnedItem>(row => row.LocationId == Pilot.ShipId)
+                .Filter<OwnedItem>(row => row.LocationId == pilot.ActiveShipId)
                 .AsEnumerable()
                 .FirstOrDefault(row =>
-                    row.OwnerId == pilotId
+                    row.OwnerId == pilot.Id
                     && row.Online
                     && row.Singleton
                     && InventoryDefinitions.IsHighSlot(row.FlagId)
                     && EntosisCatalog.Supported(catalog, row.TypeId)
                 );
 
-    private bool StandByAtSovereignty(WorldAction world, CatalogDbContext catalog, SavedCorporation corporation, SavedSovereigntyClaim home)
+    private bool StandByAtSovereignty(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        SavedCorporation corporation,
+        IReadOnlyList<SavedSovereigntyClaim> holdings,
+        bool prepare
+    )
     {
-        if (Live is not { } live || FittedEntosisModule(world, catalog) is null)
+        var pilot = world.Pilots.Find(pilotId)!;
+        if (Live is not { } live || FittedEntosisModule(world, catalog, pilot) is not { } link)
         {
             ClearSovereigntyStandby();
             return false;
         }
+        int alliance = holdings[0].AllianceId;
+        long duration = EntosisCatalog.Defense(catalog, false).Duration;
         if (
-            Work.HomeDefenseAllianceId != home.AllianceId
-            && world
-                .Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id)
-                .AsEnumerable()
-                .Any(pilot =>
-                    pilot.Id != pilotId
-                    && world.Set<SavedCapsuleerSuspension>().Find(pilot.Id) is null
-                    && pilot.ActiveShip.Position is null
-                    && pilot.ActiveShip.DockedLocationId == Pilot.StationId
-                    && HaulerCheckpoint.Read(world, live, pilot.Id) is { SovereigntyExpedition: null } work
-                    && work.ShipId == pilot.ActiveShipId
-                    && work.HomeDefenseAllianceId == home.AllianceId
-                )
+            world.Filter<Pilot>(member => member.CorporationId == corporation.Id).AsEnumerable().Any(CoversStandby)
+            || !ReachesHolding(pilot, Work)
         )
         {
             ClearSovereigntyStandby();
             return false;
         }
+        var profile = ExpeditionProfile(world, catalog, pilot, link.Id);
+        if (ExpeditionFuel(world, pilot, profile) < RequiredExpeditionCycles(duration, profile))
+        {
+            var outfit = prepare
+                ? ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance, duration, Now, profile)
+                : default;
+            _operation.MarketChanged |= outfit.MarketChanged;
+            if (!outfit.Ready)
+            {
+                ClearSovereigntyStandby();
+                return false;
+            }
+        }
         _work = Work with
         {
-            HomeDefenseAllianceId = home.AllianceId,
+            HomeDefenseAllianceId = alliance,
             DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks,
             WaitingReason = "Standing by to defend alliance territory.",
         };
         return true;
+
+        bool CoversStandby(Pilot member)
+        {
+            if (
+                member.Id == pilotId
+                || member.ActiveShip.Position is not null
+                || member.ActiveShip.DockedLocationId != Pilot.StationId
+                || world.Set<SavedCapsuleerSuspension>().Find(member.Id) is not null
+                || HaulerCheckpoint.Read(world, live, member.Id) is not { SovereigntyExpedition: null, CorporationSupply: null } work
+                || work.ShipId != member.ActiveShipId
+                || work.HomeDefenseAllianceId != alliance
+                || FittedEntosisModule(world, catalog, member) is not { } module
+            )
+            {
+                return false;
+            }
+            var fitted = ExpeditionProfile(world, catalog, member, module.Id);
+            return ExpeditionFuel(world, member, fitted) >= RequiredExpeditionCycles(duration, fitted) && ReachesHolding(member, work);
+        }
+
+        bool ReachesHolding(Pilot member, HaulerProgress work)
+        {
+            if (catalog.FittingType(member.ActiveShip.TypeId) is not { } hull)
+            {
+                return false;
+            }
+            var avoided = AvoidedSupplierSystems(work);
+            return holdings.Any(claim =>
+                CapsuleerTrafficRoutes.ToClaimSystem(
+                    catalog,
+                    Pilot.StationId,
+                    claim.SystemId,
+                    (HullClass)hull.GroupId,
+                    avoided,
+                    TrafficJourneyRules.MaximumJumps,
+                    policy: world.Settings.Capsuleers
+                )
+                    is not null
+            );
+        }
     }
 
     private void ClearSovereigntyStandby()
