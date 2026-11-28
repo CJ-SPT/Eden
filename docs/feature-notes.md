@@ -21,12 +21,12 @@
   [Faction Warfare map kills](protocol/navigation.md#faction-warfare-map-kills)
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. On established worlds, eligible
   bots buy and fit separate PvP ships. The server funds bot refits by default. Corporate pilots can take paid production work,
-  replace lost ships and fund first sovereignty claims. Stranded pilots can travel to a stocked trade hub for a replacement
-  fit. Haulers can detour around remembered threats on the way to a stocked hub. Recent PvP losses raise local
-  replacement targets and can delay offensive launches. Bot work continues with nobody logged in by default. With background
-  preparation enabled, eligible high-security systems gain bots ahead of player visits. The default departure policy favors
-  PvP roams for eligible independent pilots heading into nullsec. Hunters use regional reports and directional
-  scanning. Loaded freight can turn back after a fresh warning about the next gate.
+  replace lost ships, fund first sovereignty claims and mount paid attacks on rival hubs. Stranded pilots can travel to a
+  stocked trade hub for a replacement fit. Haulers can detour around remembered threats on the way to a stocked hub.
+  Recent PvP losses raise local replacement targets and can delay offensive launches. Bot work continues with nobody
+  logged in by default. With background preparation enabled, eligible high-security systems gain bots ahead of player
+  visits. The default departure policy favors PvP roams for eligible independent pilots heading into nullsec. Hunters
+  use regional reports and directional scanning. Loaded freight can turn back after a fresh warning about the next gate.
   [Trade hub refits](protocol/capsuleers.md#trade-hub-replacement-trips) ·
   [Replacement after pod loss](protocol/capsuleers.md#replacement-after-pod-loss-and-market-affordability) ·
   [Earned replacements on the Standard market](protocol/capsuleers.md#earned-replacements-on-the-standard-market) ·
@@ -34,7 +34,8 @@
   [Nullsec scouting](protocol/capsuleers.md#nullsec-scouting-and-freight-warnings) · [Activity-funded PvP](protocol/capsuleers.md#activity-funded-pvp-ships) ·
   [Independent nullsec expeditions](capsuleer-population.md#independent-nullsec-expeditions) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
-  [First claims](protocol/sovereignty.md#autonomous-first-claims) · [Population inspector](capsuleer-population.md#inspecting-bots-and-organizations)
+  [First claims](protocol/sovereignty.md#autonomous-first-claims) · [Rival sovereignty](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty) ·
+  [Population inspector](capsuleer-population.md#inspecting-bots-and-organizations)
 
 The linked protocol records contain scope, source revisions and validation for individual milestones.
 

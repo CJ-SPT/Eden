@@ -656,14 +656,16 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   interception, owned freight escorts and witnessed defensive responses. **Regional operations per group**
   (`settings.capsuleers.regionalOperationsPerGroup`) accepts 1-3, default 1. Losses delay offensive launches; no replacement
   ships are granted. Population reports groups and outcomes. [Regional behavior](capsuleer-population.md#regional-conflicts).
-- **Corporations, alliances & sovereignty** contains three independent switches.
+- **Corporations, alliances & sovereignty** contains three switches.
   - **Automatic corporation formation and recruitment** (`settings.capsuleers.automaticRecruitment`) controls new bot-led
     corporations, advertisements, applications initiated by bots and automatic offers to human applicants.
     Existing bot applications and relocations continue through their normal workflow.
   - **Form and grow bot alliances** (`settings.capsuleers.automaticAlliances`) controls new alliances and automatic
     admissions initiated by bot alliances. Accepted applications and existing dues continue.
   - **Start new sovereignty claims** (`settings.capsuleers.newSovereigntyClaims`) controls new hub bids and first-claim
-    departures. Existing buy orders, underway expeditions and defense of claimed systems continue.
+    departures. Together with **Regional conflicts**, it also permits attacks on rival sovereignty. Existing buy orders,
+    underway first-claim expeditions and defense continue when this switch is off.
+    [Rival sovereignty attacks](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty).
 - Expand **Ambient traffic** to adjust the established-world station roster or the gate visitor pool. Station traffic
   accepts **0–10×**, default **1×**, up to 60 travelers per community. Fractional densities use a saved-seed draw.
   Watched-gate visitors accept **0–16**, default **4**. Both ends of a gate share the same saved visitor identities.

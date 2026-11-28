@@ -6,27 +6,30 @@ using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Sovereignty;
 
-internal sealed record SovereigntyDefenseTarget(int SystemId, long Id, bool CommandNode);
+internal sealed record SovereigntyEntosisTarget(int SystemId, long Id, bool CommandNode);
 
 internal sealed partial class PilotEntosisStore
 {
-    internal IEnumerable<SovereigntyDefenseTarget> DefenseTargets(WorldAction world, SavedSovereigntyClaim home, long now)
+    internal IEnumerable<SovereigntyEntosisTarget> DefenseTargets(WorldAction world, SavedSovereigntyClaim home, long now)
     {
         var conflict = world.Set<SavedSovereigntyConflict>().Find(home.SystemId);
         if (conflict?.Phase == SovereigntyPhase.Campaign)
         {
-            return world
-                .Filter<SavedSovereigntyNode>(node => node.SourceSystemId == home.SystemId)
-                .AsEnumerable()
-                .Where(node => node.HubId == home.HubId && node.AllianceId == home.AllianceId)
-                .OrderBy(node => node.Value)
-                .ThenBy(node => node.Id)
-                .Select(node => new SovereigntyDefenseTarget(node.SystemId, node.Id, true));
+            return CampaignTargets(world, home);
         }
         return DefenseNeeded(world, home.SystemId, home.AllianceId, home.SystemId, home.HubId, now)
             ? [new(home.SystemId, home.HubId, false)]
             : [];
     }
+
+    private static IEnumerable<SovereigntyEntosisTarget> CampaignTargets(WorldAction world, SavedSovereigntyClaim claim) =>
+        world
+            .Filter<SavedSovereigntyNode>(node => node.SourceSystemId == claim.SystemId)
+            .AsEnumerable()
+            .Where(node => node.HubId == claim.HubId && node.AllianceId == claim.AllianceId)
+            .OrderBy(node => node.Value)
+            .ThenBy(node => node.Id)
+            .Select(node => new SovereigntyEntosisTarget(node.SystemId, node.Id, true));
 
     internal bool DefenseNeeded(WorldAction world, int homeSystem, int alliance, int system, long id, long now)
     {

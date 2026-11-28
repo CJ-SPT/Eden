@@ -38,7 +38,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class CapsuleerAllianceTests
+public sealed partial class CapsuleerAllianceTests
 {
     private const int HeadquartersSystem = 30000141;
     private const int ObserverSystem = 30000142;
@@ -914,6 +914,19 @@ public sealed class CapsuleerAllianceTests
             .Select(agent => agent.PilotId)
             .ToArray();
         Assert.Equal(CapsuleerCorporationRules.FoundingRoster, pilots.Length);
+        return CharterCorporation(world, catalog, system, name, ticker, now, pilots);
+    }
+
+    private static (int Id, long Ceo) CharterCorporation(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        int system,
+        string name,
+        string ticker,
+        long now,
+        IReadOnlyList<long> pilots
+    )
+    {
         long ceo = pilots[0];
         var founder = world.Pilots.Find(ceo)!;
         if (world.Positions.Find(founder.ActiveShipId) is { } position)

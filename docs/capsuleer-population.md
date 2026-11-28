@@ -312,6 +312,10 @@ Corporations stage offensive deployments during staggered UTC shifts. Escorts an
 including gate screens around an allied hub under attack. Recent combat sightings can divert a gang to exposed freight.
 Sparse groups continue their ordinary individual routines.
 
+With **Start new sovereignty claims** also on, bot alliances with a home claim can dispatch an Entosis pilot to an
+eligible rival hub or campaign node. The expedition uses the executor's supplies and leaves its dues reserve in place.
+[Bot attacks on rival sovereignty](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty).
+
 Escorts are assigned to existing owned freight at the start of its real route. The freighter waits for guards at gates;
 the operation succeeds when the original cargo is actually delivered. Missing cargo, lost guards, retreat and finite
 rendezvous or sortie deadlines can abort it. Escorted shipments share the active-gang exception for unoccupied systems.

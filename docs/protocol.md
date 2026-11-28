@@ -1087,6 +1087,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Alliance Systems window](protocol/sovereignty.md#alliance-systems-window)
 - [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims)
 - [Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep)
+- [Bot attacks on rival sovereignty](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty)
 - [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)
 - [Sovereignty conflict and command nodes, November 16, 2026](protocol/sovereignty.md#sovereignty-conflict-and-command-nodes--november-16-2026)
 - [Sovereignty activity and capitals, November 16, 2026](protocol/sovereignty.md#sovereignty-activity-and-capitals--november-16-2026)

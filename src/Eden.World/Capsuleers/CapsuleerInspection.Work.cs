@@ -12,9 +12,7 @@ internal sealed partial class CapsuleerInspection
         live.MinerCheckpoints.GetValueOrDefault(id)?.Work
         ?? MinerCheckpoint.Read(world.Filter<SavedCapsuleerCommunity>(row => row.PilotId == id).FirstOrDefault()?.Progress);
 
-    private static HaulerProgress? Hauler(LiveWorld live, WorldAction world, long id) =>
-        live.HaulerCheckpoints.GetValueOrDefault(id)?.Work
-        ?? HaulerCheckpoint.Read(world.Filter<SavedCapsuleerHauler>(row => row.PilotId == id).FirstOrDefault()?.Progress);
+    private static HaulerProgress? Hauler(LiveWorld live, WorldAction world, long id) => HaulerCheckpoint.Read(world, live, id);
 
     private static CapsuleerWorkInspection Work(MinerProgress? miner, HaulerProgress? hauler, CapsuleerOrganization organization)
     {
@@ -89,6 +87,7 @@ internal sealed partial class CapsuleerInspection
         {
             SovereigntyDuty.Claim => "Claim sovereignty",
             SovereigntyDuty.Defend => "Defend sovereignty",
+            SovereigntyDuty.Attack => "Attack rival sovereignty",
             SovereigntyDuty.ReagentDelivery => "Deliver sovereignty reagents",
             _ => Words(expedition.Duty),
         };

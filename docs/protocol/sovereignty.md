@@ -177,8 +177,7 @@ Defensive outfitting and local reagent purchases retain one monthly alliance res
 reagents run below its remaining startup cost plus two hours of consumption, a courier can purchase and carry stock toward
 startup plus four hours. The home corporation's Station Manager deposits real cargo through the native fuel ledger, and
 existing power, workforce, startup and hourly rules govern runtime. A bare hub has no reagent budget. Upgrade installation
-and Skyhook deployment remain ordinary corporation actions. The response covers the home claim. Additional claims and
-offensive campaigns remain in the [bot development plan](../bot-development-plan.md).
+and Skyhook deployment remain ordinary corporation actions. The response covers the home claim.
 
 Build 3662168's command node (34832) has a catalog radius of 243 m and omits a dogma signature. The resident signature
 read falls back to the physical radius for this type, so both player and bot targeting can use the ordinary lock timer.
@@ -210,6 +209,55 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Observe a funded guard dispatch during a home-system disruption and check the defense score in the sovereignty UI.
+
+## Bot attacks on rival sovereignty
+
+With **Regional conflicts** and **Start new sovereignty claims** enabled, a bot executor that already holds territory
+can send an available Entosis pilot against a reachable rival claim within three jumps of headquarters. An active war
+or negative alliance standing qualifies a rival. With neutral or unset standing, ordinary gate adjacency between the
+home claim and a foreign bot alliance's claim creates a border rivalry. Positive standing prevents that fallback.
+The executor retains a monthly dues reserve and avoids routes through systems the pilot has recently marked dangerous.
+The pilot uses its fitted link and fuel or buys missing supplies through normal market orders.
+
+The planner prefers reachable command nodes in an active rival campaign. The executor sends one pilot to an owned hub
+and can send available pilots to distinct command nodes once the campaign starts. Attacking an undamaged hub requires
+an open vulnerability window with time for travel and warmup. Attackers carry enough fuel for the current score and
+activity defense multiplier. The home claim and the expected rival alliance, hub and destination survive checkpoint
+reopen. The alliance counts saved expeditions before its pilots resume. The pilot revalidates the objective before
+engaging. Paid cycles and scoring leases follow the same rules as first claims and defense. Home response can dispatch
+another available pilot while an attacker is away.
+
+Paid attacker and defender links can block each other's progress. Native reinforcement sets the campaign deadline,
+and native command-node completion updates the campaign score. An attacker victory destroys the rival hub and opens
+the system for a new claim. The rules follow the existing build 3662168 warfare implementation and the EVE.js
+261108.1 `entosisLinkRuntime.js` reference recorded in [first-claim procurement](alliances.md#first-claim-hub-procurement).
+[CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[UniWiki sovereignty warfare](https://wiki.eveuniversity.org/Sovereignty_Hub#Capturing_existing_structures)
+
+### Automated validation
+
+The exact `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAllianceTests.FundedRivalsContestAnOwnedHubUnattendedAcrossRestart`
+filter passed both cases in 18.98 seconds after a 6.74-second build. With zero selected players, a two-corporation alliance
+attacks a three-corporation defender. The fixture checks the dues reserve and friendly standing before departure, then
+reopens an outbound assignment. One replay uses hostile standing and observes both paid links block the hub score.
+The neutral-border replay follows native reinforcement and reopens the command-node campaign at its saved deadline.
+At a defense multiplier of three, the available pilots pay for overlapping cycles on different nodes, destroy the rival
+hub and remove its claim. The original home claim stays held throughout the campaign.
+
+The broader `FullyQualifiedName~` selection passed 379 cases in 169.42 seconds. It combined `CapsuleerAllianceTests`,
+`CapsuleerCorporationTests`, `Eden.Protocol.Tests.Alliances`, `Eden.Protocol.Tests.Sovereignty`, `CapsuleerMaintenanceTests`,
+`CapsuleerPopulationSettingsTests`, `RegionalConflictTests`, `RegionalConflictWorldTests`,
+`CapsuleerTrafficNavigationTests` and `TargetingTests`. The final solution build took 0.87 seconds with zero warnings or
+errors. Both Python policy suites passed all 17 cases in 2.05 seconds. Formatting and whitespace checks passed with the
+local recovery archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
 
 ## Scope and implementation plan
 

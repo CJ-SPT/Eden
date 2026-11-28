@@ -97,21 +97,39 @@ internal sealed partial class CapsuleerAlliances
         return false;
     }
 
-    internal static bool ExpeditionActive(WorldAction world, SavedCorporation corporation, long? exceptPilot = null) =>
-        LiveWorld.Find(world.WorldPath) is { } live
-        && world
-            .Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id)
-            .AsEnumerable()
-            .Any(pilot =>
+    internal static bool ExpeditionActive(
+        WorldAction world,
+        SavedCorporation corporation,
+        long? exceptPilot = null,
+        SovereigntyDuty? ignoredDuty = null
+    ) => Expeditions(world, corporation, exceptPilot).Any(expedition => expedition.Duty != ignoredDuty);
+
+    internal static IEnumerable<SovereigntyExpedition> Expeditions(WorldAction world, SavedCorporation corporation, long? exceptPilot)
+    {
+        if (LiveWorld.Find(world.WorldPath) is not { } live)
+        {
+            yield break;
+        }
+        foreach (var pilot in world.Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id).AsEnumerable())
+        {
+            if (
                 pilot.Id != exceptPilot
-                && live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work is { SovereigntyExpedition: not null } work
+                && world.Set<SavedCapsuleerSuspension>().Find(pilot.Id) is null
+                && HaulerCheckpoint.Read(world, live, pilot.Id) is { SovereigntyExpedition: { } expedition } work
                 && work.ShipId == pilot.ActiveShipId
-            );
+            )
+            {
+                yield return expedition;
+            }
+        }
+    }
 
     internal static IEnumerable<int> UnclaimedSites(WorldAction world, CatalogDbContext catalog, int headquarters) =>
-        catalog
-            .Definition(s_firstClaimSystems, headquarters)
+        NearbyClaimSites(catalog, headquarters)
             .Where(system => world.Settings.Capsuleers.CanWork(catalog.Definitions, system) && !PilotEntosisStore.HasHub(world, system));
+
+    internal static IReadOnlyList<int> NearbyClaimSites(CatalogDbContext catalog, int headquarters) =>
+        catalog.Definition(s_firstClaimSystems, headquarters);
 
     private static bool HasHubSupply(WorldAction world, SavedCorporation corporation, long now)
     {

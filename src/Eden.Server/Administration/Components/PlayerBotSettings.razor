@@ -156,7 +156,7 @@
             <Control Context="field"><InputNumber id="@field.Input" @bind-Value="Form.GeneratedCombatPercent" aria-describedby="@field.Help" /></Control>
         </SettingField>
         <SettingField Label="Regional conflicts"
-                      Help="Allows groups to raid rival corridors, escort owned freight and respond to witnessed attacks.">
+                      Help="Allows regional raids, freight escorts and responses to attacks. Sovereignty attacks also require new claims to be enabled.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.RegionalConflicts" aria-describedby="@field.Help" /></Control>
         </SettingField>
         <SettingField Label="Simultaneous regional operations per group (1–3)"
@@ -181,7 +181,7 @@
             </Control>
         </SettingField>
         <SettingField Label="Start new sovereignty claims"
-                      Help="Lets bot alliances order infrastructure hubs and launch first-claim expeditions. Active expeditions, existing orders and defense continue.">
+                      Help="Lets bot alliances order hubs and launch first claims. Regional conflicts also enables attacks on rival sovereignty.">
             <Control Context="field">
                 <InputCheckbox id="@field.Input" @bind-Value="Form.NewSovereigntyClaims" aria-describedby="@field.Help" />
             </Control>

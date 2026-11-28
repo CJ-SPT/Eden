@@ -88,10 +88,15 @@ internal sealed partial class CapsuleerHauler
         if (home is not null)
         {
             SettleSovereigntyDockFreight(world);
-            return (
-                    !CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId)
-                    && TryProtectSovereignty(world, catalog, corporation, home, prepare)
-                ) || StandByAtSovereignty(world, catalog, corporation, home);
+            if (
+                !CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId, ignoredDuty: SovereigntyDuty.Attack)
+                && TryProtectSovereignty(world, catalog, corporation, home, prepare)
+            )
+            {
+                return true;
+            }
+            return TryAttackSovereignty(world, catalog, corporation, home, prepare)
+                || StandByAtSovereignty(world, catalog, corporation, home);
         }
         if (
             !world.Settings.Capsuleers.NewSovereigntyClaims
@@ -256,6 +261,14 @@ internal sealed partial class CapsuleerHauler
         }
 
         var profile = ExpeditionProfile(world, catalog, expedition.ModuleId);
+        if (
+            expedition.Attack is { } attack
+            && !PilotEntosisStore.AttackCanWarmUp(world, attack.SystemId, hubId, Now, TimeSpan.FromMilliseconds(profile.Duration).Ticks)
+        )
+        {
+            ReturnFromSovereignty(expedition);
+            return;
+        }
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, world.Pilots.Find(pilotId)!);
         double range = Math.Min(profile.Range, attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange));
         if (Pilot.Position!.DistanceTo(target.Position) - Pilot.Flight.ShipRadius - target.Radius > range)

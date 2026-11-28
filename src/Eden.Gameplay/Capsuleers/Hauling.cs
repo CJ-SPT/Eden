@@ -114,13 +114,19 @@ public sealed record SovereigntyExpedition(
     SovereigntyDuty Duty = SovereigntyDuty.Claim,
     int? HomeSystemId = null,
     int CargoQuantity = 0
-);
+)
+{
+    public SovereigntyAttackObjective? Attack { get; init; }
+}
+
+public sealed record SovereigntyAttackObjective(int SystemId, long HubId, int AllianceId);
 
 public enum SovereigntyDuty
 {
     Claim,
     Defend,
     ReagentDelivery,
+    Attack,
 }
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth? Health);

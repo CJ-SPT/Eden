@@ -163,7 +163,7 @@ internal sealed partial class CapsuleerHauler
                 .Any(pilot =>
                     pilot.Id != pilotId
                     && world.Set<SavedCapsuleerSuspension>().Find(pilot.Id) is null
-                    && live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work is { } work
+                    && HaulerCheckpoint.Read(world, live, pilot.Id) is { } work
                     && work.ShipId == pilot.ActiveShipId
                     && work.HomeDefenseAllianceId == home.AllianceId
                 )
@@ -199,6 +199,7 @@ internal sealed partial class CapsuleerHauler
                 target,
                 Now
             ),
+            SovereigntyDuty.Attack => CanContinueSovereigntyAttack(world, _operation.Catalog, expedition),
             SovereigntyDuty.ReagentDelivery => world.Set<SavedSovereigntyClaim>().Find(home) is { } claim
                 && claim.HubId == expedition.HubId
                 && claim.AllianceId == expedition.AllianceId

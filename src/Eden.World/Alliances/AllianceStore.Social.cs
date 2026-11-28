@@ -67,6 +67,9 @@ internal sealed partial class AllianceStore
                 ?? throw new InvalidDataException("Your corporation is not in an alliance.")
         );
 
+    internal static double? Standing(WorldAction world, int allianceId, long contactId) =>
+        Social(world, allianceId).Contacts.SingleOrDefault(c => c.ContactId == contactId)?.Standing;
+
     public double? Standing(int allianceId, long contactId) =>
         Social(allianceId).Contacts.SingleOrDefault(c => c.ContactId == contactId)?.Standing;
 
