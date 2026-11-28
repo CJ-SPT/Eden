@@ -11,6 +11,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Alliances;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -31,6 +32,82 @@ public sealed class MilitiaProgressionTests
     private const int SystemId = 30000142;
     private const int HullType = 587;
     private const int CargoType = 34;
+
+    [Fact]
+    public void DirectEnlistmentCountsThePilotWithoutEnlistingTheirCorporationInStatistics()
+    {
+        const MilitiaFaction faction = MilitiaFaction.Minmatar;
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock, liveWorld: true);
+        long direct = fixture.Store.FindPilot(1000001)!.PilotId;
+        long organized = fixture.Store.FindPilot(1000002)!.PilotId;
+        AllianceCreationTests.Corporation(fixture, direct);
+        int enlistedCorporation = AllianceCreationTests.Corporation(fixture, organized, "Enlisted Militia Corp", "WARC");
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin(new(pilots: [direct, organized])))
+        {
+            SetEnlistment(action, direct, faction);
+            action.Add(
+                new SavedMilitiaOrganization
+                {
+                    OwnerId = enlistedCorporation,
+                    Kind = MilitiaOrganizationKind.Corporation,
+                    Phase = MilitiaOrganizationPhase.Active,
+                    Faction = faction,
+                    EffectiveAt = clock.Now,
+                }
+            );
+            action.Commit();
+        }
+
+        var progression = fixture.Services.GetRequiredService<IMilitiaProgression>();
+        var statistics = Assert.Single(progression.Factions(), row => row.Faction == faction);
+        Assert.Equal(2, statistics.TotalMembersCount);
+        Assert.Equal(0, statistics.MilitiaMembersCount);
+        Assert.Equal(1, statistics.CorporationsCount);
+        Assert.Equal(enlistedCorporation, statistics.TopCorporation);
+        Assert.Equal(1, statistics.TopMemberCount);
+    }
+
+    [Fact]
+    public async Task BiomassDropsMilitiaHeadcountsAndKeepsHistoricalActivityAcrossCheckpoint()
+    {
+        const MilitiaFaction faction = MilitiaFaction.Minmatar;
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock, liveWorld: true);
+        var current = fixture.Store.FindPilot(1000001)!;
+        var departing = fixture.Store.FindPilot(1000002)!;
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin(new(pilots: [current.PilotId, departing.PilotId])))
+        {
+            int corporation = MilitiaRules.Corporation(faction);
+            action.Pilots.Find(current.PilotId)!.CorporationId = corporation;
+            var pilot = action.Pilots.Find(departing.PilotId)!;
+            pilot.CorporationId = corporation;
+            MilitiaProgressionStore.Record(action, pilot, faction, new(1, 25), clock.Now);
+            action.Commit();
+        }
+        AssertMembership(fixture.Services, 2);
+        var deletion = fixture.Services.GetRequiredService<ICharacterDeletion>();
+        long ready = deletion.Prepare(1000002, departing.PilotId);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(ready - clock.Now));
+        deletion.Delete(1000002, departing.PilotId);
+        AssertMembership(fixture.Services, 1);
+        await live.FlushAsync();
+        fixture.Services.Dispose();
+        using var reopened = ServerServices.Build(new(fixture.Path), clock, liveWorld: true);
+        AssertMembership(reopened, 1);
+
+        void AssertMembership(IServiceProvider services, int members)
+        {
+            var progression = services.GetRequiredService<IMilitiaProgression>();
+            var statistics = Assert.Single(progression.Factions(), row => row.Faction == faction);
+            Assert.Equal(members, statistics.TotalMembersCount);
+            Assert.Equal(members, statistics.MilitiaMembersCount);
+            Assert.Equal(members, progression.CorporationPilots(current.PilotId));
+            Assert.Equal(new MilitiaActivity(1, 25), statistics.Activity.Total);
+        }
+    }
 
     [Fact]
     public async Task ShipLossAwardsOnlyDestroyedValueAndPersistsNativeStatistics()

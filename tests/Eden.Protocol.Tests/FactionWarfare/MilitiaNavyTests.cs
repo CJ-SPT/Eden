@@ -70,6 +70,19 @@ public sealed class MilitiaNavyTests
         Assert.All(wing, npc => Assert.Equal((int)MilitiaFaction.Caldari, npc.FactionId));
         var combat = reopened.GetRequiredService<INpcCombat>();
         Assert.Equal(wing.Select(npc => npc.Id).Order(), combat.Aggressors(ship).Order());
+        long neutralShip = Assert.Single(ships.ListPilots(1000002)).ShipId;
+        using (var action = live.Economy.Begin(new(ships: [ship, neutralShip])))
+        {
+            var aggression = action.Set<NpcAggression>().Find(wing[0].Id)!;
+            aggression.TargetShipId = neutralShip;
+            aggression.LastShotAt = clock.Now;
+            aggression.LastTargetId = neutralShip;
+            action.Commit();
+        }
+        Assert.Equal(new MilitiaNavyUpdate(SceneChanged: true), navy.Advance(PilotId, true, clock.Now));
+        Assert.Equal(wing.Select(npc => npc.Id).Order(), combat.Aggressors(ship).Order());
+        Assert.Empty(combat.Aggressors(neutralShip));
+        Assert.Null(live.Economy.Inspect(world => world.Set<NpcAggression>().Find(wing[0].Id)!.LastTargetId));
         using (CatalogDbContext catalog = new(database.CatalogPath))
         {
             var profiles = reopened.GetRequiredService<NpcProfileCatalog>();

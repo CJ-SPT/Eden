@@ -2,6 +2,15 @@
 
 [Earlier sovereignty implementation record](https://github.com/CJ-SPT/Eden/blob/c31ac05af42c133567e203bb6859799c19af3852/docs/protocol/sovereignty.md)
 
+## Local skyhook and resource system resolution
+
+The pinned `eve_public.sovereignty.skyhook.api.GetAllLocal` reply now uses the active ship's resolved solar system for both
+its `solar_system` field and the local Skyhook rows. Docking at an Upwell structure uses that structure's system. NPC undock
+positions with an implicit system use the departure station's system. Local deployment and resource transfers use the
+same resolution while enforcing the existing in-space and range checks. Local EVE.js `sovModernState.js` (SHA-256 prefix
+`dd128ff4a953`) also reads the local Skyhook index using the active identity's solar system.
+[CCP Orbital Skyhook](https://support.eveonline.com/hc/en-us/articles/14339732733724-Orbital-Skyhook)
+
 ## Sovereignty hub custody after corporation departure
 
 A sovereignty claim belongs to the alliance. Hub management requires roles in the owning corporation. If that

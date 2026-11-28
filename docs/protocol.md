@@ -275,6 +275,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Capital ships and jump logistics
 
+- [Standup fighter tubes across operators](protocol/capital-logistics.md#standup-fighter-tubes-across-operators)
 - [Standard market Rhea acquisition](protocol/capital-logistics.md#standard-market-rhea-acquisition)
 - [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
 - [Carrier launch decks and light attack fighters](protocol/capital-logistics.md#carrier-launch-decks-and-light-attack-fighters)
@@ -304,6 +305,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Characters and skills
 
+- [Docked progression items and skill queue refresh](protocol/characters.md#docked-progression-items-and-skill-queue-refresh)
 - [Clone jump station cache updates](protocol/characters.md#clone-jump-station-cache-updates)
 - [Resident neural remaps](protocol/characters.md#resident-neural-remaps)
 - [Player-created portrait settings](protocol/characters.md#player-created-portrait-settings-november-12-2026)
@@ -454,6 +456,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Compatibility and route audits
 
+- [Third emulator bug audit](protocol/compatibility.md#third-emulator-bug-audit)
 - [Second emulator bug audit](protocol/compatibility.md#second-emulator-bug-audit)
 - [Emulator bug audit](protocol/compatibility.md#emulator-bug-audit)
 - [EVE.js comparison for account and station clone reads](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
@@ -534,6 +537,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Drones
 
+- [Salvage targets and repair drone safety](protocol/drones.md#salvage-targets-and-repair-drone-safety)
 - [abandoned drones](protocol/drones.md#drone-control-on-ship-destruction--november-17-2026)
 - [Utility and mining drones, November 15, 2026](protocol/drones.md#utility-and-mining-drones-november-15-2026)
 - [Partial drone stack launches](protocol/drones.md#partial-drone-stack-launches)
@@ -552,6 +556,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Faction Warfare
 
+- [Militia membership statistics and navy pursuit recovery](protocol/faction-warfare.md#militia-membership-statistics-and-navy-pursuit-recovery)
 - [Battlefield rally points, friendly fire and defender loot](protocol/faction-warfare.md#battlefield-rally-points-friendly-fire-and-defender-loot)
 - [Aldranette–Nennamaila militia patrols](protocol/faction-warfare.md#aldranettenennamaila-militia-patrols)
 - [Dynamic faction warfare patrols](protocol/faction-warfare.md#dynamic-faction-warfare-patrols)
@@ -568,6 +573,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Station repair for carried hulls and fittings](protocol/fitting.md#station-repair-for-carried-hulls-and-fittings)
 - [Strip fitting from a docked ship](protocol/fitting.md#strip-fitting-from-a-docked-ship)
 - [Festival and Display Launchers](protocol/combat.md#festival-and-display-launchers)
 - [Capital Flex Armor and Shield Hardeners](protocol/fitting.md#capital-flex-armor-and-shield-hardeners)
@@ -719,6 +725,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [CONCORD exchange location](protocol/industry.md#concord-exchange-location)
 - [Market delivery and industry job corrections](protocol/industry.md#market-delivery-and-industry-job-corrections)
 - [Packaged equipment and Metal Scraps reprocessing](protocol/industry.md#packaged-equipment-and-metal-scraps-reprocessing)
 
@@ -807,6 +814,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Navigation and travel
 
+- [Fleet boosts during same-system translocation](protocol/navigation.md#fleet-boosts-during-same-system-translocation)
 - [Cynosural cycles and travel restrictions](protocol/navigation.md#cynosural-cycles-and-travel-restrictions)
 - [Faction Warfare map kills](protocol/navigation.md#faction-warfare-map-kills)
 - [Bookmark approach](protocol/navigation.md#bookmark-approach)
@@ -1060,6 +1068,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Sovereignty
 
+- [Local Skyhook and resource system resolution](protocol/sovereignty.md#local-skyhook-and-resource-system-resolution)
 - [Sovereignty hub custody after corporation departure](protocol/sovereignty.md#sovereignty-hub-custody-after-corporation-departure)
 - [Sovereignty cleanup on alliance dissolution](protocol/sovereignty.md#sovereignty-cleanup-on-alliance-dissolution)
 - [Alliance Systems window](protocol/sovereignty.md#alliance-systems-window)

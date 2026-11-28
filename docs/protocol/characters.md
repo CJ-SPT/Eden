@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Docked progression items and skill queue refresh](#docked-progression-items-and-skill-queue-refresh)
 - [Clone jump station cache updates](#clone-jump-station-cache-updates)
 - [World skill training speed, November 21, 2026](#world-skill-training-speed-november-21-2026)
 - [Ship Tree recent-skill lookup, November 15, 2026](#ship-tree-recent-skill-lookup-november-15-2026)
@@ -56,6 +57,26 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
 - [Initial corvette fitting](#initial-corvette-fitting)
+
+## Docked progression items and skill queue refresh
+
+Learning implants, cerebral accelerators and skillbooks can be used from the active ship's cargo or the
+personal Item Hangar where the pilot is currently docked. When the pilot docks at an Upwell structure, these
+operations use that structure's hangar and reject items left at the previous NPC station.
+[EVE University skills and learning](https://wiki.eveuniversity.org/Skills_and_Learning) ·
+[EVE University medical boosters](https://wiki.eveuniversity.org/Medical_Boosters)
+
+`GetSkillQueueAndFreePoints` now reports externally removed skills before acknowledging the new revision.
+It uses the same `OnServerSkillsRemoved`, queue and brain updates as the background poll and
+`GetFreeSkillPoints`. Otherwise the queue read could hide the revision from the next poll while the native
+skills window kept a removed skill. The pinned skill service and archive hash are recorded under
+[persistent unallocated skill points](#persistent-unallocated-skill-points).
+
+EVE.js 261108.1 returns the same queue and balance tuple in `skillMgrService.js` (SHA-256
+`64d7e60fc25c835cbb87c535bc10758afade4d17b23ce163bb8ded3c37451b5f`). Its `implantsAndBoosters.js`
+(SHA-256 `68f27ea25720dbace4bbd9787afb0d0a5d52ef7c3859c986eb98dedef49d27f9`) includes the matching
+`InjectImplant` and `UseBooster` calls. The resident regressions check hangar ownership and item consumption,
+and the selected-session regression checks the removal notification and subsequent poll.
 
 ## World skill training speed, November 21, 2026
 

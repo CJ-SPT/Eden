@@ -47,7 +47,7 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
                 && i.OwnerId == pilotId
                 && (
                     (i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo)
-                    || (ship.Position == null && i.LocationId == ship.StationId && i.FlagId == (int)InventoryFlag.Hangar)
+                    || (ship.Position == null && i.LocationId == ship.DockedLocationId && i.FlagId == (int)InventoryFlag.Hangar)
                 )
             )
             .OrderBy(i => i.Id)

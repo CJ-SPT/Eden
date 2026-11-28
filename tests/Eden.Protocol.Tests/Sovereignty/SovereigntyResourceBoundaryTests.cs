@@ -1,6 +1,9 @@
 using Eden.Data.World.Sovereignty;
+using Eden.Data.World.Structures;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Sovereignty;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.PilotSessions;
@@ -12,12 +15,74 @@ using Google.Protobuf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Client = Eden.Protocol.Tests.PilotSessions.CourierServiceTests.Client;
+using Skyhook = Eden.Protocol.Gateway.Sovereignty.SkyhookApi;
 using Stars = Eden.Protocol.Gateway.CelestialResources.Stars;
 
 namespace Eden.Protocol.Tests.Sovereignty;
 
 public sealed class SovereigntyResourceBoundaryTests
 {
+    [Fact]
+    public void LocalSkyhooksUseTheDockedOrUndockSystemInsteadOfTheSavedNpcStation()
+    {
+        const long pilot = SovereigntyCaptureFixture.PilotId;
+        const int system = SovereigntyCaptureFixture.SystemId;
+        using SovereigntyCaptureFixture fixture = new();
+        var hook = SovereigntyUpgradeTests.Deploy(fixture, workforce: false);
+        var resources = fixture.World.Services.GetRequiredService<ISovereigntyResources>();
+        var gateway = fixture.World.Services.GetRequiredService<GatewayRequests>();
+        long ship = fixture.Ship();
+        long structureId = hook.Id + 1;
+        fixture.World.Store.SetPosition(ship, null);
+        int station;
+        using (var action = fixture.Live.Economy.Begin(new(ships: [ship])))
+        {
+            var hull = action.Ships.Find(ship)!;
+            station = hull.StationId;
+            hull.StructureId = structureId;
+            action.Add(
+                new SavedStructure
+                {
+                    Id = structureId,
+                    TypeId = 35832,
+                    CorporationId = fixture.CorporationId,
+                    SystemId = system,
+                    Name = "Skyhook Test Structure",
+                    State = StructureState.ShieldVulnerable,
+                }
+            );
+            action.Commit();
+        }
+
+        AssertLocal();
+        Assert.Throws<InvalidDataException>(() => resources.CollectReagents(pilot, hook.Id, 1));
+
+        var database = new WorldDatabase(fixture.World.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={system} WHERE Id={station}");
+        }
+        var orbit = fixture.Live.Economy.Inspect(world => world.Set<SavedStructure>().Find(hook.Id)!);
+        fixture.World.Store.SetPosition(ship, new SpacePosition(orbit.X + 1000, orbit.Y, orbit.Z));
+        Assert.Null(fixture.Live.Economy.Inspect(world => world.Positions.Find(ship)!.SystemId));
+        AssertLocal();
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(90));
+        long before = resources.Skyhook(pilot, hook.Id).Secured;
+        Assert.True(before > 0);
+        var collected = resources.CollectReagents(pilot, hook.Id, 1);
+        Assert.Equal(before - 1, collected.Skyhook.Secured);
+        Assert.Equal(1, Assert.Single(collected.Changes).Item.Quantity);
+
+        void AssertLocal()
+        {
+            var response = gateway.Handle(SovereigntyResourceProtocolTests.Request(new Skyhook.GetAllLocalRequest()), 1000001);
+            Assert.Equal(200u, response.StatusCode);
+            var local = response.Payload.Unpack<Skyhook.GetAllLocalResponse>();
+            Assert.Equal((ulong)system, local.SolarSystem.Sequential);
+            Assert.Equal((ulong)hook.Id, Assert.Single(local.Skyhooks).Skyhook_.Sequential);
+        }
+    }
+
     [Fact]
     public void NativeSkyhookMenuPersistsOrbitalStatesAndPublishesTheDamageLayers()
     {

@@ -2,6 +2,17 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Station repair for carried hulls and fittings
+
+Station repair resolves a carried hull and its fitted modules through the carrier's current docking location. An assembled
+hull placed in a ship maintenance bay retains its prior NPC station ID. A carrier in space therefore made the stored hull
+look available for repair at that station. Quotes and settlement now use the same location check. The resident regression
+also covers a carrier docked at the repair facility and preserves the entire payment and repair batch on rejection.
+
+The build 3662168 `repairSvc` calls keep their existing shapes. EVE.js 261108.1 resolves docking through an item's ancestors
+in `services/station/repairRuntime.js` (SHA-256 prefix `bec61da2c6cc`).
+[EVE University assembly and repair](https://wiki.eveuniversity.org/Assembly_and_Repackaging)
+
 ## Dragging loaded charges between fitting slots
 
 The build 3662168 fitting window reads the first returned destination stack ID when a pilot drags a fitted charge

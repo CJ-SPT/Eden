@@ -7,6 +7,7 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Combat;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Fleets;
@@ -171,7 +172,7 @@ internal sealed partial class PilotTranslocationStore(
                         TaskEvents.Undocked
                     );
                 }
-                else if (ship.Position.SystemId != target.System.Id && world is EconomyTransaction)
+                else if (world is EconomyTransaction && CrimewatchPersistence.System(catalog, ship) != target.System.Id)
                 {
                     CommandBurstStore.Clear(world, ship.Id);
                     PilotRemoteAssistanceStore.ClearForTravel(world, ship.Id, target.System.Id);

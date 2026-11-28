@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Fleets;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
@@ -36,6 +37,45 @@ public sealed partial class TranslocationTests
     private const int SourceMoon = 40009087;
     private const int OtherGate = 50002185;
     private const int NullsecSystem = 30000249; // EIDI-N in pinned build 3662168.
+
+    [Fact]
+    public async Task SameSystemTranslocationPreservesCommandBurstsAfterNpcUndock()
+    {
+        using Fixture f = new(inSpace: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        long boost;
+        long expires = f.Clock.Now + TimeSpan.TicksPerMinute;
+        using (var world = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            Assert.Null(world.Positions.Find(pilot.ShipId)!.SystemId);
+            boost = world.Next("WorldCommandBurst");
+            world.Add(
+                new WorldCommandBurst
+                {
+                    Id = boost,
+                    ShipId = pilot.ShipId,
+                    SystemId = pilot.SystemId,
+                    ExpiresAt = expires,
+                    BoostsJson = "[]",
+                }
+            );
+            world.Commit();
+        }
+        var travel = f.Db.Services.GetRequiredService<IPilotTranslocation>();
+
+        travel.Move(pilot.PilotId, pilot.ShipId, SourceMoon);
+
+        Assert.Equal(expires, live.Economy.Inspect(world => world.Set<WorldCommandBurst>().Find(boost)?.ExpiresAt));
+        await live.FlushAsync();
+        using (var disk = WorldConnections.FileConnection(f.Db.Path))
+        using (WorldDbContext checkpoint = new(disk))
+        {
+            Assert.Equal(expires, checkpoint.Set<WorldCommandBurst>().Find(boost)?.ExpiresAt);
+        }
+        travel.Move(pilot.PilotId, pilot.ShipId, OtherGate);
+        Assert.Null(live.Economy.Inspect(world => world.Set<WorldCommandBurst>().Find(boost)));
+    }
 
     [Theory]
     [InlineData(false)]

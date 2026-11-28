@@ -6,6 +6,19 @@ Drone motion, observer reads and nonfatal direct combat use shared resident stat
 
 Legal capsule targets now use the shared [capsule destruction and home-station respawn lifecycle](combat.md#capsule-destruction-and-home-station-respawn-november-7-2026). The original pilot-target milestone below records its earlier capsule exclusion.
 
+## Salvage targets and repair drone safety
+
+An automatic salvage drone keeps its assigned wreck while that wreck remains available and within control range. A replacement
+wreck starts a fresh salvage cycle. Both automatic and explicit orders resolve the resident tractor position, so their range and
+movement match the wreck contact before the next checkpoint. Repair drones recheck assistance legality when their target is a
+different pilot's drone. A safety change that prevents repair leaves the drone idle and the repair unapplied.
+
+Build **3662168** uses `CmdSalvage` and `CmdEngage` in `droneFunctions.pyj`. The pinned utility catalog includes Salvage Drone I
+type 32787 with its 10-second cycle and Shield Maintenance Bot I type 23719. EVE.js **261108.1** resolves live wreck coordinates
+and retains the assigned target until it becomes unavailable in `droneRuntime.js` (SHA-256 prefix `163795e56d65`). Its repair
+tick also rechecks target eligibility. [EVE University salvaging](https://wiki.eveuniversity.org/Salvaging) ·
+[CCP Crimewatch assistance](https://www.eveonline.com/news/view/introducing-the-new-and-improved-crimewatch)
+
 ## Utility and mining drones, November 15, 2026
 
 Resident worlds now support **58 published static utility profiles**: 18 shield/armor/hull repair bots, three energy neutralizers,

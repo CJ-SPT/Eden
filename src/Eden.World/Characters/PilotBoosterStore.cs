@@ -154,7 +154,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
             || item.Singleton
             || !(
                 (item.LocationId == ship.Id && item.FlagId == (int)InventoryFlag.Cargo)
-                || (ship.Position is null && item.LocationId == ship.StationId && item.FlagId == (int)InventoryFlag.Hangar)
+                || (ship.Position is null && item.LocationId == ship.DockedLocationId && item.FlagId == (int)InventoryFlag.Hangar)
             )
         )
         {

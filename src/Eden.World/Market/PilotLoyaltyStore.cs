@@ -316,7 +316,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         var pilot = world.Pilots.Find(pilotId);
         if (
             pilot is null
-            || pilot.ActiveShip.Position is not null
+            || pilot.ActiveShip is not { Position: null, StructureId: null }
             || catalog.Definitions.FindStation(pilot.ActiveShip.StationId) is not { } station
             || !catalog.Definitions.NpcCorporations.ContainsKey(station.OwnerId)
         )

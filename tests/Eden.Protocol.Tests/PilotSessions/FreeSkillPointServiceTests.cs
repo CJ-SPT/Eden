@@ -23,6 +23,39 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
 {
     [Fact]
+    public void QueueSnapshotPublishesExternallyRemovedSkillsBeforeAcknowledgingTheRevision()
+    {
+        const int skill = 3327;
+        const long pilot = FreePointTestData.Pilot;
+        var clock = CalendarTestData.Clock();
+        using var db = FreePointTestData.Create(clock);
+        using LiveWorld live = new(new(db.Path), clock, _ => { });
+        using CourierServiceTests.Client client = new(db, clock, RedemptionTests.Account);
+        client.Refresh();
+        var skills = Assert.IsType<PilotCallResult.Success>(client.Call("GetSkills", [], "@skills"));
+        Assert.Contains(skill, Assert.IsType<BlueMap<int, TrainedSkillReply>>(skills.Reply).Entries.Keys);
+        Assert.Contains(skill, client.Context.ReportedSkillTypes);
+        client.Context.Notifications.Clear();
+
+        var administration = db.Services.GetRequiredService<IPilotDeveloperSkills>();
+        Assert.Equal(skill, Assert.Single(administration.Execute(pilot, "me", new DeveloperSkillAction.Remove("3327")).Removed));
+        var snapshot = Assert.IsType<PilotCallResult.Success>(client.Call("GetSkillQueueAndFreePoints", [], "@skills"));
+        var queue = Assert.IsType<SkillQueueReply>(snapshot.Reply);
+        Assert.Empty(queue.Queue);
+        Assert.Equal(0L, queue.FreePoints);
+        var removed = Assert.Single(client.Context.Notifications.OfType<ServerSkillsRemoved>());
+        Assert.Equal(-1L, removed.Skills.Entries[skill].TrainedPoints);
+        Assert.DoesNotContain(skill, client.Context.ReportedSkillTypes);
+        Assert.Single(client.Context.Notifications.OfType<SkillQueueSaved>());
+        Assert.Single(client.Context.Notifications.OfType<ServerBrainUpdated>());
+
+        client.Context.Notifications.Clear();
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        client.Advance();
+        Assert.Empty(client.Context.Notifications.OfType<ServerSkillsRemoved>());
+    }
+
+    [Fact]
     public async Task WarmResidentQueueCallsSpendAndCheckpointWithoutWorldSql()
     {
         const int skill = 3327;

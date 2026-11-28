@@ -47,7 +47,7 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
         {
             // A different session can credit and spend the same amount between
             // polls. Persisted revisions catch that even when the pool is equal.
-            RefreshExternal(context);
+            ApplySnapshot(context, points.Snapshot(context.Pilot.PilotId));
         }
         else
         {
@@ -67,15 +67,20 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
         Observe(context, balance, revision, true);
     }
 
-    private FreeSkillPointState RefreshExternal(PilotCallContext context)
+    private IReadOnlyList<SkillQueueRow> ApplySnapshot(PilotCallContext context, FreeSkillPointState state)
     {
-        var state = points.Snapshot(context.Pilot.PilotId);
-        var ids = reader.ReadSkills(context.Pilot.PilotId).Select(s => s.TypeId).ToArray();
-        var removed = context.ReportedSkillTypes.Except(ids).ToArray();
-        skills.ReportDeleted(context, removed);
-        skills.Apply(context, new(state.Training.Queue, ids.Concat(removed).ToArray()), true);
-        Observe(context, state.Balance, state.Revision, true);
-        return state;
+        bool external = state.Revision != _revision;
+        var training = state.Training;
+        if (external)
+        {
+            var ids = reader.ReadSkills(context.Pilot.PilotId).Select(s => s.TypeId).ToArray();
+            var removed = context.ReportedSkillTypes.Except(ids).ToArray();
+            skills.ReportDeleted(context, removed);
+            training = new(training.Queue, ids.Concat(removed).ToArray());
+        }
+        var rows = skills.Apply(context, training, external || training.ChangedSkills.Count > 0);
+        Observe(context, state.Balance, state.Revision, external);
+        return rows;
     }
 
     public PilotCallResult Call(
@@ -115,7 +120,9 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
                 var balance = points.Observe(pilot);
                 if (balance.Revision != _revision)
                 {
-                    return RefreshExternal(context).Balance;
+                    var state = points.Snapshot(pilot);
+                    ApplySnapshot(context, state);
+                    return state.Balance;
                 }
                 Observe(context, balance.Points, balance.Revision, false);
                 return balance.Points;
@@ -123,13 +130,7 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
             if (method == "GetSkillQueueAndFreePoints" && args.Length == 0)
             {
                 var state = points.Snapshot(pilot);
-                bool external = state.Revision != _revision;
-                var training = external
-                    ? new TrainingState(state.Training.Queue, reader.ReadSkills(pilot).Select(s => s.TypeId).ToArray())
-                    : state.Training;
-                var rows = skills.Apply(context, training, external || training.ChangedSkills.Count > 0);
-                Observe(context, state.Balance, state.Revision, external);
-                return new SkillQueueReply(rows, state.Balance);
+                return new SkillQueueReply(ApplySnapshot(context, state), state.Balance);
             }
             FreePointRequest request = (method, args) switch
             {

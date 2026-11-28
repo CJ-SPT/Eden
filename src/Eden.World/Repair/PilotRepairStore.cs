@@ -64,6 +64,21 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         WorldActionScope.Inspect(database, world => Station(world, catalog, Pilot(world, pilotId), stationId));
     }
 
+    private static bool AvailableShip(WorldAction world, Pilot pilot, Ship ship)
+    {
+        if (ship.OwnerId != pilot.Id || ship.Position is not null)
+        {
+            return false;
+        }
+        // A hull placed in a maintenance bay retains its last station ID.
+        if (ship.StoredInId is long host)
+        {
+            return world.Ships.Find(host) is { Position: null, StoredInId: null } carrier
+                && carrier.DockedLocationId == pilot.ActiveShip.DockedLocationId;
+        }
+        return ship.DockedLocationId == pilot.ActiveShip.DockedLocationId;
+    }
+
     private static Dictionary<long, IReadOnlyList<RepairQuote>> Quotes(
         WorldAction world,
         CatalogDbContext catalog,
@@ -80,7 +95,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         {
             if (world.Ships.Find(id) is { } ship)
             {
-                if (ship.OwnerId != pilot.Id || ship.Position is not null || ship.DockedLocationId != pilot.ActiveShip.DockedLocationId)
+                if (!AvailableShip(world, pilot, ship))
                 {
                     throw new InvalidDataException("The ship is unavailable in your current station hangar.");
                 }
@@ -117,10 +132,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                     || item.Quantity != 1
                     || !(
                         item.LocationId == pilot.ActiveShip.DockedLocationId && item.FlagId == (int)InventoryFlag.Hangar
-                        || ownerShip is not null
-                            && ownerShip.OwnerId == pilot.Id
-                            && ownerShip.Position is null
-                            && ownerShip.DockedLocationId == pilot.ActiveShip.DockedLocationId
+                        || ownerShip is not null && AvailableShip(world, pilot, ownerShip)
                     )
                 )
                 {

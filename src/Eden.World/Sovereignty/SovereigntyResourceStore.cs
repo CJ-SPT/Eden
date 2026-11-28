@@ -1,4 +1,5 @@
 using Eden.Data.World.Alliances;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Sovereignty;
@@ -9,6 +10,7 @@ using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Combat;
 using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -47,14 +49,14 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
     public int CurrentSystem(long pilotId) =>
         Resident.Economy.Inspect(world =>
         {
-            var ship = world.Pilots.Find(pilotId)!.ActiveShip;
-            if (ship.Position?.SystemId is int system)
-            {
-                return system;
-            }
             using CatalogDbContext catalog = new(database.CatalogPath);
-            return catalog.RequireStation(ship.StationId).SolarSystemId;
+            return CurrentSystem(world, catalog, world.Pilots.Find(pilotId)!.ActiveShip);
         });
+
+    private static int CurrentSystem(WorldAction world, CatalogDbContext catalog, Ship ship) =>
+        ship.Position is null && ship.StructureId is long id && world.Set<SavedStructure>().Find(id) is { } structure
+            ? structure.SystemId
+            : CrimewatchPersistence.System(catalog, ship);
 
     public bool CanManageHub(long pilotId, long hubId) =>
         Resident.Economy.Inspect(world =>
@@ -131,24 +133,25 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
 
     private static void InRange(WorldAction world, CatalogDbContext catalog, long pilotId, SavedStructure structure)
     {
-        if (world.Set<Eden.Data.World.Combat.ShipLoss>().Find(world.Pilots.Find(pilotId)!.ActiveShipId) is not null)
+        var ship = world.Pilots.Find(pilotId)!.ActiveShip;
+        if (world.Set<ShipLoss>().Find(ship.Id) is not null)
         {
             throw new InvalidDataException("Use a surviving active ship.");
         }
-        var position = world.Pilots.Find(pilotId)!.ActiveShip.Position;
         if (
-            position?.SystemId != structure.SystemId
+            ship.Position is not { } position
+            || CurrentSystem(world, catalog, ship) != structure.SystemId
             || new Eden.Gameplay.Flight.SpacePosition(position.X, position.Y, position.Z).DistanceTo(
                 new(structure.X, structure.Y, structure.Z)
             )
                 - (catalog.RequireItem(structure.TypeId).Radius ?? 0)
-                - (catalog.RequireItem(world.Pilots.Find(pilotId)!.ActiveShip.TypeId).Radius ?? 0)
+                - (catalog.RequireItem(ship.TypeId).Radius ?? 0)
                 > SovereigntyResourceRules.InteractionRange
         )
         {
             throw new InvalidDataException("Move within sovereignty resource interaction range in your active ship.");
         }
-        world.RequireUncloaked(world.Pilots.Find(pilotId)!.ActiveShipId);
+        world.RequireUncloaked(ship.Id);
     }
 
     private static OwnedItem Source(WorldAction world, long pilotId, long itemId)

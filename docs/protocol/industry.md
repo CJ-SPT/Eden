@@ -2125,6 +2125,18 @@ The final required sequence passed tool/solution restore, a zero-warning/error s
 
 **Optional maintainer checks:** Open a station LP store, inspect its offers, and complete a funded personal/corporate exchange to check native layout, refresh and input behavior. Check CONCORD conversion presentation if that issuer has a saved balance.
 
+## CONCORD exchange location
+
+`LPSvc.ExchangeConcordLP` requires the pilot to be docked in an NPC station. Docking at an Upwell structure
+can leave the last NPC station ID on the ship, so the resident eligibility check also verifies that the ship
+has no active structure dock. The regression checks that the rejected exchange preserves both LP balances.
+[EVE University CONCORD loyalty points](https://wiki.eveuniversity.org/Loyalty_Points#CONCORD_loyalty_points)
+
+The pinned build 3662168 [route inventory](../client-routes/routes.csv) locates the conversion in
+`lpStoreSvc.pyj`. The archive hash and conversion rules are recorded under
+[loyalty point stores](#loyalty-point-stores-november-8-2026). EVE.js 261108.1 leaves `ExchangeConcordLP` as a
+stub in `lpService.js` (SHA-256 `9ab88f62d9a7886317cd30869f08a8e3d72aa90fcb966798d76ba8169aab53ea`).
+
 ## Datacores in empire LP stores
 
 Existing NPC LP stores for the Amarr, Caldari, Gallente and Minmatar empires also list their own militia's

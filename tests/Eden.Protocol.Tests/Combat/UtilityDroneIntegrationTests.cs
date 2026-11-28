@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -16,6 +17,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
+using Eden.World.Drones;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -30,6 +32,8 @@ public sealed class UtilityDroneIntegrationTests
     private const long Victim = 90000002;
     private const long VictimShip = 1000000000002;
     private const int System = 30000144;
+    private const int SalvageDrone = 32787;
+    private const int WreckType = 26557;
 
     internal static void Space(Fixture f)
     {
@@ -169,6 +173,176 @@ public sealed class UtilityDroneIntegrationTests
         f.Drones.Order(f.Pilot, [drone], DroneOrder.Orbit, null, new HashSet<long>(), f.Now);
         Assert.Empty(f.Base.Db.Services.GetRequiredService<IPilotElectronicWarfare>().Incoming(VictimShip));
         Assert.Empty(f.Base.Db.Services.GetRequiredService<IPilotTackle>().Incoming(VictimShip));
+    }
+
+    [Fact]
+    public void AutomaticSalvageKeepsItsCycleOnTheAssignedWreckUntilItDisappears()
+    {
+        using Fixture f = UtilityDroneTests.Prepare();
+        PassiveCatalogFixture.LoadInformation(f.Base.CatalogPath);
+        long stack = f.Bay(SalvageDrone, 1);
+        f.Space();
+        using LiveWorld live = new(new(f.Base.Db.Path), f.Base.Clock, _ => { });
+        const long first = 8_000_000_000_201;
+        const long second = 8_000_000_000_202;
+        AddWreck(f, live, first, f.Base.Db.Store.FindPilot(1000001)!.Position!);
+        long drone = f.Drones.Launch(f.Pilot, [new(stack, 1)], f.Now).Launches.Single().DroneIds.Single();
+        f.Drones.Order(f.Pilot, [drone], DroneOrder.Salvage, null, new HashSet<long>(), f.Now);
+        f.Tick();
+        var running = Cycle();
+        Assert.Equal(first, running.TargetId);
+        Assert.True(running.StartedAt > 0);
+        long secondNpc = f.Base.Db.Services.GetRequiredService<INpcEncounters>().List(System, f.Now).First(npc => npc.Id != f.Npc.Id).Id;
+        AddWreck(f, live, second, Assert.Single(f.Drones.List(System, f.Now)).Position, secondNpc);
+
+        f.Tick();
+
+        Assert.Equal(running, Cycle());
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<WorldWreck>().Find(first)!.SalvagedAt = f.Now;
+            action.Commit();
+        }
+        f.Tick();
+        var replacement = Cycle();
+        Assert.Equal(second, replacement.TargetId);
+        Assert.Equal(f.Now, replacement.StartedAt);
+        Assert.True(replacement.DueAt > running.DueAt);
+
+        DroneWork Cycle() => live.Economy.Inspect(world => PilotDroneStore.ReadWork(world.Set<WorldDrone>().Find(drone)!));
+    }
+
+    [Fact]
+    public void SalvageDroneStartsWorkingAtTheResidentTractorPositionBeforeItIsCheckpointed()
+    {
+        using Fixture f = UtilityDroneTests.Prepare();
+        PassiveCatalogFixture.LoadInformation(f.Base.CatalogPath);
+        long stack = f.Bay(SalvageDrone, 1);
+        f.Space();
+        using LiveWorld live = new(new(f.Base.Db.Path), f.Base.Clock, _ => { });
+        const long wreck = 8_000_000_000_203;
+        var source = f.Base.Db.Store.FindPilot(1000001)!.Position!;
+        var original = source + new SpacePosition(15_000, 0, 0);
+        AddWreck(f, live, wreck, original);
+        long drone = f.Drones.Launch(f.Pilot, [new(stack, 1)], f.Now).Launches.Single().DroneIds.Single();
+        InformationModule tractor = new(1, 24348, DogmaEffect.TractorBeam, 10_000, 0, 20_000, 0, 2_000, 0);
+        live.Tractors.Start(
+            new(f.Pilot, f.Ship, wreck, tractor, f.Now, f.Now + TimeSpan.TicksPerSecond * 10),
+            source,
+            original,
+            0,
+            null,
+            System
+        );
+        f.Base.Clock.Seconds += 10;
+        live.Tractors.Advance(f.Now);
+        var pulled = Assert.IsType<SpacePosition>(live.PublishedPosition(System, wreck));
+        Assert.Equal(InformationRules.TractorStopDistance, pulled.DistanceTo(source), 3);
+        f.Drones.Order(f.Pilot, [drone], DroneOrder.Salvage, wreck, new HashSet<long> { wreck }, f.Now);
+        Assert.Equal(original.X, live.Economy.Inspect(world => world.Set<WorldWreck>().Find(wreck)!.X));
+
+        f.Tick();
+
+        var work = live.Economy.Inspect(world => PilotDroneStore.ReadWork(world.Set<WorldDrone>().Find(drone)!));
+        Assert.Equal(wreck, work.TargetId);
+        Assert.Equal(f.Now, work.StartedAt);
+    }
+
+    [Fact]
+    public void RepairDroneCancelsCleanlyWhenTheTargetDroneOwnerBecomesCriminalBeforeFirstCycle()
+    {
+        using Fixture f = UtilityDroneTests.Prepare();
+        using (CatalogDbContext catalog = new(f.Base.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000144','{{"securityStatus":0.7}}')"""
+            );
+        }
+        long stack = f.Bay(23719, 1);
+        Space(f);
+        using LiveWorld live = new(new(f.Base.Db.Path), f.Base.Clock, _ => { });
+        long repaired;
+        const double damagedShield = 10;
+        using (var action = live.Economy.Begin())
+        {
+            action.Pilots.Find(f.Pilot)!.SafetyLevel = ShipSafetyLevel.Full;
+            repaired = action.NextItemId();
+            action.Add(
+                new OwnedItem
+                {
+                    Id = repaired,
+                    OwnerId = Victim,
+                    LocationId = System,
+                    TypeId = 2454,
+                    Quantity = 1,
+                    Singleton = true,
+                }
+            );
+            var position = action.Positions.Find(VictimShip)!;
+            action.Add(
+                new WorldDrone
+                {
+                    ItemId = repaired,
+                    PilotId = Victim,
+                    ControllerShipId = VictimShip,
+                    SystemId = System,
+                    Shield = damagedShield,
+                    X = position.X,
+                    Y = position.Y,
+                    Z = position.Z,
+                    UpdatedAt = f.Now,
+                }
+            );
+            action.Commit();
+        }
+        long drone = f.Drones.Launch(f.Pilot, [new(stack, 1)], f.Now).Launches.Single().DroneIds.Single();
+        f.Drones.Order(f.Pilot, [drone], DroneOrder.Engage, repaired, new HashSet<long> { repaired }, f.Now);
+        using (var action = live.Economy.Begin())
+        {
+            action.Add(
+                new SavedCrimewatch
+                {
+                    PilotId = Victim,
+                    SystemId = System,
+                    CriminalUntil = f.Now + TimeSpan.TicksPerMinute,
+                }
+            );
+            action.Commit();
+        }
+
+        Assert.Empty(f.Tick().Hits);
+
+        live.Economy.Inspect(world =>
+        {
+            Assert.Equal(DroneActivity.Idle, world.Set<WorldDrone>().Find(drone)!.Activity);
+            Assert.Equal(damagedShield, world.Set<WorldDrone>().Find(repaired)!.Shield);
+            Assert.Null(world.Set<SavedCrimewatch>().Find(f.Pilot));
+            return true;
+        });
+    }
+
+    private static void AddWreck(Fixture f, LiveWorld live, long id, SpacePosition point, long? npcId = null)
+    {
+        using var action = live.Economy.Begin();
+        action.Add(
+            new WorldWreck
+            {
+                Id = id,
+                NpcId = npcId ?? f.Npc.Id,
+                TypeId = WreckType,
+                OwnerId = f.Pilot,
+                CorporationId = 1000009,
+                SystemId = System,
+                Name = "Test wreck",
+                X = point.X,
+                Y = point.Y,
+                Z = point.Z,
+                CreatedAt = f.Now,
+                ExpiresAt = f.Now + TimeSpan.TicksPerHour,
+                SalvageJson = JsonSerializer.Serialize(new ScanItem[] { new(34, 2) }),
+            }
+        );
+        action.Commit();
     }
 
     [Fact]

@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Third emulator bug audit](#third-emulator-bug-audit)
 - [Second emulator bug audit](#second-emulator-bug-audit)
 - [Emulator bug audit](#emulator-bug-audit)
 - [EVE.js comparison for account and station clone reads](#evejs-comparison-for-account-and-station-clone-reads)
@@ -18,6 +19,93 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## Third emulator bug audit
+
+The third audit started at Eden `0ae8c93f` and fixed 13 defects. The topic records describe the behavioral changes and the
+related pinned-client, EVE.js and CCP evidence.
+
+- [Militia membership statistics and navy pursuit recovery](faction-warfare.md#militia-membership-statistics-and-navy-pursuit-recovery)
+- [Local Skyhook and resource system resolution](sovereignty.md#local-skyhook-and-resource-system-resolution)
+- [Salvage targets and repair drone safety](drones.md#salvage-targets-and-repair-drone-safety)
+- [Standup fighter tubes across operators](capital-logistics.md#standup-fighter-tubes-across-operators)
+- [Docked progression items and skill queue refresh](characters.md#docked-progression-items-and-skill-queue-refresh)
+- [CONCORD exchange location](industry.md#concord-exchange-location)
+- [Station repair for carried hulls and fittings](fitting.md#station-repair-for-carried-hulls-and-fittings)
+- [Fleet boosts during same-system translocation](navigation.md#fleet-boosts-during-same-system-translocation)
+
+### Automated validation
+
+The 13 exact-method selectors matched 17 cases. On baseline `0ae8c93f`, the 13 regressions failed and the four controls
+passed in 15.45 seconds. All 17 cases passed with the fixes in 20.05 seconds. A pre-existing loyalty store fixture still expected
+an overflow when an existing reward stack was full. The baseline reproduced that failure. The updated fixture verifies a separate
+reward stack, the original stack, both balances, the required items and a single payment receipt. Together with the
+`Market.LoyaltyStoreTests` class, the exact-method selection passed all 40 cases in 19.62 seconds.
+
+The broader affected-feature selection ran 671 cases in 408.35 seconds. Its only failure was the old loyalty fixture.
+The broader run passed all 644 cases outside that class, and the rerun passed all 27 cases in the updated loyalty class.
+
+The solution built with zero warnings or errors. The catalog setup policy (8 tests) and formatting policy (9 tests) passed.
+The full formatting check passed in an isolated checkout in 39.11 seconds, checking 3,342 files and the 140-column limit.
+
+<details>
+<summary>Test filters</summary>
+
+Prefix each suffix with `Eden.Protocol.Tests.` and join the `FullyQualifiedName` selectors with `|`.
+The exact-method selection uses `=`.
+
+```text
+Repair.RepairTests.StationRepairsUseTheLocationOfTheCarrierHoldingTheHull
+Flight.TranslocationTests.SameSystemTranslocationPreservesCommandBurstsAfterNpcUndock
+Sovereignty.SovereigntyResourceBoundaryTests.LocalSkyhooksUseTheDockedOrUndockSystemInsteadOfTheSavedNpcStation
+FactionWarfare.MilitiaProgressionTests.BiomassDropsMilitiaHeadcountsAndKeepsHistoricalActivityAcrossCheckpoint
+FactionWarfare.MilitiaNavyTests.PursuitWaitsAcrossReopenAndDeploysOnlyOneLiveWingPerGrid
+Persistence.ImplantTests.ProgressionItemsUseTheCurrentUpwellHangarInsteadOfThePreviousNpcStation
+PilotSessions.FreeSkillPointServiceTests.QueueSnapshotPublishesExternallyRemovedSkillsBeforeAcknowledgingTheRevision
+Market.LoyaltyStoreTests.RejectedConcordExchangesPreserveBothIssuerBalances
+FactionWarfare.MilitiaProgressionTests.DirectEnlistmentCountsThePilotWithoutEnlistingTheirCorporationInStatistics
+Combat.UtilityDroneIntegrationTests.AutomaticSalvageKeepsItsCycleOnTheAssignedWreckUntilItDisappears
+Combat.UtilityDroneIntegrationTests.SalvageDroneStartsWorkingAtTheResidentTractorPositionBeforeItIsCheckpointed
+Combat.UtilityDroneIntegrationTests.RepairDroneCancelsCleanlyWhenTheTargetDroneOwnerBecomesCriminalBeforeFirstCycle
+Structures.StandupFighterTests.ASecondStructureManagerCannotLoadAnOccupiedTubeUntilItsSquadronLands
+```
+
+The broader affected-feature selection uses `~`.
+
+```text
+Repair.RepairTests
+Flight.TranslocationTests
+Flight.TranslocationTargetTests
+Flight.GateCloakTests
+Sovereignty.SovereigntyResource
+FactionWarfare.MilitiaProgressionTests
+FactionWarfare.MilitiaNavyTests
+FactionWarfare.MilitiaEnlistmentTests
+FactionWarfare.MilitiaOrganizationTests
+Combat.UtilityDrone
+Combat.DroneEquipmentTests
+Structures.StandupFighterTests
+Flight.CapitalTravelTests.Archon
+Persistence.ImplantTests
+Persistence.PilotSkillBookTests
+Persistence.BoosterTests
+Persistence.BoosterTimingTests
+PilotSessions.BoosterServiceTests
+PilotSessions.FreeSkillPointServiceTests
+Market.LoyaltyStoreTests
+Market.LoyaltyStoreSkinLicenseTests
+PilotSessions.LoyaltyWalletServiceTests
+```
+
+</details>
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
 
 ## Second emulator bug audit
 

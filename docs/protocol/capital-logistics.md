@@ -6,6 +6,16 @@ Planning baseline, November 20, 2026, Eden `6898acc7`, client build **3662168**.
 delivery to an industrial cynosural field. The shared travel rules from that delivery support later combat capitals,
 fleet travel, and sovereignty infrastructure.
 
+## Standup fighter tubes across operators
+
+A Standup fighter tube stays occupied until its deployed squadron lands, even when a different structure manager handles stock.
+The structure's launched squadrons count toward both the individual tube and the deck's fighter-class limits. A rejected load
+leaves the fighter bay and deployed squadron intact. After landing, the same tube can receive more fighters of its current type.
+
+Build **3662168** uses `fightersSvc.pyj` for `LoadFightersToTube`. EVE.js **261108.1** counts occupancy by host inventory and
+checks for existing in-space squadrons by host and tube in `fighterRuntime.js` (SHA-256 prefix `7e3048354260`).
+[CCP fighter controls](https://support.eveonline.com/hc/en-us/articles/207659599-Fighter-Controls)
+
 ## Industrial cynos and jump freighters
 
 Rhea, Nomad, Anshar, and Ark can use the native fleet-member jump to a paid industrial cyno. A Venture, Venture

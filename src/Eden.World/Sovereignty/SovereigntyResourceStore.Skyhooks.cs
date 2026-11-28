@@ -68,7 +68,7 @@ internal sealed partial class SovereigntyResourceStore
             throw new InvalidDataException("Choose an Orbital Skyhook.");
         }
         var position = pilot.ActiveShip.Position ?? throw new InvalidDataException("Deploy a skyhook from your ship in space.");
-        int system = position.SystemId ?? throw new InvalidDataException("Choose an eligible solar system.");
+        int system = CurrentSystem(action, catalog, pilot.ActiveShip);
         var eligibility = new SovereigntyStore(database).System(system);
         if (eligibility is null || !SovereigntyRules.CanClaim(eligibility))
         {
@@ -184,11 +184,12 @@ internal sealed partial class SovereigntyResourceStore
         using var action = Live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = action.Pilots.Find(pilotId)!;
+        int? system = corporationOnly ? null : CurrentSystem(action, catalog, pilot.ActiveShip);
         SovereigntyResourcePersistence.Advance(action, catalog, Now);
         var result = action
             .Set<SavedSovereigntySkyhook>()
             .AsEnumerable()
-            .Where(row => corporationOnly ? row.CorporationId == pilot.CorporationId : row.SystemId == pilot.ActiveShip.Position?.SystemId)
+            .Where(row => corporationOnly ? row.CorporationId == pilot.CorporationId : row.SystemId == system)
             .Where(row => action.Set<SavedStructure>().Find(row.Id) is { State: not StructureState.Destroyed })
             .Select(row => SkyhookView(action, catalog, row, Now))
             .ToArray();

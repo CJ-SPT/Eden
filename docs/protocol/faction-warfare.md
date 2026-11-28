@@ -1,5 +1,18 @@
 # Faction warfare
 
+## Militia membership statistics and navy pursuit recovery
+
+Faction and corporation headcounts now exclude biomassed pilots while retaining their historical kills and victory points.
+Direct enlistment counts the pilot in the faction total. The corporation count and top corporation in the native
+`facWarMgr.GetStats_FactionInfo` reply use organization enlistment, including faction inherited through an alliance.
+The pinned statistics row distinguishes `totalMembersCount` from `corporationsCount` and `topCorporation`.
+Local EVE.js `facWarMgrService.js` (SHA-256 prefix `0deb401e43be`) checks both current character existence and separate
+corporation enlistment. [CCP factional warfare](https://support.eveonline.com/hc/en-us/articles/203209072-Factional-Warfare)
+
+A faction navy wing resumes aggression against its assigned ship when a recovered aggression row names another target.
+Recovery uses the same reaction deadline as initial dispatch and preserves the responder IDs. The pinned `OnRemoteMessage`
+warning and catalog navy roster are unchanged. [CCP factional warfare](https://support.eveonline.com/hc/en-us/articles/203209072-Factional-Warfare)
+
 ## Battlefield rally points, friendly fire and defender loot
 
 Battlefield acceleration gates resolve the landing point for the defender, attacker or neutral entrant from the pinned

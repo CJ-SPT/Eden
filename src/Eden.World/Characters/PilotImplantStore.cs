@@ -151,7 +151,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         if (
             !(
                 (item.LocationId == ship.Id && item.FlagId == (int)InventoryFlag.Cargo)
-                || (ship.Position is null && item.LocationId == ship.StationId && item.FlagId == (int)InventoryFlag.Hangar)
+                || (ship.Position is null && item.LocationId == ship.DockedLocationId && item.FlagId == (int)InventoryFlag.Hangar)
             )
             || item.Quantity < 1
             || item.Singleton

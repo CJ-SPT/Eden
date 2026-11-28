@@ -2,9 +2,11 @@ using Eden.Data.World.Corporations;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -323,13 +325,51 @@ public sealed class LoyaltyStoreTests
         Assert.All(verify.Set<OwnedItem>().Where(item => item.TypeId == RequiredMissile), item => Assert.Equal(5000, item.Quantity));
     }
 
+    [Fact]
+    public void FullRewardStackDeliversThePurchaseToASeparateStack()
+    {
+        using var db = Create();
+        long fullStackId;
+        using (WorldDbContext world = new(db.Path))
+        {
+            using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
+            var fullStack = InventoryPersistence.MergeOutput(
+                world,
+                catalog,
+                Pilot,
+                Station,
+                (int)InventoryFlag.Hangar,
+                Missile,
+                int.MaxValue
+            );
+            world.SaveChanges();
+            fullStackId = fullStack.Item.Id;
+        }
+
+        Store(db).Purchase(Pilot, Navy, MissileOffer, 1);
+
+        using WorldDbContext saved = new(db.Path);
+        var rewardStacks = saved.Set<OwnedItem>().Where(item => item.TypeId == Missile).ToArray();
+        Assert.Equal(int.MaxValue, Assert.Single(rewardStacks, item => item.Id == fullStackId).Quantity);
+        var delivery = Assert.Single(rewardStacks, item => item.Id != fullStackId);
+        Assert.Equal(
+            (Pilot, (long)Station, (int)InventoryFlag.Hangar, 5000),
+            (delivery.OwnerId, delivery.LocationId, delivery.FlagId, delivery.Quantity)
+        );
+        Assert.Equal(15_000, saved.Set<OwnedItem>().Single(item => item.TypeId == RequiredMissile).Quantity);
+        Assert.Equal(94_500, saved.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points);
+        Assert.Equal(Budget - 550_000_000, saved.Set<PilotWallet>().Find(Pilot)!.Cents);
+        var payment = Assert.Single(saved.Set<SavedServicePayment>());
+        Assert.Equal(WalletEntryType.LoyaltyStore, payment.Kind);
+        Assert.Equal(-550_000_000, payment.AmountCents);
+    }
+
     [Theory]
     [InlineData("lp")]
     [InlineData("isk")]
     [InlineData("items")]
     [InlineData("space")]
     [InlineData("service")]
-    [InlineData("overflow")]
     public void RejectedPurchasesLeaveEveryBalanceStackAndJournalUnchanged(string reason)
     {
         using var db = Create();
@@ -347,11 +387,6 @@ public sealed class LoyaltyStoreTests
             {
                 world.Set<OwnedItem>().Single(item => item.TypeId == RequiredMissile).FlagId = (int)InventoryFlag.Cargo;
             }
-            if (reason == "overflow")
-            {
-                using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
-                InventoryPersistence.MergeOutput(world, catalog, Pilot, Station, (int)InventoryFlag.Hangar, Missile, int.MaxValue);
-            }
             world.SaveChanges();
         }
         if (reason == "space")
@@ -368,14 +403,7 @@ public sealed class LoyaltyStoreTests
         long points = before.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points;
         long cents = before.Set<PilotWallet>().Find(Pilot)!.Cents;
         var quantities = before.Set<OwnedItem>().OrderBy(item => item.Id).Select(item => new { item.Id, item.Quantity }).ToArray();
-        if (reason == "overflow")
-        {
-            Assert.Throws<OverflowException>(() => Store(db).Purchase(Pilot, Navy, MissileOffer, 1));
-        }
-        else
-        {
-            Assert.Throws<InvalidDataException>(() => Store(db).Purchase(Pilot, Navy, MissileOffer, 1));
-        }
+        Assert.Throws<InvalidDataException>(() => Store(db).Purchase(Pilot, Navy, MissileOffer, 1));
         using WorldDbContext after = new(db.Path);
         Assert.Equal(points, after.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points);
         Assert.Equal(cents, after.Set<PilotWallet>().Find(Pilot)!.Cents);
@@ -633,9 +661,10 @@ public sealed class LoyaltyStoreTests
     [InlineData("write")]
     [InlineData("space")]
     [InlineData("overflow")]
+    [InlineData("structure")]
     public void RejectedConcordExchangesPreserveBothIssuerBalances(string reason)
     {
-        using var db = Create();
+        using var db = Create(resident: reason == "structure");
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
@@ -670,6 +699,24 @@ public sealed class LoyaltyStoreTests
         {
             var pilot = db.Store.FindPilot(1000001)!;
             db.Store.SetPosition(pilot.ShipId, new(1, 2, 3), pilot.SystemId);
+        }
+        if (reason == "structure")
+        {
+            var pilot = db.Store.FindPilot(1000001)!;
+            const long structure = StructureRules.FirstStructureId + 1;
+            PassiveCatalogFixture.LoadStructures(new WorldDatabase(db.Path).CatalogPath);
+            using var world = db.Services.GetRequiredService<LiveWorld>().Economy.Begin(new(pilots: [Pilot]));
+            world.Add(
+                new SavedStructure
+                {
+                    Id = structure,
+                    TypeId = 35832,
+                    CorporationId = pilot.CorpId,
+                    SystemId = pilot.SystemId,
+                }
+            );
+            world.Ships.Find(pilot.ShipId)!.StructureId = structure;
+            world.Commit();
         }
         if (reason == "write")
         {

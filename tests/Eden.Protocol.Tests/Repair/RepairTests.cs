@@ -293,6 +293,69 @@ public sealed class RepairTests
         Assert.Empty(f.Store.Payments(f.Pilot.PilotId));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StationRepairsUseTheLocationOfTheCarrierHoldingTheHull(bool carrierDocked)
+    {
+        using Fixture f = new();
+        var database = new WorldDatabase(f.Db.Path);
+        const int orca = 28606;
+        PassiveCatalogFixture.LoadUtilityHull(database.CatalogPath, orca);
+        using LiveWorld live = new(database, new TestClock(), _ => { });
+        var pilot = f.Pilot;
+        var carrier = f.Db.Store.FindPilot(1000002)!;
+        long module;
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId, carrier.PilotId])))
+        {
+            action.Ships.Find(carrier.ShipId)!.TypeId = orca;
+            action.Add(
+                new Ship
+                {
+                    Id = SpareShip,
+                    OwnerId = pilot.PilotId,
+                    TypeId = pilot.ShipTypeId,
+                    StationId = pilot.StationId,
+                    StoredInId = carrier.ShipId,
+                    StorageFlagId = (int)InventoryFlag.ShipMaintenanceBay,
+                    Name = "Carried repair hull",
+                }
+            );
+            action.Add(
+                new ShipHealthState
+                {
+                    ShipId = SpareShip,
+                    ArmorDamage = 10,
+                    UpdatedAt = s_now,
+                }
+            );
+            var miner = action
+                .Set<OwnedItem>()
+                .Single(i => i.OwnerId == pilot.PilotId && i.TypeId == InventoryDefinitions.CivilianMinerType);
+            miner.Singleton = true;
+            miner.LocationId = SpareShip;
+            miner.FlagId = (int)InventoryFlag.HighSlot0;
+            module = miner.Id;
+            action.Commit();
+        }
+        if (carrierDocked)
+        {
+            var quote = f.Store.Quotes(pilot.PilotId, pilot.StationId, [SpareShip, module]);
+            Assert.Equal(10, Assert.Single(quote[SpareShip]).Damage);
+            Assert.Equal(0, Assert.Single(quote[module]).Damage);
+            Assert.Equal(99_000, f.Run(100_000, SpareShip, module).BalanceCents);
+            return;
+        }
+
+        f.Db.Store.SetPosition(carrier.ShipId, new(1_000_000, 0, 0));
+        Assert.Throws<InvalidDataException>(() => f.Store.Quotes(pilot.PilotId, pilot.StationId, [SpareShip]));
+        Assert.Throws<InvalidDataException>(() => f.Store.Quotes(pilot.PilotId, pilot.StationId, [module]));
+        Assert.Throws<InvalidDataException>(() => f.Run(100_000, pilot.ShipId, SpareShip));
+        Assert.Empty(f.Store.Payments(pilot.PilotId));
+        Assert.Equal(100_000, live.Economy.Inspect(world => world.Set<PilotWallet>().Find(pilot.PilotId)!.Cents));
+        Assert.Equal(10, live.Economy.Inspect(world => world.Set<ShipHealthState>().Find(SpareShip)!.ArmorDamage));
+    }
+
     [Fact]
     public void OwnershipLocationAndServiceFailuresRejectTheWholeBatch()
     {

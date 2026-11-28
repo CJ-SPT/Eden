@@ -102,6 +102,7 @@ internal sealed class MilitiaProgressionStore(WorldDatabase database, TimeProvid
             var ownership = FactionWarzoneCatalog.Roster.ToLookup(system => FactionWarzoneStore.Occupier(world, system.SystemId));
             var members = world
                 .Pilots.AsEnumerable()
+                .Where(pilot => world.Set<SavedCharacterDeletion>().Find(pilot.Id)?.DeletedAt is null)
                 .Select(pilot => (pilot.CorporationId, Faction: MilitiaEnlistmentStore.Effective(world, pilot)))
                 .Where(pilot => pilot.Faction.HasValue)
                 .Select(pilot => new Member(pilot.CorporationId, pilot.Faction!.Value))
@@ -111,7 +112,10 @@ internal sealed class MilitiaProgressionStore(WorldDatabase database, TimeProvid
                 {
                     var corporations = members[faction]
                         .GroupBy(pilot => pilot.Corporation)
-                        .Where(corp => world.Set<SavedCorporation>().Find(corp.Key) is not null)
+                        .Where(corp =>
+                            world.Set<SavedCorporation>().Find(corp.Key) is { ClosedAt: null }
+                            && MilitiaOrganizationStore.CorporationFaction(world, corp.Key) == faction
+                        )
                         .OrderByDescending(corp => corp.Count())
                         .ThenBy(corp => corp.Key)
                         .ToArray();
@@ -134,13 +138,18 @@ internal sealed class MilitiaProgressionStore(WorldDatabase database, TimeProvid
         Resident.Economy.Inspect(world =>
         {
             var pilot = world.Pilots.Find(pilotId);
-            if (pilot is null || MilitiaEnlistmentStore.Effective(world, pilot) is not { } faction)
+            if (
+                pilot is null
+                || world.Set<SavedCharacterDeletion>().Find(pilotId)?.DeletedAt is not null
+                || MilitiaEnlistmentStore.Effective(world, pilot) is not { } faction
+            )
             {
                 return 0;
             }
             return world
                 .Filter<Pilot>(member => member.CorporationId == pilot.CorporationId)
                 .AsEnumerable()
+                .Where(member => world.Set<SavedCharacterDeletion>().Find(member.Id)?.DeletedAt is null)
                 .Count(member => MilitiaEnlistmentStore.Effective(world, member) == faction);
         });
 

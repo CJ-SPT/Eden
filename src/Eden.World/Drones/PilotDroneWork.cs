@@ -166,17 +166,9 @@ internal sealed partial class PilotDroneStore
             var endpoint =
                 WorkTarget(world, catalog, pilot, utility, id, system, now)
                 ?? throw new InvalidDataException("The drone work target is unavailable.");
-            if (utility.Repair)
+            if (utility.Repair && drones.Any(drone => drone!.ItemId == id))
             {
-                if (drones.Any(drone => drone!.ItemId == id))
-                {
-                    throw new InvalidDataException("A repair drone cannot repair itself.");
-                }
-                var recipient = endpoint.Pilot ?? (endpoint.Drone is { } repaired ? world.Pilots.Find(repaired.PilotId) : null);
-                if (recipient is not null && recipient.Id != pilot.Id)
-                {
-                    _ = AssistancePersistence.Check(world, catalog, pilot, recipient, now);
-                }
+                throw new InvalidDataException("A repair drone cannot repair itself.");
             }
             if (Position(pilot.ActiveShip.Position!).DistanceTo(endpoint.Position) > range)
             {
@@ -251,21 +243,20 @@ internal sealed partial class PilotDroneStore
         }
         if (profile.Kind == UtilityDroneKind.Salvaging)
         {
-            var wreck = world.Set<WorldWreck>().Find(id);
-            return
-                wreck is null
-                || wreck.SystemId != system
-                || wreck.ExpiresAt <= now
-                || MissionSalvageRules.IsWreck(id)
-                || wreck.SalvagedAt is not null
-                || wreck.SalvageJson is null
-                ? null
-                : new(id, new(wreck.X, wreck.Y, wreck.Z), (float)(catalog.FittingType(wreck.TypeId)?.Radius ?? 0), Wreck: wreck);
+            return SalvageTarget(catalog, LiveWorld.Find(world.WorldPath), world.Set<WorldWreck>().Find(id), system, now);
         }
         if (profile.Repair && world.Set<WorldDrone>().Find(id) is { } drone && drone.SystemId == system)
         {
             var contact = Contact(world, catalog, drone);
-            return contact.Health.Remaining.Destroyed ? null : new(id, contact.Position, contact.Profile.Radius, Drone: drone);
+            if (contact.Health.Remaining.Destroyed)
+            {
+                return null;
+            }
+            if (drone.PilotId != source.Id && world.Pilots.Find(drone.PilotId) is { } recipient)
+            {
+                _ = AssistancePersistence.Check(world, catalog, source, recipient, now);
+            }
+            return new(id, contact.Position, contact.Profile.Radius, Drone: drone);
         }
         var pilot = FindVictim(world, catalog, source, id, system, now);
         var presence = pilot is null ? null : FindContact(world, pilot, system, now);
@@ -290,6 +281,23 @@ internal sealed partial class PilotDroneStore
             _ = AssistancePersistence.Check(world, catalog, source, pilot!, now);
         }
         return new(id, presence.Position, (float)(catalog.FittingType(pilot!.ActiveShip.TypeId)?.Radius ?? 0), pilot);
+    }
+
+    private static WorkEndpoint? SalvageTarget(CatalogDbContext catalog, LiveWorld? live, WorldWreck? wreck, int system, long now)
+    {
+        if (
+            wreck is null
+            || wreck.SystemId != system
+            || wreck.ExpiresAt <= now
+            || MissionSalvageRules.IsWreck(wreck.Id)
+            || wreck.SalvagedAt is not null
+            || wreck.SalvageJson is null
+        )
+        {
+            return null;
+        }
+        var position = live?.PublishedPosition(system, wreck.Id) ?? new(wreck.X, wreck.Y, wreck.Z);
+        return new(wreck.Id, position, (float)(catalog.FittingType(wreck.TypeId)?.Radius ?? 0), Wreck: wreck);
     }
 
     private bool AdvanceWork(
@@ -327,18 +335,33 @@ internal sealed partial class PilotDroneStore
         {
             if (work.Automatic && profile.Kind == UtilityDroneKind.Salvaging)
             {
-                var candidates = world
-                    .Filter<WorldWreck>(w =>
-                        w.SystemId == drone.SystemId && w.ExpiresAt > now && w.SalvagedAt == null && w.SalvageJson != null
-                    )
-                    .ToArray();
-                endpoint = candidates
-                    .Where(w => !MissionSalvageRules.IsWreck(w.Id) && CanAutoSalvage(world, pilot, w))
-                    .Where(w => source.DistanceTo(new(w.X, w.Y, w.Z)) <= controlRange)
-                    .OrderBy(w => new SpacePosition(w.X, w.Y, w.Z).DistanceTo(contact.Position))
-                    .ThenBy(w => w.Id)
-                    .Select(w => WorkTarget(world, catalog, pilot, profile, w.Id, drone.SystemId!.Value, now))
-                    .FirstOrDefault();
+                int system = drone.SystemId!.Value;
+                var live = LiveWorld.Find(world.WorldPath);
+                if (
+                    work.TargetId != 0
+                    && SalvageTarget(catalog, live, world.Set<WorldWreck>().Find(work.TargetId), system, now) is { } current
+                    && source.DistanceTo(current.Position) <= controlRange
+                    && CanAutoSalvage(world, pilot, current.Wreck!)
+                )
+                {
+                    endpoint = current;
+                }
+                else
+                {
+                    endpoint = world
+                        .Filter<WorldWreck>(wreck =>
+                            wreck.SystemId == system && wreck.ExpiresAt > now && wreck.SalvagedAt == null && wreck.SalvageJson != null
+                        )
+                        .AsEnumerable()
+                        .Where(w => CanAutoSalvage(world, pilot, w))
+                        .Select(w => SalvageTarget(catalog, live, w, system, now))
+                        .OfType<WorkEndpoint>()
+                        .Where(candidate => source.DistanceTo(candidate.Position) <= controlRange)
+                        .OrderBy(candidate => candidate.Position.DistanceTo(contact.Position))
+                        .ThenBy(candidate => candidate.Id)
+                        .FirstOrDefault();
+                    work = work with { TargetId = endpoint?.Id ?? 0, StartedAt = 0, DueAt = 0 };
+                }
             }
             else
             {

@@ -1,5 +1,6 @@
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
@@ -19,6 +20,70 @@ namespace Eden.Protocol.Tests.Structures;
 
 public sealed partial class StandupFighterTests
 {
+    [Fact]
+    public void ASecondStructureManagerCannotLoadAnOccupiedTubeUntilItsSquadronLands()
+    {
+        using Fixture fixture = new(liveWorld: true);
+        PassiveCatalogFixture.LoadCapitalTravel(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        var structure = fixture.Online();
+        var other = fixture.Db.Store.FindPilot(1000002)!;
+        var membership = fixture.Db.Services.GetRequiredService<ICorporationMembership>();
+        var invitation = membership.Invite(fixture.PilotId, other.PilotId);
+        membership.Update(
+            other.PilotId,
+            new(invitation.Id, other.PilotId, fixture.CorporationId, "", CorporationApplicationStatus.Joined, "", invitation.AppliedAt)
+        );
+        var roles = fixture.Db.Services.GetRequiredService<ICorporationRoles>();
+        roles.UpdateMembers(
+            fixture.PilotId,
+            [new(other.PilotId, null, null, null, new((long)CorporationRole.StationManager, 0, 0, 0, 0, 0, 0, 0), null, 0)]
+        );
+        var docking = fixture.Db.Services.GetRequiredService<IStationDocking>();
+        docking.Dock(fixture.PilotId, fixture.ShipId, structure.Id);
+        fixture.Db.Store.SetPosition(other.ShipId, Fixture.Point, Fixture.SystemId);
+        docking.Dock(other.PilotId, other.ShipId, structure.Id);
+
+        var world = LiveWorld.Find(fixture.Db.Path)!;
+        long stock = AddStock(3);
+        long spare = AddStock(1);
+        var deck = fixture.Db.Services.GetRequiredService<IPilotFighterDeck>();
+        var recovery = fixture.Db.Services.GetRequiredService<IStandupFighterFlight>();
+        const int tube = FighterDeckRules.FirstTube;
+        deck.Load(fixture.PilotId, structure.Id, stock, tube);
+        var launched = Assert.Single(deck.Launch(fixture.PilotId, structure.Id, [tube], fixture.Clock.Now)).Squadron;
+        recovery.Release(fixture.PilotId, structure.Id, fixture.Clock.Now);
+
+        Assert.Throws<InvalidDataException>(() => deck.Load(other.PilotId, structure.Id, spare, tube));
+        Assert.Equal((int)InventoryFlag.FighterBay, world.Economy.Inspect(action => action.Set<OwnedItem>().Find(spare)!.FlagId));
+        Assert.Equal(3, Assert.Single(deck.Read(fixture.PilotId, structure.Id).Squadrons).Count);
+
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        recovery.AdvanceReturns(fixture.Clock.Now);
+        deck.Load(other.PilotId, structure.Id, spare, tube);
+        var landed = Assert.Single(deck.Read(other.PilotId, structure.Id).Tubes);
+        Assert.Equal(launched.SquadronId, landed.SquadronId);
+        Assert.Equal(4, landed.Count);
+
+        long AddStock(int count)
+        {
+            using var action = world.Economy.Begin();
+            long id = action.NextItemId();
+            action.Add(
+                new OwnedItem
+                {
+                    Id = id,
+                    OwnerId = fixture.CorporationId,
+                    LocationId = structure.Id,
+                    FlagId = (int)InventoryFlag.FighterBay,
+                    TypeId = 47035,
+                    Quantity = count,
+                }
+            );
+            action.Commit();
+            return id;
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -219,10 +219,22 @@ internal sealed class MilitiaNavyStore(WorldDatabase database, NpcProfileCatalog
             }.OfType<WorldNpc>()
         )
         {
-            if (world.Set<NpcAggression>().Find(npc.Id) is null)
+            var current = world.Set<NpcAggression>().Find(npc.Id);
+            if (current?.TargetShipId == pursuit.ShipId)
             {
-                world.Add(NpcAggression.Start(npc.Id, pursuit.ShipId, NpcGuardRules.ReactionMilliseconds, now));
+                continue;
             }
+            var response = NpcAggression.Start(npc.Id, pursuit.ShipId, NpcGuardRules.ReactionMilliseconds, now);
+            if (current is null)
+            {
+                world.Add(response);
+                continue;
+            }
+            current.TargetShipId = response.TargetShipId;
+            current.ReadyAt = response.ReadyAt;
+            current.MissileReadyAt = response.MissileReadyAt;
+            current.LastShotAt = null;
+            current.LastTargetId = null;
         }
     }
 

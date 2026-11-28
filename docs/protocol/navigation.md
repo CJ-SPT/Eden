@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Fleet boosts during same-system translocation](#fleet-boosts-during-same-system-translocation)
 - [Cynosural cycles and travel restrictions](#cynosural-cycles-and-travel-restrictions)
 - [Space position diagnostics](#space-position-diagnostics)
 - [Peer gate and cloak history](#peer-gate-and-cloak-history)
@@ -57,6 +58,16 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Fleet boosts during same-system translocation
+
+The developer `/tr` operation resolves the origin system from the current position or the NPC station used for undock.
+An in-system move preserves the active fleet boost and its exact deadline in the next checkpoint. Crossing into a different
+system still clears the effect. The native movement and effect notification contracts are unchanged.
+
+The EVE.js 261108.1 command burst reference stores effects and deadlines on ship entities in `space/modules/commandBurstRuntime.js`
+(SHA-256 prefix `fa64cc42acf5`). CCP's command burst behavior preserves the effect across warp within a system and clears it
+on a system change. [CCP Command Burst](https://support.eveonline.com/hc/en-us/articles/213817305-Command-Burst)
 
 ## Cynosural cycles and travel restrictions
 

@@ -3,12 +3,14 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Structures;
 using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -200,6 +202,74 @@ internal static class ImplantTestData
 
 public sealed class ImplantTests
 {
+    [Fact]
+    public void ProgressionItemsUseTheCurrentUpwellHangarInsteadOfThePreviousNpcStation()
+    {
+        const int skill = 3416;
+        const long structure = StructureRules.FirstStructureId + 1;
+        const long pilotId = ImplantTestData.Pilot;
+        var clock = CalendarTestData.Clock();
+        using var db = BoosterTestData.Create(clock);
+        var pilot = db.Store.FindPilot(1000001)!;
+        WorldDatabase database = new(db.Path);
+        PassiveCatalogFixture.LoadStructures(database.CatalogPath);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3416,'Shield Operation',257);
+                INSERT INTO TypeAttribute VALUES (3416,275,1);
+                INSERT INTO SourceRecord VALUES ('client/types','3416','{{"published":1,"volume":0.01}}');
+                """
+            );
+        }
+        long implant = ImplantTestData.Item(db);
+        long booster = BoosterTestData.Item(db);
+        long book = ImplantTestData.Item(db, skill);
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(
+                new SavedStructure
+                {
+                    Id = structure,
+                    TypeId = 35832,
+                    CorporationId = pilot.CorpId,
+                    SystemId = pilot.SystemId,
+                }
+            );
+            world.Ships.Find(pilot.ShipId)!.StructureId = structure;
+            world.SaveChanges();
+        }
+        using LiveWorld live = new(database, clock, _ => { });
+        var implants = ImplantTestData.Store(db);
+        var boosters = BoosterTestData.Store(db);
+        var books = db.Services.GetRequiredService<IPilotSkillBooks>();
+
+        Assert.Throws<InvalidDataException>(() => implants.Install(pilotId, implant));
+        Assert.Throws<InvalidDataException>(() => boosters.Consume(pilotId, booster, pilot.StationId));
+        Assert.Throws<InvalidDataException>(() => books.Inject(pilotId, [book]));
+        using (var world = live.Economy.Begin(new(pilots: [pilotId])))
+        {
+            foreach (long itemId in new[] { implant, booster, book })
+            {
+                var item = world.Set<OwnedItem>().Find(itemId)!;
+                Assert.Equal(1, item.Quantity);
+                item.LocationId = structure;
+            }
+            world.Commit();
+        }
+
+        Assert.Equal(implant, Assert.Single(implants.Install(pilotId, implant).Snapshot.Implants).ItemId);
+        Assert.Equal(booster, Assert.Single(boosters.Consume(pilotId, booster, structure).Snapshot.Boosters).ItemId);
+        Assert.Equal(skill, Assert.Single(books.Inject(pilotId, [book]).TypeIds));
+        live.Economy.Inspect(world =>
+        {
+            Assert.Equal(0, world.Set<PilotSkill>().Find(pilotId, skill)!.Points);
+            Assert.All(new[] { implant, booster, book }, id => Assert.Null(world.Set<OwnedItem>().Find(id)));
+            return true;
+        });
+    }
+
     public static IEnumerable<object[]> Profiles => ImplantTestData.Profiles.Select(p => new object[] { p.Type, p.Slot, p.Bonus });
 
     [Theory]

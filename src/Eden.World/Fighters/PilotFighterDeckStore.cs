@@ -145,9 +145,11 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
         return launches;
     }
 
-    private static IEnumerable<FighterInSpace> Deployed(WorldAction world, long pilotId, long shipId, long now = 0) =>
+    private static IEnumerable<FighterInSpace> Deployed(WorldAction world, long? pilotId, long shipId, long now = 0) =>
         world
-            .Filter<WorldDrone>(drone => drone.PilotId == pilotId && drone.ControllerShipId == shipId && drone.SystemId != null)
+            .Filter<WorldDrone>(drone =>
+                (pilotId == null || drone.PilotId == pilotId) && drone.ControllerShipId == shipId && drone.SystemId != null
+            )
             .AsEnumerable()
             .Select(drone => (Drone: drone, Item: world.Set<OwnedItem>().Find(drone.ItemId)))
             .Where(pair => pair.Item is not null && FighterDeckRules.IsTube(pair.Item.FlagId))
@@ -305,7 +307,8 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
         {
             PilotSkillReader.CheckRequirements(action, catalog, pilotId, stack.TypeId);
         }
-        var deployed = Deployed(action, pilotId, shipId).ToArray();
+        // The structure owns its tubes, including squadrons sent out by an earlier operator.
+        var deployed = Deployed(action, host.Standup ? null : pilotId, shipId).ToArray();
         if (deployed.Any(squad => squad.Flag == flag))
         {
             throw new InvalidDataException("Recall this tube's fighter squadron before loading it.");
