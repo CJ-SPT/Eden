@@ -820,6 +820,7 @@ internal sealed partial class CapsuleerMiner(
             }
         }
         FactorySupplyRequest? supply = null;
+        FactoryMoonSupply? moonSupply = null;
         CapsuleerIndustry.MoonMiningTrip? moon = null;
         if (
             Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
@@ -827,7 +828,7 @@ internal sealed partial class CapsuleerMiner(
         )
         {
             using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerIndustry");
-            var moonSupply = CapsuleerIndustry.AssignedMoonSupply(supplyWorld, Pilot, Now);
+            moonSupply = CapsuleerIndustry.AssignedMoonSupply(supplyWorld, Pilot, Now);
             industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot, sponsored: moonSupply is not null);
             if (moonSupply is not null && TryTravelToMoonSupply(moonSupply))
             {
@@ -897,7 +898,7 @@ internal sealed partial class CapsuleerMiner(
         {
             _operation.MarketChanged |= industry.SellMiningSurplus(oreMarket, _operation.Catalog, Pilot, Now);
         }
-        if (moon is null && TryTakeHuntingWork())
+        if (moonSupply is null && moon is null && TryTakeHuntingWork())
         {
             return;
         }

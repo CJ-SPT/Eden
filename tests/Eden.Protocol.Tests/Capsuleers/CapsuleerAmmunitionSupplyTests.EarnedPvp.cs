@@ -127,17 +127,20 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
     }
 
     [Theory]
-    [InlineData(false, false, false, false)]
-    [InlineData(true, false, false, false)]
-    [InlineData(false, true, false, false)]
-    [InlineData(false, false, true, false)]
-    [InlineData(false, false, false, true)]
-    [InlineData(true, false, false, true)]
+    [InlineData(false, false, false, false, false)]
+    [InlineData(true, false, false, false, false)]
+    [InlineData(false, true, false, false, false)]
+    [InlineData(false, false, true, false, false)]
+    [InlineData(false, false, false, true, false)]
+    [InlineData(true, false, false, true, false)]
+    [InlineData(false, false, false, false, true)]
+    [InlineData(false, false, true, false, true)]
     public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(
         bool remoteSupplier,
         bool progress,
         bool blockedGoal,
-        bool fundedRefit
+        bool fundedRefit,
+        bool splitAsks
     )
     {
         const int incursus = (int)TechOneHullType.Incursus;
@@ -155,7 +158,6 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         const int jitaTradeHub = 60003760;
         const long priceCents = MarketDefinitions.CentsPerIsk;
         const long openingCents = 100_000 * MarketDefinitions.CentsPerIsk;
-        const long bountyIsk = 2_000_000;
 
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
@@ -218,6 +220,9 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             .Equipment.GroupBy(item => item.TypeId)
             .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
         parts[incursus] = 1;
+        int fitUnits = parts.Values.Sum();
+        // The small bounty is below the corporation tax threshold and covers the second railgun's extra ISK.
+        long bountyIsk = splitAsks ? fitUnits + 1 : 2_000_000;
         parts[charge] *= 5;
         Assert.True(parts.Values.Sum() * priceCents < openingCents);
         var orders = parts
@@ -241,6 +246,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     )
             )
             .ToArray();
+        if (splitAsks)
+        {
+            int index = Array.FindIndex(orders, order => order.TypeId == railgun);
+            orders[index] = orders[index] with { Remaining = 1, Entered = 1 };
+            orders = [.. orders, orders[index] with { SourceOrderId = orders.Length + 1, PriceCents = 2 * priceCents }];
+        }
         StandardMarketTests.WriteSnapshot(fixture.Database, fixture.Clock, orders);
 
         var config = new WorldConfigurationStore(fixture.Database, fixture.Clock);
@@ -404,6 +415,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 Assert.Equal(bountyIsk * MarketDefinitions.CentsPerIsk, bounty.AmountCents);
                 fundedBalance = openingCents + bounty.AmountCents - bounty.TaxCents;
                 Assert.Equal(fundedBalance, work.Set<PilotWallet>().Find(pilotId)!.Cents);
+                if (splitAsks)
+                {
+                    Assert.Equal(openingCents + (fitUnits + 1) * priceCents, fundedBalance);
+                }
                 if (fundedRefit)
                 {
                     // Simulate a pilot who has already spent all their earnings.
@@ -491,7 +506,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     item => item.TypeId == repairer && item.FlagId == repairSlot && item.Online
                 );
                 var purchases = work.Filter<MarketExecution>(row => row.PilotId == pilotId).ToArray();
-                Assert.Equal(parts.Count, purchases.Length);
+                Assert.Equal(parts.Count + (splitAsks ? 1 : 0), purchases.Length);
                 Assert.DoesNotContain(purchases, row => row.TypeId == nextHull);
                 Assert.All(
                     purchases,
@@ -502,13 +517,23 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                         Assert.Equal(listingStation.OwnerId, row.CounterpartyId);
                         var stock = work.Set<NpcMarketOrder>().Find(row.OrderId)!;
                         Assert.Equal(NpcMarketKind.Standard, stock.Kind);
-                        Assert.Equal(orders.Single(order => order.TypeId == row.TypeId).Remaining - row.Quantity, stock.Remaining);
+                        var source = orders.Single(order => order.SourceOrderId == stock.SourceOrderId);
+                        Assert.Equal(source.Remaining - row.Quantity, stock.Remaining);
                     }
                 );
                 Assert.Equal(1, purchases.Single(row => row.TypeId == incursus).Quantity);
-                Assert.Equal(2, purchases.Single(row => row.TypeId == railgun).Quantity);
+                var railgunFills = purchases.Where(row => row.TypeId == railgun).ToArray();
+                Assert.Equal(2, railgunFills.Sum(row => row.Quantity));
+                if (splitAsks)
+                {
+                    Assert.Equal(new[] { priceCents, 2 * priceCents }, railgunFills.Select(row => row.PriceCents).Order());
+                }
                 walletAfterPurchase = fundedRefit ? 0 : fundedBalance - purchases.Sum(row => row.Quantity * row.PriceCents);
                 Assert.Equal(walletAfterPurchase, work.Set<PilotWallet>().Find(pilotId)!.Cents);
+                if (splitAsks)
+                {
+                    Assert.Equal(openingCents, walletAfterPurchase);
+                }
                 Assert.All(
                     purchases,
                     row =>

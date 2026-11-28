@@ -398,14 +398,17 @@ internal sealed partial class CapsuleerIndustry
             }
         }
         List<FactorySupplyNeed> needs = [];
-        var moonInputs = MoonMiningRules
-            .Composition(structure.MoonId!.Value, ManufacturingCatalog.Security(catalog, pilot.SystemId))
-            .SelectMany(entry => catalog.Read(CatalogData.Client.Typematerials, (long)entry.TypeId)?.Materials ?? [])
-            .Select(material => material.MaterialTypeID)
-            .ToHashSet();
-        var inputs = plan.Inputs.Where(material =>
-            supply.Service != StructureService.CompositeReactions || !moonInputs.Contains(material.TypeId)
-        );
+        IEnumerable<FactoryMoonMaterial> inputs = plan.Inputs;
+        // Existing-service operators can buy moon feed even when the refinery has no active extraction.
+        if (!supply.UseExistingServices && supply.Service == StructureService.CompositeReactions)
+        {
+            var moonInputs = MoonMiningRules
+                .Composition(structure.MoonId!.Value, ManufacturingCatalog.Security(catalog, pilot.SystemId))
+                .SelectMany(entry => catalog.Read(CatalogData.Client.Typematerials, (long)entry.TypeId)?.Materials ?? [])
+                .Select(material => material.MaterialTypeID)
+                .ToHashSet();
+            inputs = inputs.Where(material => !moonInputs.Contains(material.TypeId));
+        }
         if (service is { Work: RefineryWork.Fuel })
         {
             int missing = service.Quantity - (int)Quantity(stationStock, service.ItemTypeId);

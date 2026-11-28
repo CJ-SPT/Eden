@@ -125,7 +125,7 @@ internal sealed partial class CapsuleerIndustry
         var offers = hullOffers
             .Concat(market.SupplyOrders(world, catalog, station, types.Where(type => !fits.ByHull.ContainsKey(type)).ToArray(), id))
             .ToLookup(ask => ask.TypeId);
-        Dictionary<ReplacementPart, MarketPurchase?> quotes = [];
+        Dictionary<ReplacementPart, (bool Available, decimal Cost)> quotes = [];
         foreach (
             var fit in candidates
                 .OrderByDescending(fit => fit.DealsDamage)
@@ -138,7 +138,7 @@ internal sealed partial class CapsuleerIndustry
                 fit.Parts.All(part => Available(part))
                 && (
                     affordableReadyBudget is not long budget
-                    || fit.Parts.Sum(part => (decimal)quotes[part]!.LimitPriceCents * part.Quantity) <= budget
+                    || fit.Parts.Sum(part => quotes[part].Cost) <= budget
                         && fit.Parts.All(part => usable!.Contains(part.TypeId))
                         && PvpFitQualified(world, catalog, pilot, fit.Kit, fit.Parts, out _)
                 )
@@ -153,9 +153,16 @@ internal sealed partial class CapsuleerIndustry
         {
             if (!quotes.TryGetValue(part, out var quote))
             {
-                quotes[part] = quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity);
+                var purchase = QuoteInput(
+                    offers[part.TypeId],
+                    part.TypeId,
+                    part.Quantity,
+                    affordableReadyBudget.HasValue,
+                    out decimal cost
+                );
+                quotes[part] = quote = (purchase?.Quantity == part.Quantity, cost);
             }
-            return quote?.Quantity == part.Quantity;
+            return quote.Available;
         }
     }
 
@@ -195,12 +202,12 @@ internal sealed partial class CapsuleerIndustry
         decimal cost = 0;
         foreach (var part in parts)
         {
-            var quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity);
+            var quote = QuoteInput(offers[part.TypeId], part.TypeId, part.Quantity, estimateCost: true, out decimal partCost);
             if (quote is null || quote.Quantity != part.Quantity)
             {
                 return null;
             }
-            cost += (decimal)quote.LimitPriceCents * quote.Quantity;
+            cost += partCost;
             if (cost > budget)
             {
                 return null;

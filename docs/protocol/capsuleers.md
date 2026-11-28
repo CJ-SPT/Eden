@@ -655,6 +655,46 @@ also covers factory demand, regional freight, the two-batch moon chain, replacem
 roaming combat and two historical replays with the pinned catalog. All 96 targeted cases passed in
 102.61 seconds. Live acceptance and dedicated-server capacity were outside this validation.
 
+## Bot work selection and purchase costs
+
+Docked corporate pilots evaluate production before elective combat. A hauler keeps a factory commitment when
+the planner returns an input request or the pilot has an installed station job. A miner uses the result of its
+existing dockside production pass and keeps assigned moon work. Both can continue with eligible work when the
+planner declines an order that fails its cost checks. Haulers re-evaluate existing input requests at the dock.
+
+An operator assigned to an existing composite reactor can buy raw moon materials at the station or request
+corporate freight. A dedicated Miner II chain still prioritizes mining the feed in its own moon's composition.
+Earned PvP fit selection and acquisition use the same settlement estimate as paid ship replacement. The estimate
+prices each Standard NPC fill at its resting ask and personal fills at the submitted limit. The fit purchase
+retains the original limit and protects the pilot's saved opening balance.
+
+The policy uses build 3662168 catalog definitions and Eden's resident inventory, industry and market owners.
+The EVE.js 261108.1 reference includes `server/src/services/market/marketProxyService.js` and its industry service.
+[CCP reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions) ·
+[CCP market orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+**Automated validation**
+
+All 13 exact method cases passed in 33.02 seconds after a 12.27-second build. The selection covered
+`MinerRoamsAfterRestartAndReturnsToMiningWhenReserveDrops`, `CourierTakesFundedFactoryWorkAndFillsTheOrderAfterRestart`,
+`BotBuysMoonFeedForAnExistingReactorWithoutAMiningField`, `BotsDeliverTwoMinerTwoBatchesAcrossRestartsAndReplaceBootstrapReactionFuel`,
+and `EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen`. The low-bid replay reached a patrol after
+reopen and left the order and materials intact. The reactor replay verified a freight request and a subsequent local
+purchase. The Standard market replay reconciled two different ask prices against exact bounty earnings in both the
+saved-fit and fallback-fit paths.
+
+All 91 adjacent cases passed in 100.57 seconds. The filter matched `CapsuleerAmmunitionSupplyTests`,
+`CapsuleerWorkRulesTests`, `StandardMarketTests`, and `ReactionJobTests`. The solution build, 17 Python policy
+cases, style, CSharpier and line-width checks passed. CSharpier excluded the checkout's ignored local archive.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ## Queue recovery at 10,000 pilots
 
 On the historical 90-second workstation replay, the follow-up reduced the final overdue queue from 2,973 to 411 jobs.

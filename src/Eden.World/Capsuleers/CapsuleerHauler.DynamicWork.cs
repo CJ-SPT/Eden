@@ -65,9 +65,9 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         bool industryDemand = CapsuleerIndustry.HasWorkDemand(world, catalog, Pilot, now, requireProductBlueprint: true);
-        bool factoryJob = CapsuleerIndustry.HasStationFactoryJob(world, pilotId, Pilot.StationId);
+        bool factoryWork = Work.FactorySupply is not null || CapsuleerIndustry.HasStationFactoryJob(world, pilotId, Pilot.StationId);
         int replacements = canHunt && !earnedPvp ? CapsuleerIndustry.ReadyHuntReplacements(world, catalog, Pilot) : 0;
-        var work = CapsuleerWorkRules.Choose(industryDemand || factoryJob, canHunt, replacements);
+        var work = CapsuleerWorkRules.Choose(industryDemand || factoryWork, canHunt, replacements);
         if (work == CapsuleerWorkKind.Industry)
         {
             _operation.MarketChanged |= ammunitionSupply.ProduceScheduled(world, catalog, Pilot, now, out var supply);
@@ -77,20 +77,17 @@ internal sealed partial class CapsuleerHauler
                 Wait(supply is null ? "Finishing station production." : "Waiting for factory inputs.");
                 return true;
             }
-        }
-        else if (Work.FactorySupply is not null)
-        {
-            _work = Work with { FactorySupply = null };
+            work = CapsuleerWorkRules.Choose(industryDemand: false, canHunt, replacements);
         }
 
-        if (earnedPvp && canHunt && work != CapsuleerWorkKind.Industry)
+        if (earnedPvp && canHunt)
         {
             if (TryEarnedPvpDeparture(world, scoutedAnomaly))
             {
                 return true;
             }
         }
-        else if (!earnedPvp && eligibleHuntSystem && work != CapsuleerWorkKind.Industry)
+        else if (!earnedPvp && eligibleHuntSystem)
         {
             var candidate = CapsuleerWorkHulls.Find(
                 world,

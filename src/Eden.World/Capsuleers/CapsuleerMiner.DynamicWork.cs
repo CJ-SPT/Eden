@@ -64,10 +64,7 @@ internal sealed partial class CapsuleerMiner
         }
 
         long now = Now;
-        if (
-            CapsuleerIndustry.HasStationFactoryJob(world, pilotId, Pilot.StationId)
-            || CapsuleerIndustry.HasWorkDemand(world, catalog, Pilot, now)
-        )
+        if (CapsuleerIndustry.HasStationFactoryJob(world, pilotId, Pilot.StationId))
         {
             return false;
         }

@@ -134,8 +134,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         });
     }
 
-    [Fact]
-    public async Task MinerRoamsAfterRestartAndReturnsToMiningWhenReserveDrops()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MinerRoamsAfterRestartAndReturnsToMiningWhenReserveDrops(bool unprofitableBid)
     {
         const int frigate = (int)TechOneHullType.Merlin;
         const int gun = (int)CombatWeaponType.GatlingRailgun75mm;
@@ -157,6 +159,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         long miner;
         long venture;
         long combat;
+        long? lowBid = null;
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
             var live = host.GetRequiredService<LiveWorld>();
@@ -206,23 +209,44 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 AddStock(setup, miner, Depot, gun, 1);
                 // Keep two complete spare magazines in the hangar after normal launch resupply.
                 AddStock(setup, miner, Depot, Rules.ChargeType, 2_000);
-                setup.Add(
-                    new OwnedItem
-                    {
-                        Id = setup.NextItemId(),
-                        OwnerId = corporation,
-                        TypeId = Rules.ChargeType,
-                        LocationId = Depot,
-                        Quantity = 400,
-                        FlagId = CorporationStorageRules.MarketDeliveriesFlag,
-                    }
-                );
+                if (unprofitableBid)
+                {
+                    setup.Pilots.Find(Customer)!.ActiveShip.StationId = Depot;
+                    setup.Add(new PilotWallet { PilotId = Customer, Cents = 100_000_000 });
+                    AddStock(setup, miner, Depot, Rules.BlueprintType, 1);
+                    AddStock(setup, miner, Depot, Tritanium, 27);
+                    AddStock(setup, miner, Depot, Pyerite, 21);
+                }
+                else
+                {
+                    setup.Add(
+                        new OwnedItem
+                        {
+                            Id = setup.NextItemId(),
+                            OwnerId = corporation,
+                            TypeId = Rules.ChargeType,
+                            LocationId = Depot,
+                            Quantity = 400,
+                            FlagId = CorporationStorageRules.MarketDeliveriesFlag,
+                        }
+                    );
+                }
                 var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(setup, CapsuleerCommunityStore.MinerAccountId, miner)!;
                 Assert.Equal(1, CapsuleerIndustry.ReadyHuntReplacements(setup, catalog, pilot, spare));
                 AddStock(setup, miner, Depot, gun, 1);
                 Assert.Equal(2, CapsuleerIndustry.ReadyHuntReplacements(setup, catalog, pilot, spare));
                 Assert.Equal(spare.Id, CapsuleerWorkHulls.Find(setup, catalog, pilot, CapsuleerProfession.Combat, fixture.Clock.Now)?.Id);
                 setup.Commit();
+            }
+            if (unprofitableBid)
+            {
+                var market = host.GetRequiredService<IPersonalMarket>();
+                market.PlaceBuy(Customer, new(Depot, Rules.ChargeType, 1, 100, 7));
+                lowBid = Assert.Single(market.PersonalOrders(Customer)).Id;
+                using var evaluation = live.Economy.Begin(TransactionParticipants.None);
+                using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+                var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(evaluation, CapsuleerCommunityStore.MinerAccountId, miner)!;
+                Assert.True(CapsuleerIndustry.HasWorkDemand(evaluation, catalog, pilot, fixture.Clock.Now, requireProductBlueprint: true));
             }
             using var selected = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
@@ -263,6 +287,13 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         Assert.Equal(PatrolKind.Roam, patrol.Work.Ratting?.Patrol?.Kind);
         using (var stock = restored.Economy.Begin(TransactionParticipants.None))
         {
+            if (lowBid is long order)
+            {
+                Assert.Equal(100, stock.Set<SavedPersonalOrder>().Find(order)!.Remaining);
+                Assert.Empty(stock.Filter<IndustryJob>(job => job.PilotId == miner));
+                Assert.Equal(27, Stock(stock, miner, Depot, Tritanium));
+                Assert.Equal(21, Stock(stock, miner, Depot, Pyerite));
+            }
             var docked = Assert.IsType<Ship>(stock.Ships.Find(venture));
             Assert.Equal(miner, docked.OwnerId);
             Assert.Equal(Depot, docked.StationId);
