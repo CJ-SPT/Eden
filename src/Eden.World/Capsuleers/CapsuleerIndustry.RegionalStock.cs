@@ -1,10 +1,12 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
@@ -22,6 +24,7 @@ using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
+using Eden.World.Sovereignty;
 using Replacement = Eden.Gameplay.Capsuleers.CapsuleerReplacementRules;
 using Rules = Eden.Gameplay.Capsuleers.CapsuleerRegionalStockRules;
 
@@ -195,6 +198,7 @@ internal sealed partial class CapsuleerIndustry
         Dictionary<int, int> reserve = [];
         Dictionary<int, long> recovery = [];
         Dictionary<int, long> attrition = [];
+        bool sovereignty = headquarters && CapsuleerAlliances.SovereigntyExecutorAlliance(world, corporation).HasValue;
         foreach (var pilot in members)
         {
             if (
@@ -217,6 +221,10 @@ internal sealed partial class CapsuleerIndustry
                     foreach (var part in fit.Parts())
                     {
                         reserve[part.TypeId] = Math.Max(reserve.GetValueOrDefault(part.TypeId), part.Quantity);
+                    }
+                    if (sovereignty && EntosisFuelReserve(catalog, fit) is { } fuel)
+                    {
+                        reserve[fuel.TypeId] = Math.Max(reserve.GetValueOrDefault(fuel.TypeId), fuel.Quantity);
                     }
                 }
                 continue;
@@ -267,6 +275,10 @@ internal sealed partial class CapsuleerIndustry
                 {
                     attrition[part.TypeId] = attrition.GetValueOrDefault(part.TypeId) + part.Quantity;
                 }
+                if (sovereignty && EntosisFuelReserve(catalog, kit) is { } fuel)
+                {
+                    attrition[fuel.TypeId] = attrition.GetValueOrDefault(fuel.TypeId) + fuel.Quantity;
+                }
             }
         }
 
@@ -292,6 +304,35 @@ internal sealed partial class CapsuleerIndustry
             .ToArray();
     }
 
+    private static ReplacementPart? EntosisFuelReserve(CatalogDbContext catalog, ReplacementKit kit)
+    {
+        if (catalog.FittingType(kit.HullTypeId)?.GroupId == (int)HullClass.Interceptor)
+        {
+            return null;
+        }
+        var link = kit.Slots.FirstOrDefault(slot =>
+            kit.OnlineSlots.Contains(slot.FlagId)
+            && InventoryDefinitions.IsHighSlot(slot.FlagId)
+            && EntosisCatalog.Supported(catalog, slot.TypeId)
+        );
+        if (link is null)
+        {
+            return null;
+        }
+        var profile = EntosisCatalog.Module(catalog.FittingAttributes(link.TypeId), 1);
+        long duration = EntosisCatalog.Defense(catalog, false).Duration;
+        int quantity = checked((CapsuleerHauler.RequiredExpeditionCycles(duration, profile) + 1) * profile.FuelQuantity);
+        return new(profile.FuelType, quantity);
+    }
+
+    private static int EntosisStockFuel(WorldAction world, CatalogDbContext catalog, int buyer)
+    {
+        const int link = CapsuleerAllianceRules.ExpeditionLink;
+        return CapsuleerAlliances.SovereigntyExecutorAlliance(world, buyer).HasValue && EntosisCatalog.Supported(catalog, link)
+            ? EntosisCatalog.Module(catalog.FittingAttributes(link), 1).FuelType
+            : 0;
+    }
+
     private static bool IsMarketSupply(CatalogDbContext catalog, int type) =>
         catalog.Read(CatalogData.Client.Types, (long)type) is { Published: 1, MarketGroupID: > 0 };
 
@@ -306,6 +347,7 @@ internal sealed partial class CapsuleerIndustry
     {
         var nearby = NearbySystems(catalog, delivery.SolarSystemId, Rules.MaximumJumps);
         Dictionary<int, Dictionary<int, long>> stock = [];
+        int entosisFuel = EntosisStockFuel(world, catalog, buyer.Id);
         var limits = shortage.ToDictionary(part => part.TypeId, part => Replacement.LimitPrice(ReferencePrice(catalog, part.TypeId)));
         foreach (var part in shortage)
         {
@@ -362,7 +404,8 @@ internal sealed partial class CapsuleerIndustry
                     Dictionary<int, int> skills = [];
                     foreach (
                         var part in shortage.Where(part =>
-                            limits[part.TypeId] > 0
+                            part.TypeId != entosisFuel
+                            && limits[part.TypeId] > 0
                             && recipes[part.TypeId]
                                 .Any(recipe =>
                                     recipe.Skills.All(Qualified)
@@ -406,7 +449,7 @@ internal sealed partial class CapsuleerIndustry
             if (
                 catalog.Definitions.Stations.GetValueOrDefault(id) is not { } station
                 || id == delivery.Id
-                || delivery.Id == buyer.StationId && station.RegionId == delivery.RegionId
+                || delivery.Id == buyer.StationId && station.RegionId == delivery.RegionId && type != entosisFuel
                 || !StationCapabilities.Has(catalog, station.OperationId, StationService.Market)
             )
             {
@@ -434,6 +477,16 @@ internal sealed partial class CapsuleerIndustry
     )
     {
         long budget = buyer.BalanceCents / Rules.BudgetDivisor;
+        if (CapsuleerAlliances.SovereigntyExecutorAlliance(world, buyer.Id) is int alliance)
+        {
+            int members = world.Filter<SavedAllianceMember>(row => row.AllianceId == alliance).Count();
+            if (!CapsuleerAlliances.CanFund(world, buyer, members, budget))
+            {
+                budget = CapsuleerAlliances.CanFund(world, buyer, members, 0)
+                    ? Math.Min(budget, buyer.BalanceCents - AllianceBillingRules.Amount(members))
+                    : 0;
+            }
+        }
         double free = FreeFreightVolume(world, catalog, courier);
         List<MarketPurchase> purchases = [];
         foreach (var part in shortages)
@@ -475,6 +528,7 @@ internal sealed partial class CapsuleerIndustry
     )
     {
         var cart = RegionalStockBudget(world, catalog, courier, buyer, trip.Supplier, trip.Purchases);
+        int entosisFuel = EntosisStockFuel(world, catalog, buyer.Id);
         List<long> ids = [];
         foreach (var purchase in cart)
         {
@@ -485,7 +539,8 @@ internal sealed partial class CapsuleerIndustry
             var asks = market.SupplyOrders(world, catalog, trip.Supplier, [purchase.TypeId], courier.PilotId, buyer.Id);
             var quote = QuoteInput(asks.Where(order => order.PriceCents <= purchase.LimitPriceCents), purchase.TypeId, purchase.Quantity);
             bool priced = ReferencePrice(catalog, purchase.TypeId) > 0;
-            if (!priced && quote is null)
+            bool buyAvailableStock = purchase.TypeId == entosisFuel || !priced;
+            if (buyAvailableStock && quote is null)
             {
                 continue;
             }
@@ -495,7 +550,7 @@ internal sealed partial class CapsuleerIndustry
                 courier.PilotId,
                 trip.Supplier,
                 buyer,
-                [!priced || quote?.Quantity == purchase.Quantity ? quote! : purchase],
+                [buyAvailableStock || quote?.Quantity == purchase.Quantity ? quote! : purchase],
                 Replacement.OrderDays,
                 ids
             );

@@ -64,7 +64,8 @@ internal sealed partial class CapsuleerHauler
             defenseNeeded = true;
             if (!module.HasValue)
             {
-                if (prepare && PrepareSovereigntyFit(world, catalog, corporation, alliance, duration))
+                bool keepFit = Pilot.ShipTypeId == CapsuleerAllianceRules.ExpeditionSquall;
+                if (prepare && PrepareSovereigntyFit(world, catalog, corporation, alliance, duration, keepFit))
                 {
                     return true;
                 }
@@ -140,10 +141,12 @@ internal sealed partial class CapsuleerHauler
         CatalogDbContext catalog,
         SavedCorporation corporation,
         int alliance,
-        long duration
+        long duration,
+        bool useCurrentFit = false
     )
     {
-        var outfit = ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance, duration, Now);
+        var profile = useCurrentFit && FittedEntosisModule(world, catalog) is { } link ? ExpeditionProfile(world, catalog, link.Id) : null;
+        var outfit = ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance, duration, Now, profile);
         _operation.MarketChanged |= outfit.MarketChanged;
         if (!outfit.Ready)
         {

@@ -99,20 +99,17 @@ internal sealed partial class CapsuleerHauler
         {
             return true;
         }
-        var home = holdings[0];
-        if (!defenseNeeded)
+        if (defenseNeeded)
         {
-            bool resupplying = active.Any(expedition => expedition is { Duty: SovereigntyDuty.ReagentDelivery, Returning: false });
-            if (
-                (!resupplying && TryResupplySovereignty(world, catalog, corporation, holdings))
-                || TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
-                || TryAttackSovereignty(world, catalog, corporation, home, active, prepare)
-            )
-            {
-                return true;
-            }
+            ClearSovereigntyStandby();
+            return false;
         }
-        return StandByAtSovereignty(world, catalog, corporation, home);
+        var home = holdings[0];
+        bool resupplying = active.Any(expedition => expedition is { Duty: SovereigntyDuty.ReagentDelivery, Returning: false });
+        return (!resupplying && TryResupplySovereignty(world, catalog, corporation, holdings))
+            || TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
+            || TryAttackSovereignty(world, catalog, corporation, home, active, prepare)
+            || StandByAtSovereignty(world, catalog, corporation, home);
     }
 
     private bool TryLaunchSovereigntyClaim(

@@ -148,6 +148,14 @@ internal sealed partial class CapsuleerAlliances
             .Filter<SavedSovereigntyCampaignCredit>(row => row.SystemId == target)
             .Any(row => row.AllianceId == alliance && row.VictoryAt != null);
 
+    internal static int? SovereigntyExecutorAlliance(WorldAction world, int corporation) =>
+        world.Set<SavedAllianceMember>().Find(corporation) is { } member
+        && world.Set<SavedAlliance>().Find(member.AllianceId) is { ClosedAt: null } alliance
+        && alliance.ExecutorCorporationId == corporation
+        && world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is not null
+            ? alliance.Id
+            : null;
+
     internal static IReadOnlyList<int> NearbyClaimSites(CatalogDbContext catalog, int headquarters) =>
         catalog.Definition(s_firstClaimSystems, headquarters);
 

@@ -4,8 +4,11 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 
 namespace Eden.World.Capsuleers;
 
@@ -13,9 +16,10 @@ internal sealed partial class CapsuleerIndustry
 {
     private const string FleetLossesProperty = "\"" + nameof(CapsuleerOrganization.FleetLosses) + "\":";
 
-    internal static void RecordFleetLoss(WorldAction world, CatalogDbContext catalog, Pilot pilot, long shipId, long now)
+    internal static void RecordFleetLoss(WorldAction world, CatalogDbContext catalog, Pilot pilot, long shipId, long now, bool playerAttack)
     {
-        if (!CapsuleerPatrolFit.CombatHull(catalog, pilot.ActiveShip.TypeId) || Employer(world, pilot.Id, pilot.CorporationId) is null)
+        bool combatLoss = playerAttack && CapsuleerPatrolFit.CombatHull(catalog, pilot.ActiveShip.TypeId);
+        if ((!combatLoss && !LostSovereigntyFit(world, catalog, pilot, shipId)) || Employer(world, pilot.Id, pilot.CorporationId) is null)
         {
             return;
         }
@@ -28,6 +32,20 @@ internal sealed partial class CapsuleerIndustry
             .ToArray();
         CapsuleerCorporations.SaveOrganization(world, pilot.Id, organization with { FleetLosses = losses });
     }
+
+    private static bool LostSovereigntyFit(WorldAction world, CatalogDbContext catalog, Pilot pilot, long ship) =>
+        CapsuleerAlliances.SovereigntyExecutorAlliance(world, pilot.CorporationId).HasValue
+        && catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId != (int)HullClass.Interceptor
+        && world
+            .Filter<OwnedItem>(item => item.LocationId == ship)
+            .AsEnumerable()
+            .Any(item =>
+                item.OwnerId == pilot.Id
+                && item.Online
+                && item.Singleton
+                && InventoryDefinitions.IsHighSlot(item.FlagId)
+                && EntosisCatalog.Supported(catalog, item.TypeId)
+            );
 
     internal static bool CanLaunchOffensiveFleet(
         EconomyTransaction world,

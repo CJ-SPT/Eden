@@ -30,66 +30,19 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed partial class CapsuleerAllianceTests
 {
+    private const int OldestDefenseSystem = 30003990;
+    private const int LaterDefenseSystem = SovereigntyCaptureFixture.SystemId;
+
     [Fact]
     public async Task UnattendedDefendersProtectLaterClaimAndDivideCampaignNodesAcrossRestart()
     {
-        const int oldestSystem = 30003990;
-        const int laterSystem = SovereigntyCaptureFixture.SystemId;
+        const int oldestSystem = OldestDefenseSystem;
+        const int laterSystem = LaterDefenseSystem;
         const int fuel = 16;
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
-        fixture.Clock.UtcNow = new DateTimeOffset(2026, 11, 16, 18, 15, 0, TimeSpan.Zero);
-        CapsuleerCorporationTests.PrepareExistingSave(fixture);
-        var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
-        var startup = configuration.Read();
-        var draft = startup.Active.Draft;
-        configuration.Save(
-            startup.Generation,
-            draft with
-            {
-                Settings = draft.Settings with
-                {
-                    Economy = draft.Settings.Economy with
-                    {
-                        ProgressiveMarkets = false,
-                        StandardMarket = false,
-                        ChargeServiceCosts = false,
-                    },
-                    Capsuleers = draft.Settings.Capsuleers with
-                    {
-                        TrafficMultiplier = 6,
-                        AutomaticAlliances = false,
-                        RunWithoutPlayers = true,
-                        NewSovereigntyClaims = false,
-                        RegionalConflicts = false,
-                    },
-                },
-            },
-            "Multiple held claims fixture"
-        );
-        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
-        PassiveCatalogFixture.LoadSovereignty(fixture.Database.CatalogPath);
-        PassiveCatalogFixture.LoadUtilityHull(fixture.Database.CatalogPath, CapsuleerAllianceRules.ExpeditionSquall);
-        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
-        {
-            catalog.Database.ExecuteSql(
-                $"""
-                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3732,'Empire Control',257);
-                INSERT OR REPLACE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3732,275,5);
-                DELETE FROM Stargate WHERE SolarSystemId IN ({oldestSystem},{laterSystem});
-                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
-                    (55000001,{HeadquartersSystem},16,10,3500,100000000000,0,0),
-                    (55000002,{laterSystem},16,10,3500,200000000000,0,0),
-                    (55000003,{HeadquartersSystem},16,10,3500,200000000000,0,0),
-                    (55000004,{oldestSystem},16,10,3500,200000000000,0,0);
-                INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
-                    (55000001,{HeadquartersSystem},55000002),(55000002,{laterSystem},55000001),
-                    (55000003,{HeadquartersSystem},55000004),(55000004,{oldestSystem},55000003);
-                """
-            );
-        }
+        PrepareHeldClaims(fixture, regionalSupplier: false);
 
         int corporation;
-        int alliance;
         int headquarters;
         long first;
         long second;
@@ -104,46 +57,7 @@ public sealed partial class CapsuleerAllianceTests
             var live = host.GetRequiredService<LiveWorld>();
             var claims = host.GetRequiredService<ISovereignty>();
             var entosis = host.GetRequiredService<IPilotEntosis>();
-            using (var setup = live.Economy.Begin(TransactionParticipants.None))
-            using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
-            {
-                var charter = Charter(setup, catalog, HeadquartersSystem, "Border Defense Works", "BDCW", fixture.Clock.Now);
-                corporation = charter.Id;
-                headquarters = setup.Set<SavedCorporation>().Find(corporation)!.StationId;
-                setup.Set<PilotWallet>().Find(charter.Ceo)!.Cents = AllianceRules.CreationFeeCents;
-                setup.Add(
-                    new PilotSkill
-                    {
-                        PilotId = charter.Ceo,
-                        TypeId = AllianceRules.EmpireControlSkill,
-                        Points = TrainedSkill.PointsForLevel(5, AllianceRules.RequiredEmpireControlLevel),
-                    }
-                );
-                alliance = host.GetRequiredService<AllianceStore>()
-                    .Create(setup, catalog, charter.Ceo, new("Border Defense", "BDFX", "", ""), fixture.Clock.Now)
-                    .Alliance.Id;
-                var couriers = setup
-                    .Set<SavedCapsuleerHauler>()
-                    .AsEnumerable()
-                    .Where(row => setup.Pilots.Find(row.PilotId)!.CorporationId == corporation)
-                    .OrderBy(row => row.PilotId)
-                    .Take(2)
-                    .ToArray();
-                Assert.Equal(2, couriers.Length);
-                first = couriers[0].PilotId;
-                second = couriers[1].PilotId;
-                foreach (var courier in couriers)
-                {
-                    Fit(setup, catalog, courier);
-                }
-                foreach (var agent in setup.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId != first).ToArray())
-                {
-                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
-                }
-                AddHub(setup, catalog, oldestSystem, fixture.Clock.Now - TimeSpan.TicksPerDay);
-                AddHub(setup, catalog, laterSystem, fixture.Clock.Now);
-                setup.Commit();
-            }
+            (corporation, headquarters, first, second) = SeedHeldClaims(host, fixture, fuel, fuel);
 
             oldest = Assert.IsType<SovereigntyClaim>(claims.Read(oldestSystem));
             later = Assert.IsType<SovereigntyClaim>(claims.Read(laterSystem));
@@ -346,76 +260,6 @@ public sealed partial class CapsuleerAllianceTests
                 );
         }
 
-        void Fit(EconomyTransaction world, CatalogDbContext catalog, SavedCapsuleerHauler courier)
-        {
-            var ship = world.Pilots.Find(courier.PilotId)!.ActiveShip;
-            if (world.Positions.Find(ship.Id) is { } position)
-            {
-                world.Remove(position);
-            }
-            ship.StationId = headquarters;
-            courier.Progress = null;
-            world.RemoveRange(world.Filter<OwnedItem>(item => item.LocationId == ship.Id).ToArray());
-            TrafficFitting.Apply(
-                world,
-                catalog,
-                courier.PilotId,
-                ship.Id,
-                TrafficSnapshotTests.Profile() with
-                {
-                    HullTypeId = CapsuleerAllianceRules.ExpeditionSquall,
-                    Equipment = [new(CapsuleerAllianceRules.ExpeditionLink, (int)InventoryFlag.HighSlot0, 1)],
-                },
-                fixture.Clock.Now
-            );
-            InventoryPersistence.MergeOutput(
-                world,
-                catalog,
-                courier.PilotId,
-                ship.Id,
-                (int)InventoryFlag.Cargo,
-                SovereigntyCaptureFixture.Strontium,
-                fuel
-            );
-        }
-
-        void AddHub(EconomyTransaction world, CatalogDbContext catalog, int system, long claimedAt)
-        {
-            long id = Math.Max(world.NextItemId(), StructureRules.FirstStructureId + (system == oldestSystem ? 1 : 2));
-            var profile = EntosisCatalog.Hub(catalog);
-            world.Add(
-                new SavedStructure
-                {
-                    Id = id,
-                    TypeId = EntosisRules.HubTypeId,
-                    CorporationId = corporation,
-                    SystemId = system,
-                    State = StructureState.ShieldVulnerable,
-                    StateStartedAt = claimedAt,
-                    X = profile.StarDistance,
-                }
-            );
-            world.Add(
-                new SavedSovereigntyHub
-                {
-                    SystemId = system,
-                    HubId = id,
-                    CaptureDuration = profile.CaptureDuration,
-                    UpdatedAt = claimedAt,
-                }
-            );
-            world.Add(
-                new SavedSovereigntyClaim
-                {
-                    SystemId = system,
-                    HubId = id,
-                    CorporationId = corporation,
-                    AllianceId = alliance,
-                    ClaimedAt = claimedAt,
-                }
-            );
-        }
-
         long AddNode(EconomyTransaction world, SovereigntyClaim source, int system, double value)
         {
             long id = world.NextItemId();
@@ -504,5 +348,195 @@ public sealed partial class CapsuleerAllianceTests
                     .Where(item => item.TypeId == SovereigntyCaptureFixture.Strontium && item.FlagId == (int)InventoryFlag.Cargo)
                     .Sum(item => item.Quantity)
             );
+    }
+
+    private static void PrepareHeldClaims(CapsuleerHaulerTests.Fixture fixture, bool regionalSupplier)
+    {
+        fixture.Clock.UtcNow = new DateTimeOffset(2026, 11, 16, 18, 15, 0, TimeSpan.Zero);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
+        var startup = configuration.Read();
+        var draft = startup.Active.Draft;
+        configuration.Save(
+            startup.Generation,
+            draft with
+            {
+                Settings = draft.Settings with
+                {
+                    Economy = draft.Settings.Economy with
+                    {
+                        ProgressiveMarkets = false,
+                        StandardMarket = false,
+                        ChargeServiceCosts = false,
+                    },
+                    Capsuleers = draft.Settings.Capsuleers with
+                    {
+                        TrafficMultiplier = 6,
+                        AutomaticAlliances = false,
+                        FundRefits = false,
+                        RunWithoutPlayers = true,
+                        NewSovereigntyClaims = false,
+                        RegionalConflicts = false,
+                    },
+                },
+            },
+            "Multiple held claims fixture"
+        );
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        PassiveCatalogFixture.LoadSovereignty(fixture.Database.CatalogPath);
+        PassiveCatalogFixture.LoadUtilityHull(fixture.Database.CatalogPath, CapsuleerAllianceRules.ExpeditionSquall);
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3732,'Empire Control',257);
+                INSERT OR REPLACE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3732,275,5);
+                DELETE FROM Stargate WHERE SolarSystemId IN ({OldestDefenseSystem},{LaterDefenseSystem});
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
+                    (55000001,{HeadquartersSystem},16,10,3500,100000000000,0,0),
+                    (55000002,{LaterDefenseSystem},16,10,3500,200000000000,0,0),
+                    (55000003,{HeadquartersSystem},16,10,3500,200000000000,0,0),
+                    (55000004,{OldestDefenseSystem},16,10,3500,200000000000,0,0);
+                INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                    (55000001,{HeadquartersSystem},55000002),(55000002,{LaterDefenseSystem},55000001),
+                    (55000003,{HeadquartersSystem},55000004),(55000004,{OldestDefenseSystem},55000003);
+                """
+            );
+            if (regionalSupplier)
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT INTO Region(Id,Name) VALUES(10000043,'Supplier region');
+                    INSERT INTO Constellation(Id,RegionId,Name) VALUES(20000099,10000043,'Supplier constellation');
+                    UPDATE SolarSystem SET ConstellationId=20000099 WHERE Id=30000142;
+                    """
+                );
+            }
+        }
+    }
+
+    private static (int Corporation, int Headquarters, long Primary, long Backup) SeedHeldClaims(
+        ServiceProvider host,
+        CapsuleerHaulerTests.Fixture fixture,
+        int primaryFuel,
+        int backupFuel,
+        long? treasury = null
+    )
+    {
+        var live = host.GetRequiredService<LiveWorld>();
+        using var setup = live.Economy.Begin(TransactionParticipants.None);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        var charter = Charter(setup, catalog, HeadquartersSystem, "Border Defense Works", "BDCW", fixture.Clock.Now);
+        int corporation = charter.Id;
+        int headquarters = setup.Set<SavedCorporation>().Find(corporation)!.StationId;
+        setup.Set<PilotWallet>().Find(charter.Ceo)!.Cents = AllianceRules.CreationFeeCents;
+        setup.Add(
+            new PilotSkill
+            {
+                PilotId = charter.Ceo,
+                TypeId = AllianceRules.EmpireControlSkill,
+                Points = TrainedSkill.PointsForLevel(5, AllianceRules.RequiredEmpireControlLevel),
+            }
+        );
+        int alliance = host.GetRequiredService<AllianceStore>()
+            .Create(setup, catalog, charter.Ceo, new("Border Defense", "BDFX", "", ""), fixture.Clock.Now)
+            .Alliance.Id;
+        var couriers = setup
+            .Set<SavedCapsuleerHauler>()
+            .AsEnumerable()
+            .Where(row => setup.Pilots.Find(row.PilotId)!.CorporationId == corporation)
+            .OrderBy(row => row.PilotId)
+            .Take(2)
+            .ToArray();
+        Assert.Equal(2, couriers.Length);
+        long first = couriers[0].PilotId;
+        long second = couriers[1].PilotId;
+        Fit(setup, catalog, couriers[0], primaryFuel);
+        Fit(setup, catalog, couriers[1], backupFuel);
+        foreach (var agent in setup.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId != first).ToArray())
+        {
+            setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+        }
+        AddHub(setup, catalog, OldestDefenseSystem, fixture.Clock.Now - TimeSpan.TicksPerDay);
+        AddHub(setup, catalog, LaterDefenseSystem, fixture.Clock.Now);
+        if (treasury is long openingBalance)
+        {
+            setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents = openingBalance;
+        }
+        setup.Commit();
+        return (corporation, headquarters, first, second);
+
+        void Fit(EconomyTransaction world, CatalogDbContext catalog, SavedCapsuleerHauler courier, int fuel)
+        {
+            var ship = world.Pilots.Find(courier.PilotId)!.ActiveShip;
+            if (world.Positions.Find(ship.Id) is { } position)
+            {
+                world.Remove(position);
+            }
+            ship.StationId = headquarters;
+            courier.Progress = null;
+            world.RemoveRange(world.Filter<OwnedItem>(item => item.LocationId == ship.Id).ToArray());
+            TrafficFitting.Apply(
+                world,
+                catalog,
+                courier.PilotId,
+                ship.Id,
+                TrafficSnapshotTests.Profile() with
+                {
+                    HullTypeId = CapsuleerAllianceRules.ExpeditionSquall,
+                    Equipment = [new(CapsuleerAllianceRules.ExpeditionLink, (int)InventoryFlag.HighSlot0, 1)],
+                },
+                fixture.Clock.Now
+            );
+            if (fuel > 0)
+            {
+                InventoryPersistence.MergeOutput(
+                    world,
+                    catalog,
+                    courier.PilotId,
+                    ship.Id,
+                    (int)InventoryFlag.Cargo,
+                    SovereigntyCaptureFixture.Strontium,
+                    fuel
+                );
+            }
+        }
+
+        void AddHub(EconomyTransaction world, CatalogDbContext catalog, int system, long claimedAt)
+        {
+            long id = Math.Max(world.NextItemId(), StructureRules.FirstStructureId + (system == OldestDefenseSystem ? 1 : 2));
+            var profile = EntosisCatalog.Hub(catalog);
+            world.Add(
+                new SavedStructure
+                {
+                    Id = id,
+                    TypeId = EntosisRules.HubTypeId,
+                    CorporationId = corporation,
+                    SystemId = system,
+                    State = StructureState.ShieldVulnerable,
+                    StateStartedAt = claimedAt,
+                    X = profile.StarDistance,
+                }
+            );
+            world.Add(
+                new SavedSovereigntyHub
+                {
+                    SystemId = system,
+                    HubId = id,
+                    CaptureDuration = profile.CaptureDuration,
+                    UpdatedAt = claimedAt,
+                }
+            );
+            world.Add(
+                new SavedSovereigntyClaim
+                {
+                    SystemId = system,
+                    HubId = id,
+                    CorporationId = corporation,
+                    AllianceId = alliance,
+                    ClaimedAt = claimedAt,
+                }
+            );
+        }
     }
 }

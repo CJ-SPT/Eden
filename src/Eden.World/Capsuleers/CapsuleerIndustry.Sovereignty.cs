@@ -40,30 +40,33 @@ internal sealed partial class CapsuleerIndustry
         SavedCorporation corporation,
         int alliance,
         long captureDuration,
-        long now
+        long now,
+        EntosisProfile? fittedProfile = null
     )
     {
         const int carrier = CapsuleerAllianceRules.ExpeditionSquall;
         const int link = CapsuleerAllianceRules.ExpeditionLink;
-        if (catalog.FittingType(carrier) is null || !EntosisCatalog.Supported(catalog, link))
+        bool refueling = fittedProfile is not null;
+        if (!refueling && (catalog.FittingType(carrier) is null || !EntosisCatalog.Supported(catalog, link)))
         {
             return default;
         }
-        var profile = EntosisCatalog.Module(catalog.FittingAttributes(link), 1);
+        var profile = fittedProfile ?? EntosisCatalog.Module(catalog.FittingAttributes(link), 1);
         int fuelType = profile.FuelType;
         long actor = pilot.PilotId;
         long ship = pilot.ShipId;
         int station = pilot.StationId;
-        bool boarding = pilot.ShipTypeId != carrier;
-        var fittedLink = boarding
-            ? null
-            : world
-                .Filter<OwnedItem>(item => item.LocationId == ship)
-                .AsEnumerable()
-                .FirstOrDefault(item =>
-                    item.OwnerId == actor && item.TypeId == link && item.Singleton && InventoryDefinitions.IsHighSlot(item.FlagId)
-                );
-        int fuelNeeded = checked((CapsuleerHauler.RequiredExpeditionCycles(captureDuration, profile) + 1) * profile.FuelQuantity);
+        bool boarding = !refueling && pilot.ShipTypeId != carrier;
+        var fittedLink =
+            boarding || refueling
+                ? null
+                : world
+                    .Filter<OwnedItem>(item => item.LocationId == ship)
+                    .AsEnumerable()
+                    .FirstOrDefault(item =>
+                        item.OwnerId == actor && item.TypeId == link && item.Singleton && InventoryDefinitions.IsHighSlot(item.FlagId)
+                    );
+        int fuelNeeded = checked(CapsuleerHauler.RequiredExpeditionCycles(captureDuration, profile) * profile.FuelQuantity);
         if (!boarding)
         {
             fuelNeeded -= world
@@ -73,44 +76,83 @@ internal sealed partial class CapsuleerIndustry
                 )
                 .Sum(item => item.Quantity);
         }
-        var hangar = Hangar(world, actor, station).Where(item => !item.Singleton).ToLookup(item => item.TypeId);
-        (int Type, int Quantity)[] kit = [(carrier, boarding ? 1 : 0), (link, fittedLink is null ? 1 : 0), (fuelType, fuelNeeded)];
-        var shortfalls = kit.Select(part => (part.Type, Quantity: part.Quantity - hangar[part.Type].Sum(item => item.Quantity)))
-            .Where(part => part.Quantity > 0)
-            .ToArray();
-        ExpeditionOutfit supplies = new(true, false);
-        if (shortfalls.Length != 0)
+        int minimumFuel = Math.Max(0, fuelNeeded);
+        int preferredFuel = Math.Max(0, checked(fuelNeeded + profile.FuelQuantity));
+        if (!boarding && preferredFuel > 0)
         {
-            supplies = BuySovereigntySupplies(world, catalog, pilot, corporation, alliance, shortfalls);
-            if (!supplies.Ready)
+            double fuelVolume = PilotInventoryStore.Volume(catalog, fuelType);
+            double free = FreeFreightVolume(world, catalog, pilot);
+            if (minimumFuel > 0 && minimumFuel * fuelVolume > free)
             {
-                return supplies;
+                return default;
+            }
+            if (preferredFuel * fuelVolume > free)
+            {
+                preferredFuel = minimumFuel;
+            }
+        }
+        var hangar = Hangar(world, actor, station).Where(item => !item.Singleton).ToLookup(item => item.TypeId);
+        var depot = DepotStacks(world, corporation.Id, station).OrderBy(item => item.Id).ToLookup(item => item.TypeId);
+        ReplacementPart[] kit =
+        [
+            new(carrier, boarding ? 1 : 0),
+            new(link, !refueling && fittedLink is null ? 1 : 0),
+            new(fuelType, preferredFuel),
+        ];
+        var supplies = BuySovereigntySupplies(world, catalog, pilot, corporation, alliance, MissingParts(MissingParts(kit, hangar), depot));
+        if (!supplies.Ready && kit[^1].Quantity > minimumFuel)
+        {
+            // A spare cycle helps with interruptions. Dispatch can proceed on the required fuel alone.
+            kit[^1] = new(fuelType, minimumFuel);
+            supplies = BuySovereigntySupplies(world, catalog, pilot, corporation, alliance, MissingParts(MissingParts(kit, hangar), depot));
+        }
+        if (!supplies.Ready)
+        {
+            return supplies;
+        }
+        if (supplies.MarketChanged)
+        {
+            hangar = Hangar(world, actor, station).Where(item => !item.Singleton).ToLookup(item => item.TypeId);
+        }
+        var requisition = MissingParts(kit, hangar);
+        if (requisition.Length > 0)
+        {
+            foreach (var part in requisition)
+            {
+                if (TransferReplacementStock(world, catalog, actor, station, part, depot[part.TypeId]) != 0)
+                {
+                    throw new InvalidDataException("The paid expedition supplies are no longer available.");
+                }
             }
             hangar = Hangar(world, actor, station).Where(item => !item.Singleton).ToLookup(item => item.TypeId);
         }
+        fuelNeeded = kit[^1].Quantity;
 
-        CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, carrier, []);
-        CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, link, []);
-        if (!Qualify(world, catalog, actor, new(ExpeditionHaulingSkill(catalog), CapsuleerAllianceRules.ExpeditionHaulingSkillLevel)))
+        if (!refueling)
         {
-            throw new InvalidDataException("The expedition carrier's hauling skill is unavailable.");
-        }
-        if (boarding)
-        {
-            long assembled = PilotFleetStore.Assemble(world, catalog, actor, [hangar[carrier].First().Id], name: null).ShipIds.Single();
-            PilotFleetStore.Board(world, catalog, actor, assembled, ship, now);
-            ship = assembled;
-        }
-        if (fittedLink is null)
-        {
-            long itemId = hangar[link].First().Id;
-            var changes = PilotFittingStore.Fit(world, catalog, actor, [itemId], station, (int)InventoryFlag.AutoFit, now);
-            long fittedId = changes.Single(change => change.Item.LocationId == ship && change.Item.TypeId == link).Item.Id;
-            fittedLink = world.Set<OwnedItem>().Find(fittedId)!;
-        }
-        if (!fittedLink.Online)
-        {
-            PilotFittingStore.SetOnline(world, catalog, actor, ship, fittedLink.Id, true, now);
+            CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, carrier, []);
+            CapsuleerCommunityStore.GrantRequirements(world, catalog, actor, link, []);
+            if (!Qualify(world, catalog, actor, new(ExpeditionHaulingSkill(catalog), CapsuleerAllianceRules.ExpeditionHaulingSkillLevel)))
+            {
+                throw new InvalidDataException("The expedition carrier's hauling skill is unavailable.");
+            }
+            if (boarding)
+            {
+                long assembled = PilotFleetStore.Assemble(world, catalog, actor, [hangar[carrier].First().Id], name: null).ShipIds.Single();
+                PilotFleetStore.Board(world, catalog, actor, assembled, ship, now);
+                ship = assembled;
+            }
+            if (fittedLink is null)
+            {
+                long itemId = hangar[link].First().Id;
+                var changes = PilotFittingStore.Fit(world, catalog, actor, [itemId], station, (int)InventoryFlag.AutoFit, now);
+                long fittedId = changes.Single(change => change.Item.LocationId == ship && change.Item.TypeId == link).Item.Id;
+                fittedLink = world.Set<OwnedItem>().Find(fittedId)!;
+            }
+            if (!fittedLink.Online)
+            {
+                PilotFittingStore.SetOnline(world, catalog, actor, ship, fittedLink.Id, true, now);
+            }
         }
         foreach (var stack in hangar[fuelType])
         {
@@ -131,18 +173,22 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot pilot,
         SavedCorporation corporation,
         int alliance,
-        (int Type, int Quantity)[] shortfalls
+        ReplacementPart[] shortfalls
     )
     {
+        if (shortfalls.Length == 0)
+        {
+            return new(true, false);
+        }
         var offers = market
-            .SupplyOrders(world, catalog, pilot.StationId, shortfalls.Select(part => part.Type).ToArray(), pilot.PilotId, corporation.Id)
+            .SupplyOrders(world, catalog, pilot.StationId, shortfalls.Select(part => part.TypeId).ToArray(), pilot.PilotId, corporation.Id)
             .ToLookup(order => order.TypeId);
         int members = world.Filter<SavedAllianceMember>(member => member.AllianceId == alliance).Count();
         List<MarketPurchase> purchases = [];
         foreach (var part in shortfalls)
         {
-            long ceiling = ReferencePrice(catalog, part.Type);
-            var purchase = QuoteInput(offers[part.Type].Where(order => order.PriceCents <= ceiling), part.Type, part.Quantity);
+            long ceiling = ReferencePrice(catalog, part.TypeId);
+            var purchase = QuoteInput(offers[part.TypeId].Where(order => order.PriceCents <= ceiling), part.TypeId, part.Quantity);
             if (purchase is null || purchase.Quantity < part.Quantity)
             {
                 return default;
@@ -208,7 +254,7 @@ internal sealed partial class CapsuleerIndustry
             int missing = quantity - stock.Sum(item => item.Quantity);
             if (missing > 0)
             {
-                if (!BuySovereigntySupplies(world, catalog, pilot, corporation, claim.AllianceId, [(shortage.TypeId, missing)]).Ready)
+                if (!BuySovereigntySupplies(world, catalog, pilot, corporation, claim.AllianceId, [new(shortage.TypeId, missing)]).Ready)
                 {
                     continue;
                 }

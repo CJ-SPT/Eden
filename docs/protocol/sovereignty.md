@@ -234,6 +234,52 @@ Not performed. Agent client testing is disabled.
 
 Observe a funded guard dispatch during a home-system disruption and check the defense score in the sovereignty UI.
 
+## Entosis replacement and fuel stock
+
+The headquarters fleet reserve includes Strontium Clathrates for an online Entosis fit or a verified recent loss of
+one. A defender short of the required fuel can take ordinary supply or other docked work. Regional freight checks
+reachable suppliers and carries paid stock to the corporation's Market Deliveries. An Entosis fuel trip buys the
+quantity available at its approved limit. The executor's purchases retain its monthly alliance dues reserve, with
+affordability checked again at the supplier. Purchased cargo and the route use the existing freight checkpoint.
+
+Expedition outfitting combines the pilot's hangar, owned corporate stock and local market purchases. A fitted defense
+Squall can refuel with its existing link. Outfitting prefers a spare cycle and can use the exact minimum when stock or
+cargo space is tight. A lost ship's assignment is released by the normal ship-loss path, so a fueled pilot can take a current
+objective. Replacement and return continue through ordinary docking, fitting and paid Entosis.
+
+Build 3662168 supplies the fuel type and quantity through Entosis dogma. The EVE.js 261108.1
+`entosisLinkRuntime.js` reference delegates locking, capacitor and fuel payment to its module runtime. The inspected
+file has SHA-256 `afe03a1e9e0fa1525aa56a4d3782ef4e91ba06e509a49ce15803e3d1732e1d1d`.
+[CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[UniWiki Entosis Link](https://wiki.eveuniversity.org/Entosis_Link)
+
+### Automated validation
+
+`LostDefenderReplenishesAllianceFromRegionalFuelAcrossRestart` destroys a defender during its first paid cycle on
+the newer of two held claims. The regional planner declines the trip with only dues in the treasury. After funding,
+the backup requests four units, buys the three units a player offers, and pays the native broker fee. The world
+reopens with the paid cargo in flight. The backup delivers it, withdraws the required fuel, restores the contested hub
+with its original ship, and returns to headquarters. Both claims survive, the treasury retains dues, and the seller
+fills a single order with zero human pilots selected during the replay.
+
+The exact `CapsuleerAllianceTests` methods were `LostDefenderReplenishesAllianceFromRegionalFuelAcrossRestart`,
+`UnattendedDefendersProtectLaterClaimAndDivideCampaignNodesAcrossRestart`, `FundedRivalsContestAnOwnedHubUnattendedAcrossRestart`,
+and `FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem`. All eight cases passed on the final
+revision in 40.76 seconds. The isolated solution build took 15.54 seconds with zero warnings or errors.
+
+The final focused filter passed 389 cases in 246.08 seconds. It selected the `Sovereignty` and `Alliances` test
+namespaces plus `CapsuleerAllianceTests`, `CapsuleerAmmunitionSupplyTests`, `PersonalMarketTests`, `PilotCombatTests`
+and `CapsuleCombatTests`. The two Python policy suites passed 17 cases. Formatting and whitespace checks passed
+with the local recovery archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Bot attacks on rival sovereignty
 
 With **Regional conflicts** and **Start new sovereignty claims** enabled, a bot executor that already holds territory
