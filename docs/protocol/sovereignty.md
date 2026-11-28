@@ -327,8 +327,8 @@ None.
 
 With **Regional conflicts** and **Start new sovereignty claims** enabled, a bot executor that already holds territory
 can send an available Entosis pilot against a reachable rival claim within three jumps of headquarters. An active war
-or negative alliance standing qualifies a rival. With neutral or unset standing, ordinary gate adjacency between the
-home claim and a foreign bot alliance's claim creates a border rivalry. Positive standing prevents that fallback.
+or negative alliance standing qualifies a rival. With neutral or unset standing, ordinary gate adjacency between any
+held claim and a foreign bot alliance's claim creates a border rivalry. Positive standing prevents that fallback.
 The executor retains a monthly dues reserve and avoids routes through systems the pilot has recently marked dangerous.
 The pilot uses its fitted link and fuel or buys missing supplies through normal market orders.
 
@@ -401,6 +401,48 @@ reinforcement, and the attacking corporation's balance stays at its dues reserve
 The focused filter passed 342 cases in 160.66 seconds after a 1.93-second build. It selected `CapsuleerAllianceTests`,
 the `Sovereignty` and `Alliances` test namespaces, `RegionalConflictTests`, `RegionalConflictWorldTests`,
 `CapsuleerTrafficNavigationTests`, and `CapsuleerMaintenanceTests`. The solution built in 0.86 seconds with zero warnings
+or errors. Both Python policy suites passed all 17 cases. Formatting and whitespace checks passed with the local recovery
+archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Attacks across new sovereignty borders
+
+Eden's neutral-rivalry policy matches the rival claim against every system the attacking alliance holds. It uses
+reciprocal stargates backed by static gate objects. If several holdings border the same target, the oldest qualifying
+claim supplies the attack's saved home system, with system ID breaking ties. Active wars and negative standing can
+qualify a target independently of the border, while positive standing disables the neutral fallback.
+
+The courier starts and ends its route at headquarters. The saved claim establishes the border and is checked again at
+the destination and before Entosis activation or renewal. If that holding falls, the expedition returns and any paid
+cycle settles through the existing Entosis path. The rival hub remains the campaign identity used when assigning
+separate command nodes. The saved expedition format continues to use its existing home-system field.
+
+Build 3662168 supplies the gate and sovereignty records. The EVE.js 261108.1 `resolveOwnedHubTarget` reference checks
+that the target is the held hub and belongs to the current defender. Eden uses the border when planning bot work and
+leaves the ordinary Entosis eligibility and scoring to the sovereignty runtime.
+[CCP Sovereignty Hub](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub) ·
+[UniWiki sovereignty](https://wiki.eveuniversity.org/Sovereignty_Hub)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.NeutralRaiderUsesNewFrontierAndReturnsWhenItIsLostAcrossRestart` replay passed
+in 11.59 seconds after a 9.23-second build. The vulnerable hub is reachable while the alliance holds only its
+original claim, and neutral standing yields no raid. The fixture then adds a second claim that borders the rival.
+Positive standing still prevents launch. Neutral standing admits the attack and the newer claim survives reopening
+as the assignment's saved home system. The raider pays for its warmup. After a seeded loss of only that holding,
+the ship returns to headquarters without renewing the link or damaging the rival hub. The original home remains
+held and zero human pilots were selected.
+
+The focused filter passed 343 cases in 182.84 seconds after a 1.90-second build. It selected `CapsuleerAllianceTests`,
+the `Sovereignty` and `Alliances` test namespaces, `RegionalConflictTests`, `RegionalConflictWorldTests`,
+`CapsuleerTrafficNavigationTests`, and `CapsuleerMaintenanceTests`. The solution built in 1.56 seconds with zero warnings
 or errors. Both Python policy suites passed all 17 cases. Formatting and whitespace checks passed with the local recovery
 archive excluded from CSharpier.
 

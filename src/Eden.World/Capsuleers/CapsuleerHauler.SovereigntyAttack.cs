@@ -17,6 +17,7 @@ internal sealed partial class CapsuleerHauler
     private readonly record struct SovereigntyAttackPlan(
         SovereigntyAttackObjective Objective,
         SovereigntyEntosisTarget Target,
+        int HomeSystemId,
         CapsuleerTrafficRoute Route,
         long? ModuleId,
         long CaptureDuration,
@@ -28,7 +29,7 @@ internal sealed partial class CapsuleerHauler
         EconomyTransaction world,
         CatalogDbContext catalog,
         SavedCorporation corporation,
-        SavedSovereigntyClaim home,
+        IReadOnlyList<SavedSovereigntyClaim> holdings,
         IReadOnlyList<SovereigntyExpedition> otherExpeditions,
         bool prepare
     )
@@ -42,6 +43,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        var home = holdings[0];
         int members = world.Filter<SavedAllianceMember>(member => member.AllianceId == home.AllianceId).Count();
         if (!CapsuleerAlliances.CanFund(world, corporation, members, 0))
         {
@@ -52,8 +54,11 @@ internal sealed partial class CapsuleerHauler
             .NearbyClaimSites(catalog, Pilot.SystemId)
             .Select(system => world.Set<SavedSovereigntyClaim>().Find(system))
             .OfType<SavedSovereigntyClaim>()
-            .Where(claim => IsSovereigntyRival(world, catalog, home, claim))
-            .SelectMany(claim => PilotEntosisStore.AttackTargets(world, claim, Now).Select(target => (Claim: claim, Target: target)))
+            .SelectMany(claim =>
+                AttackAnchor(world, catalog, home, claim, holdings) is int anchor
+                    ? PilotEntosisStore.AttackTargets(world, claim, Now).Select(target => (Claim: claim, Target: target, Anchor: anchor))
+                    : []
+            )
             .ToArray();
         if (candidates.Length == 0)
         {
@@ -88,7 +93,7 @@ internal sealed partial class CapsuleerHauler
                     module,
                     plan.Target.Id,
                     Duty: SovereigntyDuty.Attack,
-                    HomeSystemId: home.SystemId
+                    HomeSystemId: plan.HomeSystemId
                 )
                 {
                     Attack = plan.Objective,
@@ -109,7 +114,7 @@ internal sealed partial class CapsuleerHauler
             EntosisProfile? standardProfile = null;
             var avoided = AvoidedSupplierSystems();
             Dictionary<(int System, HullClass Hull, int Jumps), CapsuleerTrafficRoute?> routes = [];
-            foreach (var (rival, target) in candidates)
+            foreach (var (rival, target, anchor) in candidates)
             {
                 SovereigntyAttackObjective objective = new(rival.SystemId, rival.HubId, rival.AllianceId);
                 if (
@@ -157,7 +162,16 @@ internal sealed partial class CapsuleerHauler
                 if (PilotEntosisStore.AttackCanWarmUp(world, rival.SystemId, target.Id, Now, leadTime))
                 {
                     int fuel = checked(RequiredExpeditionCycles(duration, profile) * profile.FuelQuantity);
-                    yield return new(objective, target, route, ready ? link!.Id : null, duration, checked(leadTime + duration), fuel);
+                    yield return new(
+                        objective,
+                        target,
+                        anchor,
+                        route,
+                        ready ? link!.Id : null,
+                        duration,
+                        checked(leadTime + duration),
+                        fuel
+                    );
                 }
             }
         }
@@ -173,24 +187,42 @@ internal sealed partial class CapsuleerHauler
         && rival.HubId == attack.HubId
         && rival.AllianceId == attack.AllianceId
         && expedition.HubId is long target
-        && IsSovereigntyRival(world, catalog, home, rival)
+        && AttackAnchor(world, catalog, home, rival).HasValue
         && PilotEntosisStore.AttackTargetAdmitted(world, rival, expedition.TargetSystemId, target, Now);
 
-    private bool IsSovereigntyRival(WorldAction world, CatalogDbContext catalog, SavedSovereigntyClaim home, SavedSovereigntyClaim rival)
+    private int? AttackAnchor(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedSovereigntyClaim home,
+        SavedSovereigntyClaim rival,
+        IReadOnlyList<SavedSovereigntyClaim>? holdings = null
+    )
     {
         if (home.AllianceId == rival.AllianceId || world.Set<SavedAlliance>().Find(rival.AllianceId) is not { ClosedAt: null } alliance)
         {
-            return false;
+            return null;
         }
         if (CorporationWarStore.HasActiveWar(world, Pilot.CorpId, rival.CorporationId, Now))
         {
-            return true;
+            return home.SystemId;
         }
         double? standing = AllianceStore.Standing(world, home.AllianceId, rival.AllianceId);
-        return standing < 0
-            || (standing is null or 0)
-                && world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is not null
-                && CapsuleerTrafficRoutes.Neighbours(catalog, home.SystemId).Contains(rival.SystemId);
+        if (standing < 0)
+        {
+            return home.SystemId;
+        }
+        if (standing is not (null or 0) || world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is null)
+        {
+            return null;
+        }
+
+        var neighbors = CapsuleerTrafficRoutes.Neighbours(catalog, rival.SystemId);
+        // Planning can choose any held border. A saved assignment revalidates its own border.
+        if (holdings is null)
+        {
+            return neighbors.Contains(home.SystemId) ? home.SystemId : null;
+        }
+        return holdings.FirstOrDefault(claim => neighbors.Contains(claim.SystemId))?.SystemId;
     }
 
     private static bool SovereigntyAttacksEnabled(WorldAction world) =>

@@ -109,7 +109,7 @@ internal sealed partial class CapsuleerHauler
         bool resupplying = active.Any(expedition => expedition is { Duty: SovereigntyDuty.ReagentDelivery, Returning: false });
         return (!resupplying && TryResupplySovereignty(world, catalog, corporation, holdings))
             || TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
-            || TryAttackSovereignty(world, catalog, corporation, home, active, prepare)
+            || TryAttackSovereignty(world, catalog, corporation, holdings, active, prepare)
             || StandByAtSovereignty(world, catalog, corporation, holdings, prepare);
     }
 

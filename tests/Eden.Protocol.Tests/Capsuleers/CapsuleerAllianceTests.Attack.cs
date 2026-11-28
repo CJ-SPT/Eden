@@ -41,9 +41,14 @@ public sealed partial class CapsuleerAllianceTests
     [Fact]
     public Task FundedRivalRaiderChoosesLowerDefenseHubAcrossRestart() => ExerciseRivalAttack(defend: false, rankRivals: true);
 
-    private static async Task ExerciseRivalAttack(bool defend, bool rankRivals)
+    [Fact]
+    public Task NeutralRaiderUsesNewFrontierAndReturnsWhenItIsLostAcrossRestart() =>
+        ExerciseRivalAttack(defend: false, rankRivals: false, frontierRaid: true);
+
+    private static async Task ExerciseRivalAttack(bool defend, bool rankRivals, bool frontierRaid = false)
     {
         const int home = 30003990;
+        const int frontier = RecoveredTerritoryDecoySystem;
         const int target = SovereigntyCaptureFixture.SystemId;
         const int fifthSystem = 31000004;
         const int fuel = 80;
@@ -82,6 +87,7 @@ public sealed partial class CapsuleerAllianceTests
         PassiveCatalogFixture.LoadUtilityHull(fixture.Database.CatalogPath, CapsuleerAllianceRules.ExpeditionSquall);
         using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
         {
+            int homeNeighbor = frontierRaid ? HeadquartersSystem : target;
             catalog.Database.ExecuteSql(
                 $"""
                 INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3732,'Empire Control',257);
@@ -91,10 +97,10 @@ public sealed partial class CapsuleerAllianceTests
                     (55000001,{HeadquartersSystem},16,10,3500,100000000000,0,0),
                     (55000002,{target},16,10,3500,200000000000,0,0),
                     (55000003,{home},16,10,3500,100000000000,0,0),
-                    (55000004,{target},16,10,3500,300000000000,0,0);
+                    (55000004,{homeNeighbor},16,10,3500,300000000000,0,0);
                 INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
                     (55000001,{HeadquartersSystem},55000002),(55000002,{target},55000001),
-                    (55000003,{home},55000004),(55000004,{target},55000003);
+                    (55000003,{home},55000004),(55000004,{homeNeighbor},55000003);
                 """
             );
             int nextGateId = 55000005;
@@ -236,11 +242,51 @@ public sealed partial class CapsuleerAllianceTests
                 funding.Set<SavedCorporation>().Find(attackers.Corporation)!.BalanceCents = reserve;
                 funding.Commit();
             }
+            if (frontierRaid)
+            {
+                using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+                Assert.DoesNotContain(target, CapsuleerTrafficRoutes.Neighbours(catalog, home));
+                Assert.Contains(target, CapsuleerTrafficRoutes.Neighbours(catalog, frontier));
+                Assert.Contains(target, CapsuleerAlliances.NearbyClaimSites(catalog, HeadquartersSystem));
+                live.Economy.Read(world =>
+                {
+                    var corporation = world.Set<SavedCorporation>().Find(attackers.Corporation)!;
+                    Assert.Equal(reserve, corporation.BalanceCents);
+                    var rival = world.Set<SavedSovereigntyClaim>().Find(target)!;
+                    Assert.Equal(hubId, Assert.Single(PilotEntosisStore.AttackTargets(world, rival, fixture.Clock.Now)).Id);
+                    var route = CapsuleerTrafficRoutes.ToClaimSystem(
+                        catalog,
+                        corporation.StationId,
+                        target,
+                        HullClass.Hauler,
+                        new HashSet<int>(),
+                        policy: world.Settings.Capsuleers
+                    );
+                    Assert.Equal(new[] { HeadquartersSystem, target }, Assert.IsType<CapsuleerTrafficRoute>(route).Systems);
+                    return true;
+                });
+                var owned = host.GetRequiredService<ISovereignty>();
+                Assert.Equal(homeClaim, Assert.Single(owned.List(attackers.Alliance)));
+                Tick(host, 45);
+                AssertIdle();
+
+                social.SetStanding(attackers.Ceo, [defenders.Alliance], 10);
+                using (var acquisition = live.Economy.Begin(TransactionParticipants.None))
+                {
+                    AddOwnedHub(acquisition, catalog, frontier, attackers.Corporation, attackers.Alliance);
+                    acquisition.Commit();
+                }
+                Assert.True(owned.Read(frontier)!.ClaimedAt > homeClaim.ClaimedAt);
+                Tick(host, 45);
+                AssertIdle();
+                social.SetStanding(attackers.Ceo, [defenders.Alliance], 0);
+                Assert.Equal(0d, social.Standing(attackers.Alliance, defenders.Alliance));
+            }
             Tick(host, 180, () => Expedition(live, attacker) is { Duty: SovereigntyDuty.Attack });
             underway = Assert.IsType<SovereigntyExpedition>(Expedition(live, attacker));
             Assert.Equal(SovereigntyDuty.Attack, underway.Duty);
             Assert.Equal(new SovereigntyAttackObjective(target, hubId, defenders.Alliance), underway.Attack);
-            Assert.Equal(home, underway.HomeSystemId);
+            Assert.Equal(frontierRaid ? frontier : home, underway.HomeSystemId);
             Assert.Equal(hubId, underway.HubId);
             Assert.Empty(entosis.Cycles(attacker));
             await live.FlushAsync();
@@ -365,6 +411,43 @@ public sealed partial class CapsuleerAllianceTests
         Assert.Equal(paid.EndsAt, paid.WarmupUntil);
         Assert.Equal(fuel - 1, Fuel(restored, attacker));
         Assert.Equal(1d, warfare.Hub(target)!.Conflict!.Capture.Value);
+        if (frontierRaid)
+        {
+            var border = Assert.IsType<SovereigntyClaim>(claims.Read(frontier));
+            Assert.Equal(attackers.Alliance, border.AllianceId);
+            using (var loss = restored.Economy.Begin(TransactionParticipants.None))
+            {
+                // Seed the settled loss of this claim without changing either alliance or the target hub.
+                var structure = loss.Set<SavedStructure>().Find(border.HubId)!;
+                structure.State = StructureState.Destroyed;
+                structure.StateStartedAt = fixture.Clock.Now;
+                loss.Remove(loss.Set<SavedSovereigntyClaim>().Find(frontier)!);
+                loss.Remove(loss.Set<SavedSovereigntyHub>().Find(frontier)!);
+                if (loss.Set<SavedSovereigntyConflict>().Find(frontier) is { } conflict)
+                {
+                    loss.Remove(conflict);
+                }
+                loss.Commit();
+            }
+            Assert.Null(claims.Read(frontier));
+            Tick(reopened, 900, () => Expedition(restored, attacker) is { Returning: true });
+            var scheduler = reopened.GetRequiredService<CapsuleerScheduler>();
+            int headquarters = restored.Economy.Read(world => world.Set<SavedCorporation>().Find(attackers.Corporation)!.StationId);
+            Tick(
+                reopened,
+                1200,
+                () => scheduler.Hauler(attacker) is { Pilot.Position: null, Pilot.DockedLocationId: var station } && station == headquarters
+            );
+            Tick(reopened, 180, () => Expedition(restored, attacker) is null);
+            Assert.Empty(warfare.Cycles(attacker));
+            Assert.Equal(fuel - 1, Fuel(restored, attacker));
+            var untouched = warfare.Hub(target)!.Conflict!;
+            Assert.Equal((SovereigntyPhase.Secure, 1d), (untouched.Phase, untouched.Capture.Value));
+            Assert.Equal(original, claims.Read(target));
+            Assert.Equal(homeClaim, Assert.Single(claims.List(attackers.Alliance)));
+            AssertUnattended(reopened);
+            return;
+        }
         if (defend)
         {
             Tick(reopened, 1600, () => warfare.Hub(target)!.Conflict!.Capture.Blocked);
