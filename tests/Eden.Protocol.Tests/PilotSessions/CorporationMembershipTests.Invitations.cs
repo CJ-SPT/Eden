@@ -15,6 +15,53 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed partial class CorporationMembershipTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AcceptingARecruitmentOfferHonorsTheCurrentCorporationsRoleCooldown(bool directInvitation)
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        int incumbent = CorporationAdministrationTests.CreateAndJoin(db);
+        TestCatalog.AddSchool(new WorldDatabase(db.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        long recruiter = db
+            .Services.GetRequiredService<ICharacterCreation>()
+            .Create(1000001, new("Another Founder", 1, 1, 1, 64, [1], [2], 18));
+        PlayerCorporationTests.Prepare(db, recruiter);
+        var corporations = db.Services.GetRequiredService<IPlayerCorporations>();
+        int destination = corporations.Create(recruiter, PlayerCorporationTests.Details("Another Corporation", "ANO")).Corporation.Id;
+        var membership = db.Services.GetRequiredService<ICorporationMembership>();
+        var offer = directInvitation
+            ? membership.Invite(recruiter, Applicant)
+            : membership.Update(
+                recruiter,
+                Change(membership.Apply(Applicant, destination, "Switch corps"), CorporationApplicationStatus.Offered)
+            );
+        using Client ceo = new(db, 1000001);
+        using Client member = new(db, 1000002);
+        Assert.Null(ceo.Reply("UpdateMember", CorporationRoleTests.MemberArguments(Applicant, new((long)CorporationRole.Accountant))));
+
+        Assert.IsType<PilotCallResult.Failure>(
+            member.Call("UpdateApplicationOffer", UpdateArgs(offer, CorporationApplicationStatus.Joined))
+        );
+        Assert.Equal(offer, membership.Applications(Applicant, false).Single(application => application.Id == offer.Id));
+        Assert.Equal(incumbent, corporations.Identity(Applicant).Id);
+        Assert.Equal(2, corporations.Employment(Applicant).Count);
+
+        Assert.Null(member.Reply("UpdateMember", CorporationRoleTests.MemberArguments(Applicant, new(), 0, true)));
+        clock.AdvanceWallTime(CorporationRoleRules.RemovalDelay - TimeSpan.FromTicks(1));
+        Assert.IsType<PilotCallResult.Failure>(
+            member.Call("UpdateApplicationOffer", UpdateArgs(offer, CorporationApplicationStatus.Joined))
+        );
+        Assert.Equal(offer, membership.Applications(Applicant, false).Single(application => application.Id == offer.Id));
+        Assert.Equal(incumbent, corporations.Identity(Applicant).Id);
+
+        clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+        Assert.Null(member.Reply("UpdateApplicationOffer", UpdateArgs(offer, CorporationApplicationStatus.Joined)));
+        Assert.Equal(destination, corporations.Identity(Applicant).Id);
+        Assert.Equal(new[] { destination, incumbent, NpcCorporation }, corporations.Employment(Applicant).Select(row => row.CorporationId));
+    }
+
     [Fact]
     public void InvitationSurvivesCheckpointAndAcceptanceSurvivesRestart()
     {

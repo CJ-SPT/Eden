@@ -33,14 +33,16 @@ internal sealed partial class CorporationStorageStore
         });
     }
 
-    public IReadOnlyList<InventoryChange> DeliverToMember(long actorId, CorporationMarketDelivery request)
+    public IReadOnlyList<InventoryChange> DeliverToMember(long actorId, CorporationMemberDelivery request)
     {
+        bool market = request.SourceFlag == CorporationStorageRules.MarketDeliveriesFlag;
         if (
             request.ItemIds.Count is 0 or > CorporationStorageRules.MaximumBatch
             || request.ItemIds.Any(id => id <= 0)
             || request.ItemIds.Distinct().Count() != request.ItemIds.Count
             || request.Quantity is <= 0
             || request.Quantity.HasValue && request.ItemIds.Count != 1
+            || !market && !CorporationStorageRules.IsDivision(request.SourceFlag)
         )
         {
             throw new InvalidDataException("Choose distinct corporate delivery items and a valid split quantity.");
@@ -52,11 +54,23 @@ internal sealed partial class CorporationStorageStore
         var corporation = CorporationRoleStore.Current(world, actorId);
         if (request.StationId != station || request.CorporationId != corporation.Id)
         {
-            throw new InvalidDataException("Withdraw your corporation's deliveries from the station where you are docked.");
+            throw new InvalidDataException("Withdraw your corporation's assets from the station where you are docked.");
         }
-        if (!CorporationStorageRules.CanTakeMarketDeliveries(CorporationRoleStore.Effective(world, actorId, corporation).Roles))
+        var access = CorporationRoleStore.Effective(world, actorId, corporation);
+        if (market && !CorporationStorageRules.CanTakeMarketDeliveries(access.Roles))
         {
             throw new InvalidDataException("Accountant or Trader authority is required to withdraw Market Deliveries.");
+        }
+        SavedCorporationOffice? office = null;
+        if (!market)
+        {
+            office = world
+                .Set<SavedCorporationOffice>()
+                .SingleOrDefault(row => row.CorporationId == corporation.Id && row.StationId == station);
+            if (office is null || !CorporationStorageRules.CanTake(access, station, corporation.StationId, request.SourceFlag))
+            {
+                throw new InvalidDataException("Hangar withdrawal authority is required for the local office division.");
+            }
         }
         if (world.Pilots.Find(request.RecipientId)?.CorporationId != corporation.Id)
         {
@@ -70,8 +84,8 @@ internal sealed partial class CorporationStorageStore
             if (
                 item is not { Quantity: > 0, Online: false }
                 || item.OwnerId != corporation.Id
-                || item.LocationId != station
-                || item.FlagId != CorporationStorageRules.MarketDeliveriesFlag
+                || item.LocationId != (office?.Id ?? station)
+                || item.FlagId != request.SourceFlag
                 || item.TypeId == CourierRules.PackageType
                 || request.Quantity > item.Quantity
                 || PilotIndustryStore.IsInstalled(world, id)
@@ -79,9 +93,18 @@ internal sealed partial class CorporationStorageStore
                 || world.Filter<Ship>(child => child.StoredInId == id).Any()
             )
             {
-                throw new InvalidDataException("A requested asset is unavailable in the local Market Deliveries hangar.");
+                throw new InvalidDataException("A requested asset is unavailable in the selected local corporation hangar.");
             }
             var before = PilotInventoryStore.Read(catalog, item);
+            if (
+                office is not null
+                && item.Singleton
+                && CargoContainerAssemblyRules.IsContainer(before)
+                && !CorporationStorageRules.CanTakeContainer(access, station, corporation.StationId, request.SourceFlag)
+            )
+            {
+                throw new InvalidDataException("Container withdrawal authority is required for the local office division.");
+            }
             if (request.Quantity is int quantity && quantity < item.Quantity)
             {
                 item.Quantity = InventoryStackRules.Split(before, quantity).Remainder;
@@ -109,9 +132,14 @@ internal sealed partial class CorporationStorageStore
             else
             {
                 item.OwnerId = request.RecipientId;
+                item.LocationId = station;
                 item.FlagId = (int)InventoryFlag.Hangar;
                 changes.Add(new(PilotInventoryStore.Read(catalog, item), before));
             }
+        }
+        if (office is not null)
+        {
+            Notify(world, new(actorId, office.Snapshot(), false, changes));
         }
         if (request.RecipientId != actorId)
         {

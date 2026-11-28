@@ -9,6 +9,9 @@ namespace Eden.Protocol.Corporations;
 internal sealed class CorporationGovernanceHandler(ICorporationVoting voting, ICorporationMemberRemovals removals)
     : ISelectedPilotCallHandler
 {
+    // Build 3662168 corporation.voting requests both statuses when viewing another corporation's cases.
+    private const long AllVoteCaseStatuses = 0;
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -54,8 +57,11 @@ internal sealed class CorporationGovernanceHandler(ICorporationVoting voting, IC
                     return voting.CanView(actor, (int)corporation);
                 case ("CanRunForCEO", []):
                     return voting.CanRunForCeo(actor);
-                case ("GetVoteCasesByCorporation", [long corporation]) when corporation is > 0 and <= int.MaxValue:
+                case ("GetVoteCasesByCorporation", [long corporation, .. var statuses])
+                    when corporation is > 0 and <= int.MaxValue && statuses is [] or [AllVoteCaseStatuses]:
                     return new CorporationVoteCasesReply(voting.List(actor, (int)corporation));
+                case ("GetVotes", [long id]) when id > 0:
+                    return new CorporationBallotsReply(id, voting.Ballots(actor, id));
                 case ("GetVoteCase" or "GetVoteCaseOptions" or "GetVotes", [long corporation, long id])
                     when corporation is > 0 and <= int.MaxValue && id > 0:
                     var vote = voting.Read(actor, (int)corporation, id);

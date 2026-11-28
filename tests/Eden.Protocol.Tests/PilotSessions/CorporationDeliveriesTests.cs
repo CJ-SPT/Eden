@@ -88,6 +88,83 @@ public sealed class CorporationDeliveriesTests
         Assert.Equal(corporation, Read(live, item).OwnerId);
     }
 
+    [Fact]
+    public void NativeOfficeDeliveryUsesLocalDivisionTakeRightsAndPublishesInventoryChanges()
+    {
+        const int division = CorporationStorageRules.FirstFlag;
+        const int containerType = 23;
+        using TestWorld world = new(liveWorld: true);
+        int corporation = CorporationAdministrationTests.CreateAndJoin(world);
+        var storage = world.Services.GetRequiredService<ICorporationStorage>();
+        long quote = storage.Quote(Ceo);
+        world
+            .Services.GetRequiredService<ICorporationWallet>()
+            .Transfer(
+                Ceo,
+                new(false, CorporationWalletRules.MasterKey, corporation, CorporationWalletRules.MasterKey, quote, "Office fee")
+            );
+        var office = storage.Rent(Ceo, quote);
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        long stack = Grant(live, corporation, office.Id, division, 7);
+        long wrongDivision = Grant(live, corporation, office.Id, division + 1, 1);
+        long assembledContainer;
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            assembledContainer = action.NextItemId();
+            action.Add(
+                new OwnedItem
+                {
+                    Id = assembledContainer,
+                    TypeId = containerType,
+                    OwnerId = corporation,
+                    LocationId = office.Id,
+                    FlagId = division,
+                    Quantity = 1,
+                    Singleton = true,
+                }
+            );
+            action.Commit();
+        }
+        using CorporationTestClient actor = new(world, 1000002);
+        using CorporationTestClient recipient = new(world, 1000001);
+
+        Assign(world, CorporationRole.Trader);
+        Assert.IsType<PilotCallResult.Failure>(Deliver(actor, Ceo, office.StationId, [stack], 3, corporation, division));
+        SetDivisionRoles(CorporationRole.HangarCanTake1);
+        Assert.IsType<PilotCallResult.Failure>(Deliver(actor, Ceo, office.StationId, [stack, wrongDivision], null, corporation, division));
+        Assert.IsType<PilotCallResult.Failure>(
+            Deliver(actor, Ceo, office.StationId, [stack, assembledContainer], null, corporation, division)
+        );
+        Assert.Equal(7, Read(live, stack).Quantity);
+        Assert.Equal(corporation, Read(live, stack).OwnerId);
+        Assert.Equal(corporation, Read(live, assembledContainer).OwnerId);
+        Assert.Empty(actor.Context.Notifications.OfType<ItemChanged>());
+
+        Assert.Same(PilotCallResult.None, Deliver(actor, Ceo, office.StationId, [stack], 3, corporation, division));
+        recipient.Advance();
+        var changes = recipient.Context.Notifications.OfType<ItemChanged>().ToArray();
+        Assert.Contains(changes, item => item.Item.Id == stack && item.Item.OwnerId == corporation && item.Item.Quantity == 4);
+        var delivered = Assert.Single(changes, item => item.Item.OwnerId == Ceo);
+        Assert.Equal(office.StationId, delivered.Item.LocationId);
+        Assert.Equal((int)InventoryFlag.Hangar, delivered.Item.FlagId);
+        Assert.Equal(3, Read(live, delivered.Item.Id).Quantity);
+
+        Assert.Same(PilotCallResult.None, Deliver(actor, Member, office.StationId, [stack], null, corporation, division));
+        Assert.Equal(Member, Read(live, stack).OwnerId);
+        Assert.Equal(office.StationId, Read(live, stack).LocationId);
+        Assert.Equal(4, Read(live, stack).Quantity);
+        Assert.Equal(corporation, Read(live, wrongDivision).OwnerId);
+
+        SetDivisionRoles(CorporationRole.HangarCanTake1 | CorporationRole.ContainerCanTake1);
+        Assert.Same(PilotCallResult.None, Deliver(actor, Member, office.StationId, [assembledContainer], null, corporation, division));
+        Assert.Equal(Member, Read(live, assembledContainer).OwnerId);
+
+        void SetDivisionRoles(CorporationRole roles) =>
+            world
+                .Services.GetRequiredService<ICorporationRoles>()
+                .UpdateMembers(Ceo, [new(Member, null, null, null, new(0, 0, (long)roles, 0, 0, 0, 0, 0), null, 0)]);
+    }
+
     private static PilotCallResult Deliver(
         CorporationTestClient actor,
         long target,
@@ -108,7 +185,7 @@ public sealed class CorporationDeliveriesTests
             .Services.GetRequiredService<ICorporationRoles>()
             .UpdateMembers(Ceo, [new(Member, null, null, null, new((long)role, 0, 0, 0, 0, 0, 0, 0), null, 0)]);
 
-    private static long Grant(LiveWorld live, int corporation, int station, int flag, int quantity)
+    private static long Grant(LiveWorld live, int corporation, long location, int flag, int quantity)
     {
         using var world = live.Economy.Begin(TransactionParticipants.None);
         var item = world
@@ -118,7 +195,7 @@ public sealed class CorporationDeliveriesTests
                     Id = world.NextItemId(),
                     TypeId = InventoryDefinitions.CivilianMinerType,
                     OwnerId = corporation,
-                    LocationId = station,
+                    LocationId = location,
                     FlagId = flag,
                     Quantity = quantity,
                     VolumeOverride = .5,

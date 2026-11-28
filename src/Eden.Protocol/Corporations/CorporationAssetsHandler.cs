@@ -9,6 +9,9 @@ namespace Eden.Protocol.Corporations;
 [Injectable]
 internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : ISelectedPilotCallHandler
 {
+    private const string Offices = "offices";
+    private const string Deliveries = "deliveries";
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -30,12 +33,9 @@ internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : IS
             long actor = context.Pilot.PilotId;
             if (method == "SearchAssets")
             {
-                if (
-                    args is not [var searchSelector, var category, var group, var type, null or long and >= 0]
-                    || BlueRead.Text(searchSelector) != "offices"
-                )
+                if (args is not [var searchSelector, var category, var group, var type, null or long and >= 0])
                 {
-                    throw new InvalidDataException("Choose office assets and valid search filters.");
+                    throw new InvalidDataException("Choose corporation assets and valid search filters.");
                 }
                 var search = new CorporationOfficeAssetSearch(
                     OptionalInt(category),
@@ -43,7 +43,14 @@ internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : IS
                     OptionalInt(type),
                     args[4] as long? ?? 0
                 );
-                return new CorporationOfficeAssetSearchReply(storage.SearchOfficeAssets(actor, search));
+                return BlueRead.Text(searchSelector) switch
+                {
+                    Offices => new CorporationOfficeAssetSearchReply(storage.SearchOfficeAssets(actor, search)),
+                    Deliveries => new CorporationOfficeAssetSearchReply(
+                        storage.DeliveryAssetLocations(actor, context.Pilot.CorpId, search).Select(location => location.StationId).ToArray()
+                    ),
+                    _ => throw new InvalidDataException("Choose office assets or Market Deliveries."),
+                };
             }
             if (
                 args.Length == 0
@@ -54,28 +61,33 @@ internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : IS
             {
                 throw new InvalidDataException("Read assets for your current corporation.");
             }
-            if (method == "GetAssetInventory" && args is [_, var selector] && BlueMarshal.Text(selector) == "offices")
+            if (method == "GetAssetInventory" && args is [_, var selector])
             {
-                storage.Assets(actor, (int)corporation, context.Pilot.NpcStationId);
-                var offices = storage.Offices(actor);
-                return new CorporationOfficeAssetsReply(
-                    offices
-                        .Select(o => new CorporationOfficeAssetRow(o, storage.Assets(actor, (int)corporation, o.StationId).Count))
-                        .ToArray()
-                );
+                switch (BlueRead.Text(selector))
+                {
+                    case Offices:
+                        storage.Assets(actor, (int)corporation, context.Pilot.NpcStationId);
+                        var offices = storage.Offices(actor);
+                        return new CorporationOfficeAssetsReply(
+                            offices
+                                .Select(o => new CorporationOfficeAssetRow(o, storage.Assets(actor, (int)corporation, o.StationId).Count))
+                                .ToArray()
+                        );
+                    case Deliveries:
+                        return new CorporationDeliveryAssetLocationsReply(storage.DeliveryAssetLocations(actor, (int)corporation));
+                }
             }
-            if (
-                method == "GetAssetInventoryForLocation"
-                && args is [_, long station, var which]
-                && station is > 0 and <= int.MaxValue
-                && BlueMarshal.Text(which) == "offices"
-            )
+            if (method == "GetAssetInventoryForLocation" && args is [_, long station, var which] && station is > 0 and <= int.MaxValue)
             {
-                return new CorporationOfficeAssetDetailsReply(
-                    storage.Assets(actor, (int)corporation, (int)station).Select(InventoryRow.From).ToArray()
-                );
+                var items = BlueRead.Text(which) switch
+                {
+                    Offices => storage.Assets(actor, (int)corporation, (int)station),
+                    Deliveries => storage.DeliveryAssets(actor, (int)corporation, (int)station),
+                    _ => throw new InvalidDataException("Choose office assets or Market Deliveries."),
+                };
+                return new CorporationOfficeAssetDetailsReply(items.Select(InventoryRow.From).ToArray());
             }
-            throw new InvalidDataException("Only rented corporation office assets are supported.");
+            throw new InvalidDataException("Choose office assets or Market Deliveries.");
         }
         catch (InvalidDataException error)
         {
@@ -90,6 +102,42 @@ internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : IS
             long id when id is >= 0 and <= int.MaxValue => (int)id,
             _ => throw new InvalidDataException("Choose a valid asset category, group or type."),
         };
+}
+
+internal sealed record CorporationDeliveryAssetLocationsReply(IReadOnlyList<CorporationDeliveryAssetLocation> Locations) : BlueModel
+{
+    private static readonly BlueConstructor s_header = BlueRows.Descriptor([
+        ("locationID", BlueColumnType.Int64),
+        ("itemCount", BlueColumnType.Int64),
+        ("solarsystemID", BlueColumnType.Int64),
+        ("typeID", BlueColumnType.Int32),
+    ]);
+
+    public override object ToBlue() =>
+        new BlueConstructor(
+            "carbon.common.script.sys.crowset.CRowset",
+            [
+                s_header,
+                Locations
+                    .Select(location =>
+                        (object?)
+                            new BlueConstructor(
+                                "blue.DBRow",
+                                [
+                                    s_header,
+                                    new object?[]
+                                    {
+                                        (long)location.StationId,
+                                        (long)location.ItemCount,
+                                        (long)location.SystemId,
+                                        location.TypeId,
+                                    },
+                                ]
+                            )
+                    )
+                    .ToList(),
+            ]
+        );
 }
 
 internal sealed record CorporationOfficeAssetSearchReply(IReadOnlyList<int> Stations) : BlueModel

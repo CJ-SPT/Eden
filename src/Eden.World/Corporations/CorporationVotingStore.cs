@@ -78,6 +78,14 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
         });
     }
 
+    public IReadOnlyList<CorporationBallot> Ballots(long actorId, long caseId) =>
+        Resident.Economy.Inspect(world =>
+        {
+            var row = world.Set<SavedCorporationVote>().Find(caseId) ?? throw new InvalidDataException("Unknown corporation vote.");
+            RequireView(world, actorId, row.CorporationId);
+            return row.Snapshot().Data.Ballots.Where(ballot => ballot.PilotId == actorId).ToArray();
+        });
+
     public long Create(long actorId, CorporationVoteDraft draft)
     {
         CorporationVotingRules.Validate(draft);

@@ -47,6 +47,90 @@ public sealed class AllianceSocialTests
         );
 
     [Fact]
+    public void FormerPilotStopsReceivingAllianceContactUpdatesBeforeSessionAffiliationRefresh()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Corporation(world);
+        var membership = world.Services.GetRequiredService<ICorporationMembership>();
+        var invitation = membership.Invite(Ceo, Other);
+        membership.Update(Other, new(invitation.Id, Other, corporation, "", CorporationApplicationStatus.Joined, "", invitation.AppliedAt));
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        using CorporationTestClient member = new(world, 1000002);
+        Assert.Empty(Assert.IsType<Dictionary<string, object?>>(Reply(member, "allianceRegistry", "GetAllianceContacts", [])));
+
+        membership.Remove(Ceo, Other);
+        Assert.Equal(alliance, member.Context.Pilot.Identity.AllianceId);
+        world.Services.GetRequiredService<IAllianceSocial>().SetStanding(Ceo, [Other], 5);
+        member.Advance();
+
+        Assert.Null(member.Context.Pilot.Identity.AllianceId);
+        Assert.DoesNotContain(member.Context.Notifications, notice => notice is OrganizationContactsUpdated or AllianceRelationshipChanged);
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("allianceRegistry", "GetAllianceContacts", []));
+    }
+
+    [Fact]
+    public void AllianceContactLabelBatchSkipsContactsMissingFromTheSharedBook()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        var setup = Admit(world, clock);
+        var social = world.Services.GetRequiredService<IAllianceSocial>();
+        using CorporationTestClient executor = new(world, 1000001);
+        using CorporationTestClient observer = new(world, 1000002);
+        social.SetStanding(Ceo, [Other], 5);
+        long label = social.CreateLabel(Ceo, "Friends", null);
+        _ = Reply(observer, "allianceRegistry", "GetAllianceContacts", []);
+
+        List<object?> selected = [Other, Ceo];
+        Assert.Null(Reply(executor, "allianceRegistry", "AssignLabels", [selected, label]));
+        observer.Advance();
+        var assigned = Assert.Single(Assert.Single(observer.Context.Notifications.OfType<OrganizationContactsUpdated>()).Updates);
+        Assert.Equal(new OrganizationContactUpdate(Other, null, label), assigned);
+
+        observer.Context.Notifications.Clear();
+        Assert.Null(Reply(executor, "allianceRegistry", "RemoveLabels", [selected, label]));
+        observer.Advance();
+        var removed = Assert.Single(Assert.Single(observer.Context.Notifications.OfType<OrganizationContactsUpdated>()).Updates);
+        Assert.Equal(new OrganizationContactUpdate(Other, null, 0), removed);
+        Assert.Equal(new AllianceContact(Other, 5, 0), Assert.Single(social.Read(Other).Contacts));
+
+        long revision = social.Revision(setup.Alliance);
+        Assert.Null(Reply(executor, "allianceRegistry", "AssignLabels", [new List<object?> { Ceo }, label]));
+        Assert.Equal(revision, social.Revision(setup.Alliance));
+    }
+
+    [Fact]
+    public void RepeatedCalendarCancellationKeepsTheCommittedAllianceBook()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int alliance = Admit(world, clock).Alliance;
+        var social = world.Services.GetRequiredService<IAllianceSocial>();
+        using CorporationTestClient creator = new(world, 1000001);
+        using CorporationTestClient attendee = new(world, 1000002);
+        long time = clock.Now + TimeSpan.FromDays(2).Ticks;
+        long eventId = Assert.IsType<long>(
+            Reply(creator, "calendarMgr", "CreateAllianceEvent", [time, 60L, "Operation", "Alliance only", true])
+        );
+        object?[] cancel = [eventId, (long)alliance];
+        Assert.Null(Reply(creator, "calendarMgr", "DeleteEvent", cancel));
+        var cancelled = social.Read(Other);
+        Assert.True(Assert.Single(cancelled.Events).Event.Deleted);
+        attendee.Advance();
+        Assert.Equal(
+            new CalendarEventRemoved(eventId, time, true),
+            Assert.Single(attendee.Context.Notifications.OfType<CalendarEventRemoved>())
+        );
+
+        attendee.Context.Notifications.Clear();
+        Assert.Null(Reply(creator, "calendarMgr", "DeleteEvent", cancel));
+        Assert.Equal(cancelled.Revision, social.Revision(alliance));
+        Assert.Same(cancelled, social.Read(Other));
+        attendee.Advance();
+        Assert.Empty(attendee.Context.Notifications.OfType<CalendarEventRemoved>());
+    }
+
+    [Fact]
     public void DiplomatsAndCommunicationsOfficersUseTheirCurrentAllianceRoles()
     {
         TestClock clock = new();

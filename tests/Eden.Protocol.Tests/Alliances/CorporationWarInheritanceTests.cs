@@ -16,6 +16,51 @@ namespace Eden.Protocol.Tests.Alliances;
 public sealed class CorporationWarInheritanceTests
 {
     [Fact]
+    public async Task AcceptedAllianceApplicationSurvivesAnInterveningMutualWarAndJoinsAfterCooldown()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        Corporation(world);
+        int applicant = Corporation(world, Other, "Applying Corporation", "APPC");
+        long opponentCeo = AllianceMembershipTests.AdditionalPilot(world, "Opposing Director");
+        int opponent = Corporation(world, opponentCeo, "Opposing Corporation", "OPPC");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        membership.Apply(Other, alliance, "Request admission");
+        membership.Decide(Ceo, applicant, "Accepted", AllianceApplicationStatus.Accepted);
+        long acceptedCursor = membership.Head;
+
+        var wars = world.Services.GetRequiredService<ICorporationWars>();
+        wars.SendInvitation(opponentCeo, applicant);
+        wars.RespondInvitation(Other, opponent, true);
+        var war = Assert.Single(wars.Wars(applicant));
+        clock.AdvanceWallTime(AllianceMembershipRules.AdmissionDelay);
+        membership.Advance();
+        Assert.Null(alliances.Affiliation(applicant));
+        var deferred = Assert.Single(membership.Applications(Other, false));
+        Assert.Equal(AllianceApplicationStatus.Accepted, deferred.Status);
+        Assert.Equal(clock.Now + TimeSpan.TicksPerHour, deferred.EffectiveAt);
+        Assert.Equal(acceptedCursor, membership.Head);
+
+        wars.RetractMutual(Other, war.Id);
+        await world.Services.GetRequiredService<LiveWorld>().FlushAsync();
+        world.Services.Dispose();
+        using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
+        var saved = reopened.GetRequiredService<IAllianceMembership>();
+        Assert.Equal(deferred, Assert.Single(saved.Applications(Other, false)));
+        clock.AdvanceWallTime(TimeSpan.FromTicks(CorporationWarRules.Cooldown - 1));
+        saved.Advance();
+        Assert.Null(reopened.GetRequiredService<IAlliances>().Affiliation(applicant));
+        var retry = Assert.Single(saved.Applications(Other, false));
+        clock.AdvanceWallTime(TimeSpan.FromTicks(retry.EffectiveAt!.Value - clock.Now));
+        saved.Advance();
+        Assert.Equal(alliance, reopened.GetRequiredService<IAlliances>().Affiliation(applicant));
+        var joined = Assert.Single(saved.Changes(Other, acceptedCursor), change => change.MemberAfter is not null);
+        Assert.Equal(clock.Now, joined.MemberAfter!.JoinedAt);
+    }
+
+    [Fact]
     public async Task DefensiveAllianceDepartureCopiesDatesAndIndependentBillOnce()
     {
         TestClock clock = new();

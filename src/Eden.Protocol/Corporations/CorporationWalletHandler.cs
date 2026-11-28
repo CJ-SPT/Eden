@@ -157,13 +157,11 @@ internal sealed class CorporationWalletHandler(ICorporationWallet wallet, IPlaye
 
     internal static long Cents(object? value)
     {
-        double isk = value switch
+        if (value is long whole && whole > 0 && whole <= long.MaxValue / MarketDefinitions.CentsPerIsk)
         {
-            long number => number,
-            double number => number,
-            _ => throw new InvalidDataException("Choose a positive ISK amount."),
-        };
-        if (!double.IsFinite(isk) || isk <= 0 || isk > long.MaxValue / (double)MarketDefinitions.CentsPerIsk)
+            return whole * MarketDefinitions.CentsPerIsk;
+        }
+        if (value is not double isk || !double.IsFinite(isk) || isk <= 0 || isk > long.MaxValue / (double)MarketDefinitions.CentsPerIsk)
         {
             throw new InvalidDataException("Choose a positive ISK amount within the wallet limit.");
         }

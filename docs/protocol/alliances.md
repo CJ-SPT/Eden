@@ -31,6 +31,28 @@ The evejs `allianceViewState.js` snapshot SHA-256 is
 All new wire models use the existing codec. Its reference remains
 [Carbon Blue Marshal.cpp, af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
 
+## Alliance contacts, applications and calendar audit
+
+- Alliance contact notifications follow the pilot's committed affiliation, including the interval before that
+  affiliation has reached the client session. A contact snapshot from a different alliance is discarded.
+- Assigning or removing a label applies to contacts still present in the alliance address book. Missing selections
+  are skipped. Replaying a label request that already matches the book leaves its revision unchanged.
+- Repeating deletion of an already removed alliance application succeeds with no duplicate notification.
+- Repeating cancellation of an already cancelled alliance event keeps the shared calendar revision and the original
+  cancellation notification.
+- An accepted application stays accepted if a war temporarily blocks admission. The retry time is checkpointed,
+  with an hourly recheck while blocked. A later successful admission publishes the membership change once.
+
+Build 3662168 `AddressBookSvc.OnOrganizationContactsUpdated` routes alliance deltas using `session.allianceid`
+at offsets 61–100. `AssignLabelFromWnd` sends the whole selection and checks each contact. The application delete button
+passes the alliance ID from its row. `CalendarSvc.DeleteEvent` passes the event and owner IDs.
+EVE.js 261108.1 references are `allianceRegistryRuntime.js` (`073f759c9ea8`),
+`corpRegistryRuntime.js` (`41d691387ff4`), and `allianceApplicationEffectiveState.js` (`43dfc86936aa`).
+[CCP mutual wars and alliances](https://support.eveonline.com/hc/en-us/articles/360005659379-Mutual-War)
+
+See the [corporation and alliance UI audit](corporations.md#corporation-and-alliance-ui-audit) for the remaining
+findings and automated validation.
+
 ## Alliance registry binding after formation
 
 The Create Alliance dialog runs `corpRegistry.CreateAlliance` inside `PerformSessionChange` and closes after the call

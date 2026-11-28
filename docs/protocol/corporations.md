@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation and alliance UI audit](#corporation-and-alliance-ui-audit)
 - [Corporation office asset search](#corporation-office-asset-search)
 - [Corporation Kill Reports](#corporation-kill-reports)
 - [Corporation medals](#corporation-medals)
@@ -58,6 +59,134 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation and alliance UI audit
+
+This audit started at Eden `ad061bf0` and fixed 15 defects. The native UI call sites below were inspected as bytecode in Windows build
+3662168, archive SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The separate [alliance findings](alliances.md#alliance-contacts-applications-and-calendar-audit) record shared contacts,
+application processing, and the calendar.
+
+### Corporation membership and voting
+
+- Accepting a recruitment offer now checks the pilot's authority to leave their existing player corporation, including
+  the role-removal cooldown. The same pending offer can be accepted when that restriction expires.
+- A pilot can remove their own roles without accidentally clearing their base. Changing their own base, member title,
+  division, or squadron still requires Personnel Manager authority.
+- Viewing another corporation's votes accepts the native `GetVoteCasesByCorporation(corporationID, 0)` call.
+  `GetVotes(voteCaseID)` resolves the case's corporation and returns the viewer's ballots, subject to the same view rules.
+  The one-argument case-list call and the two-argument ballot call remain supported.
+
+In build 3662168, `base_corporation.pyj::RemoveAllRoles` supplies a None base while zeroing the role masks.
+`voting.pyj::CorporationVotes` uses the two native voting call shapes. `corp_ui_votes.pyj::GetOpenVoteSubContent` uses those
+ballots to render the viewer's vote. EVE.js 261108.1 references are `corpRegistryRuntime.js` (`41d691387ff4`) and
+`voteManagerService.js` (`a494d91c7d13`). [CCP corporation votes](https://support.eveonline.com/hc/en-us/articles/203268841-Corporation-Votes)
+
+### Corporate hangars and wallet
+
+- Deliver to Corp Member works from an ordinary local NPC office division when the caller has its Hangar Take role.
+  Assembled containers also require Container Take. The transaction supports full stacks and partial quantities, and publishes
+  the resulting inventory changes.
+- Manual office unrenting requires Director or CEO authority. Rent Office permits renting.
+- Whole-ISK amounts keep exact cents through transfer validation and accounting, including integer amounts beyond the
+  exact range of a double.
+- Assets → Deliveries lists NPC stations with corporate Market Deliveries, including stations where the corporation has
+  no office. Authorized users can expand each location and search by category, group, type and minimum stack quantity.
+  A caller without report authority receives an empty location list so the panel can display its own role hint.
+
+`invItemFunctions.pyj::_DeliverToCorpMemberID` sends the source flag at offsets 284–305.
+`OfficesPanel._load_buttons` distinguishes the rent and unrent actions. `transferMoneyWnd.pyj::Confirm` forwards the
+amount to both wallet transfer routes at offsets 109–179. EVE.js 261108.1 references are `corporationDelivery.js`
+(`604f4904a84a`) and `officeManagerService.js` (`4ec93d6ba0f0`).
+[CCP corporation roles](https://support.eveonline.com/hc/en-us/articles/203217712-Roles-Listing)
+
+`corp_ui_accounts.pyj::CorpAccounts.ShowAssets` requests `deliveries` before its role hint.
+`GetLocationData` reads `solarsystemID` and `itemCount`, and `GetSubContent` extends the returned rowset's virtual
+columns. The location summary uses the native delivery descriptor confirmed by EVE.js `corpAssetState.js` (`787dda9c937e`).
+
+### War panels
+
+- The War HQ panel lists finished wars at the structure. The structure icon uses the current war list to decide when
+  to show its active HQ marker.
+- An open mutual-war invitation list refreshes when the pilot's corporation becomes part of an alliance and the list
+  changes. The notification compares the old view with the current invitation list before recording the new view.
+
+`panelWarHQ.pyj::WarHQ.GetWars` calls `GetWarsForStructure` and `_LoadWars` renders every returned war.
+`warMutalWarInvite.pyj::OnMutualWarsUpdated` reloads the list on the event forwarded by `mutualWarInvites.pyj`.
+EVE.js 261108.1 references are `warsInfoMgrService.js` (`eb8b1ded394f`), `warRuntimeState.js` (`7dd95ae03e39`),
+and `mutualWarInviteMgrService.js` (`96eb8bfaa332`). [CCP wars](https://support.eveonline.com/hc/en-us/articles/115004152745-Wars)
+
+### Automated validation
+
+On baseline `ad061bf0`, all 17 focused cases reproduced the defects in 10.20 seconds. With the fixes, all 17 passed in
+15.12 seconds. The adjacent selection passed 315 cases in 92.27 seconds. The solution built in 0.88 seconds with zero
+warnings or errors. The catalog setup and formatting policies passed 8 and 9 cases respectively.
+The formatting check passed in an isolated checkout in 39.23 seconds, checking 3,342 files and the 140-column limit.
+
+<details>
+<summary>Test filters</summary>
+
+Prefix each suffix with `Eden.Protocol.Tests.` and join the `FullyQualifiedName` selectors with `|`.
+The focused selection uses `=`.
+
+```text
+Alliances.CorporationWarWireTests.NativeWarHeadquartersPanelRetainsFinishedWarsAfterTheActiveMarkerClears
+Alliances.CorporationWarWireTests.NativeMutualInvitationPanelRefreshesWhenItsOrganizationChanges
+Alliances.CorporationWarInheritanceTests.AcceptedAllianceApplicationSurvivesAnInterveningMutualWarAndJoinsAfterCooldown
+Alliances.AllianceSocialTests.FormerPilotStopsReceivingAllianceContactUpdatesBeforeSessionAffiliationRefresh
+Alliances.AllianceSocialTests.AllianceContactLabelBatchSkipsContactsMissingFromTheSharedBook
+Alliances.AllianceMembershipTests.RepeatedAllianceApplicationDeletionSucceedsWithoutPublishingAnotherChange
+Alliances.AllianceSocialTests.RepeatedCalendarCancellationKeepsTheCommittedAllianceBook
+PilotSessions.CorporationDeliveriesTests.NativeOfficeDeliveryUsesLocalDivisionTakeRightsAndPublishesInventoryChanges
+PilotSessions.CorporationStorageTests.NativeUnrentOfficeRequiresDirectorEvenWhenMemberRentedTheOffice
+PilotSessions.CorporationWalletTests.IntegerWalletTransferPreservesExactCentsAboveDoublePrecision
+PilotSessions.CorporationMembershipTests.AcceptingARecruitmentOfferHonorsTheCurrentCorporationsRoleCooldown
+PilotSessions.CorporationRoleTests.SelfRoleRemovalPreservesMemberDetailsAndCannotEditThem
+PilotSessions.CorporationVotingTests.NativeForeignVoteListAcceptsTheAllStatusesArgument
+PilotSessions.CorporationVotingTests.NativeGetVotesResolvesTheCorporationFromTheCaseAndReturnsOnlyTheCallersBallots
+PilotSessions.CorporationStorageTests.NativeMarketDeliveryAssetReportsListExpandAndSearchAcrossStations
+PilotSessions.CorporationStorageTests.NativeMarketDeliveryAssetReportsRespectCurrentFinancialAuthority
+```
+
+The adjacent selection uses `~`.
+
+```text
+Alliances.
+PilotSessions.CorporationAdministrationTests
+PilotSessions.CorporationMembershipTests
+PilotSessions.CorporationRecruitmentTests
+PilotSessions.CorporationRoleTests
+PilotSessions.CorporationLeadershipTests
+PilotSessions.CorporationMemberAuditTests
+PilotSessions.CorporationVotingTests
+PilotSessions.CorporationCeoElectionTests
+PilotSessions.CorporationBlueprintVoteTests
+PilotSessions.CorporationExpulsionVoteTests
+PilotSessions.CorporationRemovalQueueTests
+PilotSessions.CorporationBulkRemovalTests
+PilotSessions.CorporationDeliveriesTests
+PilotSessions.CorporationStorageTests
+PilotSessions.CorporationWalletTests
+PilotSessions.CorporationWalletStartupTests
+PilotSessions.CorporationFinancialPanelTests
+PilotSessions.CorporationLoyaltyTests
+PilotSessions.CorporationContactsTests
+PilotSessions.CorporationCalendarTests
+PilotSessions.CorporationClientDiagnosticsTests
+Market.CorporationMarket
+```
+
+</details>
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Open another corporation's Votes panel, expand a case and inspect its options.
+2. Open Corporation Assets → Deliveries, expand a remote station and search for a delivered stack.
+3. Keep the mutual-war invitation list open while a corporation enters an alliance.
 
 ## Corporation office asset search
 

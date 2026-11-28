@@ -70,12 +70,16 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
                 throw new InvalidDataException("A corporation vote currently suspends this member's roles.");
             }
             var effectiveBefore = Effective(world, update.PilotId, corporation);
+            var submittedRoles = update.Roles.Apply(before.Roles);
+            long titleMask = update.TitleMask ?? before.TitleMask;
+            bool selfRelinquish = actorId == update.PilotId && !submittedRoles.HasAuthority && titleMask == 0;
             var after = before with
             {
-                Roles = update.Roles.Apply(before.Roles),
+                Roles = submittedRoles,
                 Title = update.Title ?? before.Title,
-                TitleMask = update.TitleMask ?? before.TitleMask,
-                BaseId = update.BaseId,
+                TitleMask = titleMask,
+                // Native RemoveAllRoles supplies None for the base because it is only changing roles.
+                BaseId = selfRelinquish ? update.BaseId ?? before.BaseId : update.BaseId,
                 BlockRoles = update.BlockRoles ?? before.BlockRoles,
                 DivisionId = update.DivisionId ?? before.DivisionId,
                 SquadronId = update.SquadronId ?? before.SquadronId,
@@ -105,25 +109,24 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             {
                 throw new InvalidDataException("Remove all roles and titles before blocking role assignments.");
             }
+            if (
+                (
+                    after.Title != before.Title
+                    || after.BaseId != before.BaseId
+                    || after.DivisionId != before.DivisionId
+                    || after.SquadronId != before.SquadronId
+                ) && !actor.Roles.Has(CorporationRole.PersonnelManager)
+            )
+            {
+                throw new InvalidDataException("Personnel management is required to change member details.");
+            }
             Save(world, update.PilotId, corporation.Id, after);
             var effectiveAfter = Effective(world, update.PilotId, corporation);
-            bool selfRelinquish = actorId == update.PilotId && !after.Roles.HasAuthority && after.TitleMask == 0;
             if (!selfRelinquish)
             {
                 bool ceo = corporation.CeoId == actorId && actor.Roles.Has(CorporationRole.Director);
                 CorporationRoleRules.Authorize(ceo, actor.Roles, before.Roles, after.Roles);
                 CorporationRoleRules.Authorize(ceo, actor.Roles, effectiveBefore.Roles, effectiveAfter.Roles);
-                if (
-                    (
-                        after.Title != before.Title
-                        || after.BaseId != before.BaseId
-                        || after.DivisionId != before.DivisionId
-                        || after.SquadronId != before.SquadronId
-                    ) && !actor.Roles.Has(CorporationRole.PersonnelManager)
-                )
-                {
-                    throw new InvalidDataException("Personnel management is required to change member details.");
-                }
             }
             if (effectiveBefore.Roles.HasAuthority && !effectiveAfter.Roles.HasAuthority)
             {

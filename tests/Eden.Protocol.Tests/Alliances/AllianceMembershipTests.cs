@@ -18,6 +18,31 @@ namespace Eden.Protocol.Tests.Alliances;
 
 public sealed class AllianceMembershipTests
 {
+    [Fact]
+    public void RepeatedAllianceApplicationDeletionSucceedsWithoutPublishingAnotherChange()
+    {
+        using TestWorld world = new(liveWorld: true);
+        Corporation(world);
+        int applicant = Corporation(world, Other, "Applicant Corporation", "APPL");
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        using CorporationTestClient executor = new(world, 1000001);
+        using CorporationTestClient applying = new(world, 1000002);
+        Assert.Null(applying.Reply("ApplyToJoinAlliance", [(long)alliance, "Join"]));
+        executor.Advance();
+        executor.Context.Notifications.Clear();
+
+        Assert.Null(applying.Reply("DeleteAllianceApplication", [(long)alliance]));
+        long head = membership.Head;
+        Assert.Null(applying.Reply("DeleteAllianceApplication", [(long)alliance]));
+        Assert.Equal(head, membership.Head);
+        Assert.Empty(membership.Applications(Other, false));
+        executor.Advance();
+        var deletion = Assert.Single(executor.Context.Notifications.OfType<AllianceApplicationChanged>()).Change;
+        Assert.Equal(applicant, deletion.ApplicationBefore?.CorporationId);
+        Assert.Null(deletion.ApplicationAfter);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -126,7 +151,7 @@ public sealed class AllianceMembershipTests
             );
     }
 
-    private static long AdditionalPilot(TestWorld world, string name)
+    internal static long AdditionalPilot(TestWorld world, string name)
     {
         TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
         return world.Services.GetRequiredService<ICharacterCreation>().Create(1000001, new(name, 1, 1, 1, 64, [1], [2], 18));

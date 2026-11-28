@@ -65,6 +65,7 @@ public interface ICorporationVoting
     bool CanRunForCeo(long actorId);
     CorporationVoteListing List(long actorId, int corporationId);
     CorporationVoteCase Read(long actorId, int corporationId, long caseId);
+    IReadOnlyList<CorporationBallot> Ballots(long actorId, long caseId);
     long Create(long actorId, CorporationVoteDraft draft);
     void Cast(long actorId, int corporationId, long caseId, int optionId);
     IReadOnlyList<CorporationVoteCase> Actions(long actorId);

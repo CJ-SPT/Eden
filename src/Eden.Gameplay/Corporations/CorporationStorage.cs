@@ -4,6 +4,8 @@ namespace Eden.Gameplay.Corporations;
 
 public sealed record CorporationOffice(long Id, int CorporationId, int StationId, int SystemId, long RentedAt, long FeeCents);
 
+public sealed record CorporationDeliveryAssetLocation(int StationId, int SystemId, int TypeId, int ItemCount);
+
 public sealed record CorporationOfficeAssetSearch(int CategoryId, int GroupId, int TypeId, long MinimumQuantity)
 {
     public bool HasFilters => CategoryId != 0 || GroupId != 0 || TypeId != 0 || MinimumQuantity != 0;
@@ -17,12 +19,13 @@ public sealed record CorporationStorageChange(
     bool MarketDelivery = false
 );
 
-public sealed record CorporationMarketDelivery(
+public sealed record CorporationMemberDelivery(
     long RecipientId,
     int StationId,
     int CorporationId,
     IReadOnlyList<long> ItemIds,
-    int? Quantity
+    int? Quantity,
+    int SourceFlag
 );
 
 public interface ICorporationStorage
@@ -37,11 +40,17 @@ public interface ICorporationStorage
     IReadOnlyList<InventoryItem> List(long actorId, long officeId, int? flag);
     IReadOnlyList<InventoryItem> Assets(long actorId, int corporationId, int stationId);
     IReadOnlyList<int> SearchOfficeAssets(long actorId, CorporationOfficeAssetSearch search);
+    IReadOnlyList<CorporationDeliveryAssetLocation> DeliveryAssetLocations(
+        long actorId,
+        int corporationId,
+        CorporationOfficeAssetSearch? search = null
+    );
+    IReadOnlyList<InventoryItem> DeliveryAssets(long actorId, int corporationId, int stationId);
     IReadOnlyList<InventoryChange> Move(long actorId, long destinationId, InventoryMoveRequest request);
     IReadOnlyList<InventoryChange> Stack(long actorId, long officeId, int flag);
     bool CanObserve(long actorId, long officeId, int flag);
     IReadOnlyList<InventoryItem> Deliveries(long actorId);
-    IReadOnlyList<InventoryChange> DeliverToMember(long actorId, CorporationMarketDelivery request);
+    IReadOnlyList<InventoryChange> DeliverToMember(long actorId, CorporationMemberDelivery request);
 }
 
 public static class CorporationStorageRules
@@ -85,6 +94,9 @@ public static class CorporationStorageRules
 
     public static bool CanTake(CorporationMemberAccess member, int station, int headquarters, int flag) =>
         Has(member, station, headquarters, flag, CorporationRole.HangarCanTake1);
+
+    public static bool CanTakeContainer(CorporationMemberAccess member, int station, int headquarters, int flag) =>
+        IsDivision(flag) && Has(member, station, headquarters, flag, CorporationRole.ContainerCanTake1);
 
     private static bool Has(CorporationMemberAccess member, int station, int headquarters, int flag, CorporationRole first)
     {

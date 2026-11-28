@@ -88,9 +88,13 @@ internal sealed partial class AllianceStore
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = CorporationRoleStore.Current(world, actorId);
         CorporationRoleStore.RequireDirector(world, actorId, corporation);
-        var row =
-            world.Filter<SavedAllianceApplication>(a => a.CorporationId == corporation.Id && a.AllianceId == allianceId).SingleOrDefault()
-            ?? throw new InvalidDataException("Unknown alliance application.");
+        var row = world
+            .Filter<SavedAllianceApplication>(a => a.CorporationId == corporation.Id && a.AllianceId == allianceId)
+            .SingleOrDefault();
+        if (row is null)
+        {
+            return;
+        }
         if (row.Status is not (AllianceApplicationStatus.New or AllianceApplicationStatus.Rejected))
         {
             throw new InvalidDataException("Only new or rejected alliance applications can be deleted.");

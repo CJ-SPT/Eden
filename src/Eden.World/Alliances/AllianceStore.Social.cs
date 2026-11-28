@@ -100,6 +100,10 @@ internal sealed partial class AllianceStore
 
     private static void SaveSocial(WorldAction world, AllianceSocialBook before, AllianceSocialBook value)
     {
+        if (ReferenceEquals(before, value))
+        {
+            return;
+        }
         var after = value with { Revision = checked(before.Revision + 1) };
         var row =
             world.Set<SavedAllianceSocial>().Find(before.AllianceId)
@@ -244,22 +248,21 @@ internal sealed partial class AllianceStore
     public void SetLabels(long actorId, IReadOnlyList<long> contacts, long mask, bool assign) =>
         ChangeSocial(
             actorId,
-            (world, state) =>
+            (_, state) =>
             {
-                CheckTargets(world, state.AllianceId, contacts);
+                ContactRules.CheckContacts(state.AllianceId, contacts);
                 long allowed = state.Labels.Aggregate(0L, (value, label) => value | label.Id);
-                if (mask <= 0 || (mask & ~allowed) != 0 || contacts.Any(id => !state.Contacts.Any(c => c.ContactId == id)))
+                if (mask <= 0 || (mask & ~allowed) != 0)
                 {
-                    throw new InvalidDataException("Choose existing alliance contacts and labels.");
+                    throw new InvalidDataException("Choose existing alliance labels.");
                 }
-                return state with
-                {
-                    Contacts = state
-                        .Contacts.Select(c =>
-                            contacts.Contains(c.ContactId) ? c with { LabelMask = assign ? c.LabelMask | mask : c.LabelMask & ~mask } : c
-                        )
-                        .ToArray(),
-                };
+                var selected = contacts.ToHashSet();
+                var updated = state
+                    .Contacts.Select(c =>
+                        selected.Contains(c.ContactId) ? c with { LabelMask = assign ? c.LabelMask | mask : c.LabelMask & ~mask } : c
+                    )
+                    .ToArray();
+                return updated.SequenceEqual(state.Contacts) ? state : state with { Contacts = updated };
             },
             role: CorporationRole.Diplomat
         );

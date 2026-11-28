@@ -229,6 +229,13 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         if (status == CorporationApplicationStatus.Joined)
         {
+            if (
+                world.Set<SavedCorporation>().Find(pilot.CorporationId) is { ClosedAt: null }
+                && Permission(world, pilot.Id, pilot.Id, now) is { Allowed: false } departure
+            )
+            {
+                throw new InvalidDataException(departure.Reason);
+            }
             Move(world, pilot, corporation.Id, now);
             DeliverWelcomeMail(world, pilot.Id, corporation, now);
         }

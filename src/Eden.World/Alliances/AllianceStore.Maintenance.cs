@@ -10,6 +10,8 @@ namespace Eden.World.Alliances;
 
 internal sealed partial class AllianceStore
 {
+    private const long WarBlockedAdmissionRetry = TimeSpan.TicksPerHour;
+
     public void Advance()
     {
         if (LiveWorld.Find(database.Path) is null)
@@ -52,14 +54,21 @@ internal sealed partial class AllianceStore
                 alliance is not { ClosedAt: null }
                 || world.Set<SavedCorporation>().Find(application.CorporationId) is not { ClosedAt: null }
                 || world.Set<SavedAllianceMember>().Find(application.CorporationId) is not null
-                || CorporationWarStore.PreventsJoiningAlliance(world, application.CorporationId, now)
-                || CorporationWarStore.IsAttackingJoiningCorporation(world, application.AllianceId, application.CorporationId, now)
                 || MilitiaOrganizationStore.AllianceAdmissionFailure(world, application.CorporationId, application.AllianceId, now)
                     is not null
             )
             {
                 application.Status = AllianceApplicationStatus.Rejected;
                 application.EffectiveAt = null;
+            }
+            else if (
+                CorporationWarStore.PreventsJoiningAlliance(world, application.CorporationId, now)
+                || CorporationWarStore.IsAttackingJoiningCorporation(world, application.AllianceId, application.CorporationId, now)
+            )
+            {
+                // The native application row still shows Accepted while a war blocks admission.
+                application.EffectiveAt = checked(now + WarBlockedAdmissionRetry);
+                continue;
             }
             else
             {

@@ -166,15 +166,145 @@ public sealed partial class CorporationStorageTests
         }
     }
 
+    [Fact]
+    public void NativeMarketDeliveryAssetReportsListExpandAndSearchAcrossStations()
+    {
+        const int otherStation = 60015159;
+        const int otherSystem = 30001392;
+        const int otherStationType = 52678;
+        const int deliveryFlag = CorporationStorageRules.MarketDeliveriesFlag;
+        using TestWorld world = new(liveWorld: true);
+        TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 18, 1, 1, otherSystem, otherStation, 601);
+        int corporation = Prepare(world);
+        var item = PersonalItem(world);
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        long first;
+        long second;
+        long remote;
+        using (var action = live.Economy.Begin())
+        {
+            first = Add(StationId, corporation, deliveryFlag, 3);
+            second = Add(StationId, corporation, deliveryFlag, 4);
+            remote = Add(otherStation, corporation, deliveryFlag, 8);
+            Add(otherStation, corporation, CorporationStorageRules.GoalDeliveriesFlag, 9);
+            Add(otherStation, Ceo, deliveryFlag, 10);
+            action.Commit();
+
+            long Add(int station, long owner, int flag, int quantity) =>
+                action
+                    .Add(
+                        new OwnedItem
+                        {
+                            Id = action.NextItemId(),
+                            TypeId = item.TypeId,
+                            LocationId = station,
+                            OwnerId = owner,
+                            FlagId = flag,
+                            Quantity = quantity,
+                        }
+                    )
+                    .Entity.Id;
+        }
+        Assert.Empty(Storage(world).Offices(Ceo));
+        using CorporationTestClient ceo = new(world, 1000001);
+        var pilot = ceo.Context.Pilot;
+        AssertDeliveryAssetLocations(
+            ceo,
+            corporation,
+            [(long)StationId, 2L, (long)pilot.HomeSystemId, pilot.StationTypeId],
+            [(long)otherStation, 1L, (long)otherSystem, otherStationType]
+        );
+        AssertOfficeAssetDetails(ceo, corporation, StationId, [Row(first, StationId, 3), Row(second, StationId, 4)], "deliveries");
+        AssertOfficeAssetDetails(ceo, corporation, otherStation, [Row(remote, otherStation, 8)], "deliveries");
+
+        Assert.Equal(new[] { StationId, otherStation }, Search(ceo, selector: "deliveries"));
+        Assert.Equal(
+            new[] { otherStation },
+            Search(ceo, item.CategoryId, item.GroupId, item.TypeId, minimumQuantity: 5, selector: "deliveries")
+        );
+        Assert.Empty(Search(ceo, type: item.TypeId, minimumQuantity: 9, selector: "deliveries"));
+        Assert.Empty(Search(ceo, group: int.MaxValue, type: item.TypeId, selector: "deliveries"));
+
+        InventoryRow Row(long id, int station, int quantity) =>
+            new(id, item.TypeId, corporation, station, deliveryFlag, quantity, item.GroupId, item.CategoryId);
+    }
+
+    [Fact]
+    public void NativeMarketDeliveryAssetReportsRespectCurrentFinancialAuthority()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Prepare(world);
+        var item = PersonalItem(world);
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin())
+        {
+            action.Add(
+                new OwnedItem
+                {
+                    Id = action.NextItemId(),
+                    TypeId = item.TypeId,
+                    LocationId = StationId,
+                    OwnerId = corporation,
+                    FlagId = CorporationStorageRules.MarketDeliveriesFlag,
+                    Quantity = 1,
+                }
+            );
+            action.Commit();
+        }
+        using CorporationTestClient member = new(world, 1000002);
+        var roles = world.Services.GetRequiredService<ICorporationRoles>();
+        void Assign(CorporationRole role) =>
+            roles.UpdateMembers(Ceo, [new(Member, null, null, null, new((long)role, 0, 0, 0, 0, 0, 0, 0), null, 0)]);
+
+        object?[] detail = [(long)corporation, (long)StationId, "deliveries"];
+        object?[] search = ["deliveries", null, null, null, null];
+        Assign(CorporationRole.Trader);
+        Assert.Single(Storage(world).Deliveries(Member));
+        AssertDeliveryAssetLocations(member, corporation);
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "GetAssetInventoryForLocation", detail));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "SearchAssets", search));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "GetAssetInventory", [(long)corporation + 1, "deliveries"]));
+
+        Assign(CorporationRole.JuniorAccountant);
+        var pilot = member.Context.Pilot;
+        AssertDeliveryAssetLocations(member, corporation, [(long)StationId, 1L, (long)pilot.HomeSystemId, pilot.StationTypeId]);
+        Assert.IsType<PilotCallResult.Success>(member.CallService("corpmgr", "GetAssetInventoryForLocation", detail));
+        Assert.Equal(new[] { StationId }, Search(member, selector: "deliveries"));
+
+        Assign(CorporationRole.NoRole);
+        AssertDeliveryAssetLocations(member, corporation);
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "GetAssetInventoryForLocation", detail));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "SearchAssets", search));
+    }
+
+    private static void AssertDeliveryAssetLocations(CorporationTestClient client, int corporation, params object?[][] locations)
+    {
+        var reply = Assert.IsType<PilotCallResult.Success>(
+            client.CallService("corpmgr", "GetAssetInventory", [(long)corporation, "deliveries"])
+        );
+        var descriptor = BlueRows.Descriptor([
+            ("locationID", BlueColumnType.Int64),
+            ("itemCount", BlueColumnType.Int64),
+            ("solarsystemID", BlueColumnType.Int64),
+            ("typeID", BlueColumnType.Int32),
+        ]);
+        var expected = new BlueConstructor(
+            "carbon.common.script.sys.crowset.CRowset",
+            [descriptor, locations.Select(location => (object?)new BlueConstructor("blue.DBRow", [descriptor, location])).ToList()]
+        );
+        Assert.Equal(BlueMarshal.Encode(expected), BlueMarshal.Encode(reply.Reply));
+    }
+
     private static void AssertOfficeAssetDetails(
         CorporationTestClient client,
         int corporation,
         int station,
-        IReadOnlyList<InventoryRow> items
+        IReadOnlyList<InventoryRow> items,
+        string selector = "offices"
     )
     {
         var reply = Assert.IsType<PilotCallResult.Success>(
-            client.CallService("corpmgr", "GetAssetInventoryForLocation", [(long)corporation, (long)station, "offices"])
+            client.CallService("corpmgr", "GetAssetInventoryForLocation", [(long)corporation, (long)station, selector])
         );
         var descriptor = InventoryWire.Descriptor();
         var header = Assert.IsType<BlueRowDescriptor>(BlueMarshal.Decode(BlueMarshal.Encode(descriptor)));
@@ -188,11 +318,12 @@ public sealed partial class CorporationStorageTests
         int? category = null,
         int? group = null,
         int? type = null,
-        long? minimumQuantity = null
+        long? minimumQuantity = null,
+        string selector = "offices"
     )
     {
         var reply = Assert.IsType<PilotCallResult.Success>(
-            client.CallService("corpmgr", "SearchAssets", ["offices", (long?)category, (long?)group, (long?)type, minimumQuantity])
+            client.CallService("corpmgr", "SearchAssets", [selector, (long?)category, (long?)group, (long?)type, minimumQuantity])
         );
         var model = Assert.IsType<CorporationOfficeAssetSearchReply>(reply.Reply);
         var descriptor = BlueRows.Descriptor([("locationID", BlueColumnType.Int64)]);

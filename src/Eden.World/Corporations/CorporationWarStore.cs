@@ -85,9 +85,7 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         long now = Now;
         return LiveWorld
                 .Find(database.Path)
-                ?.Economy.Inspect(world =>
-                    CurrentHeadquartersWars(world, structureId, now).Select(war => Snapshot(world, war, now)).ToArray()
-                )
+                ?.Economy.Inspect(world => HeadquartersHistory(world, structureId).Select(war => Snapshot(world, war, now)).ToArray())
             ?? [];
     }
 
@@ -108,11 +106,10 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
     }
 
     private static IEnumerable<SavedCorporationWar> CurrentHeadquartersWars(WorldAction world, long id, long now) =>
-        world
-            .Filter<SavedCorporationWar>(war => war.HeadquartersId == id)
-            .AsEnumerable()
-            .Where(war => Finish(war) is null || Finish(war) > now)
-            .OrderByDescending(war => war.Id);
+        HeadquartersHistory(world, id).Where(war => Finish(war) is null || Finish(war) > now);
+
+    private static IEnumerable<SavedCorporationWar> HeadquartersHistory(WorldAction world, long id) =>
+        world.Filter<SavedCorporationWar>(war => war.HeadquartersId == id).AsEnumerable().OrderByDescending(war => war.Id);
 
     public IReadOnlyList<CorporationWarPeaceTreaty> PeaceTreaties(long pilotId)
     {

@@ -40,7 +40,7 @@ internal sealed class AllianceSocialMonitor(IAllianceSocial social, IAlliances a
         {
             return;
         }
-        if (!context.Selected || _pilot != context.Pilot.PilotId || alliances.Affiliation(context.Pilot.CorpId) != before.AllianceId)
+        if (!context.Selected || _pilot != context.Pilot.PilotId || alliances.PilotAffiliation(context.Pilot.PilotId) != before.AllianceId)
         {
             Reset();
             return;
@@ -49,7 +49,21 @@ internal sealed class AllianceSocialMonitor(IAllianceSocial social, IAlliances a
         {
             return;
         }
-        var after = Read(context);
+        AllianceSocialBook after;
+        try
+        {
+            after = Read(context);
+        }
+        catch (InvalidDataException) when (alliances.PilotAffiliation(context.Pilot.PilotId) != before.AllianceId)
+        {
+            Reset();
+            return;
+        }
+        if (after.AllianceId != before.AllianceId)
+        {
+            Reset();
+            return;
+        }
         var old = before.Contacts.ToDictionary(c => c.ContactId);
         var current = after.Contacts.ToDictionary(c => c.ContactId);
         List<OrganizationContactUpdate> changes = [];

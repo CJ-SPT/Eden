@@ -127,6 +127,66 @@ public sealed class CorporationWarWireTests
     }
 
     [Fact]
+    public void NativeWarHeadquartersPanelRetainsFinishedWarsAfterTheActiveMarkerClears()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int attacker = Corporation(world);
+        int defender = Corporation(world, Other, "Defenders", "DFN");
+        CorporationWarTests.SeedHeadquarters(world, attacker, defender);
+        AllianceBillingTests.Fund(world, attacker, CorporationWarRules.WeeklyFeeCents);
+        long headquarters = CorporationWarTests.Headquarters;
+        var war = world.Services.GetRequiredService<ICorporationWars>().Declare(Ceo, defender, headquarters, false);
+        using CorporationTestClient client = new(world, 1000001);
+        Assert.Equal(war.Id, Assert.Single(ActiveWars()));
+
+        clock.AdvanceWallTime(TimeSpan.FromTicks(CorporationWarRules.BillingPeriod + CorporationWarRules.Cooldown));
+        world.Services.GetRequiredService<ICorporationWarMaintenance>().Advance(clock.Now);
+
+        Assert.Empty(ActiveWars());
+        var history = Assert.IsType<List<object?>>(Reply(client, "warsInfoMgr", "GetWarsForStructure", [headquarters]));
+        var entry = Fields(Assert.Single(history));
+        Assert.Equal(war.Id, entry["warID"]);
+        Assert.Equal(clock.Now, entry["timeFinished"]);
+        Assert.Equal((long)CorporationWarEndReason.BillUnpaid, entry["reasonEnded"]);
+
+        List<object?> ActiveWars() =>
+            Assert.IsType<List<object?>>(Fields(Reply(client, "structureDirectory", "GetStructureInfo", [headquarters]))["wars"]);
+    }
+
+    [Fact]
+    public void NativeMutualInvitationPanelRefreshesWhenItsOrganizationChanges()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int former = Corporation(world);
+        int sender = Corporation(world, Other, "Inviting Corporation", "INVC");
+        var wars = world.Services.GetRequiredService<ICorporationWars>();
+        wars.SendInvitation(Other, former);
+        using CorporationTestClient client = new(world, 1000001);
+        Assert.Equal((long)sender, Fields(Assert.Single(Invitations()))["fromOwnerID"]);
+        var monitor = client.Services.GetRequiredService<CorporationWarMonitor>();
+        monitor.Poll(client.Context);
+        Assert.Empty(client.Context.Notifications.OfType<CorporationWarInvitationsUpdated>());
+
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        wars.SendInvitation(Other, alliance);
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        monitor.Poll(client.Context);
+
+        var notification = Assert.Single(client.Context.Notifications.OfType<CorporationWarInvitationsUpdated>());
+        Assert.Equal("OnMutualWarsUpdated_Remote", notification.Name);
+        Assert.Empty(notification.Arguments);
+        Assert.Equal((long)alliance, Fields(Assert.Single(Invitations()))["toOwnerID"]);
+        client.Context.Notifications.Clear();
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        monitor.Poll(client.Context);
+        Assert.Empty(client.Context.Notifications.OfType<CorporationWarInvitationsUpdated>());
+
+        List<object?> Invitations() => Assert.IsType<List<object?>>(Reply(client, "mutualWarInviteMgr", "GetPendingInvitesForSession", []));
+    }
+
+    [Fact]
     public void NativeMutualWarUsesBoundRegistryDictionaryAndRefreshesBothParties()
     {
         using TestWorld world = new(clock: new TestClock(), liveWorld: true);

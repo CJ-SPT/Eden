@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
@@ -18,6 +19,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -129,6 +131,29 @@ public sealed class CorporationWalletTests
         Assert.Throws<InvalidDataException>(() => wallet.Balance(90000002, 1001));
         Assert.Throws<InvalidDataException>(() => wallet.Journal(90000002, true, 1001));
         Assert.Equal(9999, wallet.Balance(90000001, 1001));
+    }
+
+    [Fact]
+    public void IntegerWalletTransferPreservesExactCentsAboveDoublePrecision()
+    {
+        const long amount = 90_000_000_000_000_001;
+        const long cents = amount * MarketDefinitions.CentsPerIsk;
+        using TestWorld world = new(liveWorld: true);
+        int corporation = CorporationAdministrationTests.CreateAndJoin(world);
+        var live = world.Services.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<PilotWallet>().Find(90000001L)!.Cents = cents + 1;
+            action.Commit();
+        }
+        using CorporationTestClient ceo = new(world, 1000001);
+
+        Assert.Null(Reply(ceo, "GiveCash", [(long)corporation, amount, "Exact funding"]));
+        var wallet = world.Services.GetRequiredService<ICorporationWallet>();
+        Assert.Equal(cents, wallet.Balance(90000001L, CorporationWalletRules.MasterKey));
+        Assert.Equal(1, world.Services.GetRequiredService<IPilotWalletReader>().Balance(90000001L));
+        var journal = Assert.Single(wallet.Journal(90000001L, true, CorporationWalletRules.MasterKey));
+        Assert.Equal(cents, journal.AmountCents);
     }
 
     [Fact]

@@ -14,6 +14,61 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class CorporationVotingTests
 {
     [Fact]
+    public void NativeForeignVoteListAcceptsTheAllStatusesArgument()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        PlayerCorporationTests.Prepare(world);
+        int corporation = world
+            .Services.GetRequiredService<IPlayerCorporations>()
+            .Create(90000001, PlayerCorporationTests.Details())
+            .Corporation.Id;
+        world.Services.GetRequiredService<ICorporationShares>().Transfer(90000001, new(corporation, true, 90000002, 400));
+        var voting = world.Services.GetRequiredService<ICorporationVoting>();
+        var draft = new CorporationVoteDraft("Destination", "", CorporationVoteType.General, 1, ["A", "B"]);
+        long closed = voting.Create(90000001, draft);
+        clock.AdvanceWallTime(TimeSpan.FromDays(1));
+        long open = voting.Create(90000001, draft);
+        using CorporationTestClient shareholder = new(world, 1000002);
+        Assert.NotEqual(corporation, shareholder.Context.Pilot.CorpId);
+        var result = Assert.IsType<PilotCallResult.Success>(
+            shareholder.CallService("voteManager", "GetVoteCasesByCorporation", [(long)corporation, 0L])
+        );
+        var reply = Assert.IsType<CorporationVoteCasesReply>(result.Reply);
+        Assert.Equal(open, Assert.Single(reply.Votes.Open).Id);
+        Assert.Equal(closed, Assert.Single(reply.Votes.Closed).Id);
+        Assert.NotEmpty(BlueMarshal.Encode(reply));
+    }
+
+    [Fact]
+    public void NativeGetVotesResolvesTheCorporationFromTheCaseAndReturnsOnlyTheCallersBallots()
+    {
+        using TestWorld world = new(liveWorld: true);
+        PlayerCorporationTests.Prepare(world);
+        int corporation = world
+            .Services.GetRequiredService<IPlayerCorporations>()
+            .Create(90000001, PlayerCorporationTests.Details())
+            .Corporation.Id;
+        var voting = world.Services.GetRequiredService<ICorporationVoting>();
+        var shares = world.Services.GetRequiredService<ICorporationShares>();
+        var draft = new CorporationVoteDraft("Destination", "", CorporationVoteType.General, 1, ["A", "B"]);
+        long restrictedCase = voting.Create(90000001, draft);
+        using CorporationTestClient shareholder = new(world, 1000002);
+        Assert.IsType<PilotCallResult.Failure>(shareholder.CallService("voteManager", "GetVotes", [restrictedCase]));
+        shares.Transfer(90000001, new(corporation, true, 90000002, 400));
+        long vote = voting.Create(90000001, draft);
+        Assert.Empty(Assert.IsType<List<object?>>(Reply(shareholder, "GetVotes", [vote])));
+        voting.Cast(90000001, corporation, vote, 0);
+        voting.Cast(90000002, corporation, vote, 1);
+        var ballots = Assert.IsType<List<object?>>(Reply(shareholder, "GetVotes", [vote]));
+        var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(Assert.Single(ballots)).State);
+        Assert.Equal(90000002L, fields["characterID"]);
+        Assert.Equal(1L, fields["optionID"]);
+        Assert.Equal(400L, fields["voteWeight"]);
+        Assert.Equal(vote, fields["voteCaseID"]);
+    }
+
+    [Fact]
     public void NativeShareVotePublishesTalliesAndIssuesSharesOnlyOnceAfterSanction()
     {
         TestClock clock = new();

@@ -13,6 +13,36 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CorporationRoleTests
 {
+    [Fact]
+    public void SelfRoleRemovalPreservesMemberDetailsAndCannotEditThem()
+    {
+        const long memberId = 90000002;
+        const long station = 60003760;
+        using TestWorld world = new(liveWorld: true);
+        CorporationAdministrationTests.CreateAndJoin(world);
+        using CorporationTestClient ceo = new(world, 1000001);
+        using CorporationTestClient member = new(world, 1000002);
+        var corporations = world.Services.GetRequiredService<IPlayerCorporations>();
+        object?[] forged = MemberArguments(memberId, new());
+        forged[1] = "Self-assigned title";
+        forged[12] = station;
+        Assert.IsType<PilotCallResult.Failure>(member.Call("UpdateMember", forged));
+        Assert.Equal("", corporations.Identity(memberId).Access!.Title);
+        Assert.Null(corporations.Identity(memberId).Access!.BaseId);
+
+        object?[] assigned = MemberArguments(memberId, new((long)CorporationRole.Accountant));
+        assigned[1] = "Surveyor";
+        assigned[12] = station;
+        Assert.Null(ceo.Reply("UpdateMember", assigned));
+        Assert.Null(member.Reply("UpdateMember", MemberArguments(memberId, new(), 0, true)));
+
+        var access = corporations.Identity(memberId).Access!;
+        Assert.Equal("Surveyor", access.Title);
+        Assert.Equal((int)station, access.BaseId);
+        Assert.True(access.BlockRoles);
+        Assert.False(access.Roles.HasAuthority);
+    }
+
     internal static object?[] MemberArguments(long pilot, CorporationRoleSet roles, long? title = 0, bool? block = null) =>
         [
             pilot,

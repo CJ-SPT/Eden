@@ -516,6 +516,25 @@ public sealed partial class CorporationStorageTests
     }
 
     [Fact]
+    public void NativeUnrentOfficeRequiresDirectorEvenWhenMemberRentedTheOffice()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Prepare(world);
+        Access(world, corporation, new(Roles: (long)CorporationRole.CanRentOffice));
+        var storage = Storage(world);
+        using CorporationTestClient member = new(world, 1000002);
+        double quote = storage.Quote(Member) / (double)MarketDefinitions.CentsPerIsk;
+        Assert.Same(PilotCallResult.None, member.CallService("officeManager", "RentOffice", [quote]));
+        var office = Assert.Single(storage.Offices(Member));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("officeManager", "UnrentOffice", []));
+        Assert.Equal(office, Assert.Single(storage.Offices(Member)));
+
+        Access(world, corporation, new(Roles: (long)CorporationRole.Director));
+        Assert.Same(PilotCallResult.None, member.CallService("officeManager", "UnrentOffice", []));
+        Assert.Empty(storage.Offices(Member));
+    }
+
+    [Fact]
     public void NativeBindingsRejectRemoteAndMalformedCallsAndTitlesGrantOnlyTheirActualDivision()
     {
         using TestWorld world = new();

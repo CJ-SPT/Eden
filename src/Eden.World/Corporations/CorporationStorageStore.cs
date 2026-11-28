@@ -141,7 +141,8 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
         using WorldActionScope transaction = new(database, TransactionParticipants.None);
         var world = transaction.World;
         int station = DockedStation(world, actorId);
-        var corporation = RentalAuthority(world, actorId);
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        CorporationRoleStore.RequireDirector(world, actorId, corporation);
         var office =
             world.Set<SavedCorporationOffice>().SingleOrDefault(o => o.CorporationId == corporation.Id && o.StationId == station)
             ?? throw new InvalidDataException("Your corporation does not rent an office here.");

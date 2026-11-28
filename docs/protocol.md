@@ -487,6 +487,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Corporations
 
+- [Corporation and alliance UI audit](protocol/corporations.md#corporation-and-alliance-ui-audit)
+- [Alliance contacts, applications and calendar audit](protocol/alliances.md#alliance-contacts-applications-and-calendar-audit)
 - [Corporation office asset search](protocol/corporations.md#corporation-office-asset-search)
 - [Corporation mail restrictions](protocol/corporations.md#corporation-mail-restrictions)
 - [Medal award notifications](protocol/corporations.md#medal-award-notifications)

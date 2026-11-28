@@ -32,18 +32,11 @@ internal sealed class CorporationDeliveriesHandler(ICorporationStorage storage) 
             {
                 if (
                     keywords is { Count: > 0 }
-                    || args
-                        is not [
-                            long recipient,
-                            long station,
-                            List<object?> items,
-                            var quantity,
-                            long corporation,
-                            (long)CorporationStorageRules.MarketDeliveriesFlag,
-                        ]
+                    || args is not [long recipient, long station, List<object?> items, var quantity, long corporation, long sourceFlag]
                     || recipient <= 0
                     || station is <= 0 or > int.MaxValue
                     || corporation is <= 0 or > int.MaxValue
+                    || sourceFlag is < 0 or > int.MaxValue
                     || quantity is not (null or long and > 0 and <= int.MaxValue)
                     || items.Any(value => value is not (long and > 0))
                 )
@@ -53,7 +46,14 @@ internal sealed class CorporationDeliveriesHandler(ICorporationStorage storage) 
                 long actor = context.Pilot.PilotId;
                 var changes = storage.DeliverToMember(
                     actor,
-                    new(recipient, (int)station, (int)corporation, items.Cast<long>().ToArray(), quantity is long count ? (int)count : null)
+                    new(
+                        recipient,
+                        (int)station,
+                        (int)corporation,
+                        items.Cast<long>().ToArray(),
+                        quantity is long count ? (int)count : null,
+                        (int)sourceFlag
+                    )
                 );
                 if (recipient == actor)
                 {

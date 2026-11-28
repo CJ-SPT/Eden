@@ -188,11 +188,6 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
             {
                 _wars = wars.Wars(_organization).ToDictionary(war => war.Id);
             }
-            if (_invitations is not null)
-            {
-                _invitations = wars.Invitations(context.Pilot.PilotId);
-                _blocked = wars.InvitationsBlocked(context.Pilot.PilotId);
-            }
             if (_negotiations is not null)
             {
                 _negotiations = wars.Negotiations(context.Pilot.PilotId);
