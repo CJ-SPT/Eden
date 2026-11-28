@@ -11,6 +11,7 @@ using Eden.World.Characters;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
 
@@ -214,13 +215,43 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         {
             throw new InvalidDataException("Only the mailing-list owner can delete it.");
         }
-        foreach (var member in world.Filter<SavedMailingListMember>(m => m.ListId == listId))
+        Tombstone(world, list, origin);
+        transaction.Commit();
+    }
+
+    private static void Tombstone(WorldAction world, SavedMailingList list, Guid origin)
+    {
+        foreach (var member in world.Filter<SavedMailingListMember>(m => m.ListId == list.Id).ToArray())
         {
-            Feed(world, member.PilotId, listId, MailingListChangeKind.Deleted, origin);
+            Feed(world, member.PilotId, list.Id, MailingListChangeKind.Deleted, origin);
             world.Remove(member);
         }
         list.Deleted = true;
-        world.SaveChanges();
+    }
+
+    internal static void RetirePilot(WorldAction world, long pilotId)
+    {
+        var lists = world.Filter<SavedMailingList>(list => list.OwnerId == pilotId && !list.Deleted).ToArray();
+        var ownedIds = lists.Select(list => list.Id).ToHashSet();
+        foreach (var list in lists)
+        {
+            Tombstone(world, list, Guid.Empty);
+        }
+        world.RemoveRange(
+            world.Filter<SavedMailingListMember>(member => member.PilotId == pilotId && !ownedIds.Contains(member.ListId)).ToArray()
+        );
+    }
+
+    internal static void ReconcileRetiredPilots(WorldDbContext world)
+    {
+        var retired = world.Set<SavedCharacterDeletion>().Where(row => row.DeletedAt != null).Select(row => row.PilotId);
+        var retiredLists = world.Set<SavedMailingList>().Where(list => !list.Deleted && retired.Contains(list.OwnerId));
+        using var transaction = world.Database.BeginTransaction();
+        world
+            .Set<SavedMailingListMember>()
+            .Where(member => retired.Contains(member.PilotId) || retiredLists.Any(list => list.Id == member.ListId))
+            .ExecuteDelete();
+        retiredLists.ExecuteUpdate(setters => setters.SetProperty(list => list.Deleted, true));
         transaction.Commit();
     }
 

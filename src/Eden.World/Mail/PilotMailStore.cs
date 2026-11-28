@@ -203,7 +203,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         using var transaction = new WorldActionScope(database, new(pilots: [pilotId]));
         var world = transaction.World;
         Pilot(world, pilotId);
-        if (draft.Recipients.Any(id => !world.PilotExists(id)))
+        if (draft.Recipients.Any(id => !world.PilotExists(id) || world.Set<SavedCharacterDeletion>().Find(id)?.DeletedAt is not null))
         {
             throw new InvalidDataException("Mail can be sent only to local Eden pilots.");
         }

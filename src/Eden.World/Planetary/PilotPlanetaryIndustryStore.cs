@@ -25,6 +25,8 @@ namespace Eden.World.Planetary;
 internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimeProvider clock, PilotTrainingStore training)
     : IPilotPlanetaryIndustry
 {
+    private const double CustomsTaxQuoteTolerance = 0.000001;
+
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     private static void RequireOmega(WorldAction world, long pilotId)
@@ -553,8 +555,14 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         long officeId,
         long pinId,
         IReadOnlyList<PlanetaryCargoRequest> imports,
-        IReadOnlyList<PlanetaryCommodity> exports
-    ) => Write(pilotId, (world, catalog, now) => ImportExport(world, catalog, pilotId, officeId, pinId, imports, exports, now));
+        IReadOnlyList<PlanetaryCommodity> exports,
+        double? quotedTaxRate = null
+    ) =>
+        Write(
+            pilotId,
+            (world, catalog, now) =>
+                ImportExport(world, catalog, pilotId, officeId, pinId, imports, exports, now, quotedTaxRate: quotedTaxRate)
+        );
 
     internal PlanetaryChange ImportExport(
         WorldAction world,
@@ -565,11 +573,17 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         IReadOnlyList<PlanetaryCargoRequest> imports,
         IReadOnlyList<PlanetaryCommodity> exports,
         long now,
-        int? sponsor = null
+        int? sponsor = null,
+        double? quotedTaxRate = null
     )
     {
         RequireOmega(world, pilotId);
-        PlanetaryOrbitStore.Read(world, catalog, pilotId, officeId, now);
+        PlanetaryOrbitStore.RequireOfficePresence(world, catalog, pilotId, officeId, now);
+        double rate = PlanetaryRules.CustomsTaxRate(database.Settings.PlanetaryIndustry);
+        if (quotedTaxRate is double quote && (!double.IsFinite(quote) || Math.Abs(quote - rate) > CustomsTaxQuoteTolerance))
+        {
+            throw new PlanetaryTaxChangedException();
+        }
         int planetId = PlanetaryRules.OfficePlanet(officeId);
         var saved = Require(world, pilotId, planetId);
         var definitions = PlanetaryCatalogReader.Read(catalog);
@@ -619,7 +633,6 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         {
             colony = PlanetarySimulation.Deposit(colony, definitions, pinId, imported, database.Settings.PlanetaryIndustry);
         }
-        double rate = PlanetaryRules.CustomsTaxRate(database.Settings.PlanetaryIndustry);
         long importTax = PlanetaryRules.TaxCents(definitions, imported, rate, import: true);
         long exportTax = PlanetaryRules.TaxCents(definitions, exports, rate);
         Pay(world, sponsor, pilotId, PlanetaryOrbitStore.InterbusCorporation, planetId, WalletEntryType.PlanetaryImportTax, importTax, now);

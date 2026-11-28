@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [NPC station contract hull location](#npc-station-contract-hull-location)
 - [Capsule selection during creation](#capsule-selection-during-creation)
 - [Courier package Show Info volume](#courier-package-show-info-volume--november-9-2026)
 - [Contract search endpoint access](#contract-search-endpoint-access)
@@ -22,6 +23,20 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Personal auction contracts](#personal-auction-contracts)
 - [Bulk fitted-ship contract creation](#bulk-fitted-ship-contract-creation)
 - [Bulk personal contract cancellation](#bulk-personal-contract-cancellation)
+
+## NPC station contract hull location
+
+The personal contract picker and creation action use the assembled hull's current docked location. A hull docked at an
+Upwell structure still stores its last NPC station ID. The NPC station's asset rows and escrow validation now exclude that
+hull. An assembled spare hull actually docked at the selected NPC station remains available.
+
+Build 3662168 uses `contractProxy.GetItemsInDockableLocation` for this selection, as recorded in the
+[route inventory](../client-routes/routes.csv). The original `code.ccp` SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. EVE.js 261108.1 reads items at the exact
+selected `locationID` in `contractProxyService.js` (`add4a4c3e5e2`). [EVE University contracts](https://wiki.eveuniversity.org/Contracts)
+
+`ContractServiceTests.NpcStationContractsExcludeHullsDockedAtUpwellStructures` checks the resident asset picker, rejects
+native creation and reads the checkpoint to verify the hull, wallet and contract state.
 
 ## Capsule selection during creation
 

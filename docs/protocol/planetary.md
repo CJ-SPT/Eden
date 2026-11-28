@@ -2,6 +2,27 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Customs access, tax quotes and transit routes
+
+An undocked, uncloaked pilot in the customs office's solar system can open their compartment and transfer commodities
+between it and the launchpad from elsewhere in the system. Moving goods between the office and the ship adds a 2,500 m
+proximity requirement. Planetary launch containers retain their nearby access requirement.
+[EVE University planetary buildings](https://wiki.eveuniversity.org/Planetary_buildings)
+
+The native `ImportExportWithPlanet` request now rejects an outdated tax quote with `TaxChanged` before it alters inventory,
+wallet or colony state. The active tax policy still sets the actual charge. Existing unquoted requests use that same policy.
+Changing a processor schematic removes its prior input and output routes while preserving unrelated routes that use the
+processor as a waypoint. Those routes continue to transport goods through the existing links.
+
+Build 3662168's pinned `PlanetaryImportExportUI.ConfirmCommodityTransfer` sends the quoted rate as its fourth argument,
+as described in the [native transfer record](#one-way-customs-transfer-dictionaries--november-16-2026). EVE.js 261108.1
+separates office presence from ship-to-office transfer range in `invBrokerService.js` (`8cec4112de1b`), checks the supplied
+rate in `planetaryImportExport.js` (`b267d900cdb1`), and installs schematics independently of transit routes in
+`planetRuntimeStore.js` (`cb74256d55a9`).
+
+The resident regressions cover native office binding and launchpad settlement at a distance, cargo range, stale-quote
+rejection and retry, and continued production through preserved routes across a checkpoint.
+
 
 ## Customs quantity parsing and staged transfer refresh — November 16, 2026
 
@@ -717,9 +738,9 @@ export contains 144 types and 359 source records and is reproducible with
   five-day expiry. The journal lists their coordinates and supports the native `launch` warp selector. Containers
   use ordinary nearby cargo collection, including specialized hold restrictions. Launch deletion removes its cargo.
 - The first colony creates a shared Interbus customs office around that planet. Each pilot has a private 35,000 m³
-  compartment. Ship transfers require an uncloaked ship within 2,500 m in the same system. Launchpad import/export
-  consumes actual compartment/surface inventory and charges the 17% Interbus tariff; imports cost half exports.
-  Customs Code Expertise does not reduce Interbus tariffs. Client-supplied tax quotes cannot change charges.
+  compartment. Ship transfers require an uncloaked ship within 2,500 m in the same system. Launchpad import/export can run
+  elsewhere in the same system. It consumes actual compartment and surface inventory, checks the quoted rate and charges
+  the active Interbus tariff (17% by default). Imports cost half exports. Customs Code Expertise does not reduce Interbus tariffs.
 - Survey scans require Remote Sensing. Colonized planets and the current system get local proximity; other scans
   enforce the 1/3/5/7/9-light-year ranges and known-space restrictions. Planetology and Advanced Planetology bound
   the returned harmonic bands using the pinned proximity table. Client skill/proximity claims are not authoritative.

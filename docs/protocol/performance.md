@@ -7471,3 +7471,11 @@ Each economic job enters its own operation scope, so an earlier failure can unwi
 The timer retries the failed job on its next interval. A slow checkpoint also preserves the outcome of the durable write when its
 warning sink throws. `EconomicLifecycleTests.FailedMarketDemandDoesNotBlockBeltRenewal` and
 `LiveWorldTests.SlowCheckpointStaysSuccessfulWhenTheLogSinkThrows` cover both failure paths.
+
+## Interrupted checkpoint file recovery
+
+After acquiring the exclusive world owner, startup reclaims interrupted `.checkpoint-capture-<id>` and `.save-<id>` files
+and their SQLite journals. Both capture modes run the same cleanup, so changing the mode after a crash still releases the
+abandoned files. Recovery matches the current world's exact scratch names and preserves the durable checkpoint, its predecessor,
+other worlds and operator files. `IncrementalCheckpointTests.StartupReclaimsAbandonedCheckpointFilesRegardlessOfCaptureMode`
+exercises both modes with files from both checkpoint stages.

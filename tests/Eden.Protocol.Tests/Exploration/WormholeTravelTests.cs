@@ -29,6 +29,31 @@ public sealed class WormholeTravelTests
     private const int Portal = 30583;
 
     [Fact]
+    public void WormholeJumpAcceptsTheSystemInferredFromAnNpcStationUndock()
+    {
+        using Fixture f = new();
+        AddRoute(f);
+        long station = f.StationId;
+        long ship = f.ShipId;
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={Known} WHERE Id={station}");
+        }
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var travel = f.Db.Services.GetRequiredService<IWormholeTravel>();
+        var entrance = Assert.Single(Assert.Single(travel.Signatures(Known)).Objects);
+        f.Db.Store.SetPosition(ship, entrance.Position);
+        Assert.Null(live.Economy.Inspect(world => world.Positions.Find(ship)!.SystemId));
+        Assert.Equal(Known, f.Db.Store.FindPilot(1000001)!.SystemId);
+
+        var jump = travel.Prepare(f.PilotId, ship, entrance.Id);
+
+        Assert.Equal(Remote, jump.System.Id);
+        Assert.Equal(Remote, travel.Transfer(f.PilotId, ship, entrance.Id, jump.Exit.Id).SystemId);
+        Assert.Equal(f.Clock.Now, live.Economy.Inspect(world => world.Set<SavedWormholeJump>().Find(f.PilotId, entrance.Id)!.JumpedAt));
+    }
+
+    [Fact]
     public async Task WarmWormholeTravelKeepsPolarizationResidentUntilCheckpoint()
     {
         using Fixture f = new();

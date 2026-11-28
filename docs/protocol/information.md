@@ -2,6 +2,17 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Lost probe reconnection
+
+An explicit `ReconnectToLostProbes` request replays the pilot's unexpired deployed probes in the current system.
+The request can restore a lost client view even when the server already published those probe IDs earlier in the
+session. Probe expiry still produces the normal removal notifications.
+
+Build 3662168 `scanSvc.pyj` calls the bound scanner without arguments and forwards `OnNewProbe` to
+`probeTracker.pyj`, which stores it by probe ID. The local EVE.js `scanMgrService.js` (`a565e0c5064a`) also
+replays the probes on reconnect. The resident regression checks a second replay, expiry and unchanged launcher charges.
+[CCP scanning guide](https://support.eveonline.com/hc/en-us/articles/203209902-Scanning)
+
 ## Cargo scanning courier packages
 
 A cargo scan now reveals the immediate contents of an intact courier package carried in a scannable hold.

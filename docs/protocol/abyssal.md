@@ -1,5 +1,17 @@
 # Abyssal Deadspace
 
+## Cooperative admission and exact trace expiry
+
+When a fleetmate starts the pocket first, the trace owner's admission remains attached to the original run while
+the entrance is open. Redeployment rejects before consuming another stack or changing that admission. Once a saved
+run reaches its deadline, the origin trace and active-run response stop publishing it, even if the maintenance
+transaction has yet to settle the ship loss. The resident regressions cover both orderings and the exact deadline.
+
+Build 3662168 `abyssal_service.pyj` uses separate deployment, entrance activation and readiness calls. The local EVE.js
+`abyssalAdmissionValidation.js` (`97f37c76ad56`) checks active-run conflicts before deployment, and its timeout lifecycle
+uses the saved deadline. CCP describes the shared cooperative trace and twenty-minute timer in the
+[Abyssal Deadspace guide](https://support.eveonline.com/hc/en-us/articles/360000852629-Abyssal-Deadspace).
+
 ## Sources and implementation boundaries
 
 The gameplay references are [EVE University](https://wiki.eveuniversity.org/Abyssal_Deadspace)

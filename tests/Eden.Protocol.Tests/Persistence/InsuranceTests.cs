@@ -8,6 +8,7 @@ using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Insurance;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -169,6 +170,30 @@ public sealed class InsuranceTests
         Assert.Equal(InsurancePolicyStatus.Replaced, saved.Set<SavedInsurancePolicy>().Find(first.Policy.Id)!.Status);
         Assert.Equal(InsurancePolicyStatus.Cancelled, saved.Set<SavedInsurancePolicy>().Find(replacement.Policy.Id)!.Status);
         Assert.Equal(InsurancePolicyStatus.Expired, saved.Set<SavedInsurancePolicy>().Find(renewed.Policy.Id)!.Status);
+    }
+
+    [Fact]
+    public async Task PolicyExpiresAtItsDeadlineEvenIfTheClientSendsACancelRequest()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        InsuranceTestData.Prepare(db);
+        InsuranceTestData.Fund(db);
+        var insurance = db.Services.GetRequiredService<IPilotInsurance>();
+        var previous = insurance.Insure(PilotId, StationId, ShipId, 5000, false);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(previous.Policy.EndTime - clock.Now));
+
+        Assert.Null(insurance.Contract(PilotId, ShipId));
+        Assert.Throws<InvalidDataException>(() => insurance.Cancel(PilotId, StationId, ShipId));
+        Assert.Equal(previous.BalanceCents, db.Services.GetRequiredService<IPilotWalletReader>().Balance(PilotId));
+        var replacement = insurance.Insure(PilotId, StationId, ShipId, 5000, false);
+        Assert.Equal(replacement.Policy, insurance.Contract(PilotId, ShipId));
+
+        await LiveWorld.Find(db.Path)!.FlushAsync();
+        using var disk = WorldConnections.FileConnection(db.Path);
+        using WorldDbContext saved = new(disk);
+        Assert.Equal(InsurancePolicyStatus.Expired, saved.Set<SavedInsurancePolicy>().Find(previous.Policy.Id)!.Status);
+        Assert.Equal(InsurancePolicyStatus.Active, saved.Set<SavedInsurancePolicy>().Find(replacement.Policy.Id)!.Status);
     }
 
     [Fact]

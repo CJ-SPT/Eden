@@ -95,6 +95,44 @@ public sealed partial class ProbeScanningTests
             .ToArray();
 
     [Fact]
+    public void ReconnectReplaysAlreadyPublishedProbesWithoutConsumingMoreCharges()
+    {
+        using var f = Prepare();
+        long module = Load(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var scanning = f.Db.Services.GetRequiredService<IPilotProbeScanning>();
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        var launch = scanning.Launch(f.PilotId, module, 3, f.Clock.Now);
+        using var scope = f.Db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<ProbeScanningHandler>();
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), []),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        handler.Enter(context);
+        Assert.Equal(launch.Probes, context.Notifications.OfType<NewScanProbe>().Select(notice => notice.Probe));
+        context.Notifications.Clear();
+
+        Assert.Same(PilotCallResult.None, handler.Call(context, "@systemScan", "ReconnectToLostProbes", []));
+
+        Assert.Equal(launch.Probes, context.Notifications.OfType<NewScanProbe>().Select(notice => notice.Probe));
+        Assert.Equal(launch.Probes, scanning.List(f.PilotId, pilot.SystemId, f.Clock.Now));
+        Assert.Equal(5, live.Economy.Inspect(world => world.Set<OwnedItem>().Single(item => item.LocationId == module).Quantity));
+
+        context.Notifications.Clear();
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(launch.Probes.Max(probe => probe.ExpiresAt) - f.Clock.Now));
+        Assert.Same(PilotCallResult.None, handler.Call(context, "@systemScan", "ReconnectToLostProbes", []));
+        Assert.Empty(context.Notifications.OfType<NewScanProbe>());
+        Assert.Equal(launch.Probes.Select(probe => probe.Id), context.Notifications.OfType<RemoveScanProbe>().Select(notice => notice.Id));
+    }
+
+    [Fact]
     public void LaunchScanResolveCombatRewardAndReplacementSurviveRestart()
     {
         using var f = Prepare();

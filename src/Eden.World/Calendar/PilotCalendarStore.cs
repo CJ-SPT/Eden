@@ -62,16 +62,19 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         CalendarRules.CheckTime(entry.Time, Now);
     }
 
-    private static void CheckKnown(WorldAction world, long owner, IReadOnlyList<long> ids, bool checkBlocks)
+    private static void CheckKnown(WorldAction world, long owner, IReadOnlyList<long> ids)
     {
         CalendarRules.CheckInvitees(owner, ids);
         if (ids.Any(id => !world.PilotExists(id)))
         {
             throw new InvalidDataException("Calendar invitations require existing local Eden pilots.");
         }
+    }
+
+    private static void CheckBlocks(WorldAction world, long owner, IReadOnlyList<long> ids)
+    {
         if (
-            checkBlocks
-            && ids.Any(id =>
+            ids.Any(id =>
                 world.Set<SavedBlockedContact>().Find(owner, id) is not null || world.Set<SavedBlockedContact>().Find(id, owner) is not null
             )
         )
@@ -222,7 +225,8 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         long now = Now;
         var value = CalendarRules.Check(draft, now);
         CheckPilot(world, pilotId);
-        CheckKnown(world, pilotId, invitees, checkBlocks: true);
+        CheckKnown(world, pilotId, invitees);
+        CheckBlocks(world, pilotId, invitees);
         MailContactPolicyStore.Charge(world, pilotId, invitees, approvedContactCostIsk, now);
         var entry = world
             .Add(
@@ -311,8 +315,8 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         var world = transaction.World;
         var entry = Owned(world, pilotId, eventId);
         CheckMutable(entry);
-        CheckKnown(world, pilotId, add, checkBlocks: true);
-        CheckKnown(world, pilotId, remove, checkBlocks: false);
+        CheckKnown(world, pilotId, add);
+        CheckKnown(world, pilotId, remove);
         if (add.Intersect(remove).Any())
         {
             throw new InvalidDataException("Do not add and remove the same invitee together.");
@@ -320,6 +324,7 @@ internal sealed class PilotCalendarStore(WorldDatabase database, TimeProvider cl
         var existing = world.Filter<SavedCalendarParticipant>(p => p.EventId == eventId).ToDictionary(p => p.PilotId);
         var added = add.Except(existing.Keys).ToArray();
         var removed = remove.Intersect(existing.Keys).ToArray();
+        CheckBlocks(world, pilotId, added);
         if (existing.Count + added.Length - removed.Length > CalendarRules.MaximumInvitees)
         {
             throw new InvalidDataException("An event may invite at most fifty other pilots.");

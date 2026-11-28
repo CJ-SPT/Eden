@@ -51,7 +51,10 @@ internal sealed partial class AbyssalStore(
         Live.Economy.Inspect(world =>
         {
             var participant = world.Set<SavedAbyssalParticipant>().Find(pilotId);
-            return participant is { Finished: false, Entered: true } && world.Set<SavedAbyssalRun>().Find(participant.RunId) is { } run
+            return
+                participant is { Finished: false, Entered: true }
+                && world.Set<SavedAbyssalRun>().Find(participant.RunId) is { Status: (int)AbyssalStatus.Active } run
+                && run.ExpiresAt > Now
                 ? View(run, participant.Room)
                 : null;
         });
@@ -240,7 +243,8 @@ internal sealed partial class AbyssalStore(
             participant.Entered
             || world.Set<SavedAbyssalRun>().Find(participant.RunId) is { } run
                 && run.OwnerPilotId == pilotId
-                && run.Status == (int)AbyssalStatus.Deployed
+                && run.Status < (int)AbyssalStatus.Completed
+                && run.Room == 0
         )
             ? participant
             : null;
@@ -331,10 +335,13 @@ internal sealed partial class AbyssalStore(
     public IReadOnlyList<StaticSpaceObject> Objects(int systemId) =>
         Live.Economy.Inspect(world =>
         {
+            long now = Now;
             if (!AbyssalRules.IsSystem(systemId))
             {
                 var traces = world
-                    .Filter<SavedAbyssalRun>(r => r.OriginSystemId == systemId && r.Status < (int)AbyssalStatus.Completed)
+                    .Filter<SavedAbyssalRun>(r =>
+                        r.OriginSystemId == systemId && r.Status < (int)AbyssalStatus.Completed && r.ExpiresAt > now
+                    )
                     .ToArray();
                 if (traces.Length == 0)
                 {

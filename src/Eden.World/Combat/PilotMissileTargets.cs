@@ -43,6 +43,7 @@ internal sealed partial class PilotMissileStore
         }
         // FindVictim has loaded the current logoff row and position under this
         // transaction. Do not reopen a pilot/fitting transaction through presence.
+        // It already resolved the system, including an implicit NPC-station undock.
         var offline = world.Set<SavedLogoff>().Find(pilot.Id);
         return
             offline is not null
@@ -50,7 +51,6 @@ internal sealed partial class PilotMissileStore
             && offline.SystemId == system
             && offline.ExpiresAt > now
             && pilot.ActiveShip.Position is { } position
-            && position.SystemId == system
             ? new(shipId, new(position.X, position.Y, position.Z), SpacePosition.Zero)
             : null;
     }

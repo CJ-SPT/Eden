@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Mail;
 using Eden.Protocol.Mail;
 using Eden.Protocol.PilotSessions;
@@ -97,6 +98,48 @@ public sealed class MailingListServiceTests
         Assert.IsType<PilotCallResult.Failure>(member.Call("Join", ["Roles"], "mailingListsMgr"));
         Assert.Null(Reply(owner.Call("ClearEntityAccess", [id, MailingListTestData.Member], "mailingListsMgr")));
         Assert.Equal(id, Fields(Reply(member.Call("Join", ["Roles"], "mailingListsMgr")))["id"]);
+    }
+
+    [Fact]
+    public async Task OwnerBiomassRetiresTheListAndPreservesHistoricalMessagesAcrossReopen()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        var lists = MailingListTestData.Store(db);
+        const long ownerId = MailingListTestData.Owner;
+        const long memberId = MailingListTestData.Member;
+        long owned = lists.Create(ownerId, "Biomass fleet", MailingListTestData.Open, Guid.NewGuid());
+        long other = lists.Create(memberId, "Other fleet", MailingListTestData.Open, Guid.NewGuid());
+        lists.Join(memberId, "Biomass fleet", Guid.NewGuid());
+        lists.Join(ownerId, "Other fleet", Guid.NewGuid());
+        long message = MailTestData.Store(db).Send(ownerId, MailingListTestData.Broadcast(owned), Guid.NewGuid());
+        long replacement;
+        using (CourierServiceTests.Client member = new(db, clock, 1000002))
+        {
+            member.Refresh();
+            Reply(member.Call("GetJoinedLists", [], "mailingListsMgr"));
+            var deletion = db.Services.GetRequiredService<ICharacterDeletion>();
+            deletion.Prepare(1000001, ownerId);
+            clock.AdvanceWallTime(CharacterDeletionRules.PreparationDelay);
+            deletion.Delete(1000001, ownerId);
+
+            member.Advance();
+            Assert.Equal(owned, Assert.Single(member.Context.Notifications.OfType<MailingListDeleted>()).ListId);
+            Assert.Equal(other, Assert.Single(lists.Joined(memberId)).Id);
+            Assert.Single(lists.Members(memberId, other));
+            replacement = lists.Create(memberId, "Biomass Fleet", MailingListTestData.Open, Guid.NewGuid());
+            Assert.NotEqual(owned, replacement);
+        }
+        await live.FlushAsync();
+        db.Services.Dispose();
+        using var reopened = ServerServices.Build(new(db.Path), clock, liveWorld: true);
+        lists = reopened.GetRequiredService<IPilotMailingLists>();
+        Assert.Equal("Biomass fleet", lists.Info(memberId, owned)!.Name.Display);
+        Assert.Equal(new[] { other, replacement }, lists.Joined(memberId).Select(list => list.Id));
+        var mail = reopened.GetRequiredService<IPilotMail>();
+        Assert.Equal(owned, Assert.Single(mail.Headers(memberId, [message])).ListId);
+        Assert.Equal(MailTestData.Draft.Body, mail.Body(memberId, message, false, Guid.NewGuid()));
     }
 
     [Fact]

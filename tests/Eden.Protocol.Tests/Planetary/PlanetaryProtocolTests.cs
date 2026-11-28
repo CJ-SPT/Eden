@@ -7,6 +7,8 @@ using Eden.Data.World.Planetary;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Planetary;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -25,6 +27,101 @@ namespace Eden.Protocol.Tests.Planetary;
 
 public sealed class PlanetaryProtocolTests
 {
+    [Fact]
+    public void CustomsOfficeWindowAndLaunchpadTransfersWorkAwayFromShipCargoRange()
+    {
+        using var f = PlanetaryIndustryTests.Prepare();
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var colony = PlanetaryIndustryTests.Deploy(f);
+        var industry = PlanetaryIndustryTests.Industry(f);
+        long office = PlanetaryRules.OfficeId(PlanetaryIndustryTests.PlanetId);
+        var contact = Assert.Single(industry.OrbitContacts(f.Db.Store.FindPilot(1000001)!.SystemId, f.Clock.Now));
+        f.Db.Store.SetPosition(f.ShipId, contact.Position);
+        long cargo = f.Grant(PlanetaryIndustryTests.Water, 5, cargo: true);
+        industry.MoveOrbitCargo(f.PilotId, office, true, new([cargo], f.ShipId, (int)InventoryFlag.Hangar, 4));
+        long stack = Assert.Single(industry.OrbitInventory(f.PilotId, office).Items).Id;
+        f.Db.Store.SetPosition(f.ShipId, contact.Position + new SpacePosition(100_000, 0, 0));
+        var wrecks = f.Db.Services.GetRequiredService<IWrecks>();
+        using var context = Context(f, wrecks);
+        context.Flight.Snapshot();
+        var loot = new LootHandler(wrecks, f.Db.Services.GetRequiredService<ICargoJettison>(), f.Clock);
+        var bound = Assert.IsType<BlueObjectReference>(
+            Assert.IsType<PilotCallResult.Success>(loot.Call(context, "invbroker", "GetInventoryFromId", [office])).Reply.ToBlue()
+        );
+        string service = context.ResolveReference(bound.Id)!;
+        Assert.IsType<PilotCallResult.Success>(loot.Call(context, service, "List", []));
+        long port = colony.Pins.Single(p => p.TypeId == PlanetaryIndustryTests.Launchpad).Id;
+        var handler = new PlanetaryInventoryHandler(industry);
+        var import = handler.Call(
+            context,
+            service,
+            "ImportExportWithPlanet",
+            [
+                port,
+                new Dictionary<long, object?> { [stack] = 2L },
+                new Dictionary<long, object?>(),
+                industry.CustomsTaxRate(f.PilotId, office),
+            ]
+        );
+        Assert.Same(PilotCallResult.None, import);
+        Assert.Equal(2, Assert.Single(industry.OrbitInventory(f.PilotId, office).Items).Quantity);
+        Assert.Equal(
+            2,
+            PlanetarySimulation.Quantity(
+                industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony!.Pins.Single(p => p.Id == port),
+                PlanetaryIndustryTests.Water
+            )
+        );
+        Assert.Throws<InvalidDataException>(() => wrecks.Take(f.PilotId, f.ShipId, office, [stack], 1, f.Clock.Now));
+        Assert.Throws<InvalidDataException>(() =>
+            industry.MoveOrbitCargo(f.PilotId, office, true, new([cargo], f.ShipId, (int)InventoryFlag.Hangar, null))
+        );
+    }
+
+    [Fact]
+    public void CustomsTransferWithAnOutdatedQuoteRequiresConfirmationAtTheNewRate()
+    {
+        using var f = PlanetaryIndustryTests.Prepare();
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var colony = PlanetaryIndustryTests.Deploy(f);
+        var industry = PlanetaryIndustryTests.Industry(f);
+        long office = PlanetaryRules.OfficeId(PlanetaryIndustryTests.PlanetId);
+        var contact = Assert.Single(industry.OrbitContacts(f.Db.Store.FindPilot(1000001)!.SystemId, f.Clock.Now));
+        f.Db.Store.SetPosition(f.ShipId, contact.Position);
+        long cargo = f.Grant(PlanetaryIndustryTests.Water, 5, cargo: true);
+        industry.MoveOrbitCargo(f.PilotId, office, true, new([cargo], f.ShipId, (int)InventoryFlag.Hangar, null));
+        var stack = Assert.Single(industry.OrbitInventory(f.PilotId, office).Items);
+        long port = colony.Pins.Single(p => p.TypeId == PlanetaryIndustryTests.Launchpad).Id;
+        var wallet = f.Db.Services.GetRequiredService<IPilotWalletReader>();
+        long before = wallet.Balance(f.PilotId);
+        using var context = Context(f);
+        context.Flight.Snapshot();
+        PlanetaryInventoryHandler handler = new(industry);
+        double rate = industry.CustomsTaxRate(f.PilotId, office);
+
+        Assert.Equal("TaxChanged", Assert.IsType<PilotCallResult.NamedFailure>(Transfer(rate / 2)).Name);
+        Assert.Empty(context.Notifications);
+        Assert.Equal(before, wallet.Balance(f.PilotId));
+        Assert.Equal(stack, Assert.Single(industry.OrbitInventory(f.PilotId, office).Items));
+        var previous = industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony!.Pins.Single(p => p.Id == port);
+        Assert.Equal(0, PlanetarySimulation.Quantity(previous, PlanetaryIndustryTests.Water));
+
+        Assert.Same(PilotCallResult.None, Transfer(rate));
+        Assert.Equal(2, Assert.Single(industry.OrbitInventory(f.PilotId, office).Items).Quantity);
+        Assert.Equal(before - 10_200, wallet.Balance(f.PilotId));
+        Assert.Same(PilotCallResult.None, Transfer(null, 2));
+        Assert.Empty(industry.OrbitInventory(f.PilotId, office).Items);
+        Assert.Equal(before - 17_000, wallet.Balance(f.PilotId));
+
+        PilotCallResult Transfer(double? quotedRate, long quantity = 3) =>
+            handler.Call(
+                context,
+                WreckWireDefinitions.BindingPrefix + office,
+                "ImportExportWithPlanet",
+                [port, new Dictionary<long, object?> { [stack.Id] = quantity }, new Dictionary<long, object?>(), quotedRate]
+            );
+    }
+
     [Fact]
     public void CustomsCapacityAndTaxRepliesExposeActiveConfiguration()
     {
@@ -121,7 +218,8 @@ public sealed class PlanetaryProtocolTests
         PilotCallResult Transfer(object imports, object exports)
         {
             // Exercise the native marshal boundary: an empty Python dictionary has no key type.
-            var args = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(new object?[] { port, imports, exports, 0d })), 4);
+            double rate = industry.CustomsTaxRate(f.PilotId, office);
+            var args = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(new object?[] { port, imports, exports, rate })), 4);
             return handler.Call(context, WreckWireDefinitions.BindingPrefix + office, "ImportExportWithPlanet", args);
         }
         object Quantity(int quantity) => floatingQuantities ? (object)(double)quantity : (long)quantity;
@@ -148,7 +246,7 @@ public sealed class PlanetaryProtocolTests
         var exportedStack = Assert.Single(industry.OrbitInventory(f.PilotId, office).Items);
         Assert.Equal(PlanetaryIndustryTests.Water, exportedStack.TypeId);
         Assert.Equal(5, exportedStack.Quantity);
-        // P1 export: 5 units * 400 ISK base value * 17% authoritative tax, despite the zero client quote.
+        // P1 export: 5 units * 400 ISK base value * 17% authoritative tax.
         double afterExport = Assert.Single(context.Notifications.OfType<AccountBalanceChanged>()).Balance;
         Assert.Equal(afterImport - 340, afterExport);
         AssertCustomsRefresh(context);
@@ -341,14 +439,14 @@ public sealed class PlanetaryProtocolTests
         Assert.NotEmpty(BlueMarshal.Encode(Ballpark.WreckSlim(contact)));
     }
 
-    private static PilotCallContext Context(Fixture f)
+    private static PilotCallContext Context(Fixture f, IWrecks? wrecks = null)
     {
         var pilot = f.Db.Store.FindPilot(1000001)!;
         PilotCallContext context = new(
             1000001,
             pilot.Account,
             [pilot],
-            p => new(f.Db.Store, p, f.Clock, new SharedSpace(), []),
+            p => new(f.Db.Store, p, f.Clock, new SharedSpace(), [], wrecks: wrecks),
             42,
             SignedSettings.Empty
         );

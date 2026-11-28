@@ -171,6 +171,10 @@ internal sealed class JumpCloneHandler(
                     }
                     context.Notifications.Add(new ServerBrainUpdated(brain.Update(pilot, transfer.Pilot.ShipId)));
                     Changed(context, transfer.SourceStationId);
+                    if (!mobile && transfer.Pilot.StationId != transfer.SourceStationId)
+                    {
+                        context.Notifications.Add(new StationJumpCloneCacheInvalidated(transfer.Pilot.StationId, pilot));
+                    }
                     Balance(context, transfer.BalanceCents);
                     return PilotCallResult.None;
                 default:

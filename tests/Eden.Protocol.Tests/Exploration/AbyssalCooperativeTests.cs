@@ -126,6 +126,47 @@ public sealed class AbyssalCooperativeTests
     }
 
     [Fact]
+    public void TraceOwnerCanStillEnterAfterAMateStartsTheRunAndAnotherDeploymentIsRejected()
+    {
+        using Fixture f = new();
+        AbyssalTests.Prepare(f);
+        var owner = f.Db.Store.FindPilot(1000001)!;
+        var mate = f.Db.Store.FindPilot(1000002)!;
+        const int frigate = 587;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(owner.ShipId)!.TypeId = frigate;
+            world.Ships.Find(mate.ShipId)!.TypeId = frigate;
+            world.SaveChanges();
+        }
+        f.Db.Store.SetPosition(mate.ShipId, owner.Position, owner.SystemId);
+        var fleets = f.Db.Services.GetRequiredService<ICooperativeFleets>();
+        foreach (var pilot in new[] { owner, mate })
+        {
+            fleets.Update(Guid.NewGuid(), new(pilot.PilotId, pilot.CorpId, pilot.ShipId, frigate, owner.SystemId, owner.Position));
+        }
+        var fleet = fleets.Create(owner.PilotId);
+        fleets.Invite(owner.PilotId, fleet.Id, mate.PilotId, new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member));
+        fleets.Accept(mate.PilotId, fleet.Id);
+        int cost = AbyssalContent.Capacity(AbyssalMode.Frigates);
+        long filament = f.Grant(AbyssalRules.TranquilDarkFilament, cost * 2, cargo: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var abyss = f.Db.Services.GetRequiredService<IAbyssalDeadspace>();
+        var deployed = abyss.Deploy(owner.PilotId, owner.ShipId, filament, AbyssalMode.Frigates);
+        long trace = AbyssalRules.Trace(deployed.Run.Id);
+        var started = abyss.Activate(mate.PilotId, mate.ShipId, trace);
+        var far = owner.Position! + new SpacePosition(AbyssalRules.DeploymentClearance * 2, 0, 0);
+        f.Db.Store.SetPosition(owner.ShipId, far, owner.SystemId);
+
+        Assert.Throws<InvalidDataException>(() => abyss.Deploy(owner.PilotId, owner.ShipId, filament, AbyssalMode.Frigates));
+
+        Assert.Equal(cost, live.Economy.Inspect(world => world.Set<OwnedItem>().Find(filament)!.Quantity));
+        Assert.Equal(trace, Assert.Single(abyss.Objects(owner.SystemId)).Id);
+        f.Db.Store.SetPosition(owner.ShipId, owner.Position, owner.SystemId);
+        Assert.Equal(started.Run, abyss.Activate(owner.PilotId, owner.ShipId, trace).Run);
+    }
+
+    [Fact]
     public async Task UnusedCooperativeTraceExpiresWithoutDestroyingShipsAfterReopen()
     {
         using Fixture f = new();

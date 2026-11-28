@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Calendar invite retention and retired mail participants](#calendar-invite-retention-and-retired-mail-participants)
 - [Corporation calendar events](#corporation-calendar-events)
 - [Corporation chat MOTD, November 15, 2026](#corporation-chat-motd-november-15-2026)
 
@@ -36,6 +37,27 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
 
+
+## Calendar invite retention and retired mail participants
+
+`UpdateEventParticipants` applies explicit contact blocks to newly added guests. An already invited guest who later
+blocks the organizer can retain their RSVP while the organizer removes a different guest. The removal still sends
+the normal event notification. The pinned calendar route inventory locates `CalendarSvc.UpdateEventParticipants`
+in build 3662168. EVE.js `calendarRuntimeState.js` (`0f6cde6ad334`) represents additions and removals as separate lists.
+
+Biomass now closes lists owned by that pilot and frees memberships in other lists in the same resident transaction.
+Remaining subscribers receive the native `OnMailingListDeleted` notification. List names become available for reuse and
+old messages retain their original list identity and saved display name. Startup reconciles lists left active by a previous
+biomass and removes unusable memberships in one transaction. Build 3662168's native mail service and EVE.js
+`mailState.js` (`82b61a1f917e`) distinguish deletion from removing a subscriber.
+[EVE University mail and mailing lists](https://wiki.eveuniversity.org/EVE_Mail)
+
+Direct mail to a biomassed pilot fails before the sender pays a contact charge or the source message gains a reply or
+forward flag. Existing mail from the pilot remains readable by its recipients. The archived pilot ID still identifies the
+historical sender. [CCP character deletion](https://support.eveonline.com/hc/en-us/articles/203465591-Deleting-a-character)
+
+Regression cases exercise invite retention and removal, paid replies to a retired pilot, native list deletion and mail
+history after checkpoint reopen, and repeated startup reconciliation of a legacy save.
 
 ## Corporation calendar events
 

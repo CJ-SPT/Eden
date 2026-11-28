@@ -155,6 +155,34 @@ public sealed class IncrementalCheckpointTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StartupReclaimsAbandonedCheckpointFilesRegardlessOfCaptureMode(bool diskCapture)
+    {
+        using TestWorld fixture = new();
+        string identity = Guid.NewGuid().ToString("N");
+        string capture = fixture.Path + ".checkpoint-capture-" + identity;
+        string staging = fixture.Path + ".save-" + identity;
+        string other = Path.Combine(Path.GetDirectoryName(fixture.Path)!, "other.sqlite.save-" + identity);
+        string notes = fixture.Path + ".save-notes";
+        string previous = fixture.Path + ".previous";
+        File.Copy(fixture.Path, previous);
+        string[] abandoned = [capture, capture + "-journal", staging, staging + "-journal"];
+        foreach (string path in abandoned.Concat([other, notes]))
+        {
+            File.WriteAllText(path, "checkpoint fixture");
+        }
+
+        using LiveWorld live = new(new(fixture.Path), new TestClock(), _ => { }, diskCheckpointCapture: diskCapture);
+
+        Assert.All(abandoned, path => Assert.False(File.Exists(path)));
+        Assert.True(File.Exists(previous));
+        Assert.True(File.Exists(fixture.Path));
+        Assert.Equal("checkpoint fixture", File.ReadAllText(other));
+        Assert.Equal("checkpoint fixture", File.ReadAllText(notes));
+    }
+
     private static string[] CaptureFiles(string world) =>
         Directory.GetFiles(Path.GetDirectoryName(world)!, Path.GetFileName(world) + ".checkpoint-capture-*");
 }

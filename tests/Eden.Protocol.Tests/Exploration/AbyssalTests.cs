@@ -87,6 +87,29 @@ public sealed class AbyssalTests
     }
 
     [Fact]
+    public void ExpiredAbyssalRunStopsAdvertisingItsTraceAndActiveStateBeforeSettlement()
+    {
+        using Fixture f = new();
+        Prepare(f);
+        int origin = f.Db.Store.FindPilot(1000001)!.SystemId;
+        long filament = f.Grant(AbyssalRules.TranquilDarkFilament, cargo: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var abyss = f.Db.Services.GetRequiredService<IAbyssalDeadspace>();
+        var run = abyss.Deploy(f.PilotId, f.ShipId, filament, AbyssalMode.Cruiser).Run;
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(run.ExpiresAt - f.Clock.Now - 1));
+        Assert.Equal(AbyssalRules.Trace(run.Id), Assert.Single(abyss.Objects(origin)).Id);
+        Assert.Equal(run, abyss.Read(f.PilotId));
+
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+
+        Assert.Empty(abyss.Objects(origin));
+        Assert.Null(abyss.Read(f.PilotId));
+        Assert.Equal((int)AbyssalStatus.Active, live.Economy.Inspect(world => world.Set<SavedAbyssalRun>().Find(run.Id)!.Status));
+        abyss.Advance();
+        Assert.Equal((int)AbyssalStatus.Failed, live.Economy.Inspect(world => world.Set<SavedAbyssalRun>().Find(run.Id)!.Status));
+    }
+
+    [Fact]
     public void CurrentDungeonUsesTheSavedRoomBeforeBallparkBinding()
     {
         using Fixture f = new();

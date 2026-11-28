@@ -2,12 +2,13 @@ namespace Eden.World.Runtime;
 
 internal static class CheckpointCaptureFile
 {
-    private const string Suffix = ".checkpoint-capture-";
+    private const string CaptureSuffix = ".checkpoint-capture-";
+    private const string StagingSuffix = ".save-";
     private const string Journal = "-journal";
 
     internal static string Create(string worldPath)
     {
-        string path = worldPath + Suffix + Guid.NewGuid().ToString("N");
+        string path = worldPath + CaptureSuffix + Guid.NewGuid().ToString("N");
         FileStreamOptions create = new()
         {
             Mode = FileMode.CreateNew,
@@ -22,22 +23,35 @@ internal static class CheckpointCaptureFile
         return path;
     }
 
+    internal static string StagingPath(string worldPath) => worldPath + StagingSuffix + Guid.NewGuid().ToString("N");
+
     internal static void Reclaim(string worldPath)
     {
-        string prefix = Path.GetFileName(worldPath) + Suffix;
-        foreach (string path in Directory.EnumerateFiles(Path.GetDirectoryName(worldPath)!))
+        string worldName = Path.GetFileName(worldPath);
+        string capturePrefix = worldName + CaptureSuffix;
+        string stagingPrefix = worldName + StagingSuffix;
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        EnumerationOptions options = new() { AttributesToSkip = 0, IgnoreInaccessible = true };
+        foreach (string path in Directory.EnumerateFiles(Path.GetDirectoryName(worldPath)!, "*", options))
         {
             var name = Path.GetFileName(path).AsSpan();
-            if (!name.StartsWith(prefix, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            if (name.StartsWith(capturePrefix, comparison))
+            {
+                name = name[capturePrefix.Length..];
+            }
+            else if (name.StartsWith(stagingPrefix, comparison))
+            {
+                name = name[stagingPrefix.Length..];
+            }
+            else
             {
                 continue;
             }
-            var identity = name[prefix.Length..];
-            if (identity.EndsWith(Journal, StringComparison.Ordinal))
+            if (name.EndsWith(Journal, comparison))
             {
-                identity = identity[..^Journal.Length];
+                name = name[..^Journal.Length];
             }
-            if (identity.Length == 32 && Guid.TryParseExact(identity, "N", out _))
+            if (name.Length == 32 && Guid.TryParseExact(name, "N", out _))
             {
                 TryDelete(path);
             }

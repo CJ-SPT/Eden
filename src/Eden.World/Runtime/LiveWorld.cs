@@ -548,10 +548,7 @@ internal sealed partial class LiveWorld : IDisposable
         _memory = new(ConnectionString);
         try
         {
-            if (_diskCheckpointCapture)
-            {
-                CheckpointCaptureFile.Reclaim(_path);
-            }
+            CheckpointCaptureFile.Reclaim(_path);
             _memory.Open();
             using (var disk = WorldConnections.FileConnection(_path))
             {
@@ -978,7 +975,7 @@ internal sealed partial class LiveWorld : IDisposable
 
     internal static void PersistSnapshot(SqliteConnection snapshot, string path)
     {
-        string staging = path + ".save-" + Guid.NewGuid().ToString("N");
+        string staging = CheckpointCaptureFile.StagingPath(path);
         try
         {
             using (var disk = WorldConnections.FileConnection(staging))
@@ -990,7 +987,7 @@ internal sealed partial class LiveWorld : IDisposable
         }
         finally
         {
-            File.Delete(staging);
+            CheckpointCaptureFile.Delete(staging);
         }
     }
 

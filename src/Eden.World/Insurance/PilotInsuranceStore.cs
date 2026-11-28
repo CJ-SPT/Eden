@@ -124,8 +124,15 @@ internal sealed partial class PilotInsuranceStore(WorldDatabase database, TimePr
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         ShipAtStation(world, catalog, pilotId, stationId, shipId);
+        long now = Now;
         var policy = world
-            .Filter<SavedInsurancePolicy>(p => p.ShipId == shipId && p.PilotId == pilotId && p.Status == InsurancePolicyStatus.Active)
+            .Filter<SavedInsurancePolicy>(p =>
+                p.ShipId == shipId
+                && p.PilotId == pilotId
+                && p.Status == InsurancePolicyStatus.Active
+                && p.StartTime <= now
+                && p.EndTime > now
+            )
             .SingleOrDefault();
         if (policy is null)
         {

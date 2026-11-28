@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Clone jump station cache updates](#clone-jump-station-cache-updates)
 - [World skill training speed, November 21, 2026](#world-skill-training-speed-november-21-2026)
 - [Ship Tree recent-skill lookup, November 15, 2026](#ship-tree-recent-skill-lookup-november-15-2026)
 
@@ -598,6 +599,17 @@ References: unchanged pinned archive hash was rechecked; inert inspection covere
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Inspect agent lists in a station/Agency and an NPC profile. Save an agent, reconnect, and remove it from People and Places. Native rendering and interactions remain unverified; mission gameplay is still pending.
+
+## Clone jump station cache updates
+
+A cross-station clone jump changes the inactive body listings at both NPC stations. Eden now sends a station cache
+invalidation for the outgoing body's station and for the destination where the arriving body became active. A local swap
+sends one station invalidation. The general clone cache still refreshes once.
+
+Build 3662168's route inventory locates the station-bound `GetStationCloneState` read in `clonejumpsvc.pyj`.
+EVE.js `jumpCloneRuntime.js` (`9a1082e0c456`) invalidates both locations when settling an activation. The selected-pilot
+regression checks both station IDs alongside the existing ship replacement and location binding updates.
+[EVE University jump clones](https://wiki.eveuniversity.org/Jump_Clones)
 
 ## Persistent personal jump clones
 

@@ -4,6 +4,16 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## Missile contact after undocking and disconnecting
+
+Undocking from an NPC station can leave the saved ship position's system implicit. The missile service now keeps its validated
+logoff contact in that system until the saved timer expires. The resident regression launches a missile while the target is online,
+disconnects the target, and verifies one impact against the same hull while the PvP logoff timer runs.
+
+The existing build 3662168 missile activation and damage wires apply. EVE.js 261108.1 preserves ship position and logoff state in
+its socket lifecycle (`network/tcp/index.js`, SHA-256 prefix `bfdc20ce759d`). CCP documents attackable ships during the capsuleer
+logoff timer. [CCP logoff timers](https://support.eveonline.com/hc/en-us/articles/203208932-Weapon-and-Logoff-Timers)
+
 ## NPC identities for encounter waves
 
 On `9776f92e`, a timed reinforcement after checkpoint reopen reproduced the reported session rejection

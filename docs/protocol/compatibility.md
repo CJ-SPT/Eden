@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Second emulator bug audit](#second-emulator-bug-audit)
 - [Emulator bug audit](#emulator-bug-audit)
 - [EVE.js comparison for account and station clone reads](#evejs-comparison-for-account-and-station-clone-reads)
 - [EVE.js comparison for map, character and dungeon routes](#evejs-comparison-for-map-character-and-dungeon-routes)
@@ -17,6 +18,95 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## Second emulator bug audit
+
+The second audit began at Eden `7efbc04d` and fixed 15 defects. The topic records preserve the behavioral changes,
+local EVE.js references and relevant pinned-client evidence for build 3662168.
+
+- [Abyssal cooperative admission and trace expiry](abyssal.md#cooperative-admission-and-exact-trace-expiry)
+- [Wormhole travel after NPC undock](wormholes.md#wormhole-travel-after-npc-undock)
+- [Lost probe reconnection](information.md#lost-probe-reconnection)
+- [NPC station contract hull location](contracts.md#npc-station-contract-hull-location)
+- [Customs access, tax quotes and transit routes](planetary.md#customs-access-tax-quotes-and-transit-routes)
+- [Calendar invite retention and retired mail participants](social.md#calendar-invite-retention-and-retired-mail-participants)
+- [Clone jump station cache updates](characters.md#clone-jump-station-cache-updates)
+- [Missile contact after undocking and disconnecting](combat.md#missile-contact-after-undocking-and-disconnecting)
+- [Ship insurance cancellation deadline](inventory.md#ship-insurance-cancellation-deadline)
+- [Interrupted checkpoint file recovery](performance.md#interrupted-checkpoint-file-recovery)
+
+### Automated validation
+
+The 16 exact-method selectors matched 18 cases. On baseline `7efbc04d`, 17 failed and the explicit-system
+missile control passed in 15.67 seconds. On the corrected revision, all 18 passed in 17.93 seconds.
+The solution built with zero warnings or errors. The 25 affected-feature selectors passed all 407 cases in 192.25 seconds.
+The Python catalog and formatting policy suites passed all 17 cases. The complete formatting and line-width checks passed in
+an isolated checkout in 37.66 seconds, including restore.
+
+<details>
+<summary>Test filters</summary>
+
+Prefix each suffix with `Eden.Protocol.Tests.` and join the `FullyQualifiedName` selectors with `|`.
+The exact-method selection uses `=`.
+
+```text
+Combat.PilotMissileTests.OfflineVictimRemainsHittableAndItsPvpDeadlineExtendsAtImpact
+Persistence.IncrementalCheckpointTests.StartupReclaimsAbandonedCheckpointFilesRegardlessOfCaptureMode
+Persistence.InsuranceTests.PolicyExpiresAtItsDeadlineEvenIfTheClientSendsACancelRequest
+PilotSessions.CalendarContactPolicyTests.ExistingBlockedInviteeDoesNotPreventRemovingAnotherGuest
+PilotSessions.JumpCloneServiceTests.NativeUnboardAndCloneJumpReplaceTheCapsuleAndReleaseOldStationReferencesBeforeTheSessionDelta
+PilotSessions.MailContactPolicyTests.BiomassedRecipientCannotReceivePaidRepliesToHistoricalMail
+PilotSessions.MailingListServiceTests.OwnerBiomassRetiresTheListAndPreservesHistoricalMessagesAcrossReopen
+Persistence.MailingListLifecycleTests.StartupRetiresLegacyMailingListsOwnedByBiomassedPilots
+Exploration.WormholeTravelTests.WormholeJumpAcceptsTheSystemInferredFromAnNpcStationUndock
+Exploration.AbyssalCooperativeTests.TraceOwnerCanStillEnterAfterAMateStartsTheRunAndAnotherDeploymentIsRejected
+Exploration.AbyssalTests.ExpiredAbyssalRunStopsAdvertisingItsTraceAndActiveStateBeforeSettlement
+Exploration.ProbeScanningTests.ReconnectReplaysAlreadyPublishedProbesWithoutConsumingMoreCharges
+PilotSessions.ContractServiceTests.NpcStationContractsExcludeHullsDockedAtUpwellStructures
+Planetary.PlanetaryProtocolTests.CustomsOfficeWindowAndLaunchpadTransfersWorkAwayFromShipCargoRange
+Planetary.PlanetaryProtocolTests.CustomsTransferWithAnOutdatedQuoteRequiresConfirmationAtTheNewRate
+Planetary.PlanetaryIndustryTests.SchematicChangesPreservePlanetaryTransitRoutes
+```
+
+The affected class selection uses `~`.
+
+```text
+Combat.PilotMissileTests
+Combat.CrimewatchTests
+Persistence.IncrementalCheckpointTests
+Persistence.LiveWorldTests
+Persistence.InsuranceTests
+PilotSessions.InsuranceServiceTests
+PilotSessions.CalendarContactPolicyTests
+PilotSessions.CalendarServiceTests
+Persistence.CalendarTests
+PilotSessions.JumpCloneServiceTests
+PilotSessions.MailContactPolicyTests
+PilotSessions.MailingListServiceTests
+Persistence.MailingListLifecycleTests
+Persistence.CharacterDeletionTests
+Exploration.Abyssal
+Exploration.WormholeTravelTests
+Exploration.WormholeLifecycleTests
+Exploration.ProbeScanningTests
+PilotSessions.ContractServiceTests
+PilotSessions.ContractAssetServiceTests
+Persistence.ContractAssetTests
+Planetary.PlanetaryProtocolTests
+Planetary.PlanetaryIndustryTests
+Planetary.CustomsConfigurationTests
+Planetary.PlanetaryConfigurationTests
+```
+
+</details>
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
 
 ## Emulator bug audit
 

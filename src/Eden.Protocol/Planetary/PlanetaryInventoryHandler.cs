@@ -68,18 +68,13 @@ internal sealed class PlanetaryInventoryHandler(IPilotPlanetaryIndustry industry
                 {
                     throw new InvalidDataException("Choose a launchpad and its import/export quantities.");
                 }
-                // The client quote is not authoritative; the saved skills and NPC customs
-                // policy determine the actual charge in the same transaction as the goods.
-                if (clientRate is not null)
-                {
-                    PlanetaryRequestWire.Number(clientRate);
-                }
                 var change = industry.ImportExport(
                     context.Pilot.PilotId,
                     officeId,
                     pinId,
                     PlanetaryRequestWire.Cargo(imports),
-                    PlanetaryRequestWire.Commodities(exports)
+                    PlanetaryRequestWire.Commodities(exports),
+                    clientRate is null ? null : PlanetaryRequestWire.Number(clientRate)
                 );
                 // Rebuild the native colony before inventory callbacks rebuild the
                 // customs panes, so they cannot restore the pre-transfer launchpad.
@@ -101,6 +96,10 @@ internal sealed class PlanetaryInventoryHandler(IPilotPlanetaryIndustry industry
                 InventoryChangesWire.NotifyItemChange(context, change);
             }
             return PilotCallResult.None;
+        }
+        catch (PlanetaryTaxChangedException)
+        {
+            return new PilotCallResult.NamedFailure("TaxChanged", BlueEmpty.Dictionary);
         }
         catch (CargoCapacityException error)
         {

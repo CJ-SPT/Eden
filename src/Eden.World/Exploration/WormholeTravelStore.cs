@@ -408,9 +408,9 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);
         if (
             pilot.ActiveShipId != shipId
-            || position?.SystemId is not int system
+            || position is null
             || saved is null
-            || !Exists(world, system, entranceId, now)
+            || !Exists(world, CrimewatchPersistence.System(catalog, pilot.ActiveShip), entranceId, now)
         )
         {
             throw new InvalidDataException("Approach a wormhole with the active ship before jumping.");

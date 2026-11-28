@@ -100,10 +100,7 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
         _system = context.Pilot.SystemId;
         _probes = scanning.List(_pilot, _system, Now);
         _scan = scanning.Pending(_pilot);
-        foreach (var probe in _probes)
-        {
-            context.Notifications.Add(new NewScanProbe(probe));
-        }
+        PublishProbes(context);
         if (_scan is { } scan && scan.SystemId == _system && scan.ShipId == context.Pilot.ShipId)
         {
             context.Notifications.Add(new SystemScanStarted(scan));
@@ -191,6 +188,7 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
             {
                 throw new InvalidDataException("Wait until your ship is ready to operate probes in space.");
             }
+            bool alreadyEntered = _pilot == context.Pilot.PilotId && _system == context.Pilot.SystemId;
             Advance(context);
             if (launch && args is [long module, long count] && count is > 0 and <= ProbeScanRules.MaximumProbes)
             {
@@ -248,12 +246,11 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
             }
             if (method == "ReconnectToLostProbes" && args.Length == 0)
             {
-                var current = scanning.List(_pilot, _system, Now);
-                foreach (var probe in current.ExceptBy(_probes.Select(p => p.Id), p => p.Id))
+                if (alreadyEntered)
                 {
-                    context.Notifications.Add(new NewScanProbe(probe));
+                    _probes = scanning.List(_pilot, _system, Now);
+                    PublishProbes(context);
                 }
-                _probes = current;
                 return PilotCallResult.None;
             }
             return new PilotCallResult.Failure("Invalid probe command arguments.");
@@ -265,6 +262,14 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
         catch (Exception error) when (error is InvalidDataException or OverflowException)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private void PublishProbes(PilotCallContext context)
+    {
+        foreach (var probe in _probes)
+        {
+            context.Notifications.Add(new NewScanProbe(probe));
         }
     }
 

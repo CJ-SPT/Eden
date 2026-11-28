@@ -155,10 +155,10 @@ public sealed partial class PilotMissileTests
         return f;
     }
 
-    private static SharedSpace Space(Fixture f, SpacePosition? velocity = null)
+    private static SharedSpace Space(Fixture f, SpacePosition? velocity = null, bool implicitVictimSystem = false)
     {
         var npc = MissileCombatTests.Space(f);
-        f.Db.Store.SetPosition(VictimShip, npc.Position + new SpacePosition(11000, 0, 0), SystemId);
+        f.Db.Store.SetPosition(VictimShip, npc.Position + new SpacePosition(11000, 0, 0), implicitVictimSystem ? null : SystemId);
         var space = f.Db.Services.GetRequiredService<SharedSpace>();
         Publish(f, space, 1000001);
         Publish(f, space, 1000002, velocity);
@@ -549,12 +549,25 @@ public sealed partial class PilotMissileTests
         Assert.Empty(Store(f).TakeImpacts(f.PilotId));
     }
 
-    [Fact]
-    public void OfflineVictimRemainsHittableAndItsPvpDeadlineExtendsAtImpact()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void OfflineVictimRemainsHittableAndItsPvpDeadlineExtendsAtImpact(bool resident, bool implicitSystem)
     {
         using var f = Prepare();
+        if (implicitSystem)
+        {
+            int stationId = f.Db.Store.FindPilot(1000002)!.StationId;
+            using CatalogDbContext catalog = new(f.CatalogPath, writable: true);
+            catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={SystemId} WHERE Id={stationId}");
+        }
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         long launcher = MissileCombatTests.Load(f, Launcher, Charge);
-        var space = Space(f);
+        var space = Space(f, implicitVictimSystem: implicitSystem);
+        if (implicitSystem)
+        {
+            Assert.Null(live!.Economy.Inspect(world => world.Positions.Find(VictimShip)!.SystemId));
+        }
         Launch(f, launcher);
         var crimewatch = f.Db.Services.GetRequiredService<IPilotCrimewatch>();
         crimewatch.Disconnect(Victim, VictimShip);

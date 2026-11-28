@@ -1,5 +1,6 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Mail;
 using Eden.Gameplay.Market;
@@ -121,6 +122,35 @@ public sealed class MailContactPolicyTests
         Assert.IsType<PilotCallResult.Failure>(Send(sender));
         Assert.Equal(2, MailTestData.Store(db).Sync(Recipient, null, 0).New.Count);
         Assert.Empty(Journal(sender));
+    }
+
+    [Fact]
+    public void BiomassedRecipientCannotReceivePaidRepliesToHistoricalMail()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        using (var world = live.Economy.Begin(new(pilots: [Sender, Recipient])))
+        {
+            world.Pilots.Find(Recipient)!.CorporationId = OtherCorporation;
+            world.Add(new PilotWallet { PilotId = Sender, Cents = 10_000 });
+            world.Commit();
+        }
+        var mail = MailTestData.Store(db);
+        long source = mail.Send(Recipient, MailTestData.Draft with { Recipients = [Sender] }, Guid.NewGuid());
+        db.Services.GetRequiredService<IMailContactPolicy>().SetContactCost(Recipient, 75);
+        var deletion = db.Services.GetRequiredService<ICharacterDeletion>();
+        deletion.Prepare(1000002, Recipient);
+        clock.AdvanceWallTime(CharacterDeletionRules.PreparationDelay);
+        deletion.Delete(1000002, Recipient);
+
+        var reply = MailTestData.Draft with { ReplyTo = source, ApprovedContactCostIsk = 75 };
+        Assert.Throws<InvalidDataException>(() => mail.Send(Sender, reply, Guid.NewGuid()));
+
+        Assert.Equal(10_000, db.Services.GetRequiredService<IPilotWalletReader>().Balance(Sender));
+        Assert.Equal(MailStatus.None, Assert.Single(mail.Sync(Sender, null, 0).Status).Status);
+        Assert.Equal(source, Assert.Single(mail.Sync(Recipient, null, 0).New).Id);
+        Assert.Equal(MailTestData.Draft.Body, mail.Body(Sender, source, false, Guid.NewGuid()));
     }
 
     private static List<object?> Journal(CourierServiceTests.Client client) =>

@@ -199,6 +199,55 @@ public sealed class PlanetaryIndustryTests
     }
 
     [Fact]
+    public async Task SchematicChangesPreservePlanetaryTransitRoutes()
+    {
+        using var f = Prepare();
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var colony = Deploy(f);
+        var industry = Industry(f);
+        long port = colony.Pins.Single(p => p.TypeId == Launchpad).Id;
+        long producer = colony.Pins.Single(p => p.TypeId == Processor).Id;
+        PlanetaryId relay = new(1, 1);
+        int input = PlanetaryResources.AqueousLiquids;
+        colony = industry
+            .Update(
+                f.PilotId,
+                PlanetId,
+                [
+                    new RemovePlanetaryLink(new(port), new(producer)),
+                    new CreatePlanetaryPin(relay, Processor, 1, 1.0025),
+                    new SetPlanetarySchematic(relay, WaterSchematic),
+                    new CreatePlanetaryLink(new(port), relay, 0),
+                    new CreatePlanetaryLink(relay, new(producer), 0),
+                    new CreatePlanetaryRoute(new(1, 2), [new(port), relay, new(producer)], input, 3000),
+                    new CreatePlanetaryRoute(new(2, 2), [new(producer), relay, new(port)], Water, 20),
+                    new CreatePlanetaryRoute(new(3, 2), [new(port), relay], input, 3000),
+                    new CreatePlanetaryRoute(new(4, 2), [relay, new(port)], Water, 20),
+                ]
+            )
+            .Colony;
+        long middle = colony.Pins.Single(p => p.TypeId == Processor && p.Id != producer).Id;
+        var transit = colony.Routes.Where(r => r.Path.Count == 3 && r.Path[1] == middle).Select(r => r.Id).ToHashSet();
+        Assert.Equal(2, transit.Count);
+        var replacement = Catalog(f)
+            .Schematics.Values.OrderBy(recipe => recipe.Id)
+            .First(recipe => recipe.Id != WaterSchematic && recipe.PinTypes.Contains(Processor));
+
+        var edited = industry.Update(f.PilotId, PlanetId, [new SetPlanetarySchematic(new(middle), replacement.Id)]).Colony;
+
+        Assert.Equal(transit.Order(), edited.Routes.Where(r => r.Path.Contains(middle)).Select(r => r.Id).Order());
+        Assert.Equal(replacement.Id, edited.Pins.Single(p => p.Id == middle).SchematicId);
+        f.Clock.Seconds += 3600;
+        var finished = industry.Read(f.PilotId, PlanetId).Colony!;
+        Assert.True(PlanetarySimulation.Quantity(finished.Pins.Single(p => p.Id == port), Water) > 0);
+        await live.FlushAsync();
+        live.Dispose();
+        using WorldDbContext saved = new(f.Db.Path);
+        var restored = PilotPlanetaryIndustryStore.ReadState(saved.Set<SavedPlanetaryColony>().Find(f.PilotId, PlanetId)!);
+        Assert.Equal(transit.Order(), restored.Routes.Where(r => r.Path.Contains(middle)).Select(r => r.Id).Order());
+    }
+
+    [Fact]
     public void ExtractsProcessesAndPersistsWithoutReplayingCycles()
     {
         using var f = Prepare();
@@ -353,8 +402,13 @@ public sealed class PlanetaryIndustryTests
         long office = PlanetaryRules.OfficeId(PlanetId);
         long port = colony.Pins.Single(p => p.TypeId == Launchpad).Id;
         var contact = Assert.Single(industry.OrbitContacts(f.Db.Store.FindPilot(1000001)!.SystemId, f.Clock.Now));
-        Assert.Throws<InvalidDataException>(() => industry.ImportExport(f.PilotId, office, port, [], [new(Water, 1)]));
-        f.Db.Store.SetPosition(f.ShipId, contact.Position);
+        const int OtherSystem = 30000144;
+        f.Db.Store.SetPosition(f.ShipId, contact.Position, OtherSystem);
+        Assert.Contains(
+            "in its solar system",
+            Assert.Throws<InvalidDataException>(() => industry.ImportExport(f.PilotId, office, port, [], [new(Water, 1)])).Message
+        );
+        f.Db.Store.SetPosition(f.ShipId, contact.Position, contact.SystemId);
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Set<PilotWallet>().Find(f.PilotId)!.Cents = 0;

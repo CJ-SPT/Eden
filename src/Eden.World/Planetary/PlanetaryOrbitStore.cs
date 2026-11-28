@@ -96,7 +96,8 @@ internal static class PlanetaryOrbitStore
         CatalogDbContext catalog,
         long pilotId,
         long containerId,
-        long now
+        long now,
+        bool requireProximity = true
     )
     {
         var pilot =
@@ -137,20 +138,39 @@ internal static class PlanetaryOrbitStore
         {
             throw new InvalidDataException("Approach the orbital container in an uncloaked ship in its solar system.");
         }
-        double distance =
-            new SpacePosition(position.X, position.Y, position.Z).DistanceTo(target)
-            - (catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0)
-            - (catalog.RequireItem(typeId).Radius ?? 0);
-        if (distance > WreckDefinitions.TransferRange)
+        if (requireProximity)
         {
-            throw new InvalidDataException("Approach within 2,500 m of the orbital container.");
+            double distance =
+                new SpacePosition(position.X, position.Y, position.Z).DistanceTo(target)
+                - (catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0)
+                - (catalog.RequireItem(typeId).Radius ?? 0);
+            if (distance > WreckDefinitions.TransferRange)
+            {
+                throw new InvalidDataException("Approach within 2,500 m of the orbital container.");
+            }
         }
         return (pilot, systemId, typeId, target);
     }
 
+    internal static void RequireOfficePresence(WorldAction world, CatalogDbContext catalog, long pilotId, long officeId, long now)
+    {
+        if (!PlanetaryRules.IsOffice(officeId))
+        {
+            throw new InvalidDataException("Choose a planetary customs office.");
+        }
+        Access(world, catalog, pilotId, officeId, now, requireProximity: false);
+    }
+
     internal static PlanetaryOrbitInventory Read(WorldAction world, CatalogDbContext catalog, long pilotId, long containerId, long now)
     {
-        var (_, systemId, typeId, _) = Access(world, catalog, pilotId, containerId, now);
+        var (_, systemId, typeId, _) = Access(
+            world,
+            catalog,
+            pilotId,
+            containerId,
+            now,
+            requireProximity: !PlanetaryRules.IsOffice(containerId)
+        );
         var type = catalog.RequireItem(typeId);
         return new(
             new(

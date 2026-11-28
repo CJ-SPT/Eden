@@ -1,3 +1,4 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Mail;
 using Eden.Gameplay.Mail;
 using Eden.World.Mail;
@@ -8,6 +9,37 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class MailingListLifecycleTests
 {
+    [Fact]
+    public void StartupRetiresLegacyMailingListsOwnedByBiomassedPilots()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock);
+        var lists = MailingListTestData.Store(db);
+        long id = lists.Create(MailingListTestData.Owner, "Legacy fleet", MailingListTestData.Open, Guid.NewGuid());
+        lists.Join(MailingListTestData.Member, "Legacy fleet", Guid.NewGuid());
+        long cursor = lists.Observe(MailingListTestData.Member);
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(
+                new SavedCharacterDeletion
+                {
+                    PilotId = MailingListTestData.Owner,
+                    ReadyAt = clock.Now,
+                    DeletedAt = clock.Now,
+                }
+            );
+            world.SaveChanges();
+        }
+
+        WorldInitialization.Initialize(new(db.Path), clock);
+        WorldInitialization.Initialize(new(db.Path), clock);
+
+        Assert.Empty(lists.Joined(MailingListTestData.Member));
+        Assert.Equal("Legacy fleet", lists.Info(MailingListTestData.Member, id)!.Name.Display);
+        Assert.Equal(cursor, lists.Observe(MailingListTestData.Member));
+        Assert.NotEqual(id, lists.Create(MailingListTestData.Member, "Legacy fleet", MailingListTestData.Open, Guid.NewGuid()));
+    }
+
     [Fact]
     public async Task ConcurrentJoinsSendOneWelcomeAndDeliveryFailureRollsBackTheSubscription()
     {

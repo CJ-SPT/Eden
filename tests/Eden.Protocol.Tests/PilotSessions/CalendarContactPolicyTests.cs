@@ -1,5 +1,6 @@
 using Eden.Data.World.Market;
 using Eden.Gameplay.Calendar;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Calendar;
@@ -107,6 +108,29 @@ public sealed class CalendarContactPolicyTests
                 "calendarMgr",
                 Keywords(approval)
             );
+    }
+
+    [Fact]
+    public void ExistingBlockedInviteeDoesNotPreventRemovingAnotherGuest()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        long other = Assert.Single(CalendarTestData.AddPilots(db, 1));
+        using CourierServiceTests.Client owner = new(db, clock, 1000001);
+        owner.Refresh();
+        var calendar = db.Services.GetRequiredService<IPilotCalendar>();
+        long id = calendar.Create(Owner, CalendarTestData.Draft(clock), [Guest, other]);
+        calendar.Respond(Guest, id, Owner, CalendarResponse.Accepted);
+        db.Services.GetRequiredService<IPilotContacts>().SetBlocked(Guest, [Owner], true);
+        long cursor = calendar.Observe(other);
+
+        Assert.Null(
+            Reply(owner.Call("UpdateEventParticipants", [id, new List<object?> { Guest }, new List<object?> { other }], "calendarMgr"))
+        );
+
+        Assert.Equal(new CalendarAttendance(Guest, CalendarResponse.Accepted), Assert.Single(calendar.Attendance(Owner, id, Owner)));
+        Assert.Equal(CalendarChangeKind.Uninvited, Assert.Single(calendar.Changes(other, cursor).Items).Kind);
+        Assert.Empty(calendar.Month(other, 11, 2026));
     }
 
     private static LiveWorld Prepare(TestWorld db, long balance)

@@ -126,7 +126,9 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
             .Select(i => PilotInventoryStore.Read(catalog, i));
         var ships = world
             .Set<Ship>()
-            .Where(s => s.OwnerId == pilotId && s.StationId == stationId && s.StoredInId == null && s.Position == null)
+            .Where(s =>
+                s.OwnerId == pilotId && s.StationId == stationId && s.StructureId == null && s.StoredInId == null && s.Position == null
+            )
             .Where(s => !world.Pilots.Any(p => p.ActiveShipId == s.Id))
             .AsEnumerable()
             .Select(s => PilotFleetStore.Read(catalog, s));

@@ -2,10 +2,12 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
@@ -24,6 +26,74 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class ContractServiceTests
 {
+    [Fact]
+    public async Task NpcStationContractsExcludeHullsDockedAtUpwellStructures()
+    {
+        const long issuer = ContractAssetTestData.Pilot;
+        const int station = ContractAssetTestData.Station;
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        PassiveCatalogFixture.LoadStructures(new WorldDatabase(db.Path).CatalogPath);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        long structureId = StructureRules.FirstStructureId + 1;
+        long stationHull;
+        long structureHull;
+        using (var world = live.Economy.Begin(TransactionParticipants.None))
+        {
+            world.Add(new PilotWallet { PilotId = issuer, Cents = 100_000_000 });
+            world.Add(
+                new SavedStructure
+                {
+                    Id = structureId,
+                    TypeId = 35832,
+                    Name = "Contract audit structure",
+                    CorporationId = pilot.CorpId,
+                    SystemId = pilot.SystemId,
+                }
+            );
+            stationHull = AddHull(null);
+            structureHull = AddHull(structureId);
+            world.Commit();
+
+            long AddHull(long? structure) =>
+                world
+                    .Add(
+                        new Ship
+                        {
+                            Id = InventoryPersistence.NextId(world),
+                            OwnerId = issuer,
+                            TypeId = pilot.ShipTypeId,
+                            StationId = station,
+                            StructureId = structure,
+                            Name = "Spare contract hull",
+                        }
+                    )
+                    .Entity.Id;
+        }
+        var assets = db.Services.GetRequiredService<IPilotContractAssets>();
+        var rows = assets.Station(issuer, station);
+        Assert.Contains(rows, row => row.Id == stationHull);
+        Assert.DoesNotContain(rows, row => row.Id == structureHull);
+        using (Client owner = new(db, clock, 1000001))
+        {
+            owner.Select();
+            var request = Request(structureHull);
+            Assert.IsType<Dictionary<string, object?>>(request.State)["itemList"] = new List<object?>
+            {
+                new List<object?> { structureHull, 1L },
+            };
+            Assert.IsType<PilotCallResult.Failure>(owner.Call("CreateContract", [request]));
+            Assert.Empty(owner.Context.Notifications);
+        }
+        await live.FlushAsync();
+        db.Services.Dispose();
+        using WorldDbContext saved = new(db.Path);
+        Assert.Equal(structureId, saved.Ships.Find(structureHull)!.StructureId);
+        Assert.Equal(100_000_000, saved.Set<PilotWallet>().Find(issuer)!.Cents);
+        Assert.Empty(saved.Set<SavedContract>());
+    }
+
     [Fact]
     public void DelayedContractEventsCannotRewindANewerWalletTransaction()
     {

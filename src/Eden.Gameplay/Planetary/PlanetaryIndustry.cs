@@ -178,8 +178,11 @@ public interface IPilotPlanetaryIndustry
         long officeId,
         long pinId,
         IReadOnlyList<PlanetaryCargoRequest> imports,
-        IReadOnlyList<PlanetaryCommodity> exports
+        IReadOnlyList<PlanetaryCommodity> exports,
+        double? quotedTaxRate = null
     );
 }
 
 public sealed record PlanetaryCargoRequest(long ItemId, int Quantity);
+
+public sealed class PlanetaryTaxChangedException() : Exception("The customs tax rate changed. Review the updated tax before transferring.");

@@ -160,6 +160,10 @@ public sealed class JumpCloneServiceTests
         Assert.NotEqual(previous.ShipId, f.Context.Pilot.ShipId);
         Assert.Equal(2, f.Context.Notifications.OfType<ItemChanged>().Count());
         Assert.Single(f.Context.Notifications.OfType<JumpCloneCacheInvalidated>());
+        Assert.Equal(
+            new[] { HomeStationTestData.Other, HomeStationTestData.Origin },
+            f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>().Select(notice => notice.StationId)
+        );
         Assert.Single(f.Context.Notifications.OfType<AccountBalanceChanged>());
         List<object?> packets = [];
         PilotSessionOutput output = new(

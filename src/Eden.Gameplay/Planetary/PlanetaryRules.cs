@@ -307,7 +307,9 @@ public static class PlanetaryRules
                     if (pin.SchematicId != set.SchematicId)
                     {
                         Replace(pin with { SchematicId = set.SchematicId, Contents = [], NextRunAt = null, LastRunAt = now });
-                        RemoveRoutes(pin.Id);
+                        routes.RemoveAll(route =>
+                            route.Path is [var source, .., var destination] && (source == pin.Id || destination == pin.Id)
+                        );
                     }
                     break;
                 }

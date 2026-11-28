@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Ship insurance cancellation deadline](#ship-insurance-cancellation-deadline)
 - [Corporation Market Delivery withdrawal](#corporation-market-delivery-withdrawal)
 - [Crystal damage in inventory](#crystal-damage-in-inventory)
 - [Fitted ship repackaging](#fitted-ship-repackaging)
@@ -656,6 +657,14 @@ FullyQualifiedName~PilotFleetTests|FullyQualifiedName~CorvetteRecoveryTests|Full
 **Live acceptance.** Not performed; agent client testing is disabled. Native rendering, input and hangar refresh remain unverified.
 
 **Optional maintainer checks.** With Ship Hangar open, leave a hull and board it again; confirm the pod tile disappears. Repeat using Board my Corvette from a pod.
+
+## Ship insurance cancellation deadline
+
+The native `insuranceSvc.UnInsureShip(shipID)` request requires a currently active personal policy. At the exact expiry,
+a delayed request fails through the existing invalid-policy path and leaves the balance and historical coverage intact.
+Reissuing insurance after expiry records the preceding policy as expired and persists both policies through checkpoint reopen.
+EVE.js 261108.1 also checks expiry before cancellation in `insuranceRuntime.js` (SHA-256 prefix `6ab2a1f77cd2`).
+[CCP insurance policy duration](https://support.eveonline.com/hc/en-us/articles/212726885-Insurance)
 
 ## Personal ship insurance
 

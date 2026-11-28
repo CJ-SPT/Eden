@@ -1,5 +1,16 @@
 # Wormholes
 
+## Wormhole travel after NPC undock
+
+Wormhole preparation and transfer now resolve an in-space ship's current system from its last NPC station when the
+saved position has no explicit system. Both checks use the same location rule as navigation and keep the existing
+distance, mass and polarization requirements. The resident regression prepares and completes a jump from such a
+position, then checks the new system and the saved polarization stamp.
+
+Build 3662168 `movementFunctions.pyj` calls `wormholeMgr.WormholeJump` with the entrance ID. The local EVE.js
+`wormholeMgrService.js` (`92f88b40be23`) also derives the source system from the session. The movement restrictions
+remain consistent with [EVE University wormholes](https://wiki.eveuniversity.org/Wormholes).
+
 ## Resident connections — November 16, 2026
 
 World version **171** replaces the three permanent reservoir links with resident connection slots. The first

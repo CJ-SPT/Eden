@@ -64,6 +64,10 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ## Record index
 
+### Abyssal Deadspace
+
+- [Cooperative admission and exact trace expiry](protocol/abyssal.md#cooperative-admission-and-exact-trace-expiry)
+
 ### Agent missions and research
 
 - [NPC health reinforcement triggers](protocol/agents.md#npc-health-reinforcement-triggers--november-23-2026)
@@ -300,6 +304,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Characters and skills
 
+- [Clone jump station cache updates](protocol/characters.md#clone-jump-station-cache-updates)
 - [Resident neural remaps](protocol/characters.md#resident-neural-remaps)
 - [Player-created portrait settings](protocol/characters.md#player-created-portrait-settings-november-12-2026)
 - [Universal native search](protocol/characters.md#universal-native-search-november-9-2026)
@@ -350,6 +355,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Chat, mail and contacts
 
+- [Calendar invite retention and retired mail participants](protocol/social.md#calendar-invite-retention-and-retired-mail-participants)
 - [Live organization mail and mailbox selection](protocol/social.md#live-organization-mail-and-mailbox-selection)
 - [Contact notification CSPA](protocol/social.md#contact-notification-cspa)
 - [Personal calendar invitation CSPA](protocol/social.md#personal-calendar-invitation-cspa)
@@ -383,6 +389,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Combat and NPC populations
 
+- [Missile contact after undocking and disconnecting](protocol/combat.md#missile-contact-after-undocking-and-disconnecting)
 - [High-angle turret coverage](protocol/combat.md#high-angle-turret-coverage)
 - [Clone Soldier belt encounters](protocol/combat.md#clone-soldier-belt-encounters)
 - [Security Office tag exchanges](protocol/combat.md#security-office-tag-exchanges)
@@ -447,6 +454,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Compatibility and route audits
 
+- [Second emulator bug audit](protocol/compatibility.md#second-emulator-bug-audit)
 - [Emulator bug audit](protocol/compatibility.md#emulator-bug-audit)
 - [EVE.js comparison for account and station clone reads](protocol/compatibility.md#evejs-comparison-for-account-and-station-clone-reads)
 - [EVE.js comparison for map, character and dungeon routes](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
@@ -654,6 +662,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Information modules and salvage
 
+- [Lost probe reconnection](protocol/information.md#lost-probe-reconnection)
 - [Cargo scanning courier packages](protocol/information.md#cargo-scanning-courier-packages)
 - [Cargo scans through containers](protocol/information.md#cargo-scans-through-containers)
 - [Ship scanning Upwell structures](protocol/information.md#ship-scanning-upwell-structures)
@@ -676,6 +685,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Inventory and ship ownership
 
+- [Ship insurance cancellation deadline](protocol/inventory.md#ship-insurance-cancellation-deadline)
 - [Corporation Market Deliveries withdrawal](protocol/inventory.md#corporation-market-delivery-withdrawal)
 - [Fitted ship repackaging](protocol/inventory.md#fitted-ship-repackaging)
 - [Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
@@ -863,6 +873,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Personal contracts
 
+- [NPC station contract hull location](protocol/contracts.md#npc-station-contract-hull-location)
 - [Capsule selection during creation](protocol/contracts.md#capsule-selection-during-creation)
 - [Bulk personal contract cancellation](protocol/contracts.md#bulk-personal-contract-cancellation)
 - [courier package Show Info volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026)
@@ -881,6 +892,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Planetary industry
 
+- [Customs access, tax quotes and transit routes](protocol/planetary.md#customs-access-tax-quotes-and-transit-routes)
 - [PI customs quantities and transfer refresh](protocol/planetary.md#customs-quantity-parsing-and-staged-transfer-refresh--november-16-2026)
 - [PI customs capacity and tax](protocol/planetary.md#customs-storage-and-tax-configuration--november-16-2026)
 - [PI capacity and factory speed](protocol/planetary.md#storage-capacity-and-factory-speed--november-16-2026)
@@ -934,6 +946,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
+- [Interrupted checkpoint file recovery](protocol/performance.md#interrupted-checkpoint-file-recovery)
 - [Maintenance and checkpoint failure isolation](protocol/performance.md#maintenance-and-checkpoint-failure-isolation)
 - [Runtime admission and checkpoint recovery](protocol/performance.md#runtime-admission-and-checkpoint-recovery)
 - [SQL-free gameplay and cold market preparation](protocol/performance.md#sql-free-gameplay-and-cold-market-preparation)
@@ -1104,6 +1117,10 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 - [The Agency](protocol/agency.md#native-agency-directories--november-10-2026)
 - [Agents & Missions browsing](protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
+
+### Wormholes
+
+- [Wormhole travel after NPC undock](protocol/wormholes.md#wormhole-travel-after-npc-undock)
 
 ### World configuration
 

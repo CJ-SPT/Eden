@@ -18,6 +18,7 @@ using Eden.World.Docking;
 using Eden.World.Drones;
 using Eden.World.Economy;
 using Eden.World.Fittings;
+using Eden.World.Mail;
 using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
@@ -68,6 +69,7 @@ public static class WorldInitialization
             WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics, setup);
             mods.ImportRuntimeState(world);
         }
+        PilotMailingListStore.ReconcileRetiredPilots(world);
         if (skillsChanged)
         {
             world.Set<Eden.Data.World.Market.MarketStation>().ExecuteUpdate(setters => setters.SetProperty(row => row.SeedVersion, 0));
