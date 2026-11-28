@@ -332,8 +332,8 @@ held claim and a foreign bot alliance's claim creates a border rivalry. Positive
 The executor retains a monthly dues reserve and avoids routes through systems the pilot has recently marked dangerous.
 The pilot uses its fitted link and fuel or buys missing supplies through normal market orders.
 
-The planner prefers reachable command nodes in an active rival campaign. The executor sends one pilot to an owned hub
-and can send available pilots to distinct command nodes once the campaign starts. Attacking an undamaged hub requires
+The planner prefers reachable command nodes in an active rival campaign. The executor sends one pilot per target and
+can attack several owned hubs or command nodes when qualified ships are available. Attacking an undamaged hub requires
 an open vulnerability window with time for travel and warmup. Attackers carry enough fuel for the current score and
 activity defense multiplier. The home claim and the expected rival alliance, hub and destination survive checkpoint
 reopen. The alliance counts saved expeditions before its pilots resume. The pilot revalidates the objective before
@@ -375,7 +375,7 @@ None.
 ## Choosing rival sovereignty objectives
 
 The executor compares eligible targets using usable routes, the fitted link's duration, the ship's fuel and the native
-remaining score. Command nodes keep priority, and couriers already assigned to a campaign reserve distinct nodes. Within
+remaining score. Command nodes keep priority, and each outbound raider reserves its exact target. Within
 each priority, the planner prefers a ship that can depart on its current fit and fuel. It then estimates completion from
 route length, warmup and scoring time, using the activity defense multiplier applied to the hub or campaign. Fuel needed,
 system ID and target ID resolve ties. If a fit needs supplies, the ordinary market and dues checks still govern the purchase.
@@ -412,6 +412,40 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Concurrent attacks on rival sovereignty objectives
+
+Each outbound expedition reserves its saved hub or command node. A fitted pilot can respond to a separate vulnerable
+hub or a node from another campaign while that expedition is underway. A returning raider releases its reservation.
+The executor reads both resident work and saved checkpoints, so reopening the world preserves outbound reservations.
+
+Each launch still checks the route, current vulnerability, fitted fuel and corporation dues reserve. Home defense
+retains priority. The pinned build 3662168 scoring owner advances each target independently and counts presence by side.
+The EVE.js 261108.1 `server/src/services/sovereignty/sovCampaignState.js` reference also keeps link state per target and
+derives the scoring team from the links on that target. [CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[CCP command-node events](https://support.eveonline.com/hc/en-us/articles/203728981-Command-Nodes-Event)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.FundedRaiderWingReservesSeparateRivalHubsAcrossRestart` method filter passed one case
+in 11.48 seconds after a 14.67-second build. The first raider reserved the lower-defense hub before checkpointing,
+and a second raider took the other hub after reopening. Both paid native links advanced their hub scores during
+overlapping cycles. The third fitted pilot took home defense standby without spending fuel. Both defender claims,
+the attacker's home claim and the corporation's dues reserve remained intact. Zero human pilots were selected.
+
+The focused `FullyQualifiedName~` selection passed 36 cases in 50.36 seconds after a 1.32-second build. It covered
+owned-hub attack, target ranking, parallel reservation, border loss, interceptor response, multi-node defense, guard
+fuel stocking and replacement, first-claim staging, and the regional screen replay. It also included
+`SovereigntyCampaignTests`, `SovereigntyWarfareRulesTests`, and `SovereigntyWarfareBoundaryTests`. The solution built
+in 0.81 seconds with zero warnings or errors. The catalog setup and formatting policy suites passed 17 cases.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Attacks across new sovereignty borders
 
 Eden's neutral-rivalry policy matches the rival claim against every system the attacking alliance holds. It uses
@@ -421,8 +455,8 @@ qualify a target independently of the border, while positive standing disables t
 
 The courier starts and ends its route at headquarters. The saved claim establishes the border and is checked again at
 the destination and before Entosis activation or renewal. If that holding falls, the expedition returns and any paid
-cycle settles through the existing Entosis path. The rival hub remains the campaign identity used when assigning
-separate command nodes. The saved expedition format continues to use its existing home-system field.
+cycle settles through the existing Entosis path. Each command-node expedition also retains the rival hub as its campaign
+identity. The saved expedition format continues to use its existing home-system field.
 
 Build 3662168 supplies the gate and sovereignty records. The EVE.js 261108.1 `resolveOwnedHubTarget` reference checks
 that the target is the held hub and belongs to the current defender. Eden uses the border when planning bot work and

@@ -1091,6 +1091,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Sovereignty standby readiness](protocol/sovereignty.md#sovereignty-standby-readiness)
 - [Bot attacks on rival sovereignty](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty)
 - [Choosing rival sovereignty objectives](protocol/sovereignty.md#choosing-rival-sovereignty-objectives)
+- [Concurrent attacks on rival sovereignty objectives](protocol/sovereignty.md#concurrent-attacks-on-rival-sovereignty-objectives)
 - [Attacks across new sovereignty borders](protocol/sovereignty.md#attacks-across-new-sovereignty-borders)
 - [Grid threats and Entosis withdrawal](protocol/sovereignty.md#grid-threats-and-entosis-withdrawal)
 - [Regional fleets at sovereignty objectives](protocol/sovereignty.md#regional-fleets-at-sovereignty-objectives)

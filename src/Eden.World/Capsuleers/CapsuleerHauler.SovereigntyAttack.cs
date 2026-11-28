@@ -43,6 +43,10 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        var reservedTargets = otherExpeditions
+            .Where(expedition => !expedition.Returning)
+            .Select(expedition => expedition.HubId)
+            .ToHashSet();
         var home = holdings[0];
         int members = world.Filter<SavedAllianceMember>(member => member.AllianceId == home.AllianceId).Count();
         if (!CapsuleerAlliances.CanFund(world, corporation, members, 0))
@@ -116,16 +120,7 @@ internal sealed partial class CapsuleerHauler
             Dictionary<(int System, HullClass Hull, int Jumps), CapsuleerTrafficRoute?> routes = [];
             foreach (var (rival, target, anchor) in candidates)
             {
-                SovereigntyAttackObjective objective = new(rival.SystemId, rival.HubId, rival.AllianceId);
-                if (
-                    otherExpeditions.Count != 0
-                    && (
-                        !target.CommandNode
-                        || otherExpeditions.Any(expedition =>
-                            expedition.Attack != objective || !expedition.Returning && expedition.HubId == target.Id
-                        )
-                    )
-                )
+                if (reservedTargets.Contains(target.Id))
                 {
                     continue;
                 }
@@ -163,7 +158,7 @@ internal sealed partial class CapsuleerHauler
                 {
                     int fuel = checked(RequiredExpeditionCycles(duration, profile) * profile.FuelQuantity);
                     yield return new(
-                        objective,
+                        new(rival.SystemId, rival.HubId, rival.AllianceId),
                         target,
                         anchor,
                         route,

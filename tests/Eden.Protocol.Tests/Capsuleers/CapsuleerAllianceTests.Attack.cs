@@ -46,6 +46,10 @@ public sealed partial class CapsuleerAllianceTests
     public Task FundedRivalRaiderChoosesLowerDefenseHubAcrossRestart() => ExerciseRivalAttack(defend: false, rankRivals: true);
 
     [Fact]
+    public Task FundedRaiderWingReservesSeparateRivalHubsAcrossRestart() =>
+        ExerciseRivalAttack(defend: false, rankRivals: true, parallelRivals: true);
+
+    [Fact]
     public Task NeutralRaiderUsesNewFrontierAndReturnsWhenItIsLostAcrossRestart() =>
         ExerciseRivalAttack(defend: false, rankRivals: false, frontierRaid: true);
 
@@ -55,7 +59,13 @@ public sealed partial class CapsuleerAllianceTests
     public Task UnattendedRaiderRespondsToVisibleInterceptorOnTheHubGrid(bool hostile) =>
         ExerciseRivalAttack(defend: false, rankRivals: false, hostileGrid: hostile);
 
-    private static async Task ExerciseRivalAttack(bool defend, bool rankRivals, bool frontierRaid = false, bool? hostileGrid = null)
+    private static async Task ExerciseRivalAttack(
+        bool defend,
+        bool rankRivals,
+        bool frontierRaid = false,
+        bool? hostileGrid = null,
+        bool parallelRivals = false
+    )
     {
         const int home = 30003990;
         const int frontier = RecoveredTerritoryDecoySystem;
@@ -171,6 +181,7 @@ public sealed partial class CapsuleerAllianceTests
         long defender;
         long hubId;
         SovereigntyClaim original;
+        SovereigntyClaim? secondRival = null;
         SovereigntyClaim homeClaim;
         SovereigntyExpedition underway;
         long reserve = AllianceBillingRules.Amount(CapsuleerAllianceRules.FoundingCorporations);
@@ -220,6 +231,10 @@ public sealed partial class CapsuleerAllianceTests
             Assert.Equal(1d, conflict.Capture.Value);
             original = host.GetRequiredService<ISovereignty>().Read(target)!;
             homeClaim = host.GetRequiredService<ISovereignty>().Read(home)!;
+            if (parallelRivals)
+            {
+                secondRival = Assert.IsType<SovereigntyClaim>(host.GetRequiredService<ISovereignty>().Read(frontier));
+            }
             var social = host.GetRequiredService<IAllianceSocial>();
             social.SetStanding(attackers.Ceo, [defenders.Alliance], 10);
             social.SetStanding(defenders.Ceo, [attackers.Alliance], 10);
@@ -416,6 +431,67 @@ public sealed partial class CapsuleerAllianceTests
         Assert.Equal(underway, checkpoint?.SovereigntyExpedition);
         StartRoutines(reopened);
         Assert.Equal(original, claims.Read(target));
+        if (parallelRivals)
+        {
+            var secondClaim = Assert.IsType<SovereigntyClaim>(secondRival);
+            long wing = attackCouriers[1];
+            long spare = attackCouriers[2];
+            var scheduler = reopened.GetRequiredService<CapsuleerScheduler>();
+            var wingObjective = new SovereigntyAttackObjective(secondClaim.SystemId, secondClaim.HubId, defenders.Alliance);
+            Assert.Equal(secondClaim, claims.Read(secondClaim.SystemId));
+            Mobilize(wing);
+            Tick(reopened, 240, () => Expedition(restored, wing) is { Duty: SovereigntyDuty.Attack }, paidPilots: attackCouriers);
+            var wingExpedition = Assert.IsType<SovereigntyExpedition>(Expedition(restored, wing));
+            Assert.Equal(wingObjective, wingExpedition.Attack);
+            Assert.Equal(
+                ((long?)secondClaim.HubId, secondClaim.SystemId, (int?)home),
+                (wingExpedition.HubId, wingExpedition.TargetSystemId, wingExpedition.HomeSystemId)
+            );
+            Assert.Equal(underway.Attack, Expedition(restored, attacker)?.Attack);
+
+            Mobilize(spare);
+            Tick(
+                reopened,
+                2400,
+                () =>
+                {
+                    Assert.Null(Expedition(restored, spare));
+                    return Scoring(attacker, hubId)
+                        && Scoring(wing, secondClaim.HubId)
+                        && warfare.Hub(target)!.Conflict!.Capture.Value < 1
+                        && warfare.Hub(secondClaim.SystemId)!.Conflict!.Capture.Value < 1
+                        && restored.HaulerCheckpoints.GetValueOrDefault(spare)?.Work.HomeDefenseAllianceId == attackers.Alliance;
+                },
+                paidPilots: attackCouriers
+            );
+            Assert.True(Fuel(restored, attacker) < fuel - 1);
+            Assert.True(Fuel(restored, wing) < fuel - 1);
+            Assert.Equal(fuel, Fuel(restored, spare));
+            Assert.Empty(warfare.Cycles(spare));
+            Assert.Equal(original, claims.Read(target));
+            Assert.Equal(secondClaim, claims.Read(secondClaim.SystemId));
+            Assert.Equal(homeClaim, Assert.Single(claims.List(attackers.Alliance)));
+            Assert.Equal(reserve, restored.Economy.Read(world => world.Set<SavedCorporation>().Find(attackers.Corporation)!.BalanceCents));
+            AssertUnattended(reopened);
+            return;
+
+            bool Scoring(long pilot, long grid) =>
+                warfare
+                    .Cycles(pilot)
+                    .Any(cycle =>
+                        cycle.HubId == grid && !cycle.Stopping && cycle.WarmupUntil <= cycle.StartedAt && cycle.EndsAt > fixture.Clock.Now
+                    );
+
+            void Mobilize(long pilot)
+            {
+                using (var mobilize = restored.Economy.Begin(TransactionParticipants.None))
+                {
+                    mobilize.Remove(mobilize.Set<SavedCapsuleerSuspension>().Find(pilot)!);
+                    mobilize.Commit();
+                }
+                scheduler.PopulationPrepared(HeadquartersSystem);
+            }
+        }
         if (hostileGrid is bool hostile)
         {
             var (contact, hubPosition) = PublishInterceptor(hostile);
