@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Capsule selection during creation](#capsule-selection-during-creation)
 - [Courier package Show Info volume](#courier-package-show-info-volume--november-9-2026)
 - [Contract search endpoint access](#contract-search-endpoint-access)
 - [Contract search endpoint metadata](#contract-search-endpoint-metadata)
@@ -21,6 +22,33 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Personal auction contracts](#personal-auction-contracts)
 - [Bulk fitted-ship contract creation](#bulk-fitted-ship-contract-creation)
 - [Bulk personal contract cancellation](#bulk-personal-contract-cancellation)
+
+## Capsule selection during creation
+
+Build **3662168** `CreateContractWnd.FinishStep1` rejects an offered root in `const.groupCapsule` (**29**) with
+`ConIllegalType`. The check covers both the regular path and the fitted-ship batch path. Eden previously enforced it
+only for the fitted-ship batch. `contractProxy.CreateContract` now validates each offered root before splitting its stack
+or reserving that item's escrow. A later rejected selection rolls back earlier splits and reservations in the same resident action.
+
+REA extraction `ev_bd5916e305ccc3057bdfed2043aad806aea3dd122f6acd0cfbc7366137f656bb` identified
+`eve/client/script/ui/shared/neocom/contracts/createContractWnd.pyj` in the pinned archive (SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`). The extracted member matches the staged client's copy.
+Inert Python 2.7 disassembly of `FinishStep1`, line 1646, anchors the group list at offsets 0–9 and the two checks at
+323–344 and 669–690. The catalog maps both Capsule (**670**) and Capsule - Genolution 'Auroral' 197-variant (**33328**)
+to group 29. Local EveJS 261108.1 `contractRuntimeState.js` (`CB0A86AB657EDCAE` SHA-256 prefix) provided
+a comparison of creation-time asset and escrow validation through `validateCreationItems`.
+See [EVE University's Contracts guide](https://wiki.eveuniversity.org/Contracts) for the contract item-selection flow.
+
+**Automated validation.** The `tools/Test-Feature.ps1` exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ContractServiceTests.NativeCreationRejectsCapsuleRootsAndRollsBackEarlierOffers`
+first reproduced three successful capsule submissions through the native creation RPC. All three cases passed after the
+fix in the combined 11-case run (13.34 seconds to build and 16.68 seconds to test). The cases cover packaged and assembled
+capsule roots in item exchanges, auctions and couriers. They check that rejecting a mixed offer leaves the balance,
+inventory, available contracts, contract revision and client notifications unchanged.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
 
 ## Courier package Show Info volume — November 9, 2026
 

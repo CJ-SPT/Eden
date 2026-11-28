@@ -1233,6 +1233,19 @@ reference uses station IDs when placing market orders in `server/src/services/ma
 `F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`). Eden uses the existing resident market and gate
 transfer operations. Routes share one catalog path search per hub. [Trade hubs](https://wiki.eveuniversity.org/Trade_Hubs)
 
+Haulers with an active threat on a cached route can take another route to the same stocked hub. Eden searches the
+reciprocal gate graph once from the refuge for affected hubs, skips destinations it cannot reach without entering
+an avoided system, and ranks the resulting routes by actual gate count. A hauler can leave the threatened system
+where it is already docked. The existing market and population checks still decide which reachable hubs it can use.
+[Autopilot avoidance](https://wiki.eveuniversity.org/Autopilot_avoidance)
+
+REA inspected the previous `Eden.World.dll` (SHA-256
+`cc5801137d99aa97cb4a810d1e4fa7861ce224c63f71d107acefda3ac95c64c3`, MVID
+`aee51125-13de-410f-81f9-2f7ba27fc771`). Managed method evidence
+`ev_84659255dedee4fc2620852c88d182d00112bc9d08e574f166258c7024c6cd2a` covers
+`FindReplacementHub` (`0x06004504`), `CapsuleToTradeHub` (`0x0600475d`), and `LoadJourneyMap` (`0x06004761`).
+The inspection identifies the compiled routing methods. The scheduler regression verifies the actual selection and trip.
+
 ### Automated validation
 
 `StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart` restores saved waiting states at an unstocked station.
@@ -1242,6 +1255,11 @@ The two exact cases passed in 10.62 seconds. The combined `CapsuleerAmmunitionSu
 `CapsuleerMinerTests`, and `CapsuleerCheckpointEncodingTests` filter passed 66 tests in 87.01 seconds. The solution
 built with zero warnings or errors. Catalog setup, formatting policy, style, CSharpier, and line-width checks passed.
 The CSharpier check excluded the local `.artifacts` recovery directory.
+
+The detour case first proves that the cached route crosses the threatened system. It then selects the alternate
+route through the scheduler and completes the purchase after reopening the checkpoint. The baseline failed to
+leave the refuge while the three existing cases passed. All four passed in the combined 11-case exact run with
+the route correction. The build took 13.34 seconds and the tests took 16.68 seconds.
 
 ## Replacement after pod loss and market affordability
 

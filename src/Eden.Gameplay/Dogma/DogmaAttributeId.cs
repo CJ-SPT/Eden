@@ -518,6 +518,7 @@ public enum DogmaAttributeId
     SkillTimeConstant = 275,
     SkillLevel = 280,
     RefiningYieldMutator = 379,
+    RefiningYieldMultiplier = 717,
     RequiredSkill1Level = 277,
     RequiredSkill2Level = 278,
     RequiredSkill3Level = 279,

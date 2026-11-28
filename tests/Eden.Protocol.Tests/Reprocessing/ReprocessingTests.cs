@@ -11,8 +11,10 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +45,147 @@ public sealed class ReprocessingTests
     private const int TritaniumType = 34;
     private const int PyeriteType = 35;
     private const int SimpleOreSkill = 60377;
+    internal const int MinerOne = 483;
+    private const int Venture = 32880;
+    private const int MetalScraps = 15331;
+    private const int Mexallon = 36;
+
+    internal static void LoadScrapmetalCatalog(string catalogPath)
+    {
+        using CatalogDbContext catalog = new(catalogPath, writable: true);
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT OR IGNORE INTO ItemCategory VALUES (6,'Ship'),(7,'Module'),(17,'Commodity');
+            INSERT OR IGNORE INTO ItemGroup VALUES (25,'Frigate',6),(54,'Mining Laser',7),(526,'Commodities',17);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(32880,'Venture',25),
+                (12196,'Scrapmetal Processing',257),(15331,'Metal Scraps',526),(36,'Mexallon',18);
+            INSERT OR IGNORE INTO SourceRecord VALUES
+                ('client/types','483','{{"published":1,"volume":5,"portionSize":1}}'),
+                ('client/types','32880','{{"published":1,"volume":29500,"portionSize":1}}'),
+                ('client/types','15331','{{"published":1,"volume":0.01,"portionSize":1}}'),
+                ('client/types','36','{{"published":1,"volume":0.01}}'),
+                ('client/typematerials','483',
+                    '{{"materials":[{{"materialTypeID":34,"quantity":1324}},{{"materialTypeID":35,"quantity":481}},
+                    {{"materialTypeID":36,"quantity":119}}]}}'),
+                ('client/typematerials','32880',
+                    '{{"materials":[{{"materialTypeID":34,"quantity":22400}},{{"materialTypeID":35,"quantity":4200}},
+                    {{"materialTypeID":36,"quantity":1750}}]}}'),
+                ('client/typematerials','15331','{{"materials":[{{"materialTypeID":34,"quantity":500}}]}}');
+            INSERT OR IGNORE INTO TypeAttribute VALUES (12196,379,2),(12196,275,5);
+            """
+        );
+    }
+
+    [Theory]
+    [InlineData(.3, 7993, 1544, 616)]
+    [InlineData(.5, 13323, 2574, 1027)]
+    public async Task PackagedEquipmentQuotesAndProcessesThroughTheNativeServiceAcrossCheckpoint(
+        double baseEfficiency,
+        int tritanium,
+        int pyerite,
+        int mexallon
+    )
+    {
+        using Fixture f = new();
+        WorldDatabase database = new(f.Db.Path);
+        LoadScrapmetalCatalog(database.CatalogPath);
+        var pilot = f.Pilot;
+        int station = pilot.StationId;
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlInterpolated(
+                $"""
+                UPDATE SourceRecord SET Data=json_set(Data,'$.reprocessingEfficiency',{baseEfficiency})
+                WHERE Dataset='sde/npcStations' AND Key={station.ToString(System.Globalization.CultureInfo.InvariantCulture)}
+                """
+            );
+        }
+        long[] ids = [OreId + 10, OreId + 11, OreId + 12];
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            foreach (var (id, type) in ids.Zip(new[] { MinerOne, Venture, MetalScraps }))
+            {
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = id,
+                        OwnerId = pilot.PilotId,
+                        TypeId = type,
+                        LocationId = station,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = 1,
+                    }
+                );
+            }
+            world.AddRange(
+                new PilotSkill
+                {
+                    PilotId = pilot.PilotId,
+                    TypeId = 12196,
+                    Points = TrainedSkill.PointsForLevel(5, 5),
+                },
+                new PilotSkill
+                {
+                    PilotId = pilot.PilotId,
+                    TypeId = 3385,
+                    Points = TrainedSkill.PointsForLevel(1, 5),
+                }
+            );
+            world.SaveChanges();
+        }
+
+        using (var host = ServerServices.Build(database, liveWorld: true))
+        {
+            using PilotCallContext context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                selected => new(f.Db.Store, selected, TimeProvider.System, new SharedSpace(), f.Db.Objects),
+                1,
+                SignedSettings.Empty
+            );
+            using var scope = host.CreateScope();
+            var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            context.Select(pilot);
+            BluePackedRow item = new(new([("quantity", BlueColumnType.Int32)]), [], []);
+            var row = ids.Append(OreId).ToDictionary(id => id, _ => (object?)item);
+            object? Call(string method, params object?[] args) => router.CallWire(context, "reprocessingSvc", method, args, _ => { });
+
+            var payload = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(Call("GetQuotes", row, pilot.ShipId))));
+            var quotes = Assert.IsType<Dictionary<long, object?>>(payload[2]);
+            Dictionary<string, object?> Fields(long id) => BlueRead.Fields(Assert.IsType<BlueInstance>(quotes[id]).State);
+            foreach (long id in ids)
+            {
+                Assert.Equal(1L, Fields(id)["quantityToProcess"]);
+                Assert.Equal(baseEfficiency * 1.10, Assert.IsType<double>(Fields(id)["efficiency"]), 12);
+            }
+            Assert.Equal(baseEfficiency * 1.15, Assert.IsType<double>(Fields(OreId)["efficiency"]), 12);
+            Assert.Empty(context.Notifications);
+
+            var completion = Call(
+                "Reprocess",
+                ids.Cast<object?>().ToList(),
+                (long)station,
+                pilot.PilotId,
+                (long)station,
+                (long)InventoryFlag.Hangar
+            );
+            var result = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(completion)));
+            Assert.Equal(ids, Assert.IsType<List<object?>>(result[0]).Cast<long>());
+            var outputs = Assert.IsType<Dictionary<long, object?>>(result[1]);
+            Assert.Equal((long)tritanium, outputs[TritaniumType]);
+            Assert.Equal((long)pyerite, outputs[PyeriteType]);
+            Assert.Equal((long)mexallon, outputs[Mexallon]);
+            Assert.Equal(6, context.Notifications.Count(n => n.Name == "OnItemChange"));
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(database, liveWorld: true);
+        var inventory = reopened.GetRequiredService<IPilotInventory>().List(pilot.PilotId, station);
+        Assert.DoesNotContain(inventory, item => ids.Contains(item.Id));
+        Assert.Equal(133, Assert.Single(inventory, item => item.Id == OreId).Quantity);
+        Assert.Equal(tritanium, Assert.Single(inventory, item => item.TypeId == TritaniumType).Quantity);
+    }
 
     private sealed class Fixture : IDisposable
     {

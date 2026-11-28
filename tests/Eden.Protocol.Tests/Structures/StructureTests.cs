@@ -14,9 +14,11 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Reprocessing;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Structures;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.Protocol.Tests.Reprocessing;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -730,7 +732,9 @@ public sealed class StructureTests
     public void RefineryReprocessingUsesOnlineServiceAndCatalogHullYield()
     {
         using Fixture f = new();
-        PassiveCatalogFixture.LoadMining(new WorldDatabase(f.Db.Path).CatalogPath);
+        string catalogPath = new WorldDatabase(f.Db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadMining(catalogPath);
+        ReprocessingTests.LoadScrapmetalCatalog(catalogPath);
         var structure = f.Online(35835);
         long module = f.Item(35899);
         f.Structures.FitService(f.PilotId, structure.Id, module, StructureRules.FirstServiceSlot);
@@ -738,10 +742,21 @@ public sealed class StructureTests
         f.Structures.SetServiceOnline(f.PilotId, structure.Id, module, true);
         f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
         long ore = f.Item(1230, 1000);
+        long equipment = f.Item(ReprocessingTests.MinerOne);
         var reprocessing = f.Db.Services.GetRequiredService<IPilotReprocessing>();
-        var quote = reprocessing.Quote(f.PilotId, structure.Id, f.ShipId, [ore]);
+        var quote = reprocessing.Quote(f.PilotId, structure.Id, f.ShipId, [ore, equipment]);
         Assert.Equal(.51, quote.StationEfficiency);
         Assert.Equal(0, quote.StationTax);
+        Assert.Equal(.51, Assert.Single(quote.Items, item => item.ItemId == ore).Efficiency);
+        var scrapmetal = Assert.Single(quote.Items, item => item.ItemId == equipment);
+        Assert.Equal(.5, scrapmetal.Efficiency);
+        Assert.Equal(662, scrapmetal.Recoverables.Single(item => item.TypeId == 34).Quantity);
+        var nativeQuote = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(new ReprocessingQuoteReply(quote))));
+        var efficiencies = Assert.IsType<BlueDictionary>(nativeQuote[1]);
+        Assert.Equal(
+            new[] { ((object?)null, (object?)0.51), ((object?)(long)ReprocessingTests.MinerOne, (object?)0.5) },
+            efficiencies.Entries
+        );
         f.Structures.SetServiceOnline(f.PilotId, structure.Id, module, false);
         Assert.Throws<InvalidDataException>(() => reprocessing.Quote(f.PilotId, structure.Id, f.ShipId, [ore]));
         using WorldDbContext world = new(f.Db.Path);

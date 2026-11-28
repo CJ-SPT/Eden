@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Contracts;
@@ -27,6 +28,15 @@ public static class ContractAssetRules
         if (itemIds.Count > MaximumSelection || itemIds.Any(id => id <= 0) || itemIds.Distinct().Count() != itemIds.Count)
         {
             throw new InvalidDataException("Choose distinct owned station items for the contract.");
+        }
+    }
+
+    public static void CheckOfferedRoot(InventoryItem item)
+    {
+        // Build 3662168 CreateContractWnd.FinishStep1 rejects groupCapsule on both creation paths.
+        if (item.GroupId == FleetDefinitions.CapsuleGroup)
+        {
+            throw new InvalidDataException("Capsules cannot be offered on contracts.");
         }
     }
 

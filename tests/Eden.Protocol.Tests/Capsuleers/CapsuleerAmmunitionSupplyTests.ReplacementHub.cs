@@ -23,6 +23,7 @@ using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
@@ -30,20 +31,47 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed partial class CapsuleerAmmunitionSupplyTests
 {
     [Theory]
-    [InlineData(CapsuleerCareer.Hauling, true, 0)]
-    [InlineData(CapsuleerCareer.Mining, false, 0)]
-    [InlineData(CapsuleerCareer.Hauling, false, 2)]
-    public async Task StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart(CapsuleerCareer career, bool funded, int podLosses)
+    [InlineData(CapsuleerCareer.Hauling, true, 0, false)]
+    [InlineData(CapsuleerCareer.Mining, false, 0, false)]
+    [InlineData(CapsuleerCareer.Hauling, false, 2, false)]
+    [InlineData(CapsuleerCareer.Hauling, false, 0, true)]
+    public async Task StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart(
+        CapsuleerCareer career,
+        bool funded,
+        int podLosses,
+        bool avoidThreat
+    )
     {
         bool mining = career == CapsuleerCareer.Mining;
         int hull = mining ? (int)CapsuleerMiningHull.Venture : (int)FreightHull.Nereus;
         int module = mining ? (int)MiningLaserType.MinerI : (int)StarterMarketType.Afterburner;
         const int jita = 30000142;
+        const int threatened = 30000143;
+        const int detour = 30000144;
         const long ask = 100;
         long opening = funded ? 0 : 10_000;
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PrepareCatalog(fixture);
+        if (avoidThreat)
+        {
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000143,20000020,'Threatened');
+                DELETE FROM Stargate WHERE Id IN (50009991,50009992);
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES
+                    (50010000,30000143,16,10,1e11,0,0),(50010001,30000143,16,10,-1e11,0,0),
+                    (50010002,30000141,16,10,2e11,0,0),(50010003,30000144,16,10,1e11,0,0),
+                    (50010004,30000144,16,10,-1e11,0,0),(50010005,30000142,16,10,2e11,0,0);
+                INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                    (50009991,30000141,50010000),(50010000,30000143,50009991),
+                    (50009992,30000142,50010001),(50010001,30000143,50009992),
+                    (50010002,30000141,50010003),(50010003,30000144,50010002),
+                    (50010004,30000144,50010005),(50010005,30000142,50010004);
+                """
+            );
+        }
         PassiveCatalogFixture.LoadStarterMarket(fixture.Database.CatalogPath, new HashSet<int> { module });
         UseLocalOrders(fixture, fundRefits: funded);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
@@ -58,6 +86,11 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         {
             var live = host.GetRequiredService<LiveWorld>();
             using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            if (avoidThreat)
+            {
+                var normalRoute = CapsuleerTrafficRoutes.CapsuleToTradeHub(catalog, Depot, FactoryStation);
+                Assert.Equal(new[] { Home, threatened, jita }, normalRoute?.Systems);
+            }
             using (var setup = live.Economy.Begin())
             {
                 setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
@@ -137,6 +170,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                         new(HaulerActivity.Waiting, 0, 0, capsule, Depot, 0, navigation, waiting, DueTicks: due, Retreating: true)
                         {
                             ReplacementOrderDeadline = expired,
+                            Routine = avoidThreat
+                                ? TravelerRoutineRules.Create(bot) with
+                                {
+                                    Threats = [new(threatened, TravelerRoutineRules.ThreatMemory.Ticks)],
+                                }
+                                : null,
                         }
                     ).Apply(setup);
                 }
@@ -158,7 +197,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             );
             Assert.True(live.Economy.ActiveShip(bot, capsule));
             var route = mining ? live.MinerCheckpoints[bot].Work.ReplacementJourney : live.HaulerCheckpoints[bot].Work.Journey;
-            Assert.Equal(new[] { Home, jita }, route?.Systems);
+            Assert.Equal(avoidThreat ? new[] { Home, detour, jita } : [Home, jita], route?.Systems);
             Assert.Equal(FactoryStation, route?.DestinationStationId);
             Assert.Empty(live.Economy.Read(world => world.Filter<MarketExecution>(row => row.PilotId == bot).ToArray()));
             await live.FlushAsync();
@@ -200,6 +239,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             var scheduler = host.GetRequiredService<CapsuleerScheduler>();
             scheduler.PopulationPrepared(Home);
             scheduler.PopulationPrepared(jita);
+            if (avoidThreat)
+            {
+                scheduler.PopulationPrepared(detour);
+            }
             for (int turn = 0; turn < 600; turn++)
             {
                 fixture.Clock.Seconds++;

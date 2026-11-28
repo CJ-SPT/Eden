@@ -5,6 +5,7 @@ using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Inventory;
@@ -23,7 +24,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Reprocessing;
 
-internal sealed record ReprocessingFacility(long OwnerId, double Efficiency, double Tax);
+internal sealed record ReprocessingFacility(long OwnerId, double Efficiency, double ScrapmetalEfficiency, double Tax);
 
 [Injectable]
 internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvider? clock = null) : IPilotReprocessing
@@ -60,10 +61,16 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 && Eden.World.Structures.StructureCatalog.Service(catalog, m.TypeId)
                     .Services.Contains(Eden.Gameplay.Structures.StructureService.Reprocessing)
             );
+            var moduleAttributes = catalog.FittingAttributes(module.TypeId);
             double efficiency =
-                catalog.FittingAttributes(module.TypeId).GetValueOrDefault((DogmaAttributeId)OreRefiningYield)
+                moduleAttributes.GetValueOrDefault((DogmaAttributeId)OreRefiningYield)
                 * (1 + catalog.FittingAttributes(snapshot.Profile.TypeId).GetValueOrDefault((DogmaAttributeId)RefineryYieldBonus) / 100);
-            return new(structure.CorporationId, efficiency, 0);
+            return new(
+                structure.CorporationId,
+                efficiency,
+                moduleAttributes.GetValueOrDefault(DogmaAttributeId.RefiningYieldMultiplier),
+                0
+            );
         }
         var station = catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId);
         if (
@@ -77,6 +84,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         return new(
             catalog.RequireStation(checked((int)stationId)).OwnerId,
+            station.ReprocessingEfficiency.Value,
             station.ReprocessingEfficiency.Value,
             station.ReprocessingStationsTake.Value
         );
@@ -95,7 +103,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
     {
         if (ids.Count == 0 || ids.Distinct().Count() != ids.Count)
         {
-            throw new InvalidDataException("Select distinct ore stacks to reprocess.");
+            throw new InvalidDataException("Select distinct item stacks to reprocess.");
         }
         var ship = pilot.ActiveShip;
         var items = world
@@ -128,12 +136,15 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         return 1 + level * Attribute(catalog, skill, DogmaAttributeId.RefiningYieldMutator) / 100;
     }
 
+    private static bool IsScrapmetal(int typeId, int categoryId) =>
+        categoryId is (int)InventoryCategory.Ship or (int)InventoryCategory.Module || typeId == (int)NpcLootType.MetalScraps;
+
     private static ReprocessingQuote Quote(
         WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         OwnedItem item,
-        double stationEfficiency,
+        ReprocessingFacility station,
         decimal tax
     )
     {
@@ -143,23 +154,28 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         bool alchemy =
             type.CategoryId == (int)InventoryCategory.Material
             && Eden.World.Industry.ReactionCatalog.IsMoonAlchemyOutput(catalog, item.TypeId);
+        bool scrapmetal = IsScrapmetal(item.TypeId, type.CategoryId);
+        double stationEfficiency = scrapmetal ? station.ScrapmetalEfficiency : station.Efficiency;
         if (
-            type.CategoryId != (int)InventoryCategory.Asteroid && !alchemy
+            type.CategoryId != (int)InventoryCategory.Asteroid && !alchemy && !scrapmetal
+            || scrapmetal && stationEfficiency is not (> 0 and <= 1)
             || definition?.PortionSize is not > 0
             || materials?.Materials is not { Length: > 0 }
             || materials.RandomizedMaterials is { Length: > 0 }
         )
         {
-            // Let the native window mark unsupported inputs as restricted. Do not
-            // silently destroy equipment or ores with randomized outputs.
+            // Empty recoverables let the native window mark an unsupported input as restricted.
             return new(item.Id, item.TypeId, 0, item.Quantity, 0, stationEfficiency, []);
         }
-        var skills = new[]
-        {
-            (int)ReprocessingSkill.Reprocessing,
-            (int)ReprocessingSkill.ReprocessingEfficiency,
-            checked((int)Attribute(catalog, item.TypeId, DogmaAttributeId.ReprocessingSkillType)),
-        };
+        int[] skills =
+            alchemy ? []
+            : scrapmetal ? [(int)ReprocessingSkill.ScrapmetalProcessing]
+            :
+            [
+                (int)ReprocessingSkill.Reprocessing,
+                (int)ReprocessingSkill.ReprocessingEfficiency,
+                checked((int)Attribute(catalog, item.TypeId, DogmaAttributeId.ReprocessingSkillType)),
+            ];
         var quote = ReprocessingRules.Quote(
             new(
                 item.Id,
@@ -167,9 +183,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 item.Quantity,
                 checked((int)definition.PortionSize.Value),
                 alchemy ? 1 : stationEfficiency,
-                alchemy
-                    ? []
-                    : skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
+                skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
                 materials
                     .Materials.Value.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0))
                     .ToArray(),
@@ -219,11 +233,18 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             throw new InvalidDataException("The active ship has changed.");
         }
         var quotes =
-            itemIds.Count == 0
-                ? []
-                : Items(world, pilot, itemIds).Select(i => Quote(world, catalog, pilot, i, station.Efficiency, tax)).ToArray();
+            itemIds.Count == 0 ? [] : Items(world, pilot, itemIds).Select(i => Quote(world, catalog, pilot, i, station, tax)).ToArray();
+        var efficiencies = quotes
+            .Where(q =>
+                q.Recoverables.Count > 0
+                && station.ScrapmetalEfficiency != station.Efficiency
+                && IsScrapmetal(q.TypeId, catalog.Definitions.Items[q.TypeId].CategoryId)
+            )
+            .Select(q => q.TypeId)
+            .Distinct()
+            .ToDictionary(typeId => typeId, _ => station.ScrapmetalEfficiency);
         scope.Commit();
-        return new((double)tax, station.Efficiency, quotes);
+        return new((double)tax, station.Efficiency, quotes) { StationEfficiencyOverrides = efficiencies };
     }
 
     internal bool RefineForProduction(
@@ -250,7 +271,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             return false;
         }
         var station = Station(world, catalog, pilot, stationId);
-        var quote = Quote(world, catalog, pilot, item, station.Efficiency, Tax(world, pilot, station));
+        var quote = Quote(world, catalog, pilot, item, station, Tax(world, pilot, station));
         if (
             quote.Portions == 0
             || !quote.Recoverables.Any(row => row.Quantity > 0 && missing.ContainsKey(row.TypeId))
@@ -318,10 +339,10 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         var items = Items(world, pilot, itemIds, sourceId);
         decimal tax = Tax(world, pilot, station);
-        var quotes = items.Select(i => Quote(world, catalog, pilot, i, station.Efficiency, tax)).ToArray();
+        var quotes = items.Select(i => Quote(world, catalog, pilot, i, station, tax)).ToArray();
         if (quotes.Any(q => q.Portions == 0 || q.Recoverables.Count == 0))
         {
-            throw new InvalidDataException("Each ore stack must contain at least one complete reprocessing batch.");
+            throw new InvalidDataException("Each item stack must contain at least one complete reprocessing batch.");
         }
         Dictionary<int, int> output = [];
         foreach (var material in quotes.SelectMany(q => q.Recoverables).Where(m => m.Quantity > 0))
@@ -330,7 +351,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         if (output.Count == 0)
         {
-            throw new InvalidDataException("These stacks yield no recoverable minerals.");
+            throw new InvalidDataException("These stacks yield no recoverable materials.");
         }
         if (outputLocationId == ship.Id)
         {

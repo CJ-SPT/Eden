@@ -15,12 +15,7 @@ internal sealed partial class LiveCombatRuntime
         {
             if (before.LocalCooldowns.GetValueOrDefault(module) != ready)
             {
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT INTO WorldWeaponCooldown(ModuleId,ReadyAt,Kind) VALUES({module},{ready},{(int)ModuleCooldownKind.Cycle})
-                    ON CONFLICT(ModuleId) DO UPDATE SET ReadyAt=excluded.ReadyAt,Kind=excluded.Kind
-                    """
-                );
+                Cooldown(world, module, ready);
             }
         }
         foreach (var repair in after.Repairs.Where(repair => !before.Repairs.Contains(repair)))
@@ -28,7 +23,8 @@ internal sealed partial class LiveCombatRuntime
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldArmorRepair(ModuleId,ShipId,StartedAt,CompletesAt,Amount,Layer)
-                VALUES({repair.ModuleId},{after.ShipId},{repair.StartedAt},{repair.CompletesAt},{repair.Amount},{(int)repair.Layer})
+                SELECT Id,{after.ShipId},{repair.StartedAt},{repair.CompletesAt},{repair.Amount},{(int)repair.Layer}
+                FROM WorldItem WHERE Id={repair.ModuleId}
                 ON CONFLICT(ModuleId) DO UPDATE SET ShipId=excluded.ShipId,StartedAt=excluded.StartedAt,
                     CompletesAt=excluded.CompletesAt,Amount=excluded.Amount,Layer=excluded.Layer
                 """
@@ -71,13 +67,7 @@ internal sealed partial class LiveCombatRuntime
             var previous = before.Turrets[pair.Key];
             if (previous.ReadyAt != turret.ReadyAt)
             {
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT INTO WorldWeaponCooldown(ModuleId,ReadyAt,Kind) VALUES({pair.Key},{turret.ReadyAt},{(int)
-                        ModuleCooldownKind.Cycle})
-                    ON CONFLICT(ModuleId) DO UPDATE SET ReadyAt=excluded.ReadyAt,Kind=excluded.Kind
-                    """
-                );
+                Cooldown(world, pair.Key, turret.ReadyAt);
             }
             if (
                 turret.ChargeItemId is { } charge
@@ -104,6 +94,18 @@ internal sealed partial class LiveCombatRuntime
             world.Database.ExecuteSql($"DELETE FROM WorldArmorRepair WHERE ModuleId={repair.ModuleId} AND ShipId={after.ShipId}");
         }
         ProjectContributions(world, after.ShipId, before.Contributions, after.Contributions);
+    }
+
+    private static void Cooldown(WorldDbContext world, long module, long ready)
+    {
+        // Economy projects item removals before combat projects paid module cycles.
+        world.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldWeaponCooldown(ModuleId,ReadyAt,Kind)
+            SELECT Id,{ready},{(int)ModuleCooldownKind.Cycle} FROM WorldItem WHERE Id={module}
+            ON CONFLICT(ModuleId) DO UPDATE SET ReadyAt=excluded.ReadyAt,Kind=excluded.Kind
+            """
+        );
     }
 
     private sealed record NpcProjection(

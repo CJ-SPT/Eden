@@ -22,8 +22,8 @@
 - **Simulated capsuleers.** Encounter pilots that mine, haul, fight, explore and salvage. On established worlds, eligible
   bots buy and fit separate PvP ships. The server funds bot refits by default. Corporate pilots can take paid production work,
   replace lost ships and fund first sovereignty claims. Stranded pilots can travel to a stocked trade hub for a replacement
-  fit. Recent PvP losses raise local replacement targets and can
-  delay offensive launches. Bot work continues with nobody logged in by default. With background
+  fit. Haulers can detour around remembered threats on the way to a stocked hub. Recent PvP losses raise local
+  replacement targets and can delay offensive launches. Bot work continues with nobody logged in by default. With background
   preparation enabled, eligible high-security systems gain bots ahead of player visits. The default departure policy favors
   PvP roams for eligible independent pilots heading into nullsec. Hunters use regional reports and directional
   scanning. Loaded freight can turn back after a fresh warning about the next gate.
@@ -331,6 +331,8 @@ The Tech I hull goal has a reproducible **275-type** inventory, including factio
 
 ## Personal contracts
 
+Contract creation rejects capsule roots in personal item exchanges, auctions, couriers and fitted-ship batches. See the [capsule selection rule](protocol/contracts.md#capsule-selection-during-creation).
+
 Contract Search now uses `None` for the unused delivery station on exchanges and auctions, preventing a bogus structure-access lookup for station zero. Native `structureSettings.CharacterHasService` reads also return boolean docking access instead of **Invalid Packet Destination**. Existing offers need no migration. See the [endpoint-access correction](protocol/contracts.md#contract-search-endpoint-access).
 
 Contract search replies now provide valid endpoint systems for item exchanges and auctions. The native search window resolves both system names before it renders results, so a zero endpoint could leave its status at **Search not started**. Existing saved offers need no migration or recreation. See the [search endpoint notes](protocol/contracts.md#contract-search-endpoint-metadata); native click-to-results acceptance remains unverified.
@@ -365,7 +367,10 @@ Analysis Kredit offers and event-specific access remain open. [LP stores](protoc
 
 Mine ordinary ore, ice, gas or Mercoxit with equipment admitted for the resource and hull. Modulated ore lasers use compatible
 crystals with saved wear. At stations with reprocessing, preview and refine eligible materials using the station, recipe, and
-trained skill modifiers. [Mining and refining records](protocol/industry.md)
+trained skill modifiers. Packaged ships, packaged modules, and Metal Scraps use Scrapmetal Processing at eligible NPC
+stations and Upwell facilities.
+[Mining and refining records](protocol/industry.md) ·
+[Packaged equipment reprocessing](protocol/industry.md#packaged-equipment-and-metal-scraps-reprocessing)
 
 Personal manufacturing at NPC stations uses supported published recipes, including Tech I/II/III items, capitals
 where security allows, and packaged structures. Supercapital construction uses eligible player shipyards. Refineries

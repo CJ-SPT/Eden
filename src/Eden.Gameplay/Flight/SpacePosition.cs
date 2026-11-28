@@ -26,6 +26,8 @@ public sealed record SpacePosition(double X, double Y, double Z)
 
     public static SpacePosition operator *(SpacePosition a, double scale) => new(a.X * scale, a.Y * scale, a.Z * scale);
 
+    public override string ToString() => FormattableString.Invariant($"SpacePosition {{ X = {X}, Y = {Y}, Z = {Z} }}");
+
     public double DistanceTo(SpacePosition other)
     {
         double x = X - other.X,

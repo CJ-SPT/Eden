@@ -61,6 +61,10 @@ internal sealed partial class LiveCombatRuntime
         }
         foreach (var repair in after.Repairs.Where(r => !before.Repairs.Contains(r)))
         {
+            if (world.Set<OwnedItem>().Find(repair.ModuleId) is null)
+            {
+                continue;
+            }
             var row =
                 world.Set<PendingLocalRepair>().Find(repair.ModuleId)
                 ?? world.Add(new PendingLocalRepair { ModuleId = repair.ModuleId }).Entity;
@@ -97,6 +101,10 @@ internal sealed partial class LiveCombatRuntime
 
     private static void Cooldown(WorldAction world, long module, long ready)
     {
+        if (world.Set<OwnedItem>().Find(module) is null)
+        {
+            return;
+        }
         var row = world.Set<ModuleCooldown>().Find(module) ?? world.Add(new ModuleCooldown { ModuleId = module }).Entity;
         row.ReadyAt = ready;
         row.Kind = ModuleCooldownKind.Cycle;

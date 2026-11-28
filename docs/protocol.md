@@ -392,6 +392,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Multiplied bounty SP](protocol/combat.md#multiplied-bounty-sp--november-15-2026)
 - [Resident NPC spawn-slot replacement](protocol/combat.md#resident-npc-spawn-slot-replacement)
 - [Resident combat service state](protocol/combat.md#resident-combat-service-state)
+- [Module cooldowns after item removal](protocol/combat.md#module-cooldowns-after-item-removal)
 - [combat anomalies](protocol/combat.md#combat-anomaly-foundation-november-8-2026)
 - [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026)
 - [jamming and bracket cleanup](protocol/combat.md#npc-jamming-scan-cancellation-and-bracket-cleanup-november-6-2026)
@@ -699,6 +700,8 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Mining, industry and markets
 
+- [Packaged equipment and Metal Scraps reprocessing](protocol/industry.md#packaged-equipment-and-metal-scraps-reprocessing)
+
 - [Market and industry output stack condition](protocol/industry.md#market-and-industry-output-stack-condition)
 - [Immediate corporation market sales](protocol/industry.md#immediate-corporation-market-sales)
 - [Remote personal refinery reaction jobs](protocol/industry.md#remote-personal-refinery-reaction-jobs)
@@ -786,6 +789,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 - [Faction Warfare map kills](protocol/navigation.md#faction-warfare-map-kills)
 - [Bookmark approach](protocol/navigation.md#bookmark-approach)
+- [Space position diagnostics](protocol/navigation.md#space-position-diagnostics)
 - [Peer gate and cloak history](protocol/navigation.md#peer-gate-and-cloak-history)
 - [Peer movement history](protocol/navigation.md#peer-movement-history)
 - [Peer warp and target locks](protocol/navigation.md#peer-warp-and-target-locks)
@@ -848,6 +852,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Personal contracts
 
+- [Capsule selection during creation](protocol/contracts.md#capsule-selection-during-creation)
 - [Bulk personal contract cancellation](protocol/contracts.md#bulk-personal-contract-cancellation)
 - [courier package Show Info volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026)
 - [Resident contract settlement and search](protocol/contracts.md#resident-contract-settlement-and-search)

@@ -9,7 +9,10 @@ internal sealed record ReprocessingQuoteReply(ReprocessingQuotes Quote) : BlueMo
         new object?[]
         {
             Quote.StationTax,
-            new BlueDictionary([(null, Quote.StationEfficiency)]),
+            new BlueDictionary([
+                (null, Quote.StationEfficiency),
+                .. Quote.StationEfficiencyOverrides.Select(pair => ((object?)pair.Key, (object?)pair.Value)),
+            ]),
             new BlueMap<long, ReprocessingItemReply>(
                 Quote.Items.ToDictionary(item => item.ItemId, item => new ReprocessingItemReply(item))
             ),

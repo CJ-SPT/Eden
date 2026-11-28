@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Space position diagnostics](#space-position-diagnostics)
 - [Peer gate and cloak history](#peer-gate-and-cloak-history)
 - [Peer movement history](#peer-movement-history)
 - [Peer warp and target locks](#peer-warp-and-target-locks)
@@ -55,6 +56,23 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Space position diagnostics
+
+Flight diagnostics print the three coordinates of a space position in invariant culture. The replacement-shopping
+regression exposed recursion when formatting a stalled hauler's navigation frame. The synthesized record formatter
+printed its own computed `Unit` position, recursively formatting the resulting record until .NET threw
+`InsufficientExecutionStackException`.
+
+Static REA evidence from `Eden.Gameplay.dll` (SHA-256
+`a3391f535b84ac0e595968548e64022d3ef82ee35de8598eee8d65a7cb2049d8`, MVID
+`3786734d-f67e-4d53-bb13-9c9e633cc8f8`) identified `ToString` (`0x06002eb8`),
+`PrintMembers` (`0x06002eb9`), and its call to `get_Unit` (`0x06002eb0`).
+REA method evidence `ev_eb4d65a270a17de19d7b7944a0db081e93702228a5d155adf041b911099d252f` and
+`ev_3a139c90728c0f4b774a67e4a821f60edf9477583812d6257c12470791cc1bfd`.
+
+`TypedFlightTests.SpacePositionDiagnosticsFormatCoordinatesWithoutRecursion` passed both zero and nonzero cases
+in the combined 11-case exact run. The build took 13.34 seconds and the tests took 16.68 seconds.
 
 ## Peer gate and cloak history
 

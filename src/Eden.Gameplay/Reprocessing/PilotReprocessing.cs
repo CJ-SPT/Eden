@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Reprocessing;
@@ -17,7 +18,10 @@ public sealed record ReprocessingQuote(
     public long CostCents => Recoverables.Sum(m => m.CostCents);
 }
 
-public sealed record ReprocessingQuotes(double StationTax, double StationEfficiency, IReadOnlyList<ReprocessingQuote> Items);
+public sealed record ReprocessingQuotes(double StationTax, double StationEfficiency, IReadOnlyList<ReprocessingQuote> Items)
+{
+    public IReadOnlyDictionary<int, double> StationEfficiencyOverrides { get; init; } = FrozenDictionary<int, double>.Empty;
+}
 
 public sealed record ReprocessingResult(
     IReadOnlyList<long> ProcessedIds,
@@ -45,4 +49,5 @@ public enum ReprocessingSkill
 {
     Reprocessing = 3385,
     ReprocessingEfficiency = 3389,
+    ScrapmetalProcessing = 12196,
 }

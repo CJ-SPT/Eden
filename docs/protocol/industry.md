@@ -7,6 +7,43 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Packaged equipment and Metal Scraps reprocessing
+
+The native Reprocessing window can quote and process personal packaged ships, packaged modules, and Metal Scraps
+with fixed material recipes at NPC stations and Upwell structures with reprocessing service. The same transaction
+consumes the inputs, delivers their recovered materials, and settles applicable tax. The base NPC yield comes from
+the station. Upwell service modules use their catalog scrapmetal yield. Scrapmetal Processing and the saved world
+reprocessing multiplier determine the final yield. The existing inventory checks require accessible packaged stacks.
+
+REA extracted `reprocessing/util.pyj` and `reprocessing/ui/quotes.pyj` from pinned client build 3662168
+`code.ccp` (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, extraction evidence
+`ev_4a5fec2512bac87d3f579b4e576ce1a506263f141664d6fb3a36f3d114f257d2`). Static Python 2.7 bytecode shows
+`GetRefiningYieldPercentageForType` selecting Scrapmetal Processing for types without specialized ore skill bonuses,
+`_GetRecoverablesFromFixedMaterials` flooring output, and `Quotes.GetStationEfficiencyForType` reading a type-specific
+base yield with a `None` fallback. The catalog supplies skill 12196, the 2% bonus per level, and general structure
+service yield attribute 717. The corresponding EVE.js 261108.1 reference is `reprocessingRuntime.js` (SHA-256
+`5dc0522d36b9ba0499fb6ed2142e6a5d18ab7c90a1301af5f48581a653d0e4fa`).
+[EVE University reprocessing](https://wiki.eveuniversity.org/Reprocessing#Scrapmetal_reprocessing) ·
+[CCP reprocessing yield examples](https://www.eveonline.com/ru/news/view/reprocess-all-the-things)
+
+### Automated validation
+
+`PackagedEquipmentQuotesAndProcessesThroughTheNativeServiceAcrossCheckpoint` first reproduced the zero-quantity
+quote. Its two final cases use 30% and 50% NPC stations, verify the separate skill yields and native inventory
+notifications, and reopen the checkpoint. `RefineryReprocessingUsesOnlineServiceAndCatalogHullYield` checks a
+mixed ore and module quote, the separate base yields in the native reply, and offline service rejection. All three
+cases passed in 9.99 seconds after a 12.93-second build. The report is
+`artifacts/feature-tests/results/8fb08e939a4e44038f05683c4e2053e8/tests.trx`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Quote ore and a packaged Miner I together at an Athanor. The item tooltip should display the respective base yield
+  for each.
+
 ## Market and industry output stack condition
 
 Fresh packaged inventory output now merges only into a compatible stack with default condition and volume. A saved

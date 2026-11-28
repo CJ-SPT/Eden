@@ -296,6 +296,40 @@ internal static partial class CapsuleerTrafficRoutes
         return new(sourceStation, hub, systems);
     }
 
+    internal static IEnumerable<CapsuleerTrafficRoute> AvoidTradeHubThreats(
+        CatalogDbContext catalog,
+        int sourceStation,
+        CapsuleerTrafficRoute[] cached,
+        IReadOnlySet<int> avoided
+    )
+    {
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
+        int source = catalog.RequireStation(sourceStation).SolarSystemId;
+        JourneyMap? detours = null;
+        List<CapsuleerTrafficRoute> routes = new(cached.Length);
+        foreach (var route in cached)
+        {
+            if (!route.Systems.Skip(1).Any(avoided.Contains))
+            {
+                routes.Add(route);
+                continue;
+            }
+
+            int destination = route.Systems[^1];
+            if (avoided.Contains(destination))
+            {
+                continue;
+            }
+
+            detours ??= LoadJourneyMap(catalog, source, unrestricted: true, maximumJumps: int.MaxValue, avoided: avoided);
+            if (detours.Nodes.ContainsKey(destination))
+            {
+                routes.Add(route with { Systems = JourneyPath(graph, detours, destination) });
+            }
+        }
+        return routes.OrderBy(route => route.Systems.Length).ThenBy(route => route.DestinationStationId);
+    }
+
     internal static CapsuleerTrafficRoute? ToClaimSystem(
         CatalogDbContext catalog,
         int headquarters,

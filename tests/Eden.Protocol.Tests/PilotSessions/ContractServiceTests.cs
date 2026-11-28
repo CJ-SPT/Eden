@@ -3,6 +3,7 @@ using Eden.Data.World.Contracts;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Contracts;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Contracts;
@@ -588,6 +589,124 @@ public sealed class ContractServiceTests
         f.Owner.Context.Notifications.Clear();
         f.Owner.Advance();
         Assert.Empty(f.Owner.Context.Notifications);
+    }
+
+    [Theory]
+    [InlineData(ContractType.ItemExchange, false)]
+    [InlineData(ContractType.Auction, true)]
+    [InlineData(ContractType.Courier, false)]
+    public void NativeCreationRejectsCapsuleRootsAndRollsBackEarlierOffers(ContractType type, bool assembled)
+    {
+        const long issuer = ContractAssetTestData.Pilot;
+        const int station = ContractAssetTestData.Station;
+        const int capsuleType = FleetDefinitions.CapsuleType;
+        var clock = CalendarTestData.Clock();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        ContractAssetTestData.AddRemoteStation(db);
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            catalog.Add(
+                new ItemGroup
+                {
+                    Id = FleetDefinitions.CapsuleGroup,
+                    Name = "Capsule",
+                    CategoryId = (int)InventoryCategory.Ship,
+                }
+            );
+            catalog.Add(
+                new ItemType
+                {
+                    Id = capsuleType,
+                    Name = "Capsule",
+                    GroupId = FleetDefinitions.CapsuleGroup,
+                }
+            );
+            catalog.Add(
+                new SourceRecord
+                {
+                    Dataset = "client/types",
+                    Key = capsuleType.ToString(),
+                    Data = "{\"volume\":1000}",
+                }
+            );
+            catalog.SaveChanges();
+        }
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        long item;
+        long capsule;
+        using (var world = live.Economy.Begin(TransactionParticipants.None))
+        {
+            world.Add(new PilotWallet { PilotId = issuer, Cents = 100_000_000 });
+            item = InventoryPersistence.NextId(world);
+            world.Add(
+                new OwnedItem
+                {
+                    Id = item,
+                    OwnerId = issuer,
+                    TypeId = InventoryDefinitions.CivilianMinerType,
+                    LocationId = station,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 20,
+                }
+            );
+            capsule = InventoryPersistence.NextId(world);
+            if (assembled)
+            {
+                world.Add(
+                    new Ship
+                    {
+                        Id = capsule,
+                        OwnerId = issuer,
+                        TypeId = capsuleType,
+                        StationId = station,
+                        Name = "Capsule",
+                    }
+                );
+            }
+            else
+            {
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = capsule,
+                        OwnerId = issuer,
+                        TypeId = capsuleType,
+                        LocationId = station,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = 1,
+                    }
+                );
+            }
+            world.Commit();
+        }
+        using Client owner = new(db, clock, 1000001);
+        owner.Select();
+        var contracts = db.Services.GetRequiredService<IPilotContracts>();
+        var assets = db.Services.GetRequiredService<IPilotContractAssets>();
+        var inventory = assets.Station(issuer, station);
+        Assert.Contains(inventory, row => row.Id == capsule && row.GroupId == FleetDefinitions.CapsuleGroup);
+        long revision = contracts.Revision;
+        var request = Request(item);
+        var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
+        fields["contractType"] = (long)type;
+        Assert.IsType<List<object?>>(fields["itemList"]).Add(new List<object?> { capsule, 1L });
+        if (type == ContractType.Courier)
+        {
+            fields["destinationID"] = (long)ContractAssetTestData.RemoteStation;
+            fields["numDays"] = 1L;
+            fields["price"] = 0L;
+            fields["reward"] = 250d;
+            fields["collateral"] = 20_000d;
+        }
+
+        var failure = Assert.IsType<PilotCallResult.Failure>(owner.Call("CreateContract", [request], new() { ["confirm"] = null }));
+        Assert.Equal("Capsules cannot be offered on contracts.", failure.Message);
+        Assert.Equal(inventory, assets.Station(issuer, station));
+        Assert.Equal(100_000_000, db.Services.GetRequiredService<IPilotWalletReader>().Balance(issuer));
+        Assert.Empty(contracts.Available(ContractAssetTestData.Other));
+        Assert.Equal(revision, contracts.Revision);
+        Assert.Empty(owner.Context.Notifications.OfType<ContractEvent>());
+        Assert.Empty(owner.Context.Notifications.OfType<ItemChanged>());
     }
 
     private static long Created(PilotCallResult result) => Assert.IsType<long>(Assert.Single(Assert.IsType<List<object?>>(Reply(result))));

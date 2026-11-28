@@ -2022,6 +2022,24 @@ The build, Python policy suites and formatting checks passed.
 
 **Optional maintainer checks.** None.
 
+### Module cooldowns after item removal
+
+The resident handoff and detached checkpoint project paid module cycles and pending repairs only while the
+module item still exists. A retained combat change can otherwise recreate a cooldown after inventory removed
+the item, leaving `WorldWeaponCooldown` with a missing `WorldItem` parent and blocking the checkpoint. Other
+changes from the same shot, including its capacitor payment, still project.
+
+REA traced the `82fe626d` projection code in the baseline `Eden.World.dll` from `WorldSnapshot.Project`
+through `CombatCheckpoint.Apply` to the unconditional cooldown upsert. The artifact SHA-256 is
+`85c3ce6f7c88441d0478e941fb36b37df7ad8bded8a868c64239fab80bb0a160` and the MVID is
+`34c9e2bb-3b35-43a3-bcd7-7ea058ce8660`. The call and SQL literal evidence IDs are
+`ev_73c3d382e7dadbf55263d98ecdbbe250ba8eed40cb42179e6d50f9c6b5a3ee87` and
+`ev_ad004386069e134a14cb58c07caa54cc9a60fa6046ec0ad7749724334d742e8f`.
+
+`RemovedTurretCannotLeaveAnOrphanedCooldownInTheCheckpoint` replays a retained shot after removing its module
+through the resident economy. The baseline rejected the detached replay with a SQLite foreign-key error and
+the resident replay with `Missing resident OwnedItem reference`. Both cases passed with the guards in place.
+
 ## Server killboard
 
 The authenticated administration page at `/killboard` shows the system, UTC time, destroyed ship or capsule, and final

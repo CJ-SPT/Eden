@@ -152,6 +152,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             {
                 throw new InvalidDataException("The offered items or quantities are unavailable.");
             }
+            ContractAssetRules.CheckOfferedRoot(root);
             var contents = PilotContractAssetStore.Contents(world, catalog, pilotId, root.Id);
             if (contents.Count > 0 && (!root.Singleton || offer.Quantity != 1))
             {

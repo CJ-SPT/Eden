@@ -297,13 +297,14 @@ internal sealed partial class CapsuleerIndustry
         }
         bool funded = CapsuleerRefitFunding.Applies(world, pilot.PilotId);
         var corporation = Employer(world, pilot.PilotId, pilot.CorpId);
-        foreach (var route in catalog.Definition(s_replacementHubRoutes, pilot.StationId))
+        var cached = catalog.Definition(s_replacementHubRoutes, pilot.StationId);
+        var routes = avoided is { Count: > 0 }
+            ? CapsuleerTrafficRoutes.AvoidTradeHubThreats(catalog, pilot.StationId, cached, avoided)
+            : cached;
+        foreach (var route in routes)
         {
             int station = route.DestinationStationId;
-            if (
-                !world.Settings.Capsuleers.CanWorkAtStation(catalog.Definitions, station)
-                || avoided is not null && route.Systems.Skip(1).Any(avoided.Contains)
-            )
+            if (!world.Settings.Capsuleers.CanWorkAtStation(catalog.Definitions, station))
             {
                 continue;
             }

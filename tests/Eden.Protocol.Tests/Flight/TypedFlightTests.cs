@@ -16,6 +16,14 @@ public sealed class TypedFlightTests
     private const int ConcordNpcGroup = 301;
 
     [Theory]
+    [InlineData(0, 0, 0, "SpacePosition { X = 0, Y = 0, Z = 0 }")]
+    [InlineData(1.5, -2, 3, "SpacePosition { X = 1.5, Y = -2, Z = 3 }")]
+    public void SpacePositionDiagnosticsFormatCoordinatesWithoutRecursion(double x, double y, double z, string expected)
+    {
+        Assert.Equal(expected, new SpacePosition(x, y, z).ToString());
+    }
+
+    [Theory]
     [InlineData(NpcRole.Pirate, 11, 11)]
     [InlineData(NpcRole.Convoy, -11, -11)]
     [InlineData(NpcRole.Navy, -11, -11)]

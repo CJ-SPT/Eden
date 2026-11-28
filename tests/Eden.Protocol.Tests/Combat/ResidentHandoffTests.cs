@@ -1,4 +1,7 @@
+using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
@@ -14,6 +17,56 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class ResidentHandoffTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemovedTurretCannotLeaveAnOrphanedCooldownInTheCheckpoint(bool publishThroughResidentAction)
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        fixture.Load(quantity: 1);
+        fixture.Clock.Milliseconds += 5000;
+        fixture.Space();
+        var pilot = fixture.Pilot;
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        live.Economy.Warm();
+        Assert.False(fixture.Fire().Destroyed);
+
+        CombatCheckpoint combat;
+        using (live.EnterShared("retained turret checkpoint test"))
+        {
+            combat = live.Combat!.CaptureCheckpoint();
+        }
+        var firing = Assert.Single(combat.Ships, change => change.After.ShipId == pilot.ShipId);
+        Assert.True(firing.After.Turrets[fixture.Gun].ReadyAt > firing.Before.Turrets[fixture.Gun].ReadyAt);
+
+        using (var removal = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            var items = removal.Set<OwnedItem>();
+            removal.RemoveRange(items.Where(item => item.LocationId == fixture.Gun));
+            items.Remove(items.Find(fixture.Gun)!);
+            removal.Commit();
+        }
+
+        if (publishThroughResidentAction)
+        {
+            live.Economy.PublishCombat(combat);
+            Assert.Null(live.Economy.Peek<ModuleCooldown>(fixture.Gun));
+        }
+
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using var saved = new WorldDbContext(checkpoint.Database);
+        if (!publishThroughResidentAction)
+        {
+            combat.Apply(saved);
+        }
+        Assert.Null(saved.Set<OwnedItem>().Find(fixture.Gun));
+        Assert.Null(saved.Set<ModuleCooldown>().Find(fixture.Gun));
+        var energy = saved.Set<ShipEnergy>().Find(pilot.ShipId)!;
+        Assert.Equal(firing.After.Capacitor, energy.Charge);
+        Assert.Equal(firing.After.CapacitorAt, energy.UpdatedAt);
+    }
+
     [Fact]
     public void DemotionPublishesDirtyMotionWithoutSqlAndRejectedPublicationRetainsIt()
     {

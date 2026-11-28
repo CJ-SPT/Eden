@@ -38,7 +38,7 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
         {
             if (context.Pilot.Position is not null)
             {
-                throw new InvalidDataException("Dock at a station to reprocess ore.");
+                throw new InvalidDataException("Dock at a facility with a reprocessing service.");
             }
             if (check)
             {
