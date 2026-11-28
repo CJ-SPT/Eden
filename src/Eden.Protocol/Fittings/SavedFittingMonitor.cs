@@ -45,15 +45,15 @@ internal sealed class SavedFittingMonitor(IPilotSavedFittings fittings, IAllianc
             return;
         }
         Select(context);
-        foreach (long ownerId in _owners.Keys.ToArray())
+        long pilotId = context.Pilot.PilotId;
+        long corporationId = context.Pilot.CorpId;
+        var owners = _owners.Keys.ToArray();
+        int? allianceId = owners.Any(owner => owner != pilotId && owner != corporationId) ? alliances.PilotAffiliation(pilotId) : null;
+        foreach (long ownerId in owners)
         {
-            if (
-                ownerId != context.Pilot.PilotId
-                && ownerId != context.Pilot.CorpId
-                && ownerId != alliances.PilotAffiliation(context.Pilot.PilotId)
-            )
+            if (ownerId != pilotId && ownerId != corporationId && ownerId != allianceId)
             {
-                _owners.Remove(ownerId);
+                // Build 3662168 keeps the client cache for a shared owner across membership changes.
                 continue;
             }
             var before = _owners[ownerId];
@@ -75,7 +75,6 @@ internal sealed class SavedFittingMonitor(IPilotSavedFittings fittings, IAllianc
         catch (InvalidDataException)
         {
             // Membership can change before the session identity is refreshed.
-            _owners.Remove(ownerId);
             return;
         }
         var acknowledged = acknowledgedIds.ToHashSet();

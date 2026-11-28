@@ -181,7 +181,8 @@ internal sealed partial class PilotFittingStore
                     module.Online = true;
                 }
             }
-            Track(FittingChanges.Finish(world, catalog, pilot, checkpoint, now, ship));
+            // Prefer leaving new modules offline if the completed fitting cannot power the full rack.
+            Track(FittingChanges.Finish(world, catalog, pilot, checkpoint, now, ship, fitted.Select(module => module.Id).ToHashSet()));
         }
 
         foreach (var group in request.Supplies.GroupBy(item => (item.Flag, item.TypeId)))

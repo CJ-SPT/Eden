@@ -1,4 +1,5 @@
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -8,6 +9,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Ammunition;
 using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
+using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -275,6 +277,41 @@ public sealed class ApplyFittingTests
     }
 
     [Fact]
+    public async Task NativeApplyKeepsExistingOnlineModuleWhenNewModuleExceedsCpu()
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("INSERT OR REPLACE INTO TypeAttribute VALUES (561,50,110),(3651,50,50);");
+        }
+        using var scope = fixture.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using var context = fixture.Context();
+        var pilot = context.Pilot;
+        var service = Bind(router, context);
+        var miner = Assert.Single(fixture.Inventory.List(pilot.PilotId, pilot.DockedLocationId), item => item.TypeId == Miner);
+        Assert.True(Assert.Single(fixture.Inventory.List(pilot.PilotId, pilot.ShipId), item => item.Id == fixture.Gun).Online);
+        var args = Request(
+            pilot,
+            new() { [Miner] = [miner.Id] },
+            new() { [(long)InventoryFlag.HighSlot0] = (long)Railgun, [(long)InventoryFlag.HighSlot1] = (long)Miner }
+        );
+
+        Assert.Empty(Assert.IsType<List<object?>>(FitReply(router, context, service, args)));
+        var rack = fixture.Inventory.List(pilot.PilotId, pilot.ShipId);
+        Assert.True(Assert.Single(rack, item => item.Id == fixture.Gun).Online);
+        var fitted = Assert.Single(rack, item => item.TypeId == Miner);
+        Assert.Equal((int)InventoryFlag.HighSlot1, fitted.FlagId);
+        Assert.False(fitted.Online);
+        Assert.DoesNotContain(context.Notifications.OfType<ItemChanged>(), notice => notice.Item.Id == fixture.Gun);
+
+        await LiveWorld.Find(fixture.Db.Path)!.FlushAsync();
+        using WorldDbContext reopened = new(fixture.Db.Path);
+        Assert.True(reopened.Set<OwnedItem>().Find(fixture.Gun)!.Online);
+        Assert.False(reopened.Set<OwnedItem>().Find(fitted.Id)!.Online);
+    }
+
+    [Fact]
     public void AcceptsTheSimulationAmmoSetAndContinuesWithTheNativeLoadCall()
     {
         using AmmunitionTests.Fixture fixture = new();
@@ -365,6 +402,27 @@ public sealed class ApplyFittingTests
         Assert.Empty(Assert.IsType<List<object?>>(FitReply(router, context, service, replace)));
         Assert.Equal(rig, Assert.Single(fixture.Inventory.List(pilot.PilotId, pilot.ShipId)));
         Assert.Empty(context.Notifications);
+    }
+
+    [Theory]
+    [InlineData(31788, InventoryFlag.HighSlot0, false)] // Small Core Defense Field Extender I, in the wrong rack.
+    [InlineData(31790, InventoryFlag.RigSlot0, false)] // Medium Core Defense Field Extender I, on a small hull.
+    [InlineData(31544, InventoryFlag.RigSlot0, true)] // Two 300-calibration rigs on a 400-calibration hull.
+    public void ReplacementFitPreviewRejectsInvalidRigRackSizeAndCalibration(int rig, InventoryFlag slot, bool twoRigs)
+    {
+        const int merlin = 603;
+        const int smallExtender = 31788;
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        string path = new WorldDatabase(fixture.Db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadRigs(path);
+        using CatalogDbContext catalog = new(path);
+        long pilotId = fixture.Pilot.PilotId;
+        var world = LiveWorld.Find(fixture.Db.Path)!;
+        ReplacementKit valid = new(merlin, [new((int)InventoryFlag.RigSlot0, smallExtender)], new HashSet<int>(), [], []);
+        var invalid = valid with { Slots = twoRigs ? [new((int)slot, rig), new((int)InventoryFlag.RigSlot1, rig)] : [new((int)slot, rig)] };
+
+        Assert.True(world.Economy.Read(read => PilotFittingStore.CanOnlineFit(read, catalog, pilotId, valid)));
+        Assert.False(world.Economy.Read(read => PilotFittingStore.CanOnlineFit(read, catalog, pilotId, invalid)));
     }
 
     private static long Grant(AmmunitionTests.Fixture fixture, int type, int quantity, double? volume = null)

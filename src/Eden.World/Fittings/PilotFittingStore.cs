@@ -436,25 +436,21 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+        var ship = world.Ships.Find(shipId) ?? throw new InvalidDataException("Unknown fitting ship.");
+        RequireFittingShip(pilot, ship);
+        CheckFittingService(world, catalog, ship, pilotId);
         var item = world.Set<OwnedItem>().Find(itemId);
-        if (
-            shipId != pilot.ActiveShipId
-            || pilot.ActiveShip.Position is not null
-            || item is null
-            || item.OwnerId != pilotId
-            || item.LocationId != shipId
-            || !InventoryDefinitions.IsRigSlot(item.FlagId)
-        )
+        if (item is null || item.OwnerId != pilotId || item.LocationId != shipId || !InventoryDefinitions.IsRigSlot(item.FlagId))
         {
-            throw new InvalidDataException("Remove an owned rig from your docked active ship.");
+            throw new InvalidDataException("Remove an owned rig from the bound docked ship.");
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
+        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now, ship);
         var previous = PilotInventoryStore.Read(catalog, item);
         world.Remove(item);
         world.SaveChanges();
-        var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
+        var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now, ship);
         transaction.Commit();
         return new[] { new InventoryChange(previous with { Quantity = 0, Online = false }, previous) }.Concat(cascaded).ToArray();
     }

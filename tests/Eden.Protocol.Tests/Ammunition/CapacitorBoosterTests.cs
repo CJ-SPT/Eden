@@ -214,6 +214,10 @@ public sealed class CapacitorBoosterTests
 
         using var reopened = f.Db.Services.CreateScope();
         var services = reconnect ? reopened.ServiceProvider : scope.ServiceProvider;
+        var chargeRouter = services.GetRequiredService<PilotCallRouter>();
+        var magazine = Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId));
+        object?[] itemInfo = [new object?[] { f.ShipId, (long)magazine.FlagId, (long)charge }];
+        Assert.Same(PilotCallResult.None, chargeRouter.Call(context, "dogmaIM", "ItemGetInfo", itemInfo, _ => { }));
         var dogma = services.GetRequiredService<ShipDogmaBuilder>();
         var pending = dogma.AllInfo(context.Pilot);
         Assert.Empty(pending.Charges);
@@ -229,6 +233,10 @@ public sealed class CapacitorBoosterTests
 
         var prime = Assert.Single(context.Notifications.OfType<GodmaItemPrimed>());
         Assert.Equal(3d, prime.Item.Attributes[DogmaAttributeId.Quantity]);
+        var refreshed = Assert.IsType<DogmaItemInfo<double>>(
+            Assert.IsType<PilotCallResult.Success>(chargeRouter.Call(context, "dogmaIM", "ItemGetInfo", itemInfo, _ => { })).Reply
+        );
+        Assert.Equal(3d, refreshed.Attributes[DogmaAttributeId.Quantity]);
         Assert.Contains(
             context.Notifications.OfType<ModuleAttributesChanged>().SelectMany(update => update.Changes),
             change => change.Attribute == DogmaAttributeId.NextActivationTime && change.Value == 0

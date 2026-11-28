@@ -252,6 +252,18 @@ internal sealed class InventoryHandler(
         return result;
     }
 
+    private PilotCallResult ChargeInfo(DockedPilot pilot, long hull, long slot, long type)
+    {
+        var magazine = ammunition.Read(pilot.PilotId, hull).FirstOrDefault(m => m.FlagId == slot && m.TypeId == type);
+        if (magazine is null)
+        {
+            return PilotCallResult.None;
+        }
+        // The single-sublocation refresh uses the same presentation state as GetAllInfo.
+        magazine = magazinesWire.Visible(pilot, [magazine]).SingleOrDefault();
+        return magazine is not null ? magazinesWire.Prime(pilot.PilotId, magazine) : PilotCallResult.None;
+    }
+
     private PilotCallResult SplitFromWire(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
     {
         var pilot = context.Pilot;
@@ -582,13 +594,8 @@ internal sealed class InventoryHandler(
             ("dogmaIM", "ItemGetInfo")
                 when args is [long id] && id != context.ControlledStructureId && !(pilot.InStructure && id == pilot.DockedLocationId) =>
                 ItemInfo(context, id),
-            ("dogmaIM", "ItemGetInfo")
-                when args is [object?[] { Length: 3 } key] && key is [long hull, long slot, long type] && hull == pilot.ShipId => ammunition
-                .Read(pilot.PilotId, hull)
-                .FirstOrDefault(m => m.FlagId == slot && m.TypeId == type)
-                is { } magazine
-                ? magazinesWire.Prime(context.Pilot.PilotId, magazine)
-                : PilotCallResult.None,
+            ("dogmaIM", "ItemGetInfo") when args is [object?[] key] && key is [long hull, long slot, long type] && hull == pilot.ShipId =>
+                ChargeInfo(pilot, hull, slot, type),
             ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline")
                 when args is [long ship, long module] && ship != context.ControlledStructureId => fittingOperations.SetOnline(
                 context,

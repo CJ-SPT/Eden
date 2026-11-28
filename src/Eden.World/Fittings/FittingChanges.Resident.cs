@@ -42,7 +42,8 @@ internal static partial class FittingChanges
         Pilot pilot,
         FittingCheckpoint before,
         long now,
-        Ship? ship = null
+        Ship? ship = null,
+        IReadOnlySet<long>? preferShutdown = null
     )
     {
         ship ??= pilot.ActiveShip;
@@ -56,7 +57,7 @@ internal static partial class FittingChanges
             FittingSlotRules.Check(HullFittingCapacity.Read(calculation.Graph.Attributes(ship.Id)), calculation.ResourceUsage(catalog));
             attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, ship, calculation);
             long? shutdown =
-                ModuleFittingConstraints.ShutdownOnlineExcess(constraints)
+                ModuleFittingConstraints.ShutdownOnlineExcess(constraints, preferShutdown)
                 ?? FittingResourceRules.Shutdown(
                     attributes,
                     calculation
@@ -66,7 +67,8 @@ internal static partial class FittingChanges
                             calculation.Graph.Read(m.Item.Id, DogmaAttributeId.Cpu),
                             calculation.Graph.Read(m.Item.Id, DogmaAttributeId.Power)
                         ))
-                        .ToArray()
+                        .ToArray(),
+                    preferShutdown
                 );
             if (shutdown is null)
             {

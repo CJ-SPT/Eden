@@ -1,5 +1,7 @@
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -16,6 +18,8 @@ namespace Eden.Protocol.Tests.Fittings;
 
 public sealed class StripFittingTests
 {
+    private const int MerlinTypeId = 603;
+
     [Fact]
     public void NativeStripReturnsLoadedAmmunitionAndLeavesCargoInPlace()
     {
@@ -48,31 +52,11 @@ public sealed class StripFittingTests
     [Fact]
     public async Task InactiveLocalShipStripsOnlyRemovableSlotsAndCheckpoints()
     {
-        const int rigType = 31788;
-        const int merlin = 603;
         using PassiveFittingTests.Fixture f = new();
         PassiveCatalogFixture.LoadRigs(f.CatalogPath);
-        long ship;
-        using (WorldDbContext world = new(f.Db.Path))
-        {
-            var active = world.Ships.Find(f.ShipId)!;
-            active.TypeId = merlin;
-            ship = InventoryPersistence.NextId(world);
-            world.Add(
-                new Ship
-                {
-                    Id = ship,
-                    OwnerId = f.PilotId,
-                    StationId = active.StationId,
-                    TypeId = merlin,
-                    Name = "Reserve Merlin",
-                }
-            );
-            world.SaveChanges();
-        }
+        long ship = CreateLocalMerlin(f);
         long module = f.Fit(3651);
-        long rig = f.Grant(rigType);
-        f.Fitting.Fit(f.PilotId, [rig], f.StationId, (int)InventoryFlag.RigSlot0);
+        long rig = FitRig(f);
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Set<OwnedItem>().Find(module)!.LocationId = ship;
@@ -102,6 +86,108 @@ public sealed class StripFittingTests
         using LiveWorld reopened = new(new(f.Db.Path), f.Clock, _ => { });
         Assert.Equal(rig, Assert.Single(f.Inventory.List(f.PilotId, ship)).Id);
         Assert.Equal(f.StationId, Assert.Single(f.Inventory.List(f.PilotId, f.StationId), item => item.Id == module).LocationId);
+    }
+
+    [Fact]
+    public async Task NativeDestroyFittingUsesTheBoundLocalInactiveShip()
+    {
+        using PassiveFittingTests.Fixture f = new();
+        PassiveCatalogFixture.LoadRigs(f.CatalogPath);
+        long ship = CreateLocalMerlin(f);
+        long fittedRig = FitRig(f);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<OwnedItem>().Find(fittedRig)!.LocationId = ship;
+            world.SaveChanges();
+        }
+        long activeRig = FitRig(f);
+
+        using (LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { }))
+        {
+            using var scope = f.Db.Services.CreateScope();
+            var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            using var context = Context(f.Db, f.Clock);
+            string service = Bind(router, context, ship);
+
+            Assert.Same(PilotCallResult.None, router.Call(context, service, "DestroyFitting", new object?[] { fittedRig }, _ => { }));
+            var removed = Assert.Single(context.Notifications.OfType<ItemChanged>());
+            Assert.Equal(fittedRig, removed.Item.Id);
+            Assert.Equal((long)InventoryLocation.Graveyard, removed.Item.LocationId);
+            Assert.DoesNotContain(context.Notifications, notice => notice is ModuleAttributesChanged);
+            Assert.Empty(f.Inventory.List(f.PilotId, ship));
+            context.Notifications.Clear();
+            Assert.IsType<PilotCallResult.Failure>(router.Call(context, service, "DestroyFitting", new object?[] { activeRig }, _ => { }));
+            Assert.Empty(context.Notifications);
+            Assert.Equal(activeRig, Assert.Single(f.Inventory.List(f.PilotId, context.Pilot.ShipId)).Id);
+            await live.FlushAsync();
+        }
+
+        using LiveWorld reopened = new(new(f.Db.Path), f.Clock, _ => { });
+        Assert.Empty(f.Inventory.List(f.PilotId, ship));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeUnfitAndRigDestructionRequireAvailableUpwellFittingService(bool destroyRig)
+    {
+        const int astrahusTypeId = 35832;
+        const long structure = StructureRules.FirstStructureId + 100;
+        using PassiveFittingTests.Fixture f = new();
+        PassiveCatalogFixture.LoadRigs(f.CatalogPath);
+        PassiveCatalogFixture.LoadStructures(f.CatalogPath);
+        long ship = f.ShipId;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(ship)!.TypeId = MerlinTypeId;
+            world.SaveChanges();
+        }
+        long item = destroyRig ? FitRig(f) : f.Fit(3651);
+        using (WorldDbContext world = new(f.Db.Path))
+        using (CatalogDbContext catalog = new(f.CatalogPath))
+        {
+            var hull = world.Ships.Find(ship)!;
+            world.Add(
+                new SavedStructure
+                {
+                    Id = structure,
+                    TypeId = astrahusTypeId,
+                    CorporationId = world.Pilots.Find(f.PilotId)!.CorporationId,
+                    SystemId = catalog.FindStation(hull.StationId)!.SolarSystemId,
+                    State = StructureState.ShieldVulnerable,
+                    DeployedAt = f.Clock.Now,
+                    StateStartedAt = f.Clock.Now,
+                }
+            );
+            hull.StructureId = structure;
+            world.SaveChanges();
+        }
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using var context = Context(f.Db, f.Clock);
+        string service = Bind(router, context, ship);
+        var fitted = Assert.Single(f.Inventory.List(f.PilotId, ship));
+
+        var failure = Assert.IsType<PilotCallResult.Failure>(Call());
+        Assert.Contains("Ship fitting requires a quantum core", failure.Message);
+        Assert.Equal(fitted, Assert.Single(f.Inventory.List(f.PilotId, ship)));
+        Assert.Empty(context.Notifications);
+
+        using (var update = live.Economy.Begin())
+        {
+            update.Set<SavedStructure>().Find(structure)!.HasCore = true;
+            update.Commit();
+        }
+        Assert.Same(PilotCallResult.None, Call());
+        var change = Assert.Single(context.Notifications.OfType<ItemChanged>());
+        Assert.Equal(item, change.Item.Id);
+        Assert.Equal(destroyRig ? (long)InventoryLocation.Graveyard : structure, change.Item.LocationId);
+
+        PilotCallResult Call() =>
+            destroyRig
+                ? router.Call(context, service, "DestroyFitting", new object?[] { item }, _ => { })
+                : router.Call(context, "@hangar", "Add", new object?[] { item, ship }, _ => { });
     }
 
     [Fact]
@@ -161,6 +247,35 @@ public sealed class StripFittingTests
         );
         context.Select(pilot);
         return context;
+    }
+
+    private static long CreateLocalMerlin(PassiveFittingTests.Fixture f)
+    {
+        long activeId = f.ShipId;
+        using WorldDbContext world = new(f.Db.Path);
+        var active = world.Ships.Find(activeId)!;
+        active.TypeId = MerlinTypeId;
+        long ship = InventoryPersistence.NextId(world);
+        world.Add(
+            new Ship
+            {
+                Id = ship,
+                OwnerId = f.PilotId,
+                StationId = active.StationId,
+                TypeId = MerlinTypeId,
+                Name = "Reserve Merlin",
+            }
+        );
+        world.SaveChanges();
+        return ship;
+    }
+
+    private static long FitRig(PassiveFittingTests.Fixture f)
+    {
+        const int rigType = 31788;
+        long rig = f.Grant(rigType);
+        f.Fitting.Fit(f.PilotId, [rig], f.StationId, (int)InventoryFlag.RigSlot0);
+        return rig;
     }
 
     private static string Bind(PilotCallRouter router, PilotCallContext context, long ship)

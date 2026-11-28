@@ -44,9 +44,34 @@ internal sealed partial class PilotFittingStore
 
         try
         {
-            // The owner fits the rack before loading charges. Snapshot validation already checks its slot and charge types.
+            var definitions = modules.Select(module => FittingCatalog.Definition(catalog, module.TypeId)).ToArray();
+            if (definitions.Any(definition => definition is null))
+            {
+                return false;
+            }
+
+            // The owner fits the rack before loading charges.
             var calculation = FittingCalculation.Read(world, catalog, pilot, ship, proposedModules: modules);
-            FittingSlotRules.Check(HullFittingCapacity.Read(calculation.Graph.Attributes(ship.Id)), calculation.ResourceUsage(catalog));
+            var hull = calculation.Graph.Attributes(ship.Id);
+            var capacity = HullFittingCapacity.Read(hull);
+            double calibrationUsed = 0;
+            for (int index = 0; index < modules.Length; index++)
+            {
+                var module = modules[index];
+                var definition = definitions[index]!;
+                CheckHull(catalog, module.TypeId, ship.TypeId);
+                if (module.FlagId < definition.FirstFlag || module.FlagId >= definition.FirstFlag + capacity.Slots(definition.Rack))
+                {
+                    return false;
+                }
+                if (definition.Rack == ModuleRack.Rig)
+                {
+                    var rig = catalog.FittingAttributes(module.TypeId);
+                    RigRules.CheckFit(hull, rig, calibrationUsed);
+                    calibrationUsed += rig.GetValueOrDefault(DogmaAttributeId.CalibrationCost);
+                }
+            }
+            FittingSlotRules.Check(capacity, calculation.ResourceUsage(catalog));
             var constraints = FittingChanges.ReadConstraints(catalog, calculation);
             ModuleFittingConstraints.CheckFitted(constraints);
             ModuleFittingConstraints.CheckOnline(constraints);

@@ -253,7 +253,7 @@ internal sealed class ShipDogmaBuilder(
             shipInfo[module.Id] = PrimeModule(pilot, module);
             instances[module.Id] = new(module.Id, module.Online);
         }
-        var magazines = magazinesWire.Visible(pilot, modules, ammunition.Read(pilot.PilotId, pilot.ShipId));
+        var magazines = magazinesWire.Visible(pilot, ammunition.Read(pilot.PilotId, pilot.ShipId), modules);
         Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];
         if (magazines.Count > 0)
         {
@@ -278,7 +278,7 @@ internal sealed class ShipDogmaBuilder(
         {
             instances[module.Id] = new(module.Id, module.Online);
         }
-        var magazines = magazinesWire.Visible(pilot, modules, ammunition.Read(pilot.PilotId, pilot.ShipId));
+        var magazines = magazinesWire.Visible(pilot, ammunition.Read(pilot.PilotId, pilot.ShipId), modules);
         Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];
         if (magazines.Count > 0)
         {

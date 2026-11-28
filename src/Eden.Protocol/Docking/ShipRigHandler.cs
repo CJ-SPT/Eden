@@ -15,7 +15,8 @@ internal sealed class ShipRigHandler(IPilotRigRemoval rigs, FittingOperations fi
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (method != "DestroyFitting" || (service != "@ship" && service != $"@ship:{context.Pilot.ShipId}"))
+        long shipId = InventoryHandler.ShipContainer(service, context.Pilot);
+        if (method != "DestroyFitting" || shipId <= 0)
         {
             return PilotCallResult.Unsupported;
         }
@@ -25,14 +26,17 @@ internal sealed class ShipRigHandler(IPilotRigRemoval rigs, FittingOperations fi
         }
         try
         {
-            var banks = fitting.ReadBanks(context);
-            var changes = rigs.DestroyRig(context.Pilot.PilotId, context.Pilot.ShipId, itemId);
+            var banks = shipId == context.Pilot.ShipId ? fitting.ReadBanks(context) : null;
+            var changes = rigs.DestroyRig(context.Pilot.PilotId, shipId, itemId);
             foreach (var change in changes)
             {
                 InventoryChangesWire.NotifyItemChange(context, change);
             }
             fitting.NotifyOnlineChanges(context, changes);
-            fitting.NotifyShipAttributes(context, banks);
+            if (banks is not null)
+            {
+                fitting.NotifyShipAttributes(context, banks);
+            }
             return PilotCallResult.None;
         }
         catch (CargoCapacityException error)

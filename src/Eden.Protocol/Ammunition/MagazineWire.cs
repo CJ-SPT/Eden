@@ -196,13 +196,18 @@ internal sealed class MagazineWire(
         context.Notifications.Add(new ChargeLoading([loaded.ModuleId], loaded.TypeId, duration));
     }
 
-    internal IReadOnlyList<Magazine> Visible(DockedPilot pilot, IReadOnlyList<InventoryItem> modules, IReadOnlyList<Magazine> magazines)
+    internal IReadOnlyList<Magazine> Visible(
+        DockedPilot pilot,
+        IReadOnlyList<Magazine> magazines,
+        IReadOnlyList<InventoryItem>? modules = null
+    )
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         if (pilot.Position is null || magazines.All(magazine => magazine.ReadyAt <= now))
         {
             return magazines;
         }
+        modules ??= inventory.List(pilot.PilotId, pilot.ShipId);
         List<Magazine> visible = [];
         foreach (var magazine in magazines)
         {

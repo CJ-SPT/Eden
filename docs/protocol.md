@@ -578,6 +578,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Fitting and module families
 
+- [Fitting workflow audit](protocol/fitting.md#fitting-workflow-audit)
 - [Capacitor booster cycle and reload HUD](protocol/fitting.md#capacitor-booster-cycle-and-reload-hud)
 - [Remote fit preview and fitting receipts](protocol/fitting.md#remote-fit-preview-and-fitting-receipts)
 - [Weapon bank grouping and ammunition holds](protocol/fitting.md#weapon-bank-grouping-and-ammunition-holds)

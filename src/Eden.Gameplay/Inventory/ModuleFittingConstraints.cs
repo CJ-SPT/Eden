@@ -82,10 +82,11 @@ public static class ModuleFittingConstraints
 
     // Reuse Eden's deterministic highest-item-ID tie break when an attribute
     // change lowers an online limit, like the existing CPU/grid shutdown path.
-    public static long? ShutdownOnlineExcess(IReadOnlyList<FittedModuleConstraints> modules) =>
+    public static long? ShutdownOnlineExcess(IReadOnlyList<FittedModuleConstraints> modules, IReadOnlySet<long>? preferred = null) =>
         OnlineExcess(modules)
             .SelectMany(group => group.Where(module => module.Online))
-            .OrderByDescending(module => module.ItemId)
+            .OrderByDescending(module => preferred?.Contains(module.ItemId) == true)
+            .ThenByDescending(module => module.ItemId)
             .Select(module => (long?)module.ItemId)
             .FirstOrDefault();
 

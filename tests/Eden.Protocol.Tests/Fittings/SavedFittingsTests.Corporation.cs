@@ -210,6 +210,44 @@ public sealed partial class SavedFittingsTests
     }
 
     [Fact]
+    public void PrimedCorporationFittingsResynchronizeAfterRejoiningInTheSameSession()
+    {
+        using TestWorld db = new(liveWorld: true);
+        int corporation = CorporationAdministrationTests.CreateAndJoin(db);
+        using Client member = new(db, Other, service: "corpFittingMgr");
+        var store = db.Services.GetRequiredService<IPilotSavedFittings>();
+        var membership = db.Services.GetRequiredService<ICorporationMembership>();
+        var corporations = db.Services.GetRequiredService<IPlayerCorporations>();
+        long updated = store.Save(Owner, Plan("Doctrine"), ownerId: corporation);
+        long deleted = store.Save(Owner, Plan("Retired doctrine"), ownerId: corporation);
+        member.Success("GetFittings", [(long)corporation]);
+
+        membership.Remove(Other, Other);
+        store.Rename(Owner, updated, "New doctrine", "", corporation);
+        store.Delete(Owner, deleted, corporation);
+        long added = store.Save(Owner, Plan("Another doctrine"), ownerId: corporation);
+        member.AdvanceFittings();
+        Assert.Empty(member.Context.Notifications);
+        member.Context.Flight.UpdateCorporation(corporations.Identity(Other));
+        member.AdvanceFittings();
+        Assert.Empty(member.Context.Notifications);
+
+        var invitation = membership.Invite(Owner, Other);
+        membership.Update(
+            Other,
+            new(invitation.Id, Other, corporation, invitation.Text, CorporationApplicationStatus.Joined, "", invitation.AppliedAt)
+        );
+        member.Context.Flight.UpdateCorporation(corporations.Identity(Other));
+        member.AdvanceFittings();
+        Assert.Equal(new long[] { deleted }, Assert.Single(member.Context.Notifications.OfType<FittingsDeletedNotification>()).FittingIds);
+        Assert.Equal(added, Assert.Single(member.Context.Notifications.OfType<FittingAddedNotification>()).FittingId);
+        Assert.Equal(new long[] { updated }, Assert.Single(member.Context.Notifications.OfType<FittingsUpdatedNotification>()).FittingIds);
+        member.Context.Notifications.Clear();
+        member.AdvanceFittings();
+        Assert.Empty(member.Context.Notifications);
+    }
+
+    [Fact]
     public void LocalDeleteAcknowledgementDoesNotAbsorbOtherCommittedFittingChanges()
     {
         using TestWorld db = new();

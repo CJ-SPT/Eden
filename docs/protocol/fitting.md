@@ -2,6 +2,97 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Fitting workflow audit
+
+The follow-up audit started at Eden `a65c5408`. It covered client refreshes, applying saved fittings, removing fitted
+equipment, and checking imported replacement fits.
+
+- The tuple form of `dogmaIM.ItemGetInfo` reads the same visible capacitor-booster magazine as `GetAllInfo`.
+  A slot refresh during reload preserves the visible count and publishes the new count when the reload completes.
+- A client that already loaded a corporation or alliance fitting list receives the accumulated changes when access
+  returns in the same login. The monitor retains the client's last known revision while membership is absent.
+- Applying a fit gives newly installed modules priority for shutdown when the completed layout exceeds CPU, power
+  grid, or an online group limit. Existing online modules are preserved when the hull can still power them.
+- `DestroyFitting(itemID)` uses the ship bound to the inventory call. An owned inactive hull in the current hangar
+  updates its own fitting. Docked module removal and rig destruction enforce Upwell fitting service access.
+- Replacement-fit preview checks the module's rack, the hull restrictions, rig size, and total calibration using
+  the same rules as the committed fitting path.
+
+Build 3662168 original archive SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`godma.pyj::StateManager.UpdateItem` reads `ItemGetInfo(itemKey)` at offsets 1249–1267. `fittingSvc.pyj` primes a shared
+owner only when its cache is missing (offsets 0–49 in `PrimeFittings`). `LoadFitting` sends the fitting plan at
+offsets 898–958. `fittingSlotController.pyj::Unfit` calls `DestroyFitting` on the bound inventory after confirmation.
+
+EVE.js 261108.1 `fittingOperations.js` (`c0f37f9719aa`) preserves matching modules, reconsiders newly fitted modules
+for onlining, and validates the bound hull and its docked fitting service before rig removal.
+`invBrokerService.js` (`8cec4112de1b`) also checks Upwell fitting access for direct removal.
+`fittingMgrServiceHelpers.js` (`8c41ca9b9c44`) filters shared updates by current owner membership.
+[EVE University fitting rules](https://wiki.eveuniversity.org/Fitting_ships) ·
+[CCP Quantum Core release notes](https://www.eveonline.com/news/view/patch-notes-version-18-12)
+
+### Automated validation
+
+The six exact method filters reproduced all ten cases on `a65c5408` in 34.84 seconds across two runs.
+All ten passed with the fixes in 36.71 seconds after a 10.57-second feature build. The final solution build
+took 5.92 seconds and finished with zero warnings or errors. The adjacent selection passed 165 cases in
+183.22 seconds. The replacement fitting selection passed ten cases in 39.73 seconds. `Format.ps1 -Check` passed
+in 76.44 seconds in the isolated verification worktree. The formatting and catalog setup policies passed nine and
+eight Python cases respectively.
+
+<details>
+<summary>Focused and adjacent test filters</summary>
+
+Prefix each suffix with `Eden.Protocol.Tests.` and join the `FullyQualifiedName` selectors with `|`.
+The focused selection uses `=`.
+
+```text
+Ammunition.CapacitorBoosterTests.NativeBoosterReloadKeepsTheChargeHiddenUntilItsPaidWindowCompletes
+Fittings.SavedFittingsTests.PrimedCorporationFittingsResynchronizeAfterRejoiningInTheSameSession
+Fittings.ApplyFittingTests.NativeApplyKeepsExistingOnlineModuleWhenNewModuleExceedsCpu
+Fittings.ApplyFittingTests.ReplacementFitPreviewRejectsInvalidRigRackSizeAndCalibration
+Fittings.StripFittingTests.NativeDestroyFittingUsesTheBoundLocalInactiveShip
+Fittings.StripFittingTests.NativeUnfitAndRigDestructionRequireAvailableUpwellFittingService
+```
+
+The adjacent selection uses `~` for these prefixes.
+
+```text
+Fittings.
+Ammunition.CapacitorBoosterTests
+Persistence.PilotFittingTests
+Persistence.ModuleFittingTests
+Persistence.ShipRigTests
+Persistence.FittingConstraintTests
+Persistence.PassiveFittingTests
+Structures.StructureFittingRulesTests
+```
+
+It also includes these exact methods.
+
+```text
+Flight.CapitalTravelTests.FittedModuleTogglesAwayFromServiceAndOnlyOnliningChargesCapacitor
+Flight.CapitalTravelTests.VentureRefitsAtRorqualAndRespectsRangeAndWeaponsDeadline
+```
+
+Two additional exact methods cover the consumers of replacement-fit preview.
+
+```text
+Capsuleers.CapsuleerAmmunitionSupplyTests.StrandedBotTravelsToJitaAndBuysAnOnlineFitAcrossRestart
+Capsuleers.CapsuleerAmmunitionSupplyTests.EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen
+```
+
+</details>
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+1. Apply a fitting that adds one module beyond the ship's available CPU and check which module stays offline.
+2. Remove a rig through the fitting window of an inactive ship in the local hangar.
+3. Reopen the booster tooltip while auto-reload is in progress and check the charge count after the sweep finishes.
+
 ## Capacitor booster cycle and reload HUD
 
 In space, a capacitor booster reports the duration of its paid cycle to Godma, including changes when overheating

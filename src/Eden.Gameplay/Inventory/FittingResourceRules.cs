@@ -12,7 +12,8 @@ public static class FittingResourceRules
 {
     public static long? Shutdown(
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
-        IReadOnlyList<FittingShutdownCandidate> candidates
+        IReadOnlyList<FittingShutdownCandidate> candidates,
+        IReadOnlySet<long>? preferred = null
     )
     {
         double cpu = attributes.GetValueOrDefault(DogmaAttributeId.CpuLoad);
@@ -28,7 +29,8 @@ public static class FittingResourceRules
             > cpu / Math.Max(cpuOutput, InventoryDefinitions.ResourceTolerance);
         return candidates
                 .Where(c => (grid ? c.Power : c.Cpu) > 0)
-                .OrderByDescending(c => grid ? c.Power : c.Cpu)
+                .OrderByDescending(c => preferred?.Contains(c.ItemId) == true)
+                .ThenByDescending(c => grid ? c.Power : c.Cpu)
                 .ThenByDescending(c => c.ItemId)
                 .Select(c => (long?)c.ItemId)
                 .FirstOrDefault()

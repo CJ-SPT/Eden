@@ -410,7 +410,7 @@ internal sealed partial class PilotFittingStore
         }
     }
 
-    private static void CheckFittingService(WorldAction world, CatalogDbContext catalog, Ship ship, long pilotId)
+    internal static void CheckFittingService(WorldAction world, CatalogDbContext catalog, Ship ship, long pilotId)
     {
         if (ship.Position is null && ship.StructureId is long structureId)
         {

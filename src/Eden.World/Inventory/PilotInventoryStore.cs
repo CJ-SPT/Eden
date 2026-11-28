@@ -159,6 +159,10 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
             return splitChanges;
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
+        if (unfittedIds.Length > 0)
+        {
+            PilotFittingStore.CheckFittingService(new SqlWorldAction(world), catalog, ship, pilotId);
+        }
         var checkpoint = unfittedIds.Length > 0 && !deferFittingChanges ? FittingChanges.Capture(world, catalog, pilot, now) : null;
         var magazines = world
             .Set<OwnedItem>()
