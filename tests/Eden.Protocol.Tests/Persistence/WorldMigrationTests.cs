@@ -5,6 +5,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Mail;
 using Eden.Data.World.Mining;
 using Eden.Data.World.Propulsion;
+using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -21,6 +22,27 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
+    [Fact]
+    public void Version241UpgradeAddsCampaignCreditBeforeResidentStartup()
+    {
+        using TestWorld fixture = new(freshInitialization: true);
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldSovereigntyCampaignCredit; PRAGMA user_version=241;");
+        }
+
+        WorldDatabase database = new(fixture.Path);
+        WorldInitialization.Initialize(database);
+        WorldInitialization.Initialize(database);
+        using var reopened = ServerServices.Build(database, liveWorld: true);
+        using WorldDbContext saved = new(database.Path);
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Empty(saved.Set<SavedSovereigntyCampaignCredit>());
+        Assert.Empty(
+            reopened.GetRequiredService<LiveWorld>().Economy.Inspect(world => world.Set<SavedSovereigntyCampaignCredit>().ToArray())
+        );
+    }
+
     [Fact]
     public void Version230UpgradeLoadsAllThreeNewResidentTablesAndRetainsThePilot()
     {

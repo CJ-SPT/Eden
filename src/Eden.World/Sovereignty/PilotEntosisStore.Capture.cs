@@ -99,6 +99,7 @@ internal sealed partial class PilotEntosisStore
                     ClaimedAt = capturedAt,
                 }
             );
+            world.RemoveRange(world.Filter<SavedSovereigntyCampaignCredit>(row => row.SystemId == system).ToArray());
             EnsureConflict(world, catalog, world.Set<SavedSovereigntyClaim>().Find(system)!, capturedAt);
             world.AfterCommit(() => Interlocked.Increment(ref _viewRevision));
             structure.CorporationId = winner.CorporationId;
@@ -124,9 +125,33 @@ internal sealed partial class PilotEntosisStore
     {
         foreach (var cycle in cycles.Where(row => row.EndsAt <= now && (row.Stopping || row.Repeats == 0)))
         {
-            world.Remove(cycle);
-            world.AfterCommit(() => _scoringLeases.Remove(cycle.ModuleId));
+            RemoveCycle(world, cycle);
         }
+    }
+
+    internal long? SettleExpeditionCycle(WorldAction world, CatalogDbContext catalog, long module, long now)
+    {
+        if (world.Set<SavedEntosisCycle>().Find(module) is not { } cycle)
+        {
+            return null;
+        }
+        Advance(world, catalog, cycle.SystemId, now);
+        if (cycle.EndsAt > now)
+        {
+            return cycle.EndsAt;
+        }
+        // A destroyed hub or node can no longer retire its own paid rows.
+        if (world.Set<SavedEntosisCycle>().Find(module) is { } expired)
+        {
+            RemoveCycle(world, expired);
+        }
+        return null;
+    }
+
+    private void RemoveCycle(WorldAction world, SavedEntosisCycle cycle)
+    {
+        world.Remove(cycle);
+        world.AfterCommit(() => _scoringLeases.Remove(cycle.ModuleId));
     }
 
     private bool Valid(WorldAction world, CatalogDbContext catalog, SavedEntosisCycle cycle, EntosisTarget target)

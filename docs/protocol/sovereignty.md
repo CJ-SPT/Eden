@@ -259,6 +259,54 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Bot claims after a campaign victory
+
+When attackers capture a command node, an alliance earns credit if a valid bot link contributes at the completion
+boundary. Native attacker victory settles that credit alongside the destruction of the rival hub. A successful defense
+or the loss of the hub outside the campaign discards its pending credits. Any subsequent claim clears the system's
+credits. Saved-world schema 242 checkpoints these records by destroyed hub and contributing alliance.
+
+With **Start new sovereignty claims** enabled, a bot alliance that already has a home can pursue a credited, unoccupied
+system within three jumps of its headquarters. It uses the same corporate bid, brokerage and monthly dues reserve as
+a first claim. The executor can load an owned hub and the normal Squall route and fuel checks apply. The assignment
+revalidates the home claim, credit and destination before deploying the new hub.
+
+The replacement starts neutral and can be contested through ordinary paid Entosis. Victory credit guides bot planning.
+The first alliance to finish the neutral capture receives the claim through the existing build 3662168 settlement.
+The matching EVE.js 261108.1 neutral hub behavior is recorded in the [procurement reference](alliances.md#first-claim-hub-procurement).
+[CCP command-node events](https://support.eveonline.com/hc/en-us/articles/203728981-Command-Nodes-Event) ·
+[UniWiki sovereignty warfare](https://wiki.eveuniversity.org/Sovereignty_Hub#After_the_event)
+
+### Automated validation
+
+Four exact `FullyQualifiedName=` filters passed six cases in 41.33 seconds. The build took 1.78 seconds.
+
+- `Eden.Protocol.Tests.Capsuleers.CapsuleerAllianceTests.FundedRivalsContestAnOwnedHubUnattendedAcrossRestart`
+- `Eden.Protocol.Tests.Persistence.WorldMigrationTests.Version241UpgradeAddsCampaignCreditBeforeResidentStartup`
+- `Eden.Protocol.Tests.Sovereignty.SovereigntyCampaignTests.PaidAttackReinforcesAndNineAttackerNodesDestroyWithoutTransferringClaim`
+- `Eden.Protocol.Tests.Sovereignty.SovereigntyCampaignTests.UnattendedCampaignDefendsAndKeepsOriginalClaimUntilNextDaysWindow`
+
+The victorious bot replay uses an offline market seller and keeps funds available for a duplicate bid. It verifies a
+single corporate order, escrow and fill, infrastructure cargo bound for the defeated system, neutral deployment,
+three paid cycles, return to headquarters, and credit removal. The first empty system in the generic route search
+remains unclaimed. Both holdings survive checkpoint reopen and the next native dues payment. The returning raiders'
+cycles expire after their target nodes disappear. The other cases check an older save, human-paid victory and pending
+credit cleanup on defense.
+
+The broader `FullyQualifiedName~` selection passed 366 cases in 200.13 seconds. It combined `CapsuleerAllianceTests`,
+`CapsuleerCorporationTests`, `CapsuleerMaintenanceTests`, `CapsuleerTrafficNavigationTests`, `Eden.Protocol.Tests.Alliances`,
+`Eden.Protocol.Tests.Sovereignty`, `PersonalMarketTests`, `WorldInitializationTests` and `WorldMigrationTests`.
+The solution built in 11.78 seconds with zero warnings and errors. All 17 Python cases passed in 1.98 seconds.
+Formatting and whitespace checks passed with the local recovery archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Scope and implementation plan
 
 Target the Sovereignty Hub system supported by Windows build **3662168**, using resident authority and checkpoint

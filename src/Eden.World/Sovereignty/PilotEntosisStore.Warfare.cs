@@ -218,7 +218,7 @@ internal sealed partial class PilotEntosisStore
             CampaignMultiplier = (decimal)row.CampaignAdm,
         };
 
-    private EntosisContribution[] Contributions(WorldAction world, CatalogDbContext catalog, EntosisTarget target, long now)
+    private SavedEntosisCycle[] ValidatedCycles(WorldAction world, CatalogDbContext catalog, EntosisTarget target)
     {
         var cycles = world.Filter<SavedEntosisCycle>(row => row.SystemId == target.SystemId && row.HubId == target.Id).ToArray();
         foreach (var cycle in cycles)
@@ -230,13 +230,15 @@ internal sealed partial class PilotEntosisStore
                 world.AfterCommit(() => _scoringLeases.Remove(cycle.ModuleId));
             }
         }
-        // Expired rows must contribute through their paid end before retirement.
-        var result = cycles
+        return cycles;
+    }
+
+    // Expired rows must contribute through their paid end before retirement.
+    private static EntosisContribution[] Contributions(IEnumerable<SavedEntosisCycle> cycles) =>
+        cycles
             .Where(row => row.Contributing)
             .Select(row => new EntosisContribution(row.AllianceId, Math.Max(row.StartedAt, row.WarmupUntil), row.EndsAt))
             .ToArray();
-        return result;
-    }
 
     private void StopTarget(WorldAction world, long target)
     {
@@ -308,7 +310,7 @@ internal sealed partial class PilotEntosisStore
                 {
                     continue;
                 }
-                var links = Contributions(world, catalog, target, now);
+                var links = Contributions(ValidatedCycles(world, catalog, target));
                 if (conflict.Value == 1 && links.Length == 0)
                 {
                     continue;

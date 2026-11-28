@@ -21,7 +21,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = Eden.World.Alliances.AllianceSchema.GovernanceAndBillingVersion;
+    internal const int CurrentVersion = Eden.World.Sovereignty.SovereigntyWarfareSchema.CampaignCreditVersion;
 
     public static void Open(
         WorldDbContext world,

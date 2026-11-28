@@ -990,6 +990,7 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntyPrime();
         RegisterSovereigntyConflict();
         RegisterSovereigntyNode();
+        RegisterSovereigntyCampaignCredit();
         RegisterSovereigntyActivity();
         RegisterSovereigntyCapital();
         RegisterSovereigntyCapitalChange();

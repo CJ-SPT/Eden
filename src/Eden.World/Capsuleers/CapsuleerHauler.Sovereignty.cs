@@ -1,5 +1,6 @@
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
@@ -85,26 +86,52 @@ internal sealed partial class CapsuleerHauler
             .OrderBy(claim => claim.ClaimedAt)
             .ThenBy(claim => claim.SystemId)
             .FirstOrDefault();
-        if (home is not null)
+        if (home is null)
         {
-            SettleSovereigntyDockFreight(world);
-            if (
-                !CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId, ignoredDuty: SovereigntyDuty.Attack)
-                && TryProtectSovereignty(world, catalog, corporation, home, prepare)
-            )
-            {
-                return true;
-            }
-            return TryAttackSovereignty(world, catalog, corporation, home, prepare)
-                || StandByAtSovereignty(world, catalog, corporation, home);
+            return TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, null, prepare);
         }
+
+        SettleSovereigntyDockFreight(world);
+        if (
+            !CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId, ignoredDuty: SovereigntyDuty.Attack)
+            && TryProtectSovereignty(world, catalog, corporation, home, prepare)
+        )
+        {
+            return true;
+        }
+        return TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
+            || TryAttackSovereignty(world, catalog, corporation, home, prepare)
+            || StandByAtSovereignty(world, catalog, corporation, home);
+    }
+
+    private bool TryLaunchSovereigntyClaim(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        SavedCorporation corporation,
+        SavedAlliance alliance,
+        SavedSovereigntyClaim? home,
+        bool prepare
+    )
+    {
         if (
             !world.Settings.Capsuleers.NewSovereigntyClaims
             || CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId)
-            || world.Filter<SavedAllianceMember>(member => member.AllianceId == alliance.Id).Count()
-                < CapsuleerAllianceRules.FoundingCorporations
             || CapsuleerAlliances.HeadquartersHub(world, corporation) is not { } package
         )
+        {
+            return false;
+        }
+        int members = world.Filter<SavedAllianceMember>(member => member.AllianceId == alliance.Id).Count();
+        if (
+            members < CapsuleerAllianceRules.FoundingCorporations
+            || home is not null
+                && (!CapsuleerAlliances.CanFund(world, corporation, members, 0) || entosis.DefenseTargets(world, home, Now).Any())
+        )
+        {
+            return false;
+        }
+        var sites = CapsuleerAlliances.ClaimSites(world, catalog, Pilot.SystemId, alliance.Id, home is not null).ToArray();
+        if (sites.Length == 0)
         {
             return false;
         }
@@ -123,8 +150,7 @@ internal sealed partial class CapsuleerHauler
         bool qualified = ownedHub.Volume > 0 && hold != 0 && module.HasValue;
 
         var avoided = AvoidedSupplierSystems();
-        var route = CapsuleerAlliances
-            .UnclaimedSites(world, catalog, Pilot.SystemId)
+        var route = sites
             .Select(system =>
                 CapsuleerTrafficRoutes.ToClaimSystem(
                     catalog,
@@ -156,7 +182,10 @@ internal sealed partial class CapsuleerHauler
             world.Remove(package);
         }
         var cargo = InventoryPersistence.MergeOutput(world, catalog, pilotId, pilot.ActiveShipId, hold, EntosisRules.HubTypeId, 1);
-        LaunchSovereignty(route, new(alliance.Id, corporation.Id, route.Systems[^1], cargo.Item.Id, module!.Value));
+        LaunchSovereignty(
+            route,
+            new(alliance.Id, corporation.Id, route.Systems[^1], cargo.Item.Id, module!.Value, HomeSystemId: home?.SystemId)
+        );
         return true;
     }
 
@@ -335,15 +364,10 @@ internal sealed partial class CapsuleerHauler
 
     private void ContinueSovereigntyReturn(SovereigntyExpedition expedition)
     {
-        var world = _operation.World;
-        if (world.Set<SavedEntosisCycle>().Find(expedition.ModuleId) is { } cycle)
+        if (entosis.SettleExpeditionCycle(_operation.World, _operation.Catalog, expedition.ModuleId, Now) is long paidUntil)
         {
-            entosis.Advance(world, _operation.Catalog, cycle.SystemId, Now);
-            if (cycle.EndsAt > Now)
-            {
-                WaitAtSovereignty(cycle.EndsAt - Now);
-                return;
-            }
+            WaitAtSovereignty(paidUntil - Now);
+            return;
         }
         BeginTravel();
     }

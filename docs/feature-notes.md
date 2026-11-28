@@ -35,6 +35,7 @@
   [Independent nullsec expeditions](capsuleer-population.md#independent-nullsec-expeditions) ·
   [Capsuleer encounters](capsuleer-population.md) · [Population settings](world-configuration.md#autonomous-population) ·
   [First claims](protocol/sovereignty.md#autonomous-first-claims) · [Rival sovereignty](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty) ·
+  [Post-campaign claims](protocol/sovereignty.md#bot-claims-after-a-campaign-victory) ·
   [Population inspector](capsuleer-population.md#inspecting-bots-and-organizations)
 
 The linked protocol records contain scope, source revisions and validation for individual milestones.

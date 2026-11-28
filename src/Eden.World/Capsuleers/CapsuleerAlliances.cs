@@ -129,7 +129,7 @@ internal sealed partial class CapsuleerAlliances(
             return true;
         }
         return local.Any(corporation =>
-            TryMaintainAllianceDues(world, corporation) || TryProcureFirstHub(world, catalog, corporation, now)
+            TryMaintainAllianceDues(world, corporation) || TryProcureClaimHub(world, catalog, corporation, now)
         );
     }
 

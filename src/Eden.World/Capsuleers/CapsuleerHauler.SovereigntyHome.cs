@@ -189,8 +189,14 @@ internal sealed partial class CapsuleerHauler
         int home = expedition.HomeSystemId ?? expedition.TargetSystemId;
         return expedition.Duty switch
         {
-            SovereigntyDuty.Claim when expedition.HubId is null => CanManageOwnedHub(world) && !PilotEntosisStore.HasHub(world, home),
-            SovereigntyDuty.Claim => world.Set<SavedSovereigntyClaim>().Find(home) is null,
+            SovereigntyDuty.Claim when expedition.HubId is null => CanManageOwnedHub(world)
+                && !PilotEntosisStore.HasHub(world, expedition.TargetSystemId)
+                && (
+                    expedition.HomeSystemId is null
+                    || world.Set<SavedSovereigntyClaim>().Find(home)?.AllianceId == expedition.AllianceId
+                        && CapsuleerAlliances.CanRecoverClaim(world, expedition.TargetSystemId, expedition.AllianceId)
+                ),
+            SovereigntyDuty.Claim => world.Set<SavedSovereigntyClaim>().Find(expedition.TargetSystemId) is null,
             SovereigntyDuty.Defend when expedition.HubId is long target => entosis.DefenseNeeded(
                 world,
                 home,

@@ -13,6 +13,7 @@ internal sealed partial class PilotEntosisStore
 {
     internal void DropAllianceClaims(WorldAction world, int allianceId, long at)
     {
+        world.RemoveRange(world.Filter<SavedSovereigntyCampaignCredit>(row => row.AllianceId == allianceId).ToArray());
         var claims = world
             .Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == allianceId)
             .OrderBy(claim => claim.SystemId)
@@ -76,6 +77,7 @@ internal sealed partial class PilotEntosisStore
 
     private void DestroyClaimedHub(WorldAction world, CatalogDbContext catalog, int system, long hubId, long at)
     {
+        DiscardPendingCampaignCredits(world, hubId);
         StopTarget(world, hubId);
         if (world.Set<SavedStructure>().Find(hubId) is { State: not StructureState.Destroyed } structure)
         {

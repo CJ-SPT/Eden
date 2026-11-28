@@ -8,7 +8,12 @@ namespace Eden.World.Sovereignty;
 
 internal sealed partial class PilotEntosisStore
 {
-    private sealed record NodeProgress(SavedSovereigntyNode Node, TerritoryProgress Progress);
+    private sealed record NodeProgress(
+        SavedSovereigntyNode Node,
+        TerritoryProgress Progress,
+        SavedEntosisCycle[] Cycles,
+        EntosisContribution[] Links
+    );
 
     private static void Spawn(WorldAction world, CatalogDbContext catalog, SavedSovereigntyConflict conflict, long at)
     {
@@ -76,7 +81,7 @@ internal sealed partial class PilotEntosisStore
             {
                 var progress = SovereigntyWarfareRules.Advance(
                     new(node.Value, node.UpdatedAt),
-                    Contributions(world, catalog, Target(world, node.SystemId, node.Id)!, now),
+                    Contributions(ValidatedCycles(world, catalog, Target(world, node.SystemId, node.Id)!)),
                     next,
                     profile.Duration,
                     profile.Regeneration,
@@ -150,33 +155,36 @@ internal sealed partial class PilotEntosisStore
             var nodes = world.Filter<SavedSovereigntyNode>(row => row.SourceSystemId == conflict.SystemId).OrderBy(row => row.Id).ToArray();
             long until = Math.Min(now, conflict.NextSpawnAt);
             var previews = nodes
-                .Select(row => new NodeProgress(
-                    row,
-                    SovereigntyWarfareRules.Advance(
+                .Select(row =>
+                {
+                    var cycles = ValidatedCycles(world, catalog, Target(world, row.SystemId, row.Id)!);
+                    var links = Contributions(cycles);
+                    var progress = SovereigntyWarfareRules.Advance(
                         new(row.Value, row.UpdatedAt),
-                        Contributions(world, catalog, Target(world, row.SystemId, row.Id)!, now),
+                        links,
                         until,
                         profile.Duration,
                         profile.Regeneration,
                         conflict.DefenderAllianceId,
                         true,
                         attackMultiplier: (decimal)conflict.CampaignAdm
-                    )
-                ))
+                    );
+                    return new NodeProgress(row, progress, cycles, links);
+                })
                 .ToArray();
             long first = previews
                 .Where(row => row.Progress.CompletedAt is not null)
                 .Select(row => row.Progress.CompletedAt!.Value)
                 .DefaultIfEmpty(until)
                 .Min();
-            foreach (var (node, preview) in previews)
+            foreach (var (node, preview, cycles, links) in previews)
             {
                 var progress =
                     first == until
                         ? preview
                         : SovereigntyWarfareRules.Advance(
                             new(node.Value, node.UpdatedAt),
-                            Contributions(world, catalog, Target(world, node.SystemId, node.Id)!, now),
+                            links,
                             first,
                             profile.Duration,
                             profile.Regeneration,
@@ -189,7 +197,11 @@ internal sealed partial class PilotEntosisStore
                 node.ScoringTeam = progress.ScoringTeam;
                 node.Rate = progress.Rate;
                 node.Blocked = progress.Blocked;
-                Retire(world, world.Filter<SavedEntosisCycle>(row => row.HubId == node.Id).ToArray(), first);
+                if (progress.CompletedAt == first && progress.Value < 0)
+                {
+                    RecordCampaignContribution(world, conflict, cycles, first);
+                }
+                Retire(world, cycles, first);
                 if (progress.CompletedAt != first)
                 {
                     continue;
@@ -226,6 +238,7 @@ internal sealed partial class PilotEntosisStore
         conflict.DefenderPoints = Math.Clamp(conflict.DefenderPoints, 0, 100);
         if (conflict.DefenderPoints == 100)
         {
+            DiscardPendingCampaignCredits(world, conflict.HubId);
             conflict.Phase = SovereigntyPhase.Secure;
             conflict.CampaignAt = null;
             conflict.Value = 1;
@@ -240,9 +253,13 @@ internal sealed partial class PilotEntosisStore
             conflict.WindowEnd = nextWindow.EndsAt;
             return;
         }
+        foreach (var credit in world.Filter<SavedSovereigntyCampaignCredit>(row => row.HubId == conflict.HubId))
+        {
+            credit.VictoryAt = at;
+        }
         DestroyClaimedHub(world, catalog, conflict.SystemId, conflict.HubId, at);
         SovereigntyDevelopmentPersistence.ReconcileCapital(world, conflict.DefenderAllianceId, at);
-        // No winner receives a free replacement hull or automatic claim.
+        // A replacement hub still needs ordinary neutral deployment and capture.
         conflict.Phase = SovereigntyPhase.Secure;
     }
 }

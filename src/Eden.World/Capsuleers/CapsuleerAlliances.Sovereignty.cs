@@ -28,7 +28,7 @@ internal sealed partial class CapsuleerAlliances
         (catalog, headquarters) => FirstClaimSystems(catalog, headquarters, CapsuleerAllianceRules.FirstClaimMaximumJumps)
     );
 
-    private bool TryProcureFirstHub(EconomyTransaction world, CatalogDbContext catalog, SavedCorporation corporation, long now)
+    private bool TryProcureClaimHub(EconomyTransaction world, CatalogDbContext catalog, SavedCorporation corporation, long now)
     {
         const int hubType = EntosisRules.HubTypeId;
         int stationId = corporation.StationId;
@@ -38,7 +38,6 @@ internal sealed partial class CapsuleerAlliances
             || world.Set<SavedAlliance>().Find(membership.AllianceId) is not { ClosedAt: null } alliance
             || alliance.ExecutorCorporationId != corporation.Id
             || world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is null
-            || world.Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance.Id).Any()
             || catalog.Definitions.Stations.GetValueOrDefault(stationId) is not { } station
             || !StationCapabilities.Has(catalog, station.OperationId, StationService.Market)
             || catalog.Read(CatalogData.Client.Types, (long)hubType) is not { Published: 1, MarketGroupID: > 0 }
@@ -61,7 +60,8 @@ internal sealed partial class CapsuleerAlliances
         {
             return false;
         }
-        if (!UnclaimedSites(world, catalog, station.SolarSystemId).Any())
+        bool hasHome = world.Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance.Id).Any();
+        if (!ClaimSites(world, catalog, station.SolarSystemId, alliance.Id, hasHome).Any())
         {
             return false;
         }
@@ -124,9 +124,33 @@ internal sealed partial class CapsuleerAlliances
         }
     }
 
+    internal static IEnumerable<int> ClaimSites(WorldAction world, CatalogDbContext catalog, int headquarters, int alliance, bool hasHome)
+    {
+        if (!hasHome)
+        {
+            return UnclaimedSites(world, catalog, headquarters);
+        }
+
+        return world
+            .Filter<SavedSovereigntyCampaignCredit>(row => row.AllianceId == alliance)
+            .AsEnumerable()
+            .Where(row => row.VictoryAt.HasValue)
+            .OrderByDescending(row => row.VictoryAt)
+            .ThenBy(row => row.SystemId)
+            .Select(row => row.SystemId)
+            .Where(system => NearbyClaimSites(catalog, headquarters).Contains(system) && UnoccupiedClaimSite(world, catalog, system));
+    }
+
     internal static IEnumerable<int> UnclaimedSites(WorldAction world, CatalogDbContext catalog, int headquarters) =>
-        NearbyClaimSites(catalog, headquarters)
-            .Where(system => world.Settings.Capsuleers.CanWork(catalog.Definitions, system) && !PilotEntosisStore.HasHub(world, system));
+        NearbyClaimSites(catalog, headquarters).Where(system => UnoccupiedClaimSite(world, catalog, system));
+
+    private static bool UnoccupiedClaimSite(WorldAction world, CatalogDbContext catalog, int system) =>
+        world.Settings.Capsuleers.CanWork(catalog.Definitions, system) && !PilotEntosisStore.HasHub(world, system);
+
+    internal static bool CanRecoverClaim(WorldAction world, int target, int alliance) =>
+        world
+            .Filter<SavedSovereigntyCampaignCredit>(row => row.SystemId == target)
+            .Any(row => row.AllianceId == alliance && row.VictoryAt != null);
 
     internal static IReadOnlyList<int> NearbyClaimSites(CatalogDbContext catalog, int headquarters) =>
         catalog.Definition(s_firstClaimSystems, headquarters);

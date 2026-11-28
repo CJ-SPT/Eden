@@ -53,6 +53,12 @@ public sealed partial class CapsuleerAllianceTests
             {
                 Settings = draft.Settings with
                 {
+                    Economy = draft.Settings.Economy with
+                    {
+                        ProgressiveMarkets = false,
+                        StandardMarket = false,
+                        ChargeServiceCosts = false,
+                    },
                     Capsuleers = draft.Settings.Capsuleers with
                     {
                         TrafficMultiplier = 6,
@@ -112,6 +118,20 @@ public sealed partial class CapsuleerAllianceTests
                 );
                 outwardX += 100_000_000_000;
             }
+            if (!defend)
+            {
+                int outward = nextGateId++;
+                int inward = nextGateId;
+                catalog.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
+                        ({outward},{HeadquartersSystem},16,10,3500,200000000000,0,0),
+                        ({inward},{RecoveredTerritoryDecoySystem},16,10,3500,200000000000,0,0);
+                    INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                        ({outward},{HeadquartersSystem},{inward}),({inward},{RecoveredTerritoryDecoySystem},{outward});
+                    """
+                );
+            }
         }
         using (CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock))
         {
@@ -128,6 +148,7 @@ public sealed partial class CapsuleerAllianceTests
         long defender;
         long hubId;
         SovereigntyClaim original;
+        SovereigntyClaim homeClaim;
         SovereigntyExpedition underway;
         long reserve = AllianceBillingRules.Amount(CapsuleerAllianceRules.FoundingCorporations);
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
@@ -163,6 +184,7 @@ public sealed partial class CapsuleerAllianceTests
             Assert.True(SovereigntyWarfareRules.Open(conflict.Window, fixture.Clock.Now));
             Assert.Equal(1d, conflict.Capture.Value);
             original = host.GetRequiredService<ISovereignty>().Read(target)!;
+            homeClaim = host.GetRequiredService<ISovereignty>().Read(home)!;
             var social = host.GetRequiredService<IAllianceSocial>();
             social.SetStanding(attackers.Ceo, [defenders.Alliance], 10);
             social.SetStanding(defenders.Ceo, [attackers.Alliance], 10);
@@ -334,6 +356,9 @@ public sealed partial class CapsuleerAllianceTests
             Assert.Equal(SovereigntyWarfareRules.InitialDefenderPoints - SovereigntyWarfareRules.NodePoints, campaign.DefenderPoints);
             Assert.DoesNotContain(CampaignNodes(campaignWorld), node => node.Id == nodeCycle.HubId);
             Assert.Equal(original, campaignClaims.Read(target));
+            var credit = Assert.Single(CampaignCredits(campaignWorld, hubId));
+            Assert.Equal((target, attackers.Alliance), (credit.SystemId, credit.AllianceId));
+            Assert.Null(credit.VictoryAt);
 
             var beforeFleetFuel = attackCouriers.ToDictionary(pilot => pilot, pilot => Fuel(campaignWorld, pilot));
             using (var mobilize = campaignWorld.Economy.Begin(TransactionParticipants.None))
@@ -373,7 +398,19 @@ public sealed partial class CapsuleerAllianceTests
             Assert.Empty(CampaignNodes(campaignWorld));
             Assert.Equal(StructureState.Destroyed, campaignWorld.Economy.Read(world => world.Set<SavedStructure>().Find(hubId)!.State));
             Assert.InRange(attackCouriers.Sum(pilot => Fuel(campaignWorld, pilot)), 1, beforeFleetFuel.Values.Sum() - requiredNodes + 1);
+            var victory = Assert.Single(CampaignCredits(campaignWorld, hubId));
+            Assert.Equal((target, attackers.Alliance), (victory.SystemId, victory.AllianceId));
+            long wonAt = Assert.IsType<long>(victory.VictoryAt);
             AssertUnattended(campaignHost);
+            await ExerciseRecoveredTerritory(
+                fixture,
+                campaignHost,
+                attackCouriers,
+                homeClaim,
+                hubId,
+                wonAt,
+                (host, seconds, ready) => Tick(host, seconds, ready, paidPilots: attackCouriers)
+            );
             return;
 
             bool Victory()
@@ -514,7 +551,12 @@ public sealed partial class CapsuleerAllianceTests
                     .Select(pilot =>
                     {
                         var operation = scheduler.Hauler(pilot);
-                        return $"{pilot} in {operation?.Pilot.SystemId} {operation?.Work.Activity} {operation?.Work.SovereigntyExpedition}";
+                        var paid = warfareAtFailure.Cycles(pilot);
+                        return $"{pilot} in {operation?.Pilot.SystemId} at {operation?.Pilot.Position} "
+                            + $"dock {operation?.Pilot.DockedLocationId} {operation?.Work.Activity} "
+                            + $"{operation?.Work.SovereigntyExpedition}, "
+                            + $"active {operation?.Work.ActiveTicks}, due {operation?.Work.DueTicks}, "
+                            + $"job {live.CapsuleerJobs.GetValueOrDefault(pilot)}, cycles [{string.Join(" | ", paid)}]";
                     })
                     .ToArray();
                 var cycles = live.Economy.Read(world =>

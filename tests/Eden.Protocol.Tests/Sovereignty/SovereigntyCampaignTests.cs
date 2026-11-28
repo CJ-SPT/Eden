@@ -50,6 +50,7 @@ public sealed class SovereigntyCampaignTests
         {
             Assert.Equal(StructureState.Destroyed, world.Set<SavedStructure>().Find(hub)!.State);
             Assert.Null(world.Set<SavedSovereigntyConflict>().Find(SovereigntyCaptureFixture.SystemId));
+            Assert.Empty(world.Set<SavedSovereigntyCampaignCredit>());
             return true;
         });
         long replacement = fixture.Deploy();
@@ -62,6 +63,7 @@ public sealed class SovereigntyCampaignTests
         Assert.Null(reopened.GetRequiredService<ISovereignty>().Read(SovereigntyCaptureFixture.SystemId));
         var live = reopened.GetRequiredService<Eden.World.Runtime.LiveWorld>();
         Assert.Empty(live.Economy.Inspect(world => world.Set<SavedSovereigntyNode>().ToArray()));
+        Assert.Empty(live.Economy.Inspect(world => world.Set<SavedSovereigntyCampaignCredit>().ToArray()));
         Assert.Equal(StructureState.Destroyed, live.Economy.Inspect(world => world.Set<SavedStructure>().Find(hub)!.State));
 
         bool Screen(int? alliance) =>
@@ -85,6 +87,18 @@ public sealed class SovereigntyCampaignTests
         Reinforce(fixture, attacker, hub);
         long at = fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!.CampaignAt!.Value;
         fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(at - fixture.Clock.Now) + TimeSpan.FromHours(hours));
+        using (var action = fixture.Live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Add(
+                new SavedSovereigntyCampaignCredit
+                {
+                    HubId = hub,
+                    AllianceId = fixture.OtherAllianceId,
+                    SystemId = SovereigntyCaptureFixture.SystemId,
+                }
+            );
+            action.Commit();
+        }
         fixture.Entosis.AdvanceAll();
         if (hours == 72)
         {
@@ -101,6 +115,7 @@ public sealed class SovereigntyCampaignTests
         Assert.Equal(100, result.DefenderPoints);
         Assert.Equal(claim, fixture.Claims.Read(SovereigntyCaptureFixture.SystemId));
         Assert.Empty(Nodes(fixture));
+        Assert.Null(fixture.Live.Economy.Inspect(world => world.Set<SavedSovereigntyCampaignCredit>().Find(hub, fixture.OtherAllianceId)));
         if (hours == 4)
         {
             Assert.True(result.Window.StartsAt > fixture.Clock.Now);

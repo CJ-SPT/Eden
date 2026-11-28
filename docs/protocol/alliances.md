@@ -314,7 +314,7 @@ Open a formed alliance in Show Info after admission and confirm both corporation
 ## First-claim hub procurement
 
 The alliance review can fund a single Sovereignty Hub order at the executor corporation's NPC headquarters market.
-The alliance must be bot-founded, have an active bot-led executor, have two admitted corporations and hold no claims.
+For a first claim, the alliance must be bot-founded, have an active bot-led executor, have two admitted corporations and hold no claims.
 The planner checks the existing reciprocal, traversable gate graph out to three jumps and shares the sovereignty
 owner's claimability and occupancy rules. The candidate system also needs a catalog star. An open corporation hub bid
 or an owned packaged hub covers procurement. The selected system becomes a durable route assignment when an expedition
@@ -325,6 +325,9 @@ broker fees apply. The order may spend only the balance above a month's alliance
 settles any seller and places the package in the ordering pilot's station hangar. Headquarters and the potential claim
 can both be unobserved while the [alliance review runs](#autonomous-bot-alliances). The buy order and owned inventory
 checkpoint through the resident economy. They require no new save fields.
+
+An alliance that already holds territory can use this procurement flow for a credited system it cleared in a campaign.
+[Bot claims after a campaign victory](sovereignty.md#bot-claims-after-a-campaign-victory).
 
 Build 3662168 type 32458 is published and trades under market group 1275. Its packaged volume is 60,000 cubic meters.
 EVE.js package 261108.1 `server/src/space/modules/entosisLinkRuntime.js` distinguishes neutral hub capture from

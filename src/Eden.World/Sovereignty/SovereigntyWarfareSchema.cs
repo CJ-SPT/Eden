@@ -6,6 +6,8 @@ namespace Eden.World.Sovereignty;
 
 internal static class SovereigntyWarfareSchema
 {
+    internal const int CampaignCreditVersion = 242;
+
     internal static void Configure(ModelBuilder model)
     {
         model.Entity<SavedSovereigntyPrime>().ToTable("WorldSovereigntyPrime").HasKey(row => row.AllianceId);
@@ -21,6 +23,10 @@ internal static class SovereigntyWarfareSchema
         model.Entity<SavedSovereigntyNode>().HasIndex(row => row.SourceSystemId);
         model.Entity<SavedSovereigntyNode>().HasIndex(row => row.HubId);
         model.Entity<SavedSovereigntyNode>().HasIndex(row => row.AllianceId);
+        var credit = model.Entity<SavedSovereigntyCampaignCredit>().ToTable("WorldSovereigntyCampaignCredit");
+        credit.HasKey(row => new { row.HubId, row.AllianceId });
+        credit.HasIndex(row => row.AllianceId);
+        credit.HasIndex(row => row.SystemId);
     }
 
     internal static void Upgrade(WorldDbContext world) =>
@@ -71,6 +77,14 @@ internal static class SovereigntyWarfareSchema
             CREATE INDEX IF NOT EXISTS IX_WorldSovereigntyNode_SourceSystemId ON WorldSovereigntyNode(SourceSystemId);
             CREATE INDEX IF NOT EXISTS IX_WorldSovereigntyNode_HubId ON WorldSovereigntyNode(HubId);
             CREATE INDEX IF NOT EXISTS IX_WorldSovereigntyNode_AllianceId ON WorldSovereigntyNode(AllianceId);
+            CREATE TABLE IF NOT EXISTS WorldSovereigntyCampaignCredit(
+                HubId INTEGER NOT NULL,
+                AllianceId INTEGER NOT NULL,
+                SystemId INTEGER NOT NULL,
+                VictoryAt INTEGER,
+                PRIMARY KEY(HubId,AllianceId));
+            CREATE INDEX IF NOT EXISTS IX_WorldSovereigntyCampaignCredit_AllianceId ON WorldSovereigntyCampaignCredit(AllianceId);
+            CREATE INDEX IF NOT EXISTS IX_WorldSovereigntyCampaignCredit_SystemId ON WorldSovereigntyCampaignCredit(SystemId);
             """
         );
 }
