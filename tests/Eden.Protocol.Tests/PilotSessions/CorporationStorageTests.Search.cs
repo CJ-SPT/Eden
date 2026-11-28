@@ -73,15 +73,24 @@ public sealed partial class CorporationStorageTests
         using (CorporationTestClient ceo = new(world, 1000001))
         {
             Assert.Equal(new[] { StationId, otherStation }, Search(ceo));
-            using var performance = SessionPerformance.Begin("warm corporation office search", _ => { }, force: true)!;
-            Assert.Equal(new[] { StationId }, Search(ceo, item.CategoryId, item.GroupId, item.TypeId, 12));
-            Assert.Equal(new[] { StationId }, Search(ceo, category: item.CategoryId, group: item.GroupId));
-            Assert.Empty(Search(ceo, group: int.MaxValue, type: item.TypeId));
-            Assert.Empty(Search(ceo, type: item.TypeId, minimumQuantity: 13));
-            Assert.Equal(new[] { otherStation }, Search(ceo, type: shipType, minimumQuantity: 1));
-            Assert.Empty(Search(ceo, type: shipType, minimumQuantity: 2));
-            Assert.Equal(0, performance.Commands);
-            Assert.Equal(0, performance.Connections);
+            int shipStation;
+            using (var performance = SessionPerformance.Begin("warm corporation office search", _ => { }, force: true)!)
+            {
+                Assert.Equal(new[] { StationId }, Search(ceo, item.CategoryId, item.GroupId, item.TypeId, 12));
+                Assert.Equal(new[] { StationId }, Search(ceo, category: item.CategoryId, group: item.GroupId));
+                Assert.Empty(Search(ceo, group: int.MaxValue, type: item.TypeId));
+                Assert.Empty(Search(ceo, type: item.TypeId, minimumQuantity: 13));
+                shipStation = Assert.Single(Search(ceo, type: shipType, minimumQuantity: 1));
+                Assert.Equal(otherStation, shipStation);
+                Assert.Empty(Search(ceo, type: shipType, minimumQuantity: 2));
+                Assert.Equal(0, performance.Commands);
+                Assert.Equal(0, performance.Connections);
+            }
+            var ship = Assert.Single(Storage(world).Assets(Ceo, corporation, shipStation));
+            Assert.True(ship.Singleton);
+            var row = InventoryRow.From(ship);
+            Assert.Equal(InventoryWireDefinitions.AssembledQuantity, row.Quantity);
+            AssertOfficeAssetDetails(ceo, corporation, shipStation, [row]);
         }
         await live.FlushAsync();
         world.Services.Dispose();
@@ -103,12 +112,14 @@ public sealed partial class CorporationStorageTests
         using CorporationTestClient member = new(world, 1000002);
         object?[] arguments = ["offices", null, null, (long)item.TypeId, null];
         var live = world.Services.GetRequiredService<LiveWorld>();
+        long deliveryId;
         using (var action = live.Economy.Begin())
         {
+            deliveryId = action.NextItemId();
             action.Add(
                 new OwnedItem
                 {
-                    Id = action.NextItemId(),
+                    Id = deliveryId,
                     TypeId = item.TypeId,
                     OwnerId = corporation,
                     LocationId = office.Id,
@@ -120,15 +131,14 @@ public sealed partial class CorporationStorageTests
         }
         SetRoles(new(RolesAtHQ: (long)CorporationRole.HangarCanQuery1));
         Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "SearchAssets", arguments));
-        Assert.Empty(storage.Assets(Member, corporation, StationId));
+        AssertOfficeAssetDetails(member, corporation, StationId, []);
 
         SetRoles(new((long)CorporationRole.JuniorAccountant));
-        Assert.Equal(new[] { StationId }, Search(member, type: item.TypeId));
+        int match = Assert.Single(Search(member, type: item.TypeId));
+        Assert.Equal(StationId, match);
         Assert.Empty(Search(member, type: item.TypeId, minimumQuantity: 9));
-        var reply = Assert.IsType<PilotCallResult.Success>(
-            member.CallService("corpmgr", "GetAssetInventoryForLocation", [(long)corporation, (long)StationId, "offices"])
-        );
-        Assert.Single(Assert.IsType<BlueList<InventoryRow>>(reply.Reply).Items);
+        var ordinary = InventoryRow.From(item with { OwnerId = corporation, LocationId = office.Id, FlagId = SecondDivision });
+        AssertOfficeAssetDetails(member, corporation, match, [ordinary]);
         Assert.IsType<PilotCallResult.Failure>(
             member.CallService("corpmgr", "SearchAssets", arguments, new() { ["corporationID"] = (long)corporation + 1 })
         );
@@ -138,10 +148,12 @@ public sealed partial class CorporationStorageTests
 
         SetRoles(new((long)(CorporationRole.JuniorAccountant | CorporationRole.DeliveriesHangarQuery)));
         Assert.Equal(new[] { StationId }, Search(member, type: item.TypeId, minimumQuantity: 9));
+        var delivery = ordinary with { Id = deliveryId, FlagId = CorporationStorageRules.GoalDeliveriesFlag, Quantity = 9 };
+        AssertOfficeAssetDetails(member, corporation, StationId, new[] { ordinary, delivery }.OrderBy(row => row.Id).ToArray());
 
         SetRoles(new());
         Assert.IsType<PilotCallResult.Failure>(member.CallService("corpmgr", "SearchAssets", arguments));
-        Assert.Empty(storage.Assets(Member, corporation, StationId));
+        AssertOfficeAssetDetails(member, corporation, StationId, []);
 
         void SetRoles(CorporationRoleSet roles)
         {
@@ -152,6 +164,23 @@ public sealed partial class CorporationStorageTests
             row.DataJson = JsonSerializer.Serialize(new CorporationMemberAccess(roles));
             action.Commit();
         }
+    }
+
+    private static void AssertOfficeAssetDetails(
+        CorporationTestClient client,
+        int corporation,
+        int station,
+        IReadOnlyList<InventoryRow> items
+    )
+    {
+        var reply = Assert.IsType<PilotCallResult.Success>(
+            client.CallService("corpmgr", "GetAssetInventoryForLocation", [(long)corporation, (long)station, "offices"])
+        );
+        var descriptor = InventoryWire.Descriptor();
+        var header = Assert.IsType<BlueRowDescriptor>(BlueMarshal.Decode(BlueMarshal.Encode(descriptor)));
+        Assert.True(header.InventoryVirtuals);
+        var expected = new BlueConstructor("carbon.common.script.sys.crowset.CRowset", [descriptor, items.Cast<object?>().ToList()]);
+        Assert.Equal(BlueMarshal.Encode(expected), BlueMarshal.Encode(reply.Reply));
     }
 
     private static int[] Search(

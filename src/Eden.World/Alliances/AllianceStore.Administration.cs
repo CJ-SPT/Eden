@@ -72,6 +72,7 @@ internal sealed partial class AllianceStore
                 CreatorId = actorId,
                 CreatorCorporationId = corporation.Id,
                 ExecutorCorporationId = corporation.Id,
+                LastExecutorCorporationId = corporation.Id,
                 CreatedAt = now,
             }
         );

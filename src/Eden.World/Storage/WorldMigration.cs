@@ -21,7 +21,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = StructureReinforcementDefaultsSchema.Version;
+    internal const int CurrentVersion = Eden.World.Alliances.AllianceSchema.GovernanceAndBillingVersion;
 
     public static void Open(
         WorldDbContext world,
@@ -231,6 +231,10 @@ internal static class WorldMigration
         Eden.World.Alliances.AllianceSchema.Upgrade(world);
         Eden.World.Alliances.AllianceMembershipSchema.Upgrade(world);
         Eden.World.Alliances.AllianceBillingSchema.Upgrade(world);
+        if (version < Eden.World.Alliances.AllianceSchema.GovernanceAndBillingVersion)
+        {
+            Eden.World.Alliances.AllianceSchema.UpgradeGovernanceAndBilling(world);
+        }
         Eden.World.Alliances.AllianceSocialSchema.Upgrade(world);
         Eden.World.Sovereignty.SovereigntySchema.Upgrade(world);
         Eden.World.Sovereignty.SovereigntySchema.UpgradeCapture(world, version);

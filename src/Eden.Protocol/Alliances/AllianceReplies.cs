@@ -55,7 +55,7 @@ internal sealed record AllianceReply(Alliance Alliance, bool AllowWar = false) :
                     Alliance.Id,
                     new BlueUnicode(Alliance.Details.Name),
                     Alliance.Details.Ticker,
-                    Alliance.ExecutorCorporationId,
+                    Alliance.DisplayExecutorCorporationId ?? Alliance.ExecutorCorporationId,
                     Alliance.CreatorCorporationId,
                     Alliance.CreatorId,
                     null,

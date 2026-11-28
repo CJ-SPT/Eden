@@ -171,7 +171,7 @@ internal static partial class CapsuleerCorporations
         if (employer is not null)
         {
             var submitted = employer.Referred
-                ? CorporationMembershipStore.SubmitInvitation(world, pilot, employer.Corporation, now)
+                ? CorporationMembershipStore.SubmitInvitation(world, pilot, employer.Corporation, employer.Corporation.CeoId, now)
                 : CorporationMembershipStore.SubmitApplication(
                     world,
                     pilot,

@@ -13,10 +13,11 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
     private Dictionary<long, CorporationWar>? _wars;
     private IReadOnlyList<CorporationWarInvitation>? _invitations;
     private IReadOnlyList<CorporationWarNegotiation>? _negotiations;
+    private (int Corporation, bool Eligible)? _permit;
     private bool _blocked;
     private DateTimeOffset _nextPoll;
 
-    internal bool IsMonitoring => _wars is not null || _invitations is not null || _negotiations is not null;
+    internal bool IsMonitoring => _wars is not null || _invitations is not null || _negotiations is not null || _permit is not null;
 
     internal void Reset()
     {
@@ -24,6 +25,7 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
         _wars = null;
         _invitations = null;
         _negotiations = null;
+        _permit = null;
         _nextPoll = default;
     }
 
@@ -31,6 +33,14 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
     {
         Select(context);
         _wars ??= wars.Wars(_organization).ToDictionary(war => war.Id);
+    }
+
+    internal void WatchPermit(int corporation, bool eligible)
+    {
+        if (_permit?.Corporation != corporation)
+        {
+            _permit = (corporation, eligible);
+        }
     }
 
     internal void WatchInvitations(PilotCallContext context)
@@ -61,6 +71,27 @@ internal sealed class CorporationWarMonitor(ICorporationWars wars, TimeProvider 
         _nextPoll = now + s_pollInterval;
         Advance(context);
         AdvanceInvitations(context);
+        AdvancePermit(context);
+    }
+
+    private void AdvancePermit(PilotCallContext context)
+    {
+        if (_permit is not { } previous)
+        {
+            return;
+        }
+        if (previous.Corporation != context.Pilot.CorpId)
+        {
+            _permit = null;
+            return;
+        }
+
+        bool eligible = wars.CorporationAllowsWar(previous.Corporation);
+        if (previous.Eligible != eligible)
+        {
+            _permit = (previous.Corporation, eligible);
+            context.Notifications.Add(new CorporationWarPermitChanged(previous.Corporation, eligible));
+        }
     }
 
     internal void Advance(PilotCallContext context)
@@ -215,4 +246,9 @@ internal sealed record CorporationWarRemoved(CorporationWar Previous) : PilotNot
 internal sealed record CorporationWarInvitationsUpdated() : PilotNotification("OnMutualWarsUpdated_Remote")
 {
     public override object?[] Arguments => [];
+}
+
+internal sealed record CorporationWarPermitChanged(int CorporationId, bool Eligible) : PilotNotification("OnAllowWarUpdated")
+{
+    public override object?[] Arguments => [CorporationId, Eligible];
 }

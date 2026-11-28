@@ -33,6 +33,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation construction failure capture, November 14, 2026](#corporation-construction-failure-capture-november-14-2026)
 - [Direct invitations and corporation window reads, November 14, 2026](#direct-invitations-and-corporation-window-reads-november-14-2026)
 - [Corporation registry lifetime and application replies](#corporation-registry-lifetime-and-application-replies)
+- [Current recruitment filters and inbox notices](#current-recruitment-filters-and-inbox-notices)
 - [Corporation contacts and standings, November 11, 2026](#corporation-contacts-and-standings--november-11-2026)
 
 - [Corporation Show Info window audit, November 9, 2026](#corporation-show-info-window-audit-november-9-2026)
@@ -78,6 +79,19 @@ station using `GetAssetInventoryForLocation`. EVE.js **261108.1** confirms the f
 `787dda9c937e554650a7d69c9cf3cd67b25b6e97bb7c855d2580e1cf88113af5`).
 [CCP corporation roles](https://support.eveonline.com/hc/en-us/articles/203217712-Roles-Listing) ·
 [EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics)
+
+`GetAssetInventoryForLocation` returns a native `CRowset` for both the Offices tab and office search results.
+In build **3662168**, `CorpAccounts.GetSubContent` line 496 extends `items.header.virtual` with group and
+category getters before showing populated results. `GetSubContentDivision` line 565 also reads that header.
+A plain list passed the empty-results branch but raised an attribute error for populated offices. The response
+uses the existing inventory DBRow descriptor with stack-size and singleton getters and respects current
+office-division permissions on each read. REA extraction evidence
+`ev_2cea7aefe7ddcfbbf062c37f6cd5403bbc7cb61948f13c7c05b788be6704e819` identifies the pinned
+`corp_ui_accounts.pyj`. The pinned Carbon `CRowset` constructor stores the supplied header, and EVE.js
+`corpmgrService.js` uses a `CRowset` for the same detail call.
+
+The rowset correction passed four exact cases covering populated and empty details, office search, a remote assembled
+ship, and current division authority. The combined 22-case feature run built in 21.52 seconds and tested in 22.90 seconds.
 
 **Automated validation.** On `81a2764d` plus the search change,
 `CorporationStorageTests.NativeOfficeAssetSearchFiltersResidentStacksAndStoredShipsAcrossCheckpoint`
@@ -306,6 +320,30 @@ Not performed; agent client testing is disabled.
 
 1. Declare a standard war from **Corporation → Wars**, then verify the next bill, the War HQ's Show Info and the defender's inbox.
 2. Accept a mutual war invitation and verify a green-safety tackle succeeds after warmup and is blocked again after cooldown.
+
+## Native War Permit status and refresh
+
+Corporation replies use current effective war eligibility for the client's `allowWar` field. For an alliance member
+corporation, the alliance can qualify through a structure owned by any current member. The declaration lookup
+and command still use legal war organizations and executor authority. An alliance member corporation remains
+ineligible as a direct target. The stock context menu also reads the permit when opening an individual member
+corporation, so that menu can expose the action even though the wizard and server require the alliance as target.
+
+The native corporation registry read starts monitoring the current corporation's permit. When it changes, Eden
+sends one `OnAllowWarUpdated(corpID, allowWar)` to the observing connection. Ordinary polling sends no duplicate,
+and a corporation change invalidates the previous observation.
+
+Build **3662168** `warPermit.pyj` resolves an alliance target to its executor corporation before requesting
+`corpmgr.GetPublicInfo(corpID).allowWar`. Its own permit is cached after `corpRegistry.GetCorporation` and
+refreshed by `OnAllowWarUpdated`. The corresponding REA extraction evidence is
+`ev_a564ab886bfdfb61e0997e15195e22e41d2fba7249b39c9b5232be4035e9d777`.
+Local EVE.js 261108.1 `warPermitState.js` supplies the event comparison (SHA-256
+`1c961a8d93801e75de8ecadabdd75d1e6e75a8f1d2922f7d4a6f0f463aefe749`).
+[CCP War Eligibility](https://support.eveonline.com/hc/en-us/articles/360001975920-War-Eligibility)
+
+The two exact `CorporationWarWireTests.NativeWarPermit*` methods passed in the shared feature run
+(21.52 seconds to build, 22.90 seconds to test). They cover effective alliance eligibility, direct target
+rejection, qualifying changes on another member corporation and duplicate suppression.
 
 ## Defender allies, surrender and War Reports
 
@@ -1199,6 +1237,33 @@ verified 2,138 files, and documentation validation checked 616 links/anchors. Th
 
 **Optional maintainer checks.** Restart on the updated server and reopen Corporation. Invite another pilot, then accept
 through Recruitment / My Applications. If a panel still fails, the updated game-log error includes its embedded method.
+
+## Current recruitment filters and inbox notices
+
+`GetApplications` and `GetMyApplications` return open applications and decisions updated within the last three calendar
+months. The two older-application reads return completed applications whose latest update predates that window.
+This keeps recent outcomes in the native status filters after reconnect. Open invitations remain actionable regardless
+of age. The window starts at the latest update so a decision on a long-open application appears in the current filters.
+
+The existing corporation application update also writes the relevant Corporation inbox notice in the same transaction.
+Applicants receive offers, direct invitations and declines. CEOs, Directors and Personnel Managers receive new
+applications, joins, withdrawals and declined offers. A repeated direct invitation or a rejected transition creates
+no extra notice. The native event refreshes connected clients after commit, and offline recipients can fetch their
+notices after restart.
+
+REA extracted build 3662168's `corp_ui_applications.pyj` and `appConst.pyj` in
+`ev_a277ae57a69212e05615a352db9cd929fc550033d0f8c5015ce5e0d317a1d901`. The native current and older views call
+different getters before applying the UI's status filters. Extraction
+`ev_2aa262d14bc4a73ee7cdfc83fc751bbfe5ead62aacbfcde280b91c94ee8cb28c` identifies the notice constants
+**16–18**, **128–130**, **139**, and **142** in `notificationconst.pyj`. The archived EVE.js
+`corpApplicationNotifications.js` supplies the native `charID`, `corpID`, `invokingCharID`, `applicationText` and
+`customMessage` payloads. CCP describes the recent application window and status filters.
+[CCP corporation recruitment changes](https://www.eveonline.com/news/view/corporation-recruitment-changes)
+
+`NativeApplicationFiltersKeepRecentDecisionsAndOpenApplicationsOnFreshReads` and
+`RecruitmentPublishesNativeInboxNoticesOnceAndKeepsOfflineNoticesAcrossRestart` passed in the combined 22-case feature run.
+The build took 21.52 seconds and tests took 22.90 seconds. The cases cover the exact age boundary, authorized reads,
+native push payloads, duplicate suppression, and unread notice retrieval after checkpoint reopen.
 
 ## Corporation registry lifetime and application replies
 

@@ -20,6 +20,7 @@ internal sealed partial class CorporationHandler
             _observedPilot = context.Pilot.PilotId;
             _cursor = membership.Head(context.Pilot.PilotId);
             _allianceCursor = allianceMembership.Head;
+            _observedAlliances.Clear();
             _observedCorporationAlliances.Clear();
         }
         Advance(context);
@@ -31,6 +32,7 @@ internal sealed partial class CorporationHandler
         _lastMilitia = null;
         _cursor = 0;
         _allianceCursor = 0;
+        _observedAlliances.Clear();
         _observedCorporationAlliances.Clear();
         allianceSocial.Reset();
     }
@@ -248,14 +250,13 @@ internal sealed partial class CorporationHandler
                 case ("GetMyApplications" or "GetApplications", []):
                     bool forCorporation = method == "GetApplications";
                     return new CorporationApplicationsReply(
-                        membership.Applications(pilot, forCorporation).Where(a => !CorporationMembershipRules.Closed(a.Status)).ToArray(),
+                        membership.Applications(pilot, forCorporation, CorporationApplicationView.Current),
                         forCorporation
                     );
                 case ("GetMyOldApplications" or "GetOldApplications", []):
                     return new BlueList<CorporationApplicationReply>(
                         membership
-                            .Applications(pilot, method == "GetOldApplications")
-                            .Where(a => CorporationMembershipRules.Closed(a.Status))
+                            .Applications(pilot, method == "GetOldApplications", CorporationApplicationView.Older)
                             .Select(a => new CorporationApplicationReply(a))
                             .ToArray()
                     );

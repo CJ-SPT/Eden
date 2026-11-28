@@ -9,12 +9,30 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Sovereignty;
 using Eden.Protocol.Targeting;
+using Eden.Protocol.Tests.PilotSessions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Sovereignty;
 
 public sealed class SovereigntyProtocolTests
 {
+    [Fact]
+    public void NativeHubFuelAccessGroupReadsBySolarSystemAndRetainsAllianceReadBoundary()
+    {
+        using SovereigntyCaptureFixture fixture = new();
+        long hub = SovereigntyUpgradeTests.Claim(fixture);
+        using CorporationTestClient owner = new(fixture.World, 1000001);
+        using CorporationTestClient outsider = new(fixture.World, 1000002);
+        Assert.Same(PilotCallResult.None, Read(owner, SovereigntyCaptureFixture.SystemId));
+        Assert.IsType<PilotCallResult.Failure>(Read(outsider, SovereigntyCaptureFixture.SystemId));
+        Assert.IsType<PilotCallResult.Failure>(Read(owner, hub));
+        Assert.IsType<PilotCallResult.Failure>(Read(owner, 0));
+        Assert.IsType<PilotCallResult.Failure>(Read(owner, SovereigntyCaptureFixture.SystemId + 1));
+
+        static PilotCallResult Read(CorporationTestClient client, long id) =>
+            client.CallService("sovMgr", "GetSovHubFuelAccessGroup", [id]);
+    }
+
     [Fact]
     public void NativeDeploymentTargetingAndEntosisPublishEffectsAndRetainPaidRestrictions()
     {

@@ -729,6 +729,23 @@ FullyQualifiedName~Eden.Protocol.Tests.Sovereignty|FullyQualifiedName~Eden.Proto
 **Optional maintainer checks.** Select/cancel an alliance capital in the native panel; observe activity/trends and ADM
 in the sovereignty UI; compare an owned-hub timer with a command node after its source capital changes.
 
+## Sovereignty Hub fuel access group lookup
+
+The native Hub management controller reads the current fuel access group using
+`sovMgr.GetSovHubFuelAccessGroup(solarSystemID)`. Eden resolves the system's current claimed hub and applies the
+existing alliance read check before returning native None for the unset access group. Quasar fuel operations
+continue to identify a hub by item ID. Access-list assignment and delegated fuel deposits remain gaps.
+
+Build **3662168** `hubController.pyj` passes `_solarSystemID` during initialization. The same argument is
+forwarded unchanged by `sovSvc.pyj`. REA extraction evidence
+`ev_e37bbbaf074e032842a629ab1ac0b7213e4630d05f883fbf5c32eb1ff5ec28c0` contains both modules.
+Local EVE.js 261108.1 `sovMgrService.js` confirms the system ID lookup boundary (SHA-256
+`f1e68e6b7af1d5151c30c093e4f3e97e584ad18136023baba5803c79d9fc5daa`).
+
+`SovereigntyProtocolTests.NativeHubFuelAccessGroupReadsBySolarSystemAndRetainsAllianceReadBoundary` passed
+in the shared exact feature run (21.52 seconds to build, 22.90 seconds to test). It covers the native system
+ID, outsiders, hub item IDs and unclaimed systems.
+
 ## Sovereignty resources and upgrades — November 16, 2026
 
 Schema **183** adds seven saved resource tables with explicit immutable resident mappings: per-hub budgets, installed

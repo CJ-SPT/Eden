@@ -171,15 +171,16 @@ internal sealed record CorporationBillPaymentSettingsReply(CorporationBillPaymen
     {
         var settings = Snapshot.Corporation;
         List<(object? Key, object? Value)> fields = settings
-            .Rules.Where(rule => !Snapshot.MaintenanceAllianceId.HasValue || rule.BillTypeId != AllianceBillingRules.MaintenanceBillType)
-            .Select(rule => ((object?)(long)rule.BillTypeId, (object?)rule.Enabled))
+            .Rules.Select(rule => ((object?)(long)rule.BillTypeId, (object?)rule.Enabled))
             .ToList();
         fields.Add(("divisionID", settings.DivisionKey));
         Dictionary<long, object?> owners = new() { [settings.CorporationId] = new BlueDictionary(fields) };
         if (Snapshot.MaintenanceAllianceId is int alliance)
         {
-            bool enabled = settings.Rules.Any(rule => rule.BillTypeId == AllianceBillingRules.MaintenanceBillType && rule.Enabled);
-            owners.Add(alliance, new Dictionary<long, object?> { [AllianceBillingRules.MaintenanceBillType] = enabled });
+            owners.Add(
+                alliance,
+                new Dictionary<long, object?> { [AllianceBillingRules.MaintenanceBillType] = Snapshot.MaintenanceEnabled }
+            );
         }
         return owners;
     }

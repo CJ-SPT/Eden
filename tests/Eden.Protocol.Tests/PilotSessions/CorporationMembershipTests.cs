@@ -330,7 +330,7 @@ public sealed partial class CorporationMembershipTests
             ceo.Context.Notifications.OfType<StationGuestDeparted>(),
             n => n.Guest.CharacterId == Applicant && n.Guest.CorporationId == NpcCorporation
         );
-        Assert.Single(Assert.IsType<List<object?>>(applicant.Reply("GetMyOldApplications", [])));
+        Assert.Empty(Assert.IsType<List<object?>>(applicant.Reply("GetMyOldApplications", [])));
         var page = BlueRead.Fields(Assert.IsType<BlueInstance>(ceo.Reply("GetMembersPaged", [1L])).State);
         Assert.Equal(2L, page["totalCount"]);
         Assert.Equal(0L, page["page"]);

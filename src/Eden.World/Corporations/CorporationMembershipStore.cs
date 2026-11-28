@@ -20,8 +20,13 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    public IReadOnlyList<CorporationApplication> Applications(long pilotId, bool forCorporation)
+    public IReadOnlyList<CorporationApplication> Applications(
+        long pilotId,
+        bool forCorporation,
+        CorporationApplicationView view = CorporationApplicationView.All
+    )
     {
+        long cutoff = clock.GetUtcNow().UtcDateTime.AddMonths(-CorporationMembershipRules.RecentApplicationMonths).ToFileTimeUtc();
         return WorldActionScope.Inspect<IReadOnlyList<CorporationApplication>>(
             database,
             world =>
@@ -40,6 +45,11 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
                     .Where(a => forCorporation ? a.CorporationId == pilot.CorporationId : a.PilotId == pilotId)
                     .OrderByDescending(a => a.Id)
                     .AsEnumerable()
+                    .Where(a =>
+                        view == CorporationApplicationView.All
+                        || (view == CorporationApplicationView.Older)
+                            == (a.UpdatedAt < cutoff && CorporationMembershipRules.Closed(a.Status))
+                    )
                     .Select(a => a.Snapshot())
                     .ToArray();
             }
@@ -114,12 +124,18 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             throw new InvalidDataException("Personnel management is required to invite corporation members.");
         }
         var pilot = Pilot(world, pilotId);
-        var application = SubmitInvitation(world, pilot, corporation, Now);
+        var application = SubmitInvitation(world, pilot, corporation, actor.Id, Now);
         world.Commit();
         return application.Snapshot();
     }
 
-    internal static SavedCorporationApplication SubmitInvitation(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
+    internal static SavedCorporationApplication SubmitInvitation(
+        WorldAction world,
+        Pilot pilot,
+        SavedCorporation corporation,
+        long inviter,
+        long now
+    )
     {
         CheckJoin(world, pilot, corporation, now);
         var application = world
@@ -151,7 +167,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             application.UpdatedAt = now;
         }
         world.SaveChanges();
-        NotifyApplication(world, application);
+        NotifyApplication(world, application, inviter);
         return application;
     }
 
@@ -424,7 +440,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             ? corporation
             : throw new InvalidDataException("Unknown or closed player corporation.");
 
-    internal static void NotifyApplication(WorldAction world, SavedCorporationApplication application)
+    internal static void NotifyApplication(WorldAction world, SavedCorporationApplication application, long? inviter = null)
     {
         var corporation = Corporation(world, application.CorporationId);
         string json = JsonSerializer.Serialize(application.Snapshot());
@@ -432,11 +448,13 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             .Pilots.Where(p => p.CorporationId == corporation.Id)
             .Select(p => p.Id)
             .ToArray()
-            .Where(id => CorporationRoleStore.Has(world, id, corporation, CorporationRole.PersonnelManager));
+            .Where(id => CorporationRoleStore.Has(world, id, corporation, CorporationRole.PersonnelManager))
+            .ToArray();
         foreach (long recipient in recruiters.Append(application.PilotId).Distinct())
         {
             world.Add(new SavedCorporationChange { PilotId = recipient, ApplicationJson = json });
         }
+        PublishRecruitmentInbox(world, application, recruiters, inviter);
     }
 
     public long Head(long pilotId)

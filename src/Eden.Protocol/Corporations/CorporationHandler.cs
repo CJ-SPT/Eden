@@ -34,9 +34,9 @@ internal sealed partial class CorporationHandler(
             return;
         }
         DrainChanges(context);
-        DrainAllianceChanges(context);
-        allianceSocial.Advance(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
+        DrainAllianceChanges(context, identity.AllianceId);
+        allianceSocial.Advance(context);
         var militia = identity.Militia;
         if (_lastMilitia is not null && _lastMilitia != militia || context.Pilot.Identity.WarFaction != identity.WarFaction)
         {

@@ -8,6 +8,11 @@ public enum InboxNotificationType
     // Build 3662168 notifications.common.notificationconst.notificationTypeCharMedalMsg.
     CorporationMedalAwarded = 3,
     AllianceMaintenanceBill = 4,
+
+    // Build 3662168 eve.common.script.util.notificationconst.
+    CorporationApplicationReceived = 16,
+    CorporationApplicationDeclined = 17,
+    CorporationApplicationOffered = 18,
     MilitiaCorporationStandingRemoval = 60,
     MilitiaCorporationStandingWarning = 62,
     ContactAdded = 89,
@@ -27,6 +32,11 @@ public enum InboxNotificationType
     WarSurrenderAccepted = 123,
     WarOfferedToAlly = 126,
     WarAllyAccepted = 127,
+    CorporationApplicationJoined = 128,
+    CorporationApplicationOfferDeclined = 129,
+    CorporationApplicationWithdrawn = 130,
+    CorporationApplicationInvited = 139,
+    CorporationApplicationDeclinedWithMessage = 142,
 
     // Build 3662168 eve.common.script.util.notificationconst.
     StructureItemsDelivered = 199,
@@ -76,6 +86,14 @@ public sealed record ContactNotificationContent(double Level, string Message);
 public sealed record KillRightNotificationContent(KillRight Right);
 
 public sealed record MedalAwardNotificationContent(long MedalId, int CorporationId, string Reason);
+
+public sealed record CorporationApplicationNotificationContent(
+    long CharacterId,
+    int CorporationId,
+    string? ApplicationText,
+    string? CustomMessage,
+    long? InvitingCharacterId
+);
 
 public sealed record WarNegotiationNotificationContent(int FromOwnerId, int ToOwnerId, long ActorId, long AmountCents);
 
@@ -131,6 +149,7 @@ public sealed record InboxNotification(
     public int? ExpertSystemTypeId { get; init; }
     public CorporationWarNotificationContent? CorporationWar { get; init; }
     public MedalAwardNotificationContent? MedalAward { get; init; }
+    public CorporationApplicationNotificationContent? CorporationApplication { get; init; }
 }
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);
@@ -155,6 +174,15 @@ public static class InboxRules
     public const int MaximumUpdated = 100;
     public const int MaximumMessageLength = 120;
     public const int DeliveryBatchSize = 256;
+
+    public static bool IsCorporationApplication(InboxNotificationType type) =>
+        type
+            is >= InboxNotificationType.CorporationApplicationReceived
+                and <= InboxNotificationType.CorporationApplicationOffered
+                or >= InboxNotificationType.CorporationApplicationJoined
+                and <= InboxNotificationType.CorporationApplicationWithdrawn
+                or InboxNotificationType.CorporationApplicationInvited
+                or InboxNotificationType.CorporationApplicationDeclinedWithMessage;
 
     public static bool IsWar(InboxNotificationType type) =>
         type

@@ -6,7 +6,10 @@ public sealed record CorporationBillPaymentSettings(int CorporationId, int Divis
 
 public sealed record AllianceMaintenancePaymentRule(int AllianceId, bool Enabled);
 
-public sealed record CorporationBillPaymentSnapshot(CorporationBillPaymentSettings Corporation, int? MaintenanceAllianceId);
+public sealed record CorporationBillPaymentSnapshot(CorporationBillPaymentSettings Corporation, int? MaintenanceAllianceId)
+{
+    public bool MaintenanceEnabled { get; init; }
+}
 
 public interface ICorporationBilling
 {

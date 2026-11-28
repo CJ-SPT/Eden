@@ -37,7 +37,7 @@ internal sealed class CorporationPublicInfoHandler(
                 ? new CorporationPublicInfoReply(player)
                 {
                     AllianceId = alliances.Affiliation(player.Id),
-                    AllowWar = wars.IsEligible(player.Id),
+                    AllowWar = wars.CorporationAllowsWar(player.Id),
                 }
                 : new CorporationPublicInfoReply(npcs.Read((int)id));
         }

@@ -56,7 +56,16 @@ internal sealed class CorporationBillingStore(WorldDatabase database, TimeProvid
         return true;
     }
 
-    public CorporationBillPaymentSettings Read(long actorId) => ReadAutomaticPayment(actorId).Corporation;
+    public CorporationBillPaymentSettings Read(long actorId)
+    {
+        var snapshot = ReadAutomaticPayment(actorId);
+        return snapshot.MaintenanceAllianceId.HasValue
+            ? snapshot.Corporation with
+            {
+                Rules = [.. snapshot.Corporation.Rules, new(AllianceBillingRules.MaintenanceBillType, snapshot.MaintenanceEnabled)],
+            }
+            : snapshot.Corporation;
+    }
 
     public CorporationBillPaymentSnapshot ReadAutomaticPayment(long actorId)
     {
@@ -66,12 +75,21 @@ internal sealed class CorporationBillingStore(WorldDatabase database, TimeProvid
             {
                 var corporation = Authorize(world, actorId, false);
                 var settings = Saved(world, corporation.Id);
+                var alliance = MaintenanceAlliance(world, corporation.Id);
+                // Preserve the disabled catalogue entry for standalone corporations and older wallet clients.
                 var rules = BillTypes()
-                    .Select(id => new CorporationBillPaymentRule(id, settings?.Rules.Any(r => r.BillTypeId == id && r.Enabled) == true));
-                return new(
+                    .Where(id => alliance is null || id != AllianceBillingRules.MaintenanceBillType)
+                    .Select(id => new CorporationBillPaymentRule(
+                        id,
+                        id != AllianceBillingRules.MaintenanceBillType && settings?.Rules.Any(r => r.BillTypeId == id && r.Enabled) == true
+                    ));
+                return new CorporationBillPaymentSnapshot(
                     new(corporation.Id, settings?.DivisionKey ?? CorporationWalletRules.MasterKey, rules.ToArray()),
-                    MaintenanceAlliance(world, corporation.Id)
-                );
+                    alliance?.Id
+                )
+                {
+                    MaintenanceEnabled = alliance?.AutomaticMaintenancePayment == true,
+                };
             }
         );
     }
@@ -95,24 +113,34 @@ internal sealed class CorporationBillingStore(WorldDatabase database, TimeProvid
         {
             throw new InvalidDataException("Withdrawal access is required for the automatic payment division.");
         }
-        if (maintenance is not null)
+        var legacyRule = settings.Rules.SingleOrDefault(rule => rule.BillTypeId == AllianceBillingRules.MaintenanceBillType);
+        if (maintenance is not null || legacyRule is not null)
         {
-            if (MaintenanceAlliance(world, corporation.Id) != maintenance.AllianceId)
+            var alliance = MaintenanceAlliance(world, corporation.Id);
+            if (maintenance is not null && alliance?.Id != maintenance.AllianceId || alliance is null && legacyRule?.Enabled == true)
             {
                 throw new InvalidDataException("Choose the alliance your corporation currently executes.");
             }
-            var rules = settings.Rules.Where(rule => rule.BillTypeId != AllianceBillingRules.MaintenanceBillType);
-            settings = settings with { Rules = [.. rules, new(AllianceBillingRules.MaintenanceBillType, maintenance.Enabled)] };
+            if (alliance is not null)
+            {
+                alliance.AutomaticMaintenancePayment = maintenance?.Enabled ?? legacyRule!.Enabled;
+            }
         }
-        Store(world, settings);
+        Store(
+            world,
+            settings with
+            {
+                Rules = settings.Rules.Where(rule => rule.BillTypeId != AllianceBillingRules.MaintenanceBillType).ToArray(),
+            }
+        );
         transaction.Commit();
     }
 
-    private static int? MaintenanceAlliance(WorldAction world, int corporationId) =>
+    private static SavedAlliance? MaintenanceAlliance(WorldAction world, int corporationId) =>
         world.Set<SavedAllianceMember>().Find(corporationId) is { } member
         && world.Set<SavedAlliance>().Find(member.AllianceId) is { ClosedAt: null } alliance
         && alliance.ExecutorCorporationId == corporationId
-            ? member.AllianceId
+            ? alliance
             : null;
 
     internal static CorporationBillPaymentSettings? Saved(WorldAction world, int corporation) =>
@@ -123,13 +151,13 @@ internal sealed class CorporationBillingStore(WorldDatabase database, TimeProvid
     internal static bool DefaultAllianceMaintenance(WorldAction world, long actorId)
     {
         var corporation = Authorize(world, actorId, true);
-        var settings = Saved(world, corporation.Id) ?? new(corporation.Id, CorporationWalletRules.MasterKey, []);
+        int division = Saved(world, corporation.Id)?.DivisionKey ?? CorporationWalletRules.MasterKey;
         if (
-            settings.Rules.All(rule => rule.BillTypeId != AllianceBillingRules.MaintenanceBillType)
-            && CorporationWalletRules.CanTake(CorporationRoleStore.Effective(world, actorId, corporation).Roles, settings.DivisionKey)
+            MaintenanceAlliance(world, corporation.Id) is { AutomaticMaintenancePayment: null } alliance
+            && CorporationWalletRules.CanTake(CorporationRoleStore.Effective(world, actorId, corporation).Roles, division)
         )
         {
-            Store(world, settings with { Rules = [.. settings.Rules, new(AllianceBillingRules.MaintenanceBillType, true)] });
+            alliance.AutomaticMaintenancePayment = true;
             return true;
         }
         return false;

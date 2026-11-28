@@ -97,10 +97,10 @@ internal sealed partial class LiveWorld : IDisposable
 
     internal LiveMarketSummaries MarketSummaries { get; } = new();
     internal LiveOwnerDirectory OwnerDirectory { get; }
-    private long _killRightInboxRevision;
-    internal long KillRightInboxRevision => Interlocked.Read(ref _killRightInboxRevision);
+    private long _inboxRevision;
+    internal long InboxRevision => Interlocked.Read(ref _inboxRevision);
 
-    internal void PublishKillRightInbox() => Interlocked.Increment(ref _killRightInboxRevision);
+    internal void PublishInbox() => Interlocked.Increment(ref _inboxRevision);
 
     private long _securityPenaltyRevision;
     internal long SecurityPenaltyRevision => Interlocked.Read(ref _securityPenaltyRevision);

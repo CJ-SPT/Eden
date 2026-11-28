@@ -71,7 +71,7 @@ internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : IS
                 && BlueMarshal.Text(which) == "offices"
             )
             {
-                return new BlueList<InventoryRow>(
+                return new CorporationOfficeAssetDetailsReply(
                     storage.Assets(actor, (int)corporation, (int)station).Select(InventoryRow.From).ToArray()
                 );
             }
@@ -111,6 +111,13 @@ internal sealed record CorporationOfficeAssetSearchReply(IReadOnlyList<int> Stat
 internal sealed record CorporationOfficeAssetsReply(IReadOnlyList<CorporationOfficeAssetRow> Offices) : BlueModel
 {
     public override object ToBlue() => new CompatibilityRowset(["locationID", "solarsystemID", "itemCount"], Offices).ToBlue();
+}
+
+internal sealed record CorporationOfficeAssetDetailsReply(IReadOnlyList<InventoryRow> Items) : BlueModel
+{
+    // Build 3662168 CorpAccounts.GetSubContent extends the rowset header's virtual columns.
+    public override object ToBlue() =>
+        new BlueConstructor("carbon.common.script.sys.crowset.CRowset", [InventoryWire.Descriptor(), Items.Cast<object?>().ToList()]);
 }
 
 internal sealed record CorporationOfficeAssetRow(CorporationOffice Office, int Count) : BlueModel

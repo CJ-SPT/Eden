@@ -340,6 +340,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
         : notification.ExpertSystemTypeId is int typeId ? new InboxExpertSystemData(typeId)
         : notification.CorporationWar is { } war ? new InboxCorporationWarData(notification.Type, war, notification.Created)
         : notification.MedalAward is { } medal ? new InboxMedalAwardData(medal)
+        : notification.CorporationApplication is { } application ? new InboxCorporationApplicationData(application)
         : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>
@@ -356,6 +357,27 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
                 ["data"] = Data(Notification),
             }
         );
+}
+
+internal sealed record InboxCorporationApplicationData(CorporationApplicationNotificationContent Content) : BlueModel
+{
+    public override object ToBlue()
+    {
+        var fields = new Dictionary<string, object?> { ["charID"] = Content.CharacterId, ["corpID"] = Content.CorporationId };
+        if (Content.InvitingCharacterId is long inviter)
+        {
+            fields["invokingCharID"] = inviter;
+        }
+        if (Content.ApplicationText is { } text)
+        {
+            fields["applicationText"] = new BlueUnicode(text);
+        }
+        if (Content.CustomMessage is { } message)
+        {
+            fields["customMessage"] = new BlueUnicode(message);
+        }
+        return fields;
+    }
 }
 
 internal sealed record InboxMedalAwardData(MedalAwardNotificationContent Content) : BlueModel

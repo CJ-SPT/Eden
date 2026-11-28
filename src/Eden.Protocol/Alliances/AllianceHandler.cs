@@ -2,6 +2,7 @@ using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -9,7 +10,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Alliances;
 
 [Injectable]
-internal sealed partial class AllianceHandler(IAlliances alliances, ICorporationWars wars) : ISelectedPilotCallHandler
+internal sealed partial class AllianceHandler(IAlliances alliances, ICorporationWars wars, CorporationHandler monitor)
+    : ISelectedPilotCallHandler
 {
     private const int DefaultRankingLimit = 100;
 
@@ -55,11 +57,13 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
                 case ("GetSuggestedAllianceShortNames", [var name]) when service == "corpRegistry":
                     return new AllianceTickerSuggestions(alliances.SuggestTickers(Text(name)));
                 case ("GetAlliance" or "GetAlliancePublicInfo", [long id]) when id is > 0 and <= int.MaxValue:
-                    return Reply(Require((int)id));
+                    return Observe((int)id, alliances.PilotAffiliation(context.Pilot.PilotId));
                 case ("GetAlliance", []):
-                    return Reply(Require(Current(context)));
+                    int current = Current(context);
+                    return Observe(current, current);
                 case ("GetRankedAlliances", [] or [long]):
                     // The native Show All option sends zero as the requested maximum.
+                    int? viewerAlliance = alliances.PilotAffiliation(context.Pilot.PilotId);
                     int limit = args switch
                     {
                         [0L] => int.MaxValue,
@@ -73,7 +77,7 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
                             .OrderByDescending(a => a.MemberCount)
                             .ThenBy(a => a.Id)
                             .Take(limit)
-                            .Select(Reply)
+                            .Select(alliance => Reply(alliance.ForViewer(viewerAlliance)))
                             .ToArray()
                     );
                 case ("GetAllianceMembers", [long id]) when id is > 0 and <= int.MaxValue:
@@ -108,6 +112,13 @@ internal sealed partial class AllianceHandler(IAlliances alliances, ICorporation
     private Alliance Require(int id) => alliances.Read(id) ?? throw new InvalidDataException("Unknown alliance.");
 
     private AllianceReply Reply(Alliance alliance) => new(alliance, wars.IsEligible(alliance.Id));
+
+    private AllianceReply Observe(int id, int? viewerAlliance)
+    {
+        var alliance = Require(id).ForViewer(viewerAlliance);
+        monitor.ObserveAlliance(alliance);
+        return Reply(alliance);
+    }
 
     private int Current(PilotCallContext context) =>
         alliances.PilotAffiliation(context.Pilot.PilotId) ?? throw new InvalidDataException("Your corporation is not in an alliance.");

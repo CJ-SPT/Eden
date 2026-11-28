@@ -590,6 +590,12 @@ public sealed partial class CorporationStorageTests
             new object?[] { (long)StationId, (long)office.SystemId, 2L },
             Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(fields["lines"])))
         );
+        AssertOfficeAssetDetails(
+            member,
+            corporation,
+            StationId,
+            storage.List(Ceo, office.Id, FirstDivision).Select(InventoryRow.From).ToArray()
+        );
         Assert.IsType<PilotCallResult.Failure>(
             member.CallService("corpmgr", "GetAssetInventoryForLocation", [(long)corporation + 1, (long)StationId, "offices"])
         );

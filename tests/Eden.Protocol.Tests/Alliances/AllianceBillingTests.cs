@@ -45,15 +45,8 @@ public sealed class AllianceBillingTests
         }
         if (auto)
         {
-            action.Add(
-                new SavedCorporationBillPaymentSettings
-                {
-                    CorporationId = corporation,
-                    DataJson = JsonSerializer.Serialize(
-                        new CorporationBillPaymentSettings(corporation, key, [new(AllianceBillingRules.MaintenanceBillType, true)])
-                    ),
-                }
-            );
+            int alliance = action.Set<SavedAllianceMember>().Find(corporation)!.AllianceId;
+            action.Set<SavedAlliance>().Find(alliance)!.AutomaticMaintenancePayment = true;
         }
         action.Commit();
     }
@@ -176,6 +169,90 @@ public sealed class AllianceBillingTests
     {
         var reply = Assert.IsType<PilotCallResult.Success>(client.CallService("billMgr", "GetAutomaticPaySettings", [])).Reply;
         return Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
+    }
+
+    [Fact]
+    public void AutomaticPaymentSurvivesExecutorHandoverWithoutFollowingTheFormerExecutor()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int founder = Corporation(world);
+        int successor = Corporation(world, Other, "Successor Corporation", "SUCC");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        var billing = world.Services.GetRequiredService<ICorporationBilling>();
+        var bills = world.Services.GetRequiredService<IAllianceBilling>();
+        var wallet = world.Services.GetRequiredService<ICorporationWallet>();
+        int oldAlliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        var initial = Assert.Single(bills.Bills(Ceo));
+        int master = CorporationWalletRules.MasterKey;
+        int division = master + 1;
+        Fund(world, founder, initial.AmountCents);
+        Fund(world, successor, initial.AmountCents, division);
+        billing.Save(Ceo, new(founder, master, []), new(oldAlliance, true));
+        billing.Save(Other, new(successor, division, []));
+        membership.Apply(Other, oldAlliance, "Join");
+        membership.Decide(Ceo, successor, "Join", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(AllianceMembershipRules.AdmissionDelay);
+        membership.Advance();
+        membership.DeclareSupport(Other, successor);
+        membership.DeclareSupport(Ceo, successor);
+        membership.Remove(Ceo, founder);
+        int newAlliance = alliances.Create(Ceo, Details("Second Alliance", "SEC")).Alliance.Id;
+        var second = Assert.Single(bills.Bills(Ceo));
+        using (CorporationTestClient founderClient = new(world, 1000001))
+        using (CorporationTestClient successorClient = new(world, 1000002))
+        {
+            var oldRules = Assert.IsType<Dictionary<long, object?>>(ReadAutomaticPaymentSettings(successorClient)[oldAlliance]);
+            var newRules = Assert.IsType<Dictionary<long, object?>>(ReadAutomaticPaymentSettings(founderClient)[newAlliance]);
+            Assert.Equal(true, oldRules[AllianceBillingRules.MaintenanceBillType]);
+            Assert.Equal(false, newRules[AllianceBillingRules.MaintenanceBillType]);
+        }
+        clock.AdvanceWallTime(TimeSpan.FromTicks(second.DueAt - clock.Now));
+        membership.Advance();
+        Assert.Equal(successor, bills.Bills(Other).First(bill => bill.Id == initial.Id).PaidByCorporationId);
+        Assert.Null(bills.Bills(Ceo).First(bill => bill.Id == second.Id).PaidAt);
+        Assert.Equal(initial.AmountCents, wallet.Balance(Ceo, master));
+        Assert.Equal(0, wallet.Balance(Other, division));
+    }
+
+    [Fact]
+    public void Version240MigratesLegacyAutomaticPaymentToTheCurrentAlliance()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int founder = Corporation(world);
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        world.Services.Dispose();
+        int division = CorporationWalletRules.MasterKey + 1;
+        using (WorldDbContext saved = new(world.Path))
+        {
+            saved.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldAlliance DROP COLUMN LastExecutorCorporationId;
+                ALTER TABLE WorldAlliance DROP COLUMN AutomaticMaintenancePayment;
+                PRAGMA user_version=240;
+                """
+            );
+            string legacy = JsonSerializer.Serialize(
+                new CorporationBillPaymentSettings(founder, division, [new(2, true), new(AllianceBillingRules.MaintenanceBillType, true)])
+            );
+            saved.Database.ExecuteSql(
+                $"INSERT INTO WorldCorporationBillPaymentSettings(CorporationId,DataJson) VALUES({founder},{legacy})"
+            );
+        }
+        WorldDatabase database = new(world.Path);
+        WorldInitialization.Initialize(database);
+        using WorldDbContext reopened = new(world.Path);
+        var migrated = reopened.Set<SavedAlliance>().Find(alliance)!;
+        Assert.True(migrated.AutomaticMaintenancePayment);
+        Assert.Equal(founder, migrated.LastExecutorCorporationId);
+        var settings = JsonSerializer.Deserialize<CorporationBillPaymentSettings>(
+            reopened.Set<SavedCorporationBillPaymentSettings>().Find(founder)!.DataJson
+        )!;
+        Assert.Equal(division, settings.DivisionKey);
+        Assert.Equal(new CorporationBillPaymentRule(2, true), Assert.Single(settings.Rules));
+        Assert.Equal(WorldMigration.CurrentVersion, reopened.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]

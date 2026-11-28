@@ -198,6 +198,9 @@ recruitment, shares, dividends, voting and CEO succession. Alliance members can 
 executor, and the executor can transfer EverMarks to member corporations.
 [Corporation features](corporations.md) · [Alliance EverMark eligibility](protocol/alliances.md#alliance-membership-age-and-evermark-donations)
 
+Recent application decisions appear in the recruitment status filters, and eligible recruiters and applicants receive
+persistent Corporation inbox notices. [Recruitment filters and notices](protocol/corporations.md#current-recruitment-filters-and-inbox-notices)
+
 Accountants and Junior Accountants can search corporation office assets by category, group, type, and minimum stack
 quantity, then open the matching station's inventory. [Corporation office asset search](protocol/corporations.md#corporation-office-asset-search)
 

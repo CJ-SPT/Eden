@@ -22,7 +22,15 @@ internal sealed class InboxChangeSignal
 [Injectable]
 internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal signal) : IPilotInbox
 {
-    public long Revision => signal.Revision + (LiveWorld.Find(database.Path)?.KillRightInboxRevision ?? 0);
+    public long Revision => signal.Revision + (LiveWorld.Find(database.Path)?.InboxRevision ?? 0);
+
+    internal static void PublishResident(WorldAction world)
+    {
+        if (LiveWorld.Find(world.WorldPath) is { } live)
+        {
+            world.AfterCommit(live.PublishInbox);
+        }
+    }
 
     internal static void AddContact(
         WorldAction world,
@@ -106,7 +114,15 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
                 n.Type == InboxNotificationType.ContactAdded || n.Type == InboxNotificationType.ContactEdited
             ),
             InboxGroup.Bills => rows.Where(n => n.Type == InboxNotificationType.AllianceMaintenanceBill),
-            InboxGroup.Corporation => rows.Where(n => n.Type == InboxNotificationType.CorporationMedalAwarded),
+            InboxGroup.Corporation => rows.Where(n =>
+                n.Type == InboxNotificationType.CorporationMedalAwarded
+                || n.Type >= InboxNotificationType.CorporationApplicationReceived
+                    && n.Type <= InboxNotificationType.CorporationApplicationOffered
+                || n.Type >= InboxNotificationType.CorporationApplicationJoined
+                    && n.Type <= InboxNotificationType.CorporationApplicationWithdrawn
+                || n.Type == InboxNotificationType.CorporationApplicationInvited
+                || n.Type == InboxNotificationType.CorporationApplicationDeclinedWithMessage
+            ),
             InboxGroup.War => rows.Where(n =>
                 (n.Type >= InboxNotificationType.WarMutualInvitation && n.Type <= InboxNotificationType.WarDeclared)
                 || n.Type == InboxNotificationType.WarMutualRetracted

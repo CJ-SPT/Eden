@@ -103,6 +103,7 @@ public sealed class CorporationFinancialPanelTests
             WireSettings(corporation, 999),
             new Dictionary<long, object?> { [corporation] = new Dictionary<long, object?> { [99999L] = true } },
             new Dictionary<long, object?> { [corporation] = new Dictionary<long, object?> { [2L] = 1L } },
+            new Dictionary<long, object?> { [corporation] = new Dictionary<long, object?> { [5L] = true } },
             new Dictionary<long, object?>(),
         ];
         foreach (var request in invalid)

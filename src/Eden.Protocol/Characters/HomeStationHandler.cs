@@ -185,7 +185,8 @@ internal sealed class NpcCorporationHandler(
     ICharacterDirectory characters,
     IPlayerCorporations players,
     ICorporationWars wars,
-    CorporationHandler monitor
+    CorporationHandler monitor,
+    CorporationWarMonitor warMonitor
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -224,7 +225,12 @@ internal sealed class NpcCorporationHandler(
             if (players.Read(id) is { } player)
             {
                 monitor.ObserveCorporation(player);
-                return new PlayerCorporationReply(player, wars.IsEligible(player.Id));
+                bool allowsWar = wars.CorporationAllowsWar(player.Id);
+                if (service == "corpRegistry")
+                {
+                    warMonitor.WatchPermit(player.Id, allowsWar);
+                }
+                return new PlayerCorporationReply(player, allowsWar);
             }
             return new NpcCorporationReply(corporations.Read(id));
         }

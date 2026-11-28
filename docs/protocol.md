@@ -117,6 +117,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 - [Alliance registry binding after formation](protocol/alliances.md#alliance-registry-binding-after-formation)
 - [Alliance feature compatibility audit](protocol/alliances.md#alliance-feature-compatibility-audit)
+- [Alliance maintenance ownership and public cache updates](protocol/alliances.md#alliance-maintenance-ownership-and-public-cache-updates)
 - [Alliance membership age and EverMark donations](protocol/alliances.md#alliance-membership-age-and-evermark-donations)
 - [Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances)
 - [First-claim hub procurement](protocol/alliances.md#first-claim-hub-procurement)
@@ -478,6 +479,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Corporation medals](protocol/corporations.md#corporation-medals)
 - [Corporation Kill Reports](protocol/corporations.md#corporation-kill-reports)
 - [Corporation and alliance wars](protocol/corporations.md#corporation-and-alliance-wars)
+- [Native War Permit status and refresh](protocol/corporations.md#native-war-permit-status-and-refresh)
 - [War report side filters and former ally updates](protocol/corporations.md#war-report-side-filters-and-former-ally-updates)
 - [Defender allies, surrender and War Reports](protocol/corporations.md#defender-allies-surrender-and-war-reports)
 - [Corporation Edit Member identity](protocol/corporations.md#edit-member-private-identity-reply-november-16-2026)
@@ -498,6 +500,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Corporation offices and shared storage, November 6, 2026](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026)
 - [Resident corporation services](protocol/corporations.md#resident-corporation-services)
 - [Corporation registry lifetime and application replies](protocol/corporations.md#corporation-registry-lifetime-and-application-replies)
+- [Current recruitment filters and inbox notices](protocol/corporations.md#current-recruitment-filters-and-inbox-notices)
 - [Corporation contacts and standings, November 11, 2026](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026)
 - <a id="corporation-share-holdings-and-native-wallet-panels"></a>[Corporation share holdings and native wallet panels](protocol/corporations.md#corporation-share-holdings-and-native-wallet-panels)
 - <a id="corporation-bills-and-market-transactions-panel-calls"></a>[Corporation Bills and Market Transactions panel calls](protocol/corporations.md#corporation-bills-and-market-transactions-panel-calls)
@@ -1044,6 +1047,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Sovereignty conflict and command nodes, November 16, 2026](protocol/sovereignty.md#sovereignty-conflict-and-command-nodes--november-16-2026)
 - [Sovereignty activity and capitals, November 16, 2026](protocol/sovereignty.md#sovereignty-activity-and-capitals--november-16-2026)
 - [Sovereignty resources and upgrades, November 16, 2026](protocol/sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026)
+- [Sovereignty Hub fuel access group lookup](protocol/sovereignty.md#sovereignty-hub-fuel-access-group-lookup)
 
 ### Startup and authentication
 

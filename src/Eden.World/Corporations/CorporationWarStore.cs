@@ -35,6 +35,18 @@ internal sealed partial class CorporationWarStore(WorldDatabase database, TimePr
         return LiveWorld.Find(database.Path)?.Economy.Inspect(world => EligibilityLoss(world, ownerId, now) is null) ?? false;
     }
 
+    public bool CorporationAllowsWar(int corporationId)
+    {
+        long now = Now;
+        return LiveWorld
+                .Find(database.Path)
+                ?.Economy.Inspect(world =>
+                    world.Set<SavedCorporation>().Find(corporationId) is { ClosedAt: null }
+                    && Structures(world, Organization(world, corporationId)).Any(structure => Departure(structure, now) is null)
+                )
+            ?? false;
+    }
+
     public IReadOnlyList<CorporationWar> Wars(int ownerId)
     {
         long now = Now;

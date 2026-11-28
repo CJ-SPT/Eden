@@ -274,9 +274,6 @@ internal sealed class PilotKillRightStore(WorldDatabase database, TimeProvider c
                 Message = JsonSerializer.Serialize(content),
             }
         );
-        if (LiveWorld.Find(world.WorldPath) is { } live)
-        {
-            world.AfterCommit(live.PublishKillRightInbox);
-        }
+        Eden.World.Mail.PilotInboxStore.PublishResident(world);
     }
 }

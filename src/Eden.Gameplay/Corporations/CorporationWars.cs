@@ -66,6 +66,7 @@ public interface ICorporationWars
     int Organization(long pilotId);
     IReadOnlyList<CorporationWarPeaceTreaty> PeaceTreaties(long pilotId);
     bool IsEligible(int ownerId);
+    bool CorporationAllowsWar(int corporationId);
     IReadOnlyList<CorporationWar> Wars(int ownerId);
     IReadOnlyList<CorporationWar> PublicWars(long maxWarId);
     CorporationWar? War(long warId);

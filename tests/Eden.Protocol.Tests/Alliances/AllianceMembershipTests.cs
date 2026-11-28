@@ -18,6 +18,120 @@ namespace Eden.Protocol.Tests.Alliances;
 
 public sealed class AllianceMembershipTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PublicAllianceObserversReceiveSummaryChangesWithoutPrivateEvents(bool playerCorporation)
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        Corporation(world);
+        int applicant = Corporation(world, Other, "Applicant Corporation", "APPL");
+        long observer = AdditionalPilot(world, "Alliance Observer");
+        if (playerCorporation)
+        {
+            Corporation(world, observer, "Observer Corporation", "OBS");
+        }
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        using CorporationTestClient watched = new(world, 1000001, observer);
+        using CorporationTestClient unwatched = new(world, 1000001, observer);
+        Assert.IsType<PilotCallResult.Success>(watched.CallService("allianceRegistry", "GetAlliance", [(long)alliance]));
+        var before = alliances.Read(alliance)!;
+        const string description = "Open to new corporations";
+        alliances.Update(Ceo, description, "");
+        membership.Apply(Other, alliance, "Private application");
+        membership.Decide(Ceo, applicant, "Private response", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(AllianceMembershipRules.AdmissionDelay);
+        membership.Advance();
+
+        watched.Advance();
+        watched.Advance();
+        unwatched.Advance();
+        var change = Assert.Single(watched.Context.Notifications.OfType<AllianceChanged>()).Change;
+        Assert.Equal(before, change.Before);
+        Assert.Equal(description, change.After!.Details.Description);
+        Assert.Equal(2, change.After.CorporationCount);
+        Assert.DoesNotContain(watched.Context.Notifications, notice => notice is AllianceMemberChanged or AllianceApplicationChanged);
+        Assert.DoesNotContain(unwatched.Context.Notifications, notice => notice is AllianceChanged);
+    }
+
+    [Fact]
+    public void VacantExecutorKeepsAnApplicationRecipientWithoutGovernanceAuthority()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int founder = Corporation(world);
+        int second = Corporation(world, Other, "Second Corporation", "SEC");
+        long thirdCeo = AdditionalPilot(world, "Alliance Candidate");
+        int third = Corporation(world, thirdCeo, "Third Corporation", "TRD");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        int alliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        membership.Apply(Other, alliance, "Join");
+        membership.Decide(Ceo, second, "Join", AllianceApplicationStatus.Accepted);
+        membership.Apply(thirdCeo, alliance, "Join");
+        membership.Decide(Ceo, third, "Join", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(AllianceMembershipRules.AdmissionDelay);
+        membership.Advance();
+        membership.DeclareSupport(Other, second);
+        membership.DeclareSupport(thirdCeo, third);
+
+        var suspended = alliances.Read(alliance)!;
+        Assert.Null(suspended.ExecutorCorporationId);
+        long applicant = world
+            .Services.GetRequiredService<ICharacterCreation>()
+            .Create(1000001, new("Alliance Applicant", 1, 1, 1, 64, [1], [2], 18));
+        using CorporationTestClient member = new(world, 1000001, thirdCeo);
+        using CorporationTestClient outsider = new(world, 1000001, applicant);
+        Assert.Null(WireExecutor(AllianceDetails(member, "GetAlliance", [])));
+        Assert.Null(WireExecutor(AllianceDetails(member, "GetAlliancePublicInfo", [(long)alliance])));
+        Assert.Equal(founder, WireExecutor(AllianceDetails(outsider, "GetAlliance", [(long)alliance])));
+        Assert.Equal(founder, WireExecutor(AllianceDetails(outsider, "GetAlliancePublicInfo", [(long)alliance])));
+        Assert.Equal(founder, WireExecutor(Ranking(outsider)));
+        Assert.Null(WireExecutor(Ranking(member)));
+        Assert.Throws<InvalidDataException>(() => alliances.Update(Ceo, "Unauthorized", ""));
+
+        var corporations = world.Services.GetRequiredService<ICorporationMembership>();
+        var invitation = corporations.Invite(thirdCeo, applicant);
+        corporations.Update(
+            applicant,
+            new(invitation.Id, applicant, third, "", CorporationApplicationStatus.Joined, "", invitation.AppliedAt)
+        );
+        outsider.Advance();
+        var changed = Assert.Single(outsider.Context.Notifications.OfType<AllianceChanged>());
+        var fields = BlueRead.Fields(changed.Arguments[1]);
+        Assert.Equal(new object?[] { founder, null }, BlueRead.Tuple(fields["executorCorpID"], 2));
+
+        membership.DeclareSupport(thirdCeo, second);
+        Assert.Equal(second, alliances.Read(alliance)!.ExecutorCorporationId);
+        alliances.Update(Other, "Authority restored", "");
+
+        static int? WireExecutor(AllianceReply row) =>
+            (int?)Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(row.ToBlue()).Arguments[1])[3];
+
+        static AllianceReply AllianceDetails(CorporationTestClient client, string method, object?[] args) =>
+            Assert.IsType<AllianceReply>(
+                Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", method, args)).Reply
+            );
+
+        static AllianceReply Ranking(CorporationTestClient client) =>
+            Assert.Single(
+                Assert
+                    .IsType<AllianceRankingsReply>(
+                        Assert.IsType<PilotCallResult.Success>(client.CallService("allianceRegistry", "GetRankedAlliances", [0L])).Reply
+                    )
+                    .Alliances
+            );
+    }
+
+    private static long AdditionalPilot(TestWorld world, string name)
+    {
+        TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        return world.Services.GetRequiredService<ICharacterCreation>().Create(1000001, new(name, 1, 1, 1, 64, [1], [2], 18));
+    }
+
     [Fact]
     public async Task NativeCreationPublishesAllianceSessionChangeBeforeReply()
     {

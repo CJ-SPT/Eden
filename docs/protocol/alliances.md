@@ -141,6 +141,46 @@ and nine formatting policy checks passed, along with CSharpier, line width and w
 payment settings under the alliance bill owner after reconnecting. Check the Alliance chat MOTD menu as a regular member
 and then as a current executor Director.
 
+## Alliance maintenance ownership and public cache updates
+
+The Alliance Wallet stores the automatic-maintenance checkbox on the debtor alliance. A new executor inherits the
+alliance's choice and pays from its own selected automatic-payment division. A former executor can found or join another
+alliance without carrying the checkbox to that debtor. Schema **241** moves a legacy corporation flag to the active
+alliance it executes at migration time. Earlier settings did not retain the debtor ID. The older corporation-only request
+shape still applies its maintenance entry to the current executor alliance. Standalone corporation replies preserve
+the disabled catalogue entry for older wallet clients. Autonomous founding keeps its opt-in and respects an explicit disable.
+
+The pinned client tracks each checkbox by owner and bill type. In `CorpBillsAutoPaySettings.GetBillCheckedSettings`
+(offsets 9–87), it derives the owner from the settings map. `SubmitAutomaticPaymentSettings` (0–21) sends that map to
+`billMgr.SendAutomaticPaySettings`. EVE.js `billRuntimeState.js` similarly reads settings by the invoice's debtor and
+gets the division from the active executor at settlement.
+
+The pinned `AllianceO.GetAlliance` (51–91) returns a cached public row, and `OnAllianceChanged` updates it. Eden now
+tracks public details read by each connection, including pilots in NPC corporations. It refreshes a watched row when
+the committed change feed contains new public state for that alliance. The applicant, member and calendar feeds
+retain their existing authorization.
+
+An alliance with a suspended election shows foreign viewers its last seated executor as an application recipient
+while that corporation remains a member. The earliest remaining member supplies the address when the last executor
+has departed. Members see the vacant office in alliance controls and the EverMark panels. When an observer joins or
+leaves the alliance, the client receives a correction for its cached row. The pinned client chooses local bound
+`GetAlliance()` for its own alliance and remote `GetAlliance(allianceID)` for others. `ApplyToAllianceWnd.ConstructLayout`
+(301–400) passes the display ID to `CorporationsO.GetCorporation`, which converts a null ID to the applicant's own
+corporation (0–18). EVE.js also separates executor display data from active authority during a suspended election.
+
+REA extracted the native alliance services and panels from signed build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, evidence
+`ev_f04545bf75163bc7d95ccf3d57f194c5bdbf64beeafc544eb5be764581dd553e`. Python 2.7 disassembly established the
+client-side cache, wallet and application behavior. [Alliance management](https://wiki.eveuniversity.org/Alliances)
+
+**Automated validation.** All five alliance cases passed in the combined 22-case exact-method run.
+`AutomaticPaymentSurvivesExecutorHandoverWithoutFollowingTheFormerExecutor` checks payer division, balances
+and a successor alliance's fresh setting. `Version240MigratesLegacyAutomaticPaymentToTheCurrentAlliance` checks
+the old save upgrade. `PublicAllianceObserversReceiveSummaryChangesWithoutPrivateEvents` covers NPC and neutral
+corporation observers. `VacantExecutorKeepsAnApplicationRecipientWithoutGovernanceAuthority` covers own and foreign
+reads, loss of authority, cache updates on affiliation change, and election recovery. The build took 21.52 seconds
+and the combined tests took 22.90 seconds.
+
 ## Alliance membership age and EverMark donations
 
 The personal and corporation EverMark panels in build **3662168** ask `allianceRegistry.GetDaysInAlliance(allianceID, corporationID)`

@@ -162,15 +162,16 @@ internal sealed partial class AllianceStore
 
     private static bool AutoPay(WorldAction world, SavedAlliance alliance, SavedAllianceBill bill, long now)
     {
-        if (alliance.ExecutorCorporationId is not int id || world.Set<SavedCorporation>().Find(id) is not { ClosedAt: null } corporation)
+        if (
+            alliance.AutomaticMaintenancePayment != true
+            || alliance.ExecutorCorporationId is not int id
+            || world.Set<SavedCorporation>().Find(id) is not { ClosedAt: null } corporation
+        )
         {
             return false;
         }
-        var settings = CorporationBillingStore.Saved(world, id);
-        return settings is not null
-            && settings.CorporationId == id
-            && settings.Rules.Any(r => r.BillTypeId == AllianceBillingRules.MaintenanceBillType && r.Enabled)
-            && Settle(world, bill, corporation, settings.DivisionKey, now);
+        int key = CorporationBillingStore.Saved(world, id)?.DivisionKey ?? CorporationWalletRules.MasterKey;
+        return Settle(world, bill, corporation, key, now);
     }
 
     private long BillingDeadline() =>

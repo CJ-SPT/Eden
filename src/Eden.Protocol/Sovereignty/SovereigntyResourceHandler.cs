@@ -40,9 +40,13 @@ internal sealed class SovereigntyResourceHandler(ISovereigntyResources resources
             {
                 return new CorporationSkyhooksReply(resources.Skyhooks(context.Pilot.PilotId, true));
             }
-            if (access && method == "GetSovHubFuelAccessGroup" && args is [long hub])
+            if (access && method == "GetSovHubFuelAccessGroup" && args is [long system] && system is > 0 and <= int.MaxValue)
             {
-                resources.Read(context.Pilot.PilotId, hub);
+                // Build 3662168's HubController passes its solar-system ID, unlike the fuel gateway.
+                var hub = entosis.Hub((int)system) is { Claim: not null } claimed
+                    ? claimed
+                    : throw new InvalidDataException("This sovereignty hub has no active claim.");
+                resources.Read(context.Pilot.PilotId, hub.HubId);
                 return PilotCallResult.None;
             }
             if (access && method == "IsOnLocalSovHubFuelAccessGroup" && args.Length == 0)

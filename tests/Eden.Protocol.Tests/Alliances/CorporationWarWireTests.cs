@@ -1,9 +1,14 @@
+using Eden.Data.World.Structures;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using static Eden.Protocol.Tests.Alliances.AllianceCreationTests;
 
@@ -11,6 +16,92 @@ namespace Eden.Protocol.Tests.Alliances;
 
 public sealed class CorporationWarWireTests
 {
+    [Fact]
+    public void NativeWarPermitReflectsAllianceEligibilityWithoutAdmittingItsCorporationsAsTargets()
+    {
+        using TestWorld world = new(clock: new TestClock(), liveWorld: true);
+        int attacker = Corporation(world);
+        int defender = Corporation(world, Other, "Defenders", "DFN");
+        var alliances = world.Services.GetRequiredService<IAlliances>();
+        int attackerAlliance = alliances.Create(Ceo, Details()).Alliance.Id;
+        int defenderAlliance = alliances.Create(Other, new("Defender Alliance", "DAL", "", "")).Alliance.Id;
+        CorporationWarTests.SeedHeadquarters(world, attacker, defender);
+        AllianceBillingTests.Fund(world, attacker, CorporationWarRules.WeeklyFeeCents * 2);
+
+        using CorporationTestClient first = new(world, 1000001);
+        Assert.True(OwnPermit(first));
+        Assert.Equal(true, Fields(Reply(first, "corpmgr", "GetPublicInfo", [(long)defender]))["allowWar"]);
+        var direct = Assert.IsType<List<object?>>(Reply(first, "lookupSvc", "LookupWarableCorporationsOrAlliances", ["Defenders", true]));
+        Assert.Equal(false, Fields(Assert.Single(direct))["warPermit"]);
+        var alliance = Assert.IsType<List<object?>>(
+            Reply(first, "lookupSvc", "LookupWarableCorporationsOrAlliances", ["Defender Alliance", true])
+        );
+        Assert.Equal(true, Fields(Assert.Single(alliance))["warPermit"]);
+        Assert.IsType<PilotCallResult.Failure>(
+            first.CallService("allianceRegistry", "DeclareWarAgainst", [(long)defender, CorporationWarTests.Headquarters])
+        );
+        var declaration = Fields(
+            Reply(first, "allianceRegistry", "DeclareWarAgainst", [(long)defenderAlliance, CorporationWarTests.Headquarters])
+        );
+        Assert.Equal((long)attackerAlliance, declaration["declaredByID"]);
+        Assert.Equal((long)defenderAlliance, declaration["againstID"]);
+    }
+
+    [Fact]
+    public void NativeWarPermitRefreshesWhenAnotherAllianceCorporationGainsOrLosesTheLastStructure()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        int executor = Corporation(world);
+        int member = Corporation(world, Other, "Member Corporation", "MEMC");
+        int alliance = world.Services.GetRequiredService<IAlliances>().Create(Ceo, Details()).Alliance.Id;
+        var membership = world.Services.GetRequiredService<IAllianceMembership>();
+        membership.Apply(Other, alliance, "Join");
+        membership.Decide(Ceo, member, "Accepted", AllianceApplicationStatus.Accepted);
+        clock.AdvanceWallTime(TimeSpan.FromDays(1));
+        membership.Advance();
+        using CorporationTestClient observing = new(world, 1000001);
+        using CorporationTestClient unobserved = new(world, 1000002);
+        Assert.False(OwnPermit(observing));
+        var monitor = observing.Services.GetRequiredService<CorporationWarMonitor>();
+        monitor.Poll(observing.Context);
+        Assert.Empty(observing.Context.Notifications.OfType<CorporationWarPermitChanged>());
+
+        CorporationWarTests.SeedHeadquarters(world, member, member);
+        PollExpect(true);
+        Assert.True(OwnPermit(observing));
+        observing.Context.Notifications.Clear();
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        monitor.Poll(observing.Context);
+        Assert.Empty(observing.Context.Notifications.OfType<CorporationWarPermitChanged>());
+        unobserved.Services.GetRequiredService<CorporationWarMonitor>().Poll(unobserved.Context);
+        Assert.Empty(unobserved.Context.Notifications.OfType<CorporationWarPermitChanged>());
+
+        using (var action = world.Services.GetRequiredService<LiveWorld>().Economy.Begin(TransactionParticipants.None))
+        {
+            foreach (var structure in action.Filter<SavedStructure>(row => row.CorporationId == member).ToArray())
+            {
+                structure.State = StructureState.Destroyed;
+                structure.StateStartedAt = clock.Now;
+            }
+            action.Commit();
+        }
+        PollExpect(false);
+        Assert.False(OwnPermit(observing));
+
+        void PollExpect(bool enabled)
+        {
+            clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            monitor.Poll(observing.Context);
+            var permit = Assert.Single(observing.Context.Notifications.OfType<CorporationWarPermitChanged>());
+            Assert.Equal("OnAllowWarUpdated", permit.Name);
+            Assert.Equal(
+                new object?[] { (long)executor, enabled },
+                BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(permit.Arguments)), 2)
+            );
+        }
+    }
+
     [Fact]
     public void NativeDeclarationUsesEligibleOwnerAndAdvertisesWarHeadquarters()
     {
@@ -97,6 +188,9 @@ public sealed class CorporationWarWireTests
 
     private static object? Reply(CorporationTestClient client, string service, string method, object?[] args) =>
         BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(client.CallService(service, method, args)).Reply));
+
+    private static bool OwnPermit(CorporationTestClient client) =>
+        Assert.IsType<PlayerCorporationReply>(Assert.IsType<PilotCallResult.Success>(client.Call("GetCorporation", [])).Reply).AllowWar;
 
     private static Dictionary<string, object?> Fields(object? model) => BlueRead.Fields(Assert.IsType<BlueInstance>(model).State);
 }

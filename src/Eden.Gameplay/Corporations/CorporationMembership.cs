@@ -60,9 +60,20 @@ public sealed record CorporationLeavePermission(bool Allowed, string Reason, str
 
 public sealed record CorporationMemberRemovalResult(IReadOnlyList<long> Kicked, IReadOnlyList<long> NotKicked);
 
+public enum CorporationApplicationView
+{
+    All,
+    Current,
+    Older,
+}
+
 public interface ICorporationMembership
 {
-    IReadOnlyList<CorporationApplication> Applications(long pilotId, bool forCorporation);
+    IReadOnlyList<CorporationApplication> Applications(
+        long pilotId,
+        bool forCorporation,
+        CorporationApplicationView view = CorporationApplicationView.All
+    );
     CorporationApplication Apply(long pilotId, int corporationId, string text);
     CorporationApplication Invite(long actorId, long pilotId);
     CorporationApplication Update(long actorId, CorporationApplicationUpdate update);
@@ -80,6 +91,9 @@ public static class CorporationMembershipRules
     public const int ChangePageSize = 100;
     public const int MaximumMemberLookup = 1000;
     public const int MaximumMemberRemoval = 1000;
+
+    // CCP's corporation recruitment UI keeps three months of recent applications in its normal filters.
+    public const int RecentApplicationMonths = 3;
 
     public static void CheckRemovalTargets(long actorId, IReadOnlyList<long> pilotIds)
     {

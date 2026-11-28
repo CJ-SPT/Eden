@@ -14,7 +14,18 @@ public sealed record Alliance(
     long? ClosedAt,
     int CorporationCount,
     int MemberCount
-);
+)
+{
+    public int? DisplayExecutorCorporationId { get; init; }
+
+    public Alliance ForViewer(int? viewerAlliance) =>
+        Id == viewerAlliance && DisplayExecutorCorporationId != ExecutorCorporationId
+            ? this with
+            {
+                DisplayExecutorCorporationId = ExecutorCorporationId,
+            }
+            : this;
+}
 
 public sealed record AllianceMember(int CorporationId, int AllianceId, long JoinedAt, int? ChosenExecutorId)
 {

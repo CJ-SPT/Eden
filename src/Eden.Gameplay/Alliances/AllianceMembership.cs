@@ -45,6 +45,7 @@ public interface IAllianceMembership
     IReadOnlyList<AllianceHistory> History(int corporationId);
     long Head { get; }
     IReadOnlyList<AllianceChange> Changes(long actorId, long after);
+    IReadOnlyList<Alliance> PublicChanges(IReadOnlyCollection<int> observedAlliances, long after);
     void Advance();
 }
 

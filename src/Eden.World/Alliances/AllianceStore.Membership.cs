@@ -291,6 +291,28 @@ internal sealed partial class AllianceStore
             })
         ?? [];
 
+    public IReadOnlyList<Alliance> PublicChanges(IReadOnlyCollection<int> observedAlliances, long after)
+    {
+        if (observedAlliances.Count == 0)
+        {
+            return [];
+        }
+        return Resident.Economy.Inspect<IReadOnlyList<Alliance>>(world =>
+            observedAlliances
+                .Where(id =>
+                    world
+                        .Filter<SavedAllianceChange>(change => change.AllianceId == id && change.Id > after)
+                        .AsEnumerable()
+                        .Any(change =>
+                            JsonSerializer.Deserialize<AllianceChange>(change.DataJson) is { Before: not null } or { After: not null }
+                        )
+                )
+                .Select(id => Snapshot(world, id))
+                .OfType<Alliance>()
+                .ToArray()
+        );
+    }
+
     internal static SavedAlliance Active(WorldAction world, int id) =>
         world.Set<SavedAlliance>().Find(id) is { ClosedAt: null } row ? row : throw new InvalidDataException("Choose an active alliance.");
 
@@ -324,6 +346,7 @@ internal sealed partial class AllianceStore
             return;
         }
         var before = Snapshot(world, allianceId)!;
+        alliance.LastExecutorCorporationId = executor ?? alliance.ExecutorCorporationId ?? alliance.LastExecutorCorporationId;
         alliance.ExecutorCorporationId = executor;
         Record(world, new(0, allianceId, 0, Before: before, After: Snapshot(world, allianceId)));
     }

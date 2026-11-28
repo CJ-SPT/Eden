@@ -10,6 +10,8 @@ public sealed class SavedAlliance
     public long CreatorId { get; set; }
     public int CreatorCorporationId { get; set; }
     public int? ExecutorCorporationId { get; set; }
+    public int? LastExecutorCorporationId { get; set; }
+    public bool? AutomaticMaintenancePayment { get; set; }
     public long CreatedAt { get; set; }
     public long? ClosedAt { get; set; }
 }

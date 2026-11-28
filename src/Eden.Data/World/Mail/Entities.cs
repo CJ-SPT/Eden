@@ -54,6 +54,9 @@ public sealed class SavedInboxNotification
                 Type == InboxNotificationType.CorporationMedalAwarded
                     ? JsonSerializer.Deserialize<MedalAwardNotificationContent>(Message)
                     : null,
+            CorporationApplication = InboxRules.IsCorporationApplication(Type)
+                ? JsonSerializer.Deserialize<CorporationApplicationNotificationContent>(Message)
+                : null,
         };
 }
 

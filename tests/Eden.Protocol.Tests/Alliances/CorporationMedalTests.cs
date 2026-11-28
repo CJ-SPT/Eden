@@ -44,7 +44,7 @@ public sealed class CorporationMedalTests
                 List<object?> recipients = [Other];
                 var quote = Call(ceo, "GiveMedalToCharacters", [medal, recipients, "Reconnaissance — 探索"]);
                 Assert.Equal("ConfirmGivingMedal", Assert.IsType<PilotCallResult.NamedFailure>(quote).Name);
-                Assert.Empty(inbox.Read(Other, new(Group: InboxGroup.Corporation)));
+                Assert.Empty(MedalNotices(inbox, Other));
                 Assert.Null(RoundTrip(Reply(ceo, "GiveMedalToCharacters", [medal, recipients, "Reconnaissance — 探索", true])));
 
                 monitor.Advance(member.Context);
@@ -58,8 +58,8 @@ public sealed class CorporationMedalTests
                 Assert.Equal(medal, payload["medalID"]);
                 Assert.Equal((long)corporation, payload["corpID"]);
                 Assert.Equal("Reconnaissance — 探索", payload["reason"]);
-                Assert.Empty(inbox.Read(Ceo, new(Group: InboxGroup.Corporation)));
-                Assert.Single(inbox.Read(Other, new(Group: InboxGroup.Corporation)));
+                Assert.Empty(MedalNotices(inbox, Ceo));
+                Assert.Single(MedalNotices(inbox, Other));
                 Assert.Empty(inbox.Read(Other, new(Group: InboxGroup.Miscellaneous)));
                 member.Context.Notifications.Clear();
                 monitor.Advance(member.Context);
@@ -74,11 +74,16 @@ public sealed class CorporationMedalTests
         world.Services.Dispose();
         using var reopened = ServerServices.Build(new(world.Path), liveWorld: true);
         var restoredInbox = reopened.GetRequiredService<IPilotInbox>();
-        var restored = Assert.Single(restoredInbox.Read(Other, new(Group: InboxGroup.Corporation, UnreadOnly: true)));
+        var restored = Assert.Single(MedalNotices(restoredInbox, Other, unreadOnly: true));
         Assert.True(restored.Id > firstNotice);
         Assert.Equal(new MedalAwardNotificationContent(medal, corporation, "Offline logistics"), restored.MedalAward);
-        Assert.Equal(2, restoredInbox.Read(Other, new(Group: InboxGroup.Corporation)).Count);
-        Assert.Empty(restoredInbox.Read(Ceo, new(Group: InboxGroup.Corporation)));
+        Assert.Equal(2, MedalNotices(restoredInbox, Other).Count());
+        Assert.Empty(MedalNotices(restoredInbox, Ceo));
+
+        static IEnumerable<InboxNotification> MedalNotices(IPilotInbox inbox, long pilot, bool unreadOnly = false) =>
+            inbox
+                .Read(pilot, new(Group: InboxGroup.Corporation, UnreadOnly: unreadOnly))
+                .Where(notice => notice.Type == InboxNotificationType.CorporationMedalAwarded);
     }
 
     [Fact]

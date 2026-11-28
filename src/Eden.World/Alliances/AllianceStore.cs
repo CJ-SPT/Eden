@@ -91,10 +91,15 @@ internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider
         {
             return null;
         }
-        int[] corporations = world
-            .Filter<SavedAllianceMember>(member => member.AllianceId == allianceId)
-            .Select(m => m.CorporationId)
-            .ToArray();
+        var members = world.Filter<SavedAllianceMember>(member => member.AllianceId == allianceId).ToArray();
+        int? displayExecutor = row.ExecutorCorporationId;
+        if (!displayExecutor.HasValue && row.ClosedAt is null)
+        {
+            // The native application form treats a missing display recipient as the applicant's own corporation.
+            displayExecutor = members.Any(member => member.CorporationId == row.LastExecutorCorporationId)
+                ? row.LastExecutorCorporationId
+                : members.OrderBy(member => member.JoinedAt).ThenBy(member => member.CorporationId).FirstOrDefault()?.CorporationId;
+        }
         return new(
             row.Id,
             new(row.Name, row.Ticker, row.Description, row.Url),
@@ -103,8 +108,11 @@ internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider
             row.ExecutorCorporationId,
             row.CreatedAt,
             row.ClosedAt,
-            corporations.Length,
-            corporations.Sum(corporation => world.Pilots.Count(pilot => pilot.CorporationId == corporation))
-        );
+            members.Length,
+            members.Sum(member => world.Pilots.Count(pilot => pilot.CorporationId == member.CorporationId))
+        )
+        {
+            DisplayExecutorCorporationId = displayExecutor,
+        };
     }
 }
