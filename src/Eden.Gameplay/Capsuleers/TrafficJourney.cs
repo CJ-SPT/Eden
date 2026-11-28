@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Eden.Gameplay.Capsuleers;
 
 public enum TrafficJourneyKind
@@ -31,6 +33,9 @@ public sealed record TrafficJourney(
 )
 {
     public NullsecExpeditionWork? NullsecWork { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CapsuleerPvpFitGoal? PvpShoppingFit { get; init; }
 }
 
 public static class NullsecExpeditionRules

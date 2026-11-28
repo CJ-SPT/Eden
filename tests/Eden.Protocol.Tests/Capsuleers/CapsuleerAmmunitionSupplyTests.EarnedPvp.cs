@@ -126,21 +126,32 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         Assert.True(reopened.GetRequiredService<LiveWorld>().Economy.ActiveShip(minerId, replaced));
     }
 
+    public enum PvpGoalBlocker
+    {
+        None,
+        Skills,
+        Price,
+    }
+
     [Theory]
-    [InlineData(false, false, false, false, false)]
-    [InlineData(true, false, false, false, false)]
-    [InlineData(false, true, false, false, false)]
-    [InlineData(false, false, true, false, false)]
-    [InlineData(false, false, false, true, false)]
-    [InlineData(true, false, false, true, false)]
-    [InlineData(false, false, false, false, true)]
-    [InlineData(false, false, true, false, true)]
+    [InlineData(false, false, PvpGoalBlocker.None, false, false, false)]
+    [InlineData(true, false, PvpGoalBlocker.None, false, false, false)]
+    [InlineData(false, true, PvpGoalBlocker.None, false, false, false)]
+    [InlineData(false, false, PvpGoalBlocker.Skills, false, false, false)]
+    [InlineData(false, false, PvpGoalBlocker.None, true, false, false)]
+    [InlineData(true, false, PvpGoalBlocker.None, true, false, false)]
+    [InlineData(false, false, PvpGoalBlocker.None, false, true, false)]
+    [InlineData(false, false, PvpGoalBlocker.Skills, false, true, false)]
+    [InlineData(true, false, PvpGoalBlocker.Skills, false, true, false)]
+    [InlineData(true, false, PvpGoalBlocker.Skills, false, true, true)]
+    [InlineData(true, false, PvpGoalBlocker.Price, false, true, false)]
     public async Task EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen(
         bool remoteSupplier,
         bool progress,
-        bool blockedGoal,
+        PvpGoalBlocker goalBlocker,
         bool fundedRefit,
-        bool splitAsks
+        bool splitAsks,
+        bool withdrawStock
     )
     {
         const int incursus = (int)TechOneHullType.Incursus;
@@ -158,6 +169,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         const int jitaTradeHub = 60003760;
         const long priceCents = MarketDefinitions.CentsPerIsk;
         const long openingCents = 100_000 * MarketDefinitions.CentsPerIsk;
+        bool blockedGoal = goalBlocker != PvpGoalBlocker.None;
 
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
@@ -223,6 +235,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         int fitUnits = parts.Values.Sum();
         // The small bounty is below the corporation tax threshold and covers the second railgun's extra ISK.
         long bountyIsk = splitAsks ? fitUnits + 1 : 2_000_000;
+        long nextHullPrice = goalBlocker == PvpGoalBlocker.Price ? bountyIsk * MarketDefinitions.CentsPerIsk + 1 : priceCents / 2;
         parts[charge] *= 5;
         Assert.True(parts.Values.Sum() * priceCents < openingCents);
         var orders = parts
@@ -236,7 +249,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                         listingStation.RegionId,
                         part.Key,
                         Bid: false,
-                        part.Key == nextHull ? priceCents / 2 : priceCents,
+                        part.Key == nextHull ? nextHullPrice : priceCents,
                         progress && part.Key != incursus && part.Key != nextHull ? part.Value * 2 : part.Value,
                         progress && part.Key != incursus && part.Key != nextHull ? part.Value * 2 : part.Value,
                         fixture.Clock.Now,
@@ -291,9 +304,11 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
 
         long pilotId;
         long workShipId;
+        long fundedBalance;
         long paidShipId;
         long walletAfterPurchase;
         long[] purchaseIds;
+        TrafficJourney? departure = null;
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
         {
             var live = host.GetRequiredService<LiveWorld>();
@@ -347,7 +362,6 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             var seededHull = Assert.Single(market.Orders(pilotId, incursus), order => !order.Bid && order.StationId == listingStation.Id);
             Assert.Equal((priceCents, 1), (seededHull.PriceCents, seededHull.Remaining));
 
-            long fundedBalance;
             using (var work = live.Economy.Begin())
             {
                 var docked = ships.FindPilot(work, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
@@ -427,20 +441,37 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 }
                 var docked = ships.FindPilot(work, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
 
+                if (goalBlocker == PvpGoalBlocker.Price)
+                {
+                    CapsuleerCommunityStore.GrantRequirements(work, catalog, pilotId, nextHull, []);
+                }
                 var usableHulls = PilotSkillReader.UsableTypes(work, catalog, pilotId, [incursus, nextHull]);
-                Assert.Equal(incursus, Assert.Single(usableHulls));
+                Assert.Contains(incursus, usableHulls);
+                Assert.Equal(goalBlocker == PvpGoalBlocker.Price, usableHulls.Contains(nextHull));
                 if (blockedGoal)
                 {
                     var organization = CapsuleerCorporations.Organization(work, pilotId);
-                    var goal = Assert.IsType<CapsuleerPvpFitGoal>(organization.PvpFitGoal);
-                    CapsuleerCorporations.SaveOrganization(
-                        work,
-                        pilotId,
-                        organization with
+                    var goal = remoteSupplier
+                        ? new CapsuleerPvpFitGoal(
+                            nextHull,
+                            [
+                                new(firstHigh, railgun),
+                                new(firstHigh + 1, railgun),
+                                new((int)InventoryFlag.MediumSlot0, scrambler),
+                                new(repairSlot, repairer),
+                            ],
+                            [new(firstHigh, charge, magazine), new(firstHigh + 1, charge, magazine)]
+                        )
+                        : Assert.IsType<CapsuleerPvpFitGoal>(organization.PvpFitGoal) with
                         {
-                            PvpFitGoal = goal with { HullTypeId = nextHull },
-                        }
-                    );
+                            HullTypeId = nextHull,
+                        };
+                    if (goalBlocker == PvpGoalBlocker.Price)
+                    {
+                        var kit = goal.Kit();
+                        Assert.True(CapsuleerIndustry.PvpFitQualified(work, catalog, docked, kit, kit.Parts(), out _));
+                    }
+                    CapsuleerCorporations.SaveOrganization(work, pilotId, organization with { PvpFitGoal = goal });
                 }
                 var turn = supply.TryBuyEarnedPvpShip(work, catalog, snapshot, docked, fixture.Clock.Now);
                 Assert.Equal(!remoteSupplier, turn.Boarded);
@@ -448,11 +479,6 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 if (remoteSupplier)
                 {
                     Assert.Empty(work.Filter<MarketExecution>(row => row.PilotId == pilotId));
-                    var quote = supply.FindPvpSupplier(work, catalog, snapshot, docked, new HashSet<int>(), fixture.Clock.Now);
-                    var route = Assert.IsType<CapsuleerTrafficRoute>(quote);
-                    Assert.Equal(Depot, route.SourceStationId);
-                    Assert.Equal(listingStation.Id, route.DestinationStationId);
-                    Assert.Equal(new[] { Home, listingStation.SolarSystemId }, route.Systems);
                     Assert.False(CapsuleerIndustry.CanStagePvp(work, catalog, listingStation.SolarSystemId));
                 }
                 work.Commit();
@@ -463,22 +489,105 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 var outbound = host.GetRequiredService<CapsuleerScheduler>();
                 var outboundMaintenance = host.GetRequiredService<CapsuleerMaintenance>();
                 outbound.PopulationPrepared(Home);
-                bool shopped = false;
-                for (int elapsed = 0; elapsed < 1200 && live.Economy.ActiveShip(pilotId, workShipId); elapsed++)
+                for (int elapsed = 0; elapsed < 1200 && departure is null; elapsed++)
                 {
                     fixture.Clock.Seconds++;
                     outboundMaintenance.Tick();
-                    if (live.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.Journey is { Kind: TrafficJourneyKind.PvpShopping } trip)
+                    if (
+                        live.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.Journey is { Kind: TrafficJourneyKind.PvpShopping } trip
+                        && trip.DestinationStationId == listingStation.Id
+                    )
                     {
-                        shopped |= trip.DestinationStationId == listingStation.Id && trip.HomeStationId == Depot;
+                        departure = trip;
                     }
                 }
                 Assert.True(outbound.Read().Failures == 0, outbound.Read().LastFailure);
-                Assert.True(shopped);
-                var returning = Assert.IsType<TrafficJourney>(live.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.Journey);
-                Assert.Equal(TrafficJourneyKind.PvpShopping, returning.Kind);
-                Assert.Equal(listingStation.Id, returning.SourceStationId);
-                Assert.Equal(Depot, returning.DestinationStationId);
+                var tripPlan = Assert.IsType<TrafficJourney>(departure);
+                Assert.Equal(
+                    (Depot, Depot, listingStation.Id),
+                    (tripPlan.HomeStationId, tripPlan.SourceStationId, tripPlan.DestinationStationId)
+                );
+                Assert.Equal(new[] { Home, listingStation.SolarSystemId }, tripPlan.Systems);
+                Assert.Equal(incursus, Assert.IsType<CapsuleerPvpFitGoal>(tripPlan.PvpShoppingFit).HullTypeId);
+                Assert.True(live.Economy.ActiveShip(pilotId, workShipId));
+                if (withdrawStock)
+                {
+                    using (var work = live.Economy.Begin())
+                    {
+                        var wallet = work.Set<PilotWallet>().Find(Customer) ?? work.Add(new PilotWallet { PilotId = Customer }).Entity;
+                        wallet.Cents = priceCents;
+                        CapsuleerCommunityStore.GrantRequirements(work, catalog, pilotId, nextHull, []);
+                        Assert.Contains(nextHull, PilotSkillReader.UsableTypes(work, catalog, pilotId, [nextHull]));
+                        work.Commit();
+                    }
+                    var bought = Assert.Single(market.Buy(Customer, listingStation.Id, [new(incursus, priceCents, 1)]).Trades);
+                    Assert.Equal((incursus, 1), (bought.TypeId, bought.Quantity));
+                }
+            }
+            await live.FlushAsync();
+        }
+
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            if (departure is not null)
+            {
+                var saved = live.Economy.Read(world =>
+                {
+                    var row = world.Filter<SavedCapsuleerHauler>(row => row.PilotId == pilotId).Single();
+                    Assert.Equal(fundedBalance, world.Set<PilotWallet>().Find(pilotId)!.Cents);
+                    Assert.Empty(world.Filter<MarketExecution>(row => row.PilotId == pilotId));
+                    if (blockedGoal)
+                    {
+                        Assert.Equal(nextHull, CapsuleerCorporations.Organization(world, pilotId).PvpFitGoal?.HullTypeId);
+                    }
+                    return Assert.IsType<TrafficJourney>(HaulerCheckpoint.Read(row.Progress)?.Journey);
+                });
+                Assert.Equal(departure.Kind, saved.Kind);
+                Assert.Equal(departure.DestinationStationId, saved.DestinationStationId);
+                Assert.Equal(departure.Systems, saved.Systems);
+                var plannedFit = Assert.IsType<CapsuleerPvpFitGoal>(departure.PvpShoppingFit);
+                var savedFit = Assert.IsType<CapsuleerPvpFitGoal>(saved.PvpShoppingFit);
+                Assert.Equal(plannedFit.HullTypeId, savedFit.HullTypeId);
+                Assert.Equal(plannedFit.Slots, savedFit.Slots);
+                Assert.Equal(plannedFit.Magazines, savedFit.Magazines);
+                Assert.True(live.Economy.ActiveShip(pilotId, workShipId));
+                using var observer = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+                var inbound = host.GetRequiredService<CapsuleerScheduler>();
+                var inboundMaintenance = host.GetRequiredService<CapsuleerMaintenance>();
+                inbound.PopulationPrepared(Home);
+                TrafficJourney? returning = null;
+                for (int elapsed = 0; elapsed < 1200 && returning is null; elapsed++)
+                {
+                    fixture.Clock.Seconds++;
+                    inboundMaintenance.Tick();
+                    if (
+                        live.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.Journey is { Kind: TrafficJourneyKind.PvpShopping } trip
+                        && trip.SourceStationId == listingStation.Id
+                    )
+                    {
+                        returning = trip;
+                    }
+                }
+                Assert.True(inbound.Read().Failures == 0, inbound.Read().LastFailure);
+                var returnTrip = Assert.IsType<TrafficJourney>(returning);
+                Assert.Equal(Depot, returnTrip.DestinationStationId);
+                Assert.Null(returnTrip.PvpShoppingFit);
+                if (withdrawStock)
+                {
+                    Assert.True(live.Economy.ActiveShip(pilotId, workShipId));
+                    live.Economy.Read(world =>
+                    {
+                        var organization = CapsuleerCorporations.Organization(world, pilotId);
+                        Assert.Null(organization.EarnedPvpShipId);
+                        Assert.Equal(nextHull, organization.PvpFitGoal?.HullTypeId);
+                        Assert.True(organization.PvpSupplierReviewAt > fixture.Clock.Now);
+                        Assert.Equal(fundedBalance, world.Set<PilotWallet>().Find(pilotId)!.Cents);
+                        Assert.Empty(world.Filter<MarketExecution>(row => row.PilotId == pilotId));
+                        return 0;
+                    });
+                    return;
+                }
             }
             using (var work = live.Economy.Begin())
             {
@@ -551,8 +660,9 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 purchaseIds = purchases.Select(row => row.Id).Order().ToArray();
                 work.Commit();
             }
+            var market = host.GetRequiredService<IPilotMarket>();
             var otherHull = Assert.Single(market.Orders(pilotId, nextHull), order => !order.Bid && order.StationId == listingStation.Id);
-            Assert.Equal((priceCents / 2, 1), (otherHull.PriceCents, otherHull.Remaining));
+            Assert.Equal((nextHullPrice, 1), (otherHull.PriceCents, otherHull.Remaining));
             await live.FlushAsync();
         }
 

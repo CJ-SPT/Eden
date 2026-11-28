@@ -593,6 +593,43 @@ ordinary market orders and `externalservices/market-server/README.md` describes 
 uses compatible captured orders and validated traffic fits from catalog build 3662168. [Making Money](https://wiki.eveuniversity.org/Making_Money) ·
 [Trading](https://wiki.eveuniversity.org/Market) · [Development catalog](../development-client.md#creating-and-recreating-the-databases)
 
+### Remote suppliers for a first fit
+
+A pilot shopping for its first PvP ship checks nearby traffic stops and reachable trade hubs. It prefers its saved
+fit when a supplier can sell the complete kit within budget and the pilot can fit and fly it on the route. Otherwise,
+it can travel to the nearest eligible supplier with a complete, affordable fit it can fly. Local alternative-fit
+searches and supplier searches use separate five-minute retry timers. Existing PvP ships keep the saved upgrade path.
+
+The outbound checkpoint keeps the chosen hull, modules and magazines alongside the route. On arrival, the bot
+checks current stock, settlement prices, wallet, skills, fitting limits and the intended hull's return route before
+buying that kit. It can return in its work ship if the kit becomes unavailable. Both legs account for remembered threats,
+and a temporary threat can delay the return. A supported saved fit can stay in the training plan when it still qualifies
+as a progression upgrade.
+
+This uses the build 3662168 catalog and Eden's resident market, fitting and travel owners. EVE.js 261108.1 documents
+market order precedence in `externalservices/market-server/README.md`. [CCP market orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders) ·
+[EVE University trade hubs](https://wiki.eveuniversity.org/Trade_hub)
+
+**Automated validation**
+
+All 11 cases of `EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen` passed in 23.51 seconds after
+a 10.66-second build. The new cases cover an unqualified saved fit, a flyable but unaffordable saved fit, and a
+competing buyer taking the planned hull in transit. The replay reopens before arrival, then confirms the full fit
+settles against the seeded asks and earned budget or the pilot starts its return without a debit.
+
+All 150 adjacent cases passed in 119.54 seconds. The filter selected `CapsuleerAmmunitionSupplyTests`,
+`CapsuleerMilitiaPatrolTests`, `CapsuleerTrafficRoutesTests`, `CapsuleerTrafficNavigationTests`,
+`CapsuleerCheckpointEncodingTests`, and `StandardMarketTests`. The solution built with zero warnings or errors.
+All 17 Python policy cases, style, CSharpier and line width passed. CSharpier excluded the ignored local archive.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
+
 ### Automated validation
 
 The two cases of `EstablishedPilotBuysItsFirstPvpFitFromBountiesAndKeepsItAfterReopen` passed in 11.08 seconds.

@@ -179,6 +179,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Unvisited systems in Established Universe](protocol/capsuleers.md#unvisited-systems-in-established-universe)
 - [Bot PvP fit progression and rat damage](protocol/capsuleers.md#bot-pvp-fit-progression-and-rat-damage)
 - [Activity-funded PvP ships](protocol/capsuleers.md#activity-funded-pvp-ships)
+- [Remote suppliers for a first fit](protocol/capsuleers.md#remote-suppliers-for-a-first-fit)
 - [Demand-driven bot work](protocol/capsuleers.md#demand-driven-bot-work)
 - [Bot work selection and purchase costs](protocol/capsuleers.md#bot-work-selection-and-purchase-costs)
 - [Unattended miner patrol handoff](protocol/capsuleers.md#unattended-miner-patrol-handoff)
