@@ -13,7 +13,14 @@ internal static class CapsuleerWorkHandoff
     // Founder rows use the pinned solar-system IDs and negative slot IDs. Alternate workers use the pilot ID here.
     private const int AlternateWorkerIdBase = 1_000_000_000;
 
-    internal static void ToMining(CapsuleerOperation operation, EconomyTransaction world, DockedPilot pilot, Ship ship, long ticks)
+    internal static void ToMining(
+        CapsuleerOperation operation,
+        EconomyTransaction world,
+        DockedPilot pilot,
+        Ship ship,
+        long ticks,
+        long huntRetryAt = 0
+    )
     {
         long id = pilot.PilotId;
         var rows = world.Set<SavedCapsuleerCommunity>();
@@ -37,6 +44,8 @@ internal static class CapsuleerWorkHandoff
         }
         var organization = CapsuleerCorporations.Organization(world, id);
         CapsuleerCorporations.SaveOrganization(world, id, organization with { ActiveWorker = CapsuleerCareer.Mining });
+        var previous = MinerCheckpoint.Read(row.Progress);
+        long retryAt = Math.Max(huntRetryAt, previous?.HuntRetryAt ?? 0);
         operation.IncomingMiner = new(
             id,
             new MinerProgress(
@@ -54,7 +63,8 @@ internal static class CapsuleerWorkHandoff
                 ClockOffsetTicks: ticks
             )
             {
-                CareerPlan = MinerCheckpoint.Read(row.Progress)?.CareerPlan,
+                CareerPlan = previous?.CareerPlan,
+                HuntRetryAt = retryAt > ticks ? retryAt : 0,
             }
         );
     }
@@ -90,7 +100,8 @@ internal static class CapsuleerWorkHandoff
         }
         var organization = CapsuleerCorporations.Organization(world, id);
         CapsuleerCorporations.SaveOrganization(world, id, organization with { ActiveWorker = CapsuleerCareer.Hauling });
-        var previous = HaulerCheckpoint.Read(row.Progress)?.CareerPlan;
+        var previous = HaulerCheckpoint.Read(row.Progress);
+        var plan = previous?.CareerPlan;
         operation.IncomingHauler = new(
             id,
             new HaulerProgress(
@@ -106,8 +117,8 @@ internal static class CapsuleerWorkHandoff
                 ClockOffsetTicks: ticks
             )
             {
-                CareerPlan =
-                    profession is not { } work || previous?.Profession == work ? previous : new(work, 0, CapsuleerTrainingFocus.Work),
+                ActivitySequence = previous?.ActivitySequence ?? 0,
+                CareerPlan = profession is not { } work || plan?.Profession == work ? plan : new(work, 0, CapsuleerTrainingFocus.Work),
             }
         );
     }

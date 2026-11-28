@@ -739,8 +739,14 @@ station and hand off to the existing flight worker. The station production and r
 The flight worker applies the configured unattended roam chance and the usual departure checks. It can return
 the pilot to the parked mining ship if the replacement reserve falls.
 
+Miners under the activity-funded policy can also use this handoff in unattended nullsec. Station work has priority,
+and the normal market and fitting checks govern purchases. When the flight worker declines a departure and returns
+the pilot to mining, the miner can resume work on its next turn. It can reconsider combat after five minutes of
+active simulation, and the flight worker continues its previous patrol sequence. Both values survive a checkpoint.
+
 Eden uses build 3662168 system security and the scheduler's observation state for this decision. The EVE.js
 261108.1 reference for background flight and combat is `server/src/space/runtime/scene/tick.js`.
+[EVE University solo PvP](https://wiki.eveuniversity.org/Solo_PvP)
 
 **Automated validation**
 
@@ -752,6 +758,16 @@ All 116 adjacent cases passed in 159.11 seconds. The filter included `CapsuleerH
 `CapsuleerWorkRulesTests`, `PatrolHullTests`, `RoamingGangTests`, `HuntReserve`, and the neighboring offscreen
 factory and courier replays. The solution build, 17 Python policy cases, style, CSharpier and line-width checks passed.
 CSharpier excluded the checkout's ignored local archive.
+
+All three cases of `UnattendedMinerStagesAnEarnedPatrolAndResumesWorkIfTheFitFails` passed in 11.99 seconds after a
+6.00-second build. They start with a parked earned fit and test a healthy launch, a turret taken offline after
+handoff, and a declined roam draw. The last case uses shortened mining trips and configured consecutive roam draws
+to verify ore collection, one scheduled job, the saved retry deadline, and a later launch from a normal dock turn.
+
+The activity-funded follow-up passed 170 adjacent cases in 234.82 seconds. The filter selected
+`CapsuleerAmmunitionSupplyTests`, `CapsuleerHandoffTests`, `CapsuleerCheckpointEncodingTests`,
+`CapsuleerWorkRulesTests`, `PatrolHullTests`, and `RoamingGangTests`. The solution built without warnings.
+All 17 Python policy cases, style, CSharpier and line width passed. CSharpier excluded the ignored local archive.
 
 **Live acceptance**
 

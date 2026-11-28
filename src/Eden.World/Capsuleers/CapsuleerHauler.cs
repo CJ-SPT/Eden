@@ -808,6 +808,7 @@ internal sealed partial class CapsuleerHauler(
                 DwellSequence: previous?.DwellSequence ?? 0
             )
             {
+                ActivitySequence = previous?.ActivitySequence ?? 0,
                 CareerPlan = previous?.CareerPlan,
                 Routine = previous?.Routine,
                 Defense = previous?.Defense,

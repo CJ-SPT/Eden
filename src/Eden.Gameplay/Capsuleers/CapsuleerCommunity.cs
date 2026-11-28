@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -69,6 +70,9 @@ public sealed record MinerProgress(
     public long? MoonExtractionId { get; init; }
     public int? RefineryIceType { get; init; }
     public int? OperatingStationId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public long HuntRetryAt { get; init; }
 }
 
 public sealed record MercoxitExpedition(int StationId, int[] Systems, bool Returning = false)

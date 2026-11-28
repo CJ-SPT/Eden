@@ -49,8 +49,9 @@ internal sealed partial class CapsuleerMiner
 
         bool earnedPvp = CapsuleerIndustry.RequiresEarnedPvp(world);
         bool canHunt = earnedPvp
-            ? CapsuleerIndustry.CanStagePvp(world, catalog, Pilot.SystemId)
-                && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) == true
+            ? Work.HuntRetryAt <= Work.ActiveTicks
+                && CanStartHuntingHere(background)
+                && CapsuleerIndustry.CanStagePvp(world, catalog, Pilot.SystemId)
             : policy.RoamPercent > 0
                 && PatrolRules.Allowed(
                     new(PatrolKind.Roam, Pilot.SystemId),
@@ -92,7 +93,7 @@ internal sealed partial class CapsuleerMiner
             _operation.MarketChanged |= industry.TryReplenishHuntReserve(world, catalog, Pilot, now, combat);
             return WaitForHuntReserve();
         }
-        if (Live is null || background && !CapsuleerTrafficRoutes.IsNullsec(catalog.Definitions, Pilot.SystemId))
+        if (!CanStartHuntingHere(background))
         {
             return false;
         }
@@ -102,4 +103,7 @@ internal sealed partial class CapsuleerMiner
         _operation.TravelChanged = true;
         return true;
     }
+
+    private bool CanStartHuntingHere(bool background) =>
+        Live is not null && (!background || CapsuleerTrafficRoutes.IsNullsec(database.Catalog, Pilot.SystemId));
 }

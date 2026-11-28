@@ -10,6 +10,7 @@ public enum CapsuleerWorkKind
 public static class CapsuleerWorkRules
 {
     public const int MinimumHuntingReplacements = 2;
+    public static readonly TimeSpan EarnedHuntRetry = TimeSpan.FromMinutes(5);
 
     public static CapsuleerWorkKind Choose(bool industryDemand, bool canHunt, int readyReplacements)
     {

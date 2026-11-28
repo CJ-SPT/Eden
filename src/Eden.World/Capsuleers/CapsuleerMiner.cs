@@ -633,6 +633,7 @@ internal sealed partial class CapsuleerMiner(
                 {
                     CareerPlan = previous?.CareerPlan,
                     DeepCoreProvisioned = previous?.DeepCoreProvisioned == true,
+                    HuntRetryAt = previous?.HuntRetryAt ?? 0,
                     Mercoxit = Pilot.Position is null ? null : previous?.Mercoxit,
                     ActiveTicks = anchor,
                     ClockOffsetTicks = previous?.ClockOffsetTicks ?? anchor,

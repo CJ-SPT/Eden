@@ -146,8 +146,10 @@ internal sealed partial class CapsuleerHauler
             && CapsuleerWorkHulls.Find(world, catalog, Pilot, CapsuleerProfession.Mining, now) is { } miner
         )
         {
+            long huntRetryAt =
+                earnedPvp && canHunt && HasPvpShip ? checked(Work.ActiveTicks + CapsuleerWorkRules.EarnedHuntRetry.Ticks) : 0;
             CapsuleerWorkHulls.Board(world, catalog, Pilot, miner, now);
-            CapsuleerWorkHandoff.ToMining(_operation, world, Pilot, miner, Work.ActiveTicks);
+            CapsuleerWorkHandoff.ToMining(_operation, world, Pilot, miner, Work.ActiveTicks, huntRetryAt);
             _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
             _operation.TravelChanged = true;
             return true;
