@@ -1,14 +1,20 @@
 using System.Globalization;
 using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Serialization;
 using Eden.Server;
+using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -124,6 +130,97 @@ public sealed class MissionDeadlineTests
                     return true;
                 });
         }
+    }
+
+    [Fact]
+    public void StaleActionCannotExpireAReplacementMission()
+    {
+        using var f = Create(2912, 1);
+        const long pilot = MissionFixture.PilotId;
+        var previous = f.Request();
+        long agent = previous.Agent.Id;
+        f.Missions.Act(pilot, agent, MissionAction.Decline, previous.Id);
+        var replacement = f.Accept(f.Request());
+        f.Clock.UtcNow = DateTimeOffset.FromFileTime(replacement.ExpiresAt);
+
+        Assert.Throws<InvalidDataException>(() => f.Missions.Act(pilot, agent, MissionAction.Accept, previous.Id));
+        LiveWorld
+            .Find(f.Db.Path)!
+            .Economy.Inspect(world =>
+            {
+                var row = world.Set<SavedMission>().Find(replacement.Id)!;
+                Assert.Equal(MissionState.Accepted, row.State);
+                Assert.Null(row.ClosedAt);
+                Assert.Empty(world.Set<SavedStandingTransaction>());
+                return true;
+            });
+
+        var expired = f.Missions.Act(pilot, agent, MissionAction.Complete, replacement.Id);
+        Assert.Equal("failed", expired.Event);
+        Assert.Equal(replacement.Id, expired.Offer!.Id);
+        Assert.Equal(MissionState.Failed, expired.Offer.State);
+        Assert.Equal(2, expired.Standings.Count);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExpiredMissionNpcCannotTakeDamageOrPayBountyBeforeSiteRefresh(bool legacy)
+    {
+        const long pilotId = MissionFixture.PilotId;
+        using MissionFixture fixture = new(division: MissionRules.SecurityDivision, live: true);
+        var mission = fixture.Accept(fixture.Request());
+        fixture.Missions.Arrive(mission.SystemId, mission.Position);
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        long npcId;
+        using (var action = live.Economy.Begin(new(pilots: [pilotId], systems: [mission.SystemId])))
+        {
+            var npc = action
+                .Filter<WorldNpc>(n => n.AnchorKind == NpcAnchorKind.Mission && n.EncounterId == MissionRules.FirstSiteId + mission.Id)
+                .OrderBy(n => n.Id)
+                .First();
+            npcId = npc.Id;
+            Assert.Equal(mission.ExpiresAt, npc.ExpiresAt);
+            if (legacy)
+            {
+                npc.ExpiresAt = null;
+            }
+            action.Commit();
+        }
+
+        var combat = LiveCombatRuntime.Find(fixture.Db.Path)!;
+        fixture.Clock.UtcNow = DateTimeOffset.FromFileTime(mission.ExpiresAt - 1);
+        Assert.Equal(mission.ExpiresAt, combat.RattingNpc(npcId, fixture.Clock.Now)!.AvailableUntil);
+        fixture.Clock.UtcNow = DateTimeOffset.FromFileTime(mission.ExpiresAt);
+        Assert.Null(combat.RattingNpc(npcId, fixture.Clock.Now));
+
+        using (var action = live.Economy.Begin(new(pilots: [pilotId], systems: [mission.SystemId])))
+        {
+            var npc = action.Set<WorldNpc>().Find(npcId)!;
+            using CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+            var pilot = action.Pilots.Find(pilotId)!;
+            var hull = new NpcProfileCatalog().Read(catalog, npc.TypeId);
+            var result = NpcDamagePersistence.Apply(
+                action,
+                catalog,
+                npc,
+                pilot,
+                pilot.ActiveShipId,
+                hull.Attributes,
+                new(1_000_000, 1_000_000, 1_000_000, 1_000_000),
+                fixture.Clock.Now,
+                paidProjectile: true
+            );
+            Assert.Equal(0, result.Applied);
+            Assert.False(result.Destroyed);
+            Assert.Null(result.Reward);
+            Assert.Null(npc.DestroyedAt);
+            Assert.DoesNotContain(action.Set<WorldWreck>(), wreck => wreck.NpcId == npc.Id);
+            action.Commit();
+        }
+
+        Assert.Empty(fixture.Missions.Sites(mission.SystemId));
+        Assert.Equal(MissionState.Failed, fixture.Missions.Current(pilotId, mission.Agent.Id)!.State);
     }
 
     [Theory]

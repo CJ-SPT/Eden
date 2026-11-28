@@ -287,6 +287,40 @@ public sealed class MissionGateTests
     }
 
     [Theory]
+    [InlineData(1084, 2, true)]
+    [InlineData(2926, 1, false)]
+    public void UngatedMissionAllowsDirectWarpInAndAppliesItsInternalWarpPolicy(int missionId, int level, bool deadspace)
+    {
+        using MissionFixture f = new(
+            level,
+            MissionRules.SecurityDivision,
+            live: true,
+            configure: catalog =>
+                catalog.Database.ExecuteSql($"DELETE FROM SourceRecord WHERE Dataset='client/missions' AND Key!={missionId}")
+        );
+        Standing(f);
+        var mission = f.Accept(f.Request());
+        Assert.Equal(missionId, mission.MissionId);
+        var room = Assert.Single(f.Missions.Sites(mission.SystemId));
+        Assert.Empty(room.Gates);
+        Assert.Equal(deadspace, room.Deadspace);
+        var offset = new SpacePosition(200_000, 0, 0);
+        var origin = room.Position - offset;
+        var destination = room.Position + offset;
+        var outside = room.Position + new SpacePosition(1_000_000, 0, 0);
+        Assert.Equal(destination, f.Missions.WarpDestination(mission.SystemId, outside, destination));
+        Assert.Equal(outside, f.Missions.WarpDestination(mission.SystemId, origin, outside));
+        if (deadspace)
+        {
+            Assert.Throws<InvalidDataException>(() => f.Missions.WarpDestination(mission.SystemId, origin, destination));
+        }
+        else
+        {
+            Assert.Equal(destination, f.Missions.WarpDestination(mission.SystemId, origin, destination));
+        }
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void FlightOwnerRedirectsInnerWarpIncludingStandoffAcrossThePocketBoundary(bool boundary)

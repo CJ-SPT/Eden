@@ -18,17 +18,34 @@ namespace Eden.World.Agents;
 
 internal sealed partial class PilotMissionStore
 {
-    internal static bool RequiresHealthWaveSettlement(WorldAction world, CatalogDbContext catalog, WorldNpc npc)
+    internal static long MissionNpcDeadline(WorldAction world, WorldNpc npc) =>
+        world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId)
+            is { State: MissionState.Accepted, ClosedAt: null } mission
+            ? mission.ExpiresAt
+            : 0;
+
+    internal static bool RequiresMissionDamageSettlement(WorldAction world, CatalogDbContext catalog, WorldNpc npc)
     {
         if (
             npc.AnchorKind != NpcAnchorKind.Mission
-            || npc.Role == NpcRole.MissionStructure
             || world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId) is not { State: MissionState.Accepted } mission
         )
         {
             return false;
         }
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        if (npc.Role == NpcRole.MissionStructure)
+        {
+            return !mission.ObjectiveComplete
+                && world.Set<SavedMissionStructure>().Find(npc.Id) is { DestroyedAt: null } structure
+                && profile
+                    .Definition.Waves.Select((wave, index) => (wave, index))
+                    .Any(entry =>
+                        entry.wave.Trigger == MissionWaveTrigger.StructureDamaged
+                        && entry.wave.TriggerObjectId == structure.ObjectId
+                        && !WaveStarted(world, mission, profile, entry.index)
+                    );
+        }
         return profile.HealthWaves.Contains(npc.TypeId)
             && world.Set<SavedMissionMember>().Find(npc.Id) is { } member
             && profile
@@ -322,6 +339,7 @@ internal sealed partial class PilotMissionStore
                     ArmorDamage = repairTarget ? npcProfile.Defense.Armor * 0.5 : 0,
                     UpdatedAt = now,
                     MotionAt = now,
+                    ExpiresAt = mission.ExpiresAt,
                     AcquisitionRange = group.CareerPassive ? 0 : placements[slot].AcquisitionRange,
                 }
             );

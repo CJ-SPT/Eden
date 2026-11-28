@@ -14,6 +14,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -250,6 +251,7 @@ internal sealed partial class PilotMissileStore(
                     && Enumerable.Contains(aggressors, n.Id)
                 )
                 .AsEnumerable()
+                .Where(n => n.AnchorKind != NpcAnchorKind.Mission || PilotMissionStore.MissionNpcDeadline(world, n) > now)
                 .Select(n => new MissileAggressor(n.Id, NpcMotion.Position(n)))
                 .ToArray();
             var pilotAggressors = world
@@ -281,6 +283,7 @@ internal sealed partial class PilotMissileStore(
                 || npc.RetiredAt.HasValue
                 || npc.SystemId != systemId
                 || npc.Navigation == NpcNavigationState.Warping
+                || npc.AnchorKind == NpcAnchorKind.Mission && PilotMissionStore.MissionNpcDeadline(world, npc) <= now
             )
             {
                 throw new InvalidDataException("The NPC is unavailable.");

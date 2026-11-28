@@ -54,6 +54,7 @@ internal sealed partial class PilotMissionStore
                 ShieldCharge = hull.Defense.Shield,
                 UpdatedAt = now,
                 MotionAt = now,
+                ExpiresAt = mission.ExpiresAt,
             };
             world.Add(npc);
             pending.Add(new(npc, definition));

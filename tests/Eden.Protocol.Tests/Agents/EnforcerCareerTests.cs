@@ -7,6 +7,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Server;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,6 +88,60 @@ public sealed class EnforcerCareerTests
     }
 
     [Fact]
+    public void NonfatalTurretDamageSpawnsTheEnforcerWarehouseReinforcementOnce()
+    {
+        using var fixture = Create(
+            previous: 3134,
+            configure: catalog =>
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(14,'hiSlots'),(48,'cpuOutput'),
+                        (11,'powerOutput'),(76,'maxTargetRange');
+                    INSERT OR REPLACE INTO TypeAttribute VALUES (601,14,2),(601,48,125),(601,11,23),(601,76,50000),
+                        (3638,6,0),(3638,51,1000),(3638,54,10000),(3638,64,1),(3638,117,20),
+                        (3638,158,3000),(3638,160,500),(3638,620,40);
+                    """
+                )
+        );
+        fixture.Dock(MissionFixture.StationId);
+        var gun = Assert.Single(
+            fixture.Services.GetRequiredService<IPilotInventory>().List(Pilot, MissionFixture.StationId),
+            item => item.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun
+        );
+        var fitting = fixture.Services.GetRequiredService<IPilotFitting>();
+        fitting.Fit(Pilot, [gun.Id], MissionFixture.StationId, (int)InventoryFlag.AutoFit);
+        fitting.SetOnline(Pilot, fixture.Context.Pilot.ShipId, gun.Id, true);
+        fixture.Dock(EnforcerStation);
+
+        var offer = fixture.Accept(fixture.Request(Enforcer));
+        Assert.Equal(3139, offer.MissionId);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        var warehouse = live.Economy.Inspect(world =>
+            Assert.Single(world.Filter<SavedMissionStructure>(structure => structure.MissionId == offer.Id)).NpcId
+        );
+        var encounters = fixture.Services.GetRequiredService<INpcEncounters>();
+        var target = Assert.Single(encounters.List(offer.SystemId, fixture.Clock.Now), contact => contact.Id == warehouse);
+        Move(fixture, offer.SystemId, target.Position + new SpacePosition(target.Radius + 1000, 0, 0));
+        var combat = fixture.Services.GetRequiredService<IPilotCombat>();
+        Assert.Empty(Wave(fixture, offer.Id, 3));
+
+        CheckHit();
+        long[] reinforcement = Wave(fixture, offer.Id, 3);
+        Assert.Equal(4, reinforcement.Length);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(2));
+        CheckHit();
+        Assert.Equal(reinforcement, Wave(fixture, offer.Id, 3));
+        Assert.False(fixture.Missions.Current(Pilot, Enforcer)!.ObjectiveComplete);
+
+        void CheckHit()
+        {
+            var hit = combat.Fire(Pilot, gun.Id, target.Id, SpacePosition.Zero, fixture.Clock.Now, 0.05, WeaponActivation.Laser);
+            Assert.True(hit.Applied > 0);
+            Assert.False(hit.Destroyed);
+        }
+    }
+
+    [Fact]
     public void EnforcerTowerDestructionReleasesTheRequiredPirateCapsule()
     {
         using var fixture = Create(previous: 13868);
@@ -120,11 +175,15 @@ public sealed class EnforcerCareerTests
         Assert.True(fixture.Missions.Current(Pilot, Enforcer)!.ObjectiveComplete);
     }
 
-    private static MissionFixture Create(int previous)
+    private static MissionFixture Create(int previous, Action<CatalogDbContext>? configure = null)
     {
         MissionFixture fixture = new(
             live: true,
-            configure: catalog => PassiveCatalogFixture.LoadCareerMissions(catalog.Database.GetDbConnection().DataSource)
+            configure: catalog =>
+            {
+                PassiveCatalogFixture.LoadCareerMissions(catalog.Database.GetDbConnection().DataSource);
+                configure?.Invoke(catalog);
+            }
         );
         using var world = LiveWorld.Find(fixture.Db.Path)!.Economy.Begin(new(pilots: [Pilot]));
         world.Pilots.Find(Pilot)!.ActiveShip.StationId = EnforcerStation;

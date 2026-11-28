@@ -358,6 +358,7 @@ internal sealed partial class PilotMissionStore(
                     .Concat(structures)
                     .Select(id => npcs.Find(id))
                     .OfType<WorldNpc>()
+                    .Where(npc => npc is { DestroyedAt: null, RetiredAt: null })
                     .Select(npc => new MissionTrackingTargetRow(
                         mission,
                         npc.TypeId,
@@ -534,21 +535,22 @@ internal sealed partial class PilotMissionStore(
         }
         var researchProject = agent.Type == AgentType.Research ? RequireResearchMissionProject(world, pilot, agent) : null;
         var row = world.Set<SavedMission>().SingleOrDefault(m => m.PilotId == pilotId && m.AgentId == agentId && m.ClosedAt == null);
+        if (offerId.HasValue && (row is null || row.Id != offerId))
+        {
+            throw new InvalidDataException("This mission action is stale. Reopen the agent conversation.");
+        }
         List<MissionStandingChange> standings = [];
         if (row is not null && Expire(world, catalog, row, now, standings))
         {
             world.SaveChanges();
             return new(Snapshot(world, catalog, pilot, row), "failed", [], standings);
         }
-        if (offerId.HasValue && (row is null || row.Id != offerId))
-        {
-            throw new InvalidDataException("This mission action is stale. Reopen the agent conversation.");
-        }
         List<InventoryChange> changes = [];
         string eventName = "";
         MissionPayment? payment = null;
         double? researchPoints = null;
         SavedMission? continuation = null;
+        long? storylineAgentId = null;
         IReadOnlyList<long> retiredAgentIds = [];
         switch (action)
         {
@@ -719,7 +721,7 @@ internal sealed partial class PilotMissionStore(
                     && agent.Type is not (AgentType.FactionalWarfare or AgentType.Heraldry or AgentType.Career or AgentType.EpicArc)
                 )
                 {
-                    Progress(world, catalog, pilot, agent, row.Level, now);
+                    storylineAgentId = Progress(world, catalog, pilot, agent, row.Level, now);
                 }
                 continuation = mission.Definition.EpicArcId is int arc
                     ? ContinueEpicArc(world, catalog, pilot, row, arc, epicChoice, now)
@@ -754,6 +756,7 @@ internal sealed partial class PilotMissionStore(
         return new(snapshot, eventName, changes, standings, payment?.BalanceCents, payment?.PointsBefore ?? 0, payment?.PointsAfter ?? 0)
         {
             Continuation = continuation is null ? null : Snapshot(world, catalog, pilot, continuation),
+            StorylineAgentId = storylineAgentId,
             RetiredAgentIds = retiredAgentIds,
             CorporationPointsAfter = payment?.CorporationPointsAfter,
         };
@@ -811,6 +814,7 @@ internal sealed partial class PilotMissionStore(
         var handoff = profile.Kind == MissionKind.AgentHandoff ? EpicArcHandoff(catalog, profile, agent) : null;
         int? pickupStation = profile.Definition.PickupStationId ?? agent.StationId;
         bool toSpaceAgent = profile.Definition.DeliverToAgent && agent.Space is not null;
+        var deliveryStation = profile.Kind == MissionKind.Courier && !toSpaceAgent ? catalog.RequireStation(row.DestinationStation) : null;
         MissionCargo? cargo =
             profile.Kind == MissionKind.Courier
                 ? new(
@@ -822,7 +826,7 @@ internal sealed partial class PilotMissionStore(
                 )
                 {
                     PickupTypeId = catalog.RequireStation(pickupStation.Value).TypeId,
-                    DestinationTypeId = toSpaceAgent ? agent.Space!.TypeId : catalog.RequireStation(row.DestinationStation).TypeId,
+                    DestinationTypeId = deliveryStation?.TypeId ?? agent.Space!.TypeId,
                     PickupSystemId = catalog.RequireStation(pickupStation.Value).SolarSystemId,
                 }
                 : null;
@@ -849,8 +853,8 @@ internal sealed partial class PilotMissionStore(
             new(row.IskCents, row.LoyaltyPoints, row.CorporationFraction, row.FactionFraction),
             row.Storyline,
             profile.DungeonId,
-            row.SystemId,
-            new(row.X, row.Y, row.Z),
+            deliveryStation?.SolarSystemId ?? row.SystemId,
+            deliveryStation is null ? new(row.X, row.Y, row.Z) : new(deliveryStation.X, deliveryStation.Y, deliveryStation.Z),
             complete,
             cargo
         )

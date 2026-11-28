@@ -499,6 +499,58 @@ public sealed class MissionProtocolTests
         Assert.IsType<PilotCallResult.Success>(f.Call(service, "WarpToLocation", ["dungeon", 0L, 0d, false, null, null]));
     }
 
+    [Fact]
+    public void CourierJournalProvidesPickupAndDropoffBookmarksAndWarpsOnlyToTheLocalStop()
+    {
+        using MissionFixture f = new(live: true);
+        var offer = f.Request();
+        var cargo = offer.Cargo!;
+        string service = $"@agent:{offer.Agent.Id}";
+        Move(cargo.PickupSystemId);
+        Assert.IsType<PilotCallResult.Failure>(Warp("objective.source"));
+        f.Dock(cargo.PickupStation);
+        f.Accept(offer);
+
+        var journal = Assert.IsType<object?[]>(MissionFixture.Reply(f.Call("agentMgr", "GetMyJournalDetails", [])));
+        var row = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(journal[0])));
+        var bookmarks = Assert.IsType<List<object?>>(row[6]);
+        Assert.Collection(
+            bookmarks,
+            source => AssertStop(source, "objective.source", cargo.PickupStation, cargo.PickupSystemId, cargo.PickupTypeId),
+            destination =>
+                AssertStop(destination, "objective.destination", cargo.DestinationStation, offer.SystemId, cargo.DestinationTypeId)
+        );
+        Move(cargo.PickupSystemId);
+        Assert.NotEqual(offer.SystemId, cargo.PickupSystemId);
+        Assert.IsType<PilotCallResult.Failure>(Warp("objective.destination"));
+        Assert.IsType<PilotCallResult.Success>(Warp("objective.source"));
+        Move(offer.SystemId);
+        Assert.IsType<PilotCallResult.Failure>(Warp("objective.source"));
+        Assert.IsType<PilotCallResult.Success>(Warp("objective.destination"));
+
+        PilotCallResult Warp(string type) => f.Call(service, "WarpToLocation", [type, 0L, 0d, false, null, null]);
+
+        void Move(int system)
+        {
+            f.Db.Store.SetPosition(f.Context.Pilot.ShipId, new SpacePosition(1e10, 0, 0), system);
+            var pilot = f.Db.Store.FindPilot(1000001)!;
+            f.Context.Flight.Relocate(pilot, f.Services.GetRequiredService<ISystemObjects>().Load(system));
+            f.Context.Flight.Snapshot();
+        }
+
+        void AssertStop(object? value, string location, int itemId, int system, int typeId)
+        {
+            var bookmark = BlueRead.Fields(Assert.IsType<BlueInstance>(value).State);
+            Assert.Equal(offer.Agent.Id, bookmark["agentID"]);
+            Assert.Equal(location, BlueMarshal.Text(bookmark["locationType"]));
+            Assert.Equal(0L, bookmark["locationNumber"]);
+            Assert.Equal((long)itemId, bookmark["itemID"]);
+            Assert.Equal((long)system, bookmark["locationID"]);
+            Assert.Equal((long)system, bookmark["solarsystemID"]);
+            Assert.Equal((long)typeId, bookmark["typeID"]);
+        }
+    }
+
     private static (object? Message, List<object?> Actions, Dictionary<string, object?> Last) Conversation(PilotCallResult result)
     {
         var reply = Assert.IsType<object?[]>(MissionFixture.Reply(result));

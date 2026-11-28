@@ -157,14 +157,15 @@ internal sealed partial class PilotMissionStore
             destination =
                 destinations.FirstOrDefault()
                 ?? catalog.StationsInSystem(station.SolarSystemId).FirstOrDefault(s => s.Id != station.Id)
-                ?? (research ? ResearchCourierDestination(catalog, station, agent.CorporationId) : null)
+                ?? NearestCourierDestination(catalog, station, agent.CorporationId)
                 ?? throw new InvalidDataException("This agent has no supported courier destination.");
         }
         long serial = world.Next("WorldMission");
-        int systemId = warzoneDestination ?? profile.Definition.SiteSystemId ?? agent.Space?.SystemId ?? destination!.SolarSystemId;
+        var space = profile.Kind == MissionKind.Courier && destination is not null ? null : agent.Space;
+        int systemId = warzoneDestination ?? profile.Definition.SiteSystemId ?? space?.SystemId ?? destination!.SolarSystemId;
         var position = profile.DungeonId.HasValue
             ? MissionPlacementRules.Place(PlacementAnchor(catalog, systemId), serial)
-            : agent.Space?.Position ?? new SpacePosition(destination!.X, destination.Y, destination.Z);
+            : space?.Position ?? new SpacePosition(destination!.X, destination.Y, destination.Z);
         var row = new SavedMission
         {
             PilotId = pilot.Id,
@@ -198,6 +199,18 @@ internal sealed partial class PilotMissionStore
         }
         world.Add(row);
         return row;
+    }
+
+    private static CatalogStationDefinition? NearestCourierDestination(CatalogDbContext catalog, CatalogStationDefinition origin, int owner)
+    {
+        var distances = Distances(catalog, origin.SolarSystemId);
+        return catalog
+            .Stations()
+            .Where(station => station.Id != origin.Id && distances.ContainsKey(station.SolarSystemId))
+            .OrderBy(station => distances[station.SolarSystemId])
+            .ThenByDescending(station => station.OwnerId == owner)
+            .ThenBy(station => station.Id)
+            .FirstOrDefault();
     }
 
     private static SpacePosition PlacementAnchor(CatalogDbContext catalog, int systemId)
@@ -424,11 +437,11 @@ internal sealed partial class PilotMissionStore
         return new(wallet.Cents, before, world.Set<SavedLoyaltyBalance>().Find(pilotId, issuer)?.Points ?? 0);
     }
 
-    private void Progress(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent, int level, long now)
+    private long? Progress(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent, int level, long now)
     {
         if (agent.FactionId is not int faction || level > 4)
         {
-            return;
+            return null;
         }
         var progress =
             world.Filter<SavedMissionProgress>(p => p.PilotId == pilot.Id && p.FactionId == faction && p.Level == level).SingleOrDefault()
@@ -445,7 +458,7 @@ internal sealed partial class PilotMissionStore
         progress.Completed++;
         if (progress.Completed < MissionRules.StorylineInterval)
         {
-            return;
+            return null;
         }
         // Native storyline agents are level one. The offer inherits the regular mission level.
         var active = world.Filter<SavedMission>(m => m.PilotId == pilot.Id && m.ClosedAt == null).ToArray();
@@ -476,10 +489,11 @@ internal sealed partial class PilotMissionStore
             .FirstOrDefault();
         if (next is null)
         {
-            return;
+            return null;
         }
         _ = Offer(world, catalog, pilot, next, level, true, now);
         progress.Completed -= MissionRules.StorylineInterval;
+        return next.Id;
     }
 
     private static Dictionary<int, int> Distances(CatalogDbContext catalog, int system)

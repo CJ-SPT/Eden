@@ -1,4 +1,5 @@
 using Eden.Data.World.Agents;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
@@ -118,6 +119,72 @@ public sealed class MissionTrackerTests
         Assert.Equal(inside, MissionTrackingRules.Read(entry, accepted.SystemId, null, position).InDungeon);
         Assert.False(MissionTrackingRules.Read(entry, accepted.SystemId + 1, null, position).InDungeon);
         Assert.False(MissionTrackingRules.Read(entry, accepted.SystemId, MissionFixture.StationId, null).InDungeon);
+    }
+
+    [Fact]
+    public void SpaceCourierCompletesTrackerAtTheAgentsInteractionBoundary()
+    {
+        using MissionFixture f = new(live: true);
+        var accepted = f.Accept(f.Request());
+        var agentLocation = new AgentSpaceLocation(accepted.SystemId, 596, new(100, 200, 300), 30);
+        var entry = new MissionTrackingEntry(
+            accepted with
+            {
+                Agent = accepted.Agent with { StationId = null, Space = agentLocation },
+                Cargo = accepted.Cargo! with { DestinationStation = checked((int)accepted.Agent.Id) },
+                ObjectiveComplete = true,
+            },
+            []
+        );
+        var boundary = agentLocation.Position + new SpacePosition(agentLocation.Radius + FixedAgentRules.InteractionRange, 0, 0);
+        var outside = MissionTrackingRules.Read(entry, accepted.SystemId, null, boundary + new SpacePosition(0.01, 0, 0));
+        Assert.Equal(MissionObjectiveKind.TransportPresent, outside.Current.Kind);
+        Assert.Equal(accepted.SystemId, outside.Current.LocationId);
+        Assert.Equal(
+            MissionObjectiveKind.TransportPresent,
+            MissionTrackingRules.Read(entry, accepted.SystemId + 1, null, boundary).Current.Kind
+        );
+        Assert.Equal(MissionObjectiveKind.Complete, MissionTrackingRules.Read(entry, accepted.SystemId, null, boundary).Current.Kind);
+        var missing = entry with { Offer = entry.Offer with { ObjectiveComplete = false } };
+        Assert.Equal(
+            MissionObjectiveKind.TransportMissing,
+            MissionTrackingRules.Read(missing, accepted.SystemId, null, boundary).Current.Kind
+        );
+    }
+
+    [Fact]
+    public void TrackedTargetRetirementRefreshesTheWarmViewOnlyAfterCommit()
+    {
+        using MissionFixture f = new(division: MissionRules.SecurityDivision, live: true);
+        var accepted = f.Accept(f.Request());
+        f.Missions.Arrive(accepted.SystemId, accepted.Position);
+        var live = f.Services.GetRequiredService<LiveWorld>();
+        long id;
+        using (var action = live.Economy.Begin(new(pilots: [MissionFixture.PilotId])))
+        {
+            var member = action.Set<SavedMissionMember>().First(value => value.MissionId == accepted.Id);
+            member.CompletesMission = true;
+            id = member.NpcId;
+            action.Commit();
+        }
+        var warm = f.Missions.Tracking(MissionFixture.PilotId);
+        Assert.Equal(id, Assert.Single(Assert.Single(warm).Targets).ItemId);
+        Retire(commit: false);
+        Assert.Same(warm, f.Missions.Tracking(MissionFixture.PilotId));
+        Retire(commit: true);
+        var refreshed = Assert.Single(f.Missions.Tracking(MissionFixture.PilotId));
+        Assert.False(refreshed.Offer.ObjectiveComplete);
+        Assert.Empty(refreshed.Targets);
+
+        void Retire(bool commit)
+        {
+            using var action = live.Economy.Begin();
+            action.Set<WorldNpc>().Find(id)!.RetiredAt = f.Clock.Now;
+            if (commit)
+            {
+                action.Commit();
+            }
+        }
     }
 
     [Fact]

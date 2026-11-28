@@ -11,7 +11,8 @@ internal sealed partial class LiveReadModels
         "WorldItem",
         "WorldPilot",
         "WorldMissionMember",
-        "WorldMissionStructure"
+        "WorldMissionStructure",
+        "WorldMissionTargetUnavailable"
     );
 
     internal MissionTrackingView MissionTracking(long pilot, long now, Func<MissionTrackingView> load) =>
@@ -28,6 +29,7 @@ internal sealed partial class LiveReadModels
                     "WorldPilot" => pilot == change.Id,
                     "WorldItem" => view.Entries.Any(entry => entry.Offer.Cargo is not null || entry.Offer.Retrieval is not null),
                     "WorldMissionMember" or "WorldMissionStructure" => view.Entries.Count != 0,
+                    "WorldMissionTargetUnavailable" => view.Entries.Any(entry => entry.Targets.Any(target => target.ItemId == change.Id)),
                     _ => true,
                 }
         );

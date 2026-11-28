@@ -10,6 +10,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -139,7 +140,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             .ThenBy(m => m.Id)
             .ToArray();
         List<NpcShot> shots = [];
-        Dictionary<long, long>? incursionDeadlines = null;
+        Dictionary<long, long>? sourceDeadlines = null;
         foreach (var row in rows)
         {
             var npc = world.Set<WorldNpc>().Find(row.SourceShipId);
@@ -165,11 +166,15 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             }
             else if (npc.ExpiresAt is long deadline)
             {
-                (incursionDeadlines ??= []).Add(row.Id, deadline);
+                (sourceDeadlines ??= []).Add(row.Id, deadline);
             }
             else if (npc.AnchorKind == NpcAnchorKind.Incursion)
             {
-                (incursionDeadlines ??= []).Add(row.Id, CombatAnomalyStore.IncursionNpcDeadline(world, npc));
+                (sourceDeadlines ??= []).Add(row.Id, CombatAnomalyStore.IncursionNpcDeadline(world, npc));
+            }
+            else if (npc.AnchorKind == NpcAnchorKind.Mission)
+            {
+                (sourceDeadlines ??= []).Add(row.Id, PilotMissionStore.MissionNpcDeadline(world, npc));
             }
         }
         MissilePayload AdvanceFlight(WorldMissile row)
@@ -187,7 +192,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 row.EndedAt = time;
                 continue;
             }
-            if (incursionDeadlines?.TryGetValue(row.Id, out long deadline) == true && time >= deadline)
+            if (sourceDeadlines?.TryGetValue(row.Id, out long deadline) == true && time >= deadline)
             {
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = Math.Max(row.UpdatedAt, deadline);
@@ -240,15 +245,11 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 world.SaveChanges();
             }
         }
-        if (incursionDeadlines is not null)
+        if (sourceDeadlines is not null)
         {
             foreach (var row in rows)
             {
-                if (
-                    row.Status == MissileFlightStatus.Flying
-                    && incursionDeadlines.TryGetValue(row.Id, out long deadline)
-                    && now >= deadline
-                )
+                if (row.Status == MissileFlightStatus.Flying && sourceDeadlines.TryGetValue(row.Id, out long deadline) && now >= deadline)
                 {
                     row.Status = MissileFlightStatus.Expired;
                     row.EndedAt = Math.Max(row.UpdatedAt, deadline);

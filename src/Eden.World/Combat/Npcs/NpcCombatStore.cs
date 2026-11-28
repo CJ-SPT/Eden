@@ -11,6 +11,7 @@ using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -275,6 +276,7 @@ internal sealed partial class NpcCombatStore(
         if (
             npc?.Navigation == NpcNavigationState.Warping
             || npc?.ExpiresAt <= now
+            || npc is { AnchorKind: NpcAnchorKind.Mission } && PilotMissionStore.MissionNpcDeadline(world, npc) <= now
             || npc is { AnchorKind: NpcAnchorKind.Incursion } && !CombatAnomalyStore.IncursionNpcActive(world, npc, now)
         )
         {

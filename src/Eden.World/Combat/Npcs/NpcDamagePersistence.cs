@@ -10,12 +10,14 @@ using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Ships;
+using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 
@@ -46,6 +48,10 @@ internal static partial class NpcDamagePersistence
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
             throw new InvalidDataException("The NPC is no longer available.");
+        }
+        if (npc.AnchorKind == NpcAnchorKind.Mission && PilotMissionStore.MissionNpcDeadline(new SqlWorldAction(world), npc) <= now)
+        {
+            return UnavailableDamage(npc, attributes);
         }
         if (npc.AnchorKind == NpcAnchorKind.Incursion || NpcPopulationRules.IsIncursionPatrol(npc.AnchorKind))
         {
@@ -179,6 +185,17 @@ internal static partial class NpcDamagePersistence
             }
         }
         return new(new(npc.Id, defense, result.Remaining), result.Applied, result.Remaining.Destroyed, reward);
+    }
+
+    private static CombatDamageSettlement UnavailableDamage(WorldNpc npc, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        var defense = ShipHealth.DefenseFrom(attributes);
+        HullDamage health = new(
+            npc.ShieldCharge,
+            Math.Max(0, defense.Armor - npc.ArmorDamage),
+            Math.Max(0, defense.Structure - npc.StructureDamage)
+        );
+        return new(new(npc.Id, defense, health), 0, false, null);
     }
 
     internal static CombatReward Read(NpcBounty bounty) =>

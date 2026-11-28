@@ -51,15 +51,13 @@ internal static partial class NpcDamagePersistence
             throw new InvalidDataException("The NPC is no longer available.");
         }
         bool incursionSite = npc.AnchorKind == NpcAnchorKind.Incursion;
-        if (npc.ExpiresAt <= now || incursionSite && !CombatAnomalyStore.IncursionNpcActive(world, npc, now))
+        if (
+            npc.ExpiresAt <= now
+            || npc.AnchorKind == NpcAnchorKind.Mission && PilotMissionStore.MissionNpcDeadline(world, npc) <= now
+            || incursionSite && !CombatAnomalyStore.IncursionNpcActive(world, npc, now)
+        )
         {
-            var savedDefense = ShipHealth.DefenseFrom(attributes);
-            HullDamage savedHealth = new(
-                npc.ShieldCharge,
-                Math.Max(0, savedDefense.Armor - npc.ArmorDamage),
-                Math.Max(0, savedDefense.Structure - npc.StructureDamage)
-            );
-            return new(new(npc.Id, savedDefense, savedHealth), 0, false, null);
+            return UnavailableDamage(npc, attributes);
         }
         if (npc.Role == NpcRole.MilitiaHub)
         {

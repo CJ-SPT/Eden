@@ -537,6 +537,13 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                     new(table.Name, key.Id, Resident: true, System: changedSystem, KeepNpcPopulationDeadline: keepPopulationDeadline)
                 );
                 changes.AddRange(transaction.FitChanges(beforeRow, afterRow));
+                if (
+                    beforeRow is WorldNpc { AnchorKind: NpcAnchorKind.Mission, DestroyedAt: null, RetiredAt: null }
+                    && afterRow is not WorldNpc { DestroyedAt: null, RetiredAt: null }
+                )
+                {
+                    changes.Add(new("WorldMissionTargetUnavailable", key.Id, Resident: true));
+                }
                 if (typeof(TRow) == typeof(Eden.Data.World.Mining.WorldAsteroid))
                 {
                     var before = beforeRow as Eden.Data.World.Mining.WorldAsteroid;

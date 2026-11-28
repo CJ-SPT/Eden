@@ -409,6 +409,33 @@ internal sealed record MissionBookmark(MissionOffer Offer) : BlueModel
         );
 }
 
+internal sealed record CourierBookmark(MissionOffer Offer, MissionCargo Cargo, bool Pickup) : BlueModel
+{
+    public override object ToBlue()
+    {
+        int systemId = Pickup ? Cargo.PickupSystemId : Offer.SystemId;
+        var position = !Pickup && Cargo.DestinationStation == Offer.Agent.Id ? Offer.Agent.Space?.Position : null;
+        return new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["agentID"] = Offer.Agent.Id,
+                ["locationID"] = systemId,
+                ["itemID"] = Pickup ? Cargo.PickupStation : Cargo.DestinationStation,
+                ["typeID"] = Pickup ? Cargo.PickupTypeId : Cargo.DestinationTypeId,
+                ["locationType"] = Pickup ? "objective.source" : "objective.destination",
+                ["locationNumber"] = 0,
+                ["solarsystemID"] = systemId,
+                ["hint"] = Pickup ? "UI/Agents/Bookmarks/Objective/Pickup" : "UI/Agents/Bookmarks/Objective/DropOffAgentBase",
+                ["memo"] = Offer.Name,
+                ["x"] = position?.X ?? 0,
+                ["y"] = position?.Y ?? 0,
+                ["z"] = position?.Z ?? 0,
+            }
+        );
+    }
+}
+
 internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadOnlyList<ResearchProject>? Research = null) : BlueModel
 {
     public override object ToBlue() =>
@@ -454,6 +481,10 @@ internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadO
         {
             // The legacy objective uses "objective"; the Opportunities card uses "objective.destination".
             return [new EpicArcHandoffBookmark(offer, "objective"), new EpicArcHandoffBookmark(offer, "objective.destination")];
+        }
+        if (offer is { State: MissionState.Accepted, Cargo: { } cargo })
+        {
+            return [new CourierBookmark(offer, cargo, true), new CourierBookmark(offer, cargo, false)];
         }
         return offer.DungeonId.HasValue && !offer.RequiresScanner ? [new MissionBookmark(offer)] : [];
     }

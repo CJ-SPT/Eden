@@ -96,7 +96,7 @@ public sealed partial class MissionContentTests
         }
         Assert.False(Current(f).ObjectiveComplete);
         long last = 0;
-        if (!profile.Definition.Structures.IsEmpty)
+        if (profile.Definition.Structures.Any(structure => structure.CompletesMission))
         {
             using (WorldDbContext world = new(f.Db.Path))
             {
@@ -124,9 +124,17 @@ public sealed partial class MissionContentTests
             {
                 required = world
                     .Set<SavedMissionMember>()
-                    .Where(m => m.Required || m.CompletesMission)
+                    .Where(m => m.MissionId == offer.Id && (m.Required || m.CompletesMission))
                     .OrderBy(m => m.NpcId)
                     .Select(m => m.NpcId)
+                    .AsEnumerable()
+                    .Concat(
+                        world
+                            .Set<SavedMissionStructure>()
+                            .Where(s => s.MissionId == offer.Id && s.Required)
+                            .OrderBy(s => s.NpcId)
+                            .Select(s => s.NpcId)
+                    )
                     .ToArray();
             }
             Assert.NotEmpty(required);

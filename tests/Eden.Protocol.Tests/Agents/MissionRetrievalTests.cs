@@ -47,7 +47,7 @@ public sealed class MissionRetrievalTests
     [Fact]
     public void ContainerRejectsWrongOwnerShipSystemRangeAndInvalidTransfersWithoutChangingContents()
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision);
+        using var f = CreateStashFixture();
         var mission = Stash(f);
         var container = Container(f, mission);
         var inventory = f.Services.GetRequiredService<IPilotMissionContainers>();
@@ -94,7 +94,7 @@ public sealed class MissionRetrievalTests
     [Fact]
     public void ContainerCapacityAndWarpRejectionsPreserveReportsAndRejectOpeningDuringWarp()
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision);
+        using var f = CreateStashFixture();
         var mission = Stash(f);
         var container = Container(f, mission);
         Clear(f, mission);
@@ -136,7 +136,7 @@ public sealed class MissionRetrievalTests
     [Fact]
     public void FailedRetrievalPayoutRollsBackConsumedReportsAndContainerCleanup()
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision);
+        using var f = CreateStashFixture();
         var mission = Stash(f);
         var container = Container(f, mission);
         Clear(f, mission);
@@ -169,7 +169,7 @@ public sealed class MissionRetrievalTests
     [InlineData(true)]
     public async Task SpyStashRetrievalUsesNativeContainerInventoryPersistsAndConsumesReportsOnce(bool resident)
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision, live: resident);
+        using var f = CreateStashFixture(resident);
         var mission = Stash(f);
         var container = Container(f, mission);
         var inventory = f.Services.GetRequiredService<IPilotMissionContainers>();
@@ -244,7 +244,7 @@ public sealed class MissionRetrievalTests
     [Fact]
     public void RetrievalTurnInRequiresCurrentCargoAndAgentStationAndConsumesOnlyRequiredQuantity()
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision);
+        using var f = CreateStashFixture();
         var mission = Stash(f);
         var container = Container(f, mission);
         Clear(f, mission);
@@ -298,7 +298,7 @@ public sealed class MissionRetrievalTests
     [InlineData(MissionAction.View)]
     public void ClosingOrExpiringRetrievalRemovesUnclaimedContentsAndRejectsStaleBindings(MissionAction action)
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision);
+        using var f = CreateStashFixture();
         var mission = Stash(f);
         var container = Container(f, mission);
         Clear(f, mission);
@@ -321,7 +321,7 @@ public sealed class MissionRetrievalTests
     [Fact]
     public void NativeFetchObjectiveIncludesReportQuantityDropoffAndSeparateGuardProgressWithoutAgentGift()
     {
-        using MissionFixture f = new(3, MissionRules.SecurityDivision);
+        using var f = CreateStashFixture();
         var mission = Stash(f);
         var keywords = BlueRead.Fields(MissionFixture.Reply(new MissionKeywords(mission)));
         Assert.Equal((long)ReportType, keywords["objectiveTypeID"]);
@@ -352,6 +352,15 @@ public sealed class MissionRetrievalTests
         }
     }
 
+    private static MissionFixture CreateStashFixture(bool resident = false) =>
+        new(
+            3,
+            MissionRules.SecurityDivision,
+            live: resident,
+            configure: catalog =>
+                catalog.Database.ExecuteSql($"DELETE FROM SourceRecord WHERE Dataset='client/missions' AND Key!={SpyStash}")
+        );
+
     private static MissionOffer Stash(MissionFixture f)
     {
         using (WorldDbContext world = new(f.Db.Path))
@@ -366,16 +375,9 @@ public sealed class MissionRetrievalTests
             );
             world.SaveChanges();
         }
-        for (int i = 0; i < 4; i++)
-        {
-            var offer = f.Accept(f.Request());
-            if (offer.MissionId == SpyStash)
-            {
-                return offer;
-            }
-            f.Missions.Act(MissionFixture.PilotId, MissionFixture.AgentId, MissionAction.Quit, offer.Id);
-        }
-        throw new InvalidOperationException("The retrieval mission is missing.");
+        var offer = f.Request();
+        Assert.Equal(SpyStash, offer.MissionId);
+        return f.Accept(offer);
     }
 
     private static MissionOffer Current(MissionFixture f) => f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId)!;

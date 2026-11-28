@@ -1,4 +1,3 @@
-using Eden.Data.Catalog;
 using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Agents;
@@ -52,22 +51,6 @@ internal sealed partial class PilotMissionStore
             throw new InvalidDataException("This research agent has no new mission available yet.");
         }
         return ResearchMissionCatalog.Next(catalog, agent, previous?.MissionId);
-    }
-
-    private static CatalogStationDefinition? ResearchCourierDestination(
-        CatalogDbContext catalog,
-        CatalogStationDefinition origin,
-        int owner
-    )
-    {
-        var distances = Distances(catalog, origin.SolarSystemId);
-        return catalog
-            .Stations()
-            .Where(station => station.Id != origin.Id && distances.ContainsKey(station.SolarSystemId))
-            .OrderBy(station => distances[station.SolarSystemId])
-            .ThenByDescending(station => station.OwnerId == owner)
-            .ThenBy(station => station.Id)
-            .FirstOrDefault();
     }
 
     private static double? ResearchMissionPoints(

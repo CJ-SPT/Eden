@@ -156,6 +156,7 @@ public sealed record MissionUpdate(
 )
 {
     public MissionOffer? Continuation { get; init; }
+    public long? StorylineAgentId { get; init; }
     public IReadOnlyList<long> RetiredAgentIds { get; init; } = [];
     public long? CorporationPointsAfter { get; init; }
 }

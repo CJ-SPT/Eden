@@ -167,17 +167,15 @@ internal sealed partial class PilotMissionStore
     public SpacePosition WarpDestination(int systemId, SpacePosition origin, SpacePosition destination)
     {
         var sites = Sites(systemId).Where(s => s.Deadspace).ToArray();
-        var target = sites.FirstOrDefault(s =>
-            (s.Gates.Count > 0 || s.Position != s.Entrance) && s.Position.DistanceTo(destination) <= NpcEncounterDefinitions.VisibilityRange
-        );
+        var target = sites.FirstOrDefault(s => s.Position.DistanceTo(destination) <= NpcEncounterDefinitions.VisibilityRange);
         if (target is null)
         {
             return destination;
         }
         if (sites.Any(s => s.Id == target.Id && s.Position.DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange))
         {
-            throw new InvalidDataException("Use an acceleration gate to travel inside this deadspace complex.");
+            throw new InvalidDataException("Warp is unavailable within this deadspace complex.");
         }
-        return target.Entrance;
+        return target.Gates.Count > 0 || target.Position != target.Entrance ? target.Entrance : destination;
     }
 }

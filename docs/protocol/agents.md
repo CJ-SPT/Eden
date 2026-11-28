@@ -2,6 +2,54 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Mission lifecycle and tracker audit — November 27, 2026
+
+- Mission actions validate their offer ID before processing expiry. Storyline turn-in publishes the offering agent
+  recorded by the committed transaction. Subsequent completions leave existing offers alone.
+- Courier routing keeps the usual neighboring-system and local alternatives, with a nearest reachable station fallback.
+  This lets remote distribution agents issue missions and lets the sixteenth qualifying turn-in settle and generate a
+  storyline offer in the same transaction.
+- Accepted courier journal entries supply `objective.source` and `objective.destination` bookmarks. The agent resolves
+  each warp against the current mission and selected pilot's solar system. The tracker uses the NPC interaction range
+  for space deliveries. *Home in Peace* (14973) uses its saved destination station to resolve the system and coordinates,
+  including offers saved with the issuing agent's coordinates.
+- The tracker drops destroyed or retired targets when the resident world commits their removal from combat, including
+  kills that leave other mission objectives outstanding. Nonfatal weapon hits on Enforcer stage-nine warehouses settle
+  their authored reinforcement wave on the first qualifying hit. Ungated deadspace pockets permit direct entry from
+  outside and block warps within the same complex.
+- Mission NPCs cease accepting or dealing damage at the accepted mission deadline, including NPC rows from older saves.
+  A hit after the deadline cannot create a wreck or pay a bounty while the expired pocket awaits cleanup.
+
+The build-3662168 script archive, SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`,
+was checked through REA's archive inventory and static Python 2 bytecode inspection.
+`missionObjectiveData.pyj` selects pickup and drop-off bookmarks by location type and consumes the current courier
+destination as a location ID. `movementFunctions.pyj` passes the bookmark's agent ID, location type and number to
+`WarpToLocation`. The pinned mission catalog establishes the authored route and encounter bindings. Local EVE.js 261108.1
+`agentMissionRuntime.js`, SHA-256 `f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`, was compared
+for courier bookmarks. The EVE University reports describe [mission timers](https://wiki.eveuniversity.org/Missions),
+[*Home in Peace*](https://wiki.eveuniversity.org/Home_In_Peace), the
+[Enforcer progression](https://wiki.eveuniversity.org/Enforcer_%28Career_Agent%29), and the
+[deadspace warp rules](https://wiki.eveuniversity.org/Deadspace).
+
+**Automated validation**
+
+The solution built with zero warnings and errors. The focused filter covered the Agents namespace, militia missions,
+NPC combat and missiles, pilot missiles, resident combat and drones, and map navigation. The 1,102-case run took
+833.64 seconds and passed 1,091 cases. Nine Spy Stash cases depended on the order of the expanded offer pool, and
+two guarded-site cases assumed the structure alone completed the objectives. The fixture corrections passed all
+11 previously failing cases in a 15-case retest, which took 18.73 seconds. The retest also verified the epic courier
+fixture after a formatting adjustment. The mission content, catalog and formatting Python suites passed 36 checks.
+Repository formatting, line width, documentation links and whitespace checks passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+- Follow an accepted courier mission's pickup and drop-off actions from the tracker.
+- Damage the Enforcer stage-nine warehouse and check that its reinforcements arrive once.
+
 ## NPC health reinforcement triggers — November 23, 2026
 
 A mission definition can start an independent wave when applied damage reduces a specific earlier NPC's shield, armor,

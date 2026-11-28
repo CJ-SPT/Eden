@@ -298,6 +298,16 @@ internal sealed partial class MissionHandler(
                     { State: MissionState.Accepted, Kind: MissionKind.AgentHandoff, EpicArcTargetAgentId: long destination }
                         when location is "objective" or "objective.destination" && offer.EpicArcTargetSystem == system =>
                         new FlightCommand.WarpTo(offer.EpicArcTargetStation is int station ? station : destination, range),
+                    { State: MissionState.Accepted, Cargo: { } cargo }
+                        when location == "objective.source" && cargo.PickupSystemId == system => new FlightCommand.WarpTo(
+                        cargo.PickupStation,
+                        range
+                    ),
+                    { State: MissionState.Accepted, Cargo: { } cargo }
+                        when location == "objective.destination" && offer.SystemId == system => new FlightCommand.WarpTo(
+                        cargo.DestinationStation,
+                        range
+                    ),
                     _ => throw new InvalidDataException("Warp to your accepted mission destination in its solar system."),
                 };
                 if (args[3] is true or 1L)
@@ -386,13 +396,6 @@ internal sealed partial class MissionHandler(
                 loyalty.NotifyCorporation(context, offer.Agent.CorporationId, points);
             }
         }
-        if (update.BalanceCents is not null || update is { Event: "completed", Offer.Agent.Type: AgentType.Research })
-        {
-            foreach (var storyline in missions.Journal(context.Pilot.PilotId).Where(m => m.Storyline && m.State == MissionState.Offered))
-            {
-                context.Notifications.Add(new AgentMissionChanged("offered", storyline.Agent.Id));
-            }
-        }
         if ((update.Event.Length > 0 || update.Continuation is not null) && update.Offer?.EpicArcId is not null)
         {
             context.Notifications.Add(new EpicArcJournalChanged());
@@ -412,6 +415,10 @@ internal sealed partial class MissionHandler(
         if (update.Continuation is { } continuation)
         {
             context.Notifications.Add(new AgentMissionChanged("offered", continuation.Agent.Id));
+        }
+        if (update.StorylineAgentId is long storylineAgentId)
+        {
+            context.Notifications.Add(new AgentMissionChanged("offered", storylineAgentId));
         }
     }
 }

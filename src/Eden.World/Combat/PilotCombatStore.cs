@@ -15,6 +15,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -313,7 +314,13 @@ internal sealed partial class PilotCombatStore(
         }
         else
         {
-            if (npc is null || npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue || npc.Navigation == NpcNavigationState.Warping)
+            if (
+                npc is null
+                || npc.DestroyedAt.HasValue
+                || npc.RetiredAt.HasValue
+                || npc.Navigation == NpcNavigationState.Warping
+                || npc.AnchorKind == NpcAnchorKind.Mission && PilotMissionStore.MissionNpcDeadline(world, npc) <= now
+            )
             {
                 throw new InvalidDataException("The target NPC is unavailable.");
             }

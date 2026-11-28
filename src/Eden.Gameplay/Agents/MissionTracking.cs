@@ -64,17 +64,21 @@ public static class MissionTrackingRules
         }
         if (offer.Cargo is { } cargo)
         {
+            var space = cargo.DestinationStation == offer.Agent.Id ? offer.Agent.Space : null;
             var missing = new MissionTrackerObjective(
                 MissionObjectiveKind.TransportMissing,
                 offer.Agent.Id,
-                cargo.DestinationStation,
+                space?.SystemId ?? cargo.DestinationStation,
                 cargo.TypeId,
                 cargo.Quantity
             );
             var present = missing with { Kind = MissionObjectiveKind.TransportPresent };
+            bool atDestination = space is null
+                ? position is null && stationId == cargo.DestinationStation
+                : FixedAgentRules.InRange(space, systemId, position);
             var current =
                 !offer.ObjectiveComplete ? missing
-                : position is null && stationId == cargo.DestinationStation ? complete
+                : atDestination ? complete
                 : present;
             return new(current, [missing, present, complete], false);
         }
