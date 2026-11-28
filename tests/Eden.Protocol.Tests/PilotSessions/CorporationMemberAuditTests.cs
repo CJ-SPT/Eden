@@ -43,7 +43,7 @@ public sealed class CorporationMemberAuditTests
             new object?[] { audit.Result.Events[0].Id, clock.Now, (int)CorporationAuditEventType.Created, (int)Ceo, corporation },
             Assert.IsType<object?[]>(eventValues.Arguments[1])
         );
-        Assert.NotNull(ceo.Reply("GetMembersPaged", [1L]));
+        Assert.IsType<CorporationMemberPage>(Assert.IsType<PilotCallResult.Success>(ceo.Call("GetMembersPaged", [1L])).Reply);
         Assert.Equal(corporation, ceo.Context.Pilot.CorpId);
         // An empty date interval result must still contain both iterable native rowsets.
         var empty = Assert.IsType<CorporationMemberAuditReply>(

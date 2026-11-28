@@ -387,18 +387,16 @@ internal sealed record CorporationLeaveReply(CorporationLeavePermission Permissi
 
 internal sealed record CorporationMemberPage(IReadOnlyList<CorporationMember> Members, int TotalCount, int Page) : BlueModel
 {
+    // Build 3662168 PagedResultSet is a new-style class with a four-argument constructor.
     public override object ToBlue() =>
-        new BlueInstance(
+        new BlueConstructor(
             "eve.common.script.util.pagedCollection.PagedResultSet",
-            new Dictionary<string, object?>
-            {
-                ["collection"] = new BlueList<PlayerCorporationMemberReply>(
-                    Members.Select(m => new PlayerCorporationMemberReply(m)).ToArray()
-                ),
-                ["totalCount"] = TotalCount,
-                ["page"] = Page - 1,
-                ["perPage"] = CorporationMembershipRules.MemberPageSize,
-            }
+            [
+                new BlueList<PlayerCorporationMemberReply>(Members.Select(m => new PlayerCorporationMemberReply(m)).ToArray()),
+                TotalCount,
+                Page - 1,
+                CorporationMembershipRules.MemberPageSize,
+            ]
         );
 }
 

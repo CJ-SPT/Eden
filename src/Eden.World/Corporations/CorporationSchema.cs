@@ -125,7 +125,7 @@ internal static class CorporationSchema
                             ? !world.Pilots.Any(p => p.Id == c.CeoId && p.CorporationId == c.Id)
                             : world.Pilots.Any(p => p.CorporationId == c.Id)
                     )
-                    || c.MemberLimit < 1
+                    || c.MemberLimit < 0
                     || c.BalanceCents < 0
                 )
         )

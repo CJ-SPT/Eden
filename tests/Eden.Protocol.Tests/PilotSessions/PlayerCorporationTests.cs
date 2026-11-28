@@ -141,7 +141,7 @@ public sealed class PlayerCorporationTests
         var owner = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(owners["lines"])), 4);
         Assert.Equal(90000001L, owner[0]);
         var member = BlueRead.Fields(Assert.IsType<BlueInstance>(Decode(replies[5])).State);
-        Assert.Equal(CorporationRules.CeoRoles, member["roles"]);
+        Assert.Equal(CorporationRules.DirectorRole, member["roles"]);
         Assert.Equal(0L, member["titleMask"]);
         Assert.Equal(CorporationRules.FirstCorporationId, db.Store.FindPilot(1000001)!.CorpId);
         using WorldDbContext world = new(db.Path);
@@ -450,7 +450,7 @@ public sealed class PlayerCorporationTests
         Assert.Equal(1, values[12]);
         Assert.NotEmpty(BlueMarshal.Encode(own));
         var member = BlueRead.Fields(Assert.IsType<BlueInstance>(Reply(Call("corpRegistry", "GetMember", [90000001L]))).State);
-        Assert.Equal(CorporationRules.CeoRoles, member["roles"]);
+        Assert.Equal(CorporationRules.DirectorRole, member["roles"]);
         Assert.IsType<PilotCallResult.Failure>(Call("corpRegistry", "GetMember", [90000002L]));
         var ownerTable = BlueRead.Tuple(Reply(Call("config", "GetMultiOwnersEx", [new List<object?> { (long)id }])), 2);
         var owner = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(ownerTable[1])), 5);

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Eden.Gameplay.Corporations;
 
 public sealed record CorporationRoleSet(
@@ -74,7 +76,11 @@ public sealed record CorporationMemberAccess(
     int? DivisionId = null,
     int? SquadronId = null,
     long? AuthorityHoldVoteId = null
-);
+)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CorporationRoleSet? DirectRoles { get; init; }
+}
 
 public sealed record CorporationMemberUpdate(
     long PilotId,

@@ -331,10 +331,10 @@ public sealed partial class CorporationMembershipTests
             n => n.Guest.CharacterId == Applicant && n.Guest.CorporationId == NpcCorporation
         );
         Assert.Empty(Assert.IsType<List<object?>>(applicant.Reply("GetMyOldApplications", [])));
-        var page = BlueRead.Fields(Assert.IsType<BlueInstance>(ceo.Reply("GetMembersPaged", [1L])).State);
-        Assert.Equal(2L, page["totalCount"]);
-        Assert.Equal(0L, page["page"]);
-        Assert.Equal(2, Assert.IsType<List<object?>>(page["collection"]).Count);
+        var page = Assert.IsType<CorporationMemberPage>(Assert.IsType<PilotCallResult.Success>(ceo.Call("GetMembersPaged", [1L])).Reply);
+        Assert.Equal(2, page.TotalCount);
+        Assert.Equal(1, page.Page);
+        Assert.Equal(2, page.Members.Count);
         Assert.False(BlueRead.Tuple(ceo.Reply("CanLeaveCurrentCorporation", []), 3)[0] as bool?);
         Assert.True(BlueRead.Tuple(applicant.Reply("CanLeaveCurrentCorporation", []), 3)[0] as bool?);
         applicant.Clear();

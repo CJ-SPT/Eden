@@ -83,6 +83,8 @@ public static class CorporationRules
     // Build 3662168 appConst.corporationStartupCost, corpRoleDirector, and catalog type 3363.
     public const long CreationFeeCents = 1_599_800 * MarketDefinitions.CentsPerIsk;
     public const int ManagementSkill = 3363;
+    public const int MegacorpManagementSkill = 3731;
+    public const int SovereigntySkill = 12241;
     public const long DirectorRole = 1;
     public const long PersonnelManagerRole = 128;
     public const long CeoRoles = DirectorRole | PersonnelManagerRole;
@@ -95,6 +97,9 @@ public static class CorporationRules
     public const int MaximumTickerLength = 5;
     public const int MaximumDescriptionLength = 4000;
     public const int MaximumUrlLength = 1000;
+
+    public static int MemberCapacity(IEnumerable<(int Level, double MembersPerLevel)> skills) =>
+        checked((int)skills.Sum(skill => skill.Level * skill.MembersPerLevel));
 
     public static CorporationDetails Validate(CorporationDetails details)
     {

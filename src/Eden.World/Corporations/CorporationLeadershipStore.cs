@@ -179,7 +179,7 @@ internal sealed partial class CorporationLeadershipStore(WorldDatabase database,
             .Order()
             .ToArray();
 
-    private static SavedCorporation RequireCeo(WorldAction world, long actorId)
+    internal static SavedCorporation RequireCeo(WorldAction world, long actorId)
     {
         var corporation = CorporationRoleStore.Current(world, actorId);
         return corporation.CeoId == actorId && CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Director)

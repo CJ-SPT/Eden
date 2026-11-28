@@ -17,39 +17,8 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             ? JsonSerializer.Deserialize<CorporationMemberAccess>(row.DataJson)!
             : new(new());
 
-    internal static CorporationMemberAccess Effective(WorldDbContext world, long pilotId, SavedCorporation? corporation)
-    {
-        if (corporation is null)
-        {
-            return new(new());
-        }
-        var access = Read(world, pilotId, corporation.Id);
-        if (access.AuthorityHoldVoteId.HasValue)
-        {
-            return access with { Roles = new() };
-        }
-        if (corporation.CeoId == pilotId)
-        {
-            return access with { Roles = new(CorporationRules.CeoRoles), BlockRoles = false };
-        }
-        if (access.BlockRoles)
-        {
-            return access with { Roles = new() };
-        }
-        var roles = access.Roles;
-        foreach (var title in world.Set<SavedCorporationTitle>().Where(t => t.CorporationId == corporation.Id).AsEnumerable())
-        {
-            if ((access.TitleMask & title.TitleId) != 0)
-            {
-                roles = roles.Union(title.Snapshot().Roles);
-            }
-        }
-        if (roles.Has(CorporationRole.Director))
-        {
-            roles = roles with { Roles = roles.Roles | CorporationRules.PersonnelManagerRole };
-        }
-        return access with { Roles = roles };
-    }
+    internal static CorporationMemberAccess Effective(WorldDbContext world, long pilotId, SavedCorporation? corporation) =>
+        Effective(new SqlWorldAction(world), pilotId, corporation);
 
     internal static bool Has(WorldAction world, long actorId, SavedCorporation corporation, CorporationRole role) =>
         world.Pilots.Find(actorId)?.CorporationId == corporation.Id && Effective(world, actorId, corporation).Roles.Has(role);
@@ -141,12 +110,9 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             bool selfRelinquish = actorId == update.PilotId && !after.Roles.HasAuthority && after.TitleMask == 0;
             if (!selfRelinquish)
             {
-                CorporationRoleRules.Authorize(
-                    corporation.CeoId == actorId && actor.Roles.Has(CorporationRole.Director),
-                    actor.Roles,
-                    effectiveBefore.Roles,
-                    effectiveAfter.Roles
-                );
+                bool ceo = corporation.CeoId == actorId && actor.Roles.Has(CorporationRole.Director);
+                CorporationRoleRules.Authorize(ceo, actor.Roles, before.Roles, after.Roles);
+                CorporationRoleRules.Authorize(ceo, actor.Roles, effectiveBefore.Roles, effectiveAfter.Roles);
                 if (
                     (
                         after.Title != before.Title

@@ -30,6 +30,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Recruitment advertisements, November 14, 2026](#recruitment-advertisements-november-14-2026)
 - [Bulletins and welcome mail, November 14, 2026](#bulletins-and-welcome-mail-november-14-2026)
 - [Corporation title row decoding, November 14, 2026](#corporation-title-row-decoding-november-14-2026)
+- [Administration Role Management](#administration-role-management)
 - [Corporation construction failure capture, November 14, 2026](#corporation-construction-failure-capture-november-14-2026)
 - [Direct invitations and corporation window reads, November 14, 2026](#direct-invitations-and-corporation-window-reads-november-14-2026)
 - [Corporation registry lifetime and application replies](#corporation-registry-lifetime-and-application-replies)
@@ -50,6 +51,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Shared corporation ISK wallets and bounty taxation](#shared-corporation-isk-wallets-and-bounty-taxation)
 - [Delegated corporation roles and titles](#delegated-corporation-roles-and-titles)
 - [Persistent corporation administration](#persistent-corporation-administration)
+- [Update corporation with CEO skills](#update-corporation-with-ceo-skills)
 - [Player corporation character-selection logo correction](#player-corporation-character-selection-logo-correction)
 - [Corporation creation CEO refresh correction](#corporation-creation-ceo-refresh-correction)
 - [Corporation Details faction-enlistment service correction](#corporation-details-faction-enlistment-service-correction)
@@ -1118,6 +1120,38 @@ to the earlier title-row change, not these newly implemented controls.
 
 **Optional maintainer checks.** Add/edit/reorder a bulletin. Set a welcome mail and accept a corporation invitation on another pilot.
 
+## Administration Role Management
+
+The Administration → Members → Role Management screen loads members through `CorpRolesNew.GetMembersToShow` in
+build **3662168**. The local `PagedCorpMembers.PopulatePage` forwards a one-based page to `corpRegistry.GetMembersPaged`.
+The response builds the new-style `PagedResultSet` with its native `(collection, totalCount, page, perPage)`
+constructor. The response page is zero-based, which is the index `PagedCollection.Add` uses to insert the rows.
+
+`CorpRolesNew._CreateRowsToUpdate` sends the visible role masks in the 14-column `Rowset` even when a member's
+title assignment is unchanged. Member rows and change notifications now supply the direct masks the editor can
+save. The session and permission checks continue to use effective roles, including roles granted by titles.
+Removing a title therefore removes the roles it granted unless they were also explicitly assigned. The save
+checks both the direct assignment and effective role change against the actor's current authority.
+
+The pinned archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The native paths are `corporationWindow.construct_admin_members_panels` line 534,
+`corp_ui_member_newroles.CorpRolesNew.GetMembersToShow` line 202, `_CreateRowsToUpdate` line 518,
+`SaveChanges` line 573, `pagedCollection.PagedResultSet.__init__` line 78, and
+`bco_members.GetMyGrantableRoles` lines 246–252. EVE.js **261108.1** uses the same constructor in
+`serviceHelpers.buildPagedResultSet` and direct masks in `corpRegistryRuntime.buildMemberRow`.
+[Carbon marshal source](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) ·
+[Corporation roles and titles](https://wiki.eveuniversity.org/Managing_corporation_members)
+
+**Automated validation.** Both `CorporationRoleTests.NativeRoleManagementLoadsMemberPagesAndSavesNativeRows`
+cases passed in the five-case exact test run. The build took 15.83 seconds and the run took 9.70 seconds. The cases verify the paged
+constructor, regular member and director masks, rejection of an unauthorized write, and a saved direct change
+whose authority remains distinct from an assigned title.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Open Administration → Members → Role Management as a CEO, assign a role to a
+member who has a different role from a title, save, and verify the two assignments after reopening the panel.
+
 ## Corporation title row decoding, November 14, 2026
 
 The maintainer's next run produced `eden-corporation-21084.log`: ordinary corporation panels completed,
@@ -1606,6 +1640,31 @@ Sources: inert build **3662168** inspection of `appConst`, `bco_members.UpdateMe
 
 **Optional maintainer checks:** Assign a title and a limited role to another member; inspect their updated access. Remove all roles and inspect the leave cooldown.
 
+## Division names after a save
+
+Build 3662168's `corp_ui_home.DivisionsForm` opens for the CEO and displays the Master Wallet as a fixed label.
+`ApplyDivisionNames` (163–253) forwards the edited names and the other current values to
+`base_corporation.UpdateDivisionNames`, which calls `corpRegistry.UpdateDivisionNames` with seven hangar fields
+followed by seven wallet fields (9–54). The server already persisted this request and returned the committed names
+on a fresh corporation read.
+
+The client applies the live update through `CorporationsO.OnCorporationChanged`. Its shared
+`BaseCorpObject.GetAddRemoveFromChange` classifier (64–158) treats an all-None previous side as an insertion and an
+all-None new side as a removal. A first rename from localized defaults supplied an insertion-shaped partial delta.
+The corporation cache rejected it because the update lacked the complete DBRow (39–91). Clearing every name could
+also remove the cached row. Nullable-only updates now carry the unchanged `corporationID` pair, so both the CEO's
+and current members' caches apply the changes to the existing row.
+
+The signed archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+Local EVE.js 261108.1 `corpRegistryRuntime.js` (`41d691387ff4`) also uses fourteen positional fields.
+Its `corporationRuntimeState.js` (`2a324a6c6ac4`) supplies non-null initial strings. Eden leaves unset fields
+nullable so the pinned client can use localized labels. [Corporation divisions](https://wiki.eveuniversity.org/Corporation_logistics#Corporation_hangars)
+
+**Automated validation.** `CorporationAdministrationTests.DivisionNamesUpdateLoadedCorporationRowsWhenSavedOrCleared`
+passed in the combined five-case exact run. It replays the pinned classifier against the CEO and member updates
+after both a first save and a clear, and checks that an ordinary member cannot edit names. The build took 15.83 seconds
+and the tests took 9.70 seconds.
+
 ## Persistent corporation administration
 
 `corpRegistry.UpdateCorporation` now saves description, website, ISK/LP tax rates and application availability using the pinned five-argument request. `UpdateLogo` saves all seven nullable logo identifiers; `UpdateDivisionNames` saves fourteen nullable names. Identity names/tickers remain immutable. Validation rejects nonfinite/out-of-range rates, oversized/control-bearing fields, negative logo IDs and unauthorized actors. These operations initially require the current CEO; delegated access follows in the roles milestone. Identical edits emit no events.
@@ -1619,6 +1678,29 @@ Sources: inert pinned build **3662168** inspection of `bco_corporations.UpdateCo
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Edit corporation details/logo/division names, then inspect them from another connected member.
+
+## Update corporation with CEO skills
+
+The pinned corporation details dialog calls `corpRegistry.UpdateCorporationAbilities()` through its bound registry.
+It expects a numeric result, then forces a fresh corporation read and displays `memberLimit`. A successful update saves
+the current CEO's trained capacity and sends `OnCorporationChanged` with the previous and new limit to corporation members.
+Directors cannot apply their skills in place of the CEO. Lowering the limit can block new admissions while existing members
+keep their membership. Training by itself leaves the last saved limit in effect.
+
+REA extracted the signed build **3662168** client modules in
+`ev_3e5562fa11dbf77c6ba842dfc1dbdf91b2bfdd95064b2b0c93a820d2f889a428`. In
+`corp_dlg_editcorpdetails.pyj`, `CorpDetails.UpdateWithSkills` calls with no arguments at offset 15, checks for
+`None` at offsets 18–30 and rereads the corporation at offsets 31–58. `bco_corporations.pyj` forwards the
+zero-argument call to the registry. The pinned catalog's `corporationMemberBonus` attribute **191** supplies
+**20**, **100**, **400**, and **2,000** members per trained level for Corporation Management (**3363**), Megacorp
+Management (**3731**), Empire Control (**3732**), and Sovereignty (**12241**). EVE.js
+`corporationMemberLimit.js` and `corpRegistryRuntime.js` use the same catalog bonus and return a numeric limit.
+[EVE University corporation skill workflow](https://wiki.eveuniversity.org/Forming_a_corporation#Relevant_skills)
+
+`BoundUpdateWithMySkillsRefreshesAndPersistsCapacityForTheActiveCeo` passed both cases in the combined
+five-case exact run. It verifies the nested bind, the full **12,600** and zero capacity values, director rejection,
+the forced reread, no-op notification suppression, and checkpoint reopen. The build took 15.83 seconds and
+tests took 9.70 seconds.
 
 ## Player corporation character-selection logo correction
 

@@ -1,9 +1,13 @@
 using System.Text.Json;
 using Eden.Data.World.Corporations;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Dogma;
 using Eden.Infrastructure.Registration;
+using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Skills;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -11,6 +15,14 @@ namespace Eden.World.Corporations;
 [Injectable]
 internal sealed class CorporationAdministrationStore(WorldDatabase database) : ICorporationAdministration
 {
+    private static readonly int[] s_capacitySkills =
+    [
+        CorporationRules.ManagementSkill,
+        CorporationRules.MegacorpManagementSkill,
+        AllianceRules.EmpireControlSkill,
+        CorporationRules.SovereigntySkill,
+    ];
+
     public void Update(long actorId, CorporationProperties properties) =>
         Change(
             actorId,
@@ -24,6 +36,31 @@ internal sealed class CorporationAdministrationStore(WorldDatabase database) : I
                     LoyaltyPointTaxRate = properties.LoyaltyPointTaxRate,
                 }
         );
+
+    public int UpdateAbilities(long actorId)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Corporation abilities require the resident world.");
+        using var world = live.Economy.Begin(TransactionParticipants.None);
+        var corporation = CorporationLeadershipStore.RequireCeo(world, actorId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        int limit = CorporationRules.MemberCapacity(
+            s_capacitySkills.Select(skill =>
+                (
+                    PilotSkillReader.Level(world, catalog, actorId, skill),
+                    catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.CorporationMemberBonus)
+                )
+            )
+        );
+        int previous = corporation.MemberLimit;
+        if (previous != limit)
+        {
+            corporation.MemberLimit = limit;
+            var details = corporation.Snapshot(0).Details;
+            Publish(world, new(corporation.Id, details, details, PreviousMemberLimit: previous, MemberLimit: limit));
+            world.Commit();
+        }
+        return limit;
+    }
 
     public void UpdateLogo(long actorId, CorporationLogo logo) => Change(actorId, details => details with { Logo = logo });
 
@@ -76,11 +113,16 @@ internal sealed class CorporationAdministrationStore(WorldDatabase database) : I
             return;
         }
         corporation.DetailsJson = JsonSerializer.Serialize(after);
-        string change = JsonSerializer.Serialize(new CorporationAdministrationChange(corporation.Id, before, after));
-        foreach (long member in world.Pilots.Where(p => p.CorporationId == corporation.Id).Select(p => p.Id))
-        {
-            world.Add(new SavedCorporationChange { PilotId = member, AdministrationJson = change });
-        }
+        Publish(world, new(corporation.Id, before, after));
         transaction.Commit();
+    }
+
+    private static void Publish(WorldAction world, CorporationAdministrationChange change)
+    {
+        string json = JsonSerializer.Serialize(change);
+        foreach (long member in world.Pilots.Where(p => p.CorporationId == change.CorporationId).Select(p => p.Id))
+        {
+            world.Add(new SavedCorporationChange { PilotId = member, AdministrationJson = json });
+        }
     }
 }

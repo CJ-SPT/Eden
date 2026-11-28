@@ -52,7 +52,12 @@ internal sealed partial class CorporationRoleStore
         }
         if (corporation.CeoId == pilotId)
         {
-            return access with { Roles = new(CorporationRules.CeoRoles), BlockRoles = false };
+            return access with
+            {
+                Roles = new(CorporationRules.CeoRoles),
+                BlockRoles = false,
+                DirectRoles = new(CorporationRules.DirectorRole),
+            };
         }
         if (access.BlockRoles)
         {
@@ -70,7 +75,8 @@ internal sealed partial class CorporationRoleStore
         {
             roles = roles with { Roles = roles.Roles | CorporationRules.PersonnelManagerRole };
         }
-        return access with { Roles = roles };
+        CorporationRoleSet direct = roles.Has(CorporationRole.Director) ? new(CorporationRules.DirectorRole) : access.Roles;
+        return access with { Roles = roles, DirectRoles = direct == roles ? null : direct };
     }
 
     internal static CorporationMemberAccess Read(WorldAction world, long pilotId, int corporationId) =>

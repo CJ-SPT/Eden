@@ -217,13 +217,13 @@ internal static class CorporationRoleFields
 {
     internal static Dictionary<string, object?> Values(CorporationMemberAccess access)
     {
-        var roles = access.Roles;
+        var roles = access.DirectRoles ?? access.Roles;
         return new()
         {
             ["title"] = new BlueUnicode(access.Title),
             ["titleMask"] = access.TitleMask,
             ["roles"] = roles.Roles,
-            ["rolesAtAll"] = roles.Roles,
+            ["rolesAtAll"] = access.Roles.Roles,
             ["grantableRoles"] = roles.GrantableRoles,
             ["rolesAtHQ"] = roles.RolesAtHQ,
             ["grantableRolesAtHQ"] = roles.GrantableRolesAtHQ,

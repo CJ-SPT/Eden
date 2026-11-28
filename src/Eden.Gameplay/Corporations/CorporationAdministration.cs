@@ -56,7 +56,9 @@ public sealed record CorporationAdministrationChange(
     long? ClosedAt = null,
     CorporationVoteChange? Vote = null,
     CorporationHeadquartersChange? Headquarters = null,
-    CorporationBlueprintLockChange? BlueprintLock = null
+    CorporationBlueprintLockChange? BlueprintLock = null,
+    int? PreviousMemberLimit = null,
+    int? MemberLimit = null
 );
 
 public sealed record CorporationHeadquartersChange(int PreviousStationId, int PreviousSystemId, int StationId, int SystemId);
@@ -69,6 +71,7 @@ public interface ICorporationHeadquarters
 public interface ICorporationAdministration
 {
     void Update(long actorId, CorporationProperties properties);
+    int UpdateAbilities(long actorId);
     void UpdateLogo(long actorId, CorporationLogo logo);
     void UpdateDivisions(long actorId, CorporationDivisions divisions);
     bool RestrictsCorpMails(long actorId);

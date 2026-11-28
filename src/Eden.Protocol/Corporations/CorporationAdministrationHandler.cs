@@ -19,6 +19,7 @@ internal sealed partial class CorporationHandler
             || method
                 is not (
                     "UpdateCorporation"
+                    or "UpdateCorporationAbilities"
                     or "UpdateLogo"
                     or "UpdateDivisionNames"
                     or "DoesCorpRestrictCorpMails"
@@ -45,6 +46,10 @@ internal sealed partial class CorporationHandler
                 case ("UpdateCorporation", [var description, var url, var tax, var recruiting, var lpTax]):
                     administration.Update(actor, new(Text(description), Text(url), Rate(tax), Flag(recruiting), Rate(lpTax)));
                     break;
+                case ("UpdateCorporationAbilities", []):
+                    int limit = administration.UpdateAbilities(actor);
+                    Advance(context);
+                    return (long)limit;
                 case ("UpdateLogo", { Length: 7 }):
                     administration.UpdateLogo(
                         actor,
@@ -119,13 +124,20 @@ internal sealed record CorporationDetailsChanged(CorporationAdministrationChange
                 before["deleted"] = false;
                 after["deleted"] = true;
             }
-            return
-            [
-                Change.CorporationId,
-                after
-                    .Where(p => !Equals(before[p.Key], p.Value))
-                    .ToDictionary(p => p.Key, p => (object?)new object?[] { before[p.Key], p.Value }),
-            ];
+            if (Change.MemberLimit is int limit)
+            {
+                before["memberLimit"] = Change.PreviousMemberLimit;
+                after["memberLimit"] = limit;
+            }
+            var changes = after
+                .Where(p => !Equals(before[p.Key], p.Value))
+                .ToDictionary(p => p.Key, p => (object?)new object?[] { before[p.Key], p.Value });
+            if (changes.Count > 0 && (changes.Keys.All(key => before[key] is null) || changes.Keys.All(key => after[key] is null)))
+            {
+                // The client treats all-None old or new values as insertion or removal, respectively.
+                changes.Add("corporationID", new object?[] { Change.CorporationId, Change.CorporationId });
+            }
+            return [Change.CorporationId, changes];
         }
     }
 

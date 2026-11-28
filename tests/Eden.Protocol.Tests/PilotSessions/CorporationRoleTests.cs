@@ -56,6 +56,99 @@ public sealed class CorporationRoleTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void NativeRoleManagementLoadsMemberPagesAndSavesNativeRows(bool liveWorld)
+    {
+        const long ceoId = 90000001;
+        const long memberId = 90000002;
+        const long titleId = 1;
+        long inherited = (long)CorporationRole.Accountant;
+        long direct = (long)CorporationRole.StationManager;
+        using TestWorld world = new(liveWorld: liveWorld);
+        CorporationAdministrationTests.CreateAndJoin(world);
+        var roles = world.Services.GetRequiredService<ICorporationRoles>();
+        var corporations = world.Services.GetRequiredService<IPlayerCorporations>();
+        roles.UpdateTitles(ceoId, [new(titleId, "Finance", new(inherited))]);
+        roles.UpdateMembers(ceoId, [Update(memberId, new(), titleId)]);
+        using CorporationTestClient ceo = new(world, 1000001);
+        using CorporationTestClient member = new(world, 1000002);
+
+        var first = NativePage(ceo, 1);
+        var empty = NativePage(ceo, 2);
+        Assert.Empty(Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(empty.Arguments[0]))));
+        var rows = Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(first.Arguments[0])));
+        Assert.Equal(2, rows.Count);
+        var ceoFields = BlueRead.Fields(Assert.IsType<BlueInstance>(rows[0]).State);
+        Assert.Equal(ceoId, ceoFields["characterID"]);
+        Assert.Equal(CorporationRules.DirectorRole, ceoFields["roles"]);
+        var memberFields = BlueRead.Fields(Assert.IsType<BlueInstance>(rows[1]).State);
+        Assert.Equal(memberId, memberFields["characterID"]);
+        Assert.Equal(0L, memberFields["roles"]);
+        Assert.Equal(titleId, memberFields["titleMask"]);
+        Assert.Equal(inherited, corporations.Identity(memberId).Roles);
+
+        var header = new List<object?>
+        {
+            "characterID",
+            "title",
+            "divisionID",
+            "squadronID",
+            "roles",
+            "grantableRoles",
+            "rolesAtHQ",
+            "grantableRolesAtHQ",
+            "rolesAtBase",
+            "grantableRolesAtBase",
+            "rolesAtOther",
+            "grantableRolesAtOther",
+            "baseID",
+            "titleMask",
+        };
+        var edits = header.Select(column => memberFields[BlueRead.Text(column)]).ToList();
+        edits[4] = (long)memberFields["roles"]! | direct;
+        edits[13] = null;
+        var rowset = new BlueInstance(
+            "eve.common.script.sys.rowset.Rowset",
+            new Dictionary<string, object?>
+            {
+                ["header"] = header,
+                ["lines"] = new List<object?> { edits },
+                ["RowClass"] = new BlueGlobal(BlueNewObject.RowClass),
+            }
+        );
+        Assert.IsType<PilotCallResult.Failure>(member.Call("UpdateMembers", [rowset]));
+        Assert.Equal(inherited, corporations.Identity(memberId).Roles);
+        Assert.Null(ceo.Reply("UpdateMembers", [rowset]));
+        Assert.Equal(inherited | direct, corporations.Identity(memberId).Roles);
+        member.Advance();
+        var changed = Assert.Single(member.Context.Notifications.OfType<CorporationRolesChanged>());
+        var fields = BlueRead.Fields(changed.Arguments[2]);
+        Assert.Equal(new object?[] { 0L, direct }, fields["roles"]);
+
+        Assert.Null(ceo.Reply("DeleteTitle", [titleId]));
+        Assert.Equal(direct, corporations.Identity(memberId).Roles);
+        roles.UpdateMembers(ceoId, [Update(memberId, new(CorporationRules.DirectorRole))]);
+        var director = BlueRead.Fields(Assert.IsType<BlueInstance>(ceo.Reply("GetMember", [memberId])).State);
+        Assert.Equal(CorporationRules.DirectorRole, director["roles"]);
+        Assert.Equal(CorporationRules.CeoRoles, corporations.Identity(memberId).Roles);
+
+        static BlueConstructor NativePage(CorporationTestClient client, int pageNumber)
+        {
+            var reply = Assert.IsType<CorporationMemberPage>(
+                Assert.IsType<PilotCallResult.Success>(client.Call("GetMembersPaged", [(long)pageNumber])).Reply
+            );
+            var shape = Assert.IsType<BlueConstructor>(reply.ToBlue());
+            var expected = new BlueConstructor(
+                "eve.common.script.util.pagedCollection.PagedResultSet",
+                [shape.Arguments[0], 2, pageNumber - 1, CorporationMembershipRules.MemberPageSize]
+            );
+            Assert.Equal(BlueMarshal.Encode(expected), BlueMarshal.Encode(reply));
+            return shape;
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void NativeRoleTitleRowsRefreshSessionAndPersistWithoutChangingWalletOrMembership(bool liveWorld)
     {
         using TestWorld world = new(liveWorld: liveWorld);
