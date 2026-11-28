@@ -158,6 +158,9 @@ internal sealed partial class CapsuleerIndustry
         return new(true, true);
     }
 
+    internal static bool HasConfiguredSovereigntyUpgrades(WorldAction world, long hubId) =>
+        world.Filter<SavedSovereigntyUpgrade>(row => row.HubId == hubId).Any(upgrade => upgrade.ConfiguredOnline);
+
     internal SovereigntyReagentCargo? LoadSovereigntyReagent(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -169,7 +172,7 @@ internal sealed partial class CapsuleerIndustry
     {
         if (
             world.Set<SavedSovereigntyResourceHub>().Find(claim.HubId) is not { } hub
-            || !world.Filter<SavedSovereigntyUpgrade>(row => row.HubId == claim.HubId).Any(upgrade => upgrade.ConfiguredOnline)
+            || !HasConfiguredSovereigntyUpgrades(world, claim.HubId)
         )
         {
             return null;

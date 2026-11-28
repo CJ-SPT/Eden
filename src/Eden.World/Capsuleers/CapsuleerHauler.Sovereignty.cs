@@ -79,29 +79,40 @@ internal sealed partial class CapsuleerHauler
             || Work.SovereigntyExpedition is not null
         )
         {
+            ClearSovereigntyStandby();
             return false;
         }
-        var home = world
+        var holdings = world
             .Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance.Id)
             .OrderBy(claim => claim.ClaimedAt)
             .ThenBy(claim => claim.SystemId)
-            .FirstOrDefault();
-        if (home is null)
+            .ToArray();
+        if (holdings.Length == 0)
         {
+            ClearSovereigntyStandby();
             return TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, null, prepare);
         }
 
         SettleSovereigntyDockFreight(world);
-        if (
-            !CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId, ignoredDuty: SovereigntyDuty.Attack)
-            && TryProtectSovereignty(world, catalog, corporation, home, prepare)
-        )
+        var active = CapsuleerAlliances.Expeditions(world, corporation, pilotId).ToArray();
+        if (TryDefendSovereignty(world, catalog, corporation, alliance.Id, holdings, active, prepare, out bool defenseNeeded))
         {
             return true;
         }
-        return TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
-            || TryAttackSovereignty(world, catalog, corporation, home, prepare)
-            || StandByAtSovereignty(world, catalog, corporation, home);
+        var home = holdings[0];
+        if (!defenseNeeded)
+        {
+            bool resupplying = active.Any(expedition => expedition is { Duty: SovereigntyDuty.ReagentDelivery, Returning: false });
+            if (
+                (!resupplying && TryResupplySovereignty(world, catalog, corporation, holdings))
+                || TryLaunchSovereigntyClaim(world, catalog, corporation, alliance, home, prepare)
+                || TryAttackSovereignty(world, catalog, corporation, home, active, prepare)
+            )
+            {
+                return true;
+            }
+        }
+        return StandByAtSovereignty(world, catalog, corporation, home);
     }
 
     private bool TryLaunchSovereigntyClaim(
@@ -124,8 +135,7 @@ internal sealed partial class CapsuleerHauler
         int members = world.Filter<SavedAllianceMember>(member => member.AllianceId == alliance.Id).Count();
         if (
             members < CapsuleerAllianceRules.FoundingCorporations
-            || home is not null
-                && (!CapsuleerAlliances.CanFund(world, corporation, members, 0) || entosis.DefenseTargets(world, home, Now).Any())
+            || home is not null && !CapsuleerAlliances.CanFund(world, corporation, members, 0)
         )
         {
             return false;
@@ -208,6 +218,7 @@ internal sealed partial class CapsuleerHauler
             RouteDirection = 1,
             TrafficLane = null,
             SovereigntyExpedition = expedition,
+            HomeDefenseAllianceId = null,
         };
         LaunchActivity();
         BeginTravel();

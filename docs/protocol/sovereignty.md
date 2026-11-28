@@ -164,20 +164,24 @@ Follow a funded bot expedition through deployment and confirm the owner changes 
 
 ## Bot home defense and upkeep
 
-A bot alliance treats its earliest current claim as home. One fitted capsuleer can stay docked at the executor's
-headquarters between assignments. On a docked review, a funded pilot can respond to a live hostile link or remaining
-disruption at the home hub. During a campaign it can take a reachable command node associated with that hub, prioritizing
-nodes nearest to attacker control. The pilot uses ordinary travel, target locks, fuel, capacitor and Entosis cycles.
-Departure and each on-grid action verify the current owner and target. Paid travel restrictions still apply on retreat.
-The owning alliance's defense updates the existing hub or campaign score, including normal contention and reinforcement rules.
+A bot alliance uses its earliest current claim as home for border strategy. Docked pilots review hubs and campaign nodes
+across all of the alliance's holdings. They prioritize live hostile links, then claims nearer to defeat and targets nearer
+to attacker control. A reachable objective reserves one outbound defender. Other available pilots can respond to different
+objectives while defense, claim, attack or supply expeditions are underway. Saved assignments retain reservations across
+restart. One fitted pilot can stand by at the executor's headquarters between assignments.
+
+Defenders use ordinary travel, target locks, fuel, capacitor and Entosis. A node requires a route to its physical system
+and continued ownership of the claim it represents. Departure and each on-grid action revalidate the objective. Paid
+travel restrictions apply on retreat. Defenders update the native hub or campaign score through the existing contention
+and reinforcement rules. [CCP command-node events](https://support.eveonline.com/hc/en-us/articles/203728981-Command-Nodes-Event)
 
 The executor uses the existing recurring alliance invoice and designated wallet division. The bot review enables the
 native maintenance default for existing bot alliances with a claim and respects any explicit billing preference.
 Defensive outfitting and local reagent purchases retain one monthly alliance reserve. When a configured home upgrade's
 reagents run below its remaining startup cost plus two hours of consumption, a courier can purchase and carry stock toward
-startup plus four hours. The home corporation's Station Manager deposits real cargo through the native fuel ledger, and
-existing power, workforce, startup and hourly rules govern runtime. A bare hub has no reagent budget. Upgrade installation
-and Skyhook deployment remain ordinary corporation actions. The response covers the home claim.
+startup plus four hours. A reachable hub with configured upgrades can receive deliveries if the executor corporation
+owns it. Its Station Manager deposits the cargo through the native fuel ledger, and power, workforce, startup and hourly
+rules govern runtime. Upgrade installation and Skyhook deployment remain ordinary corporation actions.
 
 Build 3662168's command node (34832) has a catalog radius of 243 m and omits a dogma signature. The resident signature
 read falls back to the physical radius for this type, so both player and bot targeting can use the ordinary lock timer.
@@ -201,6 +205,26 @@ passed 331 cases in 2 minutes 12 seconds. The `FullyQualifiedName~` filter combi
 `Eden.Protocol.Tests.Alliances`, `CapsuleerAllianceTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerTrafficNavigationTests`,
 `CapsuleerAmmunitionSupplyTests`, `TargetingTests`, `CorporationFinancialPanelTests`, `CorporationWalletTests`,
 `PersonalMarketTests` and `Eden.Protocol.Tests.Market.ResidentEconomyTests`. Both Python policy suites passed (8 and 9 cases).
+
+The exact `FullyQualifiedName=` selection for the three methods below passed seven cases in 29.49 seconds after
+a 10.19-second build. All three methods belong to `Eden.Protocol.Tests.Capsuleers.CapsuleerAllianceTests`.
+
+- `UnattendedDefendersProtectLaterClaimAndDivideCampaignNodesAcrossRestart`
+- `FundedRivalsContestAnOwnedHubUnattendedAcrossRestart`
+- `FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem`
+
+The new unattended fixture stages disruption on the later of two claims and observes a paid defender restore the hub.
+It then stages a campaign for that claim with one node in each system. The first outbound assignment survives a
+checkpoint. A second pilot takes the other node, and both pay for overlapping cycles. The campaign reaches native
+defender victory and both holdings survive. Using pre-owned headquarters stock, a courier fuels the later hub's
+configured upgrade and settles startup with four hours of reagent remaining.
+
+The broader `FullyQualifiedName~` selection passed 408 cases in 178.13 seconds. It combined `CapsuleerAllianceTests`,
+`CapsuleerCorporationTests`, `Eden.Protocol.Tests.Alliances`, `Eden.Protocol.Tests.Sovereignty`, `CapsuleerMaintenanceTests`,
+`CapsuleerPopulationSettingsTests`, `RegionalConflictTests`, `RegionalConflictWorldTests`, `CapsuleerTrafficNavigationTests`,
+`TargetingTests` and `PersonalMarketTests`. The solution built in 0.72 seconds with zero warnings or errors. All 17 Python
+policy cases passed in 1.75 seconds. Formatting and whitespace checks passed with the local recovery archive excluded
+from CSharpier.
 
 ### Live acceptance
 

@@ -97,12 +97,8 @@ internal sealed partial class CapsuleerAlliances
         return false;
     }
 
-    internal static bool ExpeditionActive(
-        WorldAction world,
-        SavedCorporation corporation,
-        long? exceptPilot = null,
-        SovereigntyDuty? ignoredDuty = null
-    ) => Expeditions(world, corporation, exceptPilot).Any(expedition => expedition.Duty != ignoredDuty);
+    internal static bool ExpeditionActive(WorldAction world, SavedCorporation corporation, long? exceptPilot = null) =>
+        Expeditions(world, corporation, exceptPilot).Any();
 
     internal static IEnumerable<SovereigntyExpedition> Expeditions(WorldAction world, SavedCorporation corporation, long? exceptPilot)
     {

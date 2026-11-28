@@ -71,6 +71,7 @@ public static class SovereigntyWarfareRules
     public const int MaximumCampaignNodes = 10;
     public const int MaximumConstellationNodes = 20;
     public const int InitialDefenderPoints = 60;
+    public const int MaximumDefenderPoints = 100;
     public const int NodePoints = 7;
     public const int CommandNodeTypeId = 34832;
     public const int CommandNodeGroupId = 1316;

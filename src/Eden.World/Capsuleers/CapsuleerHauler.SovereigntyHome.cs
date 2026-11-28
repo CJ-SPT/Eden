@@ -19,19 +19,34 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
-    private bool TryProtectSovereignty(
+    private bool TryDefendSovereignty(
         EconomyTransaction world,
         CatalogDbContext catalog,
         SavedCorporation corporation,
-        SavedSovereigntyClaim home,
-        bool prepare
+        int alliance,
+        IReadOnlyList<SavedSovereigntyClaim> holdings,
+        IReadOnlyList<SovereigntyExpedition> active,
+        bool prepare,
+        out bool defenseNeeded
     )
     {
+        defenseNeeded = false;
         var avoided = AvoidedSupplierSystems();
         var hull = (HullClass)Pilot.ShipGroupId;
-        foreach (var target in entosis.DefenseTargets(world, home, Now))
+        var reserved = active
+            .Where(expedition => expedition is { Duty: SovereigntyDuty.Defend, Returning: false } && expedition.AllianceId == alliance)
+            .Select(expedition => expedition.HubId)
+            .ToHashSet();
+        foreach (var objective in entosis.DefenseTargets(world, holdings, Now))
         {
-            long duration = EntosisCatalog.Defense(catalog, target.CommandNode).Duration;
+            var target = objective.Target;
+            if (reserved.Contains(target.Id))
+            {
+                continue;
+            }
+            // Keep the usual fuel budget for a fresh fight. A nearly lost node can need two scoring durations.
+            long duration = (long)
+                Math.Ceiling(EntosisCatalog.Defense(catalog, target.CommandNode).Duration * Math.Max(1, 1 - objective.TargetProgress));
             long? module = ReadyEntosisModule(world, catalog, duration);
             var route = CapsuleerTrafficRoutes.ToClaimSystem(
                 catalog,
@@ -46,58 +61,78 @@ internal sealed partial class CapsuleerHauler
             {
                 continue;
             }
+            defenseNeeded = true;
             if (!module.HasValue)
             {
-                return prepare && PrepareSovereigntyFit(world, catalog, corporation, home.AllianceId, duration);
+                if (prepare && PrepareSovereigntyFit(world, catalog, corporation, alliance, duration))
+                {
+                    return true;
+                }
+                continue;
             }
             LaunchSovereignty(
                 route,
                 new(
-                    home.AllianceId,
+                    alliance,
                     corporation.Id,
                     target.SystemId,
                     0,
                     module.Value,
                     target.Id,
                     Duty: SovereigntyDuty.Defend,
-                    HomeSystemId: home.SystemId
+                    HomeSystemId: objective.ClaimSystemId
                 )
             );
             return true;
         }
-        if (home.CorporationId != corporation.Id)
+        return false;
+    }
+
+    private bool TryResupplySovereignty(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        SavedCorporation corporation,
+        IReadOnlyList<SavedSovereigntyClaim> holdings
+    )
+    {
+        var avoided = AvoidedSupplierSystems();
+        foreach (var claim in holdings)
         {
-            return false;
+            if (claim.CorporationId != corporation.Id || !CapsuleerIndustry.HasConfiguredSovereigntyUpgrades(world, claim.HubId))
+            {
+                continue;
+            }
+            var route = CapsuleerTrafficRoutes.ToClaimSystem(
+                catalog,
+                Pilot.StationId,
+                claim.SystemId,
+                (HullClass)Pilot.ShipGroupId,
+                avoided,
+                CapsuleerAllianceRules.FirstClaimMaximumJumps,
+                policy: world.Settings.Capsuleers
+            );
+            if (route is null || ammunitionSupply.LoadSovereigntyReagent(world, catalog, Pilot, corporation, claim, Now) is not { } load)
+            {
+                continue;
+            }
+            _operation.MarketChanged = true;
+            LaunchSovereignty(
+                route,
+                new(
+                    claim.AllianceId,
+                    corporation.Id,
+                    claim.SystemId,
+                    load.ItemId,
+                    0,
+                    claim.HubId,
+                    Duty: SovereigntyDuty.ReagentDelivery,
+                    HomeSystemId: claim.SystemId,
+                    CargoQuantity: load.Quantity
+                )
+            );
+            return true;
         }
-        var supplyRoute = CapsuleerTrafficRoutes.ToClaimSystem(
-            catalog,
-            Pilot.StationId,
-            home.SystemId,
-            hull,
-            avoided,
-            CapsuleerAllianceRules.FirstClaimMaximumJumps,
-            policy: world.Settings.Capsuleers
-        );
-        if (supplyRoute is null || ammunitionSupply.LoadSovereigntyReagent(world, catalog, Pilot, corporation, home, Now) is not { } load)
-        {
-            return false;
-        }
-        _operation.MarketChanged = true;
-        LaunchSovereignty(
-            supplyRoute,
-            new(
-                home.AllianceId,
-                corporation.Id,
-                home.SystemId,
-                load.ItemId,
-                0,
-                home.HubId,
-                Duty: SovereigntyDuty.ReagentDelivery,
-                HomeSystemId: home.SystemId,
-                CargoQuantity: load.Quantity
-            )
-        );
-        return true;
+        return false;
     }
 
     private bool PrepareSovereigntyFit(
@@ -152,7 +187,7 @@ internal sealed partial class CapsuleerHauler
     {
         if (Live is not { } live || FittedEntosisModule(world, catalog) is null)
         {
-            _work = Work with { HomeDefenseAllianceId = null };
+            ClearSovereigntyStandby();
             return false;
         }
         if (
@@ -163,21 +198,32 @@ internal sealed partial class CapsuleerHauler
                 .Any(pilot =>
                     pilot.Id != pilotId
                     && world.Set<SavedCapsuleerSuspension>().Find(pilot.Id) is null
-                    && HaulerCheckpoint.Read(world, live, pilot.Id) is { } work
+                    && pilot.ActiveShip.Position is null
+                    && pilot.ActiveShip.DockedLocationId == Pilot.StationId
+                    && HaulerCheckpoint.Read(world, live, pilot.Id) is { SovereigntyExpedition: null } work
                     && work.ShipId == pilot.ActiveShipId
                     && work.HomeDefenseAllianceId == home.AllianceId
                 )
         )
         {
+            ClearSovereigntyStandby();
             return false;
         }
         _work = Work with
         {
             HomeDefenseAllianceId = home.AllianceId,
             DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks,
-            WaitingReason = "Standing by to defend the alliance's home system.",
+            WaitingReason = "Standing by to defend alliance territory.",
         };
         return true;
+    }
+
+    private void ClearSovereigntyStandby()
+    {
+        if (Work.HomeDefenseAllianceId is not null)
+        {
+            _work = Work with { HomeDefenseAllianceId = null };
+        }
     }
 
     private bool CanContinueSovereignty(WorldAction world, SovereigntyExpedition expedition)

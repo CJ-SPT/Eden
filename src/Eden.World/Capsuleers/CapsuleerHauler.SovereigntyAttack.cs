@@ -19,15 +19,15 @@ internal sealed partial class CapsuleerHauler
         CatalogDbContext catalog,
         SavedCorporation corporation,
         SavedSovereigntyClaim home,
+        IReadOnlyList<SovereigntyExpedition> otherExpeditions,
         bool prepare
     )
     {
-        if (!SovereigntyAttacksEnabled(world) || entosis.DefenseTargets(world, home, Now).Any())
+        if (!SovereigntyAttacksEnabled(world))
         {
             return false;
         }
 
-        var otherExpeditions = CapsuleerAlliances.Expeditions(world, corporation, pilotId).ToArray();
         if (otherExpeditions.Any(expedition => expedition.Duty != SovereigntyDuty.Attack))
         {
             return false;
@@ -50,7 +50,7 @@ internal sealed partial class CapsuleerHauler
         {
             SovereigntyAttackObjective objective = new(rival.SystemId, rival.HubId, rival.AllianceId);
             if (
-                otherExpeditions.Length != 0
+                otherExpeditions.Count != 0
                 && (
                     !target.CommandNode
                     || otherExpeditions.Any(expedition =>
@@ -99,7 +99,6 @@ internal sealed partial class CapsuleerHauler
                 continue;
             }
 
-            _work = Work with { HomeDefenseAllianceId = null };
             LaunchSovereignty(
                 route,
                 new(

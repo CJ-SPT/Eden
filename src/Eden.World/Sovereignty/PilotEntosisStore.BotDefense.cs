@@ -8,35 +8,82 @@ namespace Eden.World.Sovereignty;
 
 internal sealed record SovereigntyEntosisTarget(int SystemId, long Id, bool CommandNode);
 
+internal sealed record SovereigntyDefenseObjective(
+    int ClaimSystemId,
+    SovereigntyEntosisTarget Target,
+    bool HostileLink,
+    double ClaimProgress,
+    double TargetProgress
+);
+
 internal sealed partial class PilotEntosisStore
 {
-    internal IEnumerable<SovereigntyEntosisTarget> DefenseTargets(WorldAction world, SavedSovereigntyClaim home, long now)
+    internal IEnumerable<SovereigntyDefenseObjective> DefenseTargets(
+        WorldAction world,
+        IReadOnlyList<SavedSovereigntyClaim> holdings,
+        long now
+    ) =>
+        holdings
+            .SelectMany(claim => DefenseObjectives(world, claim, now))
+            .OrderByDescending(objective => objective.HostileLink)
+            .ThenBy(objective => objective.ClaimProgress)
+            .ThenBy(objective => objective.TargetProgress)
+            .ThenBy(objective => objective.Target.Id);
+
+    private IEnumerable<SovereigntyDefenseObjective> DefenseObjectives(WorldAction world, SavedSovereigntyClaim claim, long now)
     {
-        var conflict = world.Set<SavedSovereigntyConflict>().Find(home.SystemId);
-        if (conflict?.Phase == SovereigntyPhase.Campaign)
+        if (
+            world.Set<SavedSovereigntyConflict>().Find(claim.SystemId) is not { } conflict
+            || conflict.HubId != claim.HubId
+            || conflict.DefenderAllianceId != claim.AllianceId
+        )
         {
-            return CampaignTargets(world, home);
+            yield break;
         }
-        return DefenseNeeded(world, home.SystemId, home.AllianceId, home.SystemId, home.HubId, now)
-            ? [new(home.SystemId, home.HubId, false)]
-            : [];
+        if (conflict.Phase == SovereigntyPhase.Campaign)
+        {
+            foreach (var node in CampaignNodes(world, claim))
+            {
+                yield return new(
+                    claim.SystemId,
+                    new(node.SystemId, node.Id, true),
+                    HasHostileLink(world, node.Id, claim.AllianceId, now),
+                    conflict.DefenderPoints / (double)SovereigntyWarfareRules.MaximumDefenderPoints,
+                    node.Value
+                );
+            }
+        }
+        else if (Target(world, claim.SystemId, claim.HubId) is { } target && Admits(world, target, now))
+        {
+            bool hostile = HasHostileLink(world, claim.HubId, claim.AllianceId, now);
+            if (hostile || conflict.Value < 1)
+            {
+                yield return new(claim.SystemId, new(claim.SystemId, claim.HubId, false), hostile, conflict.Value, conflict.Value);
+            }
+        }
     }
 
     private static IEnumerable<SovereigntyEntosisTarget> CampaignTargets(WorldAction world, SavedSovereigntyClaim claim) =>
-        world
-            .Filter<SavedSovereigntyNode>(node => node.SourceSystemId == claim.SystemId)
-            .AsEnumerable()
-            .Where(node => node.HubId == claim.HubId && node.AllianceId == claim.AllianceId)
+        CampaignNodes(world, claim)
             .OrderBy(node => node.Value)
             .ThenBy(node => node.Id)
             .Select(node => new SovereigntyEntosisTarget(node.SystemId, node.Id, true));
 
-    internal bool DefenseNeeded(WorldAction world, int homeSystem, int alliance, int system, long id, long now)
+    private static IEnumerable<SavedSovereigntyNode> CampaignNodes(WorldAction world, SavedSovereigntyClaim claim) =>
+        world
+            .Filter<SavedSovereigntyNode>(node => node.SourceSystemId == claim.SystemId)
+            .AsEnumerable()
+            .Where(node => node.HubId == claim.HubId && node.AllianceId == claim.AllianceId);
+
+    internal bool DefenseNeeded(WorldAction world, int claimSystem, int alliance, int targetSystem, long id, long now)
     {
         if (
-            world.Set<SavedSovereigntyClaim>().Find(homeSystem) is not { } claim
+            world.Set<SavedSovereigntyClaim>().Find(claimSystem) is not { } claim
             || claim.AllianceId != alliance
-            || Target(world, system, id) is not { } target
+            || world.Set<SavedSovereigntyConflict>().Find(claimSystem) is not { } conflict
+            || conflict.HubId != claim.HubId
+            || conflict.DefenderAllianceId != alliance
+            || Target(world, targetSystem, id) is not { } target
             || !Admits(world, target, now)
         )
         {
@@ -44,18 +91,16 @@ internal sealed partial class PilotEntosisStore
         }
         if (world.Set<SavedSovereigntyNode>().Find(id) is { } node)
         {
-            return node.SourceSystemId == homeSystem && node.HubId == claim.HubId && node.AllianceId == alliance;
+            return node.SourceSystemId == claimSystem && node.HubId == claim.HubId && node.AllianceId == alliance;
         }
-        return id == claim.HubId
-            && world.Set<SavedSovereigntyConflict>().Find(homeSystem) is { } conflict
-            && (
-                conflict.Value < 1
-                || world
-                    .Filter<SavedEntosisCycle>(cycle => cycle.HubId == id)
-                    .AsEnumerable()
-                    .Any(cycle => cycle.AllianceId != alliance && cycle.EndsAt > now && cycle.Contributing && CanScore(cycle.ModuleId))
-            );
+        return id == claim.HubId && (conflict.Value < 1 || HasHostileLink(world, id, alliance, now));
     }
+
+    private bool HasHostileLink(WorldAction world, long target, int defender, long now) =>
+        world
+            .Filter<SavedEntosisCycle>(cycle => cycle.HubId == target)
+            .AsEnumerable()
+            .Any(cycle => cycle.AllianceId != defender && cycle.EndsAt > now && cycle.Contributing && CanScore(cycle.ModuleId));
 
     internal static bool ContestedHub(WorldAction world, SavedSovereigntyClaim claim, long now) =>
         world.Set<SavedSovereigntyConflict>().Find(claim.SystemId) is { } conflict

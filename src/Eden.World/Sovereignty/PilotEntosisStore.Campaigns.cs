@@ -209,7 +209,7 @@ internal sealed partial class PilotEntosisStore
                 conflict.DefenderPoints += progress.Value > 0 ? SovereigntyWarfareRules.NodePoints : -SovereigntyWarfareRules.NodePoints;
                 StopTarget(world, node.Id);
                 world.Remove(node);
-                if (conflict.DefenderPoints is <= 0 or >= 100)
+                if (conflict.DefenderPoints is <= 0 or >= SovereigntyWarfareRules.MaximumDefenderPoints)
                 {
                     SettleCampaign(world, catalog, conflict, first);
                     break;
@@ -235,8 +235,8 @@ internal sealed partial class PilotEntosisStore
     private void SettleCampaign(WorldAction world, CatalogDbContext catalog, SavedSovereigntyConflict conflict, long at)
     {
         RemoveCampaignNodes(world, conflict.SystemId);
-        conflict.DefenderPoints = Math.Clamp(conflict.DefenderPoints, 0, 100);
-        if (conflict.DefenderPoints == 100)
+        conflict.DefenderPoints = Math.Clamp(conflict.DefenderPoints, 0, SovereigntyWarfareRules.MaximumDefenderPoints);
+        if (conflict.DefenderPoints == SovereigntyWarfareRules.MaximumDefenderPoints)
         {
             DiscardPendingCampaignCredits(world, conflict.HubId);
             conflict.Phase = SovereigntyPhase.Secure;
