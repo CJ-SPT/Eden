@@ -1092,6 +1092,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Bot attacks on rival sovereignty](protocol/sovereignty.md#bot-attacks-on-rival-sovereignty)
 - [Choosing rival sovereignty objectives](protocol/sovereignty.md#choosing-rival-sovereignty-objectives)
 - [Attacks across new sovereignty borders](protocol/sovereignty.md#attacks-across-new-sovereignty-borders)
+- [Grid threats and Entosis withdrawal](protocol/sovereignty.md#grid-threats-and-entosis-withdrawal)
 - [Bot claims after a campaign victory](protocol/sovereignty.md#bot-claims-after-a-campaign-victory)
 - [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)
 - [Sovereignty conflict and command nodes, November 16, 2026](protocol/sovereignty.md#sovereignty-conflict-and-command-nodes--november-16-2026)

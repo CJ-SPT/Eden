@@ -15,6 +15,7 @@ using Eden.Gameplay.Ships;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
 using Eden.Gameplay.Targeting;
+using Eden.World.Alliances;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Corporations;
@@ -284,6 +285,19 @@ internal sealed partial class CapsuleerHauler
             return;
         }
 
+        if (SovereigntyGridDanger(world, expedition))
+        {
+            _work = Work with
+            {
+                Routine = TravelerRoutineRules.Threatened(
+                    Work.Routine ?? TravelerRoutineRules.Create(pilotId),
+                    Pilot.SystemId,
+                    Work.ActiveTicks
+                ),
+            };
+            ReturnFromSovereignty(expedition);
+            return;
+        }
         if (world.Set<SavedEntosisCycle>().Find(expedition.ModuleId) is { } cycle)
         {
             if (cycle.EndsAt > Now)
@@ -361,6 +375,27 @@ internal sealed partial class CapsuleerHauler
         WaitAtSovereignty(activation.Cycle.EndsAt - Now);
     }
 
+    private bool SovereigntyGridDanger(WorldAction world, SovereigntyExpedition expedition)
+    {
+        if (!world.Settings.Capsuleers.SituationalAwareness)
+        {
+            return false;
+        }
+        var hostiles = defense
+            .Observe(Pilot, Work.ActiveTicks)
+            .Where(contact =>
+                contact.AllianceId != expedition.AllianceId
+                && PilotAwareness.ArmedHull(contact.Hull)
+                && (
+                    expedition.Attack is { } attack && contact.AllianceId == attack.AllianceId
+                    || contact.AllianceId is int alliance && AllianceStore.Standing(world, expedition.AllianceId, alliance) < 0
+                    || CorporationWarStore.HasActiveWar(world, expedition.CorporationId, contact.CorporationId, Now)
+                )
+            )
+            .ToArray();
+        return PilotAwareness.Assess(Pilot, _navigation.Velocity, hostiles, regionalGroup: null) == CivilianDanger.Escape;
+    }
+
     private void ReturnFromSovereignty(SovereigntyExpedition expedition)
     {
         var world = _operation.World;
@@ -369,17 +404,23 @@ internal sealed partial class CapsuleerHauler
             entosis.UnlockAfterCommit(world, Pilot.ShipId, hubId);
         }
         _work = Work with { SovereigntyExpedition = expedition with { Returning = true }, RouteDirection = -1, Retreating = true };
-        ContinueSovereigntyReturn(expedition);
+        BeginTravel();
     }
 
-    private void ContinueSovereigntyReturn(SovereigntyExpedition expedition)
+    private bool HoldSovereigntyTravel(SovereigntyExpedition expedition)
     {
-        if (entosis.SettleExpeditionCycle(_operation.World, _operation.Catalog, expedition.ModuleId, Now) is long paidUntil)
+        var world = _operation.World;
+        long now = Now;
+        long? paidUntil = expedition.Returning ? entosis.SettleExpeditionCycle(world, _operation.Catalog, expedition.ModuleId, now) : null;
+        paidUntil ??= EntosisPersistence.TravelLockedUntil(world, Pilot.ShipId, now);
+        if (paidUntil.HasValue || expedition.Returning && _warpBlocked)
         {
-            WaitAtSovereignty(paidUntil - Now);
-            return;
+            _navigation.CancelAlignment();
+            _work = Work with { WarpReadyAt = 0 };
+            WaitAtSovereignty(paidUntil is long endsAt ? endsAt - now : TimeSpan.TicksPerSecond);
+            return true;
         }
-        BeginTravel();
+        return false;
     }
 
     private void WaitAtSovereignty(long delay) =>

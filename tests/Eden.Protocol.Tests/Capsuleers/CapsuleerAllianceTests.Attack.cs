@@ -9,11 +9,14 @@ using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Tests.Sovereignty;
 using Eden.Server;
 using Eden.Server.Maintenance;
@@ -21,6 +24,7 @@ using Eden.World.Alliances;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
+using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -45,7 +49,13 @@ public sealed partial class CapsuleerAllianceTests
     public Task NeutralRaiderUsesNewFrontierAndReturnsWhenItIsLostAcrossRestart() =>
         ExerciseRivalAttack(defend: false, rankRivals: false, frontierRaid: true);
 
-    private static async Task ExerciseRivalAttack(bool defend, bool rankRivals, bool frontierRaid = false)
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public Task UnattendedRaiderRespondsToVisibleInterceptorOnTheHubGrid(bool hostile) =>
+        ExerciseRivalAttack(defend: false, rankRivals: false, hostileGrid: hostile);
+
+    private static async Task ExerciseRivalAttack(bool defend, bool rankRivals, bool frontierRaid = false, bool? hostileGrid = null)
     {
         const int home = 30003990;
         const int frontier = RecoveredTerritoryDecoySystem;
@@ -77,6 +87,7 @@ public sealed partial class CapsuleerAllianceTests
                         RunWithoutPlayers = true,
                         NewSovereigntyClaims = true,
                         RegionalConflicts = true,
+                        SituationalAwareness = hostileGrid.HasValue || draft.Settings.Capsuleers.SituationalAwareness,
                     },
                 },
             },
@@ -224,7 +235,7 @@ public sealed partial class CapsuleerAllianceTests
             social.SetStanding(attackers.Ceo, [defenders.Alliance], -10);
             Tick(host, 45);
             AssertIdle();
-            if (!defend && !rankRivals)
+            if (!defend && !rankRivals && hostileGrid is null)
             {
                 social.SetStanding(attackers.Ceo, [defenders.Alliance], 0);
                 Assert.Equal(0d, social.Standing(attackers.Alliance, defenders.Alliance));
@@ -405,12 +416,77 @@ public sealed partial class CapsuleerAllianceTests
         Assert.Equal(underway, checkpoint?.SovereigntyExpedition);
         StartRoutines(reopened);
         Assert.Equal(original, claims.Read(target));
+        if (hostileGrid is bool hostile)
+        {
+            var (contact, hubPosition) = PublishInterceptor(hostile);
+            var space = reopened.GetRequiredService<SharedSpace>();
+            Assert.Contains(
+                space.Observe(target, checkpoint!.ShipId, hubPosition, 0),
+                sighting => sighting.ShipId == contact.ShipId && sighting.Hull == HullClass.Interceptor
+            );
+            if (hostile)
+            {
+                var scheduler = reopened.GetRequiredService<CapsuleerScheduler>();
+                Tick(reopened, 600, () => Expedition(restored, attacker) is { Returning: true });
+                var retreat = Assert.IsType<HaulerObservation>(scheduler.Hauler(attacker));
+                Assert.Equal(target, retreat.Pilot.SystemId);
+                Assert.Contains(
+                    retreat.Work.Routine!.Threats,
+                    threat => threat.SystemId == target && threat.ExpiresAt > retreat.Work.ActiveTicks
+                );
+                Assert.Empty(warfare.Cycles(attacker));
+                Assert.Equal(fuel, Fuel(restored, attacker));
+
+                space.Leave(contact.ShipId);
+                WaitForRaidReturn(scheduler);
+                Tick(reopened, 60);
+                var settled = Assert.IsType<HaulerObservation>(scheduler.Hauler(attacker));
+                Assert.Null(settled.Work.SovereigntyExpedition);
+                Assert.Contains(
+                    settled.Work.Routine!.Threats,
+                    threat => threat.SystemId == target && threat.ExpiresAt > settled.Work.ActiveTicks
+                );
+                Assert.Empty(warfare.Cycles(attacker));
+                Assert.Equal(fuel, Fuel(restored, attacker));
+                Assert.Equal(original, claims.Read(target));
+                Assert.Equal(1d, warfare.Hub(target)!.Conflict!.Capture.Value);
+                return;
+            }
+        }
         Tick(reopened, 600, () => warfare.Cycles(attacker).Count > 0);
         var paid = Assert.Single(warfare.Cycles(attacker));
         Assert.Equal((hubId, underway.ModuleId), (paid.HubId, paid.ModuleId));
         Assert.Equal(paid.EndsAt, paid.WarmupUntil);
         Assert.Equal(fuel - 1, Fuel(restored, attacker));
         Assert.Equal(1d, warfare.Hub(target)!.Conflict!.Capture.Value);
+        if (hostileGrid == false)
+        {
+            Assert.Equal(target, restored.Economy.Read(world => world.Set<SavedEntosisCycle>().Find(paid.ModuleId)!.SystemId));
+            var expedition = Assert.IsType<SovereigntyExpedition>(Expedition(restored, attacker));
+            Assert.Equal(underway.Attack, expedition.Attack);
+            Assert.False(expedition.Returning);
+
+            var scheduler = reopened.GetRequiredService<CapsuleerScheduler>();
+            scheduler.ObserveAggression(paid.ShipId);
+            Tick(reopened, 20, () => Expedition(restored, attacker) is { Returning: true });
+            int beforeDeadline = checked((int)((paid.EndsAt - fixture.Clock.Now - TimeSpan.TicksPerSecond) / TimeSpan.TicksPerSecond));
+            Assert.True(beforeDeadline > 0);
+            Tick(reopened, beforeDeadline);
+            var holding = Assert.IsType<HaulerObservation>(scheduler.Hauler(attacker));
+            Assert.True(fixture.Clock.Now < paid.EndsAt);
+            Assert.Equal(HaulerActivity.Waiting, holding.Work.Activity);
+            Assert.Null(holding.Work.Navigation.Warp);
+            Assert.Null(holding.Work.Navigation.WarpDestination);
+            Assert.Equal(paid.EndsAt, Assert.Single(warfare.Cycles(attacker)).EndsAt);
+            Assert.Equal(fuel - 1, Fuel(restored, attacker));
+            WaitForRaidReturn(scheduler);
+            Assert.True(fixture.Clock.Now >= paid.EndsAt);
+            Assert.Empty(warfare.Cycles(attacker));
+            Assert.Equal(fuel - 1, Fuel(restored, attacker));
+            Assert.Equal(original, claims.Read(target));
+            Assert.Equal(1d, warfare.Hub(target)!.Conflict!.Capture.Value);
+            return;
+        }
         if (frontierRaid)
         {
             var border = Assert.IsType<SovereigntyClaim>(claims.Read(frontier));
@@ -587,6 +663,37 @@ public sealed partial class CapsuleerAllianceTests
         }
         Assert.Equal(original, claims.Read(target));
         AssertUnattended(reopened);
+
+        void WaitForRaidReturn(CapsuleerScheduler scheduler)
+        {
+            int headquarters = restored.Economy.Read(world => world.Set<SavedCorporation>().Find(attackers.Corporation)!.StationId);
+            Tick(
+                reopened,
+                1200,
+                () => scheduler.Hauler(attacker) is { Pilot.Position: null, Pilot.DockedLocationId: var station } && station == headquarters
+            );
+            Tick(reopened, 1000, () => Expedition(restored, attacker) is null);
+        }
+
+        (DockedPilot Contact, SpacePosition Hub) PublishInterceptor(bool hostile)
+        {
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using var placement = restored.Economy.Begin(new(pilots: [Observer]));
+            var hub = placement.Set<SavedStructure>().Find(hubId)!;
+            SpacePosition hubPosition = new(hub.X, hub.Y, hub.Z);
+            double hubRadius = catalog.FittingType(hub.TypeId)!.Radius ?? 0;
+            var pilot = placement.Pilots.Find(Observer)!;
+            pilot.CorporationId = hostile ? defenders.Corporation : attackers.Corporation;
+            pilot.ActiveShip.TypeId = (int)GangFrigate.Crow;
+            var position = hubPosition + new SpacePosition(hubRadius + 5_000, 8_000, 0);
+            SqliteWorld.SetPosition(placement, catalog, pilot.ActiveShipId, position, target, fixture.Clock.Now);
+            var ships = reopened.GetRequiredService<SqliteWorld>();
+            var contact = ships.FindPilot(placement, pilot.AccountId, pilot.Id)!;
+            placement.Commit();
+            Assert.Equal((int?)(hostile ? defenders.Alliance : attackers.Alliance), contact.Identity.AllianceId);
+            reopened.GetRequiredService<SharedSpace>().Publish(new(PilotContact.From(contact), SpacePosition.Zero, null, 0, null));
+            return (contact, hubPosition);
+        }
 
         long[] FitCouriers(EconomyTransaction world, CatalogDbContext catalog, int corporation, int count)
         {

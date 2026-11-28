@@ -569,7 +569,18 @@ internal sealed partial class CapsuleerHauler(
             }
             if (Pilot.Position is not null && _warpBlocked && _navigation.Warp is null && _navigation.WarpDestination is not null)
             {
-                throw new InvalidDataException("Warp disruption interrupts the hauler's alignment.");
+                if (Work.SovereigntyExpedition is { Returning: false } interrupted)
+                {
+                    ReturnFromSovereignty(interrupted);
+                }
+                else if (Work.SovereigntyExpedition is { Returning: true })
+                {
+                    BeginTravel();
+                }
+                else
+                {
+                    throw new InvalidDataException("Warp disruption interrupts the hauler's alignment.");
+                }
             }
             if (
                 canWork
@@ -957,13 +968,9 @@ internal sealed partial class CapsuleerHauler(
                 break;
             case HaulerActivity.Waiting when Work.ActiveTicks >= Work.DueTicks:
                 _work = Work with { WaitingReason = null };
-                if (!CanWorkHere)
+                if (!CanWorkHere || Pilot.Position is not null && Work.SovereigntyExpedition is { Returning: true })
                 {
                     BeginTravel();
-                }
-                else if (Pilot.Position is not null && Work.SovereigntyExpedition is { Returning: true } returning)
-                {
-                    ContinueSovereigntyReturn(returning);
                 }
                 else if (
                     Pilot.Position is not null
@@ -1266,6 +1273,10 @@ internal sealed partial class CapsuleerHauler(
 
     private void BeginTravel()
     {
+        if (Work.SovereigntyExpedition is { } sovereignty && HoldSovereigntyTravel(sovereignty))
+        {
+            return;
+        }
         bool canWork = CanWorkHere;
         if (Work.Journey is { Kind: TrafficJourneyKind.NullsecExpedition } journey && PrepareNullsecLeg(journey))
         {

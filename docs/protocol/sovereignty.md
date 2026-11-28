@@ -454,6 +454,45 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Grid threats and Entosis withdrawal
+
+With **Situational awareness** enabled, the courier checks visible ships on the objective grid before starting or
+renewing Entosis. Known opposition includes the raid's target alliance, pilots from alliances with negative standing,
+and corporations at war with the courier's corporation. A nearby tackle hull or an armed ship closing into tackle range
+can cause withdrawal. The sighting goes into the pilot's existing threat memory and affects later route selection.
+
+A returning courier keeps its assignment until it can leave. All routes through its travel planner respect the
+paid Entosis deadline, including navigation resumed after combat. Warp disruption cancels pending alignment and the
+courier retries under the same return assignment when it can warp. Entosis payment, scoring, and travel restrictions
+use Eden's native cycle owner for build 3662168. The EVE.js 261108.1 Entosis runtime reference records the same module
+boundary between the paid effect and campaign scoring.
+[CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[UniWiki Entosis Link](https://wiki.eveuniversity.org/Entosis_Link)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.UnattendedRaiderRespondsToVisibleInterceptorOnTheHubGrid` filter passed both cases
+in 13.55 seconds after a 6.68-second build. The fixture places an interceptor in visible tackle range after reopening
+the outbound raid. A hostile interceptor causes withdrawal with all fuel intact. The ship returns to headquarters,
+keeps the system in its threat memory after the interceptor leaves, and avoids relaunching the raid while that memory
+is active. An allied interceptor allows the native warmup. The replay then delivers the scheduler's aggression
+notification and checks that the ship starts neither warp nor alignment before the paid deadline. Its normal return
+spends no more Strontium and the target stays undamaged in both cases. Zero human pilots were selected.
+
+The focused filter passed 275 cases in 172.09 seconds after a 2.17-second build. It selected `CapsuleerAllianceTests`,
+the `Sovereignty` namespace, `CapsuleerTrafficNavigationTests`, `RegionalConflictWorldTests`, `CapsuleerDefenseFrameTests`,
+`CapsuleerMaintenanceTests`, `Eden.Protocol.Tests.Propulsion.InterdictionTests`, `GateTravelRulesTests`, and `WarpCapacitorTests`.
+The solution built in 2.83 seconds with zero warnings or errors. Both Python policy suites passed all 17 cases.
+Formatting and whitespace checks passed with the local recovery archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Bot claims after a campaign victory
 
 When attackers capture a command node, an alliance earns credit if a valid bot link contributes at the completion
