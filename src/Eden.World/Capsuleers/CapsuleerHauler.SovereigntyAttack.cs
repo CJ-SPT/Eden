@@ -14,6 +14,16 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
+    private readonly record struct SovereigntyAttackPlan(
+        SovereigntyAttackObjective Objective,
+        SovereigntyEntosisTarget Target,
+        CapsuleerTrafficRoute Route,
+        long? ModuleId,
+        long CaptureDuration,
+        long EstimatedDuration,
+        int FuelUnits
+    );
+
     private bool TryAttackSovereignty(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -38,61 +48,30 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
 
-        var avoided = AvoidedSupplierSystems();
         var candidates = CapsuleerAlliances
             .NearbyClaimSites(catalog, Pilot.SystemId)
             .Select(system => world.Set<SavedSovereigntyClaim>().Find(system))
             .OfType<SavedSovereigntyClaim>()
             .Where(claim => IsSovereigntyRival(world, catalog, home, claim))
             .SelectMany(claim => PilotEntosisStore.AttackTargets(world, claim, Now).Select(target => (Claim: claim, Target: target)))
-            .OrderByDescending(candidate => candidate.Target.CommandNode);
-        foreach (var (rival, target) in candidates)
+            .ToArray();
+        if (candidates.Length == 0)
         {
-            SovereigntyAttackObjective objective = new(rival.SystemId, rival.HubId, rival.AllianceId);
-            if (
-                otherExpeditions.Count != 0
-                && (
-                    !target.CommandNode
-                    || otherExpeditions.Any(expedition =>
-                        expedition.Attack != objective || !expedition.Returning && expedition.HubId == target.Id
-                    )
-                )
-            )
-            {
-                continue;
-            }
+            return false;
+        }
 
-            long duration = PilotEntosisStore.AttackDuration(world, catalog, rival, target);
-            long? module = ReadyEntosisModule(world, catalog, duration);
-            if (module is null && (!prepare || !EntosisCatalog.Supported(catalog, CapsuleerAllianceRules.ExpeditionLink)))
+        var plans = AttackPlans()
+            .OrderByDescending(plan => plan.Target.CommandNode)
+            .ThenByDescending(plan => plan.ModuleId.HasValue)
+            .ThenBy(plan => plan.EstimatedDuration)
+            .ThenBy(plan => plan.FuelUnits)
+            .ThenBy(plan => plan.Target.SystemId)
+            .ThenBy(plan => plan.Target.Id);
+        foreach (var plan in plans)
+        {
+            if (plan.ModuleId is not long module)
             {
-                continue;
-            }
-            var route = CapsuleerTrafficRoutes.ToClaimSystem(
-                catalog,
-                Pilot.StationId,
-                target.SystemId,
-                module.HasValue ? (HullClass)Pilot.ShipGroupId : HullClass.Hauler,
-                avoided,
-                target.CommandNode ? TrafficJourneyRules.MaximumJumps : CapsuleerAllianceRules.FirstClaimMaximumJumps,
-                policy: world.Settings.Capsuleers
-            );
-            if (route is null)
-            {
-                continue;
-            }
-            var profile = module.HasValue
-                ? ExpeditionProfile(world, catalog, world.Pilots.Find(pilotId)!, module.Value)
-                : EntosisCatalog.Module(catalog.FittingAttributes(CapsuleerAllianceRules.ExpeditionLink), 1);
-            // Allow a minute per leg for gate travel, final warp and lock before committing the launch.
-            long leadTime = TimeSpan.FromMilliseconds(profile.Duration).Ticks + TimeSpan.TicksPerMinute * route.Systems.Length;
-            if (!PilotEntosisStore.AttackCanWarmUp(world, rival.SystemId, target.Id, Now, leadTime))
-            {
-                continue;
-            }
-            if (!module.HasValue)
-            {
-                if (PrepareSovereigntyFit(world, catalog, corporation, home.AllianceId, duration))
+                if (PrepareSovereigntyFit(world, catalog, corporation, home.AllianceId, plan.CaptureDuration))
                 {
                     return true;
                 }
@@ -100,24 +79,88 @@ internal sealed partial class CapsuleerHauler
             }
 
             LaunchSovereignty(
-                route,
+                plan.Route,
                 new(
                     home.AllianceId,
                     corporation.Id,
-                    target.SystemId,
+                    plan.Target.SystemId,
                     0,
-                    module.Value,
-                    target.Id,
+                    module,
+                    plan.Target.Id,
                     Duty: SovereigntyDuty.Attack,
                     HomeSystemId: home.SystemId
                 )
                 {
-                    Attack = objective,
+                    Attack = plan.Objective,
                 }
             );
             return true;
         }
         return false;
+
+        IEnumerable<SovereigntyAttackPlan> AttackPlans()
+        {
+            const int expeditionLink = CapsuleerAllianceRules.ExpeditionLink;
+            bool canPrepare = prepare && EntosisCatalog.Supported(catalog, expeditionLink);
+            var pilot = world.Pilots.Find(pilotId)!;
+            var link = FittedEntosisModule(world, catalog, pilot);
+            var fitted = link is null ? null : ExpeditionProfile(world, catalog, pilot, link.Id);
+            long availableCycles = fitted is null ? 0 : ExpeditionFuel(world, pilot, fitted);
+            EntosisProfile? standardProfile = null;
+            var avoided = AvoidedSupplierSystems();
+            Dictionary<(int System, HullClass Hull, int Jumps), CapsuleerTrafficRoute?> routes = [];
+            foreach (var (rival, target) in candidates)
+            {
+                SovereigntyAttackObjective objective = new(rival.SystemId, rival.HubId, rival.AllianceId);
+                if (
+                    otherExpeditions.Count != 0
+                    && (
+                        !target.CommandNode
+                        || otherExpeditions.Any(expedition =>
+                            expedition.Attack != objective || !expedition.Returning && expedition.HubId == target.Id
+                        )
+                    )
+                )
+                {
+                    continue;
+                }
+
+                long duration = PilotEntosisStore.AttackDuration(world, catalog, rival, target);
+                bool ready = fitted is not null && availableCycles >= RequiredExpeditionCycles(duration, fitted);
+                if (!ready && !canPrepare)
+                {
+                    continue;
+                }
+                var hull = ready ? (HullClass)Pilot.ShipGroupId : HullClass.Hauler;
+                int jumps = target.CommandNode ? TrafficJourneyRules.MaximumJumps : CapsuleerAllianceRules.FirstClaimMaximumJumps;
+                var key = (target.SystemId, hull, jumps);
+                if (!routes.TryGetValue(key, out var route))
+                {
+                    route = CapsuleerTrafficRoutes.ToClaimSystem(
+                        catalog,
+                        Pilot.StationId,
+                        target.SystemId,
+                        hull,
+                        avoided,
+                        jumps,
+                        policy: world.Settings.Capsuleers
+                    );
+                    routes.Add(key, route);
+                }
+                if (route is null)
+                {
+                    continue;
+                }
+                var profile = ready ? fitted! : standardProfile ??= EntosisCatalog.Module(catalog.FittingAttributes(expeditionLink), 1);
+                // Allow a minute per leg for gate travel, final warp and lock before committing the launch.
+                long leadTime = TimeSpan.FromMilliseconds(profile.Duration).Ticks + TimeSpan.TicksPerMinute * route.Systems.Length;
+                if (PilotEntosisStore.AttackCanWarmUp(world, rival.SystemId, target.Id, Now, leadTime))
+                {
+                    int fuel = checked(RequiredExpeditionCycles(duration, profile) * profile.FuelQuantity);
+                    yield return new(objective, target, route, ready ? link!.Id : null, duration, checked(leadTime + duration), fuel);
+                }
+            }
+        }
     }
 
     private bool CanContinueSovereigntyAttack(WorldAction world, CatalogDbContext catalog, SovereigntyExpedition expedition) =>

@@ -10,6 +10,7 @@ using Eden.Data.World.Structures;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Gameplay.Sovereignty;
 using Eden.Gameplay.Structures;
@@ -35,7 +36,12 @@ public sealed partial class CapsuleerAllianceTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task FundedRivalsContestAnOwnedHubUnattendedAcrossRestart(bool defend)
+    public Task FundedRivalsContestAnOwnedHubUnattendedAcrossRestart(bool defend) => ExerciseRivalAttack(defend, rankRivals: false);
+
+    [Fact]
+    public Task FundedRivalRaiderChoosesLowerDefenseHubAcrossRestart() => ExerciseRivalAttack(defend: false, rankRivals: true);
+
+    private static async Task ExerciseRivalAttack(bool defend, bool rankRivals)
     {
         const int home = 30003990;
         const int target = SovereigntyCaptureFixture.SystemId;
@@ -177,6 +183,18 @@ public sealed partial class CapsuleerAllianceTests
                 }
                 AddOwnedHub(setup, catalog, home, attackers.Corporation, attackers.Alliance);
                 hubId = AddOwnedHub(setup, catalog, target, defenders.Corporation, defenders.Alliance);
+                if (rankRivals)
+                {
+                    AddOwnedHub(setup, catalog, RecoveredTerritoryDecoySystem, defenders.Corporation, defenders.Alliance);
+                    setup.Add(
+                        new SavedSovereigntyActivity
+                        {
+                            SystemId = RecoveredTerritoryDecoySystem,
+                            MilitaryPoints = SovereigntyDevelopmentRules.MaximumPoints,
+                            UpdatedAt = fixture.Clock.Now,
+                        }
+                    );
+                }
                 setup.Commit();
             }
             var entosis = host.GetRequiredService<IPilotEntosis>();
@@ -200,10 +218,18 @@ public sealed partial class CapsuleerAllianceTests
             social.SetStanding(attackers.Ceo, [defenders.Alliance], -10);
             Tick(host, 45);
             AssertIdle();
-            if (!defend)
+            if (!defend && !rankRivals)
             {
                 social.SetStanding(attackers.Ceo, [defenders.Alliance], 0);
                 Assert.Equal(0d, social.Standing(attackers.Alliance, defenders.Alliance));
+            }
+            if (rankRivals)
+            {
+                var decoy = entosis.Hub(RecoveredTerritoryDecoySystem)!.Conflict!;
+                Assert.True(SovereigntyWarfareRules.Open(decoy.Window, fixture.Clock.Now));
+                Assert.Equal(1d, decoy.Capture.Value);
+                Assert.True(decoy.DefenseMultiplier > conflict.DefenseMultiplier);
+                AssertComparableRivalHubs(Fuel(live, attacker));
             }
             using (var funding = live.Economy.Begin(TransactionParticipants.None))
             {
@@ -228,6 +254,45 @@ public sealed partial class CapsuleerAllianceTests
                 Assert.Equal(original, host.GetRequiredService<ISovereignty>().Read(target));
                 Assert.Equal(fuel, Fuel(live, attacker));
                 Assert.Equal(fuel, Fuel(live, defender));
+            }
+
+            void AssertComparableRivalHubs(int carriedFuel)
+            {
+                using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+                live.Economy.Read(world =>
+                {
+                    int[] ordered = CapsuleerAlliances
+                        .NearbyClaimSites(catalog, HeadquartersSystem)
+                        .Where(system => system is RecoveredTerritoryDecoySystem or target)
+                        .ToArray();
+                    Assert.Equal(new[] { RecoveredTerritoryDecoySystem, target }, ordered);
+                    int headquarters = world.Set<SavedCorporation>().Find(attackers.Corporation)!.StationId;
+                    var profile = EntosisCatalog.Module(catalog.FittingAttributes(CapsuleerAllianceRules.ExpeditionLink), 1);
+                    long[] durations = ordered
+                        .Select(system =>
+                        {
+                            var claim = world.Set<SavedSovereigntyClaim>().Find(system)!;
+                            var hub = Assert.Single(PilotEntosisStore.AttackTargets(world, claim, fixture.Clock.Now));
+                            Assert.Equal(new SovereigntyEntosisTarget(system, claim.HubId, false), hub);
+                            var route = CapsuleerTrafficRoutes.ToClaimSystem(
+                                catalog,
+                                headquarters,
+                                system,
+                                HullClass.Hauler,
+                                new HashSet<int>(),
+                                policy: world.Settings.Capsuleers
+                            );
+                            Assert.Equal(new[] { HeadquartersSystem, system }, Assert.IsType<CapsuleerTrafficRoute>(route).Systems);
+                            long leadTime = TimeSpan.FromMilliseconds(profile.Duration).Ticks + 2 * TimeSpan.TicksPerMinute;
+                            Assert.True(PilotEntosisStore.AttackCanWarmUp(world, system, hub.Id, fixture.Clock.Now, leadTime));
+                            long duration = PilotEntosisStore.AttackDuration(world, catalog, claim, hub);
+                            Assert.True(carriedFuel >= CapsuleerHauler.RequiredExpeditionCycles(duration, profile) * profile.FuelQuantity);
+                            return duration;
+                        })
+                        .ToArray();
+                    Assert.True(durations[0] > durations[1]);
+                    return true;
+                });
             }
 
             (int Corporation, long Ceo, int Alliance) FoundAlliance(
@@ -318,6 +383,21 @@ public sealed partial class CapsuleerAllianceTests
             Tick(reopened, 4000, () => warfare.Hub(target)!.Conflict!.Phase == SovereigntyPhase.Reinforced);
             var reinforced = warfare.Hub(target)!.Conflict!;
             Assert.Equal(SovereigntyPhase.Reinforced, reinforced.Phase);
+            if (rankRivals)
+            {
+                var decoy = warfare.Hub(RecoveredTerritoryDecoySystem)!.Conflict!;
+                Assert.Equal((SovereigntyPhase.Secure, 1d), (decoy.Phase, decoy.Capture.Value));
+                Assert.Equal(defenders.Alliance, claims.Read(RecoveredTerritoryDecoySystem)!.AllianceId);
+                Assert.Equal(original, claims.Read(target));
+                Assert.Equal(homeClaim, claims.Read(home));
+                Assert.True(Fuel(restored, attacker) < fuel - 1);
+                Assert.Equal(
+                    reserve,
+                    restored.Economy.Read(world => world.Set<SavedCorporation>().Find(attackers.Corporation)!.BalanceCents)
+                );
+                AssertUnattended(reopened);
+                return;
+            }
             long campaignAt = Assert.IsType<long>(reinforced.CampaignAt);
             Assert.Empty(CampaignNodes(restored));
             fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(campaignAt - fixture.Clock.Now));

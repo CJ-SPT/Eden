@@ -372,6 +372,46 @@ Not performed. Agent client testing is disabled.
 
 None.
 
+## Choosing rival sovereignty objectives
+
+The executor compares eligible targets using usable routes, the fitted link's duration, the ship's fuel and the native
+remaining score. Command nodes keep priority, and couriers already assigned to a campaign reserve distinct nodes. Within
+each priority, the planner prefers a ship that can depart on its current fit and fuel. It then estimates completion from
+route length, warmup and scoring time, using the activity defense multiplier applied to the hub or campaign. Fuel needed,
+system ID and target ID resolve ties. If a fit needs supplies, the ordinary market and dues checks still govern the purchase.
+
+For an undamaged hub the vulnerability window must have room for approach and warmup. A disrupted hub retains its native
+overtime admission. Command nodes use the multiplier of their campaign's source system. The estimate assumes uncontested
+scoring; paid opposing links and later changes to the route or claim still affect the actual expedition. Build 3662168
+supplies the native time and score inputs. The EVE.js 261108.1 link runtime uses separate scoring entry points for owned hubs
+and command nodes, as recorded in [Entosis replacement and fuel stock](#entosis-replacement-and-fuel-stock).
+[CCP vulnerability windows](https://support.eveonline.com/hc/en-us/articles/203728711-Vulnerability-Window) ·
+[CCP command-node events](https://support.eveonline.com/hc/en-us/articles/203728981-Command-Nodes-Event) ·
+[UniWiki activity defense multiplier](https://wiki.eveuniversity.org/Sovereignty_Hub#Activity_Defense_Multiplier)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.FundedRivalRaiderChoosesLowerDefenseHubAcrossRestart` replay passed in 12.28 seconds
+after an 8.98-second build. Two rival hubs start undamaged, with equal routes and open vulnerability windows. The raider
+has enough fuel for either. The first hub in catalog order has a higher native defense multiplier due to local activity.
+The raider chooses the lower-defense hub, resumes its outbound assignment after reopening, and pays native Entosis cycles
+until the chosen hub enters reinforcement. The stronger hub remains undamaged, both rival claims are still held at
+reinforcement, and the attacking corporation's balance stays at its dues reserve. Zero human pilots were selected.
+
+The focused filter passed 342 cases in 160.66 seconds after a 1.93-second build. It selected `CapsuleerAllianceTests`,
+the `Sovereignty` and `Alliances` test namespaces, `RegionalConflictTests`, `RegionalConflictWorldTests`,
+`CapsuleerTrafficNavigationTests`, and `CapsuleerMaintenanceTests`. The solution built in 0.86 seconds with zero warnings
+or errors. Both Python policy suites passed all 17 cases. Formatting and whitespace checks passed with the local recovery
+archive excluded from CSharpier.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Bot claims after a campaign victory
 
 When attackers capture a command node, an alliance earns credit if a valid bot link contributes at the completion
